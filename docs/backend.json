@@ -45,6 +45,7 @@
         "billingCycle": { "type": "string", "enum": ["monthly", "annual"] },
         "nextBillingDate": { "type": "string", "format": "date-time" },
         "shopId": { "type": "string", "description": "The ID of the shop owned by this company." },
+        "loadBoardId": { "type": "string", "description": "The ID of the load board owned by this company." },
         "rewardPoints": { "type": "number", "description": "Points earned for community actions." },
         "walletBalance": { "type": "number", "description": "Total ledger balance, including pending funds." },
         "pendingBalance": { "type": "number", "description": "Funds from recent sales not yet cleared for withdrawal." },
@@ -159,6 +160,41 @@
         "updatedAt": { "type": "object" }
       },
       "required": ["shopId", "companyId", "name", "price"]
+    },
+    "LoadBoard": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Load Board",
+      "type": "object",
+      "description": "Represents a member's public load board where they post available freight.",
+      "properties": {
+        "id": { "type": "string" },
+        "companyId": { "type": "string" },
+        "boardName": { "type": "string" },
+        "status": { "type": "string", "enum": ["active", "inactive"] }
+      },
+      "required": ["id", "companyId", "boardName"]
+    },
+    "Load": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Load",
+      "type": "object",
+      "description": "Represents a single freight load available for transport.",
+      "properties": {
+        "id": { "type": "string" },
+        "companyId": { "type": "string" },
+        "origin": { "type": "string" },
+        "destination": { "type": "string" },
+        "cargoDescription": { "type": "string" },
+        "weight": { "type": "number", "description": "Weight in tons." },
+        "pallets": { "type": "number", "description": "Number of pallets." },
+        "rate": { "type": "number", "description": "Rate per kilometer." },
+        "pickupDate": { "type": "string", "format": "date-time" },
+        "deliveryDate": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["draft", "active", "in_transit", "completed", "cancelled"] },
+        "postedAt": { "type": "object" },
+        "updatedAt": { "type": "object" }
+      },
+      "required": ["id", "companyId", "origin", "destination", "cargoDescription", "weight", "pickupDate"]
     },
     "Staff": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -644,6 +680,22 @@
         }
       },
       {
+        "path": "/companies/{companyId}/loadBoards/{loadBoardId}",
+        "definition": {
+          "entityName": "LoadBoard",
+          "schema": { "$ref": "#/entities/LoadBoard" },
+          "description": "Subcollection for the load board belonging to a company."
+        }
+      },
+      {
+        "path": "/companies/{companyId}/loadBoards/{loadBoardId}/loads/{loadId}",
+        "definition": {
+            "entityName": "Load",
+            "schema": { "$ref": "#/entities/Load" },
+            "description": "Subcollection for loads posted on a company's load board."
+        }
+      },
+      {
         "path": "/shops/{shopId}",
         "definition": {
           "entityName": "Shop",
@@ -657,6 +709,14 @@
           "entityName": "Product",
           "schema": { "$ref": "#/entities/Product" },
           "description": "Subcollection for products in a public shop."
+        }
+      },
+      {
+        "path": "/loads/{loadId}",
+        "definition": {
+          "entityName": "Load",
+          "schema": { "$ref": "#/entities/Load" },
+          "description": "Top-level collection for public, active loads."
         }
       },
       {
@@ -748,14 +808,6 @@
         }
       },
       {
-        "path": "/lendingAssets/{assetId}",
-        "definition": {
-            "entityName": "Asset",
-            "schema": { "$ref": "#/entities/Asset" },
-            "description": "DMS: Central register of all assets, linked to clients via clientId."
-        }
-      },
-      {
         "path": "/lendingClients/{clientId}",
         "definition": {
             "entityName": "Client",
@@ -788,6 +840,14 @@
         }
       },
       {
+        "path": "/lendingClients/{clientId}/assets/{assetId}",
+        "definition": {
+            "entityName": "Asset",
+            "schema": { "$ref": "#/entities/Asset" },
+            "description": "DMS: Asset(s) belonging to a client."
+        }
+      },
+      {
         "path": "/lendingClients/{clientId}/agreements/{agreementId}/securities/{securityId}",
         "definition": {
             "entityName": "Security",
@@ -816,4 +876,6 @@
   }
 }
 
+    
+    
     

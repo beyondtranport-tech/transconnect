@@ -31,6 +31,7 @@ const formSchema = z.object({
   userSignupPoints: z.coerce.number().min(0, 'Points must be 0 or more.'),
   shopCreationPoints: z.coerce.number().min(0, 'Points must be 0 or more.'),
   productAddPoints: z.coerce.number().min(0, 'Points must be 0 or more.'),
+  loadBoardCreationPoints: z.coerce.number().min(0, 'Points must be 0 or more.'),
   
   // AI Tool Actions
   seoBoosterPoints: z.coerce.number().min(0, 'Points must be 0 or more.'),
@@ -70,6 +71,7 @@ export default function LoyaltySettings() {
       userSignupPoints: 50,
       shopCreationPoints: 100,
       productAddPoints: 5,
+      loadBoardCreationPoints: 75,
       seoBoosterPoints: 15,
       aiImageGeneratorPoints: 2,
       imageEnhancerPoints: 1,
@@ -178,6 +180,7 @@ export default function LoyaltySettings() {
                                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                                      {renderPointsField('truckContributionPoints', 'Points Per Truck', Truck)}
                                      {renderPointsField('trailerContributionPoints', 'Points Per Trailer', Warehouse)}
+                                     {renderPointsField('loadBoardCreationPoints', 'Points Per Load Board Creation', Truck)}
                                 </div>
                             </div>
                             <div>
@@ -232,3 +235,5 @@ export default function LoyaltySettings() {
     </Card>
   );
 }
+
+    

@@ -35,7 +35,8 @@
       "features": [
         { "key": "ecosystem:access", "name": "Access to All Malls" },
         { "key": "ecosystem:funding", "name": "Funding Division Access" },
-        { "key": "ecosystem:connect_plans", "name": "Ability to Activate Connect Plans" }
+        { "key": "ecosystem:connect_plans", "name": "Ability to Activate Connect Plans" },
+        { "key": "loads:post", "name": "Ability to Post Loads" }
       ]
     },
     {
@@ -56,3 +57,5 @@
     }
   ]
 }
+
+    
