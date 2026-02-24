@@ -1,16 +1,23 @@
-
 'use client';
 
 import { useConfig } from '@/hooks/use-config';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Cpu, Truck, Calculator } from 'lucide-react';
-import FreightMatcher from './freight-matcher';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Loader2, Cpu, Truck, Calculator, ArrowRight } from 'lucide-react';
 import LoadCalculator from './load-calculator';
 import Image from 'next/image';
 import data from '@/lib/placeholder-images.json';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 const { placeholderImages } = data;
 const techImage = placeholderImages.find(p => p.id === "tech-home");
+
+const formatPrice = (price?: number) => {
+    if (typeof price !== 'number') return 'N/A';
+    if (price === 0) return 'Free';
+    const formatted = new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(price);
+    return formatted.replace(/\s/g, ' ');
+};
 
 export default function TechPage() {
     const { data: pricing, isLoading } = useConfig<any>('techPricing');
@@ -55,14 +62,33 @@ export default function TechPage() {
                     </div>
                  ) : (
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
-                        <Card>
+                        <Card className="flex flex-col">
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2"><Truck className="h-6 w-6"/>AI Freight Matcher</CardTitle>
-                                <CardDescription>Enter your details to find matching loads instantly. This tool is available with the AI Freight Matcher subscription.</CardDescription>
+                                <CardDescription>Our premium tool to find matching loads instantly. Requires a subscription.</CardDescription>
                             </CardHeader>
-                            <CardContent>
-                                <FreightMatcher />
+                            <CardContent className="flex-grow">
+                               <div className="p-6 bg-muted/50 rounded-lg text-center">
+                                    {isLoading ? (
+                                        <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                                    ) : (
+                                        <>
+                                            <p className="text-4xl font-bold text-primary">{formatPrice(pricing?.aiFreightMatcher)}</p>
+                                            <p className="text-sm text-muted-foreground">per month</p>
+                                        </>
+                                    )}
+                               </div>
+                               <p className="text-sm text-muted-foreground mt-4">
+                                Subscribe to the AI Freight Matcher to get unlimited access to our intelligent load board, reducing your empty miles and boosting your revenue.
+                               </p>
                             </CardContent>
+                            <CardFooter>
+                                <Button asChild className="w-full">
+                                    <Link href="/mall/loads">
+                                        Go to Loads Mall <ArrowRight className="ml-2 h-4 w-4" />
+                                    </Link>
+                                </Button>
+                            </CardFooter>
                         </Card>
                         <LoadCalculator />
                     </div>

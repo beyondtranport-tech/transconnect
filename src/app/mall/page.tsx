@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -34,7 +32,9 @@ const formatPrice = (price: number) => {
         minimumFractionDigits: 0,
         maximumFractionDigits: 0,
     }).format(price);
-    // Normalize non-breaking spaces to regular spaces to prevent hydration errors.
+    // On the server, Node.js might use a non-breaking space.
+    // On the client, it might be a regular space.
+    // We normalize to a regular space to prevent hydration mismatches.
     return formattedPrice.replace(/\s/g, ' ');
 };
 
@@ -68,7 +68,7 @@ const malls = [
         name: "Loads Mall",
         description: "Discover and secure freight loads from shippers.",
         icon: PackageSearch,
-        href: "/tech",
+        href: "/mall/loads",
         id: "loads",
         image: techImage!,
     },
