@@ -17,6 +17,24 @@ import { Loader2, Route, Package, Weight, ArrowRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { provinces } from "@/lib/geodata";
+
+const vehicleTypes = [
+    "Tautliner",
+    "Flatbed",
+    "Reefer",
+    "Lowbed",
+    "Tri-axle",
+    "Superlink",
+    "Pantech",
+    "Van",
+    "8-ton truck",
+    "4-ton truck",
+    "Horse & Trailer"
+];
+
+const locations = provinces.flatMap(p => p.cities.map(c => `${c}, ${p.name}`));
 
 
 export default function FreightMatcher() {
@@ -69,9 +87,14 @@ export default function FreightMatcher() {
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Current Location (Origin)</FormLabel>
-                                    <FormControl>
-                                        <Input placeholder="e.g., Johannesburg, GP" {...field} />
-                                    </FormControl>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <FormControl>
+                                            <SelectTrigger><SelectValue placeholder="Select a location..." /></SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            {locations.map(loc => <SelectItem key={loc} value={loc}>{loc}</SelectItem>)}
+                                        </SelectContent>
+                                    </Select>
                                     <FormMessage />
                                 </FormItem>
                             )}
@@ -82,9 +105,14 @@ export default function FreightMatcher() {
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Desired Destination</FormLabel>
-                                    <FormControl>
-                                        <Input placeholder="e.g., Cape Town, WC" {...field} />
-                                    </FormControl>
+                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <FormControl>
+                                            <SelectTrigger><SelectValue placeholder="Select a destination..." /></SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            {locations.map(loc => <SelectItem key={loc} value={loc}>{loc}</SelectItem>)}
+                                        </SelectContent>
+                                    </Select>
                                     <FormMessage />
                                 </FormItem>
                             )}
@@ -95,9 +123,14 @@ export default function FreightMatcher() {
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Vehicle Type</FormLabel>
-                                    <FormControl>
-                                        <Input placeholder="e.g., 53' Tautliner" {...field} />
-                                    </FormControl>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <FormControl>
+                                            <SelectTrigger><SelectValue placeholder="Select a vehicle type..." /></SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            {vehicleTypes.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}
+                                        </SelectContent>
+                                    </Select>
                                     <FormMessage />
                                 </FormItem>
                             )}
