@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from "react";
@@ -30,16 +29,11 @@ const iconMap: { [key: string]: React.ElementType } = {
 };
 
 const formatPrice = (price: number) => {
-    const formattedPrice = new Intl.NumberFormat('en-ZA', {
-        style: 'currency',
-        currency: 'ZAR',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-    }).format(price);
-    // On the server, Node.js might use a non-breaking space.
-    // On the client, it might be a regular space.
-    // We normalize to a regular space to prevent hydration mismatches.
-    return formattedPrice.replace(/\s/g, ' ');
+    if (typeof price !== 'number' || isNaN(price)) return 'R 0';
+    // Manual formatting to avoid server-client inconsistencies with Intl.
+    const parts = price.toFixed(0).toString().split('.');
+    const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    return `R ${integerPart}`;
 };
 
 export default function ConnectPage() {

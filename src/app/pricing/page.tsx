@@ -21,15 +21,13 @@ const { featureSections } = featuresData;
 
 const formatPrice = (price: number, perUnit = false, unit = "month") => {
     if (typeof price !== 'number' || isNaN(price)) return 'R 0';
-    const formatted = new Intl.NumberFormat('en-ZA', {
-        style: 'currency',
-        currency: 'ZAR',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0
-    }).format(price);
-    const result = perUnit ? `${formatted}/${unit}` : formatted;
-    // Normalize spaces to prevent hydration mismatch
-    return result.replace(/\s/g, ' ');
+    
+    // Manual formatting to avoid server-client inconsistencies with Intl.
+    const parts = price.toFixed(0).toString().split('.');
+    const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    const formatted = `R ${integerPart}`;
+
+    return perUnit ? `${formatted}/${unit}` : formatted;
 };
 
 const formatDate = (dateString: string | undefined) => {
