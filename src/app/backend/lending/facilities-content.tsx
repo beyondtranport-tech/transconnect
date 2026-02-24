@@ -3,7 +3,7 @@
 
 import { useState, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Landmark, ArrowLeft, ArrowRight, Loader2, PlusCircle, Save } from "lucide-react";
+import { Landmark, ArrowLeft, ArrowRight, Loader2, PlusCircle, Save, Check } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -15,13 +15,17 @@ import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { cn } from '@/lib/utils';
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from 'zod';
 import { FormProvider, useForm } from 'react-hook-form';
 import { Badge } from '@/components/ui/badge';
 
-
-const formatCurrency = (amount: number) => new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
+const formatCurrency = (amount: number) => {
+    if (typeof amount !== 'number' || isNaN(amount)) return 'R 0.00';
+    const parts = amount.toFixed(2).toString().split('.');
+    const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    return `R ${integerPart}.${parts[1]}`;
+};
 
 const facilitySchema = z.object({
   clientId: z.string().min(1, 'Client is required.'),
@@ -138,7 +142,7 @@ const FacilityWizard = ({ facility, onBack, onSaveSuccess }: { facility?: any, o
                     {currentStep < steps.length - 1 ? (
                         <Button onClick={handleNext} type="button">Next <ArrowRight className="ml-2 h-4 w-4"/></Button>
                     ) : (
-                         <Button type="submit" disabled={isSaving || !selectedClient || !selectedPartner || !selectedAgreement || newFacilityLimit <= 0 || isClientOverLimit || isPartnerOverLimit}>
+                         <Button type="submit" disabled={isSaving || !selectedClient || !selectedPartner || !agreements || newFacilityLimit <= 0 || isClientOverLimit || isPartnerOverLimit}>
                             {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4"/>}
                              Create Facility
                         </Button>

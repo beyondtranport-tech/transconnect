@@ -11,17 +11,20 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
+import { format as formatDateFns } from 'date-fns';
 
 const formatCurrency = (amount: number) => {
-    if (typeof amount !== 'number') return 'N/A';
-    return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
+    if (typeof amount !== 'number' || isNaN(amount)) return 'R 0.00';
+    const parts = amount.toFixed(2).toString().split('.');
+    const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    return `R ${integerPart}.${parts[1]}`;
 };
 
 const formatDate = (dateValue: any) => {
-    if (dateValue && typeof dateValue.toDate === 'function') {
-        return new Date(dateValue.toDate()).toLocaleString('en-ZA', { dateStyle: 'long', timeStyle: 'short' });
-    }
-    return 'N/A';
+    if (!dateValue) return 'N/A';
+    const date = dateValue.toDate ? dateValue.toDate() : new Date(dateValue);
+    if (isNaN(date.getTime())) return 'Invalid Date';
+    return formatDateFns(date, "dd MMM yyyy, HH:mm");
 };
 
 function ReconciliationReportComponent() {
@@ -44,11 +47,11 @@ function ReconciliationReportComponent() {
             setIsLoadingTxs(true);
             try {
                 // Query both member and platform transactions
-                const memberTxsQuery = query(collection(firestore, `members`), where('reconciliationId', '==', reconciliationId));
+                const memberTxsQuery = query(collection(firestore, `transactions`), where('reconciliationId', '==', reconciliationId));
                 const platformTxsQuery = query(collection(firestore, `platformTransactions`), where('reconciliationId', '==', reconciliationId));
 
                 const [memberTxsSnap, platformTxsSnap] = await Promise.all([
-                    getDocs(query(collection(firestore, 'transactions'), where('reconciliationId', '==', reconciliationId))),
+                    getDocs(memberTxsQuery),
                     getDocs(platformTxsQuery)
                 ]);
 
@@ -56,7 +59,11 @@ function ReconciliationReportComponent() {
                 memberTxsSnap.forEach(doc => allTxs.push({ ...doc.data(), id: doc.id, source: 'member' }));
                 platformTxsSnap.forEach(doc => allTxs.push({ ...doc.data(), id: doc.id, source: 'platform' }));
                 
-                allTxs.sort((a,b) => b.date.toDate() - a.date.toDate());
+                allTxs.sort((a,b) => {
+                    const dateA = a.date?.toDate ? a.date.toDate() : new Date(a.date);
+                    const dateB = b.date?.toDate ? b.date.toDate() : new Date(b.date);
+                    return dateB.getTime() - dateA.getTime();
+                });
 
                 setTransactions(allTxs);
             } catch (e) {

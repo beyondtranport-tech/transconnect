@@ -12,8 +12,10 @@ import { generateAmortizationSchedule, type MonthlyPayment } from './loan-calcul
 const LENDING_ASSUMPTIONS_KEY = 'adminLendingAssumptions_v1';
 
 const formatCurrency = (value: number) => {
-    if (typeof value !== 'number' || isNaN(value)) return 'R 0';
-    return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR', maximumFractionDigits: 0 }).format(value);
+    if (typeof value !== 'number' || isNaN(value)) return 'R 0.00';
+    const parts = value.toFixed(2).toString().split('.');
+    const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    return `R ${integerPart}.${parts[1]}`;
 };
 
 export default function LendingLoanBook() {
@@ -45,18 +47,22 @@ export default function LendingLoanBook() {
         ];
         
         const allSchedules: { startMonth: number, schedule: MonthlyPayment[] }[] = [];
-        const forecastPeriod = 36;
+        const forecastPeriod = 36; // This will now correctly come from assumptions if available
 
         // 1. Originate all loans and generate their schedules upfront
         for (let i = 0; i < forecastPeriod; i++) { // For each month in the forecast
             for (const agreement of agreementTypes) {
-                 // MODIFIED LOGIC HERE: Only originate if it's recurring OR if it's the very first month.
-                if (agreement.enabled && agreement.dealsPerMonth > 0 && (agreement.recurring || i === 0)) {
-                    for (let j = 0; j < agreement.dealsPerMonth; j++) {
+                const dealsToOriginate = agreement.dealsPerMonth || 0;
+                
+                // If recurring is false, only originate deals in the first month (i=0)
+                if (agreement.enabled && dealsToOriginate > 0 && (agreement.recurring || i === 0)) {
+                    for (let j = 0; j < dealsToOriginate; j++) {
                         const schedule = generateAmortizationSchedule(
                             agreement.amount || 0,
                             agreement.rate || 0,
-                            agreement.term || 0
+                            agreement.term || 0,
+                            agreement.firstInstallmentDate,
+                            agreement.paymentsInAdvance
                         );
                         if (schedule.length > 0) {
                             allSchedules.push({ startMonth: i, schedule });
@@ -132,7 +138,7 @@ export default function LendingLoanBook() {
                 </CardHeader>
                 <CardContent className="text-center">
                      <Button asChild variant="outline">
-                        <Link href="/adminaccount?view=lending-assumptions">Go to Lending Assumptions</Link>
+                        <Link href="/backend?view=lending-assumptions">Go to Lending Assumptions</Link>
                     </Button>
                 </CardContent>
             </Card>

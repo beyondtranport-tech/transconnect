@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, PlusCircle, Trash2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,8 +14,10 @@ import { type ColumnDef } from '@/hooks/use-data-table';
 import { useToast } from '@/hooks/use-toast';
 
 const formatCurrency = (amount: number) => {
-    if (typeof amount !== 'number') return 'R 0';
-    return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
+    if (typeof amount !== 'number' || isNaN(amount)) return 'R 0.00';
+    const parts = amount.toFixed(2).toString().split('.');
+    const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    return `R ${integerPart}.${parts[1]}`;
 };
 
 export default function PartnerDetails({ partnerType, initialAction }: { partnerType: 'Suppliers' | 'Vendors' | 'Associates' | 'Debtors', initialAction?: string | null }) {

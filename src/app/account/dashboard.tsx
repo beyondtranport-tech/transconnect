@@ -13,6 +13,13 @@ import QuotesCard from './quotes-card';
 import { cn } from '@/lib/utils';
 import { useMemoFirebase } from '@/hooks/use-memo-firebase';
 
+const formatCurrency = (amount: number) => {
+    if (typeof amount !== 'number' || isNaN(amount)) return 'R 0.00';
+    const parts = amount.toFixed(2).toString().split('.');
+    const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    return `R ${integerPart}.${parts[1]}`;
+};
+
 export default function AccountDashboard() {
     const { user, isUserLoading } = useUser();
     const firestore = useFirestore();
@@ -40,11 +47,6 @@ export default function AccountDashboard() {
         silver: 'bg-slate-200 text-slate-800',
         gold: 'bg-yellow-200 text-yellow-800',
     }
-
-    const formatCurrency = (amount: number) => {
-        if (typeof amount !== 'number') return 'N/A';
-        return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
-    };
     
     // Admin View
     if (isAdmin) {

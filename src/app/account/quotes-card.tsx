@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useUser, getClientSideAuthToken } from '@/firebase';
@@ -6,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Loader2, FileText, MoreVertical, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { format } from 'date-fns';
+import { format as formatDateFns } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
@@ -29,8 +30,10 @@ import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect, useCallback } from 'react';
 
 const formatCurrency = (amount: number) => {
-    if (typeof amount !== 'number') return 'N/A';
-    return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
+    if (typeof amount !== 'number' || isNaN(amount)) return 'R 0.00';
+    const parts = amount.toFixed(2).toString().split('.');
+    const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    return `R ${integerPart}.${parts[1]}`;
 };
 
 const formatDate = (isoString: string) => {
@@ -38,7 +41,7 @@ const formatDate = (isoString: string) => {
     try {
         const date = new Date(isoString);
         if (isNaN(date.getTime())) return 'Invalid Date';
-        return format(date, "dd MMM yyyy");
+        return formatDateFns(date, "dd MMM yyyy");
     } catch {
         return 'Invalid Date';
     }

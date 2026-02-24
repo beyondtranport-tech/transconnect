@@ -15,7 +15,7 @@ import { doc } from 'firebase/firestore';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const formatCurrency = (amount: number) => {
-    if (typeof amount !== 'number' || isNaN(amount)) return 'R 0';
+    if (typeof amount !== 'number' || isNaN(amount)) return 'R 0.00';
     const parts = amount.toFixed(2).toString().split('.');
     const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
     return `R ${integerPart}.${parts[1]}`;

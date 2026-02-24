@@ -8,7 +8,7 @@ import { Loader2, DollarSign, Wallet, Clock, Info, Gem, Send, AlertCircle, Bankn
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { collection, query, orderBy, limit, doc, where } from 'firebase/firestore';
-import { format, formatDistanceToNow } from 'date-fns';
+import { format as formatDateFns } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useConfig } from '@/hooks/use-config';
@@ -22,21 +22,17 @@ import PayServicesDialog from './pay-services-dialog';
 
 
 const formatCurrency = (amount: number) => {
-    if (typeof amount !== 'number') return 'N/A';
-    return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
+    if (typeof amount !== 'number' || isNaN(amount)) return 'R 0.00';
+    const parts = amount.toFixed(2).toString().split('.');
+    const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    return `R ${integerPart}.${parts[1]}`;
 };
 
 const formatDate = (timestamp: any) => {
-    if (timestamp && timestamp.toDate) {
-        return format(timestamp.toDate(), "dd MMM yyyy, HH:mm");
-    }
-     if (typeof timestamp === 'string') {
-        const date = new Date(timestamp);
-        if (!isNaN(date.getTime())) {
-             return format(date, "dd MMM yyyy, HH:mm");
-        }
-    }
-    return 'N/A';
+    if (!timestamp) return 'N/A';
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    if (isNaN(date.getTime())) return 'Invalid Date';
+    return formatDateFns(date, "dd MMM yyyy, HH:mm");
 };
 
 const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {

@@ -13,9 +13,10 @@ import { Loader2, Banknote, ClipboardCopy, ArrowRight, CheckCircle, Wallet, Aler
 import Link from 'next/link';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useMemoFirebase } from '@/hooks/use-memo-firebase';
+import { format as formatDateFns } from 'date-fns';
 
 const formatPrice = (price: number) => {
-    if (typeof price !== 'number' || isNaN(price)) return 'R 0';
+    if (typeof price !== 'number' || isNaN(price)) return 'R 0.00';
     const parts = price.toFixed(2).toString().split('.');
     const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
     return `R ${integerPart}.${parts[1]}`;

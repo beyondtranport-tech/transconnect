@@ -30,12 +30,35 @@ async function fetchFromAdminAPI(token: string, action: string, payload?: any) {
     return result;
 }
 
+const formatPrice = (price: number) => {
+    if (typeof price !== 'number' || isNaN(price)) return 'R 0';
+    const parts = price.toFixed(0).toString().split('.');
+    const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    // Compact notation for large numbers
+    if (price >= 1_000_000_000) return `R ${integerPart.slice(0, -11)}.${integerPart.slice(1,2)}B`;
+    if (price >= 1_000_000) return `R ${integerPart.slice(0, -7)}.${integerPart.slice(1,2)}M`;
+    if (price >= 1_000) return `R ${integerPart.slice(0, -3)}.${integerPart.slice(1,2)}K`;
+    return `R ${integerPart}`;
+};
+
+ const formatDate = (isoString: string | undefined) => {
+    if (!isoString) return 'N/A';
+    try {
+        const date = new Date(isoString);
+        if (isNaN(date.getTime())) return 'Invalid Date';
+        return formatDateFns(date, "dd MMM");
+    } catch (e) {
+        return 'Invalid Date';
+    }
+};
+
 
 export default function DashboardContent() {
     const { user, isUserLoading } = useUser();
     const [stats, setStats] = useState({ members: 0, applications: 0, contributions: 0, totalFunded: 0, pendingAgreements: 0 });
     const [recentMembers, setRecentMembers] = useState<any[]>([]);
     const [pendingApplications, setPendingApplications] = useState<any[]>([]);
+    const [pendingAgreements, setPendingAgreements] = useState<any[]>([]);
     const [memberGrowthData, setMemberGrowthData] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -75,6 +98,9 @@ export default function DashboardContent() {
             // Process Pending Applications
             const pending = (financeRes.data || []).filter((app: any) => app.status === 'pending');
             setPendingApplications(pending.slice(0, 5));
+
+            // Process Queues
+            setPendingAgreements(queuesRes.data.proposedAgreements || []);
             
             // Process Member Growth
             const growth: { [key: string]: number } = {};
@@ -104,21 +130,6 @@ export default function DashboardContent() {
             setIsLoading(false);
         }
     }, [isUserLoading, user, loadDashboardData]);
-
-    const formatPrice = (price: number) => {
-        if (typeof price !== 'number') return 'N/A';
-        return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR', notation: 'compact' }).format(price);
-    };
-
-     const formatDate = (isoString: string | undefined) => {
-        if (!isoString) return 'N/A';
-        try {
-            return formatDateFns(new Date(isoString), "dd MMM");
-        } catch (e) {
-            return 'Invalid Date';
-        }
-    };
-
 
     if (isLoading || isUserLoading) {
         return <div className="flex justify-center items-center py-20"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
