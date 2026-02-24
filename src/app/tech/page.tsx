@@ -3,8 +3,9 @@
 
 import { useConfig } from '@/hooks/use-config';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Cpu, Truck } from 'lucide-react';
+import { Loader2, Cpu, Truck, Calculator } from 'lucide-react';
 import FreightMatcher from './freight-matcher';
+import LoadCalculator from './load-calculator';
 import Image from 'next/image';
 import data from '@/lib/placeholder-images.json';
 
@@ -53,18 +54,17 @@ export default function TechPage() {
                         <Loader2 className="h-12 w-12 animate-spin text-primary" />
                     </div>
                  ) : (
-                    <div className="space-y-16">
-                        <div className="max-w-4xl mx-auto">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle className="flex items-center gap-2"><Truck className="h-6 w-6"/>AI Freight Matcher</CardTitle>
-                                    <CardDescription>Enter your details to find matching loads instantly. This tool is available with the AI Freight Matcher subscription.</CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <FreightMatcher />
-                                </CardContent>
-                            </Card>
-                        </div>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2"><Truck className="h-6 w-6"/>AI Freight Matcher</CardTitle>
+                                <CardDescription>Enter your details to find matching loads instantly. This tool is available with the AI Freight Matcher subscription.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <FreightMatcher />
+                            </CardContent>
+                        </Card>
+                        <LoadCalculator />
                     </div>
                  )}
             </div>
