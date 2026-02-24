@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
@@ -15,12 +16,12 @@ const formatCurrency = (amount: number) => {
 
 const formatDate = (dateValue: any) => {
     if (dateValue && typeof dateValue.toDate === 'function') {
-        return new Date(dateValue.toDate()).toLocaleString('en-ZA', { dateStyle: 'long', timeStyle: 'short' });
+        return format(new Date(dateValue.toDate()), "dd MMM yyyy, HH:mm");
     }
      if (typeof dateValue === 'string') {
         const date = new Date(dateValue);
         if (!isNaN(date.getTime())) {
-            return new Date(dateValue).toLocaleString('en-ZA', { dateStyle: 'long', timeStyle: 'short' });
+            return format(new Date(dateValue), "dd MMM yyyy, HH:mm");
         }
     }
     return 'N/A';

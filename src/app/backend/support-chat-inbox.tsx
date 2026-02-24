@@ -1,18 +1,21 @@
 
 'use client';
 
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, MessageSquare, User, Bot, Send } from 'lucide-react';
-import { useCollection, useFirestore, useMemoFirebase, useUser, getClientSideAuthToken } from '@/firebase';
-import { collection, query, collectionGroup, serverTimestamp } from 'firebase/firestore';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { cn } from '@/lib/utils';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Loader2, MessageSquare, Send, Bot, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useUser, useFirestore, useCollection, getClientSideAuthToken, useMemoFirebase } from '@/firebase';
+import { collection, query, orderBy, serverTimestamp } from 'firebase/firestore';
+import { cn } from '@/lib/utils';
+import { supportQuery } from '@/ai/flows/support-flow';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import Link from 'next/link';
+import { format as formatDateFns } from 'date-fns';
 
 interface Message {
   id: string;
@@ -34,7 +37,7 @@ const formatDate = (dateValue: any) => {
     if (!dateValue) return 'N/A';
     const date = dateValue.toDate ? dateValue.toDate() : new Date(dateValue);
     if (isNaN(date.getTime())) return 'Invalid Date';
-    return date.toLocaleString('en-ZA', { dateStyle: 'medium', timeStyle: 'short'});
+    return formatDateFns(date, "dd MMM yyyy, HH:mm");
 };
 
 export default function SupportChatInbox() {

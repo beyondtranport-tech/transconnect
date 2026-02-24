@@ -11,6 +11,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { format as formatDateFns } from 'date-fns';
+
 
 const formatPrice = (price?: number) => {
     if (typeof price !== 'number') return 'N/A';
@@ -19,12 +21,12 @@ const formatPrice = (price?: number) => {
 
 const formatDate = (dateValue: any) => {
     if (dateValue && typeof dateValue.toDate === 'function') {
-        return new Date(dateValue.toDate()).toLocaleDateString('en-ZA', { year: 'numeric', month: 'long', day: 'numeric' });
+        return formatDateFns(new Date(dateValue.toDate()), "dd MMMM yyyy");
     }
     if (typeof dateValue === 'string') {
         const date = new Date(dateValue);
         if (!isNaN(date.getTime())) {
-             return date.toLocaleDateString('en-ZA', { year: 'numeric', month: 'long', day: 'numeric' });
+             return formatDateFns(date, "dd MMMM yyyy");
         }
     }
     return 'N/A';

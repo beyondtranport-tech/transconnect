@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from "react";
@@ -41,7 +42,6 @@ export default function ConnectPage() {
     const [supplierDiscount, setSupplierDiscount] = useState(7.5);
     const [loyaltyTierIndex, setLoyaltyTierIndex] = useState(0); // 0=free, 1=basic, etc.
     const [potentialSavings, setPotentialSavings] = useState(0);
-    const [isClient, setIsClient] = useState(false);
     const [hasInteracted, setHasInteracted] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     
@@ -113,10 +113,6 @@ export default function ConnectPage() {
         loyalty: placeholderImages.find(p => p.id === 'value-community'),
         actions: placeholderImages.find(p => p.id === 'incentives-hero'),
     };
-
-    useEffect(() => {
-        setIsClient(true);
-    }, []);
 
     useEffect(() => {
         if (sortedTiers.length > 0) {
@@ -245,7 +241,7 @@ export default function ConnectPage() {
                                 <div>
                                     <div className="flex justify-between items-center mb-2">
                                         <Label htmlFor="spend-slider" className="text-lg font-medium">Monthly Spend</Label>
-                                        <span className="text-lg font-bold text-foreground">{isClient ? formatPrice(monthlySpend) : 'R 20,000'}</span>
+                                        <span className="text-lg font-bold text-foreground">{formatPrice(monthlySpend)}</span>
                                     </div>
                                     <Slider
                                         id="spend-slider"
@@ -291,7 +287,7 @@ export default function ConnectPage() {
                                 <div className="border-t border-dashed pt-4">
                                     <div className="flex justify-between items-center">
                                         <p className="text-xl font-semibold">Your Potential Monthly Savings:</p>
-                                        <p className="text-3xl font-bold text-primary">{isClient ? formatPrice(potentialSavings) : 'R 0'}</p>
+                                        <p className="text-3xl font-bold text-primary">{formatPrice(potentialSavings)}</p>
                                     </div>
                                 </div>
                             </div>

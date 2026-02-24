@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -42,7 +43,6 @@ const serviceCategories = [
 
 const formatPrice = (price: number) => {
     if (typeof price !== 'number' || isNaN(price)) return 'R 0';
-    // Manual formatting to avoid server-client mismatch with Intl
     const parts = price.toFixed(0).toString().split('.');
     const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
     return `R ${integerPart}`;

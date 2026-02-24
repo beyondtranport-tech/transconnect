@@ -7,7 +7,7 @@ import { Loader2, DollarSign } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { collection, query, orderBy } from 'firebase/firestore';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { format } from 'date-fns';
+import { format as formatDateFns } from 'date-fns';
 
 const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
   pending_allocation: 'secondary',
@@ -22,12 +22,12 @@ const formatCurrency = (amount: number) => {
 
 const formatDate = (dateValue: any) => {
     if (dateValue && typeof dateValue.toDate === 'function') {
-        return new Date(dateValue.toDate()).toLocaleString('en-ZA', { dateStyle: 'short', timeStyle: 'short' });
+        return formatDateFns(dateValue.toDate(), "dd MMM yyyy, HH:mm");
     }
      if (typeof dateValue === 'string') {
         const date = new Date(dateValue);
         if (!isNaN(date.getTime())) {
-            return new Date(dateValue).toLocaleString('en-ZA', { dateStyle: 'short', timeStyle: 'short' });
+            return formatDateFns(date, "dd MMM yyyy, HH:mm");
         }
     }
     return 'N/A';

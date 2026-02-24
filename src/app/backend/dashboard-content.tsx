@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { useState, useEffect, useCallback } from 'react';
+import { format as formatDateFns } from 'date-fns';
 
 // Centralized helper function for making authenticated API calls
 async function fetchFromAdminAPI(token: string, action: string, payload?: any) {
@@ -112,7 +113,7 @@ export default function DashboardContent() {
      const formatDate = (isoString: string | undefined) => {
         if (!isoString) return 'N/A';
         try {
-            return new Date(isoString).toLocaleDateString('en-ZA', { month: 'short', day: 'numeric' });
+            return formatDateFns(new Date(isoString), "dd MMM");
         } catch (e) {
             return 'Invalid Date';
         }
@@ -304,5 +305,3 @@ export default function DashboardContent() {
         </div>
     );
 }
-
-    

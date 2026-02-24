@@ -9,6 +9,7 @@ import { Sheet, AlertTriangle, ArrowLeft } from 'lucide-react';
 import { generateAmortizationSchedule } from '../loan-calculations';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { format as formatDateFns } from 'date-fns';
 
 const formatCurrency = (value: number) => {
     if (typeof value !== 'number' || isNaN(value)) return 'R 0.00';
@@ -17,10 +18,7 @@ const formatCurrency = (value: number) => {
 
 const formatDate = (date: Date) => {
     if (!date || isNaN(date.getTime())) return 'N/A';
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = date.getFullYear();
-    return `${day}/${month}/${year}`;
+    return formatDateFns(date, 'dd/MM/yyyy');
 };
 
 function RepaymentScheduleContent() {

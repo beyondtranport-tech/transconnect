@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -20,6 +21,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { getClientSideAuthToken, useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
+import { format as formatDateFns } from 'date-fns';
 
 const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
   pending: 'secondary',
@@ -36,7 +38,7 @@ const formatDate = (isoString: any) => {
     if (!isoString) return 'N/A';
     const date = isoString.toDate ? isoString.toDate() : new Date(isoString);
     if (isNaN(date.getTime())) return 'Invalid Date';
-    return date.toLocaleString('en-ZA', { dateStyle: 'short', timeStyle: 'short' });
+    return formatDateFns(date, "dd MMM yyyy, HH:mm");
 };
 
 async function performAdminAction(token: string, action: string, payload?: any) {

@@ -7,13 +7,12 @@ import { Loader2, Users, PlusCircle } from 'lucide-react';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { Badge } from '@/components/ui/badge';
-import { getClientSideAuthToken, useMemoFirebase } from '@/firebase';
+import { getClientSideAuthToken } from '@/firebase';
 import { cn } from '@/lib/utils';
 import MemberActionMenu from './member-action-menu';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { useCollection, useFirestore } from '@/firebase';
-import { collection, query } from 'firebase/firestore';
+import { format as formatDateFns } from 'date-fns';
 
 interface Member {
     id: string;
@@ -125,8 +124,15 @@ export default function MembersList() {
           accessorKey: 'createdAt',
           header: 'Joined',
           cell: ({ row }) => {
-            const date = row.original.createdAt ? new Date(row.original.createdAt) : null;
-            return date ? date.toLocaleDateString('en-ZA') : 'N/A';
+            const dateStr = row.original.createdAt;
+            if (!dateStr) return 'N/A';
+            try {
+                const date = new Date(dateStr);
+                if (isNaN(date.getTime())) return 'Invalid Date';
+                return formatDateFns(date, "dd MMM yyyy");
+            } catch {
+                return 'Invalid Date';
+            }
           },
         },
         {
