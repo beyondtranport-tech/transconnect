@@ -4,7 +4,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Loader2, PlusCircle, AlertTriangle, Truck, Edit, ArrowLeft } from 'lucide-react';
+import { Loader2, PlusCircle, AlertTriangle, Truck, Edit, ArrowLeft, Eye } from 'lucide-react';
 import { useUser, useFirestore, getClientSideAuthToken, useDoc, useMemoFirebase, useCollection } from '@/firebase';
 import { doc, collection } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
@@ -12,6 +12,13 @@ import { usePermissions } from '@/hooks/use-permissions';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { LoadWizard } from './load-wizard';
+import { Badge } from '@/components/ui/badge';
+import Link from 'next/link';
+
+const statusColors: { [key: string]: 'default' | 'secondary' } = {
+    active: 'default',
+    inactive: 'secondary',
+};
 
 export default function LoadBoardContent() {
     const { user, isUserLoading } = useUser();
@@ -111,13 +118,21 @@ export default function LoadBoardContent() {
             if (isLoadBoardLoading || !userLoadBoard) {
                 return <div className="flex justify-center items-center py-20"><Loader2 className="h-10 w-10 animate-spin text-primary" /><p className="ml-4">Loading your load board...</p></div>;
             }
+
+            const boardStatus = userLoadBoard.status || 'inactive';
+
             return (
                  <div className="space-y-6">
                     <div className="p-6 border rounded-lg bg-muted/50">
                         <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                             <div>
                                 <h3 className="text-xl font-semibold">{userLoadBoard.boardName}</h3>
-                                <p className="text-muted-foreground capitalize">Status: {userLoadBoard.status}</p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <span className="text-sm font-medium">Status:</span>
+                                <Badge variant={statusColors[boardStatus] || 'secondary'} className="capitalize text-base">
+                                    {boardStatus.replace(/_/g, ' ')}
+                                </Badge>
                             </div>
                         </div>
                         <div className="flex flex-col sm:flex-row justify-between sm:items-end gap-4 mt-4 pt-4 border-t">
@@ -126,6 +141,13 @@ export default function LoadBoardContent() {
                                 <p className="text-2xl font-bold">{loads?.length || 0}</p>
                             </div>
                             <div className="flex gap-2">
+                               {userLoadBoard.status === 'active' && (
+                                    <Button asChild variant="outline">
+                                        <Link href={`/mall/loads`} target="_blank">
+                                            <Eye className="mr-2 h-4 w-4" /> View Live Load Board
+                                        </Link>
+                                    </Button>
+                                )}
                                 <Button onClick={() => setView('wizard')}>
                                     <Edit className="mr-2 h-4 w-4" /> Manage Load Board
                                 </Button>
