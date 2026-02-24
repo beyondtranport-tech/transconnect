@@ -4,6 +4,7 @@ import { z } from 'zod';
 // From ai-freight-matching.ts
 export const MatchFreightInputSchema = z.object({
   location: z.string().describe('The current location of the transporter.'),
+  destination: z.string().describe('The desired destination for the transporter.'),
   vehicleType: z.string().describe('The type of vehicle the transporter has (e.g., truck, van).'),
   capacity: z.string().describe('The carrying capacity of the vehicle.'),
   preferences: z.string().optional().describe('Any specific preferences or requirements of the transporter.'),

@@ -27,7 +27,8 @@ const matchFreightFlow = ai.defineFlow(
         prompt: `You are an AI assistant specialized in matching freight loads with transporters.
 
         Given the following information about a transporter:
-        - Location: ${input.location}
+        - Origin Location: ${input.location}
+        - Destination: ${input.destination}
         - Vehicle Type: ${input.vehicleType}
         - Capacity: ${input.capacity}
         - Preferences: ${input.preferences || 'None'}

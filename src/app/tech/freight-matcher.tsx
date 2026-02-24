@@ -25,6 +25,7 @@ export default function FreightMatcher() {
         resolver: zodResolver(MatchFreightInputSchema),
         defaultValues: {
             location: "",
+            destination: "",
             vehicleType: "",
             capacity: "",
             preferences: "",
@@ -59,9 +60,22 @@ export default function FreightMatcher() {
                             name="location"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Current Location</FormLabel>
+                                    <FormLabel>Current Location (Origin)</FormLabel>
                                     <FormControl>
                                         <Input placeholder="e.g., Johannesburg, GP" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="destination"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Desired Destination</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="e.g., Cape Town, WC" {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -97,7 +111,7 @@ export default function FreightMatcher() {
                             control={form.control}
                             name="preferences"
                             render={({ field }) => (
-                                <FormItem>
+                                <FormItem className="md:col-span-2">
                                     <FormLabel>Preferences (Optional)</FormLabel>
                                     <FormControl>
                                         <Input placeholder="e.g., No-touch freight" {...field} />
