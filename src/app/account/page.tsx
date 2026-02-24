@@ -13,6 +13,7 @@ import {
   SidebarInset,
   SidebarMenuSub,
   SidebarMenuSubButton,
+  SidebarMenuSeparator,
   SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
 import {
@@ -34,6 +35,7 @@ import {
   Mail,
   Sparkles,
   MessageSquare,
+  Truck,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -62,6 +64,7 @@ import NetworkOffer from './network-offer';
 import NetworkEmails from './network-emails';
 import MarketingStudio from './marketing-studio';
 import SupportChatContent from './support-chat';
+import LoadBoardContent from './load-board-content';
 
 
 // Placeholder components for sections under construction
@@ -120,6 +123,7 @@ function AccountPageContent() {
       case 'company': return <CompanyContent />;
       case 'staff': return <StaffContent />;
       case 'shop': return <ShopContent />;
+      case 'load-board': return <LoadBoardContent />;
       case 'marketing-studio': return <MarketingStudio />;
       case 'wallet': return <WalletContent />;
       case 'billing': return <BillingContent />;
@@ -201,6 +205,12 @@ function AccountPageContent() {
                 <SidebarMenuButton tooltip="My Shop" isActive={activeView === 'shop'} onClick={() => navigate('shop')}>
                   <Store />
                   <span>My Shop</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+               <SidebarMenuItem>
+                <SidebarMenuButton tooltip="My Load Board" isActive={activeView === 'load-board'} onClick={() => navigate('load-board')}>
+                  <Truck />
+                  <span>My Load Board</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>

@@ -5,15 +5,18 @@ import FreightMatcher from "@/app/tech/freight-matcher";
 import Image from "next/image";
 import data from "@/lib/placeholder-images.json";
 import LoadCalculator from "@/app/tech/load-calculator";
-import { useUser } from '@/firebase';
-import { Loader2 } from 'lucide-react';
-import LoadBoardContent from "./load-board-content";
+import { Button } from "@/components/ui/button";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Truck } from "lucide-react";
+import Link from "next/link";
+import { useUser } from "@/firebase";
 
 const { placeholderImages } = data;
 const techImage = placeholderImages.find(p => p.id === "tech-home");
 
 export default function LoadsMallPage() {
-    const { isUserLoading } = useUser();
+    const { user } = useUser();
+    const postLoadHref = user ? '/account?view=load-board' : '/join?redirect=/account?view=load-board';
 
     return (
         <div>
@@ -40,11 +43,19 @@ export default function LoadsMallPage() {
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
                         <div className="lg:col-span-2 space-y-8">
                              <FreightMatcher />
-                             {isUserLoading ? (
-                                <div className="flex justify-center py-20"><Loader2 className="h-10 w-10 animate-spin" /></div>
-                             ) : (
-                                <LoadBoardContent />
-                             )}
+                             <Card>
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2"><Truck /> Post Your Own Load</CardTitle>
+                                    <CardDescription>Have available freight? Post it to our network to find reliable transporters quickly.</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <Button asChild>
+                                        <Link href={postLoadHref}>
+                                            Post a Load
+                                        </Link>
+                                    </Button>
+                                </CardContent>
+                            </Card>
                         </div>
                          <div className="lg:col-span-1 space-y-8">
                            <LoadCalculator />
@@ -55,5 +66,3 @@ export default function LoadsMallPage() {
         </div>
     );
 }
-
-    

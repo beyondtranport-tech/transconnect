@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, PlusCircle, AlertTriangle } from 'lucide-react';
+import { Loader2, PlusCircle, AlertTriangle, Truck } from 'lucide-react';
 import { useUser, useFirestore, getClientSideAuthToken, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
@@ -16,12 +16,12 @@ function LoadManagement({ loadBoardId, companyId }: { loadBoardId: string, compa
     return (
         <Card>
             <CardHeader>
-                <CardTitle>My Load Board</CardTitle>
+                <CardTitle className="flex items-center gap-2"><Truck /> My Load Board</CardTitle>
                 <CardDescription>Manage your posted loads. Load posting wizard coming soon.</CardDescription>
             </CardHeader>
             <CardContent>
-                <p>Load Board ID: {loadBoardId}</p>
-                 <Button>
+                <p className="text-sm text-muted-foreground">Load Board ID: {loadBoardId}</p>
+                 <Button className="mt-4">
                     <PlusCircle className="mr-2 h-4 w-4" /> Post New Load
                 </Button>
             </CardContent>
@@ -84,14 +84,14 @@ export default function LoadBoardContent() {
         );
     }
     
-    if (loadBoardExists) {
+    if (loadBoardExists && companyData) {
         return <LoadManagement loadBoardId={companyData.loadBoardId} companyId={companyData.id} />;
     }
 
     return (
         <Card className="text-center py-10">
             <CardHeader>
-                <CardTitle>Create Your Load Board</CardTitle>
+                <CardTitle className="flex items-center gap-2 justify-center"><Truck className="h-6 w-6"/>Create Your Load Board</CardTitle>
                 <CardDescription>
                     To post loads to the marketplace, you first need to activate your public load board.
                 </CardDescription>
@@ -118,5 +118,3 @@ export default function LoadBoardContent() {
         </Card>
     );
 }
-
-    
