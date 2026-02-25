@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -40,11 +41,11 @@ const formSchema = z.object({
   vatRegistered: z.boolean().default(false),
   registrationId: z.string().optional(),
   
-  // Fields from other steps
-  street: z.string().optional(),
-  city: z.string().optional(),
-  province: z.string().optional(),
-  postalCode: z.string().optional(),
+  // Address Fields
+  physicalAddress: z.string().optional(),
+  physicalPostalCode: z.string().optional(),
+  postalAddress: z.string().optional(),
+  postalPostalCode: z.string().optional(),
   
   primaryContactName: z.string().optional(),
   primaryContactEmail: z.string().email().optional().or(z.literal('')),
@@ -101,13 +102,17 @@ const StepMain = () => {
 const StepAddress = () => {
     const { control } = useFormContext<FormValues>();
     return (
-        <div className="space-y-4 max-w-lg">
-            <FormField control={control} name="street" render={({ field }) => (<FormItem><FormLabel>Street Address</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FormField control={control} name="city" render={({ field }) => (<FormItem><FormLabel>City</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
-                <FormField control={control} name="province" render={({ field }) => (<FormItem><FormLabel>Province</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a province..."/></SelectTrigger></FormControl><SelectContent>{provinces.map(p => <SelectItem key={p.name} value={p.name}>{p.name}</SelectItem>)}</SelectContent></Select></FormItem>)} />
+        <div className="space-y-6">
+            <div className="space-y-4 p-4 border rounded-lg">
+                <h4 className="font-semibold text-md">Physical Address</h4>
+                <FormField control={control} name="physicalAddress" render={({ field }) => (<FormItem><FormLabel>Address</FormLabel><FormControl><Textarea placeholder="123 Main Street&#10;Sandton" {...field} /></FormControl></FormItem>)} />
+                <FormField control={control} name="physicalPostalCode" render={({ field }) => (<FormItem><FormLabel>Post Code</FormLabel><FormControl><Input placeholder="2196" {...field} /></FormControl></FormItem>)} />
             </div>
-            <FormField control={control} name="postalCode" render={({ field }) => (<FormItem><FormLabel>Postal Code</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+            <div className="space-y-4 p-4 border rounded-lg">
+                <h4 className="font-semibold text-md">Postal Address</h4>
+                <FormField control={control} name="postalAddress" render={({ field }) => (<FormItem><FormLabel>Address</FormLabel><FormControl><Textarea placeholder="P.O. Box 123&#10;Sandton" {...field} /></FormControl></FormItem>)} />
+                <FormField control={control} name="postalPostalCode" render={({ field }) => (<FormItem><FormLabel>Post Code</FormLabel><FormControl><Input placeholder="2146" {...field} /></FormControl></FormItem>)} />
+            </div>
         </div>
     );
 };
@@ -206,7 +211,7 @@ export function ClientWizard({ client, onBack, onSaveSuccess }: { client?: any, 
                              <Button type="button" variant="ghost" onClick={onBack}><ArrowLeft className="mr-2 h-4 w-4"/> Back to List</Button>
                         </div>
                     </CardHeader>
-                    <CardContent>
+                        <CardContent>
                         <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] gap-8">
                              <div className="flex flex-col gap-2 border-r pr-4">
                                 {wizardSteps.map((step, index) => {
