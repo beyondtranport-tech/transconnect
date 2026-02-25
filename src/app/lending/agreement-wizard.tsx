@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, ArrowLeft, ArrowRight, Save, FileText, Check, Users, Briefcase, DollarSign } from 'lucide-react';
 import { getClientSideAuthToken } from '@/firebase';
 import { useRouter } from 'next/navigation';
+import { cn } from '@/lib/utils';
 
 async function performAdminAction(token: string, action: string, payload?: any) {
     const response = await fetch('/api/admin', {
@@ -46,7 +47,40 @@ const wizardSteps = [
   { id: 'review', name: 'Review & Save' },
 ];
 
-export function AgreementWizard({ agreement }: { agreement?: any }) {
+// --- Step Components ---
+
+const StepClientAndType = ({ clients }: { clients: any[] }) => {
+    const { control } = useForm<FormValues>();
+    return (
+        <div className="space-y-4 max-w-lg">
+            <FormField control={control} name="clientId" render={({ field }) => (<FormItem><FormLabel className="flex items-center gap-2"><Users/>Client</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a client..." /></SelectTrigger></FormControl><SelectContent>{clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
+            <FormField control={control} name="type" render={({ field }) => (<FormItem><FormLabel className="flex items-center gap-2"><FileText/>Agreement Type</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent><SelectItem value="loan">Loan</SelectItem><SelectItem value="installment-sale">Installment Sale</SelectItem><SelectItem value="lease">Lease</SelectItem><SelectItem value="factoring">Factoring</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
+        </div>
+    );
+};
+
+const StepFinancials = () => {
+    const { control } = useForm<FormValues>();
+    return (
+        <div className="space-y-4 max-w-lg">
+            <FormField control={control} name="amount" render={({ field }) => (<FormItem><FormLabel className="flex items-center gap-2"><DollarSign/>Amount (R)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+            <FormField control={control} name="rate" render={({ field }) => (<FormItem><FormLabel>Interest Rate (%)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+            <FormField control={control} name="term" render={({ field }) => (<FormItem><FormLabel>Term (Months)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+        </div>
+    );
+};
+
+const StepAsset = ({ assets }: { assets: any[] }) => {
+    const { control } = useForm<FormValues>();
+    return (
+        <div className="space-y-4 max-w-lg">
+            <FormField control={control} name="assetId" render={({ field }) => (<FormItem><FormLabel className="flex items-center gap-2"><Briefcase/>Linked Asset (Optional)</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select an available asset..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="">None</SelectItem>{assets.map(a => <SelectItem key={a.id} value={a.id}>{a.make} {a.model} ({a.year})</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
+        </div>
+    );
+};
+
+
+export function AgreementWizard({ agreement, defaultClientId }: { agreement?: any, defaultClientId?: string | null }) {
     const router = useRouter();
     const { toast } = useToast();
     const [currentStep, setCurrentStep] = useState(0);
@@ -58,13 +92,8 @@ export function AgreementWizard({ agreement }: { agreement?: any }) {
     const methods = useForm<FormValues>({
         resolver: zodResolver(formSchema),
         mode: 'onChange',
-        defaultValues: agreement || {
-            clientId: '',
-            type: 'loan',
-            amount: 0,
-            rate: 0,
-            term: 0,
-            assetId: '',
+        defaultValues: agreement || { 
+            clientId: defaultClientId || '',
         },
     });
 
@@ -98,13 +127,21 @@ export function AgreementWizard({ agreement }: { agreement?: any }) {
 
     const handleNext = async () => {
         const currentStepConfig = wizardSteps[currentStep];
-        const isValid = await methods.trigger(currentStepConfig.fields as (keyof FormValues)[]);
+        let isValid = false;
+        if (currentStepConfig.fields && currentStepConfig.fields.length > 0) {
+            isValid = await methods.trigger(currentStepConfig.fields as (keyof FormValues)[]);
+        } else {
+            isValid = true;
+        }
+
         if (isValid && currentStep < wizardSteps.length - 1) {
             setCurrentStep(s => s + 1);
+        } else if (!isValid) {
+            toast({ variant: 'destructive', title: 'Validation Error', description: 'Please complete all required fields for this step.' });
         }
     };
     
-    const handleBack = () => currentStep > 0 && setCurrentStep(s => s - 1);
+    const handleBackStep = () => currentStep > 0 && setCurrentStep(s => s - 1);
 
     const onSubmit = async (values: FormValues) => {
         setIsSaving(true);
@@ -121,54 +158,65 @@ export function AgreementWizard({ agreement }: { agreement?: any }) {
         }
     };
     
+    const isStepValid = (stepIndex: number) => {
+        if (stepIndex < 0) return true;
+        const step = wizardSteps[stepIndex];
+        if (!step.fields || step.fields.length === 0) return true;
+        const fields = step.fields as (keyof FormValues)[];
+        return fields.every(field => !methods.formState.errors[field]);
+    };
+    
+     const renderStepContent = () => {
+        const stepId = wizardSteps[currentStep]?.id;
+        switch (stepId) {
+            case 'client': return <StepClientAndType clients={clients} />;
+            case 'financials': return <StepFinancials />;
+            case 'asset': return <StepAsset assets={assets} />;
+            case 'review': return <div className="p-4 bg-muted rounded-md text-xs whitespace-pre-wrap">{JSON.stringify(methods.getValues(), null, 2)}</div>;
+            default: return <div className="text-center py-10"><p className="text-muted-foreground">This step is under construction.</p></div>;
+        }
+    };
+    
     return (
         <Card className="w-full">
-            <CardHeader>
-                <div className="flex justify-between items-start">
-                    <div>
-                        <h2 className="text-2xl font-bold font-headline">{agreement ? 'Edit Agreement' : 'Create New Agreement'}</h2>
-                        <p className="text-muted-foreground">{wizardSteps[currentStep].name}</p>
-                    </div>
-                    <Button type="button" variant="ghost" onClick={() => router.push('/lending?view=agreements')}><ArrowLeft className="mr-2 h-4 w-4"/> Back to List</Button>
-                </div>
-            </CardHeader>
             <FormProvider {...methods}>
                 <form onSubmit={methods.handleSubmit(onSubmit)}>
-                    <CardContent className="min-h-[400px]">
-                        {isLoadingData ? <div className="flex justify-center p-8"><Loader2 className="animate-spin" /></div> :
-                            currentStep === 0 ? (
-                                <div className="space-y-4 max-w-lg">
-                                    <FormField control={methods.control} name="clientId" render={({ field }) => (<FormItem><FormLabel className="flex items-center gap-2"><Users/>Client</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value} disabled={!!agreement}><FormControl><SelectTrigger><SelectValue placeholder="Select a client..." /></SelectTrigger></FormControl><SelectContent>{clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
-                                    <FormField control={methods.control} name="type" render={({ field }) => (<FormItem><FormLabel className="flex items-center gap-2"><FileText/>Agreement Type</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent><SelectItem value="loan">Loan</SelectItem><SelectItem value="installment-sale">Installment Sale</SelectItem><SelectItem value="lease">Lease</SelectItem><SelectItem value="factoring">Factoring</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
+                    <CardHeader>
+                        <div className="flex justify-between items-start">
+                             <div>
+                                <h2 className="text-2xl font-bold font-headline">{agreement ? 'Edit Agreement' : 'Create New Agreement'}</h2>
+                                <p className="text-muted-foreground">{wizardSteps[currentStep].name}</p>
+                            </div>
+                             <Button type="button" variant="ghost" onClick={() => router.push('/lending?view=agreements')}><ArrowLeft className="mr-2 h-4 w-4"/> Back to List</Button>
+                        </div>
+                    </CardHeader>
+                        <CardContent>
+                        <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] gap-8">
+                             <div className="flex flex-col gap-2 border-r pr-4">
+                                {wizardSteps.map((step, index) => {
+                                    const isCompleted = index < currentStep && isStepValid(index);
+                                    return (
+                                        <Button key={step.id} variant={currentStep === index ? 'default' : 'ghost'} className="justify-start gap-2" onClick={() => setCurrentStep(index)} disabled={index > currentStep && !isStepValid(currentStep - 1)}>
+                                            {isCompleted ? <Check className="h-5 w-5 text-green-500" /> : <div className={cn("h-5 w-5 rounded-full flex items-center justify-center text-xs font-bold", currentStep >= index ? "bg-primary-foreground text-primary" : "bg-muted-foreground/20")}>{index + 1}</div>}
+                                            {step.name}
+                                        </Button>
+                                    );
+                                })}
+                            </div>
+                             <div className="space-y-6">
+                                <h2 className="text-2xl font-bold">{wizardSteps[currentStep].name}</h2>
+                                <div className="min-h-[400px]">
+                                    {isLoadingData ? <div className="flex justify-center p-8"><Loader2 className="animate-spin" /></div> : renderStepContent()}
                                 </div>
-                            ) : currentStep === 1 ? (
-                                <div className="space-y-4 max-w-lg">
-                                    <FormField control={methods.control} name="amount" render={({ field }) => (<FormItem><FormLabel className="flex items-center gap-2"><DollarSign/>Amount (R)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                                    <FormField control={methods.control} name="rate" render={({ field }) => (<FormItem><FormLabel>Interest Rate (%)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                                    <FormField control={methods.control} name="term" render={({ field }) => (<FormItem><FormLabel>Term (Months)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                                </div>
-                            ) : currentStep === 2 ? (
-                                <div className="space-y-4 max-w-lg">
-                                    <FormField control={methods.control} name="assetId" render={({ field }) => (<FormItem><FormLabel className="flex items-center gap-2"><Briefcase/>Linked Asset (Optional)</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select an available asset..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="">None</SelectItem>{assets.map(a => <SelectItem key={a.id} value={a.id}>{a.make} {a.model} ({a.year})</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
-                                </div>
-                            ) : (
-                                <div className="space-y-2">
-                                    <h3 className="text-lg font-semibold">Review</h3>
-                                    <pre className="p-4 bg-muted rounded-md text-xs whitespace-pre-wrap">{JSON.stringify(methods.getValues(), null, 2)}</pre>
-                                </div>
-                            )}
+                            </div>
+                        </div>
                     </CardContent>
                     <CardFooter className="flex justify-between border-t pt-6 mt-6">
-                        <Button type="button" variant="outline" onClick={handleBack} disabled={currentStep === 0}>
-                            <ArrowLeft className="mr-2 h-4 w-4"/> Back
-                        </Button>
+                        <Button type="button" variant="outline" onClick={handleBackStep} disabled={currentStep === 0}><ArrowLeft className="mr-2 h-4 w-4" /> Back</Button>
                         {currentStep < wizardSteps.length - 1 ? (
                             <Button type="button" onClick={handleNext}>Next <ArrowRight className="ml-2 h-4 w-4"/></Button>
                         ) : (
-                            <Button type="submit" disabled={isSaving}>
-                                {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                                {agreement ? 'Save Changes' : 'Create Agreement'}
-                            </Button>
+                            <Button type="submit" disabled={isSaving}>{isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} {agreement ? 'Save Changes' : 'Create Agreement'}</Button>
                         )}
                     </CardFooter>
                 </form>
