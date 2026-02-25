@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -47,10 +46,16 @@ const formSchema = z.object({
   postalAddress: z.string().optional(),
   postalPostalCode: z.string().optional(),
   
-  primaryContactName: z.string().optional(),
-  primaryContactEmail: z.string().email().optional().or(z.literal('')),
-  primaryContactPhone: z.string().optional(),
+  // Contact Fields
+  contactPerson: z.string().optional(),
+  telWork: z.string().optional(),
+  telHome: z.string().optional(),
+  fax: z.string().optional(),
+  cell: z.string().optional(),
+  email: z.string().email().optional().or(z.literal('')),
+  url: z.string().url().optional().or(z.literal('')),
   
+  // Bank Fields
   bankName: z.string().optional(),
   accountNumber: z.string().optional(),
   branchCode: z.string().optional(),
@@ -118,17 +123,23 @@ const StepAddress = () => {
 };
 
 const StepContact = () => {
-     const { control } = useFormContext<FormValues>();
+    const { control } = useFormContext<FormValues>();
     return (
         <div className="space-y-4 max-w-lg">
-            <FormField control={control} name="primaryContactName" render={({ field }) => (<FormItem><FormLabel>Primary Contact Name</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+            <FormField control={control} name="contactPerson" render={({ field }) => (<FormItem><FormLabel>Contact</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FormField control={control} name="primaryContactEmail" render={({ field }) => (<FormItem><FormLabel>Primary Contact Email</FormLabel><FormControl><Input type="email" {...field} /></FormControl></FormItem>)} />
-                <FormField control={control} name="primaryContactPhone" render={({ field }) => (<FormItem><FormLabel>Primary Contact Phone</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
+                <FormField control={control} name="telWork" render={({ field }) => (<FormItem><FormLabel>Tel (w)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={control} name="telHome" render={({ field }) => (<FormItem><FormLabel>Tel (h)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormField control={control} name="fax" render={({ field }) => (<FormItem><FormLabel>Fax</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={control} name="cell" render={({ field }) => (<FormItem><FormLabel>Cell</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+            </div>
+            <FormField control={control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" {...field} /></FormControl><FormMessage /></FormItem>)} />
+            <FormField control={control} name="url" render={({ field }) => (<FormItem><FormLabel>URL</FormLabel><FormControl><Input type="url" placeholder="https://example.com" {...field} /></FormControl><FormMessage /></FormItem>)} />
         </div>
     );
-}
+};
 
 const StepBank = () => {
     const { control } = useFormContext<FormValues>();
