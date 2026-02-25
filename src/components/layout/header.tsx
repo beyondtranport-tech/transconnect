@@ -169,9 +169,6 @@ export function Header() {
                             <Link href="/backend">App Backend</Link>
                         </DropdownMenuItem>
                          <DropdownMenuItem asChild>
-                            <Link href="/lending">Lending Portal</Link>
-                        </DropdownMenuItem>
-                         <DropdownMenuItem asChild>
                             <Link href="/account">View Member Area</Link>
                         </DropdownMenuItem>
                         </>
@@ -267,12 +264,6 @@ export function Header() {
                                         <Link href="/adminaccount" onClick={() => setIsSheetOpen(false)}>
                                             <Building className="mr-2 h-5 w-5" />
                                             Admin Account
-                                        </Link>
-                                    </Button>
-                                     <Button asChild className="w-full justify-start">
-                                        <Link href="/lending" onClick={() => setIsSheetOpen(false)}>
-                                            <Landmark className="mr-2 h-5 w-5" />
-                                            Lending Portal
                                         </Link>
                                     </Button>
                                     <Button asChild className="w-full justify-start" variant="secondary">
