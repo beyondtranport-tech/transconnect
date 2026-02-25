@@ -1,7 +1,8 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
@@ -48,6 +49,7 @@ async function performAdminAction(token: string, action: string, payload: any) {
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ action, payload }),
     });
+
     const result = await response.json();
     if (!response.ok || !result.success) {
         throw new Error(result.error || `API Error for action: ${action}`);
@@ -165,7 +167,7 @@ function PartnerListComponent() {
     { accessorKey: 'type', header: 'Type', cell: ({ row }) => <Badge className="capitalize">{row.original.type}</Badge> },
     { accessorKey: 'globalFacilityLimit', header: 'Facility Limit', cell: ({ row }) => `R ${Number(row.original.globalFacilityLimit || 0).toLocaleString()}` },
     { id: 'actions', cell: ({ row }) => <PartnerActionMenu onEdit={() => setDialogState({ type: 'edit', data: row.original })} onDelete={() => setDialogState({ type: 'delete', data: row.original })} /> },
-  ], []);
+  ], [forceRefresh]);
 
   return (
     <>

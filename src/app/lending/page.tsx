@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -22,12 +21,13 @@ import {
   Database,
   FileText,
   FileCheck,
-  FileSignature,
   FileSearch,
   Wrench,
   ShieldCheck,
   Handshake,
-  Landmark
+  Landmark,
+  DollarSign,
+  Sheet
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -51,8 +51,10 @@ const FacilitiesContent = dynamic(() => import('./facilities-content'), { loadin
 const CollateralContent = dynamic(() => import('./collateral-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PaymentsContent = dynamic(() => import('./payments-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const SecurityContent = dynamic(() => import('./security-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const LendingModelDashboard = dynamic(() => import('@/app/backend/lending-model-dashboard'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
-function LendingAuthGuard({ children }: { children: React.ReactNode }) {
+
+function AdminAuthGuard({ children }: { children: React.ReactNode }) {
     const { user, isUserLoading } = useUser();
     const router = useRouter();
 
@@ -110,6 +112,7 @@ function LendingPortalContent() {
       case 'collateral': return <CollateralContent />;
       case 'payments': return <PaymentsContent />;
       case 'security': return <SecurityContent />;
+      case 'model': return <LendingModelDashboard />;
       default: return <LendingDashboard />;
     }
   }, [activeView]);
@@ -130,7 +133,7 @@ function LendingPortalContent() {
   const navigate = (view: string) => router.push(`/lending?view=${view}`, { scroll: false });
 
   return (
-    <LendingAuthGuard>
+    <AdminAuthGuard>
       <SidebarProvider>
         <Sidebar>
           <SidebarHeader>
@@ -148,6 +151,7 @@ function LendingPortalContent() {
                         <LayoutDashboard /><span>Dashboard</span>
                     </SidebarMenuButton>
                 </SidebarMenuItem>
+                <SidebarMenuSeparator />
                  <SidebarMenuItem>
                     <SidebarMenuButton tooltip="Discovery" isActive={activeView === 'discovery'} onClick={() => navigate('discovery')}>
                         <FileSearch /><span>Discovery</span>
@@ -160,10 +164,10 @@ function LendingPortalContent() {
                 </SidebarMenuItem>
                 <SidebarMenuSeparator />
                 <SidebarMenuItem>
-                  <SidebarMenuButton tooltip="Clients" isActive={activeView === 'clients'} onClick={() => navigate('clients')}><Users /><span>Clients</span></SidebarMenuButton>
+                  <SidebarMenuButton tooltip="Clients" isActive={activeView === 'clients'} onClick={() => navigate('clients')}><Users /><span>Clients (Debtors)</span></SidebarMenuButton>
                 </SidebarMenuItem>
                  <SidebarMenuItem>
-                  <SidebarMenuButton tooltip="Partners" isActive={activeView === 'partners'} onClick={() => navigate('partners')}><Handshake /><span>Partners</span></SidebarMenuButton>
+                  <SidebarMenuButton tooltip="Partners" isActive={activeView === 'partners'} onClick={() => navigate('partners')}><Handshake /><span>Partners (Co-funders)</span></SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuSeparator />
                  <SidebarMenuItem>
@@ -186,6 +190,10 @@ function LendingPortalContent() {
                 </SidebarMenuItem>
                  <SidebarMenuItem>
                   <SidebarMenuButton tooltip="Security" isActive={activeView === 'security'} onClick={() => navigate('security')}><ShieldCheck /><span>Security</span></SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuSeparator />
+                 <SidebarMenuItem>
+                  <SidebarMenuButton tooltip="Financial Model" isActive={activeView === 'model'} onClick={() => navigate('model')}><Sheet /><span>Financial Model</span></SidebarMenuButton>
                 </SidebarMenuItem>
             </SidebarGroup>
           </SidebarContent>

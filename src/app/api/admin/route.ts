@@ -71,16 +71,37 @@ export async function POST(req: NextRequest) {
         // --- END AUTHORIZATION ---
 
         switch (action) {
+            case 'saveLendingFacility': {
+                if (!isAdmin) throw new Error("Forbidden: Admin access required.");
+                const { facility } = payload;
+                if (!facility || !facility.clientId) throw new Error("Client ID and facility data are required.");
+                const { id, ...data } = facility;
+                const collectionRef = db.collection(`lendingClients/${facility.clientId}/facilities`);
+                if (id) {
+                    await collectionRef.doc(id).set({ ...data, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+                } else {
+                    const newDoc = collectionRef.doc();
+                    await newDoc.set({ ...data, id: newDoc.id, createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
+                }
+                return NextResponse.json({ success: true });
+            }
+            case 'deleteLendingFacility': {
+                 if (!isAdmin) throw new Error("Forbidden: Admin access required.");
+                const { clientId, facilityId } = payload;
+                if (!clientId || !facilityId) throw new Error("Client ID and Facility ID are required.");
+                await db.doc(`lendingClients/${clientId}/facilities/${facilityId}`).delete();
+                return NextResponse.json({ success: true });
+            }
             case 'getLendingData': {
                 if (!isAdmin) throw new Error("Forbidden: Admin access required.");
                 const { collectionName } = payload;
-                if (!collectionName || !['lendingClients', 'lendingPartners', 'lendingAssets', 'agreements'].includes(collectionName)) {
+                if (!collectionName || !['lendingClients', 'lendingPartners', 'lendingAssets', 'agreements', 'facilities'].includes(collectionName)) {
                     throw new Error("Invalid or missing collectionName for getLendingData.");
                 }
 
                 let snapshot;
-                if (collectionName === 'agreements') {
-                    snapshot = await db.collectionGroup('agreements').get();
+                if (['agreements', 'facilities'].includes(collectionName)) {
+                    snapshot = await db.collectionGroup(collectionName).get();
                 } else {
                     snapshot = await db.collection(collectionName).get();
                 }
@@ -88,13 +109,6 @@ export async function POST(req: NextRequest) {
                 const data = snapshot.docs.map(doc => {
                     const docData = doc.data();
                     const pathSegments = doc.ref.path.split('/');
-
-                    // If we're fetching agreements, ensure they are ONLY from the lending module.
-                    if (collectionName === 'agreements') {
-                        if (!(pathSegments.includes('lendingClients') && pathSegments.includes('agreements'))) {
-                            return null;
-                        }
-                    }
                     
                     const clientId = pathSegments.includes('lendingClients') ? pathSegments[pathSegments.indexOf('lendingClients') + 1] : docData.clientId;
                     
@@ -197,7 +211,7 @@ export async function POST(req: NextRequest) {
                         transaction.set(docRef, { ...dataToSave, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
                     } else { // This is a creation
                         const newDocRef = collectionRef.doc();
-                        transaction.set(newDocRef, { ...dataToSave, id: newDocRef.id, status: 'credit', createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
+                        transaction.set(newDocRef, { ...dataToSave, id: newDocRef.id, status: 'pending', createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
                     }
             
                     const newAssetId = dataToSave.assetId || null;
