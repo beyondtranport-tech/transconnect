@@ -45,6 +45,8 @@
         "billingCycle": { "type": "string", "enum": ["monthly", "annual"] },
         "nextBillingDate": { "type": "string", "format": "date-time" },
         "shopId": { "type": "string", "description": "The ID of the shop owned by this company." },
+        "loadBoardId": { "type": "string", "description": "The ID of the load board owned by this company." },
+        "vehicleShowroomId": { "type": "string", "description": "The ID of the vehicle showroom owned by this company." },
         "rewardPoints": { "type": "number", "description": "Points earned for community actions." },
         "walletBalance": { "type": "number", "description": "Total ledger balance, including pending funds." },
         "pendingBalance": { "type": "number", "description": "Funds from recent sales not yet cleared for withdrawal." },
@@ -56,6 +58,30 @@
         "updatedAt": { "type": "object" }
       },
       "required": ["id", "ownerId", "companyName", "membershipId"]
+    },
+    "VehicleListing": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Vehicle Listing",
+      "type": "object",
+      "description": "Represents a single vehicle listed for sale by a member.",
+      "properties": {
+        "id": { "type": "string" },
+        "companyId": { "type": "string" },
+        "make": { "type": "string" },
+        "model": { "type": "string" },
+        "year": { "type": "number" },
+        "price": { "type": "number" },
+        "description": { "type": "string" },
+        "photos": { "type": "array", "items": { "type": "string", "format": "uri" } },
+        "mileage": { "type": "number" },
+        "location": { "type": "string" },
+        "contactName": { "type": "string" },
+        "contactPhone": { "type": "string" },
+        "status": { "type": "string", "enum": ["available", "sold", "pending"] },
+        "createdAt": { "type": "object" },
+        "updatedAt": { "type": "object" }
+      },
+      "required": ["id", "companyId", "make", "model", "year", "price"]
     },
     "Partner": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -159,6 +185,41 @@
         "updatedAt": { "type": "object" }
       },
       "required": ["shopId", "companyId", "name", "price"]
+    },
+    "LoadBoard": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Load Board",
+      "type": "object",
+      "description": "Represents a member's public load board where they post available freight.",
+      "properties": {
+        "id": { "type": "string" },
+        "companyId": { "type": "string" },
+        "boardName": { "type": "string" },
+        "status": { "type": "string", "enum": ["active", "inactive"] }
+      },
+      "required": ["id", "companyId", "boardName"]
+    },
+    "Load": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Load",
+      "type": "object",
+      "description": "Represents a single freight load available for transport.",
+      "properties": {
+        "id": { "type": "string" },
+        "companyId": { "type": "string" },
+        "origin": { "type": "string" },
+        "destination": { "type": "string" },
+        "cargoDescription": { "type": "string" },
+        "weight": { "type": "number", "description": "Weight in tons." },
+        "pallets": { "type": "number", "description": "Number of pallets." },
+        "rate": { "type": "number", "description": "Rate per kilometer." },
+        "pickupDate": { "type": "string", "format": "date-time" },
+        "deliveryDate": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["draft", "active", "in_transit", "completed", "cancelled"] },
+        "postedAt": { "type": "object" },
+        "updatedAt": { "type": "object" }
+      },
+      "required": ["id", "companyId", "origin", "destination", "cargoDescription", "weight", "pickupDate"]
     },
     "Staff": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -445,8 +506,10 @@
             "clientId": { "type": "string", "description": "The ID of the client this agreement belongs to."},
             "assetId": { "type": "string", "description": "The ID of the asset being financed under this agreement."},
             "type": { "type": "string", "enum": ["loan-pv", "loan-fl", "installment-sale", "rental", "discounting"], "description": "The type of lending agreement."},
-            "status": { "type": "string", "enum": ["pending", "active", "completed", "defaulted"], "description": "The current status of the agreement."},
-            "amount": { "type": "number", "description": "The principal amount of the agreement."},
+            "status": { "type": "string", "enum": ["pending", "credit", "payout", "active", "completed", "defaulted"], "description": "The current status of the agreement."},
+            "amount": { "type": "number", "description": "The principal amount of the agreement, inclusive of VAT." },
+            "vatAmount": { "type": "number", "description": "The VAT portion of the financed amount." },
+            "markup": { "type": "number", "description": "Unfunded income from the deal." },
             "term": { "type": "number", "description": "The term of the agreement in months."},
             "rate": { "type": "number", "description": "The annual interest rate."}
         }
@@ -495,6 +558,7 @@
             "owner": { "type": "string" },
             "firstRegistrationDate": { "type": "string" },
             "classification": { "type": "string" },
+            "costOfSale": { "type": "number", "description": "The cost price of the asset, excluding VAT." },
             "status": { "type": "string", "enum": ["available", "financed", "sold", "decommissioned"], "description": "The current status of the asset." },
             "documents": {
                 "type": "object",
@@ -558,6 +622,14 @@
           "entityName": "Company",
           "schema": { "$ref": "#/entities/Company" },
           "description": "Stores company profiles. The owner of the company has full read/write access."
+        }
+      },
+      {
+        "path": "/companies/{companyId}/vehicleListings/{listingId}",
+        "definition": {
+            "entityName": "VehicleListing",
+            "schema": { "$ref": "#/entities/VehicleListing" },
+            "description": "Subcollection for vehicle sale listings belonging to a company."
         }
       },
       {
@@ -641,6 +713,22 @@
         }
       },
       {
+        "path": "/companies/{companyId}/loadBoards/{loadBoardId}",
+        "definition": {
+          "entityName": "LoadBoard",
+          "schema": { "$ref": "#/entities/LoadBoard" },
+          "description": "Subcollection for the load board belonging to a company."
+        }
+      },
+      {
+        "path": "/companies/{companyId}/loadBoards/{loadBoardId}/loads/{loadId}",
+        "definition": {
+            "entityName": "Load",
+            "schema": { "$ref": "#/entities/Load" },
+            "description": "Subcollection for loads posted on a company's load board."
+        }
+      },
+      {
         "path": "/shops/{shopId}",
         "definition": {
           "entityName": "Shop",
@@ -654,6 +742,14 @@
           "entityName": "Product",
           "schema": { "$ref": "#/entities/Product" },
           "description": "Subcollection for products in a public shop."
+        }
+      },
+      {
+        "path": "/loads/{loadId}",
+        "definition": {
+          "entityName": "Load",
+          "schema": { "$ref": "#/entities/Load" },
+          "description": "Top-level collection for public, active loads."
         }
       },
       {

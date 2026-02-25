@@ -65,6 +65,7 @@ import NetworkEmails from './network-emails';
 import MarketingStudio from './marketing-studio';
 import SupportChatContent from './support-chat';
 import LoadBoardContent from './load-board-content';
+import VehicleListingsContent from './vehicle-listings-content';
 
 
 // Placeholder components for sections under construction
@@ -124,6 +125,7 @@ function AccountPageContent() {
       case 'staff': return <StaffContent />;
       case 'shop': return <ShopContent />;
       case 'load-board': return <LoadBoardContent />;
+      case 'vehicle-listings': return <VehicleListingsContent />;
       case 'marketing-studio': return <MarketingStudio />;
       case 'wallet': return <WalletContent />;
       case 'billing': return <BillingContent />;
@@ -211,6 +213,12 @@ function AccountPageContent() {
                 <SidebarMenuButton tooltip="My Load Board" isActive={activeView === 'load-board'} onClick={() => navigate('load-board')}>
                   <Truck />
                   <span>My Load Board</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+               <SidebarMenuItem>
+                <SidebarMenuButton tooltip="My Vehicles" isActive={activeView === 'vehicle-listings'} onClick={() => navigate('vehicle-listings')}>
+                  <Truck />
+                  <span>My Vehicles</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
