@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -31,7 +30,7 @@ async function performAdminAction(token: string, action: string, payload: any) {
     return result;
 }
 
-export function AgreementActionMenu({ agreement, onEdit, onUpdate }: { agreement: any; onEdit: () => void; onUpdate: () => void; }) {
+export function AgreementActionMenu({ agreement, onUpdate }: { agreement: any; onUpdate: () => void; }) {
     const [isProcessing, setIsProcessing] = useState(false);
     const [isAlertOpen, setIsAlertOpen] = useState(false);
     const [actionToConfirm, setActionToConfirm] = useState<'delete' | 'updateStatus' | null>(null);
@@ -109,8 +108,8 @@ export function AgreementActionMenu({ agreement, onEdit, onUpdate }: { agreement
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                    <DropdownMenuItem onSelect={onEdit}>
-                        <Edit className="mr-2 h-4 w-4"/>Edit Agreement
+                    <DropdownMenuItem asChild>
+                        <Link href={`/lending/agreements/${agreement.clientId}/${agreement.id}`}><Edit className="mr-2 h-4 w-4"/>Edit Agreement</Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                          <Link href={`/lending/repayment-schedule?agreementId=${agreement.id}&clientId=${agreement.clientId}`}><Eye className="mr-2 h-4 w-4"/>View Repayment</Link>
