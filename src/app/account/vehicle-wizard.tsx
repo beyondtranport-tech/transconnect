@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useForm, FormProvider, useFieldArray, useFormContext } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -11,7 +11,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, ArrowLeft, ArrowRight, Save, Truck, Image as ImageIcon, FileText, CheckCircle, UploadCloud, Trash2, Wand2 } from 'lucide-react';
+import { Loader2, ArrowLeft, ArrowRight, Save, Truck, Image as ImageIcon, FileText, CheckCircle, UploadCloud, Trash2, Wand2, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { Progress } from '@/components/ui/progress';
@@ -167,7 +167,7 @@ export function VehicleWizard({ listing, companyId, onBack, onSaveSuccess }: { l
             toast({ title: listing?.id ? 'Listing Updated' : 'Listing Created' });
             onSaveSuccess();
         } catch (e: any) {
-            toast({ variant: 'destructive', title: 'Save Failed', description: e.message });
+            toast({ variant: 'destructive', title: 'Error saving asset', description: e.message });
         } finally {
             setIsSaving(false);
         }
@@ -233,3 +233,4 @@ export function VehicleWizard({ listing, companyId, onBack, onSaveSuccess }: { l
         </Card>
     );
 }
+    
