@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -29,7 +30,7 @@ const listingSchema = z.object({
   description: z.string().min(10, "Please provide a more detailed description"),
   mileage: z.coerce.number().min(0).optional(),
   location: z.string().min(1, "Location is required"),
-  photos: z.array(z.string().url()).optional().default([]),
+  photos: z.array(z.object({ url: z.string().url() })).optional().default([]),
 });
 
 type ListingFormValues = z.infer<typeof listingSchema>;
@@ -218,7 +219,7 @@ const StepPhotos = () => {
         }
         
         if (uploadedUrls.length > 0) {
-            uploadedUrls.forEach(url => append(url));
+            uploadedUrls.forEach(url => append({ url }));
             toast({
                 title: 'Upload Complete',
                 description: `${uploadedUrls.length} of ${totalFiles} images uploaded successfully.`,
@@ -240,7 +241,7 @@ const StepPhotos = () => {
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                     {fields.map((field, index) => (
                          <div key={field.id} className="relative aspect-square">
-                            <Image src={field.value} alt={`Vehicle photo ${index + 1}`} fill className="object-cover rounded-md border" />
+                            <Image src={field.url} alt={`Vehicle photo ${index + 1}`} fill className="object-cover rounded-md border" />
                             <Button type="button" variant="destructive" size="icon" className="absolute -top-2 -right-2 h-6 w-6 rounded-full" onClick={() => remove(index)} disabled={uploading}>
                                 <Trash2 className="h-4 w-4" />
                             </Button>
@@ -264,15 +265,17 @@ const StepPhotos = () => {
     );
 };
 
-export function VehicleWizard({ listing, companyId, onBack, onSaveSuccess }: { listing?: any; companyId: string; onBack: () => void; onSaveSuccess: () => void; }) {
+export function AssetWizard({ asset, onBack, onSaveSuccess, defaultClientId }: { asset?: any, onBack: () => void, onSaveSuccess: () => void, defaultClientId?: string | null }) {
     const [currentStep, setCurrentStep] = useState(0);
     const [isSaving, setIsSaving] = useState(false);
     const { toast } = useToast();
-
-    const methods = useForm<ListingFormValues>({
-        resolver: zodResolver(listingSchema),
+    
+    const methods = useForm<AssetWizardFormValues>({
+        resolver: zodResolver(formSchema),
         mode: 'onChange',
-        defaultValues: listing || { photos: [] },
+        defaultValues: asset || { 
+            clientId: defaultClientId || '',
+        },
     });
 
     const handleNext = async () => {
@@ -281,7 +284,7 @@ export function VehicleWizard({ listing, companyId, onBack, onSaveSuccess }: { l
 
         let isValid = false;
         if (currentStepConfig.fields && currentStepConfig.fields.length > 0) {
-            isValid = await methods.trigger(currentStepConfig.fields as (keyof ListingFormValues)[]);
+            isValid = await methods.trigger(currentStepConfig.fields as (keyof AssetWizardFormValues)[]);
         } else {
             isValid = true;
         }
@@ -295,25 +298,21 @@ export function VehicleWizard({ listing, companyId, onBack, onSaveSuccess }: { l
 
     const handleBackWizard = () => { currentStep > 0 ? setCurrentStep(prev => prev - 1) : onBack(); };
 
-    const onSubmit = async (values: ListingFormValues) => {
+    const onSubmit = async (values: AssetWizardFormValues) => {
         setIsSaving(true);
         try {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Auth failed.");
 
-            const path = `companies/${companyId}/vehicleListings`;
-            const dataToSave = { ...values, companyId };
-            
-            const response = await fetch(listing?.id ? '/api/updateUserDoc' : '/api/addUserDoc', {
+            const response = await fetch('/api/admin', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify(listing?.id ? { path: `${path}/${listing.id}`, data: dataToSave } : { collectionPath: path, data: dataToSave }),
+                body: JSON.stringify({ action: 'saveLendingAsset', payload: { asset: { id: asset?.id, ...values } } }),
             });
-            
             const result = await response.json();
             if (!response.ok) throw new Error(result.error);
             
-            toast({ title: listing?.id ? 'Listing Updated' : 'Listing Created' });
+            toast({ title: asset?.id ? 'Asset Updated' : 'Asset Created' });
             onSaveSuccess();
         } catch (e: any) {
             toast({ variant: 'destructive', title: 'Error saving asset', description: e.message });
@@ -326,15 +325,17 @@ export function VehicleWizard({ listing, companyId, onBack, onSaveSuccess }: { l
         if (stepIndex < 0) return true;
         const step = wizardSteps[stepIndex];
         if (!step.fields || step.fields.length === 0) return true;
-        const fields = step.fields as (keyof ListingFormValues)[];
+        const fields = step.fields as (keyof AssetWizardFormValues)[];
         return fields.every(field => !methods.formState.errors[field as keyof typeof methods.formState.errors]);
     };
     
      const renderStepContent = () => {
         const stepId = wizardSteps[currentStep]?.id;
         switch (stepId) {
-            case 'details': return <StepDetails />;
-            case 'photos': return <StepPhotos />;
+            case 'client': return <div>Client Selection</div>;
+            case 'asset': return <StepAssetDetails />;
+            case 'documents': return <StepDocuments />;
+            case 'review': return <div className="p-4 bg-muted rounded-md text-xs whitespace-pre-wrap">{JSON.stringify(methods.getValues(), null, 2)}</div>;
             default: return <div className="text-center py-10"><p className="text-muted-foreground">This step is under construction.</p></div>;
         }
     };
@@ -346,7 +347,7 @@ export function VehicleWizard({ listing, companyId, onBack, onSaveSuccess }: { l
                     <CardHeader>
                         <div className="flex justify-between items-start">
                              <div>
-                                <h2 className="text-2xl font-bold font-headline">{listing ? 'Edit Vehicle Listing' : 'Create New Vehicle Listing'}</h2>
+                                <h2 className="text-2xl font-bold font-headline">{asset ? 'Edit Vehicle Listing' : 'Create New Vehicle Listing'}</h2>
                                 <p className="text-muted-foreground">{wizardSteps[currentStep].name}</p>
                             </div>
                              <Button type="button" variant="ghost" onClick={onBack}><ArrowLeft className="mr-2 h-4 w-4"/> Back to List</Button>
@@ -386,3 +387,68 @@ export function VehicleWizard({ listing, companyId, onBack, onSaveSuccess }: { l
         </Card>
     );
 }
+
+// Re-add StepDocuments component
+const StepDocuments = () => {
+    const { control, setValue } = useFormContext();
+    const { user } = useUser();
+    const { toast } = useToast();
+    const [uploading, setUploading] = useState<string | null>(null);
+    const [progress, setProgress] = useState(0);
+
+    const documentTypes = [
+        { id: 'invoice', label: 'Invoice' },
+        { id: 'rc1', label: 'RC1 Certificate' },
+        { id: 'licenseDisk', label: 'License Disk' },
+        { id: 'deliveryNote', label: 'Delivery Note' },
+    ];
+
+    const handleFileUpload = async (file: File, docType: string) => {
+        if (!file || !user) return;
+        setUploading(docType); setProgress(10);
+        try {
+            const token = await getClientSideAuthToken(); if (!token) throw new Error("Authentication failed.");
+            const fileDataUri = await fileToDataUri(file); setProgress(30);
+            const folder = `lending-assets/${user.uid}/${docType}`; const fileName = `${Date.now()}_${file.name}`;
+            const response = await fetch('/api/uploadImageAsset', { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ fileDataUri, folder, fileName }) });
+            setProgress(80);
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || 'Failed to upload document.');
+            setValue(`documents.${docType}`, result.url, { shouldValidate: true });
+            setProgress(100);
+            toast({ title: 'Document Uploaded!', description: `${file.name} has been uploaded successfully.` });
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
+        } finally {
+            setUploading(null); setProgress(0);
+        }
+    };
+
+    return (
+        <div className="space-y-6">
+            <h3 className="text-lg font-semibold">Supporting Documents</h3>
+            <p className="text-sm text-muted-foreground">Upload the required documents for the asset. You can upload PDF files or clear photographs of the documents.</p>
+            <div className="space-y-4">
+                {documentTypes.map(docType => (
+                    <FormField key={docType.id} control={control} name={`documents.${docType.id}`}
+                        render={({ field }) => (
+                            <FormItem>
+                                <div className="p-4 border rounded-lg flex items-center justify-between">
+                                    <div>
+                                        <FormLabel>{docType.label}</FormLabel>
+                                        {field.value ? <div className="text-sm mt-1"><Link href={field.value} target="_blank" className="text-primary hover:underline break-all">View Uploaded Document</Link></div> : <div className="text-xs text-muted-foreground mt-1">No document uploaded.</div>}
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <Button type="button" variant="outline" size="sm" onClick={() => document.getElementById(`upload-${docType.id}`)?.click()} disabled={!!uploading}><UploadCloud className="mr-2 h-4 w-4" /> Upload</Button>
+                                        <Input id={`upload-${docType.id}`} type="file" className="hidden" accept="image/*,.pdf" onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], docType.id)} disabled={!!uploading} />
+                                    </div>
+                                </div>
+                                {uploading === docType.id && <Progress value={progress} className="h-1 mt-1" />}
+                            </FormItem>
+                        )}
+                    />
+                ))}
+            </div>
+        </div>
+    );
+};

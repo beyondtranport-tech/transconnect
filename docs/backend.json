@@ -46,6 +46,7 @@
         "nextBillingDate": { "type": "string", "format": "date-time" },
         "shopId": { "type": "string", "description": "The ID of the shop owned by this company." },
         "loadBoardId": { "type": "string", "description": "The ID of the load board owned by this company." },
+        "vehicleShowroomId": { "type": "string", "description": "The ID of the vehicle showroom owned by this company." },
         "rewardPoints": { "type": "number", "description": "Points earned for community actions." },
         "walletBalance": { "type": "number", "description": "Total ledger balance, including pending funds." },
         "pendingBalance": { "type": "number", "description": "Funds from recent sales not yet cleared for withdrawal." },
@@ -57,6 +58,55 @@
         "updatedAt": { "type": "object" }
       },
       "required": ["id", "ownerId", "companyName", "membershipId"]
+    },
+    "VehicleListing": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Vehicle Listing",
+      "type": "object",
+      "description": "Represents a single vehicle listed for sale by a member.",
+      "properties": {
+        "id": { "type": "string" },
+        "companyId": { "type": "string" },
+        "make": { "type": "string" },
+        "model": { "type": "string" },
+        "year": { "type": "string" },
+        "price": { "type": "number" },
+        "description": { "type": "string" },
+        "photos": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "url": { "type": "string", "format": "uri" }
+            }
+          }
+        },
+        "mileage": { "type": "number" },
+        "location": { "type": "string" },
+        "contactName": { "type": "string" },
+        "contactPhone": { "type": "string" },
+        "status": { "type": "string", "enum": ["draft", "active", "sold", "pending"] },
+        "createdAt": { "type": "object" },
+        "updatedAt": { "type": "object" }
+      },
+      "required": ["id", "companyId", "make", "model", "year", "price"]
+    },
+     "VehicleListingAgreement": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "Vehicle Listing Agreement",
+        "type": "object",
+        "description": "Represents a versioned commercial agreement for a vehicle listing.",
+        "properties": {
+            "id": { "type": "string" },
+            "percentage": { "type": "number", "description": "The platform commission percentage for this agreement." },
+            "status": { "type": "string", "enum": ["proposed", "active", "archived"], "description": "The status of the agreement." },
+            "effectiveDate": { "type": "string", "format": "date-time", "description": "The date this agreement becomes active." },
+            "acceptedBy": { "type": "string", "description": "The UID of the user who accepted the agreement." },
+            "proposedBy": { "type": "string", "description": "The UID of the user who proposed the agreement." },
+            "createdAt": { "type": "object" },
+            "updatedAt": { "type": "object" }
+        },
+        "required": ["id", "percentage", "status", "effectiveDate", "proposedBy"]
     },
     "Partner": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -600,6 +650,22 @@
         }
       },
       {
+        "path": "/companies/{companyId}/vehicleListings/{listingId}",
+        "definition": {
+            "entityName": "VehicleListing",
+            "schema": { "$ref": "#/entities/VehicleListing" },
+            "description": "Subcollection for vehicle sale listings belonging to a company."
+        }
+      },
+       {
+        "path": "/companies/{companyId}/vehicleListings/{listingId}/agreements/{agreementId}",
+        "definition": {
+            "entityName": "VehicleListingAgreement",
+            "schema": { "$ref": "#/entities/VehicleListingAgreement" },
+            "description": "Subcollection for versioned commercial agreements for a vehicle listing."
+        }
+      },
+      {
         "path": "/partners/{partnerId}",
         "definition": {
           "entityName": "Partner",
@@ -875,7 +941,6 @@
     "reasoning": "The data model is refactored to separate user identity from business entities. A new `/users` collection stores individual user profiles, linked via Firebase Auth UID. A new `/companies` collection stores business-related data, including wallet balance, membership status, and subcollections for transactions, staff, quotes, etc. This creates a cleaner, more scalable architecture where a user owns a company, rather than the user and company being the same entity. This prevents data duplication and clarifies ownership for security rules. Added Special Offer fields to Membership entity and created new entities for Connect Plan pricing to support advanced promotional offers. Added a complete, separate data structure for the Debtor Management System (DMS) under collections prefixed with 'lending' to ensure clear separation for future spin-off potential."
   }
 }
-
     
     
     
