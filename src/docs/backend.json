@@ -72,7 +72,15 @@
         "year": { "type": "string" },
         "price": { "type": "number" },
         "description": { "type": "string" },
-        "photos": { "type": "array", "items": { "type": "string", "format": "uri" } },
+        "photos": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "url": { "type": "string", "format": "uri" }
+            }
+          }
+        },
         "mileage": { "type": "number" },
         "location": { "type": "string" },
         "contactName": { "type": "string" },
@@ -870,7 +878,7 @@
         "definition": {
             "entityName": "Client",
             "schema": { "$ref": "#/entities/Client" },
-            "description": "Debtor Management System: Main collection for lending clients (debtors)."
+            "description": "DMS: Main collection for lending clients (debtors)."
         }
       },
       {
@@ -936,3 +944,4 @@
     
     
     
+

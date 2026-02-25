@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -81,7 +82,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 // --- Dynamic Imports for Business Components ---
 
 // Operations
-const AdminDashboardContent = dynamic(() => import('./dashboard-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const AdminDashboardContent = dynamic(() => import('@/app/adminaccount/dashboard-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 // Admin-specific pages
 const MarketingStudio = dynamic(() => import('./marketing-studio'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
@@ -118,6 +119,7 @@ const DeveloperElevatorPitch = dynamic(() => import('./developer-elevator-pitch'
 const DeveloperOffer = dynamic(() => import('./developer-offer'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const DeveloperEmailSequence = dynamic(() => import('./developer-email-sequence'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const MembersList = dynamic(() => import('@/app/backend/members-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const LendingModelDashboard = dynamic(() => import('@/app/backend/lending-model-dashboard'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 
 function AdminAuthGuard({ children }: { children: React.ReactNode }) {
@@ -211,6 +213,10 @@ function BackendContent() {
       case 'turnover': return <TurnoverProjection />;
       case 'income-statement': return <IncomeStatementProjection />;
       case 'revenue-ledger': return <PlatformTransactions />;
+      
+      // Lending Model
+      case 'lending-model': return <LendingModelDashboard />;
+
 
       default: return <AdminDashboardContent />;
     }
@@ -345,7 +351,7 @@ function BackendContent() {
                   </SidebarMenuSub>
                 </SidebarMenuItem>
                  <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Financials" isActive={isFinancialsActive}>
+                    <SidebarMenuButton tooltip="App Financials" isActive={isFinancialsActive}>
                         <FinancialSheetIcon /><span>App Financials</span>
                     </SidebarMenuButton>
                     <SidebarMenuSub>
@@ -363,6 +369,11 @@ function BackendContent() {
                         <SidebarMenuSeparator />
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'revenue-ledger'} onClick={() => navigate('revenue-ledger')}><DollarSign />Revenue Ledger</SidebarMenuSubButton></SidebarMenuSubItem>
                     </SidebarMenuSub>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                    <SidebarMenuButton tooltip="Lending Model" isActive={activeView === 'lending-model'} onClick={() => navigate('lending-model')}>
+                        <Landmark /><span>Lending Model</span>
+                    </SidebarMenuButton>
                 </SidebarMenuItem>
             </SidebarGroup>
           </SidebarContent>
