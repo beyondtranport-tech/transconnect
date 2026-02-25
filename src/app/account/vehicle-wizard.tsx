@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -18,6 +17,8 @@ import { Progress } from '@/components/ui/progress';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { provinces } from '@/lib/geodata';
+import { Label } from '@/components/ui/label';
+import { useRouter } from 'next/navigation';
 
 
 const listingSchema = z.object({
@@ -173,25 +174,64 @@ const StepPhotos = () => {
     const [progress, setProgress] = useState(0);
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file || !user) return;
-        setUploading(true); setProgress(10);
-        try {
-            const token = await getClientSideAuthToken(); if (!token) throw new Error("Authentication failed.");
-            const fileDataUri = await fileToDataUri(file); setProgress(30);
-            const folder = `user-assets/${user.uid}/vehicle-listings`; const fileName = `${Date.now()}_${file.name}`;
-            const response = await fetch('/api/uploadImageAsset', { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ fileDataUri, folder, fileName }) });
-            setProgress(80);
-            const result = await response.json();
-            if (!response.ok) throw new Error(result.error || 'Upload failed.');
-            append(result.url);
-            setProgress(100);
-            toast({ title: 'Image Uploaded' });
-        } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
-        } finally {
-            setUploading(false); setProgress(0);
+        const files = e.target.files;
+        if (!files || files.length === 0 || !user) return;
+
+        setUploading(true);
+        setProgress(0);
+
+        const uploadedUrls: string[] = [];
+        const totalFiles = files.length;
+
+        for (let i = 0; i < totalFiles; i++) {
+            const file = files[i];
+            try {
+                const token = await getClientSideAuthToken();
+                if (!token) throw new Error("Authentication failed.");
+                
+                const fileDataUri = await fileToDataUri(file);
+                
+                const folder = `user-assets/${user.uid}/vehicle-listings`;
+                const fileName = `${Date.now()}_${file.name}`;
+                
+                const response = await fetch('/api/uploadImageAsset', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ fileDataUri, folder, fileName })
+                });
+
+                const result = await response.json();
+                if (!response.ok) {
+                    throw new Error(result.error || `Failed to upload ${file.name}.`);
+                }
+                
+                uploadedUrls.push(result.url);
+                setProgress(((i + 1) / totalFiles) * 100);
+
+            } catch (error: any) {
+                toast({
+                    variant: 'destructive',
+                    title: `Upload Failed for ${file.name}`,
+                    description: error.message,
+                });
+            }
         }
+        
+        if (uploadedUrls.length > 0) {
+            uploadedUrls.forEach(url => append(url));
+            toast({
+                title: 'Upload Complete',
+                description: `${uploadedUrls.length} of ${totalFiles} images uploaded successfully.`,
+            });
+        }
+
+        // Reset the file input so the same files can be re-uploaded if needed
+        if (e.target) {
+            e.target.value = '';
+        }
+
+        setUploading(false);
+        setProgress(0);
     };
     
     return (
@@ -209,10 +249,10 @@ const StepPhotos = () => {
                      <label htmlFor="photo-upload" className="relative aspect-square flex items-center justify-center border-2 border-dashed rounded-md cursor-pointer hover:bg-accent hover:border-primary transition-colors">
                         <div className="text-center">
                             <UploadCloud className="mx-auto h-8 w-8 text-muted-foreground"/>
-                            <span className="text-sm text-muted-foreground">Upload Photo</span>
+                            <span className="text-sm text-muted-foreground">Upload Photos</span>
                         </div>
                     </label>
-                    <Input id="photo-upload" type="file" className="hidden" accept="image/*" onChange={handleFileUpload} disabled={uploading} />
+                    <Input id="photo-upload" type="file" multiple className="hidden" accept="image/*" onChange={handleFileUpload} disabled={uploading} />
                 </div>
                 {uploading && (
                     <div className="space-y-1">
@@ -236,12 +276,20 @@ export function VehicleWizard({ listing, companyId, onBack, onSaveSuccess }: { l
     });
 
     const handleNext = async () => {
-        const step = wizardSteps[currentStep];
-        const isValid = await methods.trigger(step.fields as (keyof ListingFormValues)[]);
+        const currentStepConfig = wizardSteps[currentStep];
+        if (!currentStepConfig) return;
+
+        let isValid = false;
+        if (currentStepConfig.fields && currentStepConfig.fields.length > 0) {
+            isValid = await methods.trigger(currentStepConfig.fields as (keyof ListingFormValues)[]);
+        } else {
+            isValid = true;
+        }
+
         if (isValid && currentStep < wizardSteps.length - 1) {
             setCurrentStep(s => s + 1);
         } else if (!isValid) {
-            toast({ variant: 'destructive', title: 'Please complete all fields.' });
+            toast({ variant: 'destructive', title: 'Validation Error', description: 'Please complete all fields.' });
         }
     };
 
@@ -283,7 +331,8 @@ export function VehicleWizard({ listing, companyId, onBack, onSaveSuccess }: { l
     };
     
      const renderStepContent = () => {
-        switch (wizardSteps[currentStep].id) {
+        const stepId = wizardSteps[currentStep]?.id;
+        switch (stepId) {
             case 'details': return <StepDetails />;
             case 'photos': return <StepPhotos />;
             default: return <div className="text-center py-10"><p className="text-muted-foreground">This step is under construction.</p></div>;
@@ -303,12 +352,11 @@ export function VehicleWizard({ listing, companyId, onBack, onSaveSuccess }: { l
                              <Button type="button" variant="ghost" onClick={onBack}><ArrowLeft className="mr-2 h-4 w-4"/> Back to List</Button>
                         </div>
                     </CardHeader>
-                    <CardContent>
+                        <CardContent>
                         <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] gap-8">
                              <div className="flex flex-col gap-2 border-r pr-4">
                                 {wizardSteps.map((step, index) => {
                                     const isCompleted = index < currentStep && isStepValid(index);
-                                    const Icon = step.icon;
                                     return (
                                         <Button key={step.id} variant={currentStep === index ? 'default' : 'ghost'} className="justify-start gap-2" onClick={() => setCurrentStep(index)} disabled={index > currentStep && !isStepValid(currentStep - 1)}>
                                             {isCompleted ? <Check className="h-5 w-5 text-green-500" /> : <div className={cn("h-5 w-5 rounded-full flex items-center justify-center text-xs font-bold", currentStep >= index ? "bg-primary-foreground text-primary" : "bg-muted-foreground/20")}>{index + 1}</div>}
@@ -317,19 +365,22 @@ export function VehicleWizard({ listing, companyId, onBack, onSaveSuccess }: { l
                                     );
                                 })}
                             </div>
-                             <div className="min-h-[400px]">
-                                {renderStepContent()}
+                             <div className="space-y-6">
+                                <h2 className="text-2xl font-bold">{wizardSteps[currentStep].name}</h2>
+                                <div className="min-h-[400px]">
+                                    {renderStepContent()}
+                                </div>
+                                <div className="flex justify-between pt-8 mt-8 border-t">
+                                    <Button type="button" variant="outline" onClick={handleBackWizard}><ArrowLeft className="mr-2 h-4 w-4" /> Back</Button>
+                                    {currentStep < wizardSteps.length - 1 ? (
+                                        <Button type="button" onClick={handleNext}>Next <ArrowRight className="ml-2 h-4 w-4"/></Button>
+                                    ) : (
+                                        <Button type="submit" disabled={isSaving}>{isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} Save Listing</Button>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </CardContent>
-                    <CardFooter className="flex justify-between pt-6 border-t">
-                        <Button type="button" variant="outline" onClick={handleBackWizard}><ArrowLeft className="mr-2 h-4 w-4" /> Back</Button>
-                        {currentStep < wizardSteps.length - 1 ? (
-                            <Button type="button" onClick={handleNext}>Next Step <ArrowRight className="ml-2 h-4 w-4"/></Button>
-                        ) : (
-                            <Button type="submit" disabled={isSaving}>{isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} Save Listing</Button>
-                        )}
-                    </CardFooter>
                 </form>
             </FormProvider>
         </Card>
