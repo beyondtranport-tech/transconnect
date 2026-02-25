@@ -75,11 +75,23 @@ export async function POST(req: NextRequest) {
             case 'getLendingData': {
                 if (!isAdmin) throw new Error("Forbidden: Admin access required.");
                 const { collectionName } = payload;
-                if (!collectionName || !['lendingClients', 'lendingPartners', 'lendingAssets'].includes(collectionName)) {
+                if (!collectionName || !['lendingClients', 'lendingPartners', 'lendingAssets', 'agreements'].includes(collectionName)) {
                     throw new Error("Invalid or missing collectionName for getLendingData.");
                 }
-                const snapshot = await db.collection(collectionName).get();
-                const data = snapshot.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
+
+                let snapshot;
+                if (collectionName === 'agreements') {
+                    snapshot = await db.collectionGroup('agreements').get();
+                } else {
+                    snapshot = await db.collection(collectionName).get();
+                }
+
+                const data = snapshot.docs.map(doc => {
+                    const docData = doc.data();
+                    const pathSegments = doc.ref.path.split('/');
+                    const clientId = pathSegments.includes('lendingClients') ? pathSegments[pathSegments.indexOf('lendingClients') + 1] : docData.clientId;
+                    return { id: doc.id, ...serializeTimestamps(docData), clientId };
+                });
                 return NextResponse.json({ success: true, data });
             }
             case 'deleteLendingAgreement': {
@@ -212,6 +224,15 @@ export async function POST(req: NextRequest) {
                     await newDocRef.set({ ...assetData, id: newDocRef.id, createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp(), status: 'available' });
                     return NextResponse.json({ success: true, id: newDocRef.id });
                 }
+            }
+            case 'deleteLendingAsset': {
+                if (!isAdmin) throw new Error("Forbidden: Admin access required.");
+                const { assetId } = payload;
+                if (!assetId) {
+                    throw new Error("assetId is required.");
+                }
+                await db.collection('lendingAssets').doc(assetId).delete();
+                return NextResponse.json({ success: true, message: 'Asset deleted successfully.' });
             }
             case 'unpublishShop': {
                 const { companyId, shopId } = payload;
