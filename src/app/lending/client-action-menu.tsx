@@ -1,7 +1,7 @@
-
 'use client';
 
 import { useState } from 'react';
+import { Button } from '@/components/ui/button';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -12,8 +12,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Button } from '@/components/ui/button';
-import { Loader2, MoreVertical, Edit, Trash2, Eye } from 'lucide-react';
+import { Loader2, Edit, Trash2, Eye } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
 import Link from 'next/link';
@@ -32,7 +31,7 @@ async function performAdminAction(token: string, action: string, payload: any) {
     return result;
 }
 
-export function ClientActionMenu({ client, onEdit, onUpdate }: { client: any; onEdit: () => void; onUpdate: () => void; }) {
+export function ClientActionMenu({ client, onUpdate }: { client: any; onUpdate: () => void; }) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const { toast } = useToast();
@@ -55,11 +54,8 @@ export function ClientActionMenu({ client, onEdit, onUpdate }: { client: any; on
 
   return (
     <div className="flex justify-end items-center gap-1">
-        <Button asChild variant="ghost" size="icon" title="View Details">
-            <Link href={`/lending/client/${client.id}`}><Eye className="h-4 w-4" /></Link>
-        </Button>
-        <Button variant="ghost" size="icon" onClick={onEdit} title="Edit Client">
-            <Edit className="h-4 w-4" />
+        <Button asChild variant="ghost" size="icon" title="View & Edit Details">
+            <Link href={`/lending/clients/${client.id}`}><Edit className="h-4 w-4" /></Link>
         </Button>
          <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
             <Button variant="ghost" size="icon" onClick={() => setIsAlertOpen(true)} disabled={isDeleting} title="Delete Client">
@@ -68,7 +64,7 @@ export function ClientActionMenu({ client, onEdit, onUpdate }: { client: any; on
             <AlertDialogContent>
                 <AlertDialogHeader>
                     <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                    <AlertDialogDescription>This action will permanently delete the client "{client.name}" and all associated data (agreements, assets, etc.). This cannot be undone.</AlertDialogDescription>
+                    <AlertDialogDescription>This will permanently delete the client "{client.name}" and all associated data (agreements, assets, etc.). This cannot be undone.</AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
@@ -79,4 +75,3 @@ export function ClientActionMenu({ client, onEdit, onUpdate }: { client: any; on
     </div>
   );
 }
-

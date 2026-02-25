@@ -1,4 +1,3 @@
-
 'use server';
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -71,6 +70,16 @@ export async function POST(req: NextRequest) {
         // --- END AUTHORIZATION ---
 
         switch (action) {
+            case 'getLendingClientById': {
+                if (!isAdmin) throw new Error("Forbidden: Admin access required.");
+                const { clientId } = payload;
+                if (!clientId) throw new Error("clientId is required.");
+                const docSnap = await db.collection('lendingClients').doc(clientId).get();
+                if (!docSnap.exists) {
+                    return NextResponse.json({ success: true, data: null });
+                }
+                return NextResponse.json({ success: true, data: { id: docSnap.id, ...serializeTimestamps(docSnap.data()) } });
+            }
             case 'saveLendingFacility': {
                 if (!isAdmin) throw new Error("Forbidden: Admin access required.");
                 const { facility } = payload;
