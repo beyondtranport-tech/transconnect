@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -11,7 +10,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, ArrowLeft, ArrowRight, Save, Users, FileText, Briefcase, Landmark, Sheet, LayoutDashboard, DollarSign } from 'lucide-react';
+import { Loader2, ArrowLeft, ArrowRight, Save, Users, FileText, Briefcase, Landmark, Sheet, LayoutDashboard, DollarSign, Check } from 'lucide-react';
 import { getClientSideAuthToken } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -51,8 +50,9 @@ const agreementFormSchema = z.object({
 type FormValues = z.infer<typeof agreementFormSchema>;
 
 const wizardSteps = [
-    { id: 'dashboard', name: 'Dashboard', icon: LayoutDashboard },
-    { id: 'main', name: 'Main', icon: FileText, fields: ['clientId', 'type', 'totalAdvanced', 'interestRate', 'numberOfInstallments'] },
+    { id: 'client', name: 'Select Client', icon: Users, fields: ['clientId'] },
+    { id: 'type', name: 'Agreement Type', icon: FileText, fields: ['type'] },
+    { id: 'details', name: 'Details', icon: Landmark, fields: ['totalAdvanced', 'interestRate', 'numberOfInstallments'] },
     { id: 'charges', name: 'Charges', icon: DollarSign },
     { id: 'assets', name: 'Assets', icon: Briefcase },
     { id: 'invoices', name: 'Invoices', icon: FileText },
@@ -60,9 +60,78 @@ const wizardSteps = [
     { id: 'statements', name: 'Statements', icon: Sheet },
 ];
 
-function StepMain() {
-    const { control, watch } = useFormContext<FormValues>();
+function StepSelectClient() {
+    const { control } = useFormContext<FormValues>();
     const [clients, setClients] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const { toast } = useToast();
+
+    useEffect(() => {
+        const loadClients = async () => {
+            setIsLoading(true);
+            try {
+                const token = await getClientSideAuthToken();
+                if (!token) throw new Error("Auth failed.");
+                const clientsRes = await performAdminAction(token, 'getLendingData', { collectionName: 'lendingClients' });
+                setClients(clientsRes.data || []);
+            } catch (e: any) {
+                toast({ variant: 'destructive', title: "Failed to load clients", description: e.message });
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        loadClients();
+    }, [toast]);
+
+    return (
+        <div className="max-w-md">
+            <FormField control={control} name="clientId" render={({ field }) => (
+                <FormItem>
+                    <FormLabel className="text-lg">Select a Client</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                            <SelectTrigger disabled={isLoading}>
+                                <SelectValue placeholder={isLoading ? "Loading clients..." : "Select a client..."} />
+                            </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                            {clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                    <FormMessage />
+                </FormItem>
+            )} />
+        </div>
+    );
+}
+
+function StepSelectAgreementType() {
+    const { control } = useFormContext<FormValues>();
+    return (
+        <div className="max-w-md">
+            <FormField control={control} name="type" render={({ field }) => (
+                <FormItem>
+                    <FormLabel className="text-lg">Select Agreement Type</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                            <SelectTrigger><SelectValue placeholder="Select an agreement type..."/></SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                            <SelectItem value="loan">Loan</SelectItem>
+                            <SelectItem value="installment-sale">Installment Sale</SelectItem>
+                            <SelectItem value="lease">Lease</SelectItem>
+                            <SelectItem value="factoring">Factoring</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    <FormMessage />
+                </FormItem>
+            )} />
+        </div>
+    );
+}
+
+function StepDetails() {
+    const { control, watch } = useFormContext<FormValues>();
     const [availableAssets, setAvailableAssets] = useState<any[]>([]);
     const [selectedClientDetails, setSelectedClientDetails] = useState<any | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -76,12 +145,12 @@ function StepMain() {
             try {
                 const token = await getClientSideAuthToken();
                 if (!token) throw new Error("Auth failed.");
-                const [clientsRes, assetsRes] = await Promise.all([
-                    performAdminAction(token, 'getLendingData', { collectionName: 'lendingClients' }),
+                const [assetsRes, clientDetailsRes] = await Promise.all([
                     performAdminAction(token, 'getLendingData', { collectionName: 'lendingAssets' }),
+                    selectedClientId ? performAdminAction(token, 'getLendingClientById', { clientId: selectedClientId }) : Promise.resolve({ data: null })
                 ]);
-                setClients(clientsRes.data || []);
                 setAvailableAssets((assetsRes.data || []).filter((a: any) => a.status === 'available'));
+                setSelectedClientDetails(clientDetailsRes.data || null);
             } catch (e: any) {
                 toast({ variant: 'destructive', title: "Failed to load data", description: e.message });
             } finally {
@@ -89,39 +158,16 @@ function StepMain() {
             }
         };
         loadInitialData();
-    }, [toast]);
-    
-     useEffect(() => {
-        const loadClientDetails = async () => {
-            if (!selectedClientId) {
-                setSelectedClientDetails(null);
-                return;
-            }
-            try {
-                const token = await getClientSideAuthToken();
-                if (!token) throw new Error("Auth failed.");
-                const clientDetails = await performAdminAction(token, 'getLendingClientById', { clientId: selectedClientId });
-                setSelectedClientDetails(clientDetails.data || null);
-            } catch (e: any) {
-                 toast({ variant: 'destructive', title: "Failed to load client details", description: e.message });
-            }
-        }
-        loadClientDetails();
     }, [selectedClientId, toast]);
-
-
+    
     return (
         <div className="space-y-4 max-w-2xl">
-             <FormField control={control} name="clientId" render={({ field }) => (<FormItem><FormLabel className="flex items-center gap-2"><Users/>Client</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a client..." /></SelectTrigger></FormControl><SelectContent>{clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
             <FormField control={control} name="assetId" render={({ field }) => (<FormItem><FormLabel>Link Asset (Optional)</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select an available asset..." /></SelectTrigger></FormControl><SelectContent>{availableAssets.map(a => <SelectItem key={a.id} value={a.id}>{a.make} {a.model} ({a.year})</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField control={control} name="type" render={({ field }) => (<FormItem><FormLabel>Agreement Type</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent><SelectItem value="loan">Loan</SelectItem><SelectItem value="installment-sale">Installment Sale</SelectItem><SelectItem value="lease">Lease</SelectItem><SelectItem value="factoring">Factoring</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
-                <FormField control={control} name="description" render={({ field }) => (<FormItem><FormLabel>Description</FormLabel><FormControl><Input placeholder="Agreement Description" {...field} /></FormControl><FormMessage /></FormItem>)} />
-            </div>
+            <FormField control={control} name="description" render={({ field }) => (<FormItem><FormLabel>Description</FormLabel><FormControl><Input placeholder="Agreement Description" {...field} /></FormControl><FormMessage /></FormItem>)} />
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <FormField control={control} name="totalAdvanced" render={({ field }) => (<FormItem><FormLabel>Total Advanced (R)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
                 <FormField control={control} name="interestRate" render={({ field }) => (<FormItem><FormLabel>Interest Rate (p.a. %)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                 <FormField control={control} name="arrearInterest" render={({ field }) => (<FormItem className="flex flex-row items-end space-x-2 pb-2"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange}/></FormControl><FormLabel>Arrear Interest?</FormLabel></FormItem>)} />
+                <FormField control={control} name="arrearInterest" render={({ field }) => (<FormItem className="flex flex-row items-end space-x-2 pb-2"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange}/></FormControl><FormLabel>Arrear Interest?</FormLabel></FormItem>)} />
             </div>
              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <FormField control={control} name="createDate" render={({ field }) => (<FormItem><FormLabel>Create Date</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>)} />
@@ -150,8 +196,8 @@ const PlaceholderStep = ({ name }: { name: string }) => (
 );
 
 
-export function AgreementWizard({ agreement, defaultClientId }: { agreement?: any, defaultClientId?: string | null }) {
-    const [currentStep, setCurrentStep] = useState(1); // Default to Main step
+export function AgreementWizard({ agreement, onBack, onSaveSuccess, defaultClientId }: { agreement?: any, onBack: () => void, onSaveSuccess?: () => void, defaultClientId?: string | null }) {
+    const [currentStep, setCurrentStep] = useState(agreement ? 2 : 0); // Start at client selection for new, details for existing
     const [isSaving, setIsSaving] = useState(false);
     const { toast } = useToast();
     const router = useRouter();
@@ -182,7 +228,7 @@ export function AgreementWizard({ agreement, defaultClientId }: { agreement?: an
         }
     };
 
-    const handleBackWizard = () => { currentStep > 0 ? setCurrentStep(prev => prev - 1) : router.push('/lending?view=agreements'); };
+    const handleBackWizard = () => { currentStep > 0 ? setCurrentStep(prev => prev - 1) : onBack(); };
 
     const onSubmit = async (values: FormValues) => {
         setIsSaving(true);
@@ -193,7 +239,8 @@ export function AgreementWizard({ agreement, defaultClientId }: { agreement?: an
             await performAdminAction(token, 'saveLendingAgreement', { agreement: { id: agreement?.id, ...values } });
             
             toast({ title: agreement?.id ? 'Agreement Updated' : 'Agreement Created' });
-            router.push('/lending?view=agreements');
+            if (onSaveSuccess) onSaveSuccess();
+            else router.push('/lending?view=agreements');
         } catch (e: any) {
             toast({ variant: 'destructive', title: 'Error saving agreement', description: e.message });
         } finally {
@@ -204,8 +251,9 @@ export function AgreementWizard({ agreement, defaultClientId }: { agreement?: an
      const renderStepContent = () => {
         const stepId = wizardSteps[currentStep]?.id;
         switch (stepId) {
-            case 'dashboard': return <PlaceholderStep name="Dashboard" />;
-            case 'main': return <StepMain />;
+            case 'client': return <StepSelectClient />;
+            case 'type': return <StepSelectAgreementType />;
+            case 'details': return <StepDetails />;
             case 'charges': return <PlaceholderStep name="Charges" />;
             case 'assets': return <PlaceholderStep name="Assets" />;
             case 'invoices': return <PlaceholderStep name="Invoices" />;
@@ -225,7 +273,7 @@ export function AgreementWizard({ agreement, defaultClientId }: { agreement?: an
                                 <h2 className="text-2xl font-bold font-headline">{agreement ? 'Edit Agreement' : 'Create New Agreement'}</h2>
                                 <p className="text-muted-foreground">{wizardSteps[currentStep].name}</p>
                             </div>
-                             <Button type="button" variant="ghost" onClick={() => router.push('/lending?view=agreements')}><ArrowLeft className="mr-2 h-4 w-4"/> Back to List</Button>
+                             <Button type="button" variant="ghost" onClick={onBack}><ArrowLeft className="mr-2 h-4 w-4"/> Back to List</Button>
                         </div>
                     </CardHeader>
                         <CardContent>
@@ -233,22 +281,22 @@ export function AgreementWizard({ agreement, defaultClientId }: { agreement?: an
                              <div className="flex flex-col gap-2 border-r pr-4">
                                 {wizardSteps.map((step, index) => {
                                     const Icon = step.icon;
+                                    const isCompleted = index < currentStep; // Simplified logic
                                     return (
                                         <Button key={step.id} variant={currentStep === index ? 'secondary' : 'ghost'} className="justify-start gap-2" onClick={() => setCurrentStep(index)}>
-                                            <Icon className="h-5 w-5" />
+                                            {isCompleted ? <Check className="h-5 w-5 text-green-500" /> : <Icon className="h-5 w-5" />}
                                             {step.name}
                                         </Button>
                                     );
                                 })}
                             </div>
                              <div className="space-y-6 min-h-[400px]">
-                                <h3 className="text-xl font-bold">{wizardSteps[currentStep].name}</h3>
                                 {renderStepContent()}
                              </div>
                         </div>
                     </CardContent>
                      <CardFooter className="flex justify-between border-t pt-6 mt-6">
-                        <Button type="button" variant="outline" onClick={handleBackWizard}><ArrowLeft className="mr-2 h-4 w-4" /> Back</Button>
+                        <Button type="button" variant="outline" onClick={handleBackWizard} disabled={currentStep === 0}><ArrowLeft className="mr-2 h-4 w-4" /> Back</Button>
                         {currentStep < wizardSteps.length - 1 ? (
                             <Button type="button" onClick={handleNext}>Next <ArrowRight className="ml-2 h-4 w-4"/></Button>
                         ) : (
@@ -260,5 +308,3 @@ export function AgreementWizard({ agreement, defaultClientId }: { agreement?: an
         </Card>
     );
 }
-
-    
