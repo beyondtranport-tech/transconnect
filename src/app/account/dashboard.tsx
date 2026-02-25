@@ -24,7 +24,7 @@ export default function AccountDashboard() {
     const { user, isUserLoading } = useUser();
     const firestore = useFirestore();
 
-    const isAdmin = user && user.email === 'beyondtransport@gmail.com';
+    const isAdmin = user && (user.email === 'beyondtransport@gmail.com' || user.email === 'mkoton100@gmail.com');
 
     const userDocRef = useMemoFirebase(() => {
         if (isAdmin || !firestore || !user) return null;

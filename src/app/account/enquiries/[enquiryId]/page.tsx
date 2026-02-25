@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { Suspense } from 'react';
@@ -16,7 +15,10 @@ import { format as formatDateFns } from 'date-fns';
 
 const formatPrice = (price?: number) => {
     if (typeof price !== 'number') return 'N/A';
-    return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(price);
+    // Manual format to avoid hydration errors from Intl
+    const parts = price.toFixed(0).toString().split('.');
+    const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    return `R ${integerPart}`;
 };
 
 const formatDate = (dateValue: any) => {

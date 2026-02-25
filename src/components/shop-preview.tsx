@@ -10,9 +10,11 @@ import { useCart } from '@/context/CartContext';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 
-const formatPrice = (price: number) => {
-    if (typeof price !== 'number') return 'N/A';
-    return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(price);
+const formatCurrency = (amount: number) => {
+    if (typeof amount !== 'number' || isNaN(amount)) return 'R 0.00';
+    const parts = amount.toFixed(2).toString().split('.');
+    const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    return `R ${integerPart}.${parts[1]}`;
 };
 
 const themeColors: { [key: string]: { bg: string; text: string; primary: string } } = {
@@ -68,7 +70,7 @@ export function ShopPreview({ shop, products }: { shop: any, products: any[] }) 
                         </div>
                     </CardContent>
                     <CardFooter className="flex justify-between items-center">
-                        <p className={cn("font-bold", theme.primary)}>{formatPrice(product.price)}</p>
+                        <p className={cn("font-bold", theme.primary)}>{formatCurrency(product.price)}</p>
                         <Button size="sm" onClick={() => handleAddToCart(product)} disabled={!product.stock || product.stock <= 0}>Add to Cart</Button>
                     </CardFooter>
                 </Card>
@@ -98,7 +100,7 @@ export function ShopPreview({ shop, products }: { shop: any, products: any[] }) 
                         </div>
                     </CardContent>
                     <div className="p-4 text-right">
-                         <p className={cn("font-bold", theme.primary)}>{formatPrice(product.price)}</p>
+                         <p className={cn("font-bold", theme.primary)}>{formatCurrency(product.price)}</p>
                          <Button size="sm" className="mt-1" onClick={() => handleAddToCart(product)} disabled={!product.stock || product.stock <= 0}>Add to Cart</Button>
                     </div>
                 </Card>
