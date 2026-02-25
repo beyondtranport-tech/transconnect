@@ -1,7 +1,6 @@
-
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useForm, FormProvider, useFieldArray, useFormContext } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -11,15 +10,18 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, ArrowLeft, ArrowRight, Save, Users, Building, Phone, Mail, UserSquare, Banknote, FileText, BarChart2, PlusCircle, Trash2, Check } from 'lucide-react';
+import { Loader2, ArrowLeft, Save, Users, Building, Phone, Mail, UserSquare, Banknote, FileText, BarChart2, PlusCircle, Trash2, Check, LayoutDashboard, DollarSign, Briefcase, Landmark, Sheet } from 'lucide-react';
 import { getClientSideAuthToken } from '@/firebase';
 import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
 import { useRouter } from 'next/navigation';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
 
-async function performAdminAction(token: string, action: string, payload: any) {
+
+async function performAdminAction(token: string, action: string, payload?: any) {
     const response = await fetch('/api/admin', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -118,20 +120,19 @@ const formSchema = z.object({
   bankAccounts: z.array(bankAccountSchema).optional(),
   balanceSheets: z.array(balanceSheetSchema).optional(),
   incomeStatements: z.array(incomeStatementSchema).optional(),
-  globalFacilityLimit: z.coerce.number().min(0).optional(), // Specific to Partner
+  globalFacilityLimit: z.coerce.number().min(0).optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
 
 const wizardSteps = [
+    { id: 'dashboard', name: 'Dashboard', icon: LayoutDashboard },
     { id: 'main', name: 'Main', icon: Users, fields: ['name', 'status', 'type', 'category', 'language', 'vatRegistered', 'registrationId'] },
-    { id: 'address', name: 'Address', icon: Building, fields: ['physicalAddress', 'physicalPostalCode', 'postalAddress', 'postalPostalCode'] },
-    { id: 'contact', name: 'Contact', icon: Phone, fields: ['contactPerson', 'telWork', 'telHome', 'fax', 'cell', 'email', 'url'] },
-    { id: 'owners', name: 'Owners', icon: UserSquare, fields: ['owners'] },
-    { id: 'management', name: 'Management', icon: UserSquare, fields: ['management'] },
-    { id: 'bank-accounts', name: 'Bank Accounts', icon: Banknote, fields: ['bankAccounts'] },
-    { id: 'balance-sheet', name: 'Balance Sheet', icon: FileText, fields: ['balanceSheets'] },
-    { id: 'income-statement', name: 'Income Statement', icon: FileText, fields: ['incomeStatements'] },
+    { id: 'charges', name: 'Charges', icon: DollarSign },
+    { id: 'assets', name: 'Assets', icon: Briefcase },
+    { id: 'invoices', name: 'Invoices', icon: FileText },
+    { id: 'payments', name: 'Payments', icon: Landmark },
+    { id: 'statements', name: 'Statements', icon: Sheet },
 ];
 
 const StepMain = ({ entityType }: { entityType: 'client' | 'partner' }) => {
@@ -176,320 +177,68 @@ const StepMain = ({ entityType }: { entityType: 'client' | 'partner' }) => {
         </div>
     );
 };
-const StepAddress = () => {
-    const { control } = useFormContext<FormValues>();
-    return (
-        <div className="space-y-6">
-            <div className="space-y-4 p-4 border rounded-lg">
-                <h4 className="font-semibold text-md">Physical Address</h4>
-                <FormField control={control} name="physicalAddress" render={({ field }) => (<FormItem><FormLabel>Address</FormLabel><FormControl><Textarea placeholder="123 Main Street&#10;Sandton" {...field} /></FormControl></FormItem>)} />
-                <FormField control={control} name="physicalPostalCode" render={({ field }) => (<FormItem><FormLabel>Post Code</FormLabel><FormControl><Input placeholder="2196" {...field} /></FormControl></FormItem>)} />
-            </div>
-            <div className="space-y-4 p-4 border rounded-lg">
-                <h4 className="font-semibold text-md">Postal Address</h4>
-                <FormField control={control} name="postalAddress" render={({ field }) => (<FormItem><FormLabel>Address</FormLabel><FormControl><Textarea placeholder="P.O. Box 123&#10;Sandton" {...field} /></FormControl></FormItem>)} />
-                <FormField control={control} name="postalPostalCode" render={({ field }) => (<FormItem><FormLabel>Post Code</FormLabel><FormControl><Input placeholder="2146" {...field} /></FormControl></FormItem>)} />
-            </div>
+
+const StepDashboard = () => (
+    <div className="flex items-center justify-center h-full bg-muted/50 rounded-lg p-8">
+        <div className="text-center">
+            <h3 className="text-xl font-semibold text-muted-foreground">Client Dashboard</h3>
+            <p className="text-muted-foreground mt-2">A summary of this client's financial health, agreements, and assets will be displayed here.</p>
         </div>
-    );
-};
-const StepContact = () => {
-    const { control } = useFormContext<FormValues>();
-    return (
-        <div className="space-y-4 max-w-lg">
-            <FormField control={control} name="contactPerson" render={({ field }) => (<FormItem><FormLabel>Contact Person</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FormField control={control} name="telWork" render={({ field }) => (<FormItem><FormLabel>Tel (w)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                <FormField control={control} name="telHome" render={({ field }) => (<FormItem><FormLabel>Tel (h)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FormField control={control} name="fax" render={({ field }) => (<FormItem><FormLabel>Fax</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                <FormField control={control} name="cell" render={({ field }) => (<FormItem><FormLabel>Cell</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-            </div>
-            <FormField control={control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" {...field} /></FormControl><FormMessage /></FormItem>)} />
-            <FormField control={control} name="url" render={({ field }) => (<FormItem><FormLabel>URL</FormLabel><FormControl><Input type="url" placeholder="https://example.com" {...field} /></FormControl><FormMessage /></FormItem>)} />
-        </div>
-    );
-};
-const StepOwners = () => {
-    const { control } = useFormContext<FormValues>();
-    const { fields, append, remove } = useFieldArray({
-        control,
-        name: "owners"
-    });
+    </div>
+);
+
+const StepAssets = ({ clientId }: { clientId: string }) => {
+    const [assets, setAssets] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const { toast } = useToast();
+
+    useEffect(() => {
+        if (!clientId) {
+            setIsLoading(false);
+            return;
+        };
+        const loadAssets = async () => {
+            setIsLoading(true);
+            try {
+                const token = await getClientSideAuthToken();
+                if (!token) throw new Error("Auth failed.");
+                const result = await performAdminAction(token, 'getLendingData', { collectionName: 'lendingAssets' });
+                setAssets((result.data || []).filter((a: any) => a.clientId === clientId));
+            } catch (e: any) {
+                toast({ variant: 'destructive', title: 'Failed to load assets', description: e.message });
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        loadAssets();
+    }, [clientId, toast]);
+
+    if (isLoading) return <div className="flex justify-center p-8"><Loader2 className="animate-spin" /></div>;
 
     return (
-        <div className="space-y-6">
-            {fields.map((field, index) => (
-                <Card key={field.id} className="relative p-4 pt-8">
-                     <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => remove(index)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                    <CardContent className="space-y-4">
-                        <FormField control={control} name={`owners.${index}.name`} render={({ field }) => (<FormItem><FormLabel>Owner Name</FormLabel><FormControl><Input placeholder="Full Name" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        <FormField control={control} name={`owners.${index}.address`} render={({ field }) => (<FormItem><FormLabel>Address</FormLabel><FormControl><Textarea placeholder="123 Owner Ave" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <FormField control={control} name={`owners.${index}.suburb`} render={({ field }) => (<FormItem><FormLabel>Suburb</FormLabel><FormControl><Input placeholder="Sandton" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                            <FormField control={control} name={`owners.${index}.city`} render={({ field }) => (<FormItem><FormLabel>City</FormLabel><FormControl><Input placeholder="Johannesburg" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                            <FormField control={control} name={`owners.${index}.postCode`} render={({ field }) => (<FormItem><FormLabel>Post Code</FormLabel><FormControl><Input placeholder="2196" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        </div>
-                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <FormField control={control} name={`owners.${index}.idNumber`} render={({ field }) => (<FormItem><FormLabel>ID No.</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                            <FormField control={control} name={`owners.${index}.cell`} render={({ field }) => (<FormItem><FormLabel>Cell</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        </div>
-                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                            <FormField control={control} name={`owners.${index}.position`} render={({ field }) => (<FormItem><FormLabel>Position</FormLabel><FormControl><Input placeholder="Director" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                            <FormField control={control} name={`owners.${index}.qualification`} render={({ field }) => (<FormItem><FormLabel>Qualification</FormLabel><FormControl><Input placeholder="B.Com" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                            <FormField control={control} name={`owners.${index}.since`} render={({ field }) => (<FormItem><FormLabel>Since (Year)</FormLabel><FormControl><Input placeholder="2010" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                            <FormField control={control} name={`owners.${index}.percentageHeld`} render={({ field }) => (<FormItem><FormLabel>% Held</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        </div>
-                    </CardContent>
-                </Card>
-            ))}
-            <Button
-                type="button"
-                variant="outline"
-                onClick={() => append({ name: '', address: '', suburb: '', city: '', postCode: '', idNumber: '', cell: '', position: '', qualification: '', since: '', percentageHeld: 0 })}
-            >
-                <PlusCircle className="mr-2 h-4 w-4" /> Add Owner
-            </Button>
-        </div>
-    );
-};
-const StepManagement = () => {
-    const { control } = useFormContext<FormValues>();
-    const { fields, append, remove } = useFieldArray({
-        control,
-        name: "management"
-    });
-
-    return (
-        <div className="space-y-6">
-            {fields.map((field, index) => (
-                <Card key={field.id} className="relative p-4 pt-8">
-                     <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => remove(index)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                    <CardContent className="space-y-4">
-                        <FormField control={control} name={`management.${index}.name`} render={({ field }) => (<FormItem><FormLabel>Manager Name</FormLabel><FormControl><Input placeholder="Full Name" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        <FormField control={control} name={`management.${index}.address`} render={({ field }) => (<FormItem><FormLabel>Address</FormLabel><FormControl><Textarea placeholder="123 Manager Ave" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <FormField control={control} name={`management.${index}.suburb`} render={({ field }) => (<FormItem><FormLabel>Suburb</FormLabel><FormControl><Input placeholder="Sandton" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                            <FormField control={control} name={`management.${index}.city`} render={({ field }) => (<FormItem><FormLabel>City</FormLabel><FormControl><Input placeholder="Johannesburg" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                            <FormField control={control} name={`management.${index}.postCode`} render={({ field }) => (<FormItem><FormLabel>Post Code</FormLabel><FormControl><Input placeholder="2196" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        </div>
-                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <FormField control={control} name={`management.${index}.idNumber`} render={({ field }) => (<FormItem><FormLabel>ID No.</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                            <FormField control={control} name={`management.${index}.cell`} render={({ field }) => (<FormItem><FormLabel>Cell</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        </div>
-                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <FormField control={control} name={`management.${index}.position`} render={({ field }) => (<FormItem><FormLabel>Position</FormLabel><FormControl><Input placeholder="e.g., Fleet Manager" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                            <FormField control={control} name={`management.${index}.qualification`} render={({ field }) => (<FormItem><FormLabel>Qualification</FormLabel><FormControl><Input placeholder="e.g., B.Log" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                            <FormField control={control} name={`management.${index}.since`} render={({ field }) => (<FormItem><FormLabel>Since (Year)</FormLabel><FormControl><Input placeholder="2015" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        </div>
-                    </CardContent>
-                </Card>
-            ))}
-            <Button
-                type="button"
-                variant="outline"
-                onClick={() => append({ name: '', address: '', suburb: '', city: '', postCode: '', idNumber: '', cell: '', position: '', qualification: '', since: '' })}
-            >
-                <PlusCircle className="mr-2 h-4 w-4" /> Add Manager
-            </Button>
-        </div>
-    );
-};
-const StepBank = () => {
-    const { control } = useFormContext<FormValues>();
-    const { fields, append, remove } = useFieldArray({
-        control,
-        name: "bankAccounts"
-    });
-
-    return (
-        <div className="space-y-6">
-            {fields.map((field, index) => (
-                <Card key={field.id} className="relative p-4 pt-8">
-                     <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => remove(index)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                    <CardContent className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <FormField control={control} name={`bankAccounts.${index}.bankName`} render={({ field }) => (<FormItem><FormLabel>Bank</FormLabel><FormControl><Input placeholder="e.g., FNB" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                            <FormField control={control} name={`bankAccounts.${index}.accountNumber`} render={({ field }) => (<FormItem><FormLabel>Account No</FormLabel><FormControl><Input placeholder="e.g., 62000123456" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <FormField control={control} name={`bankAccounts.${index}.branchName`} render={({ field }) => (<FormItem><FormLabel>Branch Name</FormLabel><FormControl><Input placeholder="e.g., Sandton" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                            <FormField control={control} name={`bankAccounts.${index}.branchCode`} render={({ field }) => (<FormItem><FormLabel>Branch Code</FormLabel><FormControl><Input placeholder="e.g., 250655" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                             <FormField control={control} name={`bankAccounts.${index}.bankCode`} render={({ field }) => (<FormItem><FormLabel>Bank Code</FormLabel><FormControl><Input placeholder="e.g., FIRNZAJJ" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        </div>
-                        <FormField control={control} name={`bankAccounts.${index}.address`} render={({ field }) => (<FormItem><FormLabel>Address</FormLabel><FormControl><Textarea placeholder="Bank Address" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        <FormField control={control} name={`bankAccounts.${index}.postCode`} render={({ field }) => (<FormItem><FormLabel>Post Code</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <FormField control={control} name={`bankAccounts.${index}.contactPerson`} render={({ field }) => (<FormItem><FormLabel>Contact</FormLabel><FormControl><Input placeholder="e.g., Bank Manager" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                            <FormField control={control} name={`bankAccounts.${index}.phone`} render={({ field }) => (<FormItem><FormLabel>Phone</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                            <FormField control={control} name={`bankAccounts.${index}.email`} render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        </div>
-                    </CardContent>
-                </Card>
-            ))}
-            <Button
-                type="button"
-                variant="outline"
-                onClick={() => append({ bankName: '', branchCode: '', accountNumber: '' } as any)}
-            >
-                <PlusCircle className="mr-2 h-4 w-4" /> Add Bank Account
-            </Button>
-        </div>
-    );
-};
-const formatCurrency = (value: number) => {
-    if (typeof value !== 'number' || isNaN(value)) return 'R 0';
-    return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR', maximumFractionDigits: 0 }).format(value);
-};
-const FinancialStatementRow = ({ control, name, label, isCalculated = false, calculatedValue, isSub = false }: { control: any, name: string, label: string, isCalculated?: boolean, calculatedValue?: number, isSub?: boolean }) => {
-    return (
-        <div className={cn("flex items-center justify-between py-1.5", isSub && "pl-4")}>
-            <Label htmlFor={name} className="text-muted-foreground">{label}</Label>
-            {isCalculated ? (
-                 <p className="w-40 text-right font-mono font-semibold">{formatCurrency(calculatedValue || 0)}</p>
+        <div>
+            {assets.length > 0 ? (
+                <Table>
+                    <TableHeader><TableRow><TableHead>Make</TableHead><TableHead>Model</TableHead><TableHead>Year</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
+                    <TableBody>
+                        {assets.map(asset => (
+                            <TableRow key={asset.id}>
+                                <TableCell>{asset.make}</TableCell>
+                                <TableCell>{asset.model}</TableCell>
+                                <TableCell>{asset.year}</TableCell>
+                                <TableCell><Badge>{asset.status}</Badge></TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
             ) : (
-                <FormField
-                    control={control}
-                    name={name}
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormControl>
-                                <Input
-                                    id={name}
-                                    type="number"
-                                    placeholder="0"
-                                    className="w-40 text-right font-mono"
-                                    {...field}
-                                />
-                            </FormControl>
-                            <FormMessage className="text-xs text-right" />
-                        </FormItem>
-                    )}
-                />
+                <p>No assets linked to this client.</p>
             )}
+             <Button asChild variant="outline" className="mt-4"><Link href={`/lending?view=assets&clientId=${clientId}`}>Manage Assets</Link></Button>
         </div>
     );
 };
-const StepBalanceSheet = () => {
-    const { control, watch } = useFormContext<FormValues>();
-    const { fields, append, remove } = useFieldArray({ control, name: "balanceSheets" });
 
-    return (
-        <div className="space-y-6">
-            {fields.map((field, index) => {
-                const sheetData = watch(`balanceSheets.${index}`);
-                const totalAssets = (sheetData.propertyPlantEquipment || 0) + (sheetData.intangibleAssets || 0) + (sheetData.inventory || 0) + (sheetData.tradeReceivables || 0) + (sheetData.cashEquivalents || 0);
-                const totalEquityAndLiabilities = (sheetData.shareCapital || 0) + (sheetData.retainedEarnings || 0) + (sheetData.longTermLoans || 0) + (sheetData.tradePayables || 0) + (sheetData.shortTermLoans || 0);
-                const isBalanced = Math.abs(totalAssets - totalEquityAndLiabilities) < 0.01;
-
-                return (
-                    <Card key={field.id} className="relative p-4 pt-8">
-                        <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => remove(index)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                        <CardContent className="space-y-4">
-                            <FormField control={control} name={`balanceSheets.${index}.periodEndDate`} render={({ field }) => (<FormItem><FormLabel>Period End Date</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
-                                <div className="space-y-2">
-                                    <h4 className="font-semibold text-lg border-b pb-1">Assets</h4>
-                                    <h5 className="font-medium pt-2">Non-Current Assets</h5>
-                                    <FinancialStatementRow control={control} name={`balanceSheets.${index}.propertyPlantEquipment`} label="Property, Plant, Equipment" isSub />
-                                    <FinancialStatementRow control={control} name={`balanceSheets.${index}.intangibleAssets`} label="Intangible Assets" isSub />
-                                    <h5 className="font-medium pt-2">Current Assets</h5>
-                                    <FinancialStatementRow control={control} name={`balanceSheets.${index}.inventory`} label="Inventory" isSub />
-                                    <FinancialStatementRow control={control} name={`balanceSheets.${index}.tradeReceivables`} label="Trade Receivables" isSub />
-                                    <FinancialStatementRow control={control} name={`balanceSheets.${index}.cashEquivalents`} label="Cash & Equivalents" isSub />
-                                    <div className="flex justify-between items-center pt-2 border-t font-bold text-primary">
-                                        <p>Total Assets</p>
-                                        <p className="font-mono">{formatCurrency(totalAssets)}</p>
-                                    </div>
-                                </div>
-                                <div className="space-y-2">
-                                    <h4 className="font-semibold text-lg border-b pb-1">Equity & Liabilities</h4>
-                                    <h5 className="font-medium pt-2">Equity</h5>
-                                    <FinancialStatementRow control={control} name={`balanceSheets.${index}.shareCapital`} label="Share Capital" isSub />
-                                    <FinancialStatementRow control={control} name={`balanceSheets.${index}.retainedEarnings`} label="Retained Earnings" isSub />
-                                    <h5 className="font-medium pt-2">Non-Current Liabilities</h5>
-                                    <FinancialStatementRow control={control} name={`balanceSheets.${index}.longTermLoans`} label="Long-Term Loans" isSub />
-                                    <h5 className="font-medium pt-2">Current Liabilities</h5>
-                                    <FinancialStatementRow control={control} name={`balanceSheets.${index}.tradePayables`} label="Trade Payables" isSub />
-                                    <FinancialStatementRow control={control} name={`balanceSheets.${index}.shortTermLoans`} label="Short-Term Loans" isSub />
-                                    <div className="flex justify-between items-center pt-2 border-t font-bold text-primary">
-                                        <p>Total Equity & Liabilities</p>
-                                        <p className="font-mono">{formatCurrency(totalEquityAndLiabilities)}</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className={cn("p-2 text-center text-xs font-semibold rounded-md", isBalanced ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800")}>
-                                {isBalanced ? "Balanced" : `Out of Balance by ${formatCurrency(totalAssets - totalEquityAndLiabilities)}`}
-                            </div>
-                        </CardContent>
-                    </Card>
-                );
-            })}
-             <Button type="button" variant="outline" onClick={() => append({ periodEndDate: '', propertyPlantEquipment: 0, intangibleAssets: 0, inventory: 0, tradeReceivables: 0, cashEquivalents: 0, shareCapital: 0, retainedEarnings: 0, longTermLoans: 0, tradePayables: 0, shortTermLoans: 0 })}>
-                <PlusCircle className="mr-2 h-4 w-4" /> Add Balance Sheet
-            </Button>
-        </div>
-    );
-};
-const StepIncomeStatement = () => {
-    const { control, watch } = useFormContext<FormValues>();
-    const { fields, append, remove } = useFieldArray({ control, name: "incomeStatements" });
-
-    return (
-        <div className="space-y-6">
-            {fields.map((field, index) => {
-                 const statementData = watch(`incomeStatements.${index}`);
-                 const revenue = statementData.revenue || 0;
-                 const cogs = statementData.cogs || 0;
-                 const grossProfit = revenue - cogs;
-                 const operatingExpenses = statementData.operatingExpenses || 0;
-                 const operatingProfit = grossProfit - operatingExpenses;
-                 const interestExpense = statementData.interestExpense || 0;
-                 const profitBeforeTax = operatingProfit - interestExpense;
-                 const taxation = statementData.taxation || 0;
-                 const netProfit = profitBeforeTax - taxation;
-
-                return (
-                    <Card key={field.id} className="relative p-4 pt-8">
-                         <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => remove(index)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                         <CardContent className="space-y-2">
-                             <FormField control={control} name={`incomeStatements.${index}.periodEndDate`} render={({ field }) => (<FormItem><FormLabel>Period End Date</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                             <div className="space-y-1 pt-4">
-                                <FinancialStatementRow control={control} name={`incomeStatements.${index}.revenue`} label="Revenue" />
-                                <FinancialStatementRow control={control} name={`incomeStatements.${index}.cogs`} label="Cost of Goods Sold" />
-                                <FinancialStatementRow control={control} name="" label="Gross Profit" isCalculated calculatedValue={grossProfit} />
-                                <div className="pt-2">
-                                    <FinancialStatementRow control={control} name={`incomeStatements.${index}.operatingExpenses`} label="Operating Expenses" />
-                                </div>
-                                <FinancialStatementRow control={control} name="" label="Operating Profit (EBIT)" isCalculated calculatedValue={operatingProfit} />
-                                 <div className="pt-2">
-                                     <FinancialStatementRow control={control} name={`incomeStatements.${index}.interestExpense`} label="Interest Expense" />
-                                </div>
-                                <FinancialStatementRow control={control} name="" label="Profit Before Tax" isCalculated calculatedValue={profitBeforeTax} />
-                                 <div className="pt-2">
-                                     <FinancialStatementRow control={control} name={`incomeStatements.${index}.taxation`} label="Taxation" />
-                                </div>
-                                <div className="border-t mt-2 pt-2">
-                                    <FinancialStatementRow control={control} name="" label="Net Profit / (Loss)" isCalculated calculatedValue={netProfit} />
-                                </div>
-                             </div>
-                         </CardContent>
-                    </Card>
-                );
-            })}
-            <Button type="button" variant="outline" onClick={() => append({ periodEndDate: '', revenue: 0, cogs: 0, operatingExpenses: 0, interestExpense: 0, taxation: 0 })}>
-                <PlusCircle className="mr-2 h-4 w-4" /> Add Income Statement
-            </Button>
-        </div>
-    );
-};
 const PlaceholderStep = ({ name }: { name: string }) => (
     <div className="flex items-center justify-center h-full bg-muted/50 rounded-lg p-8">
         <div className="text-center">
@@ -558,14 +307,13 @@ export function EntityWizard({ entity, entityType, onBack, onSaveSuccess }: { en
     const renderStepContent = () => {
         const stepId = wizardSteps[currentStep]?.id;
         switch (stepId) {
+            case 'dashboard': return <StepDashboard />;
             case 'main': return <StepMain entityType={entityType}/>;
-            case 'address': return <StepAddress />;
-            case 'contact': return <StepContact />;
-            case 'owners': return <StepOwners />;
-            case 'management': return <StepManagement />;
-            case 'bank-accounts': return <StepBank />;
-            case 'balance-sheet': return <StepBalanceSheet />;
-            case 'income-statement': return <StepIncomeStatement />;
+            case 'charges': return <PlaceholderStep name="Charges" />;
+            case 'assets': return <StepAssets clientId={entity?.id} />;
+            case 'invoices': return <PlaceholderStep name="Invoices" />;
+            case 'payments': return <PlaceholderStep name="Payments" />;
+            case 'statements': return <PlaceholderStep name="Statements" />;
             default: return <PlaceholderStep name={wizardSteps[currentStep]?.name || 'Step'} />;
         }
     };
@@ -598,6 +346,7 @@ export function EntityWizard({ entity, entityType, onBack, onSaveSuccess }: { en
                                 })}
                             </div>
                              <div className="space-y-6 min-h-[400px]">
+                                <h3 className="text-xl font-bold">{wizardSteps[currentStep].name}</h3>
                                 {renderStepContent()}
                              </div>
                         </div>
