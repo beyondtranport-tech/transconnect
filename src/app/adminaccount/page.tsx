@@ -81,7 +81,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 // --- Dynamic Imports for Business Components ---
 
 // Operations
-const AdminDashboardContent = dynamic(() => import('@/app/adminaccount/dashboard-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const AdminDashboardContent = dynamic(() => import('./dashboard-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 // Admin-specific pages
 const MarketingStudio = dynamic(() => import('./marketing-studio'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
