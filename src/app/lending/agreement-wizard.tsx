@@ -11,7 +11,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, ArrowLeft, Save, Users, FileText, Briefcase, Landmark, Sheet, LayoutDashboard, DollarSign } from 'lucide-react';
+import { Loader2, ArrowLeft, ArrowRight, Save, Users, FileText, Briefcase, Landmark, Sheet, LayoutDashboard, DollarSign } from 'lucide-react';
 import { getClientSideAuthToken } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -162,8 +162,8 @@ export function AgreementWizard({ agreement, defaultClientId }: { agreement?: an
     const methods = useForm<FormValues>({
         resolver: zodResolver(agreementFormSchema),
         mode: 'onChange',
-        defaultValues: {
-            clientId: defaultClientId || agreement?.clientId || '',
+        defaultValues: agreement || { 
+            clientId: defaultClientId || '',
         },
     });
 
