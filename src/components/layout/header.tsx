@@ -169,7 +169,7 @@ export function Header() {
                             <Link href="/backend">App Backend</Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild>
-                            <Link href="/adminaccount?view=lending-model">Lending Portal</Link>
+                            <Link href="/backend">Lending Portal</Link>
                         </DropdownMenuItem>
                         <DropdownMenuSeparator/>
                          <DropdownMenuItem asChild>
