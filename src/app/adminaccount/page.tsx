@@ -119,6 +119,7 @@ const DeveloperElevatorPitch = dynamic(() => import('./developer-elevator-pitch'
 const DeveloperOffer = dynamic(() => import('./developer-offer'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const DeveloperEmailSequence = dynamic(() => import('./developer-email-sequence'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const MembersList = dynamic(() => import('@/app/backend/members-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const PartnersHub = dynamic(() => import('./partners-hub'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 
 function AdminAuthGuard({ children }: { children: React.ReactNode }) {
@@ -187,6 +188,7 @@ function BackendContent() {
       // Strategy & Pitching
       case 'members': return <MembersList />;
       case 'staff-management': return <StaffManagement />;
+      case 'partners-hub': return <PartnersHub />;
       case 'partners': return <PartnerManagement />;
       case 'isa-agents': return <ISAManagement />;
       case 'investors': return <InvestorManagement />;
@@ -234,8 +236,8 @@ function BackendContent() {
   const navigate = (view: string) => router.push(`/adminaccount?view=${view}`, { scroll: false });
   
   const isSalesActive = ['leads-agent', 'leads-database', 'marketing-studio', 'audio-studio', 'asset-gallery'].includes(activeView);
-  const isStrategyActive = [
-    'members', 'staff-management', 'partners', 'isa-agents', 'investors', 'developer-list',
+  const isPartnerManagementActive = ['partners-hub', 'partners', 'isa-agents', 'investors', 'developer-list'].includes(activeView);
+  const isPitchingActive = [
     'partner-pitch', 'member-sales-offer', 'member-sales-emails', 
     'partner-offer', 'isa-emails', 'partner-emails',
     'investor-pitch', 'investor-offer', 'investor-emails',
@@ -245,7 +247,6 @@ function BackendContent() {
       'financial-setup', 'sales-roadmap', 'targets', 'budget', 'member-projection', 
       'turnover', 'income-statement', 'revenue-ledger', 'financial-bank-details'
   ].includes(activeView);
-  const isAdminOnlyActive = ['investors'].includes(activeView);
 
   return (
     <AdminAuthGuard>
@@ -282,68 +283,22 @@ function BackendContent() {
                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'asset-gallery'} onClick={() => navigate('asset-gallery')}><ImageIcon />Asset Gallery</SidebarMenuSubButton></SidebarMenuSubItem>
                   </SidebarMenuSub>
                 </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton tooltip="Strategy & Pitching" isActive={isStrategyActive}><Presentation /><span>Strategy & Pitching</span></SidebarMenuButton>
+                 <SidebarMenuItem>
+                  <SidebarMenuButton tooltip="Partner Management" isActive={isPartnerManagementActive} onClick={() => navigate('partners-hub')}><Users /><span>Partner Management</span></SidebarMenuButton>
                   <SidebarMenuSub>
-                    <SidebarMenuSubItem>
-                        <SidebarMenuButton size="sm" isActive={['members', 'partner-pitch', 'member-sales-offer', 'member-sales-emails'].includes(activeView)}>
-                            <Users />Member Pitch
-                        </SidebarMenuButton>
-                        <SidebarMenuSub>
-                            <SidebarMenuSubItem><SidebarMenuSubButton size="sm" isActive={activeView === 'members'} onClick={() => navigate('members')}>Member List</SidebarMenuSubButton></SidebarMenuSubItem>
-                            <SidebarMenuSubItem><SidebarMenuSubButton size="sm" isActive={activeView === 'partner-pitch'} onClick={() => navigate('partner-pitch')}>Elevator Pitch</SidebarMenuSubButton></SidebarMenuSubItem>
-                            <SidebarMenuSubItem><SidebarMenuSubButton size="sm" isActive={activeView === 'member-sales-offer'} onClick={() => navigate('member-sales-offer')}>Network Offer</SidebarMenuSubButton></SidebarMenuSubItem>
-                            <SidebarMenuSubItem><SidebarMenuSubButton size="sm" isActive={activeView === 'member-sales-emails'} onClick={() => navigate('member-sales-emails')}>Network Emails</SidebarMenuSubButton></SidebarMenuSubItem>
-                        </SidebarMenuSub>
-                    </SidebarMenuSubItem>
-
-                    <SidebarMenuSubItem>
-                        <SidebarMenuButton size="sm" isActive={['isa-agents', 'partner-pitch', 'partner-offer', 'isa-emails'].some(v => activeView === v)}>
-                            <Bot />ISA Pitch
-                        </SidebarMenuButton>
-                        <SidebarMenuSub>
-                            <SidebarMenuSubItem><SidebarMenuSubButton size="sm" isActive={activeView === 'isa-agents'} onClick={() => navigate('isa-agents')}>ISA List</SidebarMenuSubButton></SidebarMenuSubItem>
-                            <SidebarMenuSubItem><SidebarMenuSubButton size="sm" isActive={activeView === 'partner-pitch'} onClick={() => navigate('partner-pitch')}>Elevator Pitch</SidebarMenuSubButton></SidebarMenuSubItem>
-                            <SidebarMenuSubItem><SidebarMenuSubButton size="sm" isActive={activeView === 'partner-offer'} onClick={() => navigate('partner-offer')}>ISA Offer</SidebarMenuSubButton></SidebarMenuSubItem>
-                            <SidebarMenuSubItem><SidebarMenuSubButton size="sm" isActive={activeView === 'isa-emails'} onClick={() => navigate('isa-emails')}>ISA Emails</SidebarMenuSubButton></SidebarMenuSubItem>
-                        </SidebarMenuSub>
-                    </SidebarMenuSubItem>
-
-                    <SidebarMenuSubItem>
-                        <SidebarMenuButton size="sm" isActive={['partners', 'partner-pitch', 'partner-offer', 'partner-emails'].includes(activeView)}>
-                            <Handshake />Partner Pitch
-                        </SidebarMenuButton>
-                        <SidebarMenuSub>
-                            <SidebarMenuSubItem><SidebarMenuSubButton size="sm" isActive={activeView === 'partners'} onClick={() => navigate('partners')}>Partner List</SidebarMenuSubButton></SidebarMenuSubItem>
-                            <SidebarMenuSubItem><SidebarMenuSubButton size="sm" isActive={activeView === 'partner-pitch'} onClick={() => navigate('partner-pitch')}>Elevator Pitch</SidebarMenuSubButton></SidebarMenuSubItem>
-                            <SidebarMenuSubItem><SidebarMenuSubButton size="sm" isActive={activeView === 'partner-offer'} onClick={() => navigate('partner-offer')}>Partner Offer</SidebarMenuSubButton></SidebarMenuSubItem>
-                            <SidebarMenuSubItem><SidebarMenuSubButton size="sm" isActive={activeView === 'partner-emails'} onClick={() => navigate('partner-emails')}>Partner Emails</SidebarMenuSubButton></SidebarMenuSubItem>
-                        </SidebarMenuSub>
-                    </SidebarMenuSubItem>
-
-                    <SidebarMenuSubItem>
-                        <SidebarMenuButton size="sm" isActive={['investors', 'investor-pitch', 'investor-offer', 'investor-emails'].includes(activeView)}>
-                            <Briefcase />Investor Pitch
-                        </SidebarMenuButton>
-                        <SidebarMenuSub>
-                             <SidebarMenuSubItem><SidebarMenuSubButton size="sm" isActive={activeView === 'investors'} onClick={() => navigate('investors')}>Investor List</SidebarMenuSubButton></SidebarMenuSubItem>
-                             <SidebarMenuSubItem><SidebarMenuSubButton size="sm" isActive={activeView === 'investor-pitch'} onClick={() => navigate('investor-pitch')}>Elevator Pitch</SidebarMenuSubButton></SidebarMenuSubItem>
-                             <SidebarMenuSubItem><SidebarMenuSubButton size="sm" isActive={activeView === 'investor-offer'} onClick={() => navigate('investor-offer')}>Investor Offer</SidebarMenuSubButton></SidebarMenuSubItem>
-                             <SidebarMenuSubItem><SidebarMenuSubButton size="sm" isActive={activeView === 'investor-emails'} onClick={() => navigate('investor-emails')}>Investor Emails</SidebarMenuSubButton></SidebarMenuSubItem>
-                        </SidebarMenuSub>
-                    </SidebarMenuSubItem>
-
-                    <SidebarMenuSubItem>
-                        <SidebarMenuButton size="sm" isActive={['developer-list', 'developer-pitch', 'developer-offer', 'developer-emails'].includes(activeView)}>
-                            <Code />Developer Pitch
-                        </SidebarMenuButton>
-                        <SidebarMenuSub>
-                            <SidebarMenuSubItem><SidebarMenuSubButton size="sm" isActive={activeView === 'developer-list'} onClick={() => navigate('developer-list')}>Developer List</SidebarMenuSubButton></SidebarMenuSubItem>
-                            <SidebarMenuSubItem><SidebarMenuSubButton size="sm" isActive={activeView === 'developer-pitch'} onClick={() => navigate('developer-pitch')}>Elevator Pitch</SidebarMenuSubButton></SidebarMenuSubItem>
-                            <SidebarMenuSubItem><SidebarMenuSubButton size="sm" isActive={activeView === 'developer-offer'} onClick={() => navigate('developer-offer')}>Developer Offer</SidebarMenuSubButton></SidebarMenuSubItem>
-                            <SidebarMenuSubItem><SidebarMenuSubButton size="sm" isActive={activeView === 'developer-emails'} onClick={() => navigate('developer-emails')}>Developer Emails</SidebarMenuSubButton></SidebarMenuSubItem>
-                        </SidebarMenuSub>
-                    </SidebarMenuSubItem>
+                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'partners'} onClick={() => navigate('partners')}>Strategic Partners</SidebarMenuSubButton></SidebarMenuSubItem>
+                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'isa-agents'} onClick={() => navigate('isa-agents')}>ISA Agents</SidebarMenuSubButton></SidebarMenuSubItem>
+                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'investors'} onClick={() => navigate('investors')}>Investors</SidebarMenuSubButton></SidebarMenuSubItem>
+                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'developer-list'} onClick={() => navigate('developer-list')}>Developers</SidebarMenuSubButton></SidebarMenuSubItem>
+                  </SidebarMenuSub>
+                </SidebarMenuItem>
+                 <SidebarMenuItem>
+                  <SidebarMenuButton tooltip="Pitching" isActive={isPitchingActive}><Presentation /><span>Pitching</span></SidebarMenuButton>
+                  <SidebarMenuSub>
+                    <SidebarMenuSubItem><SidebarMenuSubButton size="sm" isActive={activeView === 'member-sales-offer'} onClick={() => navigate('member-sales-offer')}>Member Offer</SidebarMenuSubButton></SidebarMenuSubItem>
+                    <SidebarMenuSubItem><SidebarMenuSubButton size="sm" isActive={activeView === 'partner-pitch'} onClick={() => navigate('partner-pitch')}>Partner Pitch</SidebarMenuSubButton></SidebarMenuSubItem>
+                    <SidebarMenuSubItem><SidebarMenuSubButton size="sm" isActive={activeView === 'investor-pitch'} onClick={() => navigate('investor-pitch')}>Investor Pitch</SidebarMenuSubButton></SidebarMenuSubItem>
+                    <SidebarMenuSubItem><SidebarMenuSubButton size="sm" isActive={activeView === 'developer-pitch'} onClick={() => navigate('developer-pitch')}>Developer Pitch</SidebarMenuSubButton></SidebarMenuSubItem>
                   </SidebarMenuSub>
                 </SidebarMenuItem>
                  <SidebarMenuItem>
