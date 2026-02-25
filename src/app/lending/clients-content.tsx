@@ -1,7 +1,8 @@
+
 'use client';
 
-import { useState, useMemo, useEffect, useCallback } from 'react';
-import { useForm } from 'react-hook-form';
+import { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
+import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
@@ -95,7 +96,7 @@ function ClientDialog({ open, onOpenChange, client, onSave }: { open: boolean, o
   );
 }
 
-export default function ClientListComponent() {
+function ClientListComponent() {
   const [clients, setClients] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -141,4 +142,12 @@ export default function ClientListComponent() {
       </Card>
     </>
   );
+}
+
+export default function ClientsContent() {
+    return (
+        <Suspense fallback={<div className="flex justify-center items-center h-64"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>}>
+            <ClientListComponent />
+        </Suspense>
+    );
 }

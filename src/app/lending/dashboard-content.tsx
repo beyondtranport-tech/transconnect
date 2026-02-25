@@ -5,13 +5,28 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Loader2, Users, FileText, Briefcase, Landmark, Handshake, Database, ShieldCheck, FileCheck, FileSignature, Wrench } from 'lucide-react';
 import Link from 'next/link';
+import { useState, useEffect, useCallback } from 'react';
+import { getClientSideAuthToken } from '@/firebase';
 
-const kpis = [
-  { title: "Clients", value: "125", icon: Users, view: "clients" },
-  { title: "Active Agreements", value: "150", icon: FileText, view: "agreements" },
-  { title: "Total Assets Financed", value: "180", icon: Briefcase, view: "assets" },
-  { title: "Total Loan Book", value: "R 75.2M", icon: Landmark, view: "" },
-];
+async function performAdminAction(token: string, action: string, payload?: any) {
+    const response = await fetch('/api/admin', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, payload }),
+    });
+
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+        throw new Error(result.error || `API Error for action: ${action}`);
+    }
+    return result.data;
+}
+
+
+const formatCurrency = (value: number) => {
+    if (typeof value !== 'number' || isNaN(value)) return 'R 0.00M';
+    return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR', notation: 'compact' }).format(value);
+};
 
 const queues = [
   { title: "New Applications", value: "8", icon: FileSignature, description: "Applications in discovery/scoring.", view: "discovery" },
@@ -21,6 +36,78 @@ const queues = [
 ];
 
 export default function LendingDashboardContent() {
+    const [stats, setStats] = useState({
+        clients: 0,
+        agreements: 0,
+        assets: 0,
+        totalLoanBook: 0,
+    });
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string|null>(null);
+
+    const loadData = useCallback(async () => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication failed.");
+
+            const [clientsData, agreementsData, assetsData] = await Promise.all([
+                performAdminAction(token, 'getLendingData', { collectionName: 'lendingClients' }),
+                performAdminAction(token, 'getLendingData', { collectionName: 'agreements' }),
+                performAdminAction(token, 'getLendingData', { collectionName: 'lendingAssets' })
+            ]);
+            
+            const totalLoanBook = (agreementsData || []).reduce((sum: number, agreement: any) => sum + (agreement.amount || 0), 0);
+
+            setStats({
+                clients: (clientsData || []).length,
+                agreements: (agreementsData || []).length,
+                assets: (assetsData || []).length,
+                totalLoanBook: totalLoanBook,
+            });
+
+        } catch (e: any) {
+            setError(e.message);
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        loadData();
+    }, [loadData]);
+
+
+    const kpis = [
+      { title: "Clients", value: stats.clients, icon: Users, view: "clients" },
+      { title: "Active Agreements", value: stats.agreements, icon: FileText, view: "agreements" },
+      { title: "Total Assets Financed", value: stats.assets, icon: Briefcase, view: "assets" },
+      { title: "Total Loan Book", value: formatCurrency(stats.totalLoanBook), icon: Landmark, view: "loan-book" },
+    ];
+
+
+    if (isLoading) {
+        return (
+             <div className="flex justify-center items-center h-64">
+                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            </div>
+        )
+    }
+
+     if (error) {
+        return (
+            <Card className="bg-destructive/10 border-destructive">
+                <CardHeader><CardTitle className="text-destructive">Error Loading Dashboard</CardTitle></CardHeader>
+                <CardContent>
+                    <p>{error}</p>
+                    <Button onClick={loadData} className="mt-4">Try Again</Button>
+                </CardContent>
+            </Card>
+        )
+    }
+
+
     return (
          <div className="space-y-8">
             <div>
@@ -30,15 +117,17 @@ export default function LendingDashboardContent() {
             
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 {kpis.map(kpi => (
-                    <Card key={kpi.title}>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">{kpi.title}</CardTitle>
-                            <kpi.icon className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">{kpi.value}</div>
-                        </CardContent>
-                    </Card>
+                     <Link href={`/lending?view=${kpi.view}`} key={kpi.title}>
+                        <Card className="hover:bg-accent transition-colors">
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">{kpi.title}</CardTitle>
+                                <kpi.icon className="h-4 w-4 text-muted-foreground" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">{kpi.value}</div>
+                            </CardContent>
+                        </Card>
+                    </Link>
                 ))}
             </div>
 

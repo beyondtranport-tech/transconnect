@@ -87,7 +87,7 @@ function AgreementsListComponent() {
     { accessorKey: 'type', header: 'Type' },
     { accessorKey: 'status', header: 'Status', cell: ({ row }) => <Badge variant={statusColors[row.original.status] || 'secondary'} className="capitalize">{row.original.status}</Badge> },
     { accessorKey: 'amount', header: 'Amount', cell: ({ row }) => formatCurrency(row.original.amount) },
-    { id: 'actions', cell: ({ row }) => <AgreementActionMenu agreement={row.original} onUpdate={forceRefresh} /> },
+    { id: 'actions', header: () => <div className="text-right">Actions</div>, cell: ({ row }) => <div className="text-right"><AgreementActionMenu agreement={row.original} onUpdate={forceRefresh} /></div> },
   ], [forceRefresh]);
 
   return (
