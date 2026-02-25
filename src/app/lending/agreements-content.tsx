@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
@@ -49,31 +48,35 @@ function AgreementsListComponent() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  const forceRefresh = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const token = await getClientSideAuthToken();
-      if (!token) throw new Error("Auth failed.");
-      
-      const [agreementsResult, clientsResult] = await Promise.all([
-          performAdminAction(token, 'getLendingData', { collectionName: 'agreements' }),
-          performAdminAction(token, 'getLendingData', { collectionName: 'lendingClients' })
-      ]);
+  const forceRefresh = useCallback(() => setRefreshTrigger(k => k + 1), []);
 
-      setAgreements(agreementsResult.data || []);
-      setClients(clientsResult.data || []);
-
-    } catch (e: any) {
-      setError(e.message);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { forceRefresh(); }, [forceRefresh]);
-
+  useEffect(() => {
+    const loadData = async () => {
+        setIsLoading(true);
+        setError(null);
+        try {
+          const token = await getClientSideAuthToken();
+          if (!token) throw new Error("Auth failed.");
+          
+          const [agreementsResult, clientsResult] = await Promise.all([
+              performAdminAction(token, 'getLendingData', { collectionName: 'agreements' }),
+              performAdminAction(token, 'getLendingData', { collectionName: 'lendingClients' })
+          ]);
+    
+          setAgreements(agreementsResult.data || []);
+          setClients(clientsResult.data || []);
+    
+        } catch (e: any) {
+          setError(e.message);
+        } finally {
+          setIsLoading(false);
+        }
+    };
+    loadData();
+  }, [refreshTrigger]);
+  
   const clientMap = useMemo(() => new Map(clients.map(c => [c.id, c.name])), [clients]);
 
   const enrichedAgreements = useMemo(() => agreements.map(a => ({
@@ -88,7 +91,7 @@ function AgreementsListComponent() {
     { accessorKey: 'status', header: 'Status', cell: ({ row }) => <Badge variant={statusColors[row.original.status] || 'secondary'} className="capitalize">{row.original.status}</Badge> },
     { accessorKey: 'amount', header: 'Amount', cell: ({ row }) => formatCurrency(row.original.amount) },
     { id: 'actions', header: () => <div className="text-right">Actions</div>, cell: ({ row }) => <div className="text-right"><AgreementActionMenu agreement={row.original} onUpdate={forceRefresh} /></div> },
-  ], [forceRefresh]);
+  ], [forceRefresh, enrichedAgreements]);
 
   return (
     <Card>
