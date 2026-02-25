@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -71,6 +72,16 @@ export async function POST(req: NextRequest) {
         // --- END AUTHORIZATION ---
 
         switch (action) {
+            case 'getLendingData': {
+                if (!isAdmin) throw new Error("Forbidden: Admin access required.");
+                const { collectionName } = payload;
+                if (!collectionName || !['lendingClients', 'lendingPartners', 'lendingAssets'].includes(collectionName)) {
+                    throw new Error("Invalid or missing collectionName for getLendingData.");
+                }
+                const snapshot = await db.collection(collectionName).get();
+                const data = snapshot.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
+                return NextResponse.json({ success: true, data });
+            }
             case 'deleteLendingAgreement': {
                 if (!isAdmin) throw new Error("Forbidden: Admin access required.");
                 const { clientId, agreementId } = payload;

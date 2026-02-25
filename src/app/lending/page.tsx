@@ -11,8 +11,6 @@ import {
   SidebarMenuButton,
   SidebarFooter,
   SidebarInset,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
   SidebarMenuSeparator,
 } from '@/components/ui/sidebar';
 import {
@@ -29,13 +27,12 @@ import {
   Wrench,
   ShieldCheck,
   Handshake,
-  Landmark,
+  Landmark
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect, Suspense, useCallback } from 'react';
-import Link from 'next/link';
 import { useUser, useAuth } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import dynamic from 'next/dynamic';

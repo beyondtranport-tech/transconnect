@@ -2,17 +2,19 @@
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Suspense } from 'react';
+import dynamic from 'next/dynamic';
+import { Loader2 } from "lucide-react";
+
+const ClientListComponent = dynamic(() => import('@/app/backend/lending/clients-content'), { 
+    loading: () => <div className="flex justify-center items-center py-20"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>,
+    ssr: false 
+});
 
 export default function ClientsContent() {
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Clients (Debtors)</CardTitle>
-                <CardDescription>This page will be used to manage all lending clients (debtors). This component is under construction.</CardDescription>
-            </CardHeader>
-             <CardContent>
-                <p className="text-muted-foreground">A data table for managing clients will be implemented here.</p>
-            </CardContent>
-        </Card>
+        <Suspense fallback={<div className="flex justify-center items-center py-20"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>}>
+            <ClientListComponent />
+        </Suspense>
     );
 }

@@ -2,17 +2,19 @@
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import dynamic from 'next/dynamic';
+import { Suspense } from 'react';
+import { Loader2 } from 'lucide-react';
+
+const PartnerListComponent = dynamic(() => import('@/app/backend/lending/partners-content'), { 
+    loading: () => <div className="flex justify-center items-center py-20"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>,
+    ssr: false 
+});
 
 export default function PartnersContent() {
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Lending Partners</CardTitle>
-                <CardDescription>This page will be used to manage all co-funders and lending partners. This component is under construction.</CardDescription>
-            </CardHeader>
-             <CardContent>
-                <p className="text-muted-foreground">A data table for managing lending partners will be implemented here.</p>
-            </CardContent>
-        </Card>
+         <Suspense fallback={<div className="flex justify-center items-center py-20"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>}>
+            <PartnerListComponent />
+        </Suspense>
     );
 }

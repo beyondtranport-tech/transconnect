@@ -2,17 +2,19 @@
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import dynamic from "next/dynamic";
+import { Suspense } from "react";
+import { Loader2 } from "lucide-react";
+
+const AssetListComponent = dynamic(() => import('@/app/backend/lending/assets-content'), { 
+    loading: () => <div className="flex justify-center items-center py-20"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>,
+    ssr: false 
+});
 
 export default function AssetsContent() {
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Asset Register</CardTitle>
-                <CardDescription>This page will manage all assets financed through the lending portal. This component is under construction.</CardDescription>
-            </CardHeader>
-             <CardContent>
-                <p className="text-muted-foreground">A data table for the asset register will be implemented here.</p>
-            </CardContent>
-        </Card>
+         <Suspense fallback={<div className="flex justify-center items-center py-20"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>}>
+            <AssetListComponent />
+        </Suspense>
     );
 }
