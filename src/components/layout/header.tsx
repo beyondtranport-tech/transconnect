@@ -168,6 +168,10 @@ export function Header() {
                          <DropdownMenuItem asChild>
                             <Link href="/backend">App Backend</Link>
                         </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                            <Link href="/adminaccount?view=lending-model">Lending Portal</Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator/>
                          <DropdownMenuItem asChild>
                             <Link href="/account">View Member Area</Link>
                         </DropdownMenuItem>
