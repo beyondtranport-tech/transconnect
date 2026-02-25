@@ -110,7 +110,7 @@ export function AgreementActionMenu({ agreement, onUpdate }: { agreement: any; o
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                     <DropdownMenuItem asChild>
-                        <Link href={`/lending/agreements/${agreement.clientId}/${agreement.id}`}><Eye className="mr-2 h-4 w-4"/>View Details</Link>
+                        <Link href={`/lending/agreements/${agreement.clientId}/${agreement.id}`}><Eye className="mr-2 h-4 w-4"/>View / Edit</Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                          <Link href={`/lending/repayment-schedule?agreementId=${agreement.id}&clientId=${agreement.clientId}`}><Eye className="mr-2 h-4 w-4"/>View Repayment</Link>

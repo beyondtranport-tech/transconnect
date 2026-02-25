@@ -1,5 +1,4 @@
 
-
 'use server';
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -92,8 +91,8 @@ export async function POST(req: NextRequest) {
 
                     // If we're fetching agreements, ensure they are ONLY from the lending module.
                     if (collectionName === 'agreements') {
-                        if (!(pathSegments.length === 4 && pathSegments[0] === 'lendingClients' && pathSegments[2] === 'agreements')) {
-                            return null; // Filter out agreements from other collections (e.g., shops)
+                        if (!(pathSegments.includes('lendingClients') && pathSegments.includes('agreements'))) {
+                            return null;
                         }
                     }
                     
@@ -187,35 +186,38 @@ export async function POST(req: NextRequest) {
                 const { id: agreementId, ...dataToSave } = agreement;
                 const collectionRef = db.collection(`lendingClients/${dataToSave.clientId}/agreements`);
             
-                if (agreementId) { // Update existing agreement
-                    const docRef = collectionRef.doc(agreementId);
-            
-                    await db.runTransaction(async (transaction) => {
-                        const agreementDoc = await transaction.get(docRef);
-                        if (!agreementDoc.exists) {
-                            throw new Error("Agreement not found for update.");
+                await db.runTransaction(async (transaction) => {
+                    let oldAssetId: string | null = null;
+                    if (agreementId) { // This is an update
+                        const docRef = collectionRef.doc(agreementId);
+                        const oldDoc = await transaction.get(docRef);
+                        if (oldDoc.exists) {
+                            oldAssetId = oldDoc.data()?.assetId || null;
                         }
-            
-                        // Update the agreement
                         transaction.set(docRef, { ...dataToSave, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+                    } else { // This is a creation
+                        const newDocRef = collectionRef.doc();
+                        transaction.set(newDocRef, { ...dataToSave, id: newDocRef.id, status: 'credit', createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
+                    }
             
-                        // If the agreement is active and an asset is being linked, update the asset status
-                        const currentStatus = agreementDoc.data()?.status;
-                        if (currentStatus === 'active' && dataToSave.assetId) {
-                            const assetRef = db.doc(`lendingAssets/${dataToSave.assetId}`);
-                            transaction.update(assetRef, {
-                                status: 'financed',
-                                updatedAt: FieldValue.serverTimestamp()
-                            });
+                    const newAssetId = dataToSave.assetId || null;
+            
+                    // If asset has changed, update statuses
+                    if (oldAssetId !== newAssetId) {
+                        // If there was an old asset, make it available again
+                        if (oldAssetId) {
+                            const oldAssetRef = db.doc(`lendingAssets/${oldAssetId}`);
+                            transaction.update(oldAssetRef, { status: 'available' });
                         }
-                    });
+                        // If there's a new asset, mark it as financed
+                        if (newAssetId) {
+                            const newAssetRef = db.doc(`lendingAssets/${newAssetId}`);
+                            transaction.update(newAssetRef, { status: 'financed' });
+                        }
+                    }
+                });
             
-                    return NextResponse.json({ success: true, id: agreementId });
-                } else { // Create new agreement
-                    const newDocRef = collectionRef.doc();
-                    await newDocRef.set({ ...dataToSave, id: newDocRef.id, status: 'credit', createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
-                    return NextResponse.json({ success: true, id: newDocRef.id });
-                }
+                return NextResponse.json({ success: true, id: agreementId || 'new' });
             }
             case 'saveLendingAsset': {
                 if (!isAdmin) throw new Error("Forbidden: Admin access required.");
