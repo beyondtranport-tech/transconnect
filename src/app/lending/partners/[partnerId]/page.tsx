@@ -1,11 +1,11 @@
 
 'use client';
 
-import { Suspense, useEffect, useState, useMemo } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useParams, useRouter, notFound } from 'next/navigation';
 import { getClientSideAuthToken } from '@/firebase';
 import { Loader2 } from 'lucide-react';
-import { PartnerWizard } from '@/app/lending/partner-wizard';
+import { EntityWizard } from '@/app/lending/entity-wizard';
 
 async function performAdminAction(token: string, action: string, payload: any) {
     const response = await fetch('/api/admin', {
@@ -52,6 +52,10 @@ function EditPartnerPageContent() {
         loadPartner();
     }, [partnerId]);
     
+     const handleSaveSuccess = () => {
+        router.push('/lending?view=partners');
+    };
+
     if (isLoading) {
         return <div className="flex justify-center items-center h-full py-20"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
     }
@@ -64,7 +68,7 @@ function EditPartnerPageContent() {
         return notFound();
     }
 
-    return <PartnerWizard partner={partner} onBack={() => router.push('/lending?view=partners')} />;
+    return <EntityWizard entity={partner} entityType="partner" onBack={() => router.push('/lending?view=partners')} onSaveSuccess={handleSaveSuccess} />;
 }
 
 

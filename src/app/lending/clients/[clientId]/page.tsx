@@ -1,10 +1,11 @@
+
 'use client';
 
 import { Suspense, useEffect, useState } from 'react';
 import { useParams, useRouter, notFound } from 'next/navigation';
-import { Loader2 } from 'lucide-react';
-import { ClientWizard } from '@/app/lending/client-wizard';
 import { getClientSideAuthToken } from '@/firebase';
+import { Loader2 } from 'lucide-react';
+import { EntityWizard } from '@/app/lending/entity-wizard';
 
 async function performAdminAction(token: string, action: string, payload: any) {
     const response = await fetch('/api/admin', {
@@ -65,7 +66,7 @@ function EditClientPageContent() {
         return notFound();
     }
 
-    return <ClientWizard client={client} onBack={() => router.push('/lending?view=clients')} onSaveSuccess={handleSaveSuccess} />;
+    return <EntityWizard entity={client} entityType="client" onBack={() => router.push('/lending?view=clients')} onSaveSuccess={handleSaveSuccess} />;
 }
 
 

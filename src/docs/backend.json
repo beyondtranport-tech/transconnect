@@ -518,7 +518,29 @@
             "id": { "type": "string" },
             "name": { "type": "string" },
             "status": { "type": "string" },
-            "globalFacilityLimit": { "type": "number", "description": "The maximum total exposure allowed for this client across all facilities." }
+            "globalFacilityLimit": { "type": "number" },
+            "code": { "type": "string" },
+            "type": { "type": "string" },
+            "category": { "type": "string" },
+            "language": { "type": "string" },
+            "vatRegistered": { "type": "boolean" },
+            "registrationId": { "type": "string" },
+            "physicalAddress": { "type": "string" },
+            "physicalPostalCode": { "type": "string" },
+            "postalAddress": { "type": "string" },
+            "postalPostalCode": { "type": "string" },
+            "contactPerson": { "type": "string" },
+            "telWork": { "type": "string" },
+            "telHome": { "type": "string" },
+            "fax": { "type": "string" },
+            "cell": { "type": "string" },
+            "email": { "type": "string", "format": "email" },
+            "url": { "type": "string", "format": "uri" },
+            "owners": { "type": "array", "items": { "$ref": "#/entities/OwnerDetails" } },
+            "management": { "type": "array", "items": { "$ref": "#/entities/ManagementDetails" } },
+            "bankAccounts": { "type": "array", "items": { "$ref": "#/entities/BankAccount" } },
+            "balanceSheets": { "type": "array", "items": { "$ref": "#/entities/BalanceSheet" } },
+            "incomeStatements": { "type": "array", "items": { "$ref": "#/entities/IncomeStatement" } }
         }
     },
     "Agreement": {
@@ -623,9 +645,71 @@
             "id": { "type": "string" },
             "name": { "type": "string" },
             "type": { "type": "string", "enum": ["supplier", "vendor", "associate", "debtor"] },
-            "globalFacilityLimit": { "type": "number", "description": "The maximum total exposure allowed for this partner across all client facilities." }
+            "globalFacilityLimit": { "type": "number", "description": "The maximum total exposure allowed for this partner across all client facilities." },
+            "code": { "type": "string" },
+            "status": { "type": "string" },
+            "category": { "type": "string" },
+            "language": { "type": "string" },
+            "vatRegistered": { "type": "boolean" },
+            "registrationId": { "type": "string" },
+            "physicalAddress": { "type": "string" },
+            "physicalPostalCode": { "type": "string" },
+            "postalAddress": { "type": "string" },
+            "postalPostalCode": { "type": "string" },
+            "contactPerson": { "type": "string" },
+            "telWork": { "type": "string" },
+            "telHome": { "type": "string" },
+            "fax": { "type": "string" },
+            "cell": { "type": "string" },
+            "email": { "type": "string", "format": "email" },
+            "url": { "type": "string", "format": "uri" },
+            "owners": { "type": "array", "items": { "$ref": "#/entities/OwnerDetails" } },
+            "management": { "type": "array", "items": { "$ref": "#/entities/ManagementDetails" } },
+            "bankAccounts": { "type": "array", "items": { "$ref": "#/entities/BankAccount" } },
+            "balanceSheets": { "type": "array", "items": { "$ref": "#/entities/BalanceSheet" } },
+            "incomeStatements": { "type": "array", "items": { "$ref": "#/entities/IncomeStatement" } }
         },
         "required": ["id", "name", "type"]
+    },
+    "OwnerDetails": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "Owner Details",
+        "type": "object",
+        "properties": {
+            "name": { "type": "string" }, "address": { "type": "string" }, "suburb": { "type": "string" }, "city": { "type": "string" }, "postCode": { "type": "string" }, "idNumber": { "type": "string" }, "cell": { "type": "string" }, "position": { "type": "string" }, "qualification": { "type": "string" }, "since": { "type": "string" }, "percentageHeld": { "type": "number" }
+        }
+    },
+    "ManagementDetails": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "Management Details",
+        "type": "object",
+        "properties": {
+            "name": { "type": "string" }, "address": { "type": "string" }, "suburb": { "type": "string" }, "city": { "type": "string" }, "postCode": { "type": "string" }, "idNumber": { "type": "string" }, "cell": { "type": "string" }, "position": { "type": "string" }, "qualification": { "type": "string" }, "since": { "type": "string" }
+        }
+    },
+    "BankAccount": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "Bank Account",
+        "type": "object",
+        "properties": {
+            "bankName": { "type": "string" }, "branchCode": { "type": "string" }, "accountNumber": { "type": "string" }, "branchName": { "type": "string" }, "bankCode": { "type": "string" }, "address": { "type": "string" }, "postCode": { "type": "string" }, "phone": { "type": "string" }, "email": { "type": "string", "format": "email" }, "contactPerson": { "type": "string" }
+        }
+    },
+    "BalanceSheet": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "Balance Sheet",
+        "type": "object",
+        "properties": {
+            "periodEndDate": { "type": "string" }, "propertyPlantEquipment": { "type": "number" }, "intangibleAssets": { "type": "number" }, "inventory": { "type": "number" }, "tradeReceivables": { "type": "number" }, "cashEquivalents": { "type": "number" }, "shareCapital": { "type": "number" }, "retainedEarnings": { "type": "number" }, "longTermLoans": { "type": "number" }, "tradePayables": { "type": "number" }, "shortTermLoans": { "type": "number" }
+        }
+    },
+    "IncomeStatement": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "Income Statement",
+        "type": "object",
+        "properties": {
+            "periodEndDate": { "type": "string" }, "revenue": { "type": "number" }, "cogs": { "type": "number" }, "operatingExpenses": { "type": "number" }, "interestExpense": { "type": "number" }, "taxation": { "type": "number" }
+        }
     }
   },
   "auth": {

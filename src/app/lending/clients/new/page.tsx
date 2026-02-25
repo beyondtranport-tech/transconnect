@@ -1,16 +1,20 @@
+
 'use client';
 
 import { Suspense } from 'react';
 import { Loader2 } from 'lucide-react';
-import { ClientWizard } from '@/app/lending/client-wizard';
-import { useRouter } from 'next/navigation';
+import { EntityWizard } from '@/app/lending/entity-wizard';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 function NewClientPageContent() {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    
     const handleSaveSuccess = () => {
         router.push('/lending?view=clients');
     };
-    return <ClientWizard onBack={() => router.push('/lending?view=clients')} onSaveSuccess={handleSaveSuccess} />;
+
+    return <EntityWizard entityType="client" onBack={() => router.push('/lending?view=clients')} onSaveSuccess={handleSaveSuccess} />;
 }
 
 export default function NewClientPage() {

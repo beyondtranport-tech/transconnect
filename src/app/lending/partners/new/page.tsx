@@ -3,12 +3,15 @@
 
 import { Suspense } from 'react';
 import { Loader2 } from 'lucide-react';
-import { PartnerWizard } from '@/app/lending/partner-wizard';
+import { EntityWizard } from '@/app/lending/entity-wizard';
 import { useRouter } from 'next/navigation';
 
 function NewPartnerPageContent() {
     const router = useRouter();
-    return <PartnerWizard onBack={() => router.push('/lending?view=partners')} />;
+    const handleSaveSuccess = () => {
+        router.push('/lending?view=partners');
+    };
+    return <EntityWizard entityType="partner" onBack={() => router.push('/lending?view=partners')} onSaveSuccess={handleSaveSuccess} />;
 }
 
 export default function NewPartnerPage() {
