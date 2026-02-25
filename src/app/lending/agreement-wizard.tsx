@@ -1,8 +1,8 @@
 
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { useForm, FormProvider } from 'react-hook-form';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useForm, FormProvider, useFormContext } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -15,8 +15,6 @@ import { Loader2, ArrowLeft, ArrowRight, Save, Users, FileText, Briefcase, Landm
 import { getClientSideAuthToken } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { Checkbox } from '@/components/ui/checkbox';
-import { cn } from '@/lib/utils';
-import { CheckCircle } from 'lucide-react';
 
 async function performAdminAction(token: string, action: string, payload?: any) {
     const response = await fetch('/api/admin', {
@@ -61,7 +59,6 @@ const wizardSteps = [
     { id: 'payments', name: 'Payments', icon: Landmark },
     { id: 'statements', name: 'Statements', icon: Sheet },
 ];
-
 
 function StepMain() {
     const { control, watch } = useFormContext<FormValues>();
@@ -263,3 +260,5 @@ export function AgreementWizard({ agreement, defaultClientId }: { agreement?: an
         </Card>
     );
 }
+
+    
