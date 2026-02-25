@@ -1,5 +1,4 @@
 
-      
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -16,7 +15,6 @@ import { Loader2, ArrowLeft, ArrowRight, Save, Users, Building, Phone, Mail, Use
 import { getClientSideAuthToken } from '@/firebase';
 import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
-import { provinces } from '@/lib/geodata';
 import { useRouter } from 'next/navigation';
 import { Checkbox } from '@/components/ui/checkbox';
 
@@ -45,6 +43,18 @@ const ownerSchema = z.object({
   percentageHeld: z.coerce.number().min(0).max(100).optional(),
 });
 
+const managerSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  address: z.string().optional(),
+  suburb: z.string().optional(),
+  city: z.string().optional(),
+  postCode: z.string().optional(),
+  idNumber: z.string().optional(),
+  cell: z.string().optional(),
+  position: z.string().optional(),
+  qualification: z.string().optional(),
+  since: z.string().optional(),
+});
 
 const formSchema = z.object({
   code: z.string().optional(),
@@ -76,9 +86,11 @@ const formSchema = z.object({
   accountNumber: z.string().optional(),
   branchCode: z.string().optional(),
   
-  // Owners
+  // Owners & Management
   owners: z.array(ownerSchema).optional(),
+  management: z.array(managerSchema).optional(),
 });
+
 type FormValues = z.infer<typeof formSchema>;
 
 const wizardSteps = [
@@ -145,7 +157,7 @@ const StepContact = () => {
     const { control } = useFormContext<FormValues>();
     return (
         <div className="space-y-4 max-w-lg">
-            <FormField control={control} name="contactPerson" render={({ field }) => (<FormItem><FormLabel>Contact</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+            <FormField control={control} name="contactPerson" render={({ field }) => (<FormItem><FormLabel>Contact Person</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FormField control={control} name="telWork" render={({ field }) => (<FormItem><FormLabel>Tel (w)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
                 <FormField control={control} name="telHome" render={({ field }) => (<FormItem><FormLabel>Tel (h)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
@@ -217,6 +229,51 @@ const StepOwners = () => {
     );
 };
 
+const StepManagement = () => {
+    const { control } = useFormContext<FormValues>();
+    const { fields, append, remove } = useFieldArray({
+        control,
+        name: "management"
+    });
+
+    return (
+        <div className="space-y-6">
+            {fields.map((field, index) => (
+                <Card key={field.id} className="relative p-4 pt-8">
+                     <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => remove(index)}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                    <CardContent className="space-y-4">
+                        <FormField control={control} name={`management.${index}.name`} render={({ field }) => (<FormItem><FormLabel>Manager Name</FormLabel><FormControl><Input placeholder="Full Name" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={control} name={`management.${index}.address`} render={({ field }) => (<FormItem><FormLabel>Address</FormLabel><FormControl><Textarea placeholder="123 Manager Ave" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <FormField control={control} name={`management.${index}.suburb`} render={({ field }) => (<FormItem><FormLabel>Suburb</FormLabel><FormControl><Input placeholder="Sandton" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            <FormField control={control} name={`management.${index}.city`} render={({ field }) => (<FormItem><FormLabel>City</FormLabel><FormControl><Input placeholder="Johannesburg" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            <FormField control={control} name={`management.${index}.postCode`} render={({ field }) => (<FormItem><FormLabel>Post Code</FormLabel><FormControl><Input placeholder="2196" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        </div>
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <FormField control={control} name={`management.${index}.idNumber`} render={({ field }) => (<FormItem><FormLabel>ID No.</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            <FormField control={control} name={`management.${index}.cell`} render={({ field }) => (<FormItem><FormLabel>Cell</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        </div>
+                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <FormField control={control} name={`management.${index}.position`} render={({ field }) => (<FormItem><FormLabel>Position</FormLabel><FormControl><Input placeholder="e.g., Fleet Manager" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            <FormField control={control} name={`management.${index}.qualification`} render={({ field }) => (<FormItem><FormLabel>Qualification</FormLabel><FormControl><Input placeholder="e.g., B.Log" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            <FormField control={control} name={`management.${index}.since`} render={({ field }) => (<FormItem><FormLabel>Since (Year)</FormLabel><FormControl><Input placeholder="2015" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        </div>
+                    </CardContent>
+                </Card>
+            ))}
+            <Button
+                type="button"
+                variant="outline"
+                onClick={() => append({ name: '', address: '', suburb: '', city: '', postCode: '', idNumber: '', cell: '', position: '', qualification: '', since: '' })}
+            >
+                <PlusCircle className="mr-2 h-4 w-4" /> Add Manager
+            </Button>
+        </div>
+    );
+};
+
 
 const PlaceholderStep = ({ name }: { name: string }) => (
     <div className="flex items-center justify-center h-full bg-muted/50 rounded-lg p-8">
@@ -239,12 +296,18 @@ export function ClientWizard({ client, onBack, onSaveSuccess }: { client?: any, 
         defaultValues: client || {
             name: '',
             status: 'draft',
+            owners: [],
+            management: [],
         },
     });
 
     useEffect(() => {
         if (client) {
-            methods.reset(client);
+            methods.reset({
+                ...client,
+                owners: client.owners || [],
+                management: client.management || [],
+            });
         }
     }, [client, methods]);
 
@@ -272,6 +335,7 @@ export function ClientWizard({ client, onBack, onSaveSuccess }: { client?: any, 
             case 'address': return <StepAddress />;
             case 'contact': return <StepContact />;
             case 'owners': return <StepOwners />;
+            case 'management': return <StepManagement />;
             case 'bank-accounts': return <StepBank />;
             default: return <PlaceholderStep name={wizardSteps[currentStep]?.name} />;
         }
@@ -315,5 +379,3 @@ export function ClientWizard({ client, onBack, onSaveSuccess }: { client?: any, 
         </Card>
     );
 }
-      
-    
