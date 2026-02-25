@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -26,7 +27,6 @@ import {
   ShieldCheck,
   Handshake,
   Landmark,
-  DollarSign,
   Sheet
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -78,7 +78,6 @@ function AdminAuthGuard({ children }: { children: React.ReactNode }) {
     
     return <>{children}</>;
 }
-
 
 function LendingPortalContent() {
   const router = useRouter();
@@ -232,7 +231,7 @@ function LendingPortalContent() {
             </div>
         </SidebarInset>
       </SidebarProvider>
-    </LendingAuthGuard>
+    </AdminAuthGuard>
   );
 }
 
