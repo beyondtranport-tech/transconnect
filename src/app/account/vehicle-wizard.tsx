@@ -16,11 +16,14 @@ import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { Progress } from '@/components/ui/progress';
 import { getClientSideAuthToken, useUser } from '@/firebase';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { provinces } from '@/lib/geodata';
+
 
 const listingSchema = z.object({
   make: z.string().min(1, "Make is required"),
   model: z.string().min(1, "Model is required"),
-  year: z.coerce.number().min(1900).max(new Date().getFullYear() + 1),
+  year: z.string().min(4, "Please select a year"),
   price: z.coerce.number().positive("Price must be a positive number"),
   description: z.string().min(10, "Please provide a more detailed description"),
   mileage: z.coerce.number().min(0).optional(),
@@ -31,10 +34,10 @@ const listingSchema = z.object({
 type ListingFormValues = z.infer<typeof listingSchema>;
 
 const wizardSteps = [
-    { id: 'details', name: 'Vehicle Details', fields: ['make', 'model', 'year', 'price', 'mileage', 'location', 'description'], icon: Truck },
-    { id: 'photos', name: 'Photos', fields: [], icon: ImageIcon },
-    { id: 'commercials', name: 'Commercials', fields: [], icon: FileText },
-    { id: 'publish', name: 'Publish', fields: [], icon: CheckCircle },
+    { id: 'details', name: 'Vehicle Details', fields: ['make', 'model', 'year', 'price', 'mileage', 'location', 'description'] },
+    { id: 'photos', name: 'Photos', fields: [] },
+    { id: 'commercials', name: 'Commercials', fields: [] },
+    { id: 'publish', name: 'Publish', fields: [] },
 ];
 
 const fileToDataUri = (file: File) => new Promise<string>((resolve, reject) => {
@@ -44,27 +47,125 @@ const fileToDataUri = (file: File) => new Promise<string>((resolve, reject) => {
     reader.readAsDataURL(file);
 });
 
+const vehicleMakes = [
+  { id: 'scania', name: 'Scania' },
+  { id: 'volvo', name: 'Volvo' },
+  { id: 'mercedes-benz', name: 'Mercedes-Benz' },
+  { id: 'man', name: 'MAN' },
+  { id: 'freightliner', name: 'Freightliner' },
+  { id: 'henred-fruehauf', name: 'Henred Fruehauf' },
+  { id: 'afrit', name: 'Afrit' },
+  { id: 'other', name: 'Other' },
+];
+
+const vehicleModels: { [key: string]: { id: string; name: string }[] } = {
+  scania: [{ id: 'r-series', name: 'R-Series' }, { id: 'g-series', name: 'G-Series' }, { id: 'p-series', name: 'P-Series' }],
+  volvo: [{ id: 'fh-series', name: 'FH Series' }, { id: 'fm-series', name: 'FM Series' }, { id: 'fmx-series', name: 'FMX Series' }],
+  'mercedes-benz': [{ id: 'actros', name: 'Actros' }, { id: 'axor', name: 'Axor' }, { id: 'atego', name: 'Atego' }],
+  man: [{ id: 'tgx', name: 'TGX' }, { id: 'tgs', name: 'TGS' }, { id: 'tgm', name: 'TGM' }],
+  freightliner: [{ id: 'cascadia', name: 'Cascadia' }, { id: 'argosy', name: 'Argosy' }],
+  'henred-fruehauf': [{ id: 'tautliner', name: 'Tautliner' }, { id: 'flatdeck', name: 'Flatdeck' }, { id: 'refrigerated', name: 'Refrigerated' }],
+  afrit: [{ id: 'side-tipper', name: 'Side Tipper' }, { id: 'interlink', name: 'Interlink' }],
+  other: [{ id: 'custom', name: 'Custom/Other' }],
+};
+
+const currentYear = new Date().getFullYear();
+const years = Array.from({ length: 30 }, (_, i) => ({ id: (currentYear - i).toString(), name: (currentYear - i).toString() }));
+
+const locations = provinces.flatMap(p => p.cities.map(c => `${c}, ${p.name}`));
+
+
 const StepDetails = () => {
-    const { control } = useFormContext<ListingFormValues>();
+    const { control, watch, setValue } = useFormContext<ListingFormValues>();
+    const selectedMake = watch('make');
+
+    const models = useMemo(() => {
+        if (!selectedMake) return [];
+        return vehicleModels[selectedMake] || [];
+    }, [selectedMake]);
+
+    useEffect(() => {
+        if (selectedMake && models.length > 0) {
+            const currentModel = watch('model');
+            if (currentModel && !models.some(m => m.id === currentModel)) {
+                setValue('model', '');
+            }
+        }
+    }, [selectedMake, models, setValue, watch]);
+
     return (
         <div className="space-y-4">
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField control={control} name="make" render={({ field }) => <FormItem><FormLabel>Make</FormLabel><FormControl><Input placeholder="e.g., Scania" {...field} /></FormControl><FormMessage /></FormItem>} />
-                <FormField control={control} name="model" render={({ field }) => <FormItem><FormLabel>Model</FormLabel><FormControl><Input placeholder="e.g., R 560" {...field} /></FormControl><FormMessage /></FormItem>} />
-            </div>
              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <FormField control={control} name="year" render={({ field }) => <FormItem><FormLabel>Year</FormLabel><FormControl><Input type="number" placeholder="e.g., 2021" {...field} /></FormControl><FormMessage /></FormItem>} />
-                <FormField control={control} name="price" render={({ field }) => <FormItem><FormLabel>Price (R)</FormLabel><FormControl><Input type="number" placeholder="e.g., 1200000" {...field} /></FormControl><FormMessage /></FormItem>} />
-                <FormField control={control} name="mileage" render={({ field }) => <FormItem><FormLabel>Mileage (km)</FormLabel><FormControl><Input type="number" placeholder="e.g., 350000" {...field} /></FormControl><FormMessage /></FormItem>} />
+                <FormField
+                    control={control}
+                    name="make"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Make</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl><SelectTrigger><SelectValue placeholder="Select make..." /></SelectTrigger></FormControl>
+                                <SelectContent>{vehicleMakes.map(m => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}</SelectContent>
+                            </Select>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                 <FormField
+                    control={control}
+                    name="model"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Model</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value || ''} disabled={!selectedMake}>
+                                <FormControl><SelectTrigger><SelectValue placeholder="Select model..." /></SelectTrigger></FormControl>
+                                <SelectContent>{models.map(m => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}</SelectContent>
+                            </Select>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                 <FormField
+                    control={control}
+                    name="year"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Year</FormLabel>
+                             <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl><SelectTrigger><SelectValue placeholder="Select year..." /></SelectTrigger></FormControl>
+                                <SelectContent>{years.map(y => <SelectItem key={y.id} value={y.id}>{y.name}</SelectItem>)}</SelectContent>
+                            </Select>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
             </div>
-            <FormField control={control} name="location" render={({ field }) => <FormItem><FormLabel>Location</FormLabel><FormControl><Input placeholder="e.g., Johannesburg, Gauteng" {...field} /></FormControl><FormMessage /></FormItem>} />
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField control={control} name="price" render={({ field }) => <FormItem><FormLabel>Price (R)</FormLabel><FormControl><Input type="number" placeholder="e.g., 1200000" {...field} /></FormControl><FormMessage /></FormItem>} />
+                <FormField control={control} name="mileage" render={({ field }) => <FormItem><FormLabel>Mileage (km, optional)</FormLabel><FormControl><Input type="number" placeholder="e.g., 350000" {...field} /></FormControl><FormMessage /></FormItem>} />
+            </div>
+            <FormField
+                control={control}
+                name="location"
+                render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Location</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl><SelectTrigger><SelectValue placeholder="e.g., Johannesburg, Gauteng" /></SelectTrigger></FormControl>
+                          <SelectContent>
+                            {locations.map(loc => <SelectItem key={loc} value={loc}>{loc}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                    </FormItem>
+                )}
+            />
             <FormField control={control} name="description" render={({ field }) => <FormItem><FormLabel>Description</FormLabel><FormControl><Textarea placeholder="Describe the vehicle's condition, features, and history..." {...field} rows={6}/></FormControl><FormMessage /></FormItem>} />
         </div>
     );
 };
 
 const StepPhotos = () => {
-    const { control, getValues, setValue } = useFormContext<ListingFormValues>();
+    const { control } = useFormContext<ListingFormValues>();
     const { fields, append, remove } = useFieldArray({ control, name: "photos" });
     const { user } = useUser();
     const { toast } = useToast();
@@ -210,8 +311,8 @@ export function VehicleWizard({ listing, companyId, onBack, onSaveSuccess }: { l
                                     const Icon = step.icon;
                                     return (
                                         <Button key={step.id} variant={currentStep === index ? 'default' : 'ghost'} className="justify-start gap-2" onClick={() => setCurrentStep(index)} disabled={index > currentStep && !isStepValid(currentStep - 1)}>
-                                            {isCompleted ? <Check className="h-5 w-5 text-green-500" /> : <Icon className={cn("h-5 w-5", currentStep >= index ? "text-inherit" : "text-muted-foreground")} />}
-                                            {step.name}
+                                            {isCompleted ? <Check className="h-5 w-5 text-green-500" /> : <div className={cn("h-5 w-5 rounded-full flex items-center justify-center text-xs font-bold", currentStep >= index ? "bg-primary-foreground text-primary" : "bg-muted-foreground/20")}>{index + 1}</div>}
+                                            {step.name.replace(/^Step \d+: /, '')}
                                         </Button>
                                     );
                                 })}
@@ -221,7 +322,8 @@ export function VehicleWizard({ listing, companyId, onBack, onSaveSuccess }: { l
                             </div>
                         </div>
                     </CardContent>
-                    <CardFooter className="flex justify-end pt-6 border-t">
+                    <CardFooter className="flex justify-between pt-6 border-t">
+                        <Button type="button" variant="outline" onClick={handleBackWizard}><ArrowLeft className="mr-2 h-4 w-4" /> Back</Button>
                         {currentStep < wizardSteps.length - 1 ? (
                             <Button type="button" onClick={handleNext}>Next Step <ArrowRight className="ml-2 h-4 w-4"/></Button>
                         ) : (
@@ -233,4 +335,3 @@ export function VehicleWizard({ listing, companyId, onBack, onSaveSuccess }: { l
         </Card>
     );
 }
-    
