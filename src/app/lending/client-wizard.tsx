@@ -1,7 +1,9 @@
+
+      
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useForm, FormProvider } from 'react-hook-form';
+import { useForm, FormProvider, useFieldArray, useFormContext } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -10,7 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, ArrowLeft, ArrowRight, Save, Users, Building, Phone, Mail, UserSquare, Banknote, FileText, BarChart2 } from 'lucide-react';
+import { Loader2, ArrowLeft, ArrowRight, Save, Users, Building, Phone, Mail, UserSquare, Banknote, FileText, BarChart2, PlusCircle, Trash2 } from 'lucide-react';
 import { getClientSideAuthToken } from '@/firebase';
 import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
@@ -28,6 +30,20 @@ async function performAdminAction(token: string, action: string, payload: any) {
     if (!response.ok || !result.success) throw new Error(result.error || `API Error: ${action}`);
     return result;
 }
+
+const ownerSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  address: z.string().optional(),
+  suburb: z.string().optional(),
+  city: z.string().optional(),
+  postCode: z.string().optional(),
+  idNumber: z.string().optional(),
+  cell: z.string().optional(),
+  position: z.string().optional(),
+  qualification: z.string().optional(),
+  since: z.string().optional(),
+  percentageHeld: z.coerce.number().min(0).max(100).optional(),
+});
 
 
 const formSchema = z.object({
@@ -59,6 +75,9 @@ const formSchema = z.object({
   bankName: z.string().optional(),
   accountNumber: z.string().optional(),
   branchCode: z.string().optional(),
+  
+  // Owners
+  owners: z.array(ownerSchema).optional(),
 });
 type FormValues = z.infer<typeof formSchema>;
 
@@ -152,6 +171,53 @@ const StepBank = () => {
     );
 };
 
+const StepOwners = () => {
+    const { control } = useFormContext<FormValues>();
+    const { fields, append, remove } = useFieldArray({
+        control,
+        name: "owners"
+    });
+
+    return (
+        <div className="space-y-6">
+            {fields.map((field, index) => (
+                <Card key={field.id} className="relative p-4 pt-8">
+                     <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => remove(index)}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                    <CardContent className="space-y-4">
+                        <FormField control={control} name={`owners.${index}.name`} render={({ field }) => (<FormItem><FormLabel>Owner Name</FormLabel><FormControl><Input placeholder="Full Name" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={control} name={`owners.${index}.address`} render={({ field }) => (<FormItem><FormLabel>Address</FormLabel><FormControl><Textarea placeholder="123 Owner Ave" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <FormField control={control} name={`owners.${index}.suburb`} render={({ field }) => (<FormItem><FormLabel>Suburb</FormLabel><FormControl><Input placeholder="Sandton" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            <FormField control={control} name={`owners.${index}.city`} render={({ field }) => (<FormItem><FormLabel>City</FormLabel><FormControl><Input placeholder="Johannesburg" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            <FormField control={control} name={`owners.${index}.postCode`} render={({ field }) => (<FormItem><FormLabel>Post Code</FormLabel><FormControl><Input placeholder="2196" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        </div>
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <FormField control={control} name={`owners.${index}.idNumber`} render={({ field }) => (<FormItem><FormLabel>ID No.</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            <FormField control={control} name={`owners.${index}.cell`} render={({ field }) => (<FormItem><FormLabel>Cell</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        </div>
+                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <FormField control={control} name={`owners.${index}.position`} render={({ field }) => (<FormItem><FormLabel>Position</FormLabel><FormControl><Input placeholder="Director" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            <FormField control={control} name={`owners.${index}.qualification`} render={({ field }) => (<FormItem><FormLabel>Qualification</FormLabel><FormControl><Input placeholder="B.Com" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            <FormField control={control} name={`owners.${index}.since`} render={({ field }) => (<FormItem><FormLabel>Since (Year)</FormLabel><FormControl><Input placeholder="2010" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            <FormField control={control} name={`owners.${index}.percentageHeld`} render={({ field }) => (<FormItem><FormLabel>% Held</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        </div>
+                    </CardContent>
+                </Card>
+            ))}
+            <Button
+                type="button"
+                variant="outline"
+                onClick={() => append({ name: '', address: '', suburb: '', city: '', postCode: '', idNumber: '', cell: '', position: '', qualification: '', since: '', percentageHeld: 0 })}
+            >
+                <PlusCircle className="mr-2 h-4 w-4" /> Add Owner
+            </Button>
+        </div>
+    );
+};
+
+
 const PlaceholderStep = ({ name }: { name: string }) => (
     <div className="flex items-center justify-center h-full bg-muted/50 rounded-lg p-8">
         <div className="text-center">
@@ -205,6 +271,7 @@ export function ClientWizard({ client, onBack, onSaveSuccess }: { client?: any, 
             case 'main': return <StepMain />;
             case 'address': return <StepAddress />;
             case 'contact': return <StepContact />;
+            case 'owners': return <StepOwners />;
             case 'bank-accounts': return <StepBank />;
             default: return <PlaceholderStep name={wizardSteps[currentStep]?.name} />;
         }
@@ -248,3 +315,5 @@ export function ClientWizard({ client, onBack, onSaveSuccess }: { client?: any, 
         </Card>
     );
 }
+      
+    
