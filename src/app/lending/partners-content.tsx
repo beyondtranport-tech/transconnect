@@ -59,7 +59,7 @@ async function performAdminAction(token: string, action: string, payload: any) {
 
 const partnerSchema = z.object({
   name: z.string().min(1, 'Partner name is required.'),
-  type: z.enum(['supplier', 'vendor', 'associate', 'funder']),
+  type: z.enum(['supplier', 'vendor', 'associate', 'debtor']),
   globalFacilityLimit: z.coerce.number().min(0).optional(),
 });
 type PartnerFormValues = z.infer<typeof partnerSchema>;
@@ -71,7 +71,7 @@ function PartnerDialog({ open, onOpenChange, partner, onSave }: { open: boolean,
 
   useEffect(() => {
     if (open) {
-      form.reset(partner || { name: '', type: 'funder', globalFacilityLimit: 0 });
+      form.reset(partner || { name: '', type: 'supplier', globalFacilityLimit: 0 });
     }
   }, [open, partner, form]);
 
@@ -98,7 +98,7 @@ function PartnerDialog({ open, onOpenChange, partner, onSave }: { open: boolean,
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField control={form.control} name="name" render={({ field }) => (<FormItem><FormLabel>Partner Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-            <FormField control={form.control} name="type" render={({ field }) => (<FormItem><FormLabel>Type</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="supplier">Supplier</SelectItem><SelectItem value="vendor">Vendor</SelectItem><SelectItem value="associate">Associate</SelectItem><SelectItem value="funder">Funder</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
+            <FormField control={form.control} name="type" render={({ field }) => (<FormItem><FormLabel>Type</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="supplier">Supplier</SelectItem><SelectItem value="vendor">Vendor</SelectItem><SelectItem value="associate">Associate</SelectItem><SelectItem value="debtor">Debtor</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="globalFacilityLimit" render={({ field }) => (<FormItem><FormLabel>Global Facility Limit (R)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
             <DialogFooter><Button type="submit" disabled={isLoading}>{isLoading ? <Loader2 className="animate-spin" /> : null} Save Partner</Button></DialogFooter>
           </form>
@@ -161,7 +161,7 @@ function PartnerListComponent() {
         toast({ variant: 'destructive', title: 'Delete Failed', description: e.message });
     }
   };
-
+  
   const columns: ColumnDef<any>[] = useMemo(() => [
     { accessorKey: 'name', header: 'Name' },
     { accessorKey: 'type', header: 'Type', cell: ({ row }) => <Badge className="capitalize">{row.original.type}</Badge> },
@@ -195,3 +195,4 @@ export default function PartnersContent() {
         </Suspense>
     );
 }
+    

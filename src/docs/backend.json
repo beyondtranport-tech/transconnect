@@ -622,7 +622,7 @@
         "properties": {
             "id": { "type": "string" },
             "name": { "type": "string" },
-            "type": { "type": "string", "enum": ["supplier", "vendor", "associate", "funder"] },
+            "type": { "type": "string", "enum": ["supplier", "vendor", "associate", "debtor"] },
             "globalFacilityLimit": { "type": "number", "description": "The maximum total exposure allowed for this partner across all client facilities." }
         },
         "required": ["id", "name", "type"]
@@ -944,4 +944,3 @@
     
     
     
-
