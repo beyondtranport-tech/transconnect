@@ -169,7 +169,7 @@ export function Header() {
                             <Link href="/backend">App Backend</Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild>
-                            <Link href="/backend">Lending Portal</Link>
+                            <Link href="/lending">Lending Portal</Link>
                         </DropdownMenuItem>
                         <DropdownMenuSeparator/>
                          <DropdownMenuItem asChild>
@@ -268,6 +268,18 @@ export function Header() {
                                         <Link href="/adminaccount" onClick={() => setIsSheetOpen(false)}>
                                             <Building className="mr-2 h-5 w-5" />
                                             Admin Account
+                                        </Link>
+                                    </Button>
+                                    <Button asChild className="w-full justify-start">
+                                        <Link href="/lending" onClick={() => setIsSheetOpen(false)}>
+                                            <Landmark className="mr-2 h-5 w-5" />
+                                            Lending Portal
+                                        </Link>
+                                    </Button>
+                                     <Button asChild className="w-full justify-start">
+                                        <Link href="/backend" onClick={() => setIsSheetOpen(false)}>
+                                            <ShieldCheck className="mr-2 h-5 w-5" />
+                                            App Backend
                                         </Link>
                                     </Button>
                                     <Button asChild className="w-full justify-start" variant="secondary">
