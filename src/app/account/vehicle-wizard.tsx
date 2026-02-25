@@ -5,7 +5,7 @@ import React, { useState, useMemo } from 'react';
 import { useForm, FormProvider, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -45,7 +45,7 @@ const fileToDataUri = (file: File) => new Promise<string>((resolve, reject) => {
 });
 
 const StepDetails = () => {
-    const { control } = useForm<ListingFormValues>();
+    const { control } = useFormContext<ListingFormValues>();
     return (
         <div className="space-y-4">
              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -64,7 +64,7 @@ const StepDetails = () => {
 };
 
 const StepPhotos = () => {
-    const { control, getValues, setValue } = useForm<ListingFormValues>();
+    const { control, getValues, setValue } = useFormContext<ListingFormValues>();
     const { fields, append, remove } = useFieldArray({ control, name: "photos" });
     const { user } = useUser();
     const { toast } = useToast();
@@ -144,6 +144,8 @@ export function VehicleWizard({ listing, companyId, onBack, onSaveSuccess }: { l
         }
     };
 
+    const handleBackWizard = () => { currentStep > 0 ? setCurrentStep(prev => prev - 1) : onBack(); };
+
     const onSubmit = async (values: ListingFormValues) => {
         setIsSaving(true);
         try {
@@ -174,7 +176,9 @@ export function VehicleWizard({ listing, companyId, onBack, onSaveSuccess }: { l
     const isStepValid = (stepIndex: number) => {
         if (stepIndex < 0) return true;
         const step = wizardSteps[stepIndex];
-        return (step.fields || []).every(field => !methods.formState.errors[field as keyof ListingFormValues]);
+        if (!step.fields || step.fields.length === 0) return true;
+        const fields = step.fields as (keyof ListingFormValues)[];
+        return fields.every(field => !methods.formState.errors[field as keyof typeof methods.formState.errors]);
     };
     
      const renderStepContent = () => {
@@ -206,7 +210,7 @@ export function VehicleWizard({ listing, companyId, onBack, onSaveSuccess }: { l
                                     const Icon = step.icon;
                                     return (
                                         <Button key={step.id} variant={currentStep === index ? 'default' : 'ghost'} className="justify-start gap-2" onClick={() => setCurrentStep(index)} disabled={index > currentStep && !isStepValid(currentStep - 1)}>
-                                            {isCompleted ? <CheckCircle className="h-5 w-5 text-green-500" /> : <Icon className={cn("h-5 w-5", currentStep >= index ? "text-inherit" : "text-muted-foreground")} />}
+                                            {isCompleted ? <Check className="h-5 w-5 text-green-500" /> : <Icon className={cn("h-5 w-5", currentStep >= index ? "text-inherit" : "text-muted-foreground")} />}
                                             {step.name}
                                         </Button>
                                     );
@@ -229,4 +233,3 @@ export function VehicleWizard({ listing, companyId, onBack, onSaveSuccess }: { l
         </Card>
     );
 }
-
