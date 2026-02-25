@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -11,7 +10,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, ArrowLeft, ArrowRight, Save, Users, Building, Phone, Mail, UserSquare, Banknote, FileText, BarChart2, PlusCircle, Trash2 } from 'lucide-react';
+import { Loader2, ArrowLeft, ArrowRight, Save, Users, Building, Phone, Mail, UserSquare, Banknote, FileText, BarChart2, PlusCircle, Trash2, Check } from 'lucide-react';
 import { getClientSideAuthToken } from '@/firebase';
 import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
@@ -56,6 +55,19 @@ const managerSchema = z.object({
   since: z.string().optional(),
 });
 
+const bankAccountSchema = z.object({
+  bankName: z.string().min(1, "Bank name is required"),
+  branchCode: z.string().min(1, "Branch code is required"),
+  accountNumber: z.string().min(1, "Account number is required"),
+  branchName: z.string().optional(),
+  bankCode: z.string().optional(),
+  address: z.string().optional(),
+  postCode: z.string().optional(),
+  phone: z.string().optional(),
+  email: z.string().email().optional().or(z.literal('')),
+  contactPerson: z.string().optional(),
+});
+
 const formSchema = z.object({
   code: z.string().optional(),
   name: z.string().min(1, "Client name is required."),
@@ -66,13 +78,11 @@ const formSchema = z.object({
   vatRegistered: z.boolean().default(false),
   registrationId: z.string().optional(),
   
-  // Address Fields
   physicalAddress: z.string().optional(),
   physicalPostalCode: z.string().optional(),
   postalAddress: z.string().optional(),
   postalPostalCode: z.string().optional(),
   
-  // Contact Fields
   contactPerson: z.string().optional(),
   telWork: z.string().optional(),
   telHome: z.string().optional(),
@@ -81,14 +91,9 @@ const formSchema = z.object({
   email: z.string().email().optional().or(z.literal('')),
   url: z.string().url().optional().or(z.literal('')),
   
-  // Bank Fields
-  bankName: z.string().optional(),
-  accountNumber: z.string().optional(),
-  branchCode: z.string().optional(),
-  
-  // Owners & Management
   owners: z.array(ownerSchema).optional(),
   management: z.array(managerSchema).optional(),
+  bankAccounts: z.array(bankAccountSchema).optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -168,17 +173,6 @@ const StepContact = () => {
             </div>
             <FormField control={control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" {...field} /></FormControl><FormMessage /></FormItem>)} />
             <FormField control={control} name="url" render={({ field }) => (<FormItem><FormLabel>URL</FormLabel><FormControl><Input type="url" placeholder="https://example.com" {...field} /></FormControl><FormMessage /></FormItem>)} />
-        </div>
-    );
-};
-
-const StepBank = () => {
-    const { control } = useFormContext<FormValues>();
-    return (
-        <div className="space-y-4 max-w-lg">
-            <FormField control={control} name="bankName" render={({ field }) => (<FormItem><FormLabel>Bank Name</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
-            <FormField control={control} name="accountNumber" render={({ field }) => (<FormItem><FormLabel>Account Number</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
-            <FormField control={control} name="branchCode" render={({ field }) => (<FormItem><FormLabel>Branch Code</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
         </div>
     );
 };
@@ -274,6 +268,51 @@ const StepManagement = () => {
     );
 };
 
+const StepBank = () => {
+    const { control } = useFormContext<FormValues>();
+    const { fields, append, remove } = useFieldArray({
+        control,
+        name: "bankAccounts"
+    });
+
+    return (
+        <div className="space-y-6">
+            {fields.map((field, index) => (
+                <Card key={field.id} className="relative p-4 pt-8">
+                     <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => remove(index)}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                    <CardContent className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <FormField control={control} name={`bankAccounts.${index}.bankName`} render={({ field }) => (<FormItem><FormLabel>Bank</FormLabel><FormControl><Input placeholder="e.g., FNB" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            <FormField control={control} name={`bankAccounts.${index}.accountNumber`} render={({ field }) => (<FormItem><FormLabel>Account No</FormLabel><FormControl><Input placeholder="e.g., 62000123456" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <FormField control={control} name={`bankAccounts.${index}.branchName`} render={({ field }) => (<FormItem><FormLabel>Branch Name</FormLabel><FormControl><Input placeholder="e.g., Sandton" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            <FormField control={control} name={`bankAccounts.${index}.branchCode`} render={({ field }) => (<FormItem><FormLabel>Branch Code</FormLabel><FormControl><Input placeholder="e.g., 250655" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                             <FormField control={control} name={`bankAccounts.${index}.bankCode`} render={({ field }) => (<FormItem><FormLabel>Bank Code</FormLabel><FormControl><Input placeholder="e.g., FIRNZAJJ" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        </div>
+                        <FormField control={control} name={`bankAccounts.${index}.address`} render={({ field }) => (<FormItem><FormLabel>Address</FormLabel><FormControl><Textarea placeholder="Bank Address" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={control} name={`bankAccounts.${index}.postCode`} render={({ field }) => (<FormItem><FormLabel>Post Code</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <FormField control={control} name={`bankAccounts.${index}.contactPerson`} render={({ field }) => (<FormItem><FormLabel>Contact</FormLabel><FormControl><Input placeholder="e.g., Bank Manager" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            <FormField control={control} name={`bankAccounts.${index}.phone`} render={({ field }) => (<FormItem><FormLabel>Phone</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            <FormField control={control} name={`bankAccounts.${index}.email`} render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        </div>
+                    </CardContent>
+                </Card>
+            ))}
+            <Button
+                type="button"
+                variant="outline"
+                onClick={() => append({ bankName: '', branchCode: '', accountNumber: '' } as any)}
+            >
+                <PlusCircle className="mr-2 h-4 w-4" /> Add Bank Account
+            </Button>
+        </div>
+    );
+};
+
 
 const PlaceholderStep = ({ name }: { name: string }) => (
     <div className="flex items-center justify-center h-full bg-muted/50 rounded-lg p-8">
@@ -298,6 +337,7 @@ export function ClientWizard({ client, onBack, onSaveSuccess }: { client?: any, 
             status: 'draft',
             owners: [],
             management: [],
+            bankAccounts: [],
         },
     });
 
@@ -307,6 +347,7 @@ export function ClientWizard({ client, onBack, onSaveSuccess }: { client?: any, 
                 ...client,
                 owners: client.owners || [],
                 management: client.management || [],
+                bankAccounts: client.bankAccounts || [],
             });
         }
     }, [client, methods]);
