@@ -16,6 +16,7 @@ import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
 import { useRouter } from 'next/navigation';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 
 async function performAdminAction(token: string, action: string, payload: any) {
     const response = await fetch('/api/admin', {
@@ -68,6 +69,29 @@ const bankAccountSchema = z.object({
   contactPerson: z.string().optional(),
 });
 
+const balanceSheetSchema = z.object({
+  periodEndDate: z.string().min(1, "Period end date is required"),
+  propertyPlantEquipment: z.coerce.number().optional().default(0),
+  intangibleAssets: z.coerce.number().optional().default(0),
+  inventory: z.coerce.number().optional().default(0),
+  tradeReceivables: z.coerce.number().optional().default(0),
+  cashEquivalents: z.coerce.number().optional().default(0),
+  shareCapital: z.coerce.number().optional().default(0),
+  retainedEarnings: z.coerce.number().optional().default(0),
+  longTermLoans: z.coerce.number().optional().default(0),
+  tradePayables: z.coerce.number().optional().default(0),
+  shortTermLoans: z.coerce.number().optional().default(0),
+});
+
+const incomeStatementSchema = z.object({
+  periodEndDate: z.string().min(1, "Period end date is required"),
+  revenue: z.coerce.number().optional().default(0),
+  cogs: z.coerce.number().optional().default(0),
+  operatingExpenses: z.coerce.number().optional().default(0),
+  interestExpense: z.coerce.number().optional().default(0),
+  taxation: z.coerce.number().optional().default(0),
+});
+
 const formSchema = z.object({
   code: z.string().optional(),
   name: z.string().min(1, "Client name is required."),
@@ -94,6 +118,8 @@ const formSchema = z.object({
   owners: z.array(ownerSchema).optional(),
   management: z.array(managerSchema).optional(),
   bankAccounts: z.array(bankAccountSchema).optional(),
+  balanceSheets: z.array(balanceSheetSchema).optional(),
+  incomeStatements: z.array(incomeStatementSchema).optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -131,7 +157,6 @@ const StepMain = () => {
                 <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                     <div className="space-y-0.5">
                         <FormLabel className="text-base">VAT Registered?</FormLabel>
-                        <FormDescription>Is this client registered for VAT?</FormDescription>
                     </div>
                     <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
                 </FormItem>
@@ -313,6 +338,156 @@ const StepBank = () => {
     );
 };
 
+const formatCurrency = (value: number) => {
+    if (typeof value !== 'number' || isNaN(value)) return 'R 0';
+    return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR', maximumFractionDigits: 0 }).format(value);
+};
+
+const FinancialStatementRow = ({ control, name, label, isCalculated = false, calculatedValue, isSub = false }: { control: any, name: string, label: string, isCalculated?: boolean, calculatedValue?: number, isSub?: boolean }) => {
+    return (
+        <div className={cn("flex items-center justify-between py-1.5", isSub && "pl-4")}>
+            <Label htmlFor={name} className="text-muted-foreground">{label}</Label>
+            {isCalculated ? (
+                 <p className="w-40 text-right font-mono font-semibold">{formatCurrency(calculatedValue || 0)}</p>
+            ) : (
+                <FormField
+                    control={control}
+                    name={name}
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormControl>
+                                <Input
+                                    id={name}
+                                    type="number"
+                                    placeholder="0"
+                                    className="w-40 text-right font-mono"
+                                    {...field}
+                                />
+                            </FormControl>
+                            <FormMessage className="text-xs text-right" />
+                        </FormItem>
+                    )}
+                />
+            )}
+        </div>
+    );
+};
+
+const StepBalanceSheet = () => {
+    const { control, watch } = useFormContext<FormValues>();
+    const { fields, append, remove } = useFieldArray({ control, name: "balanceSheets" });
+
+    return (
+        <div className="space-y-6">
+            {fields.map((field, index) => {
+                const sheetData = watch(`balanceSheets.${index}`);
+                const totalAssets = (sheetData.propertyPlantEquipment || 0) + (sheetData.intangibleAssets || 0) + (sheetData.inventory || 0) + (sheetData.tradeReceivables || 0) + (sheetData.cashEquivalents || 0);
+                const totalEquityAndLiabilities = (sheetData.shareCapital || 0) + (sheetData.retainedEarnings || 0) + (sheetData.longTermLoans || 0) + (sheetData.tradePayables || 0) + (sheetData.shortTermLoans || 0);
+                const isBalanced = Math.abs(totalAssets - totalEquityAndLiabilities) < 0.01;
+
+                return (
+                    <Card key={field.id} className="relative p-4 pt-8">
+                        <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => remove(index)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                        <CardContent className="space-y-4">
+                            <FormField control={control} name={`balanceSheets.${index}.periodEndDate`} render={({ field }) => (<FormItem><FormLabel>Period End Date</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
+                                <div className="space-y-2">
+                                    <h4 className="font-semibold text-lg border-b pb-1">Assets</h4>
+                                    <h5 className="font-medium pt-2">Non-Current Assets</h5>
+                                    <FinancialStatementRow control={control} name={`balanceSheets.${index}.propertyPlantEquipment`} label="Property, Plant, Equipment" isSub />
+                                    <FinancialStatementRow control={control} name={`balanceSheets.${index}.intangibleAssets`} label="Intangible Assets" isSub />
+                                    <h5 className="font-medium pt-2">Current Assets</h5>
+                                    <FinancialStatementRow control={control} name={`balanceSheets.${index}.inventory`} label="Inventory" isSub />
+                                    <FinancialStatementRow control={control} name={`balanceSheets.${index}.tradeReceivables`} label="Trade Receivables" isSub />
+                                    <FinancialStatementRow control={control} name={`balanceSheets.${index}.cashEquivalents`} label="Cash & Equivalents" isSub />
+                                    <div className="flex justify-between items-center pt-2 border-t font-bold text-primary">
+                                        <p>Total Assets</p>
+                                        <p className="font-mono">{formatCurrency(totalAssets)}</p>
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <h4 className="font-semibold text-lg border-b pb-1">Equity & Liabilities</h4>
+                                    <h5 className="font-medium pt-2">Equity</h5>
+                                    <FinancialStatementRow control={control} name={`balanceSheets.${index}.shareCapital`} label="Share Capital" isSub />
+                                    <FinancialStatementRow control={control} name={`balanceSheets.${index}.retainedEarnings`} label="Retained Earnings" isSub />
+                                    <h5 className="font-medium pt-2">Non-Current Liabilities</h5>
+                                    <FinancialStatementRow control={control} name={`balanceSheets.${index}.longTermLoans`} label="Long-Term Loans" isSub />
+                                    <h5 className="font-medium pt-2">Current Liabilities</h5>
+                                    <FinancialStatementRow control={control} name={`balanceSheets.${index}.tradePayables`} label="Trade Payables" isSub />
+                                    <FinancialStatementRow control={control} name={`balanceSheets.${index}.shortTermLoans`} label="Short-Term Loans" isSub />
+                                    <div className="flex justify-between items-center pt-2 border-t font-bold text-primary">
+                                        <p>Total Equity & Liabilities</p>
+                                        <p className="font-mono">{formatCurrency(totalEquityAndLiabilities)}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className={cn("p-2 text-center text-xs font-semibold rounded-md", isBalanced ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800")}>
+                                {isBalanced ? "Balanced" : `Out of Balance by ${formatCurrency(totalAssets - totalEquityAndLiabilities)}`}
+                            </div>
+                        </CardContent>
+                    </Card>
+                );
+            })}
+             <Button type="button" variant="outline" onClick={() => append({ periodEndDate: '', propertyPlantEquipment: 0, intangibleAssets: 0, inventory: 0, tradeReceivables: 0, cashEquivalents: 0, shareCapital: 0, retainedEarnings: 0, longTermLoans: 0, tradePayables: 0, shortTermLoans: 0 })}>
+                <PlusCircle className="mr-2 h-4 w-4" /> Add Balance Sheet
+            </Button>
+        </div>
+    );
+};
+
+const StepIncomeStatement = () => {
+    const { control, watch } = useFormContext<FormValues>();
+    const { fields, append, remove } = useFieldArray({ control, name: "incomeStatements" });
+
+    return (
+        <div className="space-y-6">
+            {fields.map((field, index) => {
+                 const statementData = watch(`incomeStatements.${index}`);
+                 const revenue = statementData.revenue || 0;
+                 const cogs = statementData.cogs || 0;
+                 const grossProfit = revenue - cogs;
+                 const operatingExpenses = statementData.operatingExpenses || 0;
+                 const operatingProfit = grossProfit - operatingExpenses;
+                 const interestExpense = statementData.interestExpense || 0;
+                 const profitBeforeTax = operatingProfit - interestExpense;
+                 const taxation = statementData.taxation || 0;
+                 const netProfit = profitBeforeTax - taxation;
+
+                return (
+                    <Card key={field.id} className="relative p-4 pt-8">
+                         <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => remove(index)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                         <CardContent className="space-y-2">
+                             <FormField control={control} name={`incomeStatements.${index}.periodEndDate`} render={({ field }) => (<FormItem><FormLabel>Period End Date</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                             <div className="space-y-1 pt-4">
+                                <FinancialStatementRow control={control} name={`incomeStatements.${index}.revenue`} label="Revenue" />
+                                <FinancialStatementRow control={control} name={`incomeStatements.${index}.cogs`} label="Cost of Goods Sold" />
+                                <FinancialStatementRow control={control} name="" label="Gross Profit" isCalculated calculatedValue={grossProfit} />
+                                <div className="pt-2">
+                                    <FinancialStatementRow control={control} name={`incomeStatements.${index}.operatingExpenses`} label="Operating Expenses" />
+                                </div>
+                                <FinancialStatementRow control={control} name="" label="Operating Profit (EBIT)" isCalculated calculatedValue={operatingProfit} />
+                                 <div className="pt-2">
+                                     <FinancialStatementRow control={control} name={`incomeStatements.${index}.interestExpense`} label="Interest Expense" />
+                                </div>
+                                <FinancialStatementRow control={control} name="" label="Profit Before Tax" isCalculated calculatedValue={profitBeforeTax} />
+                                 <div className="pt-2">
+                                     <FinancialStatementRow control={control} name={`incomeStatements.${index}.taxation`} label="Taxation" />
+                                </div>
+                                <div className="border-t mt-2 pt-2">
+                                    <FinancialStatementRow control={control} name="" label="Net Profit / (Loss)" isCalculated calculatedValue={netProfit} />
+                                </div>
+                             </div>
+                         </CardContent>
+                    </Card>
+                );
+            })}
+            <Button type="button" variant="outline" onClick={() => append({ periodEndDate: '', revenue: 0, cogs: 0, operatingExpenses: 0, interestExpense: 0, taxation: 0 })}>
+                <PlusCircle className="mr-2 h-4 w-4" /> Add Income Statement
+            </Button>
+        </div>
+    );
+};
+
 
 const PlaceholderStep = ({ name }: { name: string }) => (
     <div className="flex items-center justify-center h-full bg-muted/50 rounded-lg p-8">
@@ -338,6 +513,8 @@ export function ClientWizard({ client, onBack, onSaveSuccess }: { client?: any, 
             owners: [],
             management: [],
             bankAccounts: [],
+            balanceSheets: [],
+            incomeStatements: [],
         },
     });
 
@@ -348,6 +525,8 @@ export function ClientWizard({ client, onBack, onSaveSuccess }: { client?: any, 
                 owners: client.owners || [],
                 management: client.management || [],
                 bankAccounts: client.bankAccounts || [],
+                balanceSheets: client.balanceSheets || [],
+                incomeStatements: client.incomeStatements || [],
             });
         }
     }, [client, methods]);
@@ -378,6 +557,8 @@ export function ClientWizard({ client, onBack, onSaveSuccess }: { client?: any, 
             case 'owners': return <StepOwners />;
             case 'management': return <StepManagement />;
             case 'bank-accounts': return <StepBank />;
+            case 'balance-sheet': return <StepBalanceSheet />;
+            case 'income-statement': return <StepIncomeStatement />;
             default: return <PlaceholderStep name={wizardSteps[currentStep]?.name} />;
         }
     };
