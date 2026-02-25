@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -7,16 +6,17 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, ArrowLeft, Save, Users, Building, Phone, Mail, UserSquare, Banknote, FileText, BarChart2 } from 'lucide-react';
+import { Loader2, ArrowLeft, ArrowRight, Save, Users, Building, Phone, Mail, UserSquare, Banknote, FileText, BarChart2 } from 'lucide-react';
 import { getClientSideAuthToken } from '@/firebase';
 import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
 import { provinces } from '@/lib/geodata';
 import { useRouter } from 'next/navigation';
+import { Checkbox } from '@/components/ui/checkbox';
 
 async function performAdminAction(token: string, action: string, payload: any) {
     const response = await fetch('/api/admin', {
@@ -31,10 +31,16 @@ async function performAdminAction(token: string, action: string, payload: any) {
 
 
 const formSchema = z.object({
+  code: z.string().optional(),
   name: z.string().min(1, "Client name is required."),
   status: z.enum(['active', 'inactive', 'draft']).default('draft'),
-  globalFacilityLimit: z.coerce.number().min(0).optional(),
+  type: z.string().optional(),
+  category: z.string().optional(),
+  language: z.string().optional(),
+  vatRegistered: z.boolean().default(false),
+  registrationId: z.string().optional(),
   
+  // Fields from other steps
   street: z.string().optional(),
   city: z.string().optional(),
   province: z.string().optional(),
@@ -63,18 +69,37 @@ const wizardSteps = [
 ];
 
 const StepMain = () => {
-    const { control } = useForm<FormValues>();
+    const { control } = useFormContext<FormValues>();
     return (
         <div className="space-y-4 max-w-lg">
-            <FormField control={control} name="name" render={({ field }) => (<FormItem><FormLabel>Client Name</FormLabel><FormControl><Input placeholder="e.g., ABC Transport (Pty) Ltd" {...field} /></FormControl><FormMessage /></FormItem>)} />
-            <FormField control={control} name="status" render={({ field }) => (<FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="draft">Draft</SelectItem><SelectItem value="active">Active</SelectItem><SelectItem value="inactive">Inactive</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
-            <FormField control={control} name="globalFacilityLimit" render={({ field }) => (<FormItem><FormLabel>Global Facility Limit (R)</FormLabel><FormControl><Input type="number" placeholder="e.g., 5000000" {...field} /></FormControl><FormMessage /></FormItem>)} />
+             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormField control={control} name="code" render={({ field }) => (<FormItem><FormLabel>Code</FormLabel><FormControl><Input placeholder="Client Code" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={control} name="name" render={({ field }) => (<FormItem><FormLabel>Name</FormLabel><FormControl><Input placeholder="Client Name" {...field} /></FormControl><FormMessage /></FormItem>)} />
+            </div>
+             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormField control={control} name="status" render={({ field }) => (<FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent><SelectItem value="draft">Draft</SelectItem><SelectItem value="active">Active</SelectItem><SelectItem value="inactive">Inactive</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
+                <FormField control={control} name="type" render={({ field }) => (<FormItem><FormLabel>Type</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a type..."/></SelectTrigger></FormControl><SelectContent><SelectItem value="individual">Individual</SelectItem><SelectItem value="company">Company</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
+            </div>
+             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormField control={control} name="category" render={({ field }) => (<FormItem><FormLabel>Category</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a category..."/></SelectTrigger></FormControl><SelectContent><SelectItem value="transport">Transport</SelectItem><SelectItem value="logistics">Logistics</SelectItem><SelectItem value="supplier">Supplier</SelectItem><SelectItem value="other">Other</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
+                <FormField control={control} name="language" render={({ field }) => (<FormItem><FormLabel>Language</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a language..."/></SelectTrigger></FormControl><SelectContent><SelectItem value="english">English</SelectItem><SelectItem value="afrikaans">Afrikaans</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
+            </div>
+            <FormField control={control} name="registrationId" render={({ field }) => (<FormItem><FormLabel>Reg. ID</FormLabel><FormControl><Input placeholder="Company Registration ID" {...field} /></FormControl><FormMessage /></FormItem>)} />
+             <FormField control={control} name="vatRegistered" render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                        <FormLabel className="text-base">VAT Registered?</FormLabel>
+                        <FormDescription>Is this client registered for VAT?</FormDescription>
+                    </div>
+                    <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                </FormItem>
+            )} />
         </div>
     );
-}
+};
 
 const StepAddress = () => {
-    const { control } = useForm<FormValues>();
+    const { control } = useFormContext<FormValues>();
     return (
         <div className="space-y-4 max-w-lg">
             <FormField control={control} name="street" render={({ field }) => (<FormItem><FormLabel>Street Address</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
@@ -88,7 +113,7 @@ const StepAddress = () => {
 };
 
 const StepContact = () => {
-     const { control } = useForm<FormValues>();
+     const { control } = useFormContext<FormValues>();
     return (
         <div className="space-y-4 max-w-lg">
             <FormField control={control} name="primaryContactName" render={({ field }) => (<FormItem><FormLabel>Primary Contact Name</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
@@ -101,7 +126,7 @@ const StepContact = () => {
 }
 
 const StepBank = () => {
-    const { control } = useForm<FormValues>();
+    const { control } = useFormContext<FormValues>();
     return (
         <div className="space-y-4 max-w-lg">
             <FormField control={control} name="bankName" render={({ field }) => (<FormItem><FormLabel>Bank Name</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>)} />
@@ -129,8 +154,18 @@ export function ClientWizard({ client, onBack, onSaveSuccess }: { client?: any, 
 
     const methods = useForm<FormValues>({
         resolver: zodResolver(formSchema),
-        defaultValues: client || {},
+        defaultValues: client || {
+            name: '',
+            status: 'draft',
+        },
     });
+
+    useEffect(() => {
+        if (client) {
+            methods.reset(client);
+        }
+    }, [client, methods]);
+
 
     const onSubmit = async (values: FormValues) => {
         setIsSaving(true);
