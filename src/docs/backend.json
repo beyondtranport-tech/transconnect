@@ -552,13 +552,19 @@
             "id": { "type": "string" },
             "clientId": { "type": "string", "description": "The ID of the client this agreement belongs to."},
             "assetId": { "type": "string", "description": "The ID of the asset being financed under this agreement."},
-            "type": { "type": "string", "enum": ["loan-pv", "loan-fl", "installment-sale", "rental", "discounting"], "description": "The type of lending agreement."},
+            "type": { "type": "string", "enum": ["loan", "installment-sale", "lease", "factoring"], "description": "The type of lending agreement."},
             "status": { "type": "string", "enum": ["pending", "credit", "payout", "active", "completed", "defaulted"], "description": "The current status of the agreement."},
-            "amount": { "type": "number", "description": "The principal amount of the agreement, inclusive of VAT." },
-            "vatAmount": { "type": "number", "description": "The VAT portion of the financed amount." },
-            "markup": { "type": "number", "description": "Unfunded income from the deal." },
-            "term": { "type": "number", "description": "The term of the agreement in months."},
-            "rate": { "type": "number", "description": "The annual interest rate."}
+            "description": { "type": "string", "description": "A description for the agreement." },
+            "totalAdvanced": { "type": "number", "description": "The principal amount of the agreement, inclusive of VAT." },
+            "interestRate": { "type": "number", "description": "The annual interest rate." },
+            "arrearInterest": { "type": "boolean", "description": "Is interest calculated in arrears?" },
+            "createDate": { "type": "string", "format": "date-time", "description": "The creation date of the agreement." },
+            "capitalizationDate": { "type": "string", "format": "date-time", "description": "The date from which interest is capitalized." },
+            "firstInstallmentDate": { "type": "string", "format": "date-time", "description": "The date of the first payment." },
+            "numberOfInstallments": { "type": "number", "description": "The total number of installments." },
+            "interval": { "type": "string", "enum": ["daily", "weekly", "bi-monthly", "monthly"], "description": "The payment interval." },
+            "paymentMethod": { "type": "string", "enum": ["debit_order", "eft"], "description": "The method of payment." },
+            "bankAccountId": { "type": "string", "description": "ID of the client's bank account to be used." }
         }
     },
     "Facility": {
