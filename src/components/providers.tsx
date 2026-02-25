@@ -6,7 +6,6 @@ import { Toaster } from '@/components/ui/toaster';
 import { CartProvider } from '@/context/CartContext';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import Analytics from '@/components/Analytics';
-import { VisitorTracker } from '@/components/VisitorTracker';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -14,7 +13,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <CartProvider>
         <TooltipProvider>
           <Analytics />
-          <VisitorTracker />
           {children}
           <Toaster />
         </TooltipProvider>
