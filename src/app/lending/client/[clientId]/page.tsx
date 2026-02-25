@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Suspense, useEffect, useState, useCallback, useMemo } from 'react';
@@ -12,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
-import { AgreementActionMenu } from '@/app/backend/lending/agreements/AgreementActionMenu';
+import { AgreementActionMenu } from '@/app/lending/agreements/AgreementActionMenu';
 
 const formatCurrency = (amount?: number) => {
     if (typeof amount !== 'number') return 'R 0.00';
@@ -119,4 +118,3 @@ export default function Page() {
         </Suspense>
     );
 }
-
