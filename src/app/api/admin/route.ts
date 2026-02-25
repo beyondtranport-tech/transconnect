@@ -89,9 +89,19 @@ export async function POST(req: NextRequest) {
                 const data = snapshot.docs.map(doc => {
                     const docData = doc.data();
                     const pathSegments = doc.ref.path.split('/');
+
+                    // If we're fetching agreements, ensure they are ONLY from the lending module.
+                    if (collectionName === 'agreements') {
+                        if (!(pathSegments.length === 4 && pathSegments[0] === 'lendingClients' && pathSegments[2] === 'agreements')) {
+                            return null; // Filter out agreements from other collections (e.g., shops)
+                        }
+                    }
+                    
                     const clientId = pathSegments.includes('lendingClients') ? pathSegments[pathSegments.indexOf('lendingClients') + 1] : docData.clientId;
+                    
                     return { id: doc.id, ...serializeTimestamps(docData), clientId };
-                });
+                }).filter(Boolean); // Remove null entries
+
                 return NextResponse.json({ success: true, data });
             }
             case 'deleteLendingAgreement': {
