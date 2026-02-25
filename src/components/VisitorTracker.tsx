@@ -11,7 +11,10 @@ export function VisitorTracker() {
   const firestore = useFirestore();
 
   useEffect(() => {
-    if (!firestore) return;
+    // Add a check to ensure this code only runs in the browser.
+    if (typeof window === 'undefined' || !firestore) {
+      return;
+    }
 
     const trackVisitor = () => {
       let visitorId = localStorage.getItem(VISITOR_ID_KEY);
@@ -47,4 +50,3 @@ export function VisitorTracker() {
 
   return null; // This component does not render anything
 }
-    
