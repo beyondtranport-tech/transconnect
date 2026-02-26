@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetFooter } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import * as React from "react";
-import { useUser, useAuth } from "@/firebase";
+import { useUser, useAuth, useFirestore, useDoc, useMemoFirebase } from "@/firebase";
 import { signOut } from "firebase/auth";
 import {
   DropdownMenu,
@@ -21,6 +21,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useCart } from "@/context/CartContext";
 import { Badge } from "@/components/ui/badge";
+import { doc } from 'firebase/firestore';
 
 const mainNavLinks = [
   { href: "/", label: "Home" },
@@ -47,6 +48,16 @@ export function Header() {
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
   const { cartItems } = useCart();
+  const firestore = useFirestore();
+
+  const companyDocRef = useMemoFirebase(() => {
+    if (!firestore || !user?.companyId) return null;
+    return doc(firestore, 'companies', user.companyId);
+  }, [firestore, user?.companyId]);
+  const { data: companyData } = useDoc(companyDocRef);
+
+  const isWctaMember = companyData?.referrerId === 'WCTA';
+
 
   const handleSignOut = async () => {
     if (!auth) return;
@@ -160,15 +171,22 @@ export function Header() {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
+                    
                     <DropdownMenuItem asChild>
                         <Link href="/account">My Account</Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                        <Link href="/supply-chain">Supply Chain Portal</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                        <Link href="/port-logistics">Port Logistics Portal</Link>
-                    </DropdownMenuItem>
+
+                    {(isAdmin || isWctaMember) && (
+                        <>
+                            <DropdownMenuItem asChild>
+                                <Link href="/supply-chain">Supply Chain Portal</Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                                <Link href="/port-logistics">Port Logistics Portal</Link>
+                            </DropdownMenuItem>
+                        </>
+                    )}
+                    
                     {isAdmin && (
                         <>
                             <DropdownMenuSeparator/>
@@ -176,7 +194,7 @@ export function Header() {
                             <DropdownMenuItem asChild>
                                 <Link href="/adminaccount">Admin Account</Link>
                             </DropdownMenuItem>
-                            <DropdownMenuItem asChild>
+                             <DropdownMenuItem asChild>
                                 <Link href="/backend">App Backend</Link>
                             </DropdownMenuItem>
                              <DropdownMenuItem asChild>

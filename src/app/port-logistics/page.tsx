@@ -23,15 +23,19 @@ import {
   ShoppingCart,
   CalendarCheck,
   Ship,
+  ShieldAlert,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect, Suspense, useCallback } from 'react';
-import { useUser, useAuth } from '@/firebase';
+import { useUser, useAuth, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { signOut } from 'firebase/auth';
+import { doc } from 'firebase/firestore';
 import dynamic from 'next/dynamic';
 import React from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import Link from 'next/link';
 
 // Dynamically import content components
 const DashboardContent = dynamic(() => import('./dashboard'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
@@ -49,10 +53,25 @@ function PortLogisticsPortalContent() {
   const [activeView, setActiveView] = useState(initialView);
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
+  const firestore = useFirestore();
+
+  const companyDocRef = useMemoFirebase(() => {
+    if (!firestore || !user?.companyId) return null;
+    return doc(firestore, 'companies', user.companyId);
+  }, [firestore, user?.companyId]);
+  const { data: companyData, isLoading: isCompanyLoading } = useDoc(companyDocRef);
+
+  const isLoading = isUserLoading || isCompanyLoading;
   
   useEffect(() => {
     setActiveView(initialView);
   }, [initialView]);
+
+   useEffect(() => {
+    if (!isLoading && !user) {
+        router.replace('/signin?redirect=/port-logistics');
+    }
+  }, [isLoading, user, router]);
 
   const onLogout = async () => {
     if (!auth) return;
@@ -78,13 +97,43 @@ function PortLogisticsPortalContent() {
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
   };
 
-  if (isUserLoading || !user) {
+  if (isLoading || !user) {
     return (
         <div className="flex justify-center items-center min-h-[calc(100vh-8rem)]">
             <Loader2 className="h-16 w-16 animate-spin text-primary" />
         </div>
     );
   }
+
+  const isAdmin = user?.email === 'mkoton100@gmail.com' || user?.email === 'beyondtransport@gmail.com';
+  const isWctaMember = companyData?.referrerId === 'WCTA';
+  const hasPremiumPlan = companyData?.membershipId === 'premium'; // Example required plan
+
+  if (!isAdmin && !isWctaMember) {
+      router.replace('/account');
+      return null;
+  }
+  
+  if (!isAdmin && !hasPremiumPlan) {
+        return (
+            <div className="container mx-auto flex min-h-[calc(100vh-8rem)] items-center justify-center px-4 py-16">
+                 <Card className="w-full max-w-lg text-center">
+                    <CardHeader>
+                        <CardTitle className="flex items-center justify-center gap-2 text-destructive"><ShieldAlert /> Premium Access Required</CardTitle>
+                        <CardDescription>
+                            The Port Logistics Portal requires a Premium membership plan.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <p>Please upgrade your membership to gain access to this exclusive portal and its powerful features.</p>
+                        <Button asChild className="mt-6">
+                            <Link href="/pricing">Upgrade Your Plan</Link>
+                        </Button>
+                    </CardContent>
+                </Card>
+            </div>
+        )
+    }
 
   const navigate = (view: string) => router.push(`/port-logistics?view=${view}`, { scroll: false });
 
@@ -146,7 +195,7 @@ function PortLogisticsPortalContent() {
               </Avatar>
               <div className="flex flex-col truncate">
                   <span className="text-sm font-medium text-sidebar-foreground truncate">
-                  {user.displayName || 'Super Admin'}
+                  {user.displayName || 'Admin'}
                   </span>
                   <span className="text-xs text-sidebar-foreground/70 truncate">
                   {user.email}
