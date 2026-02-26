@@ -1,9 +1,10 @@
+
 'use client';
 
-import React, { createContext, useContext, ReactNode, useMemo, useState, useEffect, useCallback, useRef } from 'react';
+import React, { createContext, useContext, ReactNode, useMemo, useState, useEffect, useCallback } from 'react';
 import { FirebaseApp } from 'firebase/app';
 import { Firestore, doc } from 'firebase/firestore';
-import { Auth, User, onIdTokenChanged, getIdToken } from 'firebase/auth';
+import { Auth, User, onIdTokenChanged, getIdTokenResult } from 'firebase/auth';
 import { FirebaseStorage } from 'firebase/storage';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 import { useDoc } from './firestore/use-doc';
@@ -20,6 +21,7 @@ interface FirebaseProviderProps {
 interface EnrichedUser extends User {
     companyId?: string;
     passwordChangeRequired?: boolean;
+    claims?: { [key: string]: any };
 }
 
 interface UserAuthState {
@@ -42,7 +44,6 @@ export interface FirebaseContextState {
 
 const FirebaseContext = createContext<FirebaseContextState | undefined>(undefined);
 
-// A robust async function to handle setting the session cookie.
 const setSessionCookie = async (idToken: string | null) => {
     try {
         await fetch('/api/auth/session', {
@@ -58,45 +59,6 @@ const setSessionCookie = async (idToken: string | null) => {
     }
 };
 
-function useEnrichedUser(baseUser: User | null, firestore: Firestore | null) {
-    const isAdmin = baseUser?.email === 'mkoton100@gmail.com' || baseUser?.email === 'beyondtransport@gmail.com';
-    const uid = baseUser?.uid;
-
-    const userDocRef = useMemoFirebase(() => {
-        if (!firestore || !uid || isAdmin) {
-            return null;
-        }
-        return doc(firestore, 'users', uid);
-    }, [firestore, uid, isAdmin]);
-
-    const { data: userData, isLoading: isUserDataLoading, forceRefresh } = useDoc<{ companyId?: string; passwordChangeRequired?: boolean }>(userDocRef);
-    
-    const companyId = userData?.companyId;
-    const passwordChangeRequired = userData?.passwordChangeRequired;
-
-    const enrichedUser = useMemo(() => {
-        if (!baseUser) return null;
-        // Do not enrich admin users with Firestore data
-        if (isAdmin) return baseUser as EnrichedUser;
-
-        return {
-            ...baseUser,
-            companyId: companyId,
-            passwordChangeRequired: passwordChangeRequired,
-        } as EnrichedUser;
-
-    }, [baseUser, companyId, passwordChangeRequired, isAdmin]);
-
-    const isEnriching = !isAdmin && !!baseUser && isUserDataLoading;
-    
-    return useMemo(() => ({
-        enrichedUser,
-        isEnriching,
-        forceRefresh,
-    }), [enrichedUser, isEnriching, forceRefresh]);
-}
-
-
 export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   children,
   firebaseApp,
@@ -107,16 +69,16 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   const [baseUser, setBaseUser] = useState<User | null>(auth.currentUser);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [authError, setAuthError] = useState<Error | null>(null);
+  const [claims, setClaims] = useState<any | null>(null);
+  const [isClaimsLoading, setIsClaimsLoading] = useState(true);
 
-  const { enrichedUser, isEnriching, forceRefresh } = useEnrichedUser(baseUser, firestore);
-
+  // Effect for Auth state
   useEffect(() => {
     const unsubscribe = onIdTokenChanged(
       auth,
       async (firebaseUser) => {
         const idToken = firebaseUser ? await firebaseUser.getIdToken() : null;
         await setSessionCookie(idToken);
-        
         setBaseUser(firebaseUser);
         setIsAuthLoading(false);
         setAuthError(null);
@@ -132,16 +94,56 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     return () => unsubscribe();
   }, [auth]);
 
+  // Effect for Custom Claims
+  useEffect(() => {
+    if (baseUser) {
+        setIsClaimsLoading(true);
+        // Force refresh to get latest claims after registration
+        baseUser.getIdTokenResult(true).then((idTokenResult) => {
+            setClaims(idTokenResult.claims);
+        }).catch(error => {
+            console.error("Error fetching user claims:", error);
+            setClaims(null);
+        }).finally(() => {
+            setIsClaimsLoading(false);
+        });
+    } else {
+        setClaims(null);
+        setIsClaimsLoading(false);
+    }
+  }, [baseUser]);
+
+  // Data fetching for user document from Firestore
+  const userDocRef = useMemoFirebase(() => {
+    if (!firestore || !baseUser?.uid) return null;
+    return doc(firestore, 'users', baseUser.uid);
+  }, [firestore, baseUser]);
+
+  const { data: userData, isLoading: isUserDataLoading, forceRefresh } = useDoc<{ companyId?: string; passwordChangeRequired?: boolean }>(userDocRef);
+
+  // Combine all data into the final user object
+  const enrichedUser = useMemo(() => {
+    if (!baseUser) return null;
+    return {
+        ...baseUser,
+        companyId: userData?.companyId,
+        passwordChangeRequired: userData?.passwordChangeRequired,
+        claims: claims || {},
+    } as EnrichedUser;
+  }, [baseUser, userData, claims]);
+
+  const isUserLoading = isAuthLoading || isUserDataLoading || isClaimsLoading;
+
   const contextValue = useMemo((): FirebaseContextState => ({
     firebaseApp,
     firestore,
     auth,
     storage,
     user: enrichedUser,
-    isUserLoading: isAuthLoading || isEnriching,
+    isUserLoading,
     userError: authError,
     forceRefreshUser: forceRefresh,
-  }), [firebaseApp, firestore, auth, storage, enrichedUser, isAuthLoading, isEnriching, authError, forceRefresh]);
+  }), [firebaseApp, firestore, auth, storage, enrichedUser, isUserLoading, authError, forceRefresh]);
 
   return (
     <FirebaseContext.Provider value={contextValue}>

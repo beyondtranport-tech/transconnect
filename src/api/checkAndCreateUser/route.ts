@@ -22,12 +22,8 @@ export async function POST(req: NextRequest) {
     const adminAuth = getAuth(app);
     const decodedToken = await adminAuth.verifyIdToken(idToken);
     
-    const firebaseUser = {
-      uid: decodedToken.uid,
-      email: decodedToken.email,
-      displayName: decodedToken.name || '',
-      phoneNumber: decodedToken.phone_number || '',
-    };
+    const { uid, email, name, phone_number } = decodedToken;
+    const firebaseUser = { uid, email, displayName: name || '', phoneNumber: phone_number || '' };
 
     if (!firebaseUser.email) {
       throw new Error("Token did not contain an email address.");
@@ -45,65 +41,65 @@ export async function POST(req: NextRequest) {
 
     const db = getFirestore(app);
     const userDocRef = db.collection('users').doc(firebaseUser.uid);
-    const userDocSnap = await userDocRef.get();
+    
+    // Use a transaction to ensure atomic read/writes for user and company creation.
+    await db.runTransaction(async (transaction) => {
+        const userDocSnap = await transaction.get(userDocRef);
 
-    // 4. FAST PATH: If user document exists and has a companyId, they are already set up. Do nothing.
-    if (userDocSnap.exists && userDocSnap.data()?.companyId) {
-      return NextResponse.json({ success: true, message: 'User document already exists and is complete.' });
+        // FAST PATH: If user document exists and has a companyId, they are already set up. Do nothing.
+        if (userDocSnap.exists && userDocSnap.data()?.companyId) {
+            return;
+        }
+        
+        // CORE LOGIC: Create the user and company documents.
+        const companyRef = db.collection('companies').doc();
+        const displayName = firebaseUser.displayName.trim();
+        const companyName = displayName ? `${displayName}'s Company` : 'My Company';
+
+        const newCompanyData: any = {
+            id: companyRef.id,
+            ownerId: firebaseUser.uid,
+            companyName: companyName,
+            membershipId: 'free',
+            isBillable: false,
+            walletBalance: 0,
+            pendingBalance: 0,
+            availableBalance: 0,
+            loyaltyTier: 'bronze',
+            status: 'pending',
+            createdAt: FieldValue.serverTimestamp(),
+            updatedAt: FieldValue.serverTimestamp(),
+        };
+        
+        if (referrerId) {
+            newCompanyData.referrerId = referrerId;
+        }
+        transaction.set(companyRef, newCompanyData);
+
+        const nameParts = (firebaseUser.displayName || '').split(' ');
+        const newUserData = {
+            id: firebaseUser.uid,
+            firstName: userDocSnap.data()?.firstName || nameParts[0] || 'New',
+            lastName: userDocSnap.data()?.lastName || (nameParts.length > 1 ? nameParts.slice(1).join(' ') : 'User'),
+            email: firebaseUser.email,
+            phone: userDocSnap.data()?.phone || firebaseUser.phoneNumber || '',
+            companyId: companyRef.id, // Link the user to the new company
+            role: 'owner',
+            updatedAt: FieldValue.serverTimestamp(),
+             ...( !userDocSnap.exists && { createdAt: FieldValue.serverTimestamp() } )
+        };
+        transaction.set(userDocRef, newUserData, { merge: true });
+    });
+    
+    // 4. Set Custom Claim if it's a WCTA member AFTER the transaction is successful.
+    if (referrerId === 'WCTA') {
+        await adminAuth.setCustomUserClaims(uid, { wcta: true });
     }
-    
-    // 5. CORE LOGIC: Create the user and company documents in a single, reliable transaction.
-    const batch = db.batch();
-    
-    // Create a new company document reference.
-    const companyRef = db.collection('companies').doc();
-    const displayName = firebaseUser.displayName.trim();
-    const companyName = displayName ? `${displayName}'s Company` : 'My Company';
-
-    const newCompanyData: any = {
-        id: companyRef.id,
-        ownerId: firebaseUser.uid,
-        companyName: companyName,
-        membershipId: 'free',
-        isBillable: false,
-        walletBalance: 0,
-        pendingBalance: 0,
-        availableBalance: 0,
-        loyaltyTier: 'bronze',
-        status: 'pending',
-        createdAt: FieldValue.serverTimestamp(),
-        updatedAt: FieldValue.serverTimestamp(),
-    };
-    
-    // Add referrerId if it was passed from the client (e.g., for WCTA).
-    if (referrerId) {
-        newCompanyData.referrerId = referrerId;
-    }
-    batch.set(companyRef, newCompanyData);
-
-    // Prepare the user document data.
-    const nameParts = (firebaseUser.displayName || '').split(' ');
-    const newUserData = {
-        id: firebaseUser.uid,
-        firstName: userDocSnap.data()?.firstName || nameParts[0] || 'New',
-        lastName: userDocSnap.data()?.lastName || (nameParts.length > 1 ? nameParts.slice(1).join(' ') : 'User'),
-        email: firebaseUser.email,
-        phone: userDocSnap.data()?.phone || firebaseUser.phoneNumber || '',
-        companyId: companyRef.id, // Link the user to the new company
-        role: 'owner',
-        createdAt: FieldValue.serverTimestamp(),
-        updatedAt: FieldValue.serverTimestamp(),
-    };
-    batch.set(userDocRef, newUserData, { merge: true });
-    
-    // Commit the transaction.
-    await batch.commit();
 
     return NextResponse.json({ success: true, message: 'User account and company created successfully.' });
 
   } catch (error: any) {
     console.error(`CRITICAL ERROR in checkAndCreateUser:`, error);
-    // Ensure a JSON response is always sent on failure.
     return NextResponse.json({ success: false, error: `Internal Server Error: ${error.message}` }, { status: 500 });
   }
 }

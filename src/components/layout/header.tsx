@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetFooter } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import * as React from "react";
-import { useUser, useAuth, useFirestore, useDoc, useMemoFirebase } from "@/firebase";
+import { useUser, useAuth } from "@/firebase";
 import { signOut } from "firebase/auth";
 import {
   DropdownMenu,
@@ -21,7 +21,6 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useCart } from "@/context/CartContext";
 import { Badge } from "@/components/ui/badge";
-import { doc } from 'firebase/firestore';
 
 const mainNavLinks = [
   { href: "/", label: "Home" },
@@ -48,20 +47,11 @@ export function Header() {
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
   const { cartItems } = useCart();
-  const firestore = useFirestore();
-
-  const companyDocRef = useMemoFirebase(() => {
-    if (!firestore || !user?.companyId) return null;
-    return doc(firestore, 'companies', user.companyId);
-  }, [firestore, user?.companyId]);
-  const { data: companyData } = useDoc(companyDocRef);
 
   const handleSignOut = async () => {
     if (!auth) return;
     try {
         await signOut(auth);
-        // The clearCart() logic is now handled automatically by the CartProvider
-        // when the user state changes to null.
         setIsSheetOpen(false);
         router.push('/');
     } catch (error) {
@@ -75,7 +65,7 @@ export function Header() {
   };
 
   const isAdmin = user && (user.email === 'beyondtransport@gmail.com' || user.email === 'mkoton100@gmail.com');
-  const isWctaMember = companyData?.referrerId === 'WCTA';
+  const isWctaMember = user?.claims?.wcta === true;
 
   const navItems = [
     { href: "/", label: "Home" },

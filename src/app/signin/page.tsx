@@ -43,21 +43,22 @@ function SignInFormComponent() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [isWaitingForProfile, setIsWaitingForProfile] = useState(false);
+  const [authActionInitiated, setAuthActionInitiated] = useState(false);
   const auth = useAuth();
   const { user, isUserLoading, forceRefresh } = useUser();
   const redirectParam = searchParams.get('redirect');
 
   // This effect handles the final redirect after the user profile is confirmed to be loaded.
   useEffect(() => {
-    // Only redirect if we are in the "waiting" state and the user object is fully loaded with a companyId.
-    if (isWaitingForProfile && user?.companyId) {
-        setIsWaitingForProfile(false); // Turn off waiting state
-        const isAdmin = user.email === 'mkoton100@gmail.com' || user.email === 'beyondtransport@gmail.com';
+    // Only redirect if we've started the process and the user object is fully loaded (including claims and firestore data).
+    if (authActionInitiated && !isUserLoading && user?.uid) {
+        setIsLoading(false);
+        setAuthActionInitiated(false);
+        const isAdmin = user.claims?.admin === true || user.email === 'mkoton100@gmail.com' || user.email === 'beyondtransport@gmail.com';
         const defaultRedirect = isAdmin ? '/adminaccount' : '/account';
-        router.replace(redirectParam || defaultRedirect);
+        router.push(redirectParam || defaultRedirect);
     }
-  }, [user, isWaitingForProfile, router, redirectParam]);
+  }, [authActionInitiated, isUserLoading, user, router, redirectParam]);
 
 
   const form = useForm<SignInFormValues>({
@@ -122,7 +123,9 @@ function SignInFormComponent() {
       const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
       const loggedInUser = userCredential.user;
       
-      const idToken = await getIdToken(loggedInUser, true);
+      const idToken = await getIdToken(loggedInUser, true); // Force refresh to get latest claims
+      
+      // Update session cookie on the server.
       await fetch('/api/auth/session', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -136,13 +139,14 @@ function SignInFormComponent() {
         body: JSON.stringify({}),
       }).catch(e => console.error("Non-critical background profile check failed:", e));
       
+      // Trigger the redirect process
+      setAuthActionInitiated(true);
       forceRefresh();
-      setIsWaitingForProfile(true); 
+
       toast({
         title: 'Sign In Successful',
         description: 'Loading your profile...',
       });
-      setIsLoading(false);
 
     } catch (error: any) {
       let title = 'An error occurred.';
@@ -224,9 +228,9 @@ function SignInFormComponent() {
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full" disabled={isLoading || isWaitingForProfile}>
-              {(isLoading || isWaitingForProfile) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-               {isWaitingForProfile ? 'Loading Profile...' : 'Sign In'}
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+               {isLoading ? 'Signing In...' : 'Sign In'}
             </Button>
           </form>
         </Form>

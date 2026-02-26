@@ -52,25 +52,27 @@ function JoinFormComponent() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [isWaitingForProfile, setIsWaitingForProfile] = useState(false);
+  const [authActionInitiated, setAuthActionInitiated] = useState(false);
   const auth = useAuth();
   const { user, isUserLoading, forceRefresh } = useUser();
   const redirectParam = searchParams.get('redirect');
 
   // This effect handles the final redirect after the user profile is confirmed to be loaded.
   useEffect(() => {
-    // Only redirect if we are in the "waiting" state and the user object is fully loaded with a companyId.
-    if (isWaitingForProfile && user?.companyId) {
-        setIsWaitingForProfile(false); // Turn off waiting state
+    // Only redirect if we've started the process and the user object is fully loaded (including claims and firestore data).
+    if (authActionInitiated && !isUserLoading && user?.uid) {
+        setIsLoading(false); // Turn off the main loading spinner
+        setAuthActionInitiated(false); // Reset the trigger
         toast({
             title: 'Account Ready!',
             description: "Redirecting to your dashboard...",
         });
-        const isAdmin = user.email === 'mkoton100@gmail.com' || user.email === 'beyondtransport@gmail.com';
+        const isAdmin = user.claims?.admin === true || user.email === 'mkoton100@gmail.com' || user.email === 'beyondtransport@gmail.com';
         const defaultRedirect = isAdmin ? '/adminaccount' : '/account';
         router.push(redirectParam || defaultRedirect);
     }
-  }, [user, isWaitingForProfile, router, redirectParam, toast]);
+  }, [authActionInitiated, isUserLoading, user, router, redirectParam, toast]);
+
 
   const userRole = searchParams.get('role');
   const financierType = searchParams.get('type');
@@ -158,12 +160,7 @@ function JoinFormComponent() {
         throw new Error("Could not retrieve auth token after user creation.");
       }
       
-      await fetch('/api/auth/session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ idToken: token }),
-      });
-
+      // Call the API that will create the user and company docs, and set custom claims if needed.
       const checkAndCreateUserResponse = await fetch('/api/checkAndCreateUser', {
           method: 'POST',
           headers: {
@@ -177,14 +174,22 @@ function JoinFormComponent() {
           const result = await checkAndCreateUserResponse.json();
           throw new Error(result.error || "Failed to create user profile in database.");
       }
+      
+      // Update session cookie on the server.
+      await fetch('/api/auth/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken: token }),
+      });
 
+      // Trigger the redirect process.
+      setAuthActionInitiated(true);
       forceRefresh();
-      setIsWaitingForProfile(true); 
+      
       toast({
         title: 'Account Created!',
         description: "Finalizing your profile, please wait...",
       });
-      setIsLoading(false);
 
     } catch (error: any) {
       let title = 'An error occurred.';
@@ -334,9 +339,9 @@ function JoinFormComponent() {
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full" disabled={isLoading || isWaitingForProfile}>
-              {(isLoading || isWaitingForProfile) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isWaitingForProfile ? 'Finalizing...' : 'Create Free Account'}
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isLoading ? 'Creating Account...' : 'Create Free Account'}
             </Button>
           </form>
         </Form>
