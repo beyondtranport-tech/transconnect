@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -7,6 +6,7 @@ import { ArrowRight, CheckCircle, Handshake } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import data from "@/lib/placeholder-images.json";
+import * as gtag from '@/lib/gtag';
 
 const { placeholderImages } = data;
 
@@ -30,7 +30,7 @@ export default function WCTAMallPage() {
                 <div className="absolute inset-0 bg-black/60" />
                 <div className="relative h-full flex flex-col items-center justify-center text-center text-primary-foreground z-10 p-4">
                     <div className="mb-4">
-                         <Image src="/wcta-logo.png" alt="WCTA Logo" width={200} height={80} />
+                         <Image src="/wcta/wcta-logo.png" alt="WCTA Logo" width={200} height={80} />
                     </div>
                     <h1 className="text-4xl md:text-5xl font-bold font-headline">Western Cape Truckers Association Mall</h1>
                     <p className="mt-4 text-lg md:text-xl max-w-3xl">An exclusive hub for WCTA members to connect, grow, and save.</p>
@@ -63,9 +63,9 @@ export default function WCTAMallPage() {
                             </CardContent>
                             <CardFooter>
                                 <Button asChild className="w-full" variant="outline">
-                                    <a href="https://www.wcta.example.com/join" target="_blank" rel="noopener noreferrer">
+                                    <Link href="/wcta/join">
                                         Join the WCTA
-                                    </a>
+                                    </Link>
                                 </Button>
                             </CardFooter>
                         </Card>

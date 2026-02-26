@@ -69,6 +69,10 @@ import MarketingStudio from './marketing-studio';
 import SupportChatContent from './support-chat';
 import LoadBoardContent from './load-board-content';
 import VehicleListingsContent from './vehicle-listings-content';
+import FinancialSetup from './financial-setup';
+import SalesRoadmap from './sales-roadmap';
+import Targets from './targets';
+import BudgetPage from './budget/page';
 
 
 // Placeholder components for sections under construction
@@ -145,6 +149,11 @@ function AccountPageContent() {
       // Placeholders
       case 'documents': return <DocumentsContent />;
       case 'settings': return <SettingsContent />;
+      case 'financial-setup': return <FinancialSetup />;
+      case 'sales-roadmap': return <SalesRoadmap />;
+      case 'targets': return <Targets />;
+      case 'budget': return <BudgetPage />;
+
 
       case 'dashboard':
       default:
@@ -165,6 +174,8 @@ function AccountPageContent() {
   };
   
   const isSalesActive = ['network', 'performance', 'offer', 'emails'].includes(activeView);
+  const isFinancialsActive = ['financial-setup', 'sales-roadmap', 'targets', 'budget'].includes(activeView);
+
 
   return (
     <SidebarProvider>
@@ -255,6 +266,18 @@ function AccountPageContent() {
                             <Mail />Email Templates
                         </SidebarMenuSubButton>
                     </SidebarMenuSubItem>
+                </SidebarMenuSub>
+              </SidebarMenuItem>
+                 <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Financials" isActive={isFinancialsActive}>
+                    <TrendingUp /><span>Financials</span>
+                </SidebarMenuButton>
+                <SidebarMenuSub>
+                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'financial-setup'} onClick={() => navigate('financial-setup')}>Set Up</SidebarMenuSubButton></SidebarMenuSubItem>
+                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'sales-roadmap'} onClick={() => navigate('sales-roadmap')}>Sales Roadmap</SidebarMenuSubButton></SidebarMenuSubItem>
+                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'targets'} onClick={() => navigate('targets')}>Targets</SidebarMenuSubButton></SidebarMenuSubItem>
+                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'budget'} onClick={() => navigate('budget')}>Budget</SidebarMenuSubButton></SidebarMenuSubItem>
+                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'forecast'} onClick={() => navigate('forecast')}>Forecast</SidebarMenuSubButton></SidebarMenuSubItem>
                 </SidebarMenuSub>
               </SidebarMenuItem>
                <SidebarMenuItem>
