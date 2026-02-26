@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    // 2. Authenticate the request from the client.
+    // 2. Authenticate the request
     const authorization = req.headers.get('authorization');
     if (!authorization?.startsWith('Bearer ')) {
       return NextResponse.json({ success: false, error: 'Unauthorized: No token provided.' }, { status: 401 });
@@ -33,25 +33,26 @@ export async function POST(req: NextRequest) {
       throw new Error("Token did not contain an email address.");
     }
     
-    // 3. Get referrerId from the request body if it exists.
+    // 3. Get referrerId from request body if it exists
     let referrerId: string | null = null;
     try {
       const body = await req.json();
       referrerId = body.referrerId;
     } catch (e) {
-      // Body might be empty for sign-in flows, which is acceptable.
+      // Body might be empty, which is fine for sign-in flows.
     }
 
     const db = getFirestore(app);
     const userDocRef = db.collection('users').doc(firebaseUser.uid);
     const userDocSnap = await userDocRef.get();
 
-    // 4. If user profile and company are already fully set up, do nothing.
+    // 4. If user is already set up, do nothing.
     if (userDocSnap.exists && userDocSnap.data()?.companyId) {
       return NextResponse.json({ success: true, message: 'User document already exists and is complete.' });
     }
     
-    // 5. This is the streamlined, stable creation path for all new registrations.
+    // 5. If user is NOT fully set up, run the creation logic.
+    // This is a simplified and more robust path for all new registrations.
     const batch = db.batch();
     const companyRef = db.collection('companies').doc();
     
@@ -68,13 +69,11 @@ export async function POST(req: NextRequest) {
         pendingBalance: 0,
         availableBalance: 0,
         loyaltyTier: 'bronze',
-        rewardPoints: 50, // Default signup points
         status: 'pending',
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
     };
     
-    // Critical: Add the referrerId if it exists (e.g., 'WCTA').
     if (referrerId) {
         newCompanyData.referrerId = referrerId;
     }
@@ -88,19 +87,40 @@ export async function POST(req: NextRequest) {
         phone: userDocSnap.data()?.phone || firebaseUser.phoneNumber || '',
         companyId: companyRef.id,
         role: 'owner',
-        createdAt: FieldValue.serverTimestamp(), // Always set on creation
         updatedAt: FieldValue.serverTimestamp(),
     };
     
+    // Only add createdAt and award points if it's a completely new user document
+    if (!userDocSnap.exists) {
+        (newUserData as any).createdAt = FieldValue.serverTimestamp();
+        
+        // This can fail if the config doc doesn't exist, but it's not critical. Wrap in a try-catch.
+        try {
+            const loyaltyConfigDoc = await db.collection('configuration').doc('loyaltySettings').get();
+            const signupPoints = loyaltyConfigDoc.data()?.userSignupPoints || 50;
+            newCompanyData.rewardPoints = signupPoints;
+            
+            if (referrerId) {
+                const partnerReferralPoints = loyaltyConfigDoc.data()?.partnerReferralPoints || 200;
+                const referrerCompanyRef = db.collection('companies').doc(referrerId);
+                // Use a merge update to avoid failing if the referrer doc doesn't exist yet, though it should.
+                batch.set(referrerCompanyRef, { rewardPoints: FieldValue.increment(partnerReferralPoints) }, { merge: true });
+            }
+        } catch (pointError) {
+            console.warn("Could not award sign-up points:", pointError);
+        }
+    }
+    
     batch.set(companyRef, newCompanyData);
-    batch.set(userDocRef, newUserData, { merge: true }); // Use merge to be safe
+    batch.set(userDocRef, newUserData, { merge: true });
     
     await batch.commit();
 
     return NextResponse.json({ success: true, message: 'User account created/updated successfully.' });
 
   } catch (error: any) {
-    console.error(`CRITICAL Error in checkAndCreateUser:`, error);
+    console.error(`Error in checkAndCreateUser:`, error);
+    // Ensure a JSON response is always sent
     return NextResponse.json({ success: false, error: `Internal Server Error: ${error.message}` }, { status: 500 });
   }
 }
