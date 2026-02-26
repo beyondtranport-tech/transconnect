@@ -108,7 +108,7 @@ function SupplyChainPortalContent() {
   
   const isAdmin = user?.email === 'mkoton100@gmail.com' || user?.email === 'beyondtransport@gmail.com';
   const isWctaMember = companyData?.referrerId === 'WCTA';
-  const hasPremiumPlan = companyData?.membershipId === 'premium'; // Example required plan
+  const hasPremiumPlan = companyData?.membershipId === 'premium';
 
   if (!isAdmin && !isWctaMember) {
       router.replace('/account');

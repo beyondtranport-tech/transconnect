@@ -34,7 +34,7 @@ import { signOut } from 'firebase/auth';
 import { doc } from 'firebase/firestore';
 import dynamic from 'next/dynamic';
 import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import Link from 'next/link';
 
 // Dynamically import content components
@@ -104,7 +104,7 @@ function PortLogisticsPortalContent() {
         </div>
     );
   }
-
+  
   const isAdmin = user?.email === 'mkoton100@gmail.com' || user?.email === 'beyondtransport@gmail.com';
   const isWctaMember = companyData?.referrerId === 'WCTA';
   const hasPremiumPlan = companyData?.membershipId === 'premium'; // Example required plan
