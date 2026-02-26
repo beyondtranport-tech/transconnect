@@ -22,6 +22,7 @@ interface EnrichedUser extends User {
     companyId?: string;
     passwordChangeRequired?: boolean;
     claims?: { [key: string]: any };
+    companyData?: any; // Added to hold the entire company document
 }
 
 interface UserAuthState {
@@ -120,6 +121,15 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   }, [firestore, baseUser]);
 
   const { data: userData, isLoading: isUserDataLoading, forceRefresh } = useDoc<{ companyId?: string; passwordChangeRequired?: boolean }>(userDocRef);
+  const companyId = userData?.companyId;
+
+  // NEW: Fetch company document right here
+  const companyDocRef = useMemoFirebase(() => {
+    if (!firestore || !companyId) return null;
+    return doc(firestore, 'companies', companyId);
+  }, [firestore, companyId]);
+
+  const { data: companyData, isLoading: isCompanyLoading } = useDoc(companyDocRef);
 
   // Combine all data into the final user object
   const enrichedUser = useMemo(() => {
@@ -129,10 +139,11 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
         companyId: userData?.companyId,
         passwordChangeRequired: userData?.passwordChangeRequired,
         claims: claims || {},
+        companyData: companyData, // Attach the fetched company data
     } as EnrichedUser;
-  }, [baseUser, userData, claims]);
+  }, [baseUser, userData, claims, companyData]); // Add companyData to dependency array
 
-  const isUserLoading = isAuthLoading || isUserDataLoading || isClaimsLoading;
+  const isUserLoading = isAuthLoading || isUserDataLoading || isClaimsLoading || (userData?.companyId ? isCompanyLoading : false);
 
   const contextValue = useMemo((): FirebaseContextState => ({
     firebaseApp,

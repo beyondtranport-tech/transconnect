@@ -1,5 +1,7 @@
 
-import { getFirestore, FieldValue, Timestamp } from 'firebase-admin/firestore';
+'use server';
+
+import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase-admin';
@@ -21,91 +23,72 @@ export async function POST(req: NextRequest) {
     const decodedToken = await adminAuth.verifyIdToken(idToken);
     
     const { uid, email, name, phone_number } = decodedToken;
-    const firebaseUser = { uid, email, displayName: name || '', phoneNumber: phone_number || '' };
+    const db = getFirestore(app);
 
-    if (!firebaseUser.email) {
-      throw new Error("Token did not contain an email address.");
+    const userDocRef = db.collection('users').doc(uid);
+    const userDocSnap = await userDocRef.get();
+
+    // If user document already exists and has a companyId, we are done.
+    // This also handles the case where the user signs in again.
+    if (userDocSnap.exists && userDocSnap.data()?.companyId) {
+      // Ensure WCTA claim is set if they are a WCTA member
+      if (userDocSnap.data()?.companyData?.referrerId === 'WCTA' && !decodedToken.wcta) {
+          await adminAuth.setCustomUserClaims(uid, { wcta: true });
+      }
+      return NextResponse.json({ success: true, message: 'User already setup.' });
     }
     
-    let referrerId: string | null = null;
-    try {
-      const body = await req.json();
-      referrerId = body.referrerId;
-    } catch (e) {
-      // Body might be empty, which is acceptable.
+    const { referrerId } = await req.json().catch(() => ({ referrerId: null }));
+
+    const companyRef = db.collection('companies').doc();
+    const companyId = companyRef.id;
+
+    const displayName = name || '';
+    const companyName = displayName.trim() ? `${displayName.trim()}'s Company` : 'My Company';
+    
+    const newCompanyData: any = {
+      id: companyId,
+      ownerId: uid,
+      companyName,
+      membershipId: 'free',
+      isBillable: false,
+      walletBalance: 0,
+      pendingBalance: 0,
+      availableBalance: 0,
+      loyaltyTier: 'bronze',
+      status: 'pending',
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+      rewardPoints: 50,
+    };
+
+    if (referrerId) {
+      newCompanyData.referrerId = referrerId;
     }
+    
+    const nameParts = displayName.split(' ').filter(Boolean);
+    const newUserData = {
+      id: uid,
+      firstName: nameParts[0] || 'New',
+      lastName: nameParts.slice(1).join(' ') || 'User',
+      email: email,
+      phone: phone_number || '',
+      companyId: companyId,
+      role: 'owner',
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+    };
+    
+    // Simple, sequential writes for stability.
+    await companyRef.set(newCompanyData);
+    await userDocRef.set(newUserData, { merge: true });
 
-    const db = getFirestore(app);
-    const userDocRef = db.collection('users').doc(firebaseUser.uid);
-    const companyCollectionRef = db.collection('companies');
-
-    await db.runTransaction(async (transaction) => {
-        const userDoc = await transaction.get(userDocRef);
-        // If the user document exists and already has a companyId, the user is fully set up.
-        // We will just ensure their WCTA claim is set if applicable and then do nothing else.
-        if (userDoc.exists && userDoc.data()?.companyId) {
-             if (referrerId === 'WCTA') {
-                const existingCompany = await transaction.get(companyCollectionRef.doc(userDoc.data()?.companyId));
-                if (existingCompany.exists && existingCompany.data()?.referrerId === 'WCTA') {
-                    // The custom claim might have been missed if a previous function failed.
-                    // This ensures it gets set on subsequent logins.
-                    await adminAuth.setCustomUserClaims(uid, { wcta: true });
-                }
-             }
-            return;
-        }
-
-        // --- Create New Company and User atomically ---
-        const companyRef = companyCollectionRef.doc();
-        const companyId = companyRef.id;
-
-        const displayName = firebaseUser.displayName.trim();
-        const companyName = displayName ? `${displayName}'s Company` : 'My Company';
-
-        const newCompanyData: any = {
-            id: companyId,
-            ownerId: uid,
-            companyName: companyName,
-            membershipId: 'free',
-            isBillable: false,
-            walletBalance: 0,
-            pendingBalance: 0,
-            availableBalance: 0,
-            loyaltyTier: 'bronze',
-            status: 'pending',
-            createdAt: FieldValue.serverTimestamp(),
-            updatedAt: FieldValue.serverTimestamp(),
-        };
-        if (referrerId) {
-            newCompanyData.referrerId = referrerId;
-        }
-
-        const nameParts = (firebaseUser.displayName || '').split(' ');
-        const newUserData: any = {
-            id: uid,
-            firstName: nameParts[0] || 'New',
-            lastName: nameParts.length > 1 ? nameParts.slice(1).join(' ') : 'User',
-            email: firebaseUser.email,
-            phone: firebaseUser.phoneNumber || '',
-            companyId: companyId,
-            role: 'owner',
-            updatedAt: FieldValue.serverTimestamp(),
-        };
-
-        if (!userDoc.exists) {
-            newUserData.createdAt = FieldValue.serverTimestamp();
-        }
-        
-        transaction.set(companyRef, newCompanyData);
-        transaction.set(userDocRef, newUserData, { merge: true });
-    });
-
-    // This runs only after the transaction above successfully commits.
+    // Set custom claim after successful write.
     if (referrerId === 'WCTA') {
         await adminAuth.setCustomUserClaims(uid, { wcta: true });
     }
 
-    return NextResponse.json({ success: true, message: 'User account and company created successfully.' });
+    return NextResponse.json({ success: true, message: 'User account created successfully.' });
 
   } catch (error: any) {
     console.error(`CRITICAL ERROR in checkAndCreateUser:`, error);

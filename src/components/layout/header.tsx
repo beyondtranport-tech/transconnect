@@ -44,10 +44,10 @@ export function Header() {
   const pathname = usePathname();
   const router = useRouter();
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
-  const { user, isUserLoading } = useUser();
+  const { user, isUserLoading } = useUser(); // useUser now provides the enriched user object
   const auth = useAuth();
   const { cartItems } = useCart();
-
+  
   const handleSignOut = async () => {
     if (!auth) return;
     try {
@@ -65,7 +65,9 @@ export function Header() {
   };
 
   const isAdmin = user && (user.email === 'beyondtransport@gmail.com' || user.email === 'mkoton100@gmail.com');
-  const isWctaMember = user?.claims?.wcta === true;
+  
+  // Simplified logic using the enriched user object
+  const isWctaMember = user?.claims?.wcta === true || user?.companyData?.referrerId === 'WCTA';
 
   const navItems = [
     { href: "/", label: "Home" },
@@ -271,13 +273,7 @@ export function Header() {
                         <div className="h-10 w-full rounded-md bg-muted/50 animate-pulse" />
                     ) : user ? (
                         <div className='flex flex-col gap-2'>
-                            <Button asChild className="w-full justify-start">
-                                <Link href="/account" onClick={() => setIsSheetOpen(false)}>
-                                    <User className="mr-2 h-5 w-5" />
-                                    My Account
-                                </Link>
-                            </Button>
-                             {(isAdmin || isWctaMember) && (
+                             {(isAdmin || isWctaMember) ? (
                                 <>
                                     <Button asChild className="w-full justify-start">
                                         <Link href="/supply-chain" onClick={() => setIsSheetOpen(false)}>
@@ -292,6 +288,13 @@ export function Header() {
                                         </Link>
                                     </Button>
                                 </>
+                            ) : (
+                                 <Button asChild className="w-full justify-start">
+                                    <Link href="/account" onClick={() => setIsSheetOpen(false)}>
+                                        <User className="mr-2 h-5 w-5" />
+                                        My Account
+                                    </Link>
+                                </Button>
                             )}
                              {isAdmin && (
                                 <>
