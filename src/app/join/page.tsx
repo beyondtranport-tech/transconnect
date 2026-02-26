@@ -32,7 +32,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Building2, User, Eye, EyeOff } from 'lucide-react';
+import { Loader2, Building2, User, Eye, EyeOff, Handshake } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 const formSchema = z.object({
@@ -234,6 +234,14 @@ function JoinFormComponent() {
             </Badge>
           </div>
         )}
+        {referrerId === 'WCTA' && (
+            <div className="mb-4">
+                <Badge variant="secondary" className="w-full justify-center p-2 text-sm">
+                    <Handshake className="mr-2 h-4 w-4 text-primary" />
+                    Joining with WCTA Benefits
+                </Badge>
+            </div>
+        )}
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -297,7 +305,7 @@ function JoinFormComponent() {
                 <FormItem>
                   <div className="flex items-center justify-between">
                       <FormLabel>Password</FormLabel>
-                      <button type="button" onClick={handlePasswordReset} className="text-sm font-medium text-primary hover:underline">
+                      <button type="button" onClick={handlePasswordReset} className="text-sm font-medium text-primary hover:underline" disabled={isLoading}>
                           Forgot password?
                       </button>
                   </div>
