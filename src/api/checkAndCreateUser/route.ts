@@ -19,19 +19,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Unauthorized: No token provided.' }, { status: 401 });
     }
     const idToken = authorization.split('Bearer ')[1];
+    
     const adminAuth = getAuth(app);
     const decodedToken = await adminAuth.verifyIdToken(idToken);
     
-    const { uid, email, name, phone_number } = decodedToken;
+    const { uid, email, name } = decodedToken;
     const db = getFirestore(app);
 
     const userDocRef = db.collection('users').doc(uid);
     const userDocSnap = await userDocRef.get();
 
-    // If user document already exists and has a companyId, we are done.
-    // This also handles the case where the user signs in again.
+    // If user is already fully set up, we are done.
     if (userDocSnap.exists && userDocSnap.data()?.companyId) {
-      // Ensure WCTA claim is set if they are a WCTA member
+      // Set WCTA claim for existing users if they are WCTA members
       if (userDocSnap.data()?.companyData?.referrerId === 'WCTA' && !decodedToken.wcta) {
           await adminAuth.setCustomUserClaims(uid, { wcta: true });
       }
@@ -40,6 +40,7 @@ export async function POST(req: NextRequest) {
     
     const { referrerId } = await req.json().catch(() => ({ referrerId: null }));
 
+    // Simple, sequential writes for maximum stability. No batch.
     const companyRef = db.collection('companies').doc();
     const companyId = companyRef.id;
 
@@ -59,31 +60,31 @@ export async function POST(req: NextRequest) {
       status: 'pending',
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
-      rewardPoints: 50,
+      rewardPoints: 50, // Default starting points
     };
-
+    
     if (referrerId) {
       newCompanyData.referrerId = referrerId;
     }
-    
+
+    await companyRef.set(newCompanyData);
+
     const nameParts = displayName.split(' ').filter(Boolean);
     const newUserData = {
       id: uid,
       firstName: nameParts[0] || 'New',
       lastName: nameParts.slice(1).join(' ') || 'User',
       email: email,
-      phone: phone_number || '',
+      phone: decodedToken.phone_number || '',
       companyId: companyId,
       role: 'owner',
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
     };
     
-    // Simple, sequential writes for stability.
-    await companyRef.set(newCompanyData);
     await userDocRef.set(newUserData, { merge: true });
 
-    // Set custom claim after successful write.
+    // Set custom claim AFTER successful database writes.
     if (referrerId === 'WCTA') {
         await adminAuth.setCustomUserClaims(uid, { wcta: true });
     }
