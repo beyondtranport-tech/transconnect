@@ -22,7 +22,8 @@ import {
   Package,
   Building,
   BarChart3,
-  Network
+  Network,
+  ShoppingCart
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
