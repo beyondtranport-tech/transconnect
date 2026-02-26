@@ -1,4 +1,3 @@
-'use server';
 
 import { getFirestore, FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { NextRequest, NextResponse } from 'next/server';
@@ -8,7 +7,7 @@ import { getAdminApp } from '@/lib/firebase-admin';
 export async function POST(req: NextRequest) {
   const { app, error: initError } = getAdminApp();
   if (initError || !app) {
-    console.error("CRITICAL: Admin SDK init error in checkAndCreateUser:", initError);
+    console.error("Admin SDK init error in checkAndCreateUser:", initError);
     return NextResponse.json({ success: false, error: 'Internal Server Error: Could not connect to Firebase.' }, { status: 500 });
   }
 
