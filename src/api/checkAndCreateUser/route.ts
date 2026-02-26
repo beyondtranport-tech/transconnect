@@ -1,11 +1,10 @@
 
-import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { getFirestore, FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase-admin';
 
 export async function POST(req: NextRequest) {
-  // 1. Initialize Admin App
   const { app, error: initError } = getAdminApp();
   if (initError || !app) {
     console.error("Admin SDK init error in checkAndCreateUser:", initError);
@@ -13,7 +12,6 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    // 2. Authenticate the request from the client.
     const authorization = req.headers.get('authorization');
     if (!authorization?.startsWith('Bearer ')) {
       return NextResponse.json({ success: false, error: 'Unauthorized: No token provided.' }, { status: 401 });
@@ -29,78 +27,80 @@ export async function POST(req: NextRequest) {
       throw new Error("Token did not contain an email address.");
     }
     
-    // 3. Safely get referrerId from the request body.
     let referrerId: string | null = null;
     try {
       const body = await req.json();
       referrerId = body.referrerId;
     } catch (e) {
-      // Body might be empty or invalid JSON, which is acceptable.
+      // Body might be empty, which is acceptable.
     }
 
     const db = getFirestore(app);
     const userDocRef = db.collection('users').doc(firebaseUser.uid);
-    const userDocSnap = await userDocRef.get();
+    const companyCollectionRef = db.collection('companies');
 
-    // FAST PATH: If user document exists and has a companyId, they are already set up. Do nothing.
-    if (userDocSnap.exists && userDocSnap.data()?.companyId) {
-        // As a safeguard, ensure claim is set if they are a WCTA member
-        if(userDocSnap.data()?.companyId && referrerId === 'WCTA') {
-            const companyDoc = await db.collection('companies').doc(userDocSnap.data()?.companyId).get();
-            if(companyDoc.data()?.referrerId === 'WCTA') {
-                await adminAuth.setCustomUserClaims(uid, { wcta: true });
-            }
+    await db.runTransaction(async (transaction) => {
+        const userDoc = await transaction.get(userDocRef);
+        // If the user document exists and already has a companyId, the user is fully set up.
+        // We will just ensure their WCTA claim is set if applicable and then do nothing else.
+        if (userDoc.exists && userDoc.data()?.companyId) {
+             if (referrerId === 'WCTA') {
+                const existingCompany = await transaction.get(companyCollectionRef.doc(userDoc.data()?.companyId));
+                if (existingCompany.exists && existingCompany.data()?.referrerId === 'WCTA') {
+                    // The custom claim might have been missed if a previous function failed.
+                    // This ensures it gets set on subsequent logins.
+                    await adminAuth.setCustomUserClaims(uid, { wcta: true });
+                }
+             }
+            return;
         }
-        return NextResponse.json({ success: true, message: 'User already configured.' });
-    }
-    
-    // --- NEW SIMPLIFIED AND ATOMIC CREATION LOGIC ---
-    const batch = db.batch();
 
-    // 1. Create the Company Document
-    const companyRef = db.collection('companies').doc();
-    const displayName = firebaseUser.displayName.trim();
-    const companyName = displayName ? `${displayName}'s Company` : 'My Company';
+        // --- Create New Company and User atomically ---
+        const companyRef = companyCollectionRef.doc();
+        const companyId = companyRef.id;
 
-    const newCompanyData: any = {
-        id: companyRef.id,
-        ownerId: firebaseUser.uid,
-        companyName: companyName,
-        membershipId: 'free',
-        isBillable: false,
-        walletBalance: 0,
-        pendingBalance: 0,
-        availableBalance: 0,
-        loyaltyTier: 'bronze',
-        status: 'pending',
-        createdAt: FieldValue.serverTimestamp(),
-        updatedAt: FieldValue.serverTimestamp(),
-    };
-    
-    if (referrerId) {
-        newCompanyData.referrerId = referrerId;
-    }
-    batch.set(companyRef, newCompanyData);
+        const displayName = firebaseUser.displayName.trim();
+        const companyName = displayName ? `${displayName}'s Company` : 'My Company';
 
-    // 2. Create the User Document
-    const nameParts = (firebaseUser.displayName || '').split(' ');
-    const newUserData = {
-        id: firebaseUser.uid,
-        firstName: userDocSnap.data()?.firstName || nameParts[0] || 'New',
-        lastName: userDocSnap.data()?.lastName || (nameParts.length > 1 ? nameParts.slice(1).join(' ') : 'User'),
-        email: firebaseUser.email,
-        phone: userDocSnap.data()?.phone || firebaseUser.phoneNumber || '',
-        companyId: companyRef.id, // Link the user to the new company
-        role: 'owner',
-        updatedAt: FieldValue.serverTimestamp(),
-         ...( !userDocSnap.exists && { createdAt: FieldValue.serverTimestamp() } )
-    };
-    batch.set(userDocRef, newUserData, { merge: true });
+        const newCompanyData: any = {
+            id: companyId,
+            ownerId: uid,
+            companyName: companyName,
+            membershipId: 'free',
+            isBillable: false,
+            walletBalance: 0,
+            pendingBalance: 0,
+            availableBalance: 0,
+            loyaltyTier: 'bronze',
+            status: 'pending',
+            createdAt: FieldValue.serverTimestamp(),
+            updatedAt: FieldValue.serverTimestamp(),
+        };
+        if (referrerId) {
+            newCompanyData.referrerId = referrerId;
+        }
 
-    // 3. Commit the atomic write
-    await batch.commit();
+        const nameParts = (firebaseUser.displayName || '').split(' ');
+        const newUserData: any = {
+            id: uid,
+            firstName: nameParts[0] || 'New',
+            lastName: nameParts.length > 1 ? nameParts.slice(1).join(' ') : 'User',
+            email: firebaseUser.email,
+            phone: firebaseUser.phoneNumber || '',
+            companyId: companyId,
+            role: 'owner',
+            updatedAt: FieldValue.serverTimestamp(),
+        };
 
-    // 4. Set Custom Claim if it's a WCTA member AFTER creation is successful.
+        if (!userDoc.exists) {
+            newUserData.createdAt = FieldValue.serverTimestamp();
+        }
+        
+        transaction.set(companyRef, newCompanyData);
+        transaction.set(userDocRef, newUserData, { merge: true });
+    });
+
+    // This runs only after the transaction above successfully commits.
     if (referrerId === 'WCTA') {
         await adminAuth.setCustomUserClaims(uid, { wcta: true });
     }
