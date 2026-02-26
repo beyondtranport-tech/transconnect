@@ -5,8 +5,8 @@ import { NextRequest } from 'next/server';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 
-// Force re-initialization by changing the app name to discard cached broken configs.
-const ADMIN_APP_NAME = 'firebase-admin-app-transconnect-studio-v16-final-fix'; // <-- Incremented version
+// Reverting to a stable, single app name to ensure consistency.
+const ADMIN_APP_NAME = 'firebase-admin-app-transconnect-studio-v7';
 
 export function getAdminApp(): { app: App | null; error: string | null } {
   const existingApp = getApps().find(app => app.name === ADMIN_APP_NAME);
@@ -32,14 +32,14 @@ export function getAdminApp(): { app: App | null; error: string | null } {
     
     const projectId = serviceAccount.project_id;
 
-    // Initialize without the storageBucket property here to avoid any conflicts.
-    // The bucket will be specified directly in the API route.
+    // The storageBucket property is removed from here to prevent the main app initialization from
+    // hanging if there's a problem connecting to the bucket. This makes Auth and Firestore
+    // operations more reliable. Storage will be handled specifically in the upload route.
     const app = initializeApp({
       credential: cert(serviceAccount),
       projectId: projectId,
     }, ADMIN_APP_NAME);
 
-    console.log(`Successfully initialized Firebase Admin App '${ADMIN_APP_NAME}'.`);
     return { app, error: null };
 
   } catch (error: any) {

@@ -111,6 +111,7 @@ function JoinFormComponent() {
         return;
     }
     
+    setIsLoading(true);
     try {
       await sendPasswordResetEmail(auth, email);
       toast({
@@ -123,6 +124,8 @@ function JoinFormComponent() {
         title: 'Error sending reset email',
         description: 'Please try again later.',
       });
+    } finally {
+        setIsLoading(false);
     }
   };
 
@@ -170,7 +173,7 @@ function JoinFormComponent() {
           },
           body: JSON.stringify({ referrerId }),
       });
-
+      
       if (!checkAndCreateUserResponse.ok) {
           const result = await checkAndCreateUserResponse.json();
           throw new Error(result.error || "Failed to create user profile in database.");

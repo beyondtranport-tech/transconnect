@@ -60,6 +60,8 @@ export function Header() {
     if (!auth) return;
     try {
         await signOut(auth);
+        // The clearCart() logic is now handled automatically by the CartProvider
+        // when the user state changes to null.
         setIsSheetOpen(false);
         router.push('/');
     } catch (error) {
