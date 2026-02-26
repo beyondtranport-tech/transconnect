@@ -129,7 +129,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     return doc(firestore, 'companies', companyId);
   }, [firestore, companyId]);
 
-  const { data: companyData, isLoading: isCompanyLoading } = useDoc(companyDocRef);
+  const { data: companyData, isLoading: isCompanyLoading, forceRefresh: forceRefreshCompany } = useDoc(companyDocRef);
 
   // Combine all data into the final user object
   const enrichedUser = useMemo(() => {
@@ -144,6 +144,13 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   }, [baseUser, userData, claims, companyData]); // Add companyData to dependency array
 
   const isUserLoading = isAuthLoading || isUserDataLoading || isClaimsLoading || (userData?.companyId ? isCompanyLoading : false);
+  
+  const forceRefreshAll = useCallback(() => {
+    forceRefresh(); // Refreshes userDoc
+    if (companyId) {
+      forceRefreshCompany(); // Refreshes companyDoc
+    }
+  }, [forceRefresh, forceRefreshCompany, companyId]);
 
   const contextValue = useMemo((): FirebaseContextState => ({
     firebaseApp,
@@ -153,8 +160,8 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     user: enrichedUser,
     isUserLoading,
     userError: authError,
-    forceRefreshUser: forceRefresh,
-  }), [firebaseApp, firestore, auth, storage, enrichedUser, isUserLoading, authError, forceRefresh]);
+    forceRefreshUser: forceRefreshAll,
+  }), [firebaseApp, firestore, auth, storage, enrichedUser, isUserLoading, authError, forceRefreshAll]);
 
   return (
     <FirebaseContext.Provider value={contextValue}>

@@ -44,7 +44,7 @@ export function Header() {
   const pathname = usePathname();
   const router = useRouter();
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
-  const { user, isUserLoading } = useUser(); // useUser now provides the enriched user object
+  const { user, isUserLoading } = useUser();
   const auth = useAuth();
   const { cartItems } = useCart();
   
@@ -65,8 +65,6 @@ export function Header() {
   };
 
   const isAdmin = user && (user.email === 'beyondtransport@gmail.com' || user.email === 'mkoton100@gmail.com');
-  
-  // Simplified logic using the enriched user object
   const isWctaMember = user?.claims?.wcta === true || user?.companyData?.referrerId === 'WCTA';
 
   const navItems = [
