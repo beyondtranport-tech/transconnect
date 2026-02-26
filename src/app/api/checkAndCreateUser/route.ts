@@ -44,7 +44,23 @@ export async function POST(req: NextRequest) {
     
     const db = getFirestore(app);
     const userDocRef = db.collection('users').doc(firebaseUser.uid);
-    const userDocSnap = await userDocRef.get();
+
+    // --- Start Parallel Fetches ---
+    const [
+        userDocSnap,
+        partnerQuerySnap,
+        staffQuerySnap,
+        leadQuerySnap,
+        loyaltyConfigSnap
+    ] = await Promise.all([
+        userDocRef.get(),
+        db.collection('partners').where('email', '==', firebaseUser.email).where('invitationStatus', '==', 'invited').limit(1).get(),
+        db.collectionGroup('staff').where('email', '==', firebaseUser.email).where('status', '==', 'unconfirmed').limit(1).get(),
+        db.collectionGroup('leads').where('email', '==', firebaseUser.email).limit(1).get(),
+        db.collection('configuration').doc('loyaltySettings').get()
+    ]);
+    // --- End Parallel Fetches ---
+
     const userData = userDocSnap.data();
 
     // If user document exists AND it has a companyId, there's nothing to do.
@@ -55,19 +71,15 @@ export async function POST(req: NextRequest) {
     const batch = db.batch();
 
     // Priority 1: Check for a pending partner invitation.
-    const partnerQuery = db.collection('partners').where('email', '==', firebaseUser.email).where('invitationStatus', '==', 'invited').limit(1);
-    const partnerSnap = await partnerQuery.get();
-
-    if (!partnerSnap.empty) {
+    if (!partnerQuerySnap.empty) {
         console.log(`Found pending partner invitation for ${firebaseUser.email}. Processing as partner.`);
-        const partnerDoc = partnerSnap.docs[0];
+        const partnerDoc = partnerQuerySnap.docs[0];
         
         batch.update(partnerDoc.ref, { 
             invitationStatus: 'registered',
             updatedAt: FieldValue.serverTimestamp(),
         });
 
-        // Use set with merge to create or update the user document as a partner
         const partnerData = partnerDoc.data();
         const displayName = firebaseUser.displayName || `${partnerData.firstName} ${partnerData.lastName}`;
         const nameParts = displayName.split(' ');
@@ -91,16 +103,12 @@ export async function POST(req: NextRequest) {
     }
 
     // Priority 2: Check for a pending staff invitation.
-    const staffQuery = db.collectionGroup('staff').where('email', '==', firebaseUser.email).where('status', '==', 'unconfirmed').limit(1);
-    const staffSnap = await staffQuery.get();
-
-    if (!staffSnap.empty) {
+    if (!staffQuerySnap.empty) {
         console.log(`Found pending staff invitation for ${firebaseUser.email}. Processing as staff.`);
-        const invitedStaffDoc = staffSnap.docs[0];
+        const invitedStaffDoc = staffQuerySnap.docs[0];
         const invitedStaffData = invitedStaffDoc.data();
         const companyId = invitedStaffData.companyId;
         
-        // Use set with merge to create or update the user doc as staff
         const userAsStaffData = {
             id: firebaseUser.uid,
             firstName: invitedStaffData.firstName,
@@ -116,10 +124,9 @@ export async function POST(req: NextRequest) {
         }
         batch.set(userDocRef, userAsStaffData, { merge: true });
         
-        // Re-create the staff document using the UID as the key and confirm them.
         const newStaffDocRef = db.collection(`companies/${companyId}/staff`).doc(firebaseUser.uid);
         batch.set(newStaffDocRef, { ...invitedStaffData, id: firebaseUser.uid, status: 'confirmed' });
-        batch.delete(invitedStaffDoc.ref); // Delete the original invite document.
+        batch.delete(invitedStaffDoc.ref);
 
         await batch.commit();
         return NextResponse.json({ success: true, message: 'Staff account processed successfully.' });
@@ -128,17 +135,14 @@ export async function POST(req: NextRequest) {
     // --- Standard new user or INCOMPLETE user registration ---
     console.log(`Processing standard/incomplete user registration for ${firebaseUser.email}.`);
     
-    const leadQuery = db.collectionGroup('leads').where('email', '==', firebaseUser.email).limit(1);
-    const leadSnap = await leadQuery.get();
-    if (!leadSnap.empty) {
-        const leadDoc = leadSnap.docs[0];
+    if (!leadQuerySnap.empty) {
+        const leadDoc = leadQuerySnap.docs[0];
         batch.update(leadDoc.ref, { status: 'registered' });
         if (!referrerId && leadDoc.data().companyId) {
             referrerId = leadDoc.data().companyId;
         }
     }
 
-    // Create the company document. This is safe because we already checked if the user has one.
     const companyRef = db.collection('companies').doc();
     const displayName = firebaseUser.displayName?.trim();
     const companyName = displayName ? `${displayName}'s Company` : 'My Company';
@@ -162,7 +166,6 @@ export async function POST(req: NextRequest) {
         newCompanyData.referrerId = referrerId;
     }
 
-    // Prepare user data, preserving existing fields if the user doc already exists.
     const nameParts = (firebaseUser.displayName || '').split(' ');
     
     const newUserData = {
@@ -171,30 +174,25 @@ export async function POST(req: NextRequest) {
         lastName: userData?.lastName || (nameParts.length > 1 ? nameParts.slice(1).join(' ') : 'User'),
         email: firebaseUser.email,
         phone: userData?.phone || firebaseUser.phoneNumber || '',
-        companyId: companyRef.id, // This is the crucial link.
+        companyId: companyRef.id,
         role: 'owner',
         updatedAt: FieldValue.serverTimestamp(),
     };
     
-    // Add createdAt and award points only if it's a completely new user.
     if (!userDocSnap.exists) {
         (newUserData as any).createdAt = FieldValue.serverTimestamp();
         
-        const loyaltyConfigDoc = await db.collection('configuration').doc('loyaltySettings').get();
-        const signupPoints = loyaltyConfigDoc.data()?.userSignupPoints || 50;
+        const signupPoints = loyaltyConfigSnap.data()?.userSignupPoints || 50;
         newCompanyData.rewardPoints = signupPoints;
         
         if (referrerId) {
-            const partnerReferralPoints = loyaltyConfigDoc.data()?.partnerReferralPoints || 200;
+            const partnerReferralPoints = loyaltyConfigSnap.data()?.partnerReferralPoints || 200;
             const referrerCompanyRef = db.collection('companies').doc(referrerId);
             batch.update(referrerCompanyRef, { rewardPoints: FieldValue.increment(partnerReferralPoints) });
         }
     }
     
-    // Set the company data in the batch
     batch.set(companyRef, newCompanyData);
-    
-    // This single command handles both creation of a new user doc and updating an incomplete one.
     batch.set(userDocRef, newUserData, { merge: true });
     
     await batch.commit();
