@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -31,7 +32,6 @@ import { useUser, useAuth } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import dynamic from 'next/dynamic';
 import React from 'react';
-import AdminAuthGuard from './AdminAuthGuard';
 
 // Dynamically import content components
 const DashboardContent = dynamic(() => import('./dashboard'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
@@ -89,7 +89,6 @@ function PortLogisticsPortalContent() {
   const navigate = (view: string) => router.push(`/port-logistics?view=${view}`, { scroll: false });
 
   return (
-    <AdminAuthGuard>
       <SidebarProvider>
         <Sidebar>
           <SidebarHeader>
@@ -174,7 +173,6 @@ function PortLogisticsPortalContent() {
             </div>
         </SidebarInset>
       </SidebarProvider>
-    </AdminAuthGuard>
   );
 }
 

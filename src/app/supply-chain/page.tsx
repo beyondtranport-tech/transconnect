@@ -36,6 +36,7 @@ import { signOut } from 'firebase/auth';
 
 import dynamic from 'next/dynamic';
 import React from 'react';
+import AdminAuthGuard from './AdminAuthGuard';
 
 // Dynamically import content components
 const DashboardContent = dynamic(() => import('./dashboard'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
@@ -45,31 +46,6 @@ const InventoryContent = dynamic(() => import('./inventory'), { loading: () => <
 const LogisticsContent = dynamic(() => import('./logistics'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const AnalyticsContent = dynamic(() => import('./analytics'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
-
-function AdminAuthGuard({ children }: { children: React.ReactNode }) {
-    const { user, isUserLoading } = useUser();
-    const router = useRouter();
-
-    useEffect(() => {
-        if (isUserLoading) return;
-        if (!user) {
-            router.replace('/signin?redirect=/supply-chain');
-        } else if (user.email !== 'mkoton100@gmail.com' && user.email !== 'beyondtransport@gmail.com') {
-            router.replace('/account'); 
-        }
-    }, [user, isUserLoading, router]);
-
-    if (isUserLoading || !user || (user.email !== 'mkoton100@gmail.com' && user.email !== 'beyondtransport@gmail.com')) {
-        return (
-            <div className="flex flex-col justify-center items-center min-h-[calc(100vh-8rem)]">
-                <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                <p className="mt-4 text-muted-foreground">Verifying admin credentials...</p>
-            </div>
-        );
-    }
-    
-    return <>{children}</>;
-}
 
 function SupplyChainPortalContent() {
   const router = useRouter();
@@ -117,7 +93,6 @@ function SupplyChainPortalContent() {
   const navigate = (view: string) => router.push(`/supply-chain?view=${view}`, { scroll: false });
 
   return (
-    <AdminAuthGuard>
       <SidebarProvider>
         <Sidebar>
           <SidebarHeader>
@@ -197,7 +172,6 @@ function SupplyChainPortalContent() {
             </div>
         </SidebarInset>
       </SidebarProvider>
-    </AdminAuthGuard>
   );
 }
 
