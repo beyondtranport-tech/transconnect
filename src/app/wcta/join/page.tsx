@@ -1,11 +1,15 @@
+
 'use client';
 
+import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { ArrowRight, CheckCircle } from "lucide-react";
+import { ArrowRight, CheckCircle, Percent } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import data from "@/lib/placeholder-images.json";
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 const { placeholderImages } = data;
 const wctaHeroImage = placeholderImages.find(p => p.id === 'wcta-mall-hero');
@@ -19,6 +23,16 @@ const benefits = [
 ];
 
 export default function WCTAMembershipPage() {
+    const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
+
+    const monthlyPrice = 100;
+    const annualDiscountPercent = 15;
+    const annualPrice = (monthlyPrice * 12) * (1 - annualDiscountPercent / 100);
+
+    const displayPrice = billingCycle === 'annual' ? annualPrice : monthlyPrice;
+    const priceUnit = billingCycle === 'annual' ? '/ year' : '/ month';
+    const annualSavings = (monthlyPrice * 12) - annualPrice;
+
     return (
         <div>
             <section className="relative w-full h-72 bg-card">
@@ -58,8 +72,27 @@ export default function WCTAMembershipPage() {
                                     </li>
                                 ))}
                             </ul>
-                            <div className="pt-6 text-center">
-                                <p className="text-2xl font-bold">Membership Fee: R 2500 / year</p>
+                            <div className="pt-6 border-t">
+                                <div className="flex justify-center items-center gap-4 mb-6">
+                                    <Label htmlFor="billing-switch">Monthly</Label>
+                                    <Switch
+                                        id="billing-switch"
+                                        checked={billingCycle === 'annual'}
+                                        onCheckedChange={(checked) => setBillingCycle(checked ? 'annual' : 'monthly')}
+                                    />
+                                    <Label htmlFor="billing-switch" className="flex items-center">
+                                        Annual 
+                                        <span className="ml-2 inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
+                                           <Percent className="mr-1 h-3 w-3" /> Save {annualDiscountPercent}%
+                                        </span>
+                                    </Label>
+                                </div>
+                                <div className="text-center">
+                                    <p className="text-4xl font-bold">R{displayPrice.toFixed(0)}<span className="text-lg font-normal text-muted-foreground">{priceUnit}</span></p>
+                                    {billingCycle === 'annual' && (
+                                        <p className="text-sm text-primary font-semibold mt-1">You save R{annualSavings.toFixed(0)} per year!</p>
+                                    )}
+                                </div>
                             </div>
                         </CardContent>
                         <CardFooter className="flex-col gap-4">
