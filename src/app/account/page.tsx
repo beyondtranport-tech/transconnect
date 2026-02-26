@@ -225,11 +225,6 @@ function AccountPageContent() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Supply Chain" asChild>
-                    <Link href="/supply-chain"><Network /><span>Supply Chain</span></Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
                 <SidebarMenuButton tooltip="AI Marketing Studio" isActive={activeView === 'marketing-studio'} onClick={() => navigate('marketing-studio')}>
                   <Sparkles />
                   <span>AI Marketing</span>

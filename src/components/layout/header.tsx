@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Truck, Menu, User, ChevronDown, ShieldCheck, Building, LogOut, ShoppingCart, Landmark } from "lucide-react";
+import { Truck, Menu, User, ChevronDown, ShieldCheck, Building, LogOut, ShoppingCart, Landmark, Network } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetFooter } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
@@ -171,6 +171,9 @@ export function Header() {
                         <DropdownMenuItem asChild>
                             <Link href="/lending">Lending Portal</Link>
                         </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                            <Link href="/supply-chain">Supply Chain Portal</Link>
+                        </DropdownMenuItem>
                         <DropdownMenuSeparator/>
                          <DropdownMenuItem asChild>
                             <Link href="/account">View Member Area</Link>
@@ -280,6 +283,12 @@ export function Header() {
                                         <Link href="/backend" onClick={() => setIsSheetOpen(false)}>
                                             <ShieldCheck className="mr-2 h-5 w-5" />
                                             App Backend
+                                        </Link>
+                                    </Button>
+                                     <Button asChild className="w-full justify-start">
+                                        <Link href="/supply-chain" onClick={() => setIsSheetOpen(false)}>
+                                            <Network className="mr-2 h-5 w-5" />
+                                            Supply Chain
                                         </Link>
                                     </Button>
                                     <Button asChild className="w-full justify-start" variant="secondary">
