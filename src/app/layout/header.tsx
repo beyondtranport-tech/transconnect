@@ -56,9 +56,6 @@ export function Header() {
   }, [firestore, user?.companyId]);
   const { data: companyData } = useDoc(companyDocRef);
 
-  const isWctaMember = companyData?.referrerId === 'WCTA';
-
-
   const handleSignOut = async () => {
     if (!auth) return;
     try {
@@ -78,6 +75,7 @@ export function Header() {
   };
 
   const isAdmin = user && (user.email === 'beyondtransport@gmail.com' || user.email === 'mkoton100@gmail.com');
+  const isWctaMember = user?.claims?.wcta === true || companyData?.referrerId === 'WCTA';
 
   const navItems = [
     { href: "/", label: "Home" },
@@ -283,27 +281,9 @@ export function Header() {
                         <div className="h-10 w-full rounded-md bg-muted/50 animate-pulse" />
                     ) : user ? (
                         <div className='flex flex-col gap-2'>
-                             {isAdmin ? (
+                             {(isAdmin || isWctaMember) ? (
                                 <>
                                     <Button asChild className="w-full justify-start">
-                                        <Link href="/adminaccount" onClick={() => setIsSheetOpen(false)}>
-                                            <Building className="mr-2 h-5 w-5" />
-                                            Admin Account
-                                        </Link>
-                                    </Button>
-                                    <Button asChild className="w-full justify-start">
-                                        <Link href="/lending" onClick={() => setIsSheetOpen(false)}>
-                                            <Landmark className="mr-2 h-5 w-5" />
-                                            Lending Portal
-                                        </Link>
-                                    </Button>
-                                     <Button asChild className="w-full justify-start">
-                                        <Link href="/backend" onClick={() => setIsSheetOpen(false)}>
-                                            <ShieldCheck className="mr-2 h-5 w-5" />
-                                            App Backend
-                                        </Link>
-                                    </Button>
-                                     <Button asChild className="w-full justify-start">
                                         <Link href="/supply-chain" onClick={() => setIsSheetOpen(false)}>
                                             <Network className="mr-2 h-5 w-5" />
                                             Supply Chain
@@ -315,20 +295,36 @@ export function Header() {
                                             Port Logistics
                                         </Link>
                                     </Button>
-                                    <Button asChild className="w-full justify-start" variant="secondary">
-                                        <Link href="/account" onClick={() => setIsSheetOpen(false)}>
-                                            <User className="mr-2 h-5 w-5" />
-                                            View Member Area
-                                        </Link>
-                                    </Button>
                                 </>
-                             ) : (
-                                <Button asChild className="w-full justify-start">
+                            ) : (
+                                 <Button asChild className="w-full justify-start">
                                     <Link href="/account" onClick={() => setIsSheetOpen(false)}>
                                         <User className="mr-2 h-5 w-5" />
                                         My Account
                                     </Link>
                                 </Button>
+                            )}
+                             {isAdmin && (
+                                <>
+                                    <Button asChild className="w-full justify-start" variant="secondary">
+                                        <Link href="/adminaccount" onClick={() => setIsSheetOpen(false)}>
+                                            <Building className="mr-2 h-5 w-5" />
+                                            Admin Account
+                                        </Link>
+                                    </Button>
+                                    <Button asChild className="w-full justify-start" variant="secondary">
+                                        <Link href="/lending" onClick={() => setIsSheetOpen(false)}>
+                                            <Landmark className="mr-2 h-5 w-5" />
+                                            Lending Portal
+                                        </Link>
+                                    </Button>
+                                     <Button asChild className="w-full justify-start" variant="secondary">
+                                        <Link href="/backend" onClick={() => setIsSheetOpen(false)}>
+                                            <ShieldCheck className="mr-2 h-5 w-5" />
+                                            App Backend
+                                        </Link>
+                                    </Button>
+                                </>
                              )}
                              <Button onClick={handleSignOut} variant="outline" className="w-full justify-start">
                                 <LogOut className="mr-2 h-5 w-5" />
@@ -353,3 +349,4 @@ export function Header() {
     </header>
   );
 }
+

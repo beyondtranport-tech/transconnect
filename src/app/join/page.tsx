@@ -60,7 +60,7 @@ function JoinFormComponent() {
   // This effect handles the final redirect after the user profile is confirmed to be loaded.
   useEffect(() => {
     // Only redirect if we've started the process and the user object is fully loaded (including claims and firestore data).
-    if (authActionInitiated && !isUserLoading && user?.uid) {
+    if (authActionInitiated && !isUserLoading && user?.uid && user?.companyId) {
         setIsLoading(false); // Turn off the main loading spinner
         setAuthActionInitiated(false); // Reset the trigger
         toast({
@@ -160,7 +160,6 @@ function JoinFormComponent() {
         throw new Error("Could not retrieve auth token after user creation.");
       }
       
-      // Call the API that will create the user and company docs, and set custom claims if needed.
       const checkAndCreateUserResponse = await fetch('/api/checkAndCreateUser', {
           method: 'POST',
           headers: {
@@ -175,14 +174,12 @@ function JoinFormComponent() {
           throw new Error(result.error || "Failed to create user profile in database.");
       }
       
-      // Update session cookie on the server.
       await fetch('/api/auth/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ idToken: token }),
       });
 
-      // Trigger the redirect process.
       setAuthActionInitiated(true);
       forceRefresh();
       
@@ -365,3 +362,4 @@ export default function JoinPage() {
     </div>
   );
 }
+

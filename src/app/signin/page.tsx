@@ -51,7 +51,7 @@ function SignInFormComponent() {
   // This effect handles the final redirect after the user profile is confirmed to be loaded.
   useEffect(() => {
     // Only redirect if we've started the process and the user object is fully loaded (including claims and firestore data).
-    if (authActionInitiated && !isUserLoading && user?.uid) {
+    if (authActionInitiated && !isUserLoading && user?.uid && user?.companyId) {
         setIsLoading(false);
         setAuthActionInitiated(false);
         const isAdmin = user.claims?.admin === true || user.email === 'mkoton100@gmail.com' || user.email === 'beyondtransport@gmail.com';
@@ -254,3 +254,4 @@ export default function SignInPage() {
         </div>
     )
 }
+
