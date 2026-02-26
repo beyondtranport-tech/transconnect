@@ -52,19 +52,24 @@ function JoinFormComponent() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [isWaitingForProfile, setIsWaitingForProfile] = useState(false);
   const auth = useAuth();
   const { user, isUserLoading, forceRefresh } = useUser();
   const redirectParam = searchParams.get('redirect');
 
-  // Redirect if user is already logged in
+  // This effect handles the final redirect after the user profile is confirmed to be loaded.
   useEffect(() => {
-    if (!isUserLoading && user) {
-      const isAdmin = user.email === 'mkoton100@gmail.com';
-      const defaultRedirect = isAdmin ? '/adminaccount' : '/account';
-      router.replace(redirectParam || defaultRedirect);
+    if (isWaitingForProfile && user?.companyId) {
+        setIsWaitingForProfile(false);
+        toast({
+            title: 'Account Ready!',
+            description: "Redirecting to your dashboard...",
+        });
+        const isAdmin = user.email === 'mkoton100@gmail.com';
+        const defaultRedirect = isAdmin ? '/adminaccount' : '/account';
+        router.push(redirectParam || defaultRedirect);
     }
-  }, [user, isUserLoading, router, redirectParam]);
-
+  }, [user, isWaitingForProfile, router, redirectParam, toast]);
 
   const userRole = searchParams.get('role');
   const financierType = searchParams.get('type');
@@ -144,7 +149,7 @@ function JoinFormComponent() {
         displayName: `${values.firstName} ${values.lastName}`,
       });
       
-      const token = await getIdToken(user, true); // Force refresh to get the latest token
+      const token = await getIdToken(user, true);
       if (!token) {
         throw new Error("Could not retrieve auth token after user creation.");
       }
@@ -154,12 +159,8 @@ function JoinFormComponent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ idToken: token }),
       });
+      if (!sessionResponse.ok) throw new Error('Failed to create server session.');
 
-      if (!sessionResponse.ok) {
-        throw new Error('Failed to create server session.');
-      }
-
-      // Explicitly call checkAndCreateUser after successful sign-up
       const checkAndCreateUserResponse = await fetch('/api/checkAndCreateUser', {
           method: 'POST',
           headers: {
@@ -171,21 +172,16 @@ function JoinFormComponent() {
 
       if (!checkAndCreateUserResponse.ok) {
           const result = await checkAndCreateUserResponse.json();
-          // This is a critical error on sign-up, so we should throw it.
           throw new Error(result.error || "Failed to create user profile in database.");
       }
 
-      // **THE FIX**: Force a refresh of the user data from the client-side
-      await forceRefresh();
-
+      // Instead of redirecting, trigger a refresh and wait for the user object to update.
+      forceRefresh();
+      setIsWaitingForProfile(true);
       toast({
         title: 'Account Created!',
-        description: "Welcome to Logistics Flow. Redirecting you now...",
+        description: "Finalizing your profile, please wait...",
       });
-      
-      const isAdmin = user.email === 'mkoton100@gmail.com';
-      const defaultRedirect = isAdmin ? '/adminaccount' : '/account';
-      router.push(redirectParam || defaultRedirect);
 
     } catch (error: any) {
       let title = 'An error occurred.';
@@ -201,8 +197,7 @@ function JoinFormComponent() {
         title,
         description,
       });
-    } finally {
-        setIsLoading(false);
+      setIsLoading(false);
     }
   };
   
@@ -336,9 +331,9 @@ function JoinFormComponent() {
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Create Free Account
+            <Button type="submit" className="w-full" disabled={isLoading || isWaitingForProfile}>
+              {(isLoading || isWaitingForProfile) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isWaitingForProfile ? 'Finalizing...' : 'Create Free Account'}
             </Button>
           </form>
         </Form>

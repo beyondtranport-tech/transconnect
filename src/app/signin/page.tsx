@@ -43,18 +43,21 @@ function SignInFormComponent() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [isWaitingForProfile, setIsWaitingForProfile] = useState(false);
   const auth = useAuth();
   const { user, isUserLoading, forceRefresh } = useUser();
   const redirectParam = searchParams.get('redirect');
 
-  // Redirect if user is already logged in
+  // Redirect if user profile is fully loaded
   useEffect(() => {
-    if (!isUserLoading && user) {
-      const isAdmin = user.email === 'mkoton100@gmail.com';
-      const defaultRedirect = isAdmin ? '/adminaccount' : '/account';
-      router.replace(redirectParam || defaultRedirect);
+    // Check if user is loaded and has companyId, or if we are waiting and the companyId has arrived.
+    if ((!isUserLoading && user?.companyId) || (isWaitingForProfile && user?.companyId)) {
+        setIsWaitingForProfile(false); // Stop waiting
+        const isAdmin = user.email === 'mkoton100@gmail.com';
+        const defaultRedirect = isAdmin ? '/adminaccount' : '/account';
+        router.replace(redirectParam || defaultRedirect);
     }
-  }, [user, isUserLoading, router, redirectParam]);
+  }, [user, isUserLoading, isWaitingForProfile, router, redirectParam]);
 
 
   const form = useForm<SignInFormValues>({
@@ -125,12 +128,8 @@ function SignInFormComponent() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ idToken }),
       });
-
-      if (!sessionResponse.ok) {
-        throw new Error('Failed to set session cookie.');
-      }
+      if (!sessionResponse.ok) throw new Error('Failed to set session cookie.');
       
-      // Explicitly call checkAndCreateUser after successful sign-in
       const checkAndCreateUserResponse = await fetch('/api/checkAndCreateUser', {
         method: 'POST',
         headers: {
@@ -139,25 +138,18 @@ function SignInFormComponent() {
         },
         body: JSON.stringify({}), // Body can be empty for sign-in
       });
-
       if (!checkAndCreateUserResponse.ok) {
         const result = await checkAndCreateUserResponse.json();
-        // Log error but don't block the user, as the user document might already exist.
         console.error("checkAndCreateUser call failed on sign-in:", result.error);
       }
       
-      // **THE FIX**: Force a refresh of the user data from the client-side
-      await forceRefresh();
-
+      // Instead of redirecting immediately, trigger a data refresh and wait
+      forceRefresh();
+      setIsWaitingForProfile(true);
       toast({
         title: 'Sign In Successful',
-        description: 'Redirecting to your dashboard...',
+        description: 'Loading your profile...',
       });
-      
-      const isAdmin = loggedInUser.email === 'mkoton100@gmail.com';
-      const defaultRedirect = isAdmin ? '/adminaccount' : '/account';
-      
-      router.push(redirectParam || defaultRedirect);
 
     } catch (error: any) {
       let title = 'An error occurred.';
@@ -239,9 +231,9 @@ function SignInFormComponent() {
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Sign In
+            <Button type="submit" className="w-full" disabled={isLoading || isWaitingForProfile}>
+              {(isLoading || isWaitingForProfile) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+               {isWaitingForProfile ? 'Loading Profile...' : 'Sign In'}
             </Button>
           </form>
         </Form>
