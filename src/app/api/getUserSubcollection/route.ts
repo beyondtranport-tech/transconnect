@@ -29,7 +29,16 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: false, error: `Internal Server Error: Could not connect to Firebase. ${initError}` }, { status: 500 });
     }
 
-    const { path, type } = await req.json();
+    let path, type;
+    try {
+        const body = await req.json();
+        path = body.path;
+        type = body.type;
+    } catch (e) {
+        // If body is empty or not valid JSON, it's a bad request.
+        return NextResponse.json({ success: false, error: 'Bad Request: Invalid or missing JSON body.' }, { status: 400 });
+    }
+
 
     if (!path || !type) {
         return NextResponse.json({ success: false, error: 'Bad Request: "path" and "type" are required.' }, { status: 400 });
@@ -121,7 +130,7 @@ export async function POST(req: NextRequest) {
                     ...serializeTimestamps(docData) 
                 };
              });
-             return NextResponse.json({ success: true, data });
+             return NextResponse.json({ success: true, data: data });
         } else {
              return NextResponse.json({ success: false, error: 'Bad Request: "type" must be "collection", "document", or "collection-group".' }, { status: 400 });
         }
