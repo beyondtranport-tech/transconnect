@@ -1,24 +1,28 @@
 
 'use client';
 
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, MessageSquare, User, Bot, Send } from 'lucide-react';
-import { useCollection, useFirestore, useMemoFirebase, useUser, getClientSideAuthToken } from '@/firebase';
-import { collection, query, collectionGroup, serverTimestamp } from 'firebase/firestore';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { cn } from '@/lib/utils';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Loader2, MessageSquare, Send, Bot, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useUser, useFirestore, useCollection, getClientSideAuthToken, useMemoFirebase } from '@/firebase';
+import { collection, query, orderBy, serverTimestamp, collectionGroup } from 'firebase/firestore';
+import { cn } from '@/lib/utils';
+import { supportQuery } from '@/ai/flows/support-flow';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import Link from 'next/link';
+import { format as formatDateFns } from 'date-fns';
 
 interface Message {
   id: string;
   path: string;
   text: string;
   senderId: string;
+  senderName: string;
   timestamp: any;
   companyId: string;
   leadId: string;
@@ -40,12 +44,12 @@ const formatDate = (dateValue: any) => {
     if (!dateValue) return 'N/A';
     const date = dateValue.toDate ? dateValue.toDate() : new Date(dateValue);
     if (isNaN(date.getTime())) return 'Invalid Date';
-    return date.toLocaleString('en-ZA', { dateStyle: 'medium', timeStyle: 'short'});
+    return formatDateFns(date, "dd MMM yyyy, HH:mm");
 };
 
 export default function CommunicationsContent() {
     const firestore = useFirestore();
-    const { user } = useUser();
+    const { user: adminUser } = useUser();
     const { toast } = useToast();
 
     // Fetch all necessary data
@@ -86,7 +90,6 @@ export default function CommunicationsContent() {
             return acc;
         }, {} as Record<string, { company?: Company; lead?: Lead; messages: Message[] }>);
         
-        // Sort messages within each conversation
         Object.values(grouped).forEach(convo => {
             if (convo.messages) {
                  convo.messages.sort((a, b) => {
@@ -111,7 +114,7 @@ export default function CommunicationsContent() {
         const [isSending, setIsSending] = useState(false);
         
         const handleAdminSend = async () => {
-            if (!user || !adminInput.trim() || !convo.company?.id || !convo.lead?.id) return;
+            if (!adminUser || !adminInput.trim() || !convo.company?.id || !convo.lead?.id) return;
             setIsSending(true);
 
             try {
@@ -121,7 +124,7 @@ export default function CommunicationsContent() {
                 const path = `companies/${convo.company.id}/leads/${convo.lead.id}/messages`;
                 const messageData = {
                     text: adminInput,
-                    senderId: user.uid,
+                    senderId: adminUser.uid,
                     timestamp: serverTimestamp(),
                     read: false,
                 };
@@ -168,7 +171,7 @@ export default function CommunicationsContent() {
                              <div className="space-y-4">
                                 {convo.messages.map((message: Message) => {
                                     const isAgent = message.senderId === convo.company?.ownerId;
-                                    const isAdmin = message.senderId === user?.uid;
+                                    const isAdmin = message.senderId === adminUser?.uid;
                                     const alignment = (isAgent || isAdmin) ? "justify-end" : "justify-start";
 
                                     return (
@@ -178,9 +181,10 @@ export default function CommunicationsContent() {
                                                     <AvatarFallback className="bg-muted">L</AvatarFallback>
                                                 </Avatar>
                                             )}
-                                            <div className={cn("rounded-lg px-3 py-2 max-w-[80%] text-sm", 
-                                                isAgent ? "bg-primary text-primary-foreground" : 
+                                            <div className={cn(
+                                                "rounded-lg px-3 py-2 max-w-[80%] text-sm", 
                                                 isAdmin ? "bg-secondary text-secondary-foreground" :
+                                                isAgent ? "bg-primary text-primary-foreground" : 
                                                 "bg-background border"
                                             )}>
                                                 <p>{message.text}</p>
@@ -239,7 +243,7 @@ export default function CommunicationsContent() {
                 {conversations.length > 0 ? (
                     <Accordion type="single" collapsible className="w-full">
                         {conversations.map((convo) => (
-                           <Conversation key={convo.company?.id + convo.lead?.id} convo={convo} />
+                           <Conversation key={convo.company.id + convo.lead.id} convo={convo} />
                         ))}
                     </Accordion>
                 ) : (

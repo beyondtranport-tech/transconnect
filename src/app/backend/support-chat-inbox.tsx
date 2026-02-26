@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Loader2, MessageSquare, Send, Bot, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useCollection, getClientSideAuthToken, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, serverTimestamp } from 'firebase/firestore';
+import { collection, query, orderBy, serverTimestamp, collectionGroup } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
 import { supportQuery } from '@/ai/flows/support-flow';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
