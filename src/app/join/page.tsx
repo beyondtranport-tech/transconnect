@@ -158,12 +158,11 @@ function JoinFormComponent() {
         throw new Error("Could not retrieve auth token after user creation.");
       }
       
-      const sessionResponse = await fetch('/api/auth/session', {
+      await fetch('/api/auth/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ idToken: token }),
       });
-      if (!sessionResponse.ok) throw new Error('Failed to create server session.');
 
       const checkAndCreateUserResponse = await fetch('/api/checkAndCreateUser', {
           method: 'POST',
@@ -179,14 +178,12 @@ function JoinFormComponent() {
           throw new Error(result.error || "Failed to create user profile in database.");
       }
 
-      // Instead of redirecting immediately, trigger a data refresh and wait for the provider to update.
       forceRefresh();
-      setIsWaitingForProfile(true); // Start waiting for the enriched user object.
+      setIsWaitingForProfile(true); 
       toast({
         title: 'Account Created!',
         description: "Finalizing your profile, please wait...",
       });
-      // The useEffect hook at the top of the component will handle the redirect once the user object is ready.
       setIsLoading(false);
 
     } catch (error: any) {

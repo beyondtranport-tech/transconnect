@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    // 2. Authenticate the request
+    // 2. Authenticate the request from the client.
     const authorization = req.headers.get('authorization');
     if (!authorization?.startsWith('Bearer ')) {
       return NextResponse.json({ success: false, error: 'Unauthorized: No token provided.' }, { status: 401 });
@@ -33,29 +33,30 @@ export async function POST(req: NextRequest) {
       throw new Error("Token did not contain an email address.");
     }
     
-    // 3. Get referrerId from request body if it exists
+    // 3. Safely get referrerId from the request body.
     let referrerId: string | null = null;
     try {
       const body = await req.json();
       referrerId = body.referrerId;
     } catch (e) {
-      // Body might be empty, which is fine for sign-in flows.
+      // Body might be empty or invalid JSON, which is acceptable.
+      console.log("No valid body for referrerId, proceeding without it.");
     }
 
     const db = getFirestore(app);
     const userDocRef = db.collection('users').doc(firebaseUser.uid);
     const userDocSnap = await userDocRef.get();
 
-    // 4. If user is already set up, do nothing.
+    // 4. FAST PATH: If user document exists and has a companyId, they are already set up. Do nothing.
     if (userDocSnap.exists && userDocSnap.data()?.companyId) {
       return NextResponse.json({ success: true, message: 'User document already exists and is complete.' });
     }
     
-    // 5. If user is NOT fully set up, run the creation logic.
-    // This is a simplified and more robust path for all new registrations.
+    // 5. CORE LOGIC: Create the user and company documents in a single, reliable transaction.
     const batch = db.batch();
-    const companyRef = db.collection('companies').doc();
     
+    // Create a new company document reference.
+    const companyRef = db.collection('companies').doc();
     const displayName = firebaseUser.displayName.trim();
     const companyName = displayName ? `${displayName}'s Company` : 'My Company';
 
@@ -74,10 +75,13 @@ export async function POST(req: NextRequest) {
         updatedAt: FieldValue.serverTimestamp(),
     };
     
+    // Add referrerId if it was passed from the client (e.g., for WCTA).
     if (referrerId) {
         newCompanyData.referrerId = referrerId;
     }
+    batch.set(companyRef, newCompanyData);
 
+    // Prepare the user document data.
     const nameParts = (firebaseUser.displayName || '').split(' ');
     const newUserData = {
         id: firebaseUser.uid,
@@ -85,42 +89,21 @@ export async function POST(req: NextRequest) {
         lastName: userDocSnap.data()?.lastName || (nameParts.length > 1 ? nameParts.slice(1).join(' ') : 'User'),
         email: firebaseUser.email,
         phone: userDocSnap.data()?.phone || firebaseUser.phoneNumber || '',
-        companyId: companyRef.id,
+        companyId: companyRef.id, // Link the user to the new company
         role: 'owner',
+        createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
     };
-    
-    // Only add createdAt and award points if it's a completely new user document
-    if (!userDocSnap.exists) {
-        (newUserData as any).createdAt = FieldValue.serverTimestamp();
-        
-        // This can fail if the config doc doesn't exist, but it's not critical. Wrap in a try-catch.
-        try {
-            const loyaltyConfigDoc = await db.collection('configuration').doc('loyaltySettings').get();
-            const signupPoints = loyaltyConfigDoc.data()?.userSignupPoints || 50;
-            newCompanyData.rewardPoints = signupPoints;
-            
-            if (referrerId) {
-                const partnerReferralPoints = loyaltyConfigDoc.data()?.partnerReferralPoints || 200;
-                const referrerCompanyRef = db.collection('companies').doc(referrerId);
-                // Use a merge update to avoid failing if the referrer doc doesn't exist yet, though it should.
-                batch.set(referrerCompanyRef, { rewardPoints: FieldValue.increment(partnerReferralPoints) }, { merge: true });
-            }
-        } catch (pointError) {
-            console.warn("Could not award sign-up points:", pointError);
-        }
-    }
-    
-    batch.set(companyRef, newCompanyData);
     batch.set(userDocRef, newUserData, { merge: true });
     
+    // Commit the transaction.
     await batch.commit();
 
-    return NextResponse.json({ success: true, message: 'User account created/updated successfully.' });
+    return NextResponse.json({ success: true, message: 'User account and company created successfully.' });
 
   } catch (error: any) {
-    console.error(`Error in checkAndCreateUser:`, error);
-    // Ensure a JSON response is always sent
+    console.error(`CRITICAL ERROR in checkAndCreateUser:`, error);
+    // Ensure a JSON response is always sent on failure.
     return NextResponse.json({ success: false, error: `Internal Server Error: ${error.message}` }, { status: 500 });
   }
 }

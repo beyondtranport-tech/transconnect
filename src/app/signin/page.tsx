@@ -123,29 +123,25 @@ function SignInFormComponent() {
       const loggedInUser = userCredential.user;
       
       const idToken = await getIdToken(loggedInUser, true);
-      const sessionResponse = await fetch('/api/auth/session', {
+      await fetch('/api/auth/session', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ idToken }),
       });
-      if (!sessionResponse.ok) throw new Error('Failed to set session cookie.');
       
-      // We still call checkAndCreateUser to handle legacy users or edge cases,
-      // but we don't need to wait for its full completion before refreshing client state.
+      // Run in the background without blocking UI
       fetch('/api/checkAndCreateUser', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({}),
       }).catch(e => console.error("Non-critical background profile check failed:", e));
       
-      // Instead of redirecting immediately, trigger a data refresh and wait for the provider to update.
       forceRefresh();
-      setIsWaitingForProfile(true); // Start waiting for the enriched user object.
+      setIsWaitingForProfile(true); 
       toast({
         title: 'Sign In Successful',
         description: 'Loading your profile...',
       });
-      // The useEffect hook at the top will handle the redirect.
       setIsLoading(false);
 
     } catch (error: any) {
