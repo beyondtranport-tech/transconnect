@@ -3,7 +3,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { ArrowRight, ShoppingBasket, Building2, Truck, Landmark, PackageSearch, Store, Network, Warehouse, Recycle, Wrench, Scale } from "lucide-react";
+import { ArrowRight, ShoppingBasket, Building2, Truck, Landmark, PackageSearch, Store, Network, Warehouse, Recycle, Wrench, Scale, Handshake } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import data from "@/lib/placeholder-images.json";
@@ -77,11 +77,19 @@ const malls = [
     },
     {
         name: "SA Auction Mall",
-        description: "Live auctions for vehicles, equipment, and salvaged assets from SA Auction Online.",
+        description: "Live auctions for vehicles, equipment, and salvaged assets from SA Auction Group.",
         icon: Scale,
         href: "/mall/sa-auction",
         id: "sa-auction",
         image: saAuctionMallImage,
+    },
+    {
+        name: "WCTA Mall",
+        description: "An exclusive portal for members of the Western Cape Truckers Association.",
+        icon: Handshake,
+        href: "/mall/wcta",
+        id: "wcta",
+        image: placeholderImages.find(p => p.id === 'value-integrity')!,
     },
     {
         name: "Distribution Mall",

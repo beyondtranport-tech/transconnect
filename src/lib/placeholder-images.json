@@ -230,6 +230,13 @@
       "imageUrl": "https://images.unsplash.com/photo-1578575437130-5278ce68f49a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxzaGlwcGluZyUyMHBvcnR8ZW58MHx8fHwxNzE5MjM0MDI4fDA&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "shipping port",
       "category": "General"
+    },
+    {
+      "id": "wcta-mall-hero",
+      "description": "A secure handshake between two business professionals",
+      "imageUrl": "https://images.unsplash.com/photo-1686771416282-3888ddaf249b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxidXNpbmVzcyUyMGhhbmRzaGFrZXxlbnwwfHx8fDE3Njg2NTg4ODh8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "business handshake",
+      "category": "Services"
     }
   ]
 }
