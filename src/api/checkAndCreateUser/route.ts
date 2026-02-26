@@ -54,7 +54,8 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: true, message: 'User already configured.' });
     }
     
-    // --- NEW SIMPLIFIED CREATION LOGIC ---
+    // --- NEW SIMPLIFIED AND ATOMIC CREATION LOGIC ---
+    const batch = db.batch();
 
     // 1. Create the Company Document
     const companyRef = db.collection('companies').doc();
@@ -79,7 +80,7 @@ export async function POST(req: NextRequest) {
     if (referrerId) {
         newCompanyData.referrerId = referrerId;
     }
-    await companyRef.set(newCompanyData);
+    batch.set(companyRef, newCompanyData);
 
     // 2. Create the User Document
     const nameParts = (firebaseUser.displayName || '').split(' ');
@@ -94,9 +95,12 @@ export async function POST(req: NextRequest) {
         updatedAt: FieldValue.serverTimestamp(),
          ...( !userDocSnap.exists && { createdAt: FieldValue.serverTimestamp() } )
     };
-    await userDocRef.set(newUserData, { merge: true });
+    batch.set(userDocRef, newUserData, { merge: true });
 
-    // 3. Set Custom Claim if it's a WCTA member AFTER creation is successful.
+    // 3. Commit the atomic write
+    await batch.commit();
+
+    // 4. Set Custom Claim if it's a WCTA member AFTER creation is successful.
     if (referrerId === 'WCTA') {
         await adminAuth.setCustomUserClaims(uid, { wcta: true });
     }
@@ -108,4 +112,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: `Internal Server Error: ${error.message}` }, { status: 500 });
   }
 }
-
