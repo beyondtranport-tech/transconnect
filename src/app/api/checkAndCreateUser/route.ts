@@ -1,3 +1,4 @@
+
 'use client';
 
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
@@ -6,145 +7,58 @@ import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase-admin';
 
 export async function POST(req: NextRequest) {
+  // 1. Initialize Admin App
   const { app, error: initError } = getAdminApp();
   if (initError || !app) {
     console.error("Admin SDK init error in checkAndCreateUser:", initError);
     return NextResponse.json({ success: false, error: 'Internal Server Error: Could not connect to Firebase.' }, { status: 500 });
   }
 
-  const authorization = req.headers.get('authorization');
-  if (!authorization?.startsWith('Bearer ')) {
-    return NextResponse.json({ success: false, error: 'Unauthorized: No token provided.' }, { status: 401 });
-  }
-
-  const idToken = authorization.split('Bearer ')[1];
-  
-  let referrerId: string | null = null;
   try {
-      const body = await req.json();
-      referrerId = body.referrerId;
-  } catch (e) {
-      // Body might be empty, which is fine.
-  }
-
-  try {
+    // 2. Authenticate the request
+    const authorization = req.headers.get('authorization');
+    if (!authorization?.startsWith('Bearer ')) {
+      return NextResponse.json({ success: false, error: 'Unauthorized: No token provided.' }, { status: 401 });
+    }
+    const idToken = authorization.split('Bearer ')[1];
     const adminAuth = getAuth(app);
     const decodedToken = await adminAuth.verifyIdToken(idToken);
     
     const firebaseUser = {
-        uid: decodedToken.uid,
-        email: decodedToken.email,
-        displayName: decodedToken.name,
-        phoneNumber: decodedToken.phone_number,
+      uid: decodedToken.uid,
+      email: decodedToken.email,
+      displayName: decodedToken.name || '',
+      phoneNumber: decodedToken.phone_number || '',
     };
-    
+
     if (!firebaseUser.email) {
-        throw new Error("Token did not contain an email address.");
+      throw new Error("Token did not contain an email address.");
     }
     
+    // 3. Get referrerId from request body if it exists
+    let referrerId: string | null = null;
+    try {
+      const body = await req.json();
+      referrerId = body.referrerId;
+    } catch (e) {
+      // Body might be empty, which is fine for sign-in flows.
+    }
+
     const db = getFirestore(app);
     const userDocRef = db.collection('users').doc(firebaseUser.uid);
+    const userDocSnap = await userDocRef.get();
 
-    // --- Start Parallel Fetches ---
-    const [
-        userDocSnap,
-        partnerQuerySnap,
-        staffQuerySnap,
-        leadQuerySnap,
-        loyaltyConfigSnap
-    ] = await Promise.all([
-        userDocRef.get(),
-        db.collection('partners').where('email', '==', firebaseUser.email).where('invitationStatus', '==', 'invited').limit(1).get(),
-        db.collectionGroup('staff').where('email', '==', firebaseUser.email).where('status', '==', 'unconfirmed').limit(1).get(),
-        db.collectionGroup('leads').where('email', '==', firebaseUser.email).limit(1).get(),
-        db.collection('configuration').doc('loyaltySettings').get()
-    ]);
-    // --- End Parallel Fetches ---
-
-    const userData = userDocSnap.data();
-
-    // If user document exists AND it has a companyId, there's nothing to do.
-    if (userDocSnap.exists && userData?.companyId) {
-        return NextResponse.json({ success: true, message: 'User document already exists and is complete.' });
+    // 4. If user is already set up, do nothing.
+    if (userDocSnap.exists && userDocSnap.data()?.companyId) {
+      return NextResponse.json({ success: true, message: 'User document already exists and is complete.' });
     }
-
+    
+    // 5. If user is NOT fully set up, run the creation logic.
+    // This is a simplified and more robust path for all new registrations.
     const batch = db.batch();
-
-    // Priority 1: Check for a pending partner invitation.
-    if (!partnerQuerySnap.empty) {
-        console.log(`Found pending partner invitation for ${firebaseUser.email}. Processing as partner.`);
-        const partnerDoc = partnerQuerySnap.docs[0];
-        
-        batch.update(partnerDoc.ref, { 
-            invitationStatus: 'registered',
-            updatedAt: FieldValue.serverTimestamp(),
-        });
-
-        const partnerData = partnerDoc.data();
-        const displayName = firebaseUser.displayName || `${partnerData.firstName} ${partnerData.lastName}`;
-        const nameParts = displayName.split(' ');
-        const userAsPartnerData = {
-            id: firebaseUser.uid,
-            firstName: partnerData.firstName || nameParts[0] || 'Partner',
-            lastName: partnerData.lastName || (nameParts.length > 1 ? nameParts.slice(1).join(' ') : ''),
-            email: firebaseUser.email,
-            phone: firebaseUser.phoneNumber || '',
-            companyId: null, // Partners do not have a companyId.
-            role: 'partner',
-            updatedAt: FieldValue.serverTimestamp(),
-        };
-        if (!userDocSnap.exists) {
-            (userAsPartnerData as any).createdAt = FieldValue.serverTimestamp();
-        }
-        batch.set(userDocRef, userAsPartnerData, { merge: true });
-        
-        await batch.commit();
-        return NextResponse.json({ success: true, message: 'Partner account processed successfully.' });
-    }
-
-    // Priority 2: Check for a pending staff invitation.
-    if (!staffQuerySnap.empty) {
-        console.log(`Found pending staff invitation for ${firebaseUser.email}. Processing as staff.`);
-        const invitedStaffDoc = staffQuerySnap.docs[0];
-        const invitedStaffData = invitedStaffDoc.data();
-        const companyId = invitedStaffData.companyId;
-        
-        const userAsStaffData = {
-            id: firebaseUser.uid,
-            firstName: invitedStaffData.firstName,
-            lastName: invitedStaffData.lastName,
-            email: firebaseUser.email,
-            phone: firebaseUser.phoneNumber || '',
-            companyId: companyId,
-            role: 'staff',
-            updatedAt: FieldValue.serverTimestamp(),
-        };
-        if (!userDocSnap.exists) {
-            (userAsStaffData as any).createdAt = FieldValue.serverTimestamp();
-        }
-        batch.set(userDocRef, userAsStaffData, { merge: true });
-        
-        const newStaffDocRef = db.collection(`companies/${companyId}/staff`).doc(firebaseUser.uid);
-        batch.set(newStaffDocRef, { ...invitedStaffData, id: firebaseUser.uid, status: 'confirmed' });
-        batch.delete(invitedStaffDoc.ref);
-
-        await batch.commit();
-        return NextResponse.json({ success: true, message: 'Staff account processed successfully.' });
-    }
-    
-    // --- Standard new user or INCOMPLETE user registration ---
-    console.log(`Processing standard/incomplete user registration for ${firebaseUser.email}.`);
-    
-    if (!leadQuerySnap.empty) {
-        const leadDoc = leadQuerySnap.docs[0];
-        batch.update(leadDoc.ref, { status: 'registered' });
-        if (!referrerId && leadDoc.data().companyId) {
-            referrerId = leadDoc.data().companyId;
-        }
-    }
-
     const companyRef = db.collection('companies').doc();
-    const displayName = firebaseUser.displayName?.trim();
+    
+    const displayName = firebaseUser.displayName.trim();
     const companyName = displayName ? `${displayName}'s Company` : 'My Company';
 
     const newCompanyData: any = {
@@ -167,28 +81,35 @@ export async function POST(req: NextRequest) {
     }
 
     const nameParts = (firebaseUser.displayName || '').split(' ');
-    
     const newUserData = {
         id: firebaseUser.uid,
-        firstName: userData?.firstName || nameParts[0] || 'New',
-        lastName: userData?.lastName || (nameParts.length > 1 ? nameParts.slice(1).join(' ') : 'User'),
+        firstName: userDocSnap.data()?.firstName || nameParts[0] || 'New',
+        lastName: userDocSnap.data()?.lastName || (nameParts.length > 1 ? nameParts.slice(1).join(' ') : 'User'),
         email: firebaseUser.email,
-        phone: userData?.phone || firebaseUser.phoneNumber || '',
+        phone: userDocSnap.data()?.phone || firebaseUser.phoneNumber || '',
         companyId: companyRef.id,
         role: 'owner',
         updatedAt: FieldValue.serverTimestamp(),
     };
     
+    // Only add createdAt and award points if it's a completely new user document
     if (!userDocSnap.exists) {
         (newUserData as any).createdAt = FieldValue.serverTimestamp();
         
-        const signupPoints = loyaltyConfigSnap.data()?.userSignupPoints || 50;
-        newCompanyData.rewardPoints = signupPoints;
-        
-        if (referrerId) {
-            const partnerReferralPoints = loyaltyConfigSnap.data()?.partnerReferralPoints || 200;
-            const referrerCompanyRef = db.collection('companies').doc(referrerId);
-            batch.update(referrerCompanyRef, { rewardPoints: FieldValue.increment(partnerReferralPoints) });
+        // This can fail if the config doc doesn't exist, but it's not critical. Wrap in a try-catch.
+        try {
+            const loyaltyConfigDoc = await db.collection('configuration').doc('loyaltySettings').get();
+            const signupPoints = loyaltyConfigDoc.data()?.userSignupPoints || 50;
+            newCompanyData.rewardPoints = signupPoints;
+            
+            if (referrerId) {
+                const partnerReferralPoints = loyaltyConfigDoc.data()?.partnerReferralPoints || 200;
+                const referrerCompanyRef = db.collection('companies').doc(referrerId);
+                // Use a merge update to avoid failing if the referrer doc doesn't exist yet, though it should.
+                batch.set(referrerCompanyRef, { rewardPoints: FieldValue.increment(partnerReferralPoints) }, { merge: true });
+            }
+        } catch (pointError) {
+            console.warn("Could not award sign-up points:", pointError);
         }
     }
     
@@ -197,15 +118,11 @@ export async function POST(req: NextRequest) {
     
     await batch.commit();
 
-    console.log(`Successfully processed user and company for ${firebaseUser.email}.`);
-    return NextResponse.json({ success: true, message: 'User account processed successfully.' });
+    return NextResponse.json({ success: true, message: 'User account created/updated successfully.' });
 
   } catch (error: any) {
-    const uidFromToken = idToken ? await getAuth(app).verifyIdToken(idToken).then(t=>t.uid).catch(()=>'unknown') : 'unknown';
-    console.error(`Error in checkAndCreateUser for user ${uidFromToken}:`, error);
-    if (error.code?.startsWith('auth/')) {
-       return NextResponse.json({ success: false, error: `Authentication error: ${error.message}` }, { status: 401 });
-    }
+    console.error(`Error in checkAndCreateUser:`, error);
+    // Ensure a JSON response is always sent
     return NextResponse.json({ success: false, error: `Internal Server Error: ${error.message}` }, { status: 500 });
   }
 }
