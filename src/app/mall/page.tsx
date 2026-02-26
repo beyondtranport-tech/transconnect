@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -301,7 +302,6 @@ export default function MallPage() {
                     </div>
                     <div className="space-y-16">
                         {malls.map((mall, index) => {
-                            const Icon = mall.icon;
                             return (
                                 <div key={mall.name} className="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
                                     <div className={`relative aspect-video rounded-lg overflow-hidden shadow-lg ${index % 2 === 1 ? 'md:order-2' : ''}`}>
@@ -317,10 +317,10 @@ export default function MallPage() {
                                     </div>
                                     <div className={index % 2 === 1 ? 'md:order-1' : ''}>
                                         <div className="flex items-center gap-4">
-                                            {(mall as any).logo ? (
-                                                <Image src={(mall as any).logo} alt={`${mall.name} logo`} width={120} height={40} className="h-10 w-auto object-contain" />
+                                            {mall.logo ? (
+                                                <Image src={mall.logo} alt={`${mall.name} logo`} width={120} height={40} className="h-10 w-auto object-contain" />
                                             ) : (
-                                                Icon && <Icon className="h-10 w-10 text-primary" />
+                                                mall.icon && React.createElement(mall.icon, { className: "h-10 w-10 text-primary" })
                                             )}
                                             <h3 className="text-3xl font-bold font-headline">{mall.name}</h3>
                                         </div>
