@@ -52,6 +52,8 @@ export function Header() {
     if (!auth) return;
     try {
         await signOut(auth);
+        // The clearCart() logic is now handled automatically by the CartProvider
+        // when the user state changes to null.
         setIsSheetOpen(false);
         router.push('/');
     } catch (error) {
@@ -65,6 +67,7 @@ export function Header() {
   };
 
   const isAdmin = user && (user.email === 'beyondtransport@gmail.com' || user.email === 'mkoton100@gmail.com');
+  // Redundant check for WCTA status for maximum reliability. Checks instant claim AND database record.
   const isWctaMember = user?.claims?.wcta === true || user?.companyData?.referrerId === 'WCTA';
 
   const navItems = [
