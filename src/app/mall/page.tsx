@@ -305,8 +305,16 @@ export default function MallPage() {
                             const Icon = mall.icon;
                             return (
                                 <div key={mall.name} className="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
-                                    <div className={`relative aspect-video rounded-lg overflow-hidden shadow-lg ${index % 2 === 1 ? 'md:order-2' : ''}`}>
-                                        {mall.image && (
+                                    <div className={`relative aspect-video rounded-lg overflow-hidden shadow-lg bg-muted flex items-center justify-center p-4 ${index % 2 === 1 ? 'md:order-2' : ''}`}>
+                                        {mall.logo ? (
+                                            <Image
+                                                src={mall.logo}
+                                                alt={`${mall.name} logo`}
+                                                width={300}
+                                                height={120}
+                                                className="object-contain"
+                                            />
+                                        ) : mall.image && (
                                             <Image
                                                 src={mall.image.imageUrl}
                                                 alt={mall.name}
@@ -318,11 +326,7 @@ export default function MallPage() {
                                     </div>
                                     <div className={index % 2 === 1 ? 'md:order-1' : ''}>
                                         <div className="flex items-center gap-4">
-                                            {mall.logo ? (
-                                                <Image src={mall.logo} alt={`${mall.name} logo`} width={120} height={40} className="h-10 w-auto object-contain" />
-                                            ) : (
-                                                Icon && React.createElement(Icon, { className: "h-10 w-10 text-primary" })
-                                            )}
+                                            {!mall.logo && Icon && React.createElement(Icon, { className: "h-10 w-10 text-primary" })}
                                             <h3 className="text-3xl font-bold font-headline">{mall.name}</h3>
                                         </div>
                                         <p className="mt-4 text-lg text-muted-foreground">
