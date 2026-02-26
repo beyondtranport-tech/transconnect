@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -36,6 +37,7 @@ import {
   Sparkles,
   MessageSquare,
   Truck,
+  Network,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -47,6 +49,7 @@ import { Loader2 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import React from 'react';
 import AIChatWidget from '@/components/ai-chat-widget';
+import Link from 'next/link';
 
 // Statically import all components that are conditionally rendered
 import AccountDashboard from './dashboard';
@@ -219,6 +222,11 @@ function AccountPageContent() {
                 <SidebarMenuButton tooltip="My Vehicles" isActive={activeView === 'vehicle-listings'} onClick={() => navigate('vehicle-listings')}>
                   <Truck />
                   <span>My Vehicles</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Supply Chain" asChild>
+                    <Link href="/supply-chain"><Network /><span>Supply Chain</span></Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
