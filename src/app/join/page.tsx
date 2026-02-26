@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, Suspense, useEffect } from 'react';
@@ -52,7 +53,7 @@ function JoinFormComponent() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const auth = useAuth();
-  const { user, isUserLoading } = useUser();
+  const { user, isUserLoading, forceRefresh } = useUser();
   const redirectParam = searchParams.get('redirect');
 
   // Redirect if user is already logged in
@@ -173,6 +174,9 @@ function JoinFormComponent() {
           // This is a critical error on sign-up, so we should throw it.
           throw new Error(result.error || "Failed to create user profile in database.");
       }
+
+      // **THE FIX**: Force a refresh of the user data from the client-side
+      await forceRefresh();
 
       toast({
         title: 'Account Created!',

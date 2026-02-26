@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, Suspense, useEffect } from 'react';
@@ -43,7 +44,7 @@ function SignInFormComponent() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const auth = useAuth();
-  const { user, isUserLoading } = useUser();
+  const { user, isUserLoading, forceRefresh } = useUser();
   const redirectParam = searchParams.get('redirect');
 
   // Redirect if user is already logged in
@@ -144,6 +145,9 @@ function SignInFormComponent() {
         // Log error but don't block the user, as the user document might already exist.
         console.error("checkAndCreateUser call failed on sign-in:", result.error);
       }
+      
+      // **THE FIX**: Force a refresh of the user data from the client-side
+      await forceRefresh();
 
       toast({
         title: 'Sign In Successful',
