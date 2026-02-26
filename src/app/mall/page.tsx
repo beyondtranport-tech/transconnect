@@ -85,11 +85,10 @@ const malls = [
     },
     {
         name: "WCTA Mall",
-        description: "An exclusive portal for members of the Western Cape Truckers Association.",
+        description: "An exclusive portal for members of the Western Cape Truckers Alliance.",
         logo: "/wcta/wcta-logo.png",
         href: "/mall/wcta",
         id: "wcta",
-        image: placeholderImages.find(p => p.id === 'value-integrity')!,
     },
     {
         name: "Distribution Mall",
@@ -314,7 +313,7 @@ export default function MallPage() {
                                                 height={120}
                                                 className="object-contain"
                                             />
-                                        ) : mall.image && (
+                                        ) : mall.image ? (
                                             <Image
                                                 src={mall.image.imageUrl}
                                                 alt={mall.name}
@@ -322,7 +321,9 @@ export default function MallPage() {
                                                 className="object-cover"
                                                 data-ai-hint={mall.image.imageHint}
                                             />
-                                        )}
+                                        ) : Icon ? (
+                                            <Icon className="h-24 w-24 text-muted-foreground/50" />
+                                        ) : null}
                                     </div>
                                     <div className={index % 2 === 1 ? 'md:order-1' : ''}>
                                         <div className="flex items-center gap-4">
@@ -394,3 +395,5 @@ export default function MallPage() {
         </div>
     )
 }
+
+    

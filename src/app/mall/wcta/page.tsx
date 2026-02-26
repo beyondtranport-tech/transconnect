@@ -52,7 +52,7 @@ export default function WCTAMembershipPage() {
                          <Image src="/wcta/wcta-logo.png" alt="WCTA Logo" width={150} height={60} />
                     </div>
                     <h1 className="text-4xl md:text-5xl font-bold font-headline">Join the WCTA</h1>
-                    <p className="mt-4 text-lg md:text-xl max-w-3xl">Become part of a leading association dedicated to supporting and empowering transport professionals in the Western Cape.</p>
+                    <p className="mt-4 text-lg md:text-xl max-w-3xl">An exclusive portal for members of the Western Cape Truckers Alliance.</p>
                 </div>
             </section>
             
@@ -108,3 +108,5 @@ export default function WCTAMembershipPage() {
         </div>
     )
 }
+
+    
