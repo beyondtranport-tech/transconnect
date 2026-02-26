@@ -30,7 +30,7 @@ export default function WCTAMallPage() {
                 <div className="absolute inset-0 bg-black/60" />
                 <div className="relative h-full flex flex-col items-center justify-center text-center text-primary-foreground z-10 p-4">
                     <div className="mb-4">
-                         <Image src="https://placehold.co/200x80/ffffff/14532d?text=WCTA+Logo" alt="WCTA Logo" width={200} height={80} />
+                         <Image src="/wcta-logo.png" alt="WCTA Logo" width={200} height={80} />
                     </div>
                     <h1 className="text-4xl md:text-5xl font-bold font-headline">Western Cape Truckers Association Mall</h1>
                     <p className="mt-4 text-lg md:text-xl max-w-3xl">An exclusive hub for WCTA members to connect, grow, and save.</p>
