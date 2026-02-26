@@ -281,7 +281,7 @@ export function Header() {
                         <div className="h-10 w-full rounded-md bg-muted/50 animate-pulse" />
                     ) : user ? (
                         <div className='flex flex-col gap-2'>
-                             <Button asChild className="w-full justify-start">
+                            <Button asChild className="w-full justify-start">
                                 <Link href="/account" onClick={() => setIsSheetOpen(false)}>
                                     <User className="mr-2 h-5 w-5" />
                                     My Account
