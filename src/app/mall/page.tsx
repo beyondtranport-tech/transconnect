@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -86,7 +85,7 @@ const malls = [
     {
         name: "WCTA Mall",
         description: "An exclusive portal for members of the Western Cape Truckers Association.",
-        icon: Handshake,
+        logo: "/wcta-logo.png",
         href: "/mall/wcta",
         id: "wcta",
         image: placeholderImages.find(p => p.id === 'value-integrity')!,
@@ -318,7 +317,11 @@ export default function MallPage() {
                                     </div>
                                     <div className={index % 2 === 1 ? 'md:order-1' : ''}>
                                         <div className="flex items-center gap-4">
-                                            {Icon && <Icon className="h-10 w-10 text-primary" />}
+                                            {(mall as any).logo ? (
+                                                <Image src={(mall as any).logo} alt={`${mall.name} logo`} width={120} height={40} className="h-10 w-auto object-contain" />
+                                            ) : (
+                                                Icon && <Icon className="h-10 w-10 text-primary" />
+                                            )}
                                             <h3 className="text-3xl font-bold font-headline">{mall.name}</h3>
                                         </div>
                                         <p className="mt-4 text-lg text-muted-foreground">
