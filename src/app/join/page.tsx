@@ -59,13 +59,14 @@ function JoinFormComponent() {
 
   // This effect handles the final redirect after the user profile is confirmed to be loaded.
   useEffect(() => {
+    // Only redirect if we are in the "waiting" state and the user object is fully loaded with a companyId.
     if (isWaitingForProfile && user?.companyId) {
-        setIsWaitingForProfile(false);
+        setIsWaitingForProfile(false); // Turn off waiting state
         toast({
             title: 'Account Ready!',
             description: "Redirecting to your dashboard...",
         });
-        const isAdmin = user.email === 'mkoton100@gmail.com';
+        const isAdmin = user.email === 'mkoton100@gmail.com' || user.email === 'beyondtransport@gmail.com';
         const defaultRedirect = isAdmin ? '/adminaccount' : '/account';
         router.push(redirectParam || defaultRedirect);
     }
@@ -175,13 +176,15 @@ function JoinFormComponent() {
           throw new Error(result.error || "Failed to create user profile in database.");
       }
 
-      // Instead of redirecting, trigger a refresh and wait for the user object to update.
+      // Instead of redirecting immediately, trigger a data refresh and wait for the provider to update.
       forceRefresh();
-      setIsWaitingForProfile(true);
+      setIsWaitingForProfile(true); // Start waiting for the enriched user object.
       toast({
         title: 'Account Created!',
         description: "Finalizing your profile, please wait...",
       });
+      // The useEffect hook at the top of the component will handle the redirect once the user object is ready.
+      setIsLoading(false);
 
     } catch (error: any) {
       let title = 'An error occurred.';
@@ -351,7 +354,7 @@ function JoinFormComponent() {
 export default function JoinPage() {
   return (
     <div className="container mx-auto flex min-h-[calc(100vh-8rem)] items-center justify-center px-4 py-16">
-      <Suspense fallback={<div>Loading...</div>}>
+      <Suspense fallback={<Loader2 className="h-12 w-12 animate-spin text-primary" />}>
         <JoinFormComponent />
       </Suspense>
     </div>

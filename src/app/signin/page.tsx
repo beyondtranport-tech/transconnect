@@ -48,16 +48,16 @@ function SignInFormComponent() {
   const { user, isUserLoading, forceRefresh } = useUser();
   const redirectParam = searchParams.get('redirect');
 
-  // Redirect if user profile is fully loaded
+  // This effect handles the final redirect after the user profile is confirmed to be loaded.
   useEffect(() => {
-    // Check if user is loaded and has companyId, or if we are waiting and the companyId has arrived.
-    if ((!isUserLoading && user?.companyId) || (isWaitingForProfile && user?.companyId)) {
-        setIsWaitingForProfile(false); // Stop waiting
-        const isAdmin = user.email === 'mkoton100@gmail.com';
+    // Only redirect if we are in the "waiting" state and the user object is fully loaded with a companyId.
+    if (isWaitingForProfile && user?.companyId) {
+        setIsWaitingForProfile(false); // Turn off waiting state
+        const isAdmin = user.email === 'mkoton100@gmail.com' || user.email === 'beyondtransport@gmail.com';
         const defaultRedirect = isAdmin ? '/adminaccount' : '/account';
         router.replace(redirectParam || defaultRedirect);
     }
-  }, [user, isUserLoading, isWaitingForProfile, router, redirectParam]);
+  }, [user, isWaitingForProfile, router, redirectParam]);
 
 
   const form = useForm<SignInFormValues>({
@@ -130,26 +130,23 @@ function SignInFormComponent() {
       });
       if (!sessionResponse.ok) throw new Error('Failed to set session cookie.');
       
-      const checkAndCreateUserResponse = await fetch('/api/checkAndCreateUser', {
+      // We still call checkAndCreateUser to handle legacy users or edge cases,
+      // but we don't need to wait for its full completion before refreshing client state.
+      fetch('/api/checkAndCreateUser', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${idToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({}), // Body can be empty for sign-in
-      });
-      if (!checkAndCreateUserResponse.ok) {
-        const result = await checkAndCreateUserResponse.json();
-        console.error("checkAndCreateUser call failed on sign-in:", result.error);
-      }
+        headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      }).catch(e => console.error("Non-critical background profile check failed:", e));
       
-      // Instead of redirecting immediately, trigger a data refresh and wait
+      // Instead of redirecting immediately, trigger a data refresh and wait for the provider to update.
       forceRefresh();
-      setIsWaitingForProfile(true);
+      setIsWaitingForProfile(true); // Start waiting for the enriched user object.
       toast({
         title: 'Sign In Successful',
         description: 'Loading your profile...',
       });
+      // The useEffect hook at the top will handle the redirect.
+      setIsLoading(false);
 
     } catch (error: any) {
       let title = 'An error occurred.';
