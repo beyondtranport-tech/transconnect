@@ -47,45 +47,43 @@ export function usePermissions() {
     const permissions = useMemo(() => {
         const perms = new Set<string>();
         
-        // This check is the critical fix. We only need the base user object to start assigning roles.
         if (!user) {
             return perms;
         }
 
         const isAdmin = user.email === 'mkoton100@gmail.com' || user.email === 'beyondtransport@gmail.com';
-        const isOwner = user.role === 'owner';
-        
-        // Use optional chaining for safety as companyData might not be loaded yet.
-        const isWctaMember = user.companyData?.referrerId === 'WCTA';
-        const isPaidMember = user.companyData?.membershipId && user.companyData.membershipId !== 'free';
 
         // Admins get all permissions
         if (isAdmin) {
             return new Set<string>(['manage:all']);
         }
-
-        // --- All Owners ---
-        if (isOwner) {
-            // Base permissions for ALL owners, including free plan
-            perms.add('create:shop'); // Ability to create a draft shop
-            perms.add('edit:shop');   // Ability to edit their own shop
-            perms.add('manage:products'); // Ability to add/edit products
-            perms.add('view:account');
+        
+        // Handle staff members first, as they have explicit, limited permissions
+        if (user.role === 'staff' && Array.isArray(user.permissions)) {
+             user.permissions.forEach(p => perms.add(p));
+             return perms; // Return immediately with only staff permissions
         }
 
-        // --- Premium Permissions ---
-        // Grant additional rights to owners who are on a paid plan or are WCTA members.
-        if (isOwner && (isPaidMember || isWctaMember)) {
+        // For everyone else who is logged in, grant default owner permissions.
+        // This is safer and assumes any authenticated non-staff user is an owner.
+        perms.add('create:shop');
+        perms.add('edit:shop');
+        perms.add('manage:products');
+        perms.add('view:account');
+        perms.add('manage:staff');
+        perms.add('edit:staff');
+        perms.add('delete:staff');
+        perms.add('create:staff');
+
+        // Check for premium status and add permissions accordingly
+        // This check is safe because companyData is fetched with the user object
+        const isWctaMember = user.companyData?.referrerId === 'WCTA';
+        const isPaidMember = user.companyData?.membershipId && user.companyData.membershipId !== 'free';
+
+        if (isPaidMember || isWctaMember) {
             perms.add('publish:shop');
             perms.add('create:loads');
             perms.add('manage:loads');
-            // Add other premium feature permissions here
-        }
-
-        // --- Staff Permissions ---
-        if (user.role === 'staff' && user.permissions) {
-            // Staff permissions are explicitly assigned strings like "view:shop", "edit:products"
-             (user.permissions as string[]).forEach(p => perms.add(p));
         }
         
         return perms;

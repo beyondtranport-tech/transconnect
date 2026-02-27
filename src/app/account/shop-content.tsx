@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
@@ -220,15 +221,17 @@ export default function ShopContent() {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <div className="inline-block mt-4">
-                    <Button onClick={handleCreateShop} disabled={isCreating || !canCreateShop}>
-                      {isCreating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
+                    <Button onClick={handleCreateShop} disabled={isCreating || !canCreateShop || arePermissionsLoading}>
+                      {isCreating || arePermissionsLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
                       Create My Shop
                     </Button>
                   </div>
                 </TooltipTrigger>
                 {!canCreateShop && (
                   <TooltipContent>
-                    <p className="flex items-center gap-2"><ShieldAlert className="h-4 w-4" /> You don't have permission to create a shop.</p>
+                    <p className="flex items-center gap-2"><ShieldAlert className="h-4 w-4" /> 
+                        {arePermissionsLoading ? 'Loading permissions...' : "You don't have permission to create a shop."}
+                    </p>
                   </TooltipContent>
                 )}
               </Tooltip>
