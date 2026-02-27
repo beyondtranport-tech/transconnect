@@ -63,7 +63,7 @@ export async function verifyAdmin(req: NextRequest) {
     
     const adminAuth = getAuth(app);
     const decodedToken = await adminAuth.verifyIdToken(token);
-    const isAdmin = decodedToken.email === 'mkoton100@gmail.com';
+    const isAdmin = decodedToken.email === 'mkoton100@gmail.com' || decodedToken.email === 'beyondtransport@gmail.com';
 
     if (!isAdmin) {
         throw new Error("Forbidden: Admin access required.");

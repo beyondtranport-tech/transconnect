@@ -12,7 +12,7 @@ service cloud.firestore {
     function isAdmin() {
       // It's recommended to use custom claims for security and scalability.
       // To set a custom claim, use the Firebase Admin SDK to set {'admin': true} on a user's token.
-      let isSuperAdminByEmail = request.auth != null && request.auth.token.email == 'mkoton100@gmail.com';
+      let isSuperAdminByEmail = request.auth != null && (request.auth.token.email == 'mkoton100@gmail.com' || request.auth.token.email == 'beyondtransport@gmail.com');
       let hasAdminClaim = request.auth != null && request.auth.token.admin == true;
       return isSuperAdminByEmail || hasAdminClaim;
     }
@@ -134,6 +134,17 @@ service cloud.firestore {
     // Admin-managed collection for sales leads.
     match /leads/{leadId=**} {
       allow read, write: if isAdmin();
+    }
+    
+    // --- Lending Module Collections (Admin Only) ---
+    match /lendingAssets/{assetId} {
+        allow read, write: if isAdmin();
+    }
+    match /lendingClients/{clientId}/{document=**} {
+        allow read, write: if isAdmin();
+    }
+    match /lendingPartners/{partnerId}/{document=**} {
+        allow read, write: if isAdmin();
     }
   }
 }

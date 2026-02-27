@@ -1,9 +1,7 @@
 
 'use client';
 
-import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
-import { useDoc } from '@/firebase/firestore/use-doc';
-import { doc } from 'firebase/firestore';
+import { useUser } from '@/firebase';
 import { useMemo } from 'react';
 
 export type Action = 'create' | 'view' | 'edit' | 'delete' | 'manage';
@@ -18,7 +16,7 @@ export type Resource =
     'supplierMall' |
     'transporterMall' |
     'financeMall' |
-    'loadsMall' |
+    'loads' |
     'buySellMall' |
     'distributionMall' |
     'warehouseMall' |
@@ -42,61 +40,62 @@ const permissionHierarchy: { [key in Action]: Action[] } = {
 };
 
 export function usePermissions() {
-    const { user } = useUser();
-    const firestore = useFirestore();
-
-    const isAdmin = user?.email === 'beyondtransport@gmail.com';
-
-    // 1. Get the current user's profile to find their role and companyId
-    const userDocRef = useMemoFirebase(() => {
-        if (!firestore || !user) return null;
-        return doc(firestore, 'users', user.uid);
-    }, [firestore, user]);
-    const { data: userData, isLoading: isUserLoading } = useDoc<{ companyId: string, role: 'owner' | 'staff' | 'partner' }>(userDocRef);
-
-    // 2. If the user is a staff member, get their specific staff document to find permissions
-    const staffDocRef = useMemoFirebase(() => {
-        if (!firestore || !userData || userData.role !== 'staff' || !user) return null;
-        return doc(firestore, `companies/${userData.companyId}/staff`, user.uid);
-    }, [firestore, userData, user]);
-    const { data: staffData, isLoading: isStaffLoading } = useDoc<{ permissions: string[] }>(staffDocRef);
-
+    const { user, isUserLoading } = useUser();
+    
     const permissions = useMemo(() => {
-        if (!userData) return new Set<string>();
+        const perms = new Set<string>();
+        
+        if (!user || !user.companyData) {
+            return perms;
+        }
 
-        // If a user's role is not 'staff' or 'partner', they are considered an owner.
-        // This handles both new users with `role: 'owner'` and legacy users with no `role` field.
-        const isOwner = userData.role !== 'staff' && userData.role !== 'partner';
+        const isAdmin = user.email === 'mkoton100@gmail.com' || user.email === 'beyondtransport@gmail.com';
+        const isOwner = user.role !== 'staff' && user.role !== 'partner';
+        const isWctaMember = user.companyData.referrerId === 'WCTA';
+        const isPaidMember = user.companyData.membershipId && user.companyData.membershipId !== 'free';
 
-        // Grant full permissions if the user is the admin or the company owner.
-        if (isAdmin || isOwner) {
+        // Admins get all permissions
+        if (isAdmin) {
             return new Set<string>(['manage:all']);
         }
-        
-        // Staff members' permissions are loaded from their document for more granular control
-        if (userData.role === 'staff' && staffData?.permissions) {
-            return new Set<string>(staffData.permissions);
+
+        // --- All Owners ---
+        if (isOwner) {
+            // Base permissions for ALL owners, including free plan
+            perms.add('create:shop'); // Ability to create a draft shop
+            perms.add('edit:shop');   // Ability to edit their own shop
+            perms.add('manage:products'); // Ability to add/edit products
+            perms.add('view:account');
         }
 
-        return new Set<string>();
-    }, [userData, staffData, isAdmin]);
+        // --- Premium Permissions ---
+        // Grant additional rights to owners who are on a paid plan or are WCTA members.
+        if (isOwner && (isPaidMember || isWctaMember)) {
+            perms.add('publish:shop');
+            perms.add('create:loads');
+            perms.add('manage:loads');
+            // Add other premium feature permissions here
+        }
+
+        // --- Staff Permissions ---
+        if (user.role === 'staff' && user.permissions) {
+            // Staff permissions are explicitly assigned strings like "view:shop", "edit:products"
+             (user.permissions as string[]).forEach(p => perms.add(p));
+        }
+        
+        return perms;
+
+    }, [user]);
 
     const can = (action: Action, resource: Resource) => {
-        if (!userData) return false;
+        if (!user) return false;
+        
+        if (permissions.has('manage:all')) return true;
+        if (permissions.has(`manage:${resource}`)) return true;
 
         const requiredPermissions = permissionHierarchy[action];
-        
-        // Check for wildcard 'manage:all'
-        if (permissions.has('manage:all')) return true;
-
-        // Check for resource-specific manage 'manage:shop'
-        if (permissions.has(`manage:${resource}`)) return true;
-        
-        // Check for the specific action:resource permission
         return requiredPermissions.some(perm => permissions.has(`${perm}:${resource}`));
     };
     
-    const isLoading = isUserLoading || (userData?.role === 'staff' && isStaffLoading);
-
-    return { can, isLoading, permissions };
+    return { can, isLoading: isUserLoading, permissions };
 }
