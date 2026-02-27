@@ -127,33 +127,6 @@ function PortLogisticsPortalContent() {
     );
   }
   
-  // This top-level check now only verifies if the user is a WCTA member at all.
-  if (!isAdmin && !isWctaMember) {
-        return (
-            <div className="container mx-auto flex min-h-[calc(100vh-8rem)] items-center justify-center px-4 py-16">
-                 <Card className="w-full max-w-lg text-center">
-                    <CardHeader>
-                        <CardTitle className="flex items-center justify-center gap-2 text-destructive"><ShieldAlert /> Access Denied</CardTitle>
-                        <CardDescription>
-                            The Port Logistics Portal is an exclusive benefit for WCTA members.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <p>Learn more about our partnerships or return to your account.</p>
-                        <div className="flex gap-4 mt-6 justify-center">
-                            <Button asChild>
-                                <Link href="/account">Go to My Account</Link>
-                            </Button>
-                             <Button asChild variant="outline">
-                                <Link href="/contact">Contact Us</Link>
-                            </Button>
-                        </div>
-                    </CardContent>
-                </Card>
-            </div>
-        )
-    }
-
   const navigate = (view: string) => router.push(`/port-logistics?view=${view}`, { scroll: false });
 
   return (
