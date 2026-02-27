@@ -4,7 +4,7 @@
 import { useUser } from '@/firebase';
 import { useMemo } from 'react';
 
-export type Action = 'create' | 'view' | 'edit' | 'delete' | 'manage';
+export type Action = 'create' | 'view' | 'edit' | 'delete' | 'manage' | 'publish';
 export type Resource = 
     'shop' | 
     'products' | 
@@ -28,15 +28,17 @@ export type Resource =
     'marketplaceLoyalty' |
     'tech' |
     'contributions' |
-    'permissions';
+    'permissions' |
+    'account';
 
 // `manage` implies all other actions
 const permissionHierarchy: { [key in Action]: Action[] } = {
-    manage: ['create', 'view', 'edit', 'delete'],
+    manage: ['create', 'view', 'edit', 'delete', 'publish'],
     create: ['create'],
     view: ['view'],
     edit: ['edit'],
     delete: ['delete'],
+    publish: ['publish'],
 };
 
 export function usePermissions() {
@@ -45,14 +47,17 @@ export function usePermissions() {
     const permissions = useMemo(() => {
         const perms = new Set<string>();
         
-        if (!user || !user.companyData) {
+        // This check is the critical fix. We only need the base user object to start assigning roles.
+        if (!user) {
             return perms;
         }
 
         const isAdmin = user.email === 'mkoton100@gmail.com' || user.email === 'beyondtransport@gmail.com';
         const isOwner = user.role === 'owner';
-        const isWctaMember = user.companyData.referrerId === 'WCTA';
-        const isPaidMember = user.companyData.membershipId && user.companyData.membershipId !== 'free';
+        
+        // Use optional chaining for safety as companyData might not be loaded yet.
+        const isWctaMember = user.companyData?.referrerId === 'WCTA';
+        const isPaidMember = user.companyData?.membershipId && user.companyData.membershipId !== 'free';
 
         // Admins get all permissions
         if (isAdmin) {
