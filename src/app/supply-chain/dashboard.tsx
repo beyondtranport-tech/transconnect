@@ -1,7 +1,7 @@
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { LayoutDashboard, CheckCircle, RefreshCw, Users, FileText, AlertTriangle } from "lucide-react";
+import { LayoutDashboard, CheckCircle, RefreshCw, Users, FileText, AlertTriangle, Network } from "lucide-react";
 
 const kpis = [
     {
@@ -53,6 +53,20 @@ export default function DashboardContent() {
                 <CardDescription>A high-level overview of your supply chain operations and key metrics.</CardDescription>
             </CardHeader>
             
+            <Card className="bg-primary/5 border-primary/20">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-3">
+                        <Network className="h-6 w-6 text-primary" />
+                        What is the Supply Chain Portal?
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-muted-foreground">
+                        This portal is your integrated command center for managing your entire supply chain. It provides tools to oversee your suppliers, streamline procurement, manage inventory levels, and coordinate logistics—all from one place. The goal is to give you the visibility and control needed to reduce costs, improve efficiency, and build a more resilient supply chain.
+                    </p>
+                </CardContent>
+            </Card>
+
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
                 {kpis.map((kpi) => {
                     const Icon = kpi.icon;

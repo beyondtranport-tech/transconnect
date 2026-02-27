@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -36,7 +35,7 @@ import { useUser, useAuth } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import dynamic from 'next/dynamic';
 import React from 'react';
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
+import { PremiumFeaturePrompt } from '@/components/PremiumFeaturePrompt';
 
 // Dynamically import content components
 const DashboardContent = dynamic(() => import('./dashboard'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
@@ -46,24 +45,6 @@ const InventoryContent = dynamic(() => import('./inventory'), { loading: () => <
 const LogisticsContent = dynamic(() => import('./logistics'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const AnalyticsContent = dynamic(() => import('./analytics'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
-function UpgradePrompt() {
-    return (
-        <Card className="w-full max-w-lg text-center mx-auto mt-10">
-            <CardHeader>
-                <CardTitle className="flex items-center justify-center gap-2 text-primary"><ShieldAlert /> Premium Access Required</CardTitle>
-                <CardDescription>
-                    This feature is an exclusive benefit for members on a paid plan.
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                <p>Please upgrade your membership to gain access to this powerful tool.</p>
-                <Button asChild className="mt-6">
-                    <Link href="/pricing">Upgrade Your Plan</Link>
-                </Button>
-            </CardContent>
-        </Card>
-    );
-}
 
 function SupplyChainPortalContent() {
   const router = useRouter();
@@ -90,18 +71,28 @@ function SupplyChainPortalContent() {
   };
 
   const isAdmin = user?.claims?.admin === true || user?.email === 'mkoton100@gmail.com' || user?.email === 'beyondtransport@gmail.com';
-  const isWctaMember = user?.claims?.wcta === true || user?.companyData?.referrerId === 'WCTA';
   const hasPremiumPlan = user?.companyData?.membershipId && user.companyData.membershipId !== 'free';
 
   const renderContent = useCallback(() => {
-    // Allow dashboard view for all WCTA members
     if (activeView === 'dashboard') {
       return <DashboardContent />;
     }
     
-    // For all other views, require a paid plan or admin status
     if (!isAdmin && !hasPremiumPlan) {
-      return <UpgradePrompt />;
+      switch (activeView) {
+        case 'suppliers':
+            return <PremiumFeaturePrompt icon={Building} title="Supplier Management" description="This tool allows you to maintain a directory of your suppliers, track performance, and manage contracts." />;
+        case 'procurement':
+            return <PremiumFeaturePrompt icon={ShoppingCart} title="Procurement" description="Create purchase orders, manage approvals, and track order status with your suppliers." />;
+        case 'inventory':
+            return <PremiumFeaturePrompt icon={Package} title="Inventory Management" description="Track stock levels, set reorder points, and manage inventory across multiple locations." />;
+        case 'logistics':
+            return <PremiumFeaturePrompt icon={Truck} title="Logistics" description="Plan and track inbound and outbound shipments, manage carriers, and optimize routes." />;
+        case 'analytics':
+             return <PremiumFeaturePrompt icon={BarChart3} title="Analytics" description="Access detailed charts and reports on supplier performance, inventory turnover, and logistics efficiency." />;
+        default:
+             return <DashboardContent />;
+      }
     }
 
     switch (activeView) {

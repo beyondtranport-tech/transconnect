@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -16,25 +15,32 @@ import {
   LogOut,
   Loader2,
   LayoutDashboard,
-  ShieldCheck,
-  Landmark,
+  User,
+  Shield,
+  Truck,
+  Package,
+  Building,
+  BarChart3,
+  Network,
+  ShoppingCart,
+  ShieldAlert,
+  Ship,
   FileText,
   BrainCircuit,
-  ShoppingCart,
   CalendarCheck,
-  Ship,
-  ShieldAlert,
+  Landmark,
+  ShieldCheck,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect, Suspense, useCallback } from 'react';
+import Link from 'next/link';
 import { useUser, useAuth } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import dynamic from 'next/dynamic';
 import React from 'react';
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
-import Link from 'next/link';
+import { PremiumFeaturePrompt } from '@/components/PremiumFeaturePrompt';
 
 // Dynamically import content components
 const DashboardContent = dynamic(() => import('./dashboard'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
@@ -45,24 +51,6 @@ const TbsIntegrationContent = dynamic(() => import('./tbs-integration'), { loadi
 const NavisIntegrationContent = dynamic(() => import('./navis-integration'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const GateOptimizationContent = dynamic(() => import('./gate-optimization'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
-function UpgradePrompt() {
-    return (
-        <Card className="w-full max-w-lg text-center mx-auto mt-10">
-            <CardHeader>
-                <CardTitle className="flex items-center justify-center gap-2 text-primary"><ShieldAlert /> Premium Access Required</CardTitle>
-                <CardDescription>
-                    This feature is an exclusive benefit for members on a paid plan.
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                <p>Please upgrade your membership to gain access to this powerful tool.</p>
-                <Button asChild className="mt-6">
-                    <Link href="/pricing">Upgrade Your Plan</Link>
-                </Button>
-            </CardContent>
-        </Card>
-    );
-}
 
 function PortLogisticsPortalContent() {
   const router = useRouter();
@@ -89,7 +77,6 @@ function PortLogisticsPortalContent() {
   };
 
   const isAdmin = user?.claims?.admin === true || user?.email === 'mkoton100@gmail.com' || user?.email === 'beyondtransport@gmail.com';
-  const isWctaMember = user?.claims?.wcta === true || user?.companyData?.referrerId === 'WCTA';
   const hasPremiumPlan = user?.companyData?.membershipId && user.companyData.membershipId !== 'free';
 
   const renderContent = useCallback(() => {
@@ -100,9 +87,25 @@ function PortLogisticsPortalContent() {
     
     // For all other views, require a paid plan or admin status
     if (!isAdmin && !hasPremiumPlan) {
-      return <UpgradePrompt />;
+      switch (activeView) {
+        case 'marketplace':
+            return <PremiumFeaturePrompt icon={ShoppingCart} title="Real-time Marketplace" description="This feature provides a live marketplace with upfront pricing and instant booking to eliminate negotiation delays." />;
+        case 'ai-matching':
+            return <PremiumFeaturePrompt icon={BrainCircuit} title="AI Matching" description="Connect the right truck to the right container based on proximity, capacity, and other criteria using AI." />;
+        case 'workflow':
+            return <PremiumFeaturePrompt icon={FileText} title="Digital Workflow" description="Eliminate paperwork by managing digital Bills of Lading (BOL) and Proofs of Delivery (POD) directly on the platform." />;
+        case 'tbs-integration':
+            return <PremiumFeaturePrompt icon={CalendarCheck} title="TBS Integration" description="Directly integrate with the Transnet Truck Booking System for real-time slot availability and one-click bookings." />;
+        case 'navis-integration':
+            return <PremiumFeaturePrompt icon={Landmark} title="Navis N4 Connectivity" description="Automate container validation and receive real-time status updates from the terminal operating system." />;
+        case 'gate-optimization':
+            return <PremiumFeaturePrompt icon={ShieldCheck} title="Gate-In Optimization" description="Reduce terminal turnaround times and eliminate manual paperwork with digital gate passes and pre-gate validation." />;
+        default:
+            return <DashboardContent />;
+      }
     }
-
+    
+    // User is authorized, show the content
     switch (activeView) {
       case 'marketplace': return <MarketplaceContent />;
       case 'ai-matching': return <AiMatchingContent />;
