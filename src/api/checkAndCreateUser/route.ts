@@ -5,15 +5,13 @@ import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase-admin';
 
 export async function POST(req: NextRequest) {
-  // 1. Initialize Admin App
   const { app, error: initError } = getAdminApp();
   if (initError || !app) {
-    console.error("Admin SDK init error in checkAndCreateUser:", initError);
+    console.error("CRITICAL: Admin SDK init error in checkAndCreateUser:", initError);
     return NextResponse.json({ success: false, error: 'Internal Server Error: Could not connect to Firebase.' }, { status: 500 });
   }
 
   try {
-    // 2. Authenticate the request
     const authorization = req.headers.get('authorization');
     if (!authorization?.startsWith('Bearer ')) {
       return NextResponse.json({ success: false, error: 'Unauthorized: No token provided.' }, { status: 401 });
@@ -28,7 +26,6 @@ export async function POST(req: NextRequest) {
       throw new Error("Token did not contain an email address.");
     }
     
-    // 3. Get referrerId from request body if it exists
     let referrerId: string | null = null;
     try {
       const body = await req.json();
@@ -41,22 +38,19 @@ export async function POST(req: NextRequest) {
     const userDocRef = db.collection('users').doc(uid);
     const userDocSnap = await userDocRef.get();
 
-    // 4. If user is already fully set up, ensure claim is set and exit.
+    // Fast path: If user is already fully set up, do nothing.
     if (userDocSnap.exists && userDocSnap.data()?.companyId) {
-        if (userDocSnap.data()?.companyData?.referrerId === 'WCTA' && !decodedToken.wcta) {
-          await adminAuth.setCustomUserClaims(uid, { wcta: true });
-        }
-        return NextResponse.json({ success: true, message: 'User already set up.' });
+      return NextResponse.json({ success: true, message: 'User already set up.' });
     }
     
-    // 5. Use a Firestore Batch for atomic write of new user and company.
+    // --- This is the new, robust creation path ---
     const batch = db.batch();
+    
+    // 1. Prepare Company Document
     const companyRef = db.collection('companies').doc();
     const companyId = companyRef.id;
+    const companyName = name?.trim() ? `${name.trim()}'s Company` : 'My Company';
     
-    const displayName = name || '';
-    const companyName = displayName.trim() ? `${displayName.trim()}'s Company` : 'My Company';
-
     const newCompanyData: any = {
         id: companyId,
         ownerId: uid,
@@ -72,14 +66,13 @@ export async function POST(req: NextRequest) {
         updatedAt: FieldValue.serverTimestamp(),
         rewardPoints: 50, // Default points
     };
-    
-    if (referrerId) {
-        newCompanyData.referrerId = referrerId;
+    if (referrerId === 'WCTA') {
+        newCompanyData.referrerId = 'WCTA';
     }
-    
     batch.set(companyRef, newCompanyData);
 
-    const nameParts = (displayName || '').split(' ').filter(Boolean);
+    // 2. Prepare User Document
+    const nameParts = (name || '').split(' ').filter(Boolean);
     const newUserData = {
         id: uid,
         firstName: nameParts[0] || 'New',
@@ -88,28 +81,29 @@ export async function POST(req: NextRequest) {
         phone: phone_number || '',
         companyId: companyId,
         role: 'owner',
+        createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
     };
+    batch.set(userDocRef, newUserData, { merge: true }); // Merge in case a partial user doc exists
     
-    if (!userDocSnap.exists) {
-        (newUserData as any).createdAt = FieldValue.serverTimestamp();
-    }
-    
-    batch.set(userDocRef, newUserData, { merge: true });
-    
-    // 6. Commit the atomic write.
+    // 3. Commit atomically
     await batch.commit();
 
-    // 7. Set custom claim *after* the database operations are successful.
+    // 4. Set custom claim for instant access (best-effort after successful write)
     if (referrerId === 'WCTA') {
-        await adminAuth.setCustomUserClaims(uid, { wcta: true });
+        try {
+            await adminAuth.setCustomUserClaims(uid, { wcta: true });
+        } catch (claimError) {
+            // Log this, but don't fail the entire request because the database is correct.
+            console.warn(`Failed to set WCTA custom claim for user ${uid}:`, claimError);
+        }
     }
 
     return NextResponse.json({ success: true, message: 'User account created successfully.' });
 
   } catch (error: any) {
     console.error(`CRITICAL ERROR in checkAndCreateUser:`, error);
-    // Always return a valid JSON response, even on errors.
+    // Always return a valid JSON response, even on crashes.
     return NextResponse.json({ success: false, error: `Internal Server Error: ${error.message}` }, { status: 500 });
   }
 }
