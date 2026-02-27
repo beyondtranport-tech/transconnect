@@ -19,6 +19,7 @@ interface FirebaseProviderProps {
 }
 
 interface EnrichedUser extends User {
+    role?: string;
     companyId?: string;
     passwordChangeRequired?: boolean;
     claims?: { [key: string]: any };
@@ -120,7 +121,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     return doc(firestore, 'users', baseUser.uid);
   }, [firestore, baseUser]);
 
-  const { data: userData, isLoading: isUserDataLoading, forceRefresh } = useDoc<{ companyId?: string; passwordChangeRequired?: boolean }>(userDocRef);
+  const { data: userData, isLoading: isUserDataLoading, forceRefresh } = useDoc<{ companyId?: string; passwordChangeRequired?: boolean, role?: string }>(userDocRef);
   const companyId = userData?.companyId;
 
   // NEW: Fetch company document right here
@@ -136,12 +137,11 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     if (!baseUser) return null;
     return {
         ...baseUser,
-        companyId: userData?.companyId,
-        passwordChangeRequired: userData?.passwordChangeRequired,
+        ...userData, // Spread the entire Firestore user document
         claims: claims || {},
         companyData: companyData, // Attach the fetched company data
     } as EnrichedUser;
-  }, [baseUser, userData, claims, companyData]); // Add companyData to dependency array
+  }, [baseUser, userData, claims, companyData]);
 
   const isUserLoading = isAuthLoading || isUserDataLoading || isClaimsLoading || (userData?.companyId ? isCompanyLoading : false);
   

@@ -50,7 +50,7 @@ export function usePermissions() {
         }
 
         const isAdmin = user.email === 'mkoton100@gmail.com' || user.email === 'beyondtransport@gmail.com';
-        const isOwner = user.role !== 'staff' && user.role !== 'partner';
+        const isOwner = user.role === 'owner';
         const isWctaMember = user.companyData.referrerId === 'WCTA';
         const isPaidMember = user.companyData.membershipId && user.companyData.membershipId !== 'free';
 
