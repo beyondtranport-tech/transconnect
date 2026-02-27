@@ -18,7 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
 import { Loader2, Building, Save, Banknote, ArrowLeft } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useUser, useFirestore, useDoc, useMemoFirebase, errorEmitter } from '@/firebase';
+import { useUser, useFirestore, errorEmitter } from '@/firebase';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { Separator } from '@/components/ui/separator';
@@ -41,29 +41,13 @@ const companyFormSchema = z.object({
 type CompanyFormValues = z.infer<typeof companyFormSchema>;
 
 export default function CompanyContent() {
-  const { user, isUserLoading: isAuthLoading } = useUser();
+  const { user, isUserLoading, forceRefreshUser } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
   const fromWallet = searchParams.get('from') === 'wallet';
-
-  // 1. Get user document to find the companyId. This is the source of truth.
-  const userDocRef = useMemoFirebase(() => {
-    if (!firestore || !user?.uid) return null;
-    return doc(firestore, 'users', user.uid);
-  }, [firestore, user?.uid]);
-  const { data: userData, isLoading: isUserDocLoading } = useDoc<{ companyId: string }>(userDocRef);
-
-  // 2. Use the companyId from the user document to get the company document.
-  const companyId = userData?.companyId;
-  const companyDocRef = useMemoFirebase(() => {
-    if (!firestore || !companyId) return null;
-    return doc(firestore, 'companies', companyId);
-  }, [firestore, companyId]);
-
-  const { data: companyData, isLoading: isCompanyLoading, forceRefresh } = useDoc(companyDocRef);
 
   const form = useForm<CompanyFormValues>({
     resolver: zodResolver(companyFormSchema),
@@ -83,7 +67,9 @@ export default function CompanyContent() {
   });
 
   useEffect(() => {
-    if (companyData) {
+    // The useUser hook provides the companyData directly.
+    if (user?.companyData) {
+      const companyData = user.companyData;
       let companyName = companyData.companyName;
       // If company name is empty or a placeholder, but we have user's name, create a better default.
       if ((!companyName || companyName === 'My Company') && user?.displayName) {
@@ -103,11 +89,12 @@ export default function CompanyContent() {
         accountHolderName: companyData.accountHolderName || '',
       });
     }
-  }, [companyData, user, form]);
+  }, [user, form]);
 
   const onSubmit = async (values: CompanyFormValues) => {
     setIsSaving(true);
-    // CRITICAL CHANGE: Use the companyId fetched directly from the user document.
+    // Use the companyId directly from the central user object.
+    const companyId = user?.companyId;
     if (!companyId || !firestore) {
       toast({ variant: 'destructive', title: 'Error', description: 'Your company profile is still being created. Please refresh the page in a moment and try again.' });
       setIsSaving(false);
@@ -127,7 +114,7 @@ export default function CompanyContent() {
                 title: 'Company Info Updated',
                 description: 'Your company information has been saved.',
             });
-            forceRefresh();
+            forceRefreshUser(); // Trigger a refresh of the user context
             if (fromWallet) {
                 router.push('/account?view=wallet');
             }
@@ -144,8 +131,9 @@ export default function CompanyContent() {
             setIsSaving(false);
         });
   };
-
-  const isLoading = isAuthLoading || isUserDocLoading || (!!companyId && isCompanyLoading);
+  
+  // Simplified loading state
+  const isLoading = isUserLoading;
 
   return (
     <Card>
@@ -223,7 +211,7 @@ export default function CompanyContent() {
               </div>
 
               <div className="flex items-center gap-4">
-                <Button type="submit" disabled={isSaving}>
+                <Button type="submit" disabled={isSaving || isLoading}>
                     {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                     Save Changes
                 </Button>
