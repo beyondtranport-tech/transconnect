@@ -67,8 +67,6 @@ export function Header() {
   };
 
   const isAdmin = user && (user.email === 'beyondtransport@gmail.com' || user.email === 'mkoton100@gmail.com');
-  // Redundant check for WCTA status for maximum reliability. Checks instant claim AND database record.
-  const isWctaMember = user?.claims?.wcta === true || user?.companyData?.referrerId === 'WCTA';
 
   const navItems = [
     { href: "/", label: "Home" },
@@ -166,17 +164,14 @@ export function Header() {
                     <DropdownMenuItem asChild>
                         <Link href="/account">My Account</Link>
                     </DropdownMenuItem>
-
-                    {(isAdmin || isWctaMember) && (
-                        <>
-                            <DropdownMenuItem asChild>
-                                <Link href="/supply-chain">Supply Chain Portal</Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem asChild>
-                                <Link href="/port-logistics">Port Logistics Portal</Link>
-                            </DropdownMenuItem>
-                        </>
-                    )}
+                    
+                    {/* Universal Links for Portals */}
+                    <DropdownMenuItem asChild>
+                        <Link href="/supply-chain">Supply Chain Portal</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                        <Link href="/port-logistics">Port Logistics Portal</Link>
+                    </DropdownMenuItem>
                     
                     {isAdmin && (
                         <>
@@ -274,29 +269,24 @@ export function Header() {
                         <div className="h-10 w-full rounded-md bg-muted/50 animate-pulse" />
                     ) : user ? (
                         <div className='flex flex-col gap-2'>
-                             {(isAdmin || isWctaMember) ? (
-                                <>
-                                    <Button asChild className="w-full justify-start">
-                                        <Link href="/supply-chain" onClick={() => setIsSheetOpen(false)}>
-                                            <Network className="mr-2 h-5 w-5" />
-                                            Supply Chain
-                                        </Link>
-                                    </Button>
-                                    <Button asChild className="w-full justify-start">
-                                        <Link href="/port-logistics" onClick={() => setIsSheetOpen(false)}>
-                                            <Ship className="mr-2 h-5 w-5" />
-                                            Port Logistics
-                                        </Link>
-                                    </Button>
-                                </>
-                            ) : (
-                                 <Button asChild className="w-full justify-start">
-                                    <Link href="/account" onClick={() => setIsSheetOpen(false)}>
-                                        <User className="mr-2 h-5 w-5" />
-                                        My Account
-                                    </Link>
-                                </Button>
-                            )}
+                             <Button asChild className="w-full justify-start">
+                                <Link href="/account" onClick={() => setIsSheetOpen(false)}>
+                                    <User className="mr-2 h-5 w-5" />
+                                    My Account
+                                </Link>
+                            </Button>
+                             <Button asChild className="w-full justify-start">
+                                <Link href="/supply-chain" onClick={() => setIsSheetOpen(false)}>
+                                    <Network className="mr-2 h-5 w-5" />
+                                    Supply Chain
+                                </Link>
+                            </Button>
+                            <Button asChild className="w-full justify-start">
+                                <Link href="/port-logistics" onClick={() => setIsSheetOpen(false)}>
+                                    <Ship className="mr-2 h-5 w-5" />
+                                    Port Logistics
+                                </Link>
+                            </Button>
                              {isAdmin && (
                                 <>
                                     <Button asChild className="w-full justify-start" variant="secondary">

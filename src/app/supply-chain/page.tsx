@@ -32,9 +32,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect, Suspense, useCallback } from 'react';
 import Link from 'next/link';
 
-import { useUser, useAuth, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { useUser, useAuth } from '@/firebase';
 import { signOut } from 'firebase/auth';
-import { doc } from 'firebase/firestore';
 import dynamic from 'next/dynamic';
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
@@ -55,25 +54,16 @@ function SupplyChainPortalContent() {
   const [activeView, setActiveView] = useState(initialView);
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
-  const firestore = useFirestore();
-
-  const companyDocRef = useMemoFirebase(() => {
-    if (!firestore || !user?.companyId) return null;
-    return doc(firestore, 'companies', user.companyId);
-  }, [firestore, user?.companyId]);
-  const { data: companyData, isLoading: isCompanyLoading } = useDoc(companyDocRef);
-
-  const isLoading = isUserLoading || isCompanyLoading;
   
   useEffect(() => {
     setActiveView(initialView);
   }, [initialView]);
 
   useEffect(() => {
-    if (!isLoading && !user) {
+    if (!isUserLoading && !user) {
         router.replace('/signin?redirect=/supply-chain');
     }
-  }, [isLoading, user, router]);
+  }, [isUserLoading, user, router]);
 
   const onLogout = async () => {
     if (!auth) return;
@@ -98,7 +88,7 @@ function SupplyChainPortalContent() {
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
   };
 
-  if (isLoading || !user) {
+  if (isUserLoading || !user) {
     return (
         <div className="flex justify-center items-center min-h-[calc(100vh-8rem)]">
             <Loader2 className="h-16 w-16 animate-spin text-primary" />
@@ -106,27 +96,23 @@ function SupplyChainPortalContent() {
     );
   }
   
-  const isAdmin = user?.email === 'mkoton100@gmail.com' || user?.email === 'beyondtransport@gmail.com';
-  const isWctaMember = companyData?.referrerId === 'WCTA';
-  const hasPremiumPlan = companyData?.membershipId === 'premium';
+  const isAdmin = user.claims?.admin === true || user.email === 'mkoton100@gmail.com' || user.email === 'beyondtransport@gmail.com';
+  const isWctaMember = user.claims?.wcta === true || user.companyData?.referrerId === 'WCTA';
+  const hasPremiumPlan = user.companyData?.membershipId && user.companyData.membershipId !== 'free';
 
-  if (!isAdmin && !isWctaMember) {
-      router.replace('/account');
-      return null;
-  }
-  
-  if (!isAdmin && !hasPremiumPlan) {
+  // The new authorization check
+  if (!isAdmin && (!isWctaMember || !hasPremiumPlan)) {
         return (
             <div className="container mx-auto flex min-h-[calc(100vh-8rem)] items-center justify-center px-4 py-16">
                  <Card className="w-full max-w-lg text-center">
                     <CardHeader>
                         <CardTitle className="flex items-center justify-center gap-2 text-destructive"><ShieldAlert /> Premium Access Required</CardTitle>
                         <CardDescription>
-                            The Supply Chain Portal requires a Premium membership plan.
+                            The Supply Chain Portal is an exclusive benefit for WCTA members on a paid plan.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <p>Please upgrade your membership to gain access to this exclusive portal and its powerful features.</p>
+                        <p>Please upgrade your membership to gain access to this powerful feature.</p>
                         <Button asChild className="mt-6">
                             <Link href="/pricing">Upgrade Your Plan</Link>
                         </Button>
