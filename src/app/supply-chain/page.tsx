@@ -46,6 +46,24 @@ const InventoryContent = dynamic(() => import('./inventory'), { loading: () => <
 const LogisticsContent = dynamic(() => import('./logistics'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const AnalyticsContent = dynamic(() => import('./analytics'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
+function UpgradePrompt() {
+    return (
+        <Card className="w-full max-w-lg text-center mx-auto mt-10">
+            <CardHeader>
+                <CardTitle className="flex items-center justify-center gap-2 text-primary"><ShieldAlert /> Premium Access Required</CardTitle>
+                <CardDescription>
+                    This feature is an exclusive benefit for members on a paid plan.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <p>Please upgrade your membership to gain access to this powerful tool.</p>
+                <Button asChild className="mt-6">
+                    <Link href="/pricing">Upgrade Your Plan</Link>
+                </Button>
+            </CardContent>
+        </Card>
+    );
+}
 
 function SupplyChainPortalContent() {
   const router = useRouter();
@@ -71,9 +89,22 @@ function SupplyChainPortalContent() {
     router.push('/');
   };
 
+  const isAdmin = user?.claims?.admin === true || user?.email === 'mkoton100@gmail.com' || user?.email === 'beyondtransport@gmail.com';
+  const isWctaMember = user?.claims?.wcta === true || user?.companyData?.referrerId === 'WCTA';
+  const hasPremiumPlan = user?.companyData?.membershipId && user.companyData.membershipId !== 'free';
+
   const renderContent = useCallback(() => {
+    // Allow dashboard view for all WCTA members
+    if (activeView === 'dashboard') {
+      return <DashboardContent />;
+    }
+    
+    // For all other views, require a paid plan or admin status
+    if (!isAdmin && !hasPremiumPlan) {
+      return <UpgradePrompt />;
+    }
+
     switch (activeView) {
-      case 'dashboard': return <DashboardContent />;
       case 'suppliers': return <SuppliersContent />;
       case 'procurement': return <ProcurementContent />;
       case 'inventory': return <InventoryContent />;
@@ -81,7 +112,7 @@ function SupplyChainPortalContent() {
       case 'analytics': return <AnalyticsContent />;
       default: return <DashboardContent />;
     }
-  }, [activeView]);
+  }, [activeView, isAdmin, hasPremiumPlan]);
   
   const getInitials = (name: string | null | undefined) => {
     if (!name) return "AD";
@@ -96,26 +127,27 @@ function SupplyChainPortalContent() {
     );
   }
   
-  const isAdmin = user.claims?.admin === true || user.email === 'mkoton100@gmail.com' || user.email === 'beyondtransport@gmail.com';
-  const isWctaMember = user.claims?.wcta === true || user.companyData?.referrerId === 'WCTA';
-  const hasPremiumPlan = user.companyData?.membershipId && user.companyData.membershipId !== 'free';
-
-  // The new authorization check
-  if (!isAdmin && (!isWctaMember || !hasPremiumPlan)) {
+  // This top-level check now only verifies if the user is a WCTA member at all.
+  if (!isAdmin && !isWctaMember) {
         return (
             <div className="container mx-auto flex min-h-[calc(100vh-8rem)] items-center justify-center px-4 py-16">
                  <Card className="w-full max-w-lg text-center">
                     <CardHeader>
-                        <CardTitle className="flex items-center justify-center gap-2 text-destructive"><ShieldAlert /> Premium Access Required</CardTitle>
+                        <CardTitle className="flex items-center justify-center gap-2 text-destructive"><ShieldAlert /> Access Denied</CardTitle>
                         <CardDescription>
-                            The Supply Chain Portal is an exclusive benefit for WCTA members on a paid plan.
+                            The Supply Chain Portal is an exclusive benefit for WCTA members.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <p>Please upgrade your membership to gain access to this powerful feature.</p>
-                        <Button asChild className="mt-6">
-                            <Link href="/pricing">Upgrade Your Plan</Link>
-                        </Button>
+                        <p>Learn more about our partnerships or return to your account.</p>
+                        <div className="flex gap-4 mt-6 justify-center">
+                            <Button asChild>
+                                <Link href="/account">Go to My Account</Link>
+                            </Button>
+                             <Button asChild variant="outline">
+                                <Link href="/contact">Contact Us</Link>
+                            </Button>
+                        </div>
                     </CardContent>
                 </Card>
             </div>
