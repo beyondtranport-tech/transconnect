@@ -48,6 +48,7 @@ export default function CompanyContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const fromWallet = searchParams.get('from') === 'wallet';
+  const [isAwaitingCompanyId, setIsAwaitingCompanyId] = useState(false);
 
   const form = useForm<CompanyFormValues>({
     resolver: zodResolver(companyFormSchema),
@@ -67,11 +68,9 @@ export default function CompanyContent() {
   });
 
   useEffect(() => {
-    // The useUser hook provides the companyData directly.
     if (user?.companyData) {
       const companyData = user.companyData;
       let companyName = companyData.companyName;
-      // If company name is empty or a placeholder, but we have user's name, create a better default.
       if ((!companyName || companyName === 'My Company') && user?.displayName) {
         companyName = `${user.displayName}'s Company`;
       }
@@ -91,9 +90,43 @@ export default function CompanyContent() {
     }
   }, [user, form]);
 
+  useEffect(() => {
+    let pollInterval: NodeJS.Timeout | null = null;
+    let timeout: NodeJS.Timeout | null = null;
+
+    if (!isUserLoading && user && !user.companyId) {
+      setIsAwaitingCompanyId(true);
+      pollInterval = setInterval(() => {
+        forceRefreshUser();
+      }, 2000);
+
+      timeout = setTimeout(() => {
+        if (pollInterval) {
+          clearInterval(pollInterval);
+          setIsAwaitingCompanyId(false);
+          toast({
+            variant: "destructive",
+            title: "Could not finalize setup",
+            description: "There was a delay creating your company profile. Please try refreshing the page.",
+          });
+        }
+      }, 15000);
+    }
+
+    if (user?.companyId) {
+      if (pollInterval) clearInterval(pollInterval);
+      if (timeout) clearTimeout(timeout);
+      setIsAwaitingCompanyId(false);
+    }
+    
+    return () => {
+      if (pollInterval) clearInterval(pollInterval);
+      if (timeout) clearTimeout(timeout);
+    };
+  }, [isUserLoading, user, user?.companyId, forceRefreshUser, toast]);
+
   const onSubmit = async (values: CompanyFormValues) => {
     setIsSaving(true);
-    // Use the companyId directly from the central user object.
     const companyId = user?.companyId;
     if (!companyId || !firestore) {
       toast({ variant: 'destructive', title: 'Error', description: 'Your company profile is still being created. Please refresh the page in a moment and try again.' });
@@ -102,11 +135,7 @@ export default function CompanyContent() {
     }
 
     const docRefToUpdate = doc(firestore, 'companies', companyId);
-
-    const dataToUpdate = {
-        ...values,
-        updatedAt: serverTimestamp(),
-    };
+    const dataToUpdate = { ...values, updatedAt: serverTimestamp() };
 
     updateDoc(docRefToUpdate, dataToUpdate)
         .then(() => {
@@ -114,7 +143,7 @@ export default function CompanyContent() {
                 title: 'Company Info Updated',
                 description: 'Your company information has been saved.',
             });
-            forceRefreshUser(); // Trigger a refresh of the user context
+            forceRefreshUser();
             if (fromWallet) {
                 router.push('/account?view=wallet');
             }
@@ -132,8 +161,7 @@ export default function CompanyContent() {
         });
   };
   
-  // Simplified loading state
-  const isLoading = isUserLoading;
+  const isLoading = isUserLoading || isAwaitingCompanyId;
 
   return (
     <Card>
@@ -142,12 +170,21 @@ export default function CompanyContent() {
         <CardDescription>View and update your company's information and payout bank details.</CardDescription>
       </CardHeader>
       <CardContent>
-        {isLoading ? (
+        {isUserLoading && !isAwaitingCompanyId ? (
           <div className="flex justify-center items-center py-10">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         ) : (
           <Form {...form}>
+            {isAwaitingCompanyId && (
+              <div className="flex items-center gap-4 p-4 mb-6 text-sm text-primary-foreground bg-primary/90 rounded-md">
+                <Loader2 className="h-5 w-5 animate-spin" />
+                <div>
+                  <p className="font-semibold">Finalizing your company profile...</p>
+                  <p className="text-xs">This should only take a moment.</p>
+                </div>
+              </div>
+            )}
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 max-w-2xl">
               <div>
                 <h3 className="text-lg font-medium">Business Details</h3>
