@@ -10,7 +10,7 @@
 
 import {ai} from '@/ai/genkit';
 import { SocialLinkGeneratorInputSchema, SocialLinkGeneratorOutputSchema, type SocialLinkGeneratorInput, type SocialLinkGeneratorOutput } from '@/ai/schemas';
-import { googleAI } from '@genkit-ai/google-genai';
+import { googleAI } from '@genkit-ai/googleai';
 
 export async function generateSocialLinks(input: SocialLinkGeneratorInput): Promise<SocialLinkGeneratorOutput> {
   return socialLinkGeneratorFlow(input);

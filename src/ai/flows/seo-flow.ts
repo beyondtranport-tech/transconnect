@@ -10,7 +10,7 @@
 
 import {ai} from '@/ai/genkit';
 import { ShopSeoInputSchema, ShopSeoOutputSchema, type ShopSeoInput, type ShopSeoOutput } from '@/ai/schemas';
-import { googleAI } from '@genkit-ai/google-genai';
+import { googleAI } from '@genkit-ai/googleai';
 
 export async function generateShopSeo(input: ShopSeoInput): Promise<ShopSeoOutput> {
   return shopSeoFlow(input);

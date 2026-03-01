@@ -10,7 +10,7 @@
 
 import { ai } from '@/ai/genkit';
 import { TTSInputSchema, TTSOutputSchema, type TTSInput, type TTSOutput } from '@/ai/schemas';
-import { googleAI } from '@genkit-ai/google-genai';
+import { googleAI } from '@genkit-ai/googleai';
 import wav from 'wav';
 
 async function toWav(

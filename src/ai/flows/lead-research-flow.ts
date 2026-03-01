@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview An AI-powered research agent for generating potential sales leads.
@@ -11,7 +12,7 @@ import {ai} from '@/ai/genkit';
 import { LeadResearchInputSchema, LeadResearchOutputSchema, type LeadResearchInput, type LeadResearchOutput } from '@/ai/schemas';
 import { googleSearchTool } from '../tools/google-search';
 import { z } from 'zod';
-import { googleAI } from '@genkit-ai/google-genai';
+import { googleAI } from '@genkit-ai/googleai';
 
 export async function leadResearchFlow(input: LeadResearchInput): Promise<LeadResearchOutput> {
   return leadResearchAIFlow(input);

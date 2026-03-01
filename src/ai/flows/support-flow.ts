@@ -10,7 +10,7 @@
 
 import {ai} from '@/ai/genkit';
 import { SupportInputSchema, SupportOutputSchema, type SupportInput, type SupportOutput } from '@/ai/schemas';
-import { googleAI } from '@genkit-ai/google-genai';
+import { googleAI } from '@genkit-ai/googleai';
 
 const systemPrompt = `You are a helpful and friendly AI assistant for Logistics Flow, a digital ecosystem for the logistics industry in South Africa.
 

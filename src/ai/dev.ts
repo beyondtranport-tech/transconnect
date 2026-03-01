@@ -1,13 +1,10 @@
 
-import { config } from 'dotenv';
-config();
+// This file is for the Genkit developer UI, started with `genkit start`.
+// It is not part of the Next.js build.
 
-// CORRECTED: Import the already-configured 'ai' instance.
-// Do NOT call configureGenkit() here, as it creates a conflict.
 import { ai } from '@/ai/genkit';
 
-// Import all flow files to register them with the single, correct Genkit instance.
-// This ensures the dev server and API routes use the same flows.
+// Import all flow files to register them with the Genkit dev UI.
 import '@/ai/flows/ai-freight-matching.ts';
 import '@/ai/flows/image-edit-flow.ts';
 import '@/ai/flows/image-generation-flow.ts';
@@ -17,4 +14,3 @@ import '@/ai/flows/lead-research-flow.ts';
 import '@/ai/flows/tts-flow.ts';
 import '@/ai/flows/social-link-generator-flow.ts';
 import '@/ai/flows/support-flow.ts';
-
