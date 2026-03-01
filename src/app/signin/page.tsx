@@ -8,8 +8,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import {
-  createUserWithEmailAndPassword,
-  updateProfile,
+  signInWithEmailAndPassword,
   getIdToken,
   sendPasswordResetEmail,
 } from 'firebase/auth';
@@ -102,10 +101,11 @@ function SignInFormComponent() {
         description: `If an account exists for ${email}, a password reset link has been sent.`,
       });
     } catch (error: any) {
+      console.error("Password reset failed:", error);
        toast({
         variant: 'destructive',
         title: 'Error sending reset email',
-        description: error.message || 'Please try again later.',
+        description: error.message || "An unspecified error occurred. Please check the browser console for details.",
       });
     } finally {
         setIsLoading(false);
