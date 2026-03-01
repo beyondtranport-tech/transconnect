@@ -7,7 +7,12 @@ import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { signInWithEmailAndPassword, sendPasswordResetEmail, getIdToken } from 'firebase/auth';
+import {
+  createUserWithEmailAndPassword,
+  updateProfile,
+  getIdToken,
+  sendPasswordResetEmail,
+} from 'firebase/auth';
 
 import { useAuth, useUser } from '@/firebase';
 import { Button } from '@/components/ui/button';
@@ -100,7 +105,7 @@ function SignInFormComponent() {
        toast({
         variant: 'destructive',
         title: 'Error sending reset email',
-        description: 'Please try again later.',
+        description: error.message || 'Please try again later.',
       });
     } finally {
         setIsLoading(false);
