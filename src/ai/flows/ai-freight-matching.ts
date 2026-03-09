@@ -10,7 +10,7 @@
 
 import {ai} from '@/ai/genkit';
 import { MatchFreightInputSchema, MatchFreightOutputSchema, type MatchFreightInput, type MatchFreightOutput } from '@/ai/schemas';
-import { googleAI } from '@genkit-ai/googleai';
+import { googleAI } from '@genkit-ai/google-genai';
 
 export async function matchFreight(input: MatchFreightInput): Promise<MatchFreightOutput> {
   return matchFreightFlow(input);
@@ -34,20 +34,26 @@ const matchFreightFlow = ai.defineFlow(
         - Total Vehicle Capacity: ${input.capacity}`;
     
     if (input.rate) {
-        prompt += `\n        - Desired Rate: R${input.rate} per kilometer`;
+        prompt += `
+        - Desired Rate: R${input.rate} per kilometer`;
     }
 
     if (input.isPartLoad && input.palletCount) {
-        prompt += `\n        - Load Type: This is a PART LOAD. The transporter has space for approximately ${input.palletCount} pallets (roughly ${input.palletCount} tons).`;
+        prompt += `
+        - Load Type: This is a PART LOAD. The transporter has space for approximately ${input.palletCount} pallets (roughly ${input.palletCount} tons).`;
     } else {
-        prompt += `\n        - Load Type: Looking for a FULL LOAD.`;
+        prompt += `
+        - Load Type: Looking for a FULL LOAD.`;
     }
     
     if (input.preferences) {
-        prompt += `\n        - Other Preferences: ${input.preferences}`;
+        prompt += `
+        - Other Preferences: ${input.preferences}`;
     }
 
-    prompt += `\n\nFind available freight loads that match these criteria. Critically, if it is a part load, only return loads that would fit the specified pallet count.`;
+    prompt += `
+
+Find available freight loads that match these criteria. Critically, if it is a part load, only return loads that would fit the specified pallet count.`;
 
     const { output } = await ai.generate({
         model: googleAI.model('gemini-1.5-flash-latest'),
