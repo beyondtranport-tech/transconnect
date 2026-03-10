@@ -5,43 +5,44 @@ import { NextRequest } from 'next/server';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 
-// Reverting to a stable, single app name to ensure consistency.
-const ADMIN_APP_NAME = 'firebase-admin-app-transconnect-studio-v7';
+// Simplified and robust initialization logic.
+let adminApp: App | null = null;
 
-export function getAdminApp(): { app: App | null; error: string | null } {
-  const existingApp = getApps().find(app => app.name === ADMIN_APP_NAME);
-  if (existingApp) {
-    return { app: existingApp, error: null };
+function getOrCreateAdminApp(): App {
+  if (adminApp) {
+    return adminApp;
   }
 
   const encodedServiceAccount = process.env.FIREBASE_ADMIN_SDK_CONFIG_B64;
 
   if (!encodedServiceAccount) {
-    const errorMessage = 'Firebase Admin SDK initialization failed: The FIREBASE_ADMIN_SDK_CONFIG_B64 environment variable is not set.';
-    console.error(errorMessage);
-    return { app: null, error: errorMessage };
+    throw new Error('Firebase Admin SDK initialization failed: The FIREBASE_ADMIN_SDK_CONFIG_B64 environment variable is not set.');
   }
 
+  const serviceAccountJson = Buffer.from(encodedServiceAccount, 'base64').toString('utf8');
+  const serviceAccount = JSON.parse(serviceAccountJson) as ServiceAccount;
+
+  if (!serviceAccount.project_id || !serviceAccount.client_email || !serviceAccount.private_key) {
+    throw new Error('Parsed service account is invalid or missing essential properties (project_id, client_email, private_key). Please re-generate it following the backend-setup.md guide.');
+  }
+  
+  // Use the default app instance if it already exists.
+  if (getApps().length > 0) {
+      adminApp = getApps()[0];
+  } else {
+      adminApp = initializeApp({
+        credential: cert(serviceAccount),
+        projectId: serviceAccount.project_id,
+      });
+  }
+
+  return adminApp;
+}
+
+export function getAdminApp(): { app: App | null; error: string | null } {
   try {
-    const serviceAccountJson = Buffer.from(encodedServiceAccount, 'base64').toString('utf8');
-    const serviceAccount = JSON.parse(serviceAccountJson) as ServiceAccount;
-
-    if (!serviceAccount.project_id || !serviceAccount.client_email || !serviceAccount.private_key) {
-        throw new Error('Parsed service account is invalid or missing essential properties (project_id, client_email, private_key). Please re-generate it following the backend-setup.md guide.');
-    }
-    
-    const projectId = serviceAccount.project_id;
-
-    // The storageBucket property is removed from here to prevent the main app initialization from
-    // hanging if there's a problem connecting to the bucket. This makes Auth and Firestore
-    // operations more reliable. Storage will be handled specifically in the upload route.
-    const app = initializeApp({
-      credential: cert(serviceAccount),
-      projectId: projectId,
-    }, ADMIN_APP_NAME);
-
+    const app = getOrCreateAdminApp();
     return { app, error: null };
-
   } catch (error: any) {
     const errorMessage = `Firebase Admin SDK initialization failed: ${error.message}`;
     console.error(errorMessage, error);
@@ -50,10 +51,7 @@ export function getAdminApp(): { app: App | null; error: string | null } {
 }
 
 export async function verifyAdmin(req: NextRequest) {
-    const { app, error: initError } = getAdminApp();
-    if (initError || !app) {
-        throw new Error(`Admin SDK not initialized: ${initError}`);
-    }
+    const app = getOrCreateAdminApp();
 
     const authorization = req.headers.get('authorization');
     if (!authorization?.startsWith('Bearer ')) {
