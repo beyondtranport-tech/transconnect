@@ -1,8 +1,7 @@
-
 'use client';
 
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { useForm, FormProvider, useFieldArray, useFormContext } from 'react-hook-form';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useForm, FormProvider, useFormContext } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -11,7 +10,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, ArrowLeft, ArrowRight, Save, Truck, Image as ImageIcon, FileText, CheckCircle, UploadCloud, Trash2, Wand2, Check } from 'lucide-react';
+import { Loader2, ArrowLeft, ArrowRight, Save, Truck, Image as ImageIcon, FileText, CheckCircle, UploadCloud, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { Progress } from '@/components/ui/progress';
@@ -226,7 +225,6 @@ const StepPhotos = () => {
             });
         }
 
-        // Reset the file input so the same files can be re-uploaded if needed
         if (e.target) {
             e.target.value = '';
         }
@@ -265,16 +263,26 @@ const StepPhotos = () => {
     );
 };
 
-export function AssetWizard({ asset, onBack, onSaveSuccess, defaultClientId }: { asset?: any, onBack: () => void, onSaveSuccess: () => void, defaultClientId?: string | null }) {
+const PlaceholderStep = ({ name }: { name: string }) => (
+    <div className="flex items-center justify-center h-full bg-muted/50 rounded-lg p-8">
+        <div className="text-center">
+             <h3 className="text-xl font-semibold text-muted-foreground">{name}</h3>
+            <p className="text-muted-foreground mt-2">This section is under construction.</p>
+        </div>
+    </div>
+);
+
+
+export function VehicleWizard({ listing, onBack, onSaveSuccess, companyId }: { listing?: any, onBack: () => void, onSaveSuccess: () => void, companyId: string | null }) {
     const [currentStep, setCurrentStep] = useState(0);
     const [isSaving, setIsSaving] = useState(false);
     const { toast } = useToast();
     
-    const methods = useForm<AssetWizardFormValues>({
-        resolver: zodResolver(formSchema),
+    const methods = useForm<ListingFormValues>({
+        resolver: zodResolver(listingSchema),
         mode: 'onChange',
-        defaultValues: asset || { 
-            clientId: defaultClientId || '',
+        defaultValues: listing || { 
+            make: '', model: '', year: '', price: 0, description: '', mileage: 0, location: '', photos: [],
         },
     });
 
@@ -284,7 +292,7 @@ export function AssetWizard({ asset, onBack, onSaveSuccess, defaultClientId }: {
 
         let isValid = false;
         if (currentStepConfig.fields && currentStepConfig.fields.length > 0) {
-            isValid = await methods.trigger(currentStepConfig.fields as (keyof AssetWizardFormValues)[]);
+            isValid = await methods.trigger(currentStepConfig.fields as (keyof ListingFormValues)[]);
         } else {
             isValid = true;
         }
@@ -292,30 +300,45 @@ export function AssetWizard({ asset, onBack, onSaveSuccess, defaultClientId }: {
         if (isValid && currentStep < wizardSteps.length - 1) {
             setCurrentStep(s => s + 1);
         } else if (!isValid) {
-            toast({ variant: 'destructive', title: 'Validation Error', description: 'Please complete all fields.' });
+            toast({ variant: 'destructive', title: 'Validation Error', description: 'Please complete all required fields.' });
         }
     };
 
     const handleBackWizard = () => { currentStep > 0 ? setCurrentStep(prev => prev - 1) : onBack(); };
 
-    const onSubmit = async (values: AssetWizardFormValues) => {
+    const onSubmit = async (values: ListingFormValues) => {
         setIsSaving(true);
+        if (!companyId) {
+            toast({ variant: 'destructive', title: "Error", description: "Company ID not found." });
+            setIsSaving(false);
+            return;
+        }
         try {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Auth failed.");
 
-            const response = await fetch('/api/admin', {
+            const path = listing?.id 
+                ? `companies/${companyId}/vehicleListings/${listing.id}` 
+                : `companies/${companyId}/vehicleListings`;
+            
+            const dataToSave = { ...values, companyId, status: 'active' };
+
+            const response = await fetch(listing?.id ? '/api/updateUserDoc' : '/api/addUserDoc', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'saveLendingAsset', payload: { asset: { id: asset?.id, ...values } } }),
+                body: JSON.stringify(listing?.id 
+                    ? { path, data: { ...dataToSave, updatedAt: { _methodName: 'serverTimestamp' } } }
+                    : { collectionPath: path, data: dataToSave }
+                ),
             });
+
             const result = await response.json();
-            if (!response.ok) throw new Error(result.error);
+            if (!response.ok) throw new Error(result.error || 'Failed to save listing.');
             
-            toast({ title: asset?.id ? 'Asset Updated' : 'Asset Created' });
+            toast({ title: listing?.id ? 'Listing Updated' : 'Listing Created' });
             onSaveSuccess();
         } catch (e: any) {
-            toast({ variant: 'destructive', title: 'Error saving asset', description: e.message });
+            toast({ variant: 'destructive', title: 'Error saving listing', description: e.message });
         } finally {
             setIsSaving(false);
         }
@@ -325,18 +348,16 @@ export function AssetWizard({ asset, onBack, onSaveSuccess, defaultClientId }: {
         if (stepIndex < 0) return true;
         const step = wizardSteps[stepIndex];
         if (!step.fields || step.fields.length === 0) return true;
-        const fields = step.fields as (keyof AssetWizardFormValues)[];
+        const fields = step.fields as (keyof ListingFormValues)[];
         return fields.every(field => !methods.formState.errors[field as keyof typeof methods.formState.errors]);
     };
     
      const renderStepContent = () => {
         const stepId = wizardSteps[currentStep]?.id;
         switch (stepId) {
-            case 'client': return <div>Client Selection</div>;
-            case 'asset': return <StepAssetDetails />;
-            case 'documents': return <StepDocuments />;
-            case 'review': return <div className="p-4 bg-muted rounded-md text-xs whitespace-pre-wrap">{JSON.stringify(methods.getValues(), null, 2)}</div>;
-            default: return <div className="text-center py-10"><p className="text-muted-foreground">This step is under construction.</p></div>;
+            case 'details': return <StepDetails />;
+            case 'photos': return <StepPhotos />;
+            default: return <PlaceholderStep name={wizardSteps[currentStep]?.name || 'Step'} />;
         }
     };
     
@@ -347,7 +368,7 @@ export function AssetWizard({ asset, onBack, onSaveSuccess, defaultClientId }: {
                     <CardHeader>
                         <div className="flex justify-between items-start">
                              <div>
-                                <h2 className="text-2xl font-bold font-headline">{asset ? 'Edit Vehicle Listing' : 'Create New Vehicle Listing'}</h2>
+                                <h2 className="text-2xl font-bold font-headline">{listing ? 'Edit Vehicle Listing' : 'Create New Vehicle Listing'}</h2>
                                 <p className="text-muted-foreground">{wizardSteps[currentStep].name}</p>
                             </div>
                              <Button type="button" variant="ghost" onClick={onBack}><ArrowLeft className="mr-2 h-4 w-4"/> Back to List</Button>
@@ -359,96 +380,28 @@ export function AssetWizard({ asset, onBack, onSaveSuccess, defaultClientId }: {
                                 {wizardSteps.map((step, index) => {
                                     const isCompleted = index < currentStep && isStepValid(index);
                                     return (
-                                        <Button key={step.id} variant={currentStep === index ? 'default' : 'ghost'} className="justify-start gap-2" onClick={() => setCurrentStep(index)} disabled={index > currentStep && !isStepValid(currentStep - 1)}>
-                                            {isCompleted ? <Check className="h-5 w-5 text-green-500" /> : <div className={cn("h-5 w-5 rounded-full flex items-center justify-center text-xs font-bold", currentStep >= index ? "bg-primary-foreground text-primary" : "bg-muted-foreground/20")}>{index + 1}</div>}
-                                            {step.name.replace(/^Step \d+: /, '')}
+                                        <Button key={step.id} variant={currentStep === index ? 'secondary' : 'ghost'} className="justify-start gap-2" onClick={() => setCurrentStep(index)} disabled={index > currentStep && !isStepValid(currentStep - 1)}>
+                                            {isCompleted ? <CheckCircle className="h-5 w-5 text-green-500" /> : <div className={cn("h-5 w-5 rounded-full flex items-center justify-center text-xs font-bold", currentStep >= index ? "bg-primary text-primary-foreground border-2 border-primary" : "bg-muted text-muted-foreground")}>{index + 1}</div>}
+                                            {step.name}
                                         </Button>
                                     );
                                 })}
                             </div>
-                             <div className="space-y-6">
-                                <h2 className="text-2xl font-bold">{wizardSteps[currentStep].name}</h2>
-                                <div className="min-h-[400px]">
-                                    {renderStepContent()}
-                                </div>
-                                <div className="flex justify-between pt-8 mt-8 border-t">
-                                    <Button type="button" variant="outline" onClick={handleBackWizard}><ArrowLeft className="mr-2 h-4 w-4" /> Back</Button>
-                                    {currentStep < wizardSteps.length - 1 ? (
-                                        <Button type="button" onClick={handleNext}>Next <ArrowRight className="ml-2 h-4 w-4"/></Button>
-                                    ) : (
-                                        <Button type="submit" disabled={isSaving}>{isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} Save Listing</Button>
-                                    )}
-                                </div>
-                            </div>
+                             <div className="space-y-6 min-h-[400px]">
+                                {renderStepContent()}
+                             </div>
                         </div>
                     </CardContent>
+                    <CardFooter className="flex justify-between border-t pt-6 mt-6">
+                        <Button type="button" variant="outline" onClick={handleBackWizard} disabled={currentStep === 0}><ArrowLeft className="mr-2 h-4 w-4" /> Back</Button>
+                        {currentStep < wizardSteps.length - 1 ? (
+                            <Button type="button" onClick={handleNext}>Next <ArrowRight className="ml-2 h-4 w-4"/></Button>
+                        ) : (
+                            <Button type="submit" disabled={isSaving}>{isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} {listing ? 'Save Changes' : 'Create Listing'}</Button>
+                        )}
+                    </CardFooter>
                 </form>
             </FormProvider>
         </Card>
     );
 }
-
-// Re-add StepDocuments component
-const StepDocuments = () => {
-    const { control, setValue } = useFormContext();
-    const { user } = useUser();
-    const { toast } = useToast();
-    const [uploading, setUploading] = useState<string | null>(null);
-    const [progress, setProgress] = useState(0);
-
-    const documentTypes = [
-        { id: 'invoice', label: 'Invoice' },
-        { id: 'rc1', label: 'RC1 Certificate' },
-        { id: 'licenseDisk', label: 'License Disk' },
-        { id: 'deliveryNote', label: 'Delivery Note' },
-    ];
-
-    const handleFileUpload = async (file: File, docType: string) => {
-        if (!file || !user) return;
-        setUploading(docType); setProgress(10);
-        try {
-            const token = await getClientSideAuthToken(); if (!token) throw new Error("Authentication failed.");
-            const fileDataUri = await fileToDataUri(file); setProgress(30);
-            const folder = `lending-assets/${user.uid}/${docType}`; const fileName = `${Date.now()}_${file.name}`;
-            const response = await fetch('/api/uploadImageAsset', { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ fileDataUri, folder, fileName }) });
-            setProgress(80);
-            const result = await response.json();
-            if (!response.ok) throw new Error(result.error || 'Failed to upload document.');
-            setValue(`documents.${docType}`, result.url, { shouldValidate: true });
-            setProgress(100);
-            toast({ title: 'Document Uploaded!', description: `${file.name} has been uploaded successfully.` });
-        } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
-        } finally {
-            setUploading(null); setProgress(0);
-        }
-    };
-
-    return (
-        <div className="space-y-6">
-            <h3 className="text-lg font-semibold">Supporting Documents</h3>
-            <p className="text-sm text-muted-foreground">Upload the required documents for the asset. You can upload PDF files or clear photographs of the documents.</p>
-            <div className="space-y-4">
-                {documentTypes.map(docType => (
-                    <FormField key={docType.id} control={control} name={`documents.${docType.id}`}
-                        render={({ field }) => (
-                            <FormItem>
-                                <div className="p-4 border rounded-lg flex items-center justify-between">
-                                    <div>
-                                        <FormLabel>{docType.label}</FormLabel>
-                                        {field.value ? <div className="text-sm mt-1"><Link href={field.value} target="_blank" className="text-primary hover:underline break-all">View Uploaded Document</Link></div> : <div className="text-xs text-muted-foreground mt-1">No document uploaded.</div>}
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <Button type="button" variant="outline" size="sm" onClick={() => document.getElementById(`upload-${docType.id}`)?.click()} disabled={!!uploading}><UploadCloud className="mr-2 h-4 w-4" /> Upload</Button>
-                                        <Input id={`upload-${docType.id}`} type="file" className="hidden" accept="image/*,.pdf" onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], docType.id)} disabled={!!uploading} />
-                                    </div>
-                                </div>
-                                {uploading === docType.id && <Progress value={progress} className="h-1 mt-1" />}
-                            </FormItem>
-                        )}
-                    />
-                ))}
-            </div>
-        </div>
-    );
-};

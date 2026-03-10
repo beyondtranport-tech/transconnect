@@ -1,6 +1,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { imageEditFlow } from '@/ai/flows/image-edit-flow';
+import { imageEdit } from '@/ai/flows/image-edit-flow';
 
 export async function POST(req: NextRequest) {
     if (!process.env.GEMINI_API_KEY) {
@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ success: false, error: 'Missing imageDataUri or prompt in request body.' }, { status: 400 });
         }
         
-        const result = await imageEditFlow({ photoDataUri: imageDataUri, prompt });
+        const result = await imageEdit({ photoDataUri: imageDataUri, prompt });
 
         return NextResponse.json(result);
     } catch (error: any) {
