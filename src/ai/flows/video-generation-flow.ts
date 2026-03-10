@@ -26,6 +26,8 @@ const videoGenerateFlow = ai.defineFlow(
     outputSchema: VideoGenerateOutputSchema,
   },
   async (input) => {
-    throw new Error('Video generation functionality is temporarily unavailable. Please try again later.');
+    // Return a dummy value instead of throwing an error to prevent server crashes.
+    console.warn("videoGenerateFlow is disabled and returning an empty response.");
+    return { videoDataUri: "" };
   }
 );

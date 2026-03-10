@@ -25,6 +25,8 @@ const ttsFlow = ai.defineFlow(
     outputSchema: TTSOutputSchema,
   },
   async (input) => {
-    throw new Error('Text-to-Speech functionality is temporarily unavailable. Please try again later.');
+    // Return a dummy value instead of throwing an error to prevent server crashes.
+    console.warn("ttsFlow is disabled and returning an empty response.");
+    return { audioDataUri: "" };
   }
 );
