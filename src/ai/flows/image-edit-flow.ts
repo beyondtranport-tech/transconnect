@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview An AI-powered image editing flow.
@@ -12,15 +11,17 @@ import { ai } from '@/ai/genkit';
 import { ImageEditInputSchema, ImageEditOutputSchema, type ImageEditInput, type ImageEditOutput } from '@/ai/schemas';
 
 export async function imageEdit(input: ImageEditInput): Promise<ImageEditOutput> {
-  const response = await ai.generate({
-    model: 'gemini-pro-vision',
+  const { media } = await ai.generate({
+    model: 'googleai/gemini-2.5-flash-image',
     prompt: [
       { media: { url: input.photoDataUri } },
       { text: input.prompt },
     ],
+    config: {
+        responseModalities: ['TEXT', 'IMAGE'],
+    },
   });
 
-  const media = response.media;
   if (!media?.url) {
     throw new Error('Image generation failed to return an image.');
   }
