@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -20,13 +21,14 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Sparkles, Video, Download, Save, Copy, Film } from 'lucide-react';
+import { Loader2, Sparkles, Video, Download, Save, Copy, Film, AlertTriangle } from 'lucide-react';
 import { generateVideo } from '../../ai/flows/video-generation-flow';
 import { Textarea } from '@/components/ui/textarea';
 import { useUser, getClientSideAuthToken } from '@/firebase';
 import { Input } from '@/components/ui/input';
 import Image from 'next/image';
 import { Progress } from '@/components/ui/progress';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const defaultPrompt = `Animate this image. If it contains a vehicle, make its wheels spin and have it drive down the road. Add some subtle lens flare and a cinematic feel.`;
 
@@ -180,7 +182,14 @@ export default function VideoAnimatorCard({ promptTemplate }: { promptTemplate?:
                 </DialogDescription>
               </DialogHeader>
               <div className="grid flex-1 grid-cols-1 gap-6 overflow-y-auto py-4 pr-4 md:grid-cols-2">
-                  <div className="space-y-4">
+                <fieldset disabled={true} className="space-y-4">
+                  <Alert variant="destructive">
+                      <AlertTriangle className="h-4 w-4" />
+                      <AlertTitle>Feature Temporarily Disabled</AlertTitle>
+                      <AlertDescription>
+                          Video generation is currently unavailable due to a necessary package downgrade. This feature will be re-enabled after a future platform upgrade.
+                      </AlertDescription>
+                  </Alert>
                     <div className="space-y-2">
                       <Label htmlFor="image-upload-animator">1. Upload Starting Image</Label>
                       <Input id="image-upload-animator" type="file" accept="image/*" onChange={handleImageUpload} />
@@ -194,7 +203,7 @@ export default function VideoAnimatorCard({ promptTemplate }: { promptTemplate?:
                       <Label htmlFor="animate-prompt">2. Describe Your Animation</Label>
                       <Textarea id="animate-prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)} rows={sourceImage ? 8 : 16} />
                     </div>
-                  </div>
+                </fieldset>
                   <div className="space-y-4">
                       <Label>3. Generated Video</Label>
                       <div className="relative aspect-video w-full rounded-md border border-dashed flex items-center justify-center bg-muted">
@@ -209,39 +218,11 @@ export default function VideoAnimatorCard({ promptTemplate }: { promptTemplate?:
                               <p className="text-sm text-muted-foreground">Your animated video will appear here.</p>
                           )}
                       </div>
-                      {isSaving && (
-                        <div className="space-y-2">
-                            <Label className="text-xs">Saving to Cloud...</Label>
-                            <Progress value={uploadProgress} />
-                        </div>
-                      )}
-                      {savedVideoUrl && (
-                          <div className="space-y-2">
-                              <Label>Permanent URL</Label>
-                              <div className="flex items-center gap-2">
-                                  <Input value={savedVideoUrl} readOnly />
-                                  <Button variant="outline" size="icon" onClick={copyUrlToClipboard}>
-                                      <Copy className="h-4 w-4"/>
-                                  </Button>
-                              </div>
-                          </div>
-                      )}
                   </div>
               </div>
               <DialogFooter className="mt-auto flex-shrink-0 pt-4 sm:justify-between">
                 <div className="flex w-full items-center justify-between gap-2">
-                  {generatedVideo ? (
-                      <div className="flex items-center gap-2">
-                          <Button variant="secondary" onClick={handleDownload} disabled={isSaving}>
-                              <Download className="mr-2 h-4 w-4" /> Download
-                          </Button>
-                          <Button variant="outline" onClick={handleSaveToCloud} disabled={isSaving || !!savedVideoUrl}>
-                             {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />}
-                             {savedVideoUrl ? 'Saved' : 'Save to Cloud'}
-                          </Button>
-                      </div>
-                  ) : <div />}
-                   <Button onClick={handleGenerate} disabled={isLoading || !sourceImage}>
+                   <Button onClick={handleGenerate} disabled={true}>
                       {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
                       Generate Video
                   </Button>

@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview An AI-powered image generation flow.
@@ -21,11 +22,12 @@ const imageGenerateFlow = ai.defineFlow(
     outputSchema: ImageGenerateOutputSchema,
   },
   async input => {
-    const { media } = await ai.generate({
-      model: 'googleai/imagen-4.0-fast-generate-001',
+    const response = await ai.generate({
+      model: 'imagen2',
       prompt: input.prompt,
     });
 
+    const media = response.media;
     if (!media?.url) {
       throw new Error('Image generation failed to return an image.');
     }

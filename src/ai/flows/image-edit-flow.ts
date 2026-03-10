@@ -9,21 +9,18 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { googleAI } from '@genkit-ai/google-genai';
 import { ImageEditInputSchema, ImageEditOutputSchema, type ImageEditInput, type ImageEditOutput } from '@/ai/schemas';
 
 export async function imageEdit(input: ImageEditInput): Promise<ImageEditOutput> {
-  const { media } = await ai.generate({
-    model: googleAI.model('gemini-2.5-flash-image'),
+  const response = await ai.generate({
+    model: 'gemini-pro-vision',
     prompt: [
       { media: { url: input.photoDataUri } },
       { text: input.prompt },
     ],
-    config: {
-      responseModalities: ['TEXT', 'IMAGE'],
-    },
   });
 
+  const media = response.media;
   if (!media?.url) {
     throw new Error('Image generation failed to return an image.');
   }

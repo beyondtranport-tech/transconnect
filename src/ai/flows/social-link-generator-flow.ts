@@ -8,9 +8,8 @@
  * - SocialLinkGeneratorOutput - The return type for the function.
  */
 
-import {ai} from '@/ai/genkit';
+import { ai } from '@/ai/genkit';
 import { SocialLinkGeneratorInputSchema, SocialLinkGeneratorOutputSchema, type SocialLinkGeneratorInput, type SocialLinkGeneratorOutput } from '@/ai/schemas';
-import { googleAI } from '@genkit-ai/google-genai';
 
 export async function generateSocialLinks(input: SocialLinkGeneratorInput): Promise<SocialLinkGeneratorOutput> {
   return socialLinkGeneratorFlow(input);
@@ -23,8 +22,8 @@ const socialLinkGeneratorFlow = ai.defineFlow(
     outputSchema: SocialLinkGeneratorOutputSchema,
   },
   async (input) => {
-    const { output } = await ai.generate({
-        model: googleAI.model('gemini-1.5-flash-latest'),
+    const response = await ai.generate({
+        model: 'gemini-1.5-flash',
         prompt: `You are an assistant that creates plausible social media URLs for a business.
         Given the shop name "${input.shopName}", create conventional, best-guess URLs for the following platforms: Facebook, Instagram, Twitter (X), LinkedIn (as a company page), and YouTube.
         - Sanitize the shop name to be URL-friendly (remove spaces, special characters).
@@ -36,6 +35,6 @@ const socialLinkGeneratorFlow = ai.defineFlow(
         }
     });
 
-    return output || {};
+    return response.output || {};
   }
 );

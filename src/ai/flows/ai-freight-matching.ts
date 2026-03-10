@@ -8,9 +8,8 @@
  * - MatchFreightOutput - The return type for the matchFreight function.
  */
 
-import {ai} from '@/ai/genkit';
+import { ai } from '@/ai/genkit';
 import { MatchFreightInputSchema, MatchFreightOutputSchema, type MatchFreightInput, type MatchFreightOutput } from '@/ai/schemas';
-import { googleAI } from '@genkit-ai/google-genai';
 
 export async function matchFreight(input: MatchFreightInput): Promise<MatchFreightOutput> {
   return matchFreightFlow(input);
@@ -55,14 +54,14 @@ const matchFreightFlow = ai.defineFlow(
 
 Find available freight loads that match these criteria. Critically, if it is a part load, only return loads that would fit the specified pallet count.`;
 
-    const { output } = await ai.generate({
-        model: googleAI.model('gemini-1.5-flash-latest'),
+    const response = await ai.generate({
+        model: 'gemini-1.5-flash',
         prompt: prompt,
         output: {
             schema: MatchFreightOutputSchema
         }
     });
     
-    return output || { matches: [] };
+    return response.output || { matches: [] };
   }
 );

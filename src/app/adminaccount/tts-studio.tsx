@@ -7,12 +7,13 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Loader2, Sparkles, Download, Mic } from 'lucide-react';
+import { Loader2, Sparkles, Download, Mic, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
 import { TTSInputSchema, type TTSInput } from '@/ai/schemas';
 import { generateAudio } from '@/ai/flows/tts-flow';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const voices = [
     { id: 'Algenib', name: 'Algenib (Male)' },
@@ -78,58 +79,57 @@ export default function TTSStudio() {
             <CardContent>
                  <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                        <FormField
-                          control={form.control}
-                          name="script"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Your Script</FormLabel>
-                              <FormControl>
-                                <Textarea
-                                  placeholder="Enter the script for your voiceover here..."
-                                  className="min-h-[200px] font-mono text-sm"
-                                  {...field}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                         <FormField
+                        <Alert variant="destructive">
+                            <AlertTriangle className="h-4 w-4" />
+                            <AlertTitle>Feature Temporarily Disabled</AlertTitle>
+                            <AlertDescription>
+                                Text-to-Speech is currently unavailable due to a necessary package downgrade. This feature will be re-enabled after a future platform upgrade.
+                            </AlertDescription>
+                        </Alert>
+
+                        <fieldset disabled>
+                            <FormField
                             control={form.control}
-                            name="voice"
+                            name="script"
                             render={({ field }) => (
                                 <FormItem>
-                                <FormLabel>Voice</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <FormControl>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select a voice" />
-                                        </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                        {voices.map(v => (
-                                            <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                <FormLabel>Your Script</FormLabel>
+                                <FormControl>
+                                    <Textarea
+                                    placeholder="Enter the script for your voiceover here..."
+                                    className="min-h-[200px] font-mono text-sm"
+                                    {...field}
+                                    />
+                                </FormControl>
                                 <FormMessage />
                                 </FormItem>
                             )}
-                        />
+                            />
+                            <FormField
+                                control={form.control}
+                                name="voice"
+                                render={({ field }) => (
+                                    <FormItem>
+                                    <FormLabel>Voice</FormLabel>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <FormControl>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select a voice" />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            {voices.map(v => (
+                                                <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </fieldset>
                         
-                         {generatedAudio && (
-                            <div className="space-y-4">
-                                <Label>Generated Audio</Label>
-                                <audio src={generatedAudio} controls className="w-full" />
-                                <Button type="button" onClick={handleDownload} variant="outline" className="w-full">
-                                    <Download className="mr-2 h-4 w-4" />
-                                    Download WAV File
-                                </Button>
-                            </div>
-                        )}
-                        
-                        <Button type="submit" disabled={isLoading} className="w-full">
+                        <Button type="submit" disabled={true} className="w-full">
                             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4" />}
                             Generate Audio
                         </Button>

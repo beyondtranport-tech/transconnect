@@ -8,9 +8,8 @@
  * - ShopSeoOutput - The return type for the generateShopSeo function.
  */
 
-import {ai} from '@/ai/genkit';
+import { ai } from '@/ai/genkit';
 import { ShopSeoInputSchema, ShopSeoOutputSchema, type ShopSeoInput, type ShopSeoOutput } from '@/ai/schemas';
-import { googleAI } from '@genkit-ai/google-genai';
 
 export async function generateShopSeo(input: ShopSeoInput): Promise<ShopSeoOutput> {
   return shopSeoFlow(input);
@@ -23,8 +22,8 @@ const shopSeoFlow = ai.defineFlow(
     outputSchema: ShopSeoOutputSchema,
   },
   async (input) => {
-    const { output } = await ai.generate({
-        model: googleAI.model('gemini-1.5-flash-latest'),
+    const response = await ai.generate({
+        model: 'gemini-1.5-flash',
         prompt: `You are an SEO expert for e-commerce websites in the transport and logistics industry. 
   
         Based on the following shop details:
@@ -37,6 +36,6 @@ const shopSeoFlow = ai.defineFlow(
         }
     });
     
-    return output || { metaTitle: '', metaDescription: '', tags: [] };
+    return response.output || { metaTitle: '', metaDescription: '', tags: [] };
   }
 );

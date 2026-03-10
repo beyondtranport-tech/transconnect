@@ -8,11 +8,10 @@
  * - LeadResearchOutput - The return type for the function.
  */
 
-import {ai} from '@/ai/genkit';
+import { ai } from '@/ai/genkit';
 import { LeadResearchInputSchema, LeadResearchOutputSchema, type LeadResearchInput, type LeadResearchOutput } from '@/ai/schemas';
 import { googleSearchTool } from '../tools/google-search';
 import { z } from 'zod';
-import { googleAI } from '@genkit-ai/google-genai';
 
 export async function leadResearchFlow(input: LeadResearchInput): Promise<LeadResearchOutput> {
   return leadResearchAIFlow(input);
@@ -25,8 +24,8 @@ const leadResearchAIFlow = ai.defineFlow(
     outputSchema: LeadResearchOutputSchema,
   },
   async (input) => {
-    const { output } = await ai.generate({
-        model: googleAI.model('gemini-1.5-flash-latest'),
+    const response = await ai.generate({
+        model: 'gemini-1.5-flash',
         tools: [googleSearchTool],
         prompt: input.prompt,
         output: {
@@ -34,6 +33,7 @@ const leadResearchAIFlow = ai.defineFlow(
         }
     });
     
+    const output = response.output;
     if (!output || !output.leads) {
         return { leads: [] };
     }

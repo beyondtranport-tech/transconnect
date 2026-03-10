@@ -8,9 +8,8 @@
  * - SupportOutput - The return type for the supportQuery function.
  */
 
-import {ai} from '@/ai/genkit';
+import { ai } from '@/ai/genkit';
 import { SupportInputSchema, SupportOutputSchema, type SupportInput, type SupportOutput } from '@/ai/schemas';
-import { googleAI } from '@genkit-ai/google-genai';
 
 const systemPrompt = `You are a helpful and friendly AI assistant for Logistics Flow, a digital ecosystem for the logistics industry in South Africa.
 
@@ -57,7 +56,7 @@ const supportFlow = ai.defineFlow(
         const formattedHistory = history || [];
 
         const response = await ai.generate({
-            model: googleAI.model('gemini-1.5-flash-latest'),
+            model: 'gemini-1.5-flash',
             system: systemPrompt,
             history: formattedHistory, // Use the 'history' property for previous messages
             prompt: query,           // Use the 'prompt' property for the latest user query
