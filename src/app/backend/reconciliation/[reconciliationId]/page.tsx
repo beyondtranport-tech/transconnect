@@ -9,7 +9,6 @@ import { Loader2, ArrowLeft, Printer, FileText } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { format as formatDateFns } from 'date-fns';
 
@@ -43,7 +42,7 @@ function ReconciliationReportComponent() {
     const [generatedAt, setGeneratedAt] = useState<string | null>(null);
 
     useEffect(() => {
-        setGeneratedAt(new Date().toLocaleString());
+        setGeneratedAt(formatDateFns(new Date(), "dd MMM yyyy, HH:mm"));
     }, []);
 
 

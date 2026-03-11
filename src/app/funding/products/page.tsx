@@ -1,7 +1,7 @@
 
 'use client';
 
-import { Suspense, useState, useEffect } from 'react';
+import { Suspense, useState, useEffect, useMemo } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Landmark, ArrowRight, Truck, Briefcase, FileText, Repeat, Calculator, Save, Mail } from "lucide-react";
@@ -60,13 +60,10 @@ const productsData = {
 };
 
 const formatPrice = (price: number) => {
-    const formattedPrice = new Intl.NumberFormat('en-ZA', {
-        style: 'currency',
-        currency: 'ZAR',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-    }).format(price);
-    return formattedPrice.replace(/\s/g, ' ');
+    if (typeof price !== 'number' || isNaN(price)) return 'R 0.00';
+    const parts = price.toFixed(2).toString().split('.');
+    const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    return `R ${integerPart}.${parts[1]}`;
 };
 
 function QuoteCalculator({ product, onQuoteSaved, onOpenChange }: { product: { id: string; title: string }, onQuoteSaved: () => void, onOpenChange: (open: boolean) => void }) {

@@ -32,12 +32,13 @@ async function fetchFromAdminAPI(token: string, action: string, payload?: any) {
 
 const formatPrice = (price: number) => {
     if (typeof price !== 'number' || isNaN(price)) return 'R 0';
+    
+    if (price >= 1_000_000_000) return `R ${(price / 1_000_000_000).toFixed(1)}B`;
+    if (price >= 1_000_000) return `R ${(price / 1_000_000).toFixed(1)}M`;
+    if (price >= 1_000) return `R ${(price / 1_000).toFixed(1)}K`;
+
     const parts = price.toFixed(0).toString().split('.');
     const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-    // Compact notation for large numbers
-    if (price >= 1_000_000_000) return `R ${integerPart.slice(0, -11)}.${integerPart.slice(1,2)}B`;
-    if (price >= 1_000_000) return `R ${integerPart.slice(0, -7)}.${integerPart.slice(1,2)}M`;
-    if (price >= 1_000) return `R ${integerPart.slice(0, -3)}.${integerPart.slice(1,2)}K`;
     return `R ${integerPart}`;
 };
 

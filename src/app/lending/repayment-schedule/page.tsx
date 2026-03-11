@@ -12,7 +12,9 @@ import { Loader2 } from 'lucide-react';
 
 const formatCurrency = (value: number) => {
     if (typeof value !== 'number' || isNaN(value)) return 'R 0.00';
-    return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(value);
+    const parts = value.toFixed(2).toString().split('.');
+    const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    return `R ${integerPart}.${parts[1]}`;
 };
 
 function RepaymentScheduleComponent() {

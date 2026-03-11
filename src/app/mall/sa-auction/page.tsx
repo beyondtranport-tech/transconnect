@@ -48,8 +48,10 @@ const featuredAuctions = [
 ];
 
 const formatCurrency = (price: number) => {
-    // Manual formatting to ensure consistency between server and client
-    return 'R ' + price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    if (typeof price !== 'number' || isNaN(price)) return 'R 0.00';
+    const parts = price.toFixed(2).toString().split('.');
+    const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    return `R ${integerPart}.${parts[1]}`;
 };
 
 

@@ -13,23 +13,20 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import Link from 'next/link';
+import { format as formatDateFns } from 'date-fns';
 
 const formatCurrency = (amount: number) => {
-    if (typeof amount !== 'number') return 'N/A';
-    return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
+    if (typeof amount !== 'number' || isNaN(amount)) return 'R 0.00';
+    const parts = amount.toFixed(2).toString().split('.');
+    const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    return `R ${integerPart}.${parts[1]}`;
 };
 
 const formatDate = (dateValue: any) => {
-    if (dateValue && typeof dateValue.toDate === 'function') {
-        return new Date(dateValue.toDate()).toLocaleString('en-ZA', { dateStyle: 'long', timeStyle: 'short' });
-    }
-     if (typeof dateValue === 'string') {
-        const date = new Date(dateValue);
-        if (!isNaN(date.getTime())) {
-            return new Date(dateValue).toLocaleString('en-ZA', { dateStyle: 'long', timeStyle: 'short' });
-        }
-    }
-    return 'N/A';
+    if (!dateValue) return 'N/A';
+    const date = dateValue.toDate ? dateValue.toDate() : new Date(dateValue);
+    if (isNaN(date.getTime())) return 'Invalid Date';
+    return formatDateFns(date, "dd MMMM yyyy, HH:mm");
 };
 
 function ApprovePaymentComponent() {
