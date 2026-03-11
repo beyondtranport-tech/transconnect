@@ -1,9 +1,10 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
 
 export interface ColumnDef<TData> {
-  accessorKey: keyof TData | string;
+  accessorKey?: keyof TData | string;
   header: React.ReactNode;
   cell?: (props: { row: { original: TData } }) => React.ReactNode;
   id?: string;
@@ -18,8 +19,8 @@ export function useDataTable<TData>(data: TData[], columns: ColumnDef<TData>[]) 
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState('');
 
-  const getNestedValue = (obj: any, path: string): any => {
-    if (obj === null || obj === undefined) return undefined;
+  const getNestedValue = (obj: any, path?: string): any => {
+    if (!path || obj === null || obj === undefined) return undefined;
     return path.split('.').reduce((acc, part) => acc && acc[part], obj);
   };
 
@@ -30,6 +31,7 @@ export function useDataTable<TData>(data: TData[], columns: ColumnDef<TData>[]) 
     if (globalFilter) {
       processedData = processedData.filter(row =>
         columns.some(column => {
+          if (!column.accessorKey) return false;
           const value = getNestedValue(row, column.accessorKey as string);
           return String(value).toLowerCase().includes(globalFilter.toLowerCase());
         })
