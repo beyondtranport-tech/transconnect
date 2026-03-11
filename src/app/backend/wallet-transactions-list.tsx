@@ -74,7 +74,7 @@ const formatDate = (dateValue: any) => {
     }
 
     if (isNaN(date.getTime())) return 'Invalid Date';
-    return formatDateFns(date, 'dd MMM yyyy, HH:mm');
+    return formatDateFns(date, "dd MMM yyyy, HH:mm");
 };
 
 async function performAdminAction(token: string, action: string, payload: any) {

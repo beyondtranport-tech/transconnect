@@ -18,6 +18,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { getAuth, sendPasswordResetEmail, updateProfile } from 'firebase/auth';
+import { format as formatDateFns } from 'date-fns';
 
 
 async function fetchFromAdminAPI(token: string, action: string, payload?: any) {
@@ -106,12 +107,12 @@ export default function UsersList() {
         { 
           accessorKey: 'creationTime', 
           header: 'Date Created', 
-          cell: ({row}) => new Date(row.original.creationTime).toLocaleDateString()
+          cell: ({row}) => formatDateFns(new Date(row.original.creationTime), 'dd MMM yyyy')
         },
         { 
           accessorKey: 'lastSignInTime', 
           header: 'Last Sign-In', 
-          cell: ({row}) => new Date(row.original.lastSignInTime).toLocaleDateString()
+          cell: ({row}) => formatDateFns(new Date(row.original.lastSignInTime), 'dd MMM yyyy')
         },
         {
           id: 'actions',
@@ -159,4 +160,3 @@ export default function UsersList() {
         </Card>
     );
 }
-

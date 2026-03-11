@@ -15,6 +15,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { format as formatDateFns } from 'date-fns';
 
 async function fetchFromAdminAPI(token: string, action: string, payload?: any) {
     const response = await fetch('/api/admin', {
@@ -33,7 +34,9 @@ async function fetchFromAdminAPI(token: string, action: string, payload?: any) {
 const formatDate = (isoString?: string) => {
     if (!isoString) return 'N/A';
     try {
-        return new Date(isoString).toLocaleString('en-ZA', { dateStyle: 'medium', timeStyle: 'short' });
+        const date = new Date(isoString);
+        if (isNaN(date.getTime())) return 'Invalid Date';
+        return formatDateFns(date, "dd MMM yyyy, HH:mm");
     } catch {
         return 'Invalid Date';
     }
@@ -254,5 +257,3 @@ export default function CommercialNegotiations() {
         </Card>
     );
 }
-
-    
