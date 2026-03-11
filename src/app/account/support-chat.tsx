@@ -15,12 +15,13 @@ import { cn } from '@/lib/utils';
 import { supportQuery } from '@/ai/flows/support-flow';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import Link from 'next/link';
+import { format as formatDateFns } from 'date-fns';
 
 const formatDate = (dateValue: any) => {
     if (!dateValue) return 'N/A';
     const date = dateValue.toDate ? dateValue.toDate() : new Date(dateValue);
     if (isNaN(date.getTime())) return 'Invalid Date';
-    return date.toLocaleString('en-ZA', { dateStyle: 'medium', timeStyle: 'short'});
+    return formatDateFns(date, "dd MMM yyyy, HH:mm");
 };
 
 export default function SupportChatContent() {

@@ -22,8 +22,10 @@ import { usePermissions } from '@/hooks/use-permissions';
 import { format } from 'date-fns';
 
 const formatCurrency = (amount: number) => {
-    if (typeof amount !== 'number') return 'N/A';
-    return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
+    if (typeof amount !== 'number' || isNaN(amount)) return 'R 0.00';
+    const parts = amount.toFixed(2).toString().split('.');
+    const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    return `R ${integerPart}.${parts[1]}`;
 };
 const formatDate = (date: any) => {
   if (!date) return 'N/A';
