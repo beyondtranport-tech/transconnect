@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -8,8 +9,10 @@ import { useConfig } from '@/hooks/use-config';
 import { Loader2 } from 'lucide-react';
 
 const formatCurrency = (amount: number) => {
-    if (typeof amount !== 'number') return 'N/A';
-    return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR', maximumFractionDigits: 0 }).format(amount);
+    if (typeof amount !== 'number' || isNaN(amount)) return 'R 0';
+    const parts = amount.toFixed(0).toString().split('.');
+    const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    return `R ${integerPart}`;
 };
 
 export default function PartnerOffer() {
@@ -201,4 +204,3 @@ export default function PartnerOffer() {
         </div>
     );
 }
-    

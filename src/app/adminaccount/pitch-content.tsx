@@ -9,8 +9,10 @@ import { useConfig } from '@/hooks/use-config';
 import { Loader2 } from 'lucide-react';
 
 const formatCurrency = (amount: number) => {
-    if (typeof amount !== 'number') return 'N/A';
-    return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR', maximumFractionDigits: 0 }).format(amount);
+    if (typeof amount !== 'number' || isNaN(amount)) return 'R 0';
+    const parts = amount.toFixed(0).toString().split('.');
+    const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    return `R ${integerPart}`;
 };
 
 export default function PitchContent() {
@@ -180,7 +182,7 @@ export default function PitchContent() {
                     </div>
                      <div>
                         <h4 className="font-bold text-lg">Step 2: You Activate Your Network</h4>
-                        <p className="text-muted-foreground">You introduce Logistics Flow to your community. Your pitch is simple: invite them to join an ecosystem that saves them money, helps them find work, and gives them access to better financing. We equip you with offers and materials to make signing up irresistible.</p>
+                        <p className="text-muted-foreground">You introduce TransConnect to your community. Your pitch is simple: invite them to join an ecosystem that saves them money, helps them find work, and gives them access to better financing. We equip you with offers and materials to make signing up irresistible.</p>
                     </div>
                      <div>
                         <h4 className="font-bold text-lg">Step 3: You Earn Automatically</h4>
