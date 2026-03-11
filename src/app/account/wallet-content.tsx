@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useUser, useFirestore, useCollection, useDoc, getClientSideAuthToken } from '@/firebase';
@@ -8,7 +7,6 @@ import { Loader2, DollarSign, Wallet, Clock, Info, Gem, Send, AlertCircle, Bankn
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { collection, query, orderBy, limit, doc, where } from 'firebase/firestore';
-import { format as formatDateFns } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useConfig } from '@/hooks/use-config';
@@ -19,14 +17,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import PayServicesDialog from './pay-services-dialog';
-import { formatCurrency } from '@/lib/utils';
-
-const formatDate = (timestamp: any) => {
-    if (!timestamp) return 'N/A';
-    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-    if (isNaN(date.getTime())) return 'Invalid Date';
-    return formatDateFns(date, "dd MMM yyyy, HH:mm");
-};
+import { formatCurrency, formatDateSafe } from '@/lib/utils';
 
 const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
   pending_allocation: 'secondary',
@@ -381,7 +372,7 @@ export default function WalletContent() {
                                         <TableBody>
                                             {pendingPayments.map((payment) => (
                                                 <TableRow key={payment.id} className="bg-muted/30">
-                                                    <TableCell className="text-muted-foreground text-xs">{formatDate(payment.createdAt)}</TableCell>
+                                                    <TableCell className="text-muted-foreground text-xs">{formatDateSafe(payment.createdAt, "dd MMM yyyy, HH:mm")}</TableCell>
                                                     <TableCell>
                                                         <p className="font-medium capitalize">{payment.description.replace(/_/g, ' ')}</p>
                                                     </TableCell>
@@ -427,7 +418,7 @@ export default function WalletContent() {
                                         <TableBody>
                                             {transactions.map((tx) => (
                                                 <TableRow key={tx.id}>
-                                                    <TableCell className="text-muted-foreground text-xs">{formatDate(tx.date)}</TableCell>
+                                                    <TableCell className="text-muted-foreground text-xs">{formatDateSafe(tx.date, "dd MMM yyyy, HH:mm")}</TableCell>
                                                     <TableCell>
                                                         <p className="font-medium">{tx.description}</p>
                                                     </TableCell>

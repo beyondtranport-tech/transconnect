@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Suspense, useState, useEffect, useMemo } from 'react';
@@ -15,6 +14,8 @@ import { useUser, getClientSideAuthToken } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { CheckCircle } from 'lucide-react';
+import { formatCurrency } from '@/lib/utils';
+
 
 const productsData = {
     loans: {
@@ -57,13 +58,6 @@ const productsData = {
             { id: "rights-discounting", title: "Rights discounting", description: "Unlock the value of your contractual rights to future income streams." }
         ]
     }
-};
-
-const formatPrice = (price: number) => {
-    if (typeof price !== 'number' || isNaN(price)) return 'R 0.00';
-    const parts = price.toFixed(2).toString().split('.');
-    const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-    return `R ${integerPart}.${parts[1]}`;
 };
 
 function QuoteCalculator({ product, onQuoteSaved, onOpenChange }: { product: { id: string; title: string }, onQuoteSaved: () => void, onOpenChange: (open: boolean) => void }) {
@@ -195,7 +189,7 @@ function QuoteCalculator({ product, onQuoteSaved, onOpenChange }: { product: { i
                 <div>
                     <div className="flex justify-between items-center mb-2">
                         <Label htmlFor="amount-slider">Loan Amount</Label>
-                        <span className="font-bold">{formatPrice(amount)}</span>
+                        <span className="font-bold">{formatCurrency(amount)}</span>
                     </div>
                     <Slider id="amount-slider" min={10000} max={5000000} step={10000} value={[amount]} onValueChange={(v) => setAmount(v[0])} />
                 </div>
@@ -217,7 +211,7 @@ function QuoteCalculator({ product, onQuoteSaved, onOpenChange }: { product: { i
                     <div>
                         <div className="flex justify-between items-center mb-2">
                             <Label htmlFor="balloon-slider">Balloon Percentage</Label>
-                            <span className="font-bold">{balloonPercent}% ({formatPrice(amount * (balloonPercent / 100))})</span>
+                            <span className="font-bold">{balloonPercent}% ({formatCurrency(amount * (balloonPercent / 100))})</span>
                         </div>
                         <Slider id="balloon-slider" min={0} max={50} step={5} value={[balloonPercent]} onValueChange={(v) => setBalloonPercent(v[0])} />
                     </div>
@@ -226,11 +220,11 @@ function QuoteCalculator({ product, onQuoteSaved, onOpenChange }: { product: { i
                 <div className="border-t border-dashed pt-4 space-y-2">
                     <div className="flex justify-between items-center">
                         <p className="font-semibold">Estimated Monthly Payment:</p>
-                        <p className="text-xl font-bold text-primary">{formatPrice(monthlyPayment)}</p>
+                        <p className="text-xl font-bold text-primary">{formatCurrency(monthlyPayment)}</p>
                     </div>
                     <div className="flex justify-between items-center text-sm">
                         <p className="text-muted-foreground">Total Repayment:</p>
-                        <p className="font-mono text-muted-foreground">{formatPrice(totalRepayment)}</p>
+                        <p className="font-mono text-muted-foreground">{formatCurrency(totalRepayment)}</p>
                     </div>
                 </div>
             </div>

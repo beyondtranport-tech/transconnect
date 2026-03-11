@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -163,7 +162,7 @@ export default function SA_AuctionMallPage() {
                         <div className="text-center py-20 border-2 border-dashed rounded-lg">
                             <Clock className="mx-auto h-12 w-12 text-muted-foreground" />
                             <h3 className="mt-4 text-xl font-semibold">No Live Auctions Currently</h3>
-                            <p className="mt-2 text-muted-foreground">Please check back soon for new auction listings from SA Auction Online.</p>
+                            <p className="mt-2 text-muted-foreground">Please check back soon for new auction listings from SA Auction Group.</p>
                         </div>
                     )}
                 </div>

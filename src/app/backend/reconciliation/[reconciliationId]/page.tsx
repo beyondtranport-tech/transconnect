@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Suspense, useEffect, useState } from 'react';
@@ -98,7 +97,7 @@ function ReconciliationReportComponent() {
                 </div>
                  <div className="flex gap-2">
                     <Button variant="outline" asChild>
-                        <Link href="/adminaccount?view=bank-reconciliation"><ArrowLeft className="mr-2 h-4 w-4"/> Back to List</Link>
+                        <Link href="/backend?view=reconciliation"><ArrowLeft className="mr-2 h-4 w-4"/> Back to List</Link>
                     </Button>
                     <Button onClick={() => window.print()}><Printer className="mr-2 h-4 w-4"/> Print</Button>
                 </div>

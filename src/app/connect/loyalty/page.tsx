@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -44,7 +43,7 @@ export default function LoyaltyPlanPage() {
                                 {isLoading ? (
                                     <Loader2 className="h-6 w-6 animate-spin text-primary mt-2" />
                                 ) : (
-                                    <p className="text-lg text-primary font-semibold">{formatCurrency(pricing?.loyaltyPlanPrice || 50)}/month</p>
+                                    <p className="text-lg text-primary font-semibold">{formatCurrency(pricing?.loyaltyPlanPrice || 0)}/month</p>
                                 )}
                             </div>
                         </div>

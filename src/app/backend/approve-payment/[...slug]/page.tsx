@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Suspense, useEffect, useState } from 'react';
@@ -13,21 +12,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import Link from 'next/link';
-import { format as formatDateFns } from 'date-fns';
-
-const formatCurrency = (amount: number) => {
-    if (typeof amount !== 'number' || isNaN(amount)) return 'R 0.00';
-    const parts = amount.toFixed(2).toString().split('.');
-    const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-    return `R ${integerPart}.${parts[1]}`;
-};
-
-const formatDate = (dateValue: any) => {
-    if (!dateValue) return 'N/A';
-    const date = dateValue.toDate ? dateValue.toDate() : new Date(dateValue);
-    if (isNaN(date.getTime())) return 'Invalid Date';
-    return formatDateFns(date, "dd MMMM yyyy, HH:mm");
-};
+import { formatCurrency, formatDateSafe } from '@/lib/utils';
 
 function ApprovePaymentComponent() {
     const params = useParams();
@@ -126,7 +111,7 @@ function ApprovePaymentComponent() {
                     <AlertTitle>Confirm Payment Details</AlertTitle>
                     <AlertDescription className="space-y-2 mt-2">
                        <div className="flex justify-between"><span>Company ID:</span><span className="font-mono">{companyId}</span></div>
-                       <div className="flex justify-between"><span>Date Logged:</span><span className="font-semibold">{formatDate(payment.createdAt)}</span></div>
+                       <div className="flex justify-between"><span>Date Logged:</span><span className="font-semibold">{formatDateSafe(payment.createdAt, "dd MMMM yyyy, HH:mm")}</span></div>
                        <div className="flex justify-between"><span>Description:</span><span className="font-semibold">{payment.description}</span></div>
                        <div className="flex justify-between text-lg"><span>Amount:</span><span className="font-bold text-primary">{formatCurrency(payment.amount)}</span></div>
                     </AlertDescription>

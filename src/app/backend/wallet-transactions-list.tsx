@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
@@ -21,8 +20,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { format as formatDateFns } from 'date-fns';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, formatDateSafe } from '@/lib/utils';
 
 
 interface Company {
@@ -55,13 +53,6 @@ interface Transaction {
     date: any;
     memberName?: string;
 }
-
-const formatDate = (dateValue: any) => {
-    if (!dateValue) return 'N/A';
-    const date = dateValue.toDate ? dateValue.toDate() : new Date(dateValue);
-    if (isNaN(date.getTime())) return 'Invalid Date';
-    return formatDateFns(date, "dd MMM yyyy, HH:mm");
-};
 
 async function performAdminAction(token: string, action: string, payload?: any) {
     const response = await fetch('/api/admin', {
@@ -273,7 +264,7 @@ export default function WalletTransactionsList() {
                             <TableBody>
                                 {enhancedPayouts.map(p => (
                                      <TableRow key={p.id}>
-                                        <TableCell>{formatDate(p.createdAt)}</TableCell>
+                                        <TableCell>{formatDateSafe(p.createdAt, "dd MMM yyyy, HH:mm")}</TableCell>
                                         <TableCell>{p.company?.companyName}</TableCell>
                                         <TableCell className="font-semibold">{formatCurrency(p.amount)}</TableCell>
                                         <TableCell className="text-xs font-mono">
@@ -343,7 +334,7 @@ export default function WalletTransactionsList() {
                             <TableBody>
                                 {enhancedPayments.map(p => (
                                     <TableRow key={p.id} className="bg-amber-50 dark:bg-amber-900/20">
-                                        <TableCell>{formatDate(p.createdAt)}</TableCell>
+                                        <TableCell>{formatDateSafe(p.createdAt, "dd MMM yyyy, HH:mm")}</TableCell>
                                         <TableCell className="font-medium">{p.memberName}</TableCell>
                                         <TableCell className="font-mono text-xs">{p.companyId}</TableCell>
                                         <TableCell>{p.description}</TableCell>
@@ -396,7 +387,7 @@ export default function WalletTransactionsList() {
                             <TableBody>
                                 {enhancedTransactions.slice(0, 20).map(tx => ( // Show latest 20
                                     <TableRow key={tx.id}>
-                                        <TableCell>{formatDate(tx.date)}</TableCell>
+                                        <TableCell>{formatDateSafe(tx.date, "dd MMM yyyy, HH:mm")}</TableCell>
                                         <TableCell className="font-medium">{tx.memberName}</TableCell>
                                         <TableCell className="font-mono text-xs">{tx.companyId}</TableCell>
                                         <TableCell>{tx.description}</TableCell>

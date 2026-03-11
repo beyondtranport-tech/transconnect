@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useUser, getClientSideAuthToken } from '@/firebase';
@@ -7,7 +6,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Loader2, FileText, MoreVertical, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { format as formatDateFns } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
@@ -28,18 +26,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect, useCallback } from 'react';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, formatDateSafe } from '@/lib/utils';
 
-const formatDate = (isoString: string) => {
-    if (!isoString) return 'N/A';
-    try {
-        const date = new Date(isoString);
-        if (isNaN(date.getTime())) return 'Invalid Date';
-        return formatDateFns(date, "dd MMM yyyy");
-    } catch {
-        return 'Invalid Date';
-    }
-};
 
 export default function QuotesCard() {
     const { user, isUserLoading: isAdminLoading } = useUser();
@@ -176,7 +164,7 @@ export default function QuotesCard() {
                             <TableBody>
                                 {quotes.map((quote) => (
                                     <TableRow key={quote.id}>
-                                        <TableCell className="text-muted-foreground text-xs">{formatDate(quote.createdAt)}</TableCell>
+                                        <TableCell className="text-muted-foreground text-xs">{formatDateSafe(quote.createdAt, "dd MMM yyyy")}</TableCell>
                                         <TableCell>
                                             <p className="font-medium capitalize">{quote.fundingType?.replace(/-/g, ' ')}</p>
                                         </TableCell>

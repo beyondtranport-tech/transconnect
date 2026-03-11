@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useUser, getClientSideAuthToken } from '@/firebase';
@@ -7,7 +6,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Loader2, FileText, MoreVertical, Trash2, Edit, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { format as formatDateFns } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { useState, useEffect, useCallback } from 'react';
 import {
@@ -28,18 +26,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useToast } from '@/hooks/use-toast';
-import { formatCurrency } from '@/lib/utils';
-
-const formatDate = (isoString: string) => {
-    if (!isoString) return 'N/A';
-    try {
-        const date = new Date(isoString);
-        if (isNaN(date.getTime())) return 'Invalid Date';
-        return formatDateFns(date, "dd MMM yyyy");
-    } catch {
-        return 'Invalid Date';
-    }
-};
+import { formatCurrency, formatDateSafe } from '@/lib/utils';
 
 const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
   pending: 'secondary',
@@ -212,7 +199,7 @@ export default function EnquiriesCard() {
                                 <TableBody>
                                     {enquiries.map((enquiry) => (
                                         <TableRow key={enquiry.id}>
-                                            <TableCell className="text-muted-foreground text-xs whitespace-nowrap">{formatDate(enquiry.createdAt)}</TableCell>
+                                            <TableCell className="text-muted-foreground text-xs whitespace-nowrap">{formatDateSafe(enquiry.createdAt, "dd MMM yyyy")}</TableCell>
                                             <TableCell>
                                                 <p className="font-medium capitalize">{fundingNeedsMap[enquiry.fundingNeed] || enquiry.fundingNeed?.replace(/-/g, ' ')}</p>
                                             </TableCell>

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,14 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import Link from "next/link";
 import { collection, query, orderBy } from "firebase/firestore";
 import { useRouter, useSearchParams } from "next/navigation";
-import { format as formatDateFns } from 'date-fns';
-
-const formatDate = (timestamp: any) => {
-    if (!timestamp) return 'N/A';
-    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-    if (isNaN(date.getTime())) return 'Invalid Date';
-    return formatDateFns(date, "dd MMM yyyy, HH:mm");
-}
+import { formatDateSafe } from "@/lib/utils";
 
 
 const manualAdjustmentTemplate = {
@@ -250,7 +242,7 @@ function ReconciliationDashboard() {
                                     <TableRow key={recon.id}>
                                         <TableCell className="font-mono text-xs">{recon.id}</TableCell>
                                         <TableCell>{recon.statementPeriod}</TableCell>
-                                        <TableCell>{formatDate(recon.processedAt)}</TableCell>
+                                        <TableCell>{formatDateSafe(recon.processedAt, "dd MMM yyyy, HH:mm")}</TableCell>
                                         <TableCell className="text-right">
                                             <Button variant="outline" size="sm" asChild>
                                                 <Link href={`/backend/reconciliation/${recon.id}`}>View Report <ArrowRight className="ml-2 h-4 w-4"/></Link>

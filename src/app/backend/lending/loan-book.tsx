@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useMemo, useState, useEffect } from 'react';
@@ -7,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Database, AlertTriangle, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { generateAmortizationSchedule, type MonthlyPayment } from './loan-calculations';
+import { generateAmortizationSchedule, type MonthlyPayment } from '@/app/lending/loan-calculations';
 import { formatCurrency } from '@/lib/utils';
 
 const LENDING_ASSUMPTIONS_KEY = 'adminLendingAssumptions_v1';
@@ -132,7 +131,7 @@ export default function LendingLoanBook() {
                 </CardHeader>
                 <CardContent className="text-center">
                      <Button asChild variant="outline">
-                        <Link href="/backend?view=lending-assumptions">Go to Lending Assumptions</Link>
+                        <Link href="/lending?view=assumptions">Go to Lending Assumptions</Link>
                     </Button>
                 </CardContent>
             </Card>

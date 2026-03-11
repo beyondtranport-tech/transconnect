@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Suspense } from 'react';
@@ -10,29 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { format as formatDateFns } from 'date-fns';
-
-
-const formatPrice = (price?: number) => {
-    if (typeof price !== 'number' || isNaN(price)) return 'N/A';
-    // Manual format to avoid hydration errors from Intl
-    const parts = price.toFixed(0).toString().split('.');
-    const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-    return `R ${integerPart}`;
-};
-
-const formatDate = (dateValue: any) => {
-    if (dateValue && typeof dateValue.toDate === 'function') {
-        return formatDateFns(new Date(dateValue.toDate()), "dd MMMM yyyy");
-    }
-    if (typeof dateValue === 'string') {
-        const date = new Date(dateValue);
-        if (!isNaN(date.getTime())) {
-             return formatDateFns(date, "dd MMMM yyyy");
-        }
-    }
-    return 'N/A';
-};
+import { formatCurrency, formatDateSafe } from '@/lib/utils';
 
 const fundingNeedsMap: { [key: string]: string } = {
     'business': 'My Business',
@@ -125,7 +102,7 @@ function EnquiryDetail() {
                            <FileText /> Enquiry Details
                         </CardTitle>
                         <CardDescription>
-                            Submitted on {formatDate(enquiry.createdAt)}
+                            Submitted on {formatDateSafe(enquiry.createdAt, "dd MMMM yyyy")}
                         </CardDescription>
                     </div>
                     <Badge variant={statusColors[enquiry.status] || 'secondary'} className="capitalize text-lg">
@@ -135,7 +112,7 @@ function EnquiryDetail() {
             </CardHeader>
             <CardContent className="space-y-6">
                 <div className="p-4 bg-muted/50 rounded-lg">
-                    <h3 className="font-bold text-3xl text-primary">{formatPrice(enquiry.amountRequested)}</h3>
+                    <h3 className="font-bold text-3xl text-primary">{formatCurrency(enquiry.amountRequested)}</h3>
                     <p className="text-muted-foreground">Amount Requested</p>
                 </div>
                 

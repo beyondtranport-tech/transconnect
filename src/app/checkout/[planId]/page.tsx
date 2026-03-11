@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Suspense, useState, useEffect, useMemo } from 'react';
@@ -13,8 +12,8 @@ import { Loader2, Banknote, ClipboardCopy, ArrowRight, CheckCircle, Wallet, Aler
 import Link from 'next/link';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useMemoFirebase } from '@/hooks/use-memo-firebase';
-import { format as formatDateFns } from 'date-fns';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, formatDateSafe } from '@/lib/utils';
+
 
 function CheckoutComponent() {
   const router = useRouter();

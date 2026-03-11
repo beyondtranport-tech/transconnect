@@ -1,9 +1,8 @@
-
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import LendingAssumptions from "./lending-assumptions";
-import LendingLoanBook from "./lending-loan-book";
+import LendingLoanBook from "./lending/loan-book";
 import LendingIncomeStatement from "./lending-income-statement";
 import LendingCashflow from "./lending-cashflow";
 import LendingBalanceSheet from "./lending-balance-sheet";

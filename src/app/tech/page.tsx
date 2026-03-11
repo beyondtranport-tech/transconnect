@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useConfig } from '@/hooks/use-config';
@@ -75,7 +74,7 @@ export default function TechPage() {
                                         <Loader2 className="h-6 w-6 animate-spin mx-auto" />
                                     ) : (
                                         <>
-                                            <p className="text-4xl font-bold text-primary">{formatPrice(pricing?.aiFreightMatcher)}</p>
+                                            <p className="text-4xl font-bold text-primary">{formatCurrency(pricing?.aiFreightMatcher || 0)}</p>
                                             <p className="text-sm text-muted-foreground">per month</p>
                                         </>
                                     )}
