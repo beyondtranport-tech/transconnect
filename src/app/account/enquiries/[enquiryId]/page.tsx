@@ -14,7 +14,7 @@ import { format as formatDateFns } from 'date-fns';
 
 
 const formatPrice = (price?: number) => {
-    if (typeof price !== 'number') return 'N/A';
+    if (typeof price !== 'number' || isNaN(price)) return 'N/A';
     // Manual format to avoid hydration errors from Intl
     const parts = price.toFixed(0).toString().split('.');
     const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');

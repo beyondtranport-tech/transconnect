@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Database, AlertTriangle, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { generateAmortizationSchedule, type MonthlyPayment } from './loan-calculations';
+import { generateAmortizationSchedule, type MonthlyPayment } from '@/app/lending/loan-calculations';
 
 const LENDING_ASSUMPTIONS_KEY = 'adminLendingAssumptions_v1';
 

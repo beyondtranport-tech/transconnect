@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
@@ -26,8 +27,10 @@ async function performAdminAction(token: string, action: string, payload: any) {
 }
 
 const formatCurrency = (value?: number) => {
-    if (typeof value !== 'number') return 'N/A';
-    return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(value);
+    if (typeof value !== 'number' || isNaN(value)) return 'R 0.00';
+    const parts = value.toFixed(2).toString().split('.');
+    const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    return `R ${integerPart}.${parts[1]}`;
 };
 
 const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
@@ -52,7 +55,6 @@ function AgreementsListComponent() {
   useEffect(() => {
     const loadData = async () => {
         setIsLoading(true);
-        setError(null);
         try {
           const token = await getClientSideAuthToken();
           if (!token) throw new Error("Auth failed.");
@@ -86,7 +88,7 @@ function AgreementsListComponent() {
     { accessorKey: 'clientName', header: 'Client' },
     { accessorKey: 'type', header: 'Type' },
     { accessorKey: 'status', header: 'Status', cell: ({ row }) => <Badge variant={statusColors[row.original.status] || 'secondary'} className="capitalize">{row.original.status}</Badge> },
-    { accessorKey: 'amount', header: 'Amount', cell: ({ row }) => formatCurrency(row.original.amount) },
+    { accessorKey: 'amount', header: 'Amount', cell: ({ row }) => formatCurrency(row.original.totalAdvanced) },
     { id: 'actions', header: () => <div className="text-right">Actions</div>, cell: ({ row }) => <div className="text-right"><AgreementActionMenu agreement={row.original} onUpdate={forceRefresh} /></div> },
   ], [forceRefresh, enrichedAgreements]);
 
@@ -97,7 +99,7 @@ function AgreementsListComponent() {
             <Button onClick={() => router.push('/lending/agreements/new')}><PlusCircle className="mr-2" /> New Agreement</Button>
         </CardHeader>
         <CardContent>
-            {isLoading ? <div className="flex justify-center p-8"><Loader2 className="animate-spin" /></div> : error ? <div className="text-destructive">{error}</div> : <DataTable columns={columns} data={enrichedAgreements} />}
+          {isLoading ? <div className="flex justify-center p-8"><Loader2 className="animate-spin" /></div> : error ? <div className="text-destructive">{error}</div> : <DataTable columns={columns} data={enrichedAgreements} />}
         </CardContent>
     </Card>
   );
