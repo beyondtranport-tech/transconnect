@@ -1,8 +1,9 @@
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
   // Forcing one FINAL, DEFINITIVE server restart to clear the corrupted Next.js cache. This will resolve the runtime error.
-  /* config options here */
+  /* config options here - change */
   images: {
     remotePatterns: [
       {

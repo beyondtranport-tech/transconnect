@@ -21,21 +21,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MemberPayoutRequests from './member-payout-requests';
 import { useRouter } from 'next/navigation';
 import { EditMemberDialog } from './edit-member-dialog';
-import { format as formatDateFns } from 'date-fns';
+import { formatCurrency, formatDateSafe } from '@/lib/utils';
 
-const formatCurrency = (amount: number) => {
-    if (typeof amount !== 'number' || isNaN(amount)) return 'R 0.00';
-    const parts = amount.toFixed(2).toString().split('.');
-    const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-    return `R ${integerPart}.${parts[1]}`;
-};
-
-const formatDate = (isoString: any) => {
-    if (!isoString) return 'N/A';
-    const date = isoString.toDate ? isoString.toDate() : new Date(isoString);
-    if (isNaN(date.getTime())) return 'Invalid Date';
-    return formatDateFns(date, 'dd MMM yyyy');
-};
 
 export default function MemberWallet({ memberId }: { memberId: string }) {
     const { toast } = useToast();
@@ -230,7 +217,7 @@ export default function MemberWallet({ memberId }: { memberId: string }) {
                                     <Mail className="h-4 w-4" /> {ownerData?.email}
                                 </CardDescription>
                                 <CardDescription className="flex items-center gap-2">
-                                    <Calendar className="h-4 w-4" /> Joined: {formatDate(companyData?.createdAt)}
+                                    <Calendar className="h-4 w-4" /> Joined: {formatDateSafe(companyData?.createdAt)}
                                 </CardDescription>
                             </div>
                         </div>

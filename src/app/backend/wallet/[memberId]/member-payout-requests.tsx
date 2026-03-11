@@ -9,8 +9,9 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
-import { format as formatDateFns } from 'date-fns';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, formatDateSafe } from '@/lib/utils';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+
 
 async function performAdminAction(token: string, action: string, payload: any) {
     const response = await fetch('/api/admin', {
@@ -28,22 +29,6 @@ async function performAdminAction(token: string, action: string, payload: any) {
     }
     return result;
 }
-
-const formatDate = (dateValue: any) => {
-    if (!dateValue) return 'N/A';
-    let date;
-    if (typeof dateValue === 'string') {
-        date = new Date(dateValue);
-    } else if (dateValue.toDate && typeof dateValue.toDate === 'function') {
-        date = dateValue.toDate();
-    } else {
-        return 'N/A';
-    }
-
-    if (isNaN(date.getTime())) return 'Invalid Date';
-    return formatDateFns(date, "dd MMM yyyy, HH:mm");
-};
-
 
 export default function MemberPayoutRequests({ companyId, onUpdate }: { companyId: string, onUpdate: () => void }) {
     const { toast } = useToast();
@@ -102,13 +87,31 @@ export default function MemberPayoutRequests({ companyId, onUpdate }: { companyI
                         <TableBody>
                             {payouts.map(p => (
                                 <TableRow key={p.id}>
-                                    <TableCell>{formatDate(p.createdAt)}</TableCell>
+                                    <TableCell>{formatDateSafe(p.createdAt, "dd MMM yyyy, HH:mm")}</TableCell>
                                     <TableCell className="text-right font-semibold">{formatCurrency(p.amount)}</TableCell>
                                     <TableCell className="text-right">
-                                        <Button variant="destructive" size="sm" onClick={() => handleReject(p.id)} disabled={!!isProcessing}>
-                                            {isProcessing === p.id ? <Loader2 className="h-4 w-4 animate-spin"/> : <XCircle className="mr-2 h-4 w-4" />}
-                                            Reject
-                                        </Button>
+                                        <AlertDialog>
+                                            <AlertDialogTrigger asChild>
+                                                <Button variant="destructive" size="sm" disabled={!!isProcessing}>
+                                                    {isProcessing === p.id ? <Loader2 className="h-4 w-4 animate-spin"/> : <XCircle className="mr-2 h-4 w-4" />}
+                                                    Reject
+                                                </Button>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                        This will reject the payout request of {formatCurrency(p.amount)} for this member.
+                                                    </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={() => handleReject(p.id)} variant="destructive">
+                                                        Yes, Reject Payout
+                                                    </AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
                                     </TableCell>
                                 </TableRow>
                             ))}
