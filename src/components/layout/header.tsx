@@ -22,6 +22,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useCart } from "@/context/CartContext";
 import { Badge } from "@/components/ui/badge";
 import { doc } from 'firebase/firestore';
+import { Skeleton } from "@/components/ui/skeleton";
 
 const mainNavLinks = [
   { href: "/", label: "Home" },
@@ -60,8 +61,6 @@ export function Header() {
     if (!auth) return;
     try {
         await signOut(auth);
-        // The clearCart() logic is now handled automatically by the CartProvider
-        // when the user state changes to null.
         setIsSheetOpen(false);
         router.push('/');
     } catch (error) {
@@ -149,7 +148,9 @@ export function Header() {
                 </Link>
             </Button>
             
-            {user ? (
+            {isUserLoading ? (
+              <Skeleton className="h-8 w-8 rounded-full" />
+            ) : user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-8 w-8 rounded-full">
