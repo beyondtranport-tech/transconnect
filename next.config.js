@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  // This comment forces a server restart to clear the cache and fix styling.
+  // This comment forces a server restart to clear the cache and fix styling. Please do not remove.
   /* config options here */
   images: {
     remotePatterns: [
