@@ -51,15 +51,16 @@ const supportFlow = ai.defineFlow(
     }
     
     try {
-        // The `history` object from the client is already in the correct format.
-        // We ensure it's an array, even if it's undefined for the first message.
         const formattedHistory = history || [];
 
+        // Correctly combine history and the new prompt into a single array
         const response = await ai.generate({
             model: 'gemini-1.5-flash',
             system: systemPrompt,
-            history: formattedHistory, // Use the 'history' property for previous messages
-            prompt: query,           // Use the 'prompt' property for the latest user query
+            prompt: [
+                ...formattedHistory,
+                { role: 'user', parts: [{ text: query }] }
+            ],
         });
         
         const textResponse = response.text;
