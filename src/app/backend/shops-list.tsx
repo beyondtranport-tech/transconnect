@@ -11,7 +11,7 @@ import { getClientSideAuthToken } from '@/firebase';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ShopActionMenu } from './shop-action-menu';
-
+import { format as formatDateFns } from 'date-fns';
 
 // --- Interfaces & Helper Functions ---
 interface Shop {
@@ -32,15 +32,19 @@ const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | '
   rejected: 'destructive',
 };
 
-const formatDate = (isoString: string | undefined) => {
-    if (!isoString) return 'N/A';
-    try {
-        const date = typeof isoString === 'string' ? new Date(isoString) : (isoString as any).toDate();
-        if (isNaN(date.getTime())) return 'Invalid Date';
-        return date.toLocaleString('en-ZA', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'});
-    } catch (e) {
-        return 'Invalid Date';
+const formatDate = (dateValue: any) => {
+    if (!dateValue) return 'N/A';
+    let date;
+    if (typeof dateValue === 'string') {
+        date = new Date(dateValue);
+    } else if (dateValue.toDate && typeof dateValue.toDate === 'function') {
+        date = dateValue.toDate();
+    } else {
+        return 'N/A';
     }
+
+    if (isNaN(date.getTime())) return 'Invalid Date';
+    return formatDateFns(date, "dd MMM yyyy, HH:mm");
 };
 
 async function fetchFromAdminAPI(token: string, action: string, payload?: any) {
