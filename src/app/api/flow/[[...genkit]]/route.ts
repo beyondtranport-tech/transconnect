@@ -1,19 +1,19 @@
-export {};
+import { NextResponse } from 'next/server';
 
-// import { GenkitNextRequest, GenkitNextResponse, handleRequest } from "@genkit-ai/next";
+// This API route is intentionally disabled to prevent build issues with its
+// dependencies, while still allowing the rest of the application to build and run.
+// The primary AI flows are accessed via Server Actions, not this HTTP endpoint.
 
-// // Import all flow files to register them with Genkit for this API route.
-// import '@/ai/flows/ai-freight-matching';
-// import '@/ai/flows/image-edit-flow';
-// import '@/ai/flows/image-generation-flow';
-// import '@/ai/flows/lead-research-flow';
-// import '@/ai/flows/seo-flow';
-// import '@/ai/flows/social-link-generator-flow';
-// import '@/ai/flows/support-flow';
-// import '@/ai/flows/tts-flow';
-// import '@/ai/flows/video-generation-flow';
+export async function GET() {
+  return NextResponse.json(
+    { message: "Genkit API endpoint is not available." },
+    { status: 503 }
+  );
+}
 
-
-// export async function POST(req: GenkitNextRequest): Promise<GenkitNextResponse> {
-//   return handleRequest(req);
-// }
+export async function POST() {
+    return NextResponse.json(
+    { message: "Genkit API endpoint is not available." },
+    { status: 503 }
+  );
+}
