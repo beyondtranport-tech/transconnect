@@ -1,9 +1,10 @@
+
 'use client';
 
 import { Suspense, useEffect, useState } from 'react';
 import { notFound, useParams } from 'next/navigation';
 import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, doc, getDocs, query, where } from 'firebase/firestore';
+import { collection, doc, getDocs, query, where, collectionGroup } from 'firebase/firestore';
 import { Loader2, ArrowLeft, Printer, FileText } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -37,12 +38,12 @@ function ReconciliationReportComponent() {
             setIsLoadingTxs(true);
             try {
                 // Query both member and platform transactions
-                const memberTxsQuery = query(collection(firestore, `transactions`), where('reconciliationId', '==', reconciliationId));
+                const memberTxsQuery = query(collectionGroup(firestore, `transactions`), where('reconciliationId', '==', reconciliationId));
                 const platformTxsQuery = query(collection(firestore, `platformTransactions`), where('reconciliationId', '==', reconciliationId));
 
                 const [memberTxsSnap, platformTxsSnap] = await Promise.all([
                     getDocs(memberTxsQuery),
-                    getDocs(platformTxsQuery)
+                    getDocs(platformTxsSnap)
                 ]);
 
                 let allTxs: any[] = [];

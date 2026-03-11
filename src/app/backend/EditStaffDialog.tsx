@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -78,7 +79,7 @@ export function EditStaffDialog({ isOpen, setIsOpen, staffMember, onUpdate }: Ed
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          path: `companies/${staffMember.companyId}/staff/${staffMember.id}`,
+          path: `companies/${staffMember.companyId}/staff/${staffMember.docId}`,
           data: { ...values, updatedAt: { _methodName: 'serverTimestamp' } }
         }),
       });
