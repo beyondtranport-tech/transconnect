@@ -36,7 +36,7 @@ export function getAdminApp(): { app: App | null; error: string | null } {
 
     // The storageBucket property is removed from here to prevent the main app initialization from
     // hanging if there's a problem connecting to the bucket. This makes Auth and Firestore
-    // operations more reliable. Storage will be handled specifically in the upload route.
+    // operations more reliable.
     
     // The cert() function correctly handles the snake_case object.
     const app = initializeApp({
