@@ -78,6 +78,21 @@ const generateDefaultValues = (months: number) => {
     return defaults;
 };
 
+type FormValues = {
+    budgetInputs: {
+        revenue: { [key: string]: number[] };
+        cogs: { [key: string]: number[] };
+        opexOther: { [key: string]: number[] };
+    };
+    opexSalaries: {
+        role: string;
+        count: number;
+        salary: number;
+        monthlyHeadcount: number[];
+        monthlySalary: number[];
+    }[];
+};
+
 
 function BudgetPageComponent() {
     const router = useRouter();
@@ -105,7 +120,7 @@ function BudgetPageComponent() {
         }
     }, []);
 
-    const form = useForm({
+    const form = useForm<FormValues>({
         defaultValues: useCallback(() => {
             if (typeof window === 'undefined') {
                 return generateDefaultValues(forecastMonths);
