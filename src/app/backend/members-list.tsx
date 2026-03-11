@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 import MemberActionMenu from './member-action-menu';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { format as formatDateFns } from 'date-fns';
+import { formatDateSafe } from '@/lib/utils';
 
 interface Member {
     id: string;
@@ -123,17 +123,7 @@ export default function MembersList() {
         {
           accessorKey: 'createdAt',
           header: 'Joined',
-          cell: ({ row }) => {
-            const dateStr = row.original.createdAt;
-            if (!dateStr) return 'N/A';
-            try {
-                const date = new Date(dateStr);
-                if (isNaN(date.getTime())) return 'Invalid Date';
-                return formatDateFns(date, "dd MMM yyyy");
-            } catch {
-                return 'Invalid Date';
-            }
-          },
+          cell: ({ row }) => formatDateSafe(row.original.createdAt)
         },
         {
             id: 'actions',

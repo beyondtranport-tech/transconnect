@@ -7,23 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFoo
 import { Loader2, DollarSign } from 'lucide-react';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
-import { formatCurrency } from '@/lib/utils';
-import { format as formatDateFns } from 'date-fns';
-
-const formatDate = (dateValue: any) => {
-    if (!dateValue) return 'N/A';
-    let date;
-    if (typeof dateValue === 'string') {
-        date = new Date(dateValue);
-    } else if (dateValue.toDate && typeof dateValue.toDate === 'function') {
-        date = dateValue.toDate();
-    } else {
-        return 'N/A';
-    }
-
-    if (isNaN(date.getTime())) return 'Invalid Date';
-    return formatDateFns(date, 'dd MMM yyyy, HH:mm');
-};
+import { formatCurrency, formatDateSafe } from '@/lib/utils';
 
 export default function PlatformTransactions() {
     const firestore = useFirestore();
@@ -91,7 +75,7 @@ export default function PlatformTransactions() {
                         <TableBody>
                             {transactions.map(tx => (
                                 <TableRow key={tx.id}>
-                                    <TableCell>{formatDate(tx.date)}</TableCell>
+                                    <TableCell>{formatDateSafe(tx.date, "dd MMM yyyy, HH:mm")}</TableCell>
                                     <TableCell>{tx.description}</TableCell>
                                     <TableCell className="font-mono text-xs">{tx.chartOfAccountsCode}</TableCell>
                                     <TableCell className={`text-right font-mono font-semibold ${tx.type === 'credit' ? 'text-green-600' : 'text-destructive'}`}>

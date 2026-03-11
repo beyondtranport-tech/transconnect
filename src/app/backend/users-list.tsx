@@ -18,7 +18,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { getAuth, sendPasswordResetEmail } from 'firebase/auth';
-import { format as formatDateFns } from 'date-fns';
+import { formatDateSafe } from '@/lib/utils';
 
 
 async function fetchFromAdminAPI(token: string, action: string, payload?: any) {
@@ -37,14 +37,6 @@ async function fetchFromAdminAPI(token: string, action: string, payload?: any) {
     }
     return result;
 }
-
-const formatDate = (dateValue: any) => {
-    if (!dateValue) return 'N/A';
-    const date = new Date(dateValue);
-    if (isNaN(date.getTime())) return 'Invalid Date';
-    return formatDateFns(date, 'dd MMM yyyy');
-};
-
 
 export default function UsersList() {
     const [users, setUsers] = useState<any[]>([]);
@@ -114,12 +106,12 @@ export default function UsersList() {
         { 
           accessorKey: 'creationTime', 
           header: 'Date Created', 
-          cell: ({row}) => formatDate(row.original.creationTime)
+          cell: ({row}) => formatDateSafe(row.original.creationTime)
         },
         { 
           accessorKey: 'lastSignInTime', 
           header: 'Last Sign-In', 
-          cell: ({row}) => formatDate(row.original.lastSignInTime)
+          cell: ({row}) => formatDateSafe(row.original.lastSignInTime)
         },
         {
           id: 'actions',
@@ -142,7 +134,8 @@ export default function UsersList() {
             </div>
           )
         },
-    ], [handlePasswordReset]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    ], []);
 
     return (
         <Card>
@@ -167,4 +160,3 @@ export default function UsersList() {
         </Card>
     );
 }
-

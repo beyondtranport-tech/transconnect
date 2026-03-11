@@ -10,21 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { format as formatDateFns } from 'date-fns';
-
-const formatCurrency = (amount: number) => {
-    if (typeof amount !== 'number' || isNaN(amount)) return 'R 0.00';
-    const parts = amount.toFixed(2).toString().split('.');
-    const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-    return `R ${integerPart}.${parts[1]}`;
-};
-
-const formatDate = (dateValue: any) => {
-    if (!dateValue) return 'N/A';
-    const date = dateValue.toDate ? dateValue.toDate() : new Date(dateValue);
-    if (isNaN(date.getTime())) return 'Invalid Date';
-    return formatDateFns(date, "dd MMM yyyy, HH:mm");
-};
+import { formatCurrency, formatDateSafe } from '@/lib/utils';
 
 function ReconciliationReportComponent() {
     const params = useParams();
@@ -42,7 +28,7 @@ function ReconciliationReportComponent() {
     const [generatedAt, setGeneratedAt] = useState<string | null>(null);
 
     useEffect(() => {
-        setGeneratedAt(formatDateFns(new Date(), "dd MMM yyyy, HH:mm"));
+        setGeneratedAt(formatDateSafe(new Date(), "dd MMM yyyy, HH:mm"));
     }, []);
 
 
@@ -122,7 +108,7 @@ function ReconciliationReportComponent() {
                     <h3 className="font-semibold text-lg">Summary</h3>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2 text-sm">
                         <div><p className="text-muted-foreground">Statement Period</p><p className="font-semibold">{reconciliation.statementPeriod}</p></div>
-                        <div><p className="text-muted-foreground">Processed On</p><p className="font-semibold">{formatDate(reconciliation.processedAt)}</p></div>
+                        <div><p className="text-muted-foreground">Processed On</p><p className="font-semibold">{formatDateSafe(reconciliation.processedAt, "dd MMM yyyy, HH:mm")}</p></div>
                          <div><p className="text-muted-foreground">Opening Balance</p><p className="font-mono">{formatCurrency(reconciliation.openingBalance)}</p></div>
                         <div><p className="text-muted-foreground">Closing Balance</p><p className="font-mono">{formatCurrency(reconciliation.closingBalance)}</p></div>
                     </div>
@@ -136,7 +122,7 @@ function ReconciliationReportComponent() {
                             <TableBody>
                                 {memberTransactions.length > 0 ? memberTransactions.map(tx => (
                                     <TableRow key={tx.id}>
-                                        <TableCell className="text-xs">{formatDate(tx.date)}</TableCell>
+                                        <TableCell className="text-xs">{formatDateSafe(tx.date, "dd MMM yyyy, HH:mm")}</TableCell>
                                         <TableCell className="font-mono text-xs">{tx.memberId}</TableCell>
                                         <TableCell>{tx.description}</TableCell>
                                         <TableCell className={`text-right font-semibold ${tx.type === 'credit' ? 'text-green-600' : 'text-destructive'}`}>
@@ -166,7 +152,7 @@ function ReconciliationReportComponent() {
                             <TableBody>
                                 {platformTransactions.length > 0 ? platformTransactions.map(tx => (
                                     <TableRow key={tx.id}>
-                                        <TableCell className="text-xs">{formatDate(tx.date)}</TableCell>
+                                        <TableCell className="text-xs">{formatDateSafe(tx.date, "dd MMM yyyy, HH:mm")}</TableCell>
                                         <TableCell>{tx.description}</TableCell>
                                         <TableCell className="font-mono text-xs">{tx.chartOfAccountsCode}</TableCell>
                                         <TableCell className="text-right font-semibold text-destructive">- {formatCurrency(tx.amount)}</TableCell>

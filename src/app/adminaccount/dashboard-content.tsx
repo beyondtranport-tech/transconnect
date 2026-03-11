@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { useState, useEffect, useCallback } from 'react';
-import { format as formatDateFns } from 'date-fns';
+import { formatCurrency, formatDateSafe } from '@/lib/utils';
 
 // Centralized helper function for making authenticated API calls
 async function fetchFromAdminAPI(token: string, action: string, payload?: any) {
@@ -29,31 +29,6 @@ async function fetchFromAdminAPI(token: string, action: string, payload?: any) {
     }
     return result;
 }
-
-
-const formatPrice = (price: number) => {
-    if (typeof price !== 'number' || isNaN(price)) return 'R 0';
-    
-    if (price >= 1_000_000_000) return `R ${(price / 1_000_000_000).toFixed(1)}B`;
-    if (price >= 1_000_000) return `R ${(price / 1_000_000).toFixed(1)}M`;
-    if (price >= 1_000) return `R ${(price / 1_000).toFixed(1)}K`;
-
-    const parts = price.toFixed(0).toString().split('.');
-    const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-    return `R ${integerPart}`;
-};
-
- const formatDate = (isoString: string | undefined) => {
-    if (!isoString) return 'N/A';
-    try {
-        const date = new Date(isoString);
-        if (isNaN(date.getTime())) return 'Invalid Date';
-        return formatDateFns(date, "dd MMM");
-    } catch (e) {
-        return 'Invalid Date';
-    }
-};
-
 
 export default function DashboardContent() {
     const { user, isUserLoading } = useUser();
@@ -175,7 +150,7 @@ export default function DashboardContent() {
                         <DollarSign className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{formatPrice(stats.totalFunded)}</div>
+                        <div className="text-2xl font-bold">{formatCurrency(stats.totalFunded)}</div>
                     </CardContent>
                 </Card>
                 <Link href="/adminaccount?view=divisions-funding">
@@ -246,9 +221,9 @@ export default function DashboardContent() {
                                     <TableRow key={app.id}>
                                         <TableCell>
                                             <div className="font-medium capitalize">{app.fundingType?.replace(/_/g, ' ')}</div>
-                                            <div className="text-sm text-muted-foreground">{formatDate(app.createdAt)}</div>
+                                            <div className="text-sm text-muted-foreground">{formatDateSafe(app.createdAt, "dd MMM")}</div>
                                         </TableCell>
-                                        <TableCell>{formatPrice(app.amountRequested)}</TableCell>
+                                        <TableCell>{formatCurrency(app.amountRequested)}</TableCell>
                                         <TableCell className="text-right">
                                              <Button asChild variant="outline" size="sm">
                                                 <Link href={`/backend?view=wallet&memberId=${app.applicantId}`}>View Member</Link>
@@ -284,7 +259,7 @@ export default function DashboardContent() {
                                     <TableRow key={agreement.id}>
                                         <TableCell>
                                             <div className="font-medium">{agreement.shopName}</div>
-                                            <div className="text-sm text-muted-foreground">{formatDate(agreement.createdAt)}</div>
+                                            <div className="text-sm text-muted-foreground">{formatDateSafe(agreement.createdAt, "dd MMM")}</div>
                                         </TableCell>
                                         <TableCell className="font-semibold text-lg text-primary">{agreement.percentage}%</TableCell>
                                         <TableCell>
@@ -325,7 +300,7 @@ export default function DashboardContent() {
                                             <div className="text-sm text-muted-foreground">{member.email}</div>
                                         </TableCell>
                                         <TableCell>{member.companyName}</TableCell>
-                                        <TableCell className="text-right font-mono">{formatPrice(member.walletBalance || 0)}</TableCell>
+                                        <TableCell className="text-right font-mono">{formatCurrency(member.walletBalance || 0)}</TableCell>
                                    </TableRow>
                                )) : (
                                      <TableRow>

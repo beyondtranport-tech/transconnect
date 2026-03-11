@@ -7,12 +7,7 @@ import { Gift, DollarSign, TrendingUp, Handshake, CheckCircle, ShoppingBasket } 
 import React from 'react';
 import { useConfig } from '@/hooks/use-config';
 import { Loader2 } from 'lucide-react';
-
-const formatCurrency = (amount: number) => {
-    if (typeof amount !== 'number' || isNaN(amount)) return 'R 0';
-    const integerPart = amount.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-    return `R ${integerPart}`;
-};
+import { formatCurrency } from '@/lib/utils';
 
 export default function PitchContent() {
     const { data: isaConfig, isLoading } = useConfig<any>('isaPitch');
@@ -119,19 +114,19 @@ export default function PitchContent() {
                             <li className="flex items-start gap-3">
                                 <CheckCircle className="h-4 w-4 text-green-600 mt-1 shrink-0" />
                                 <div>
-                                    <strong className="font-semibold">Finance Mall:</strong> A member from your network finances a <strong className="font-mono">{formatCurrency(exampleDealSize)}</strong> trailer. Logistics Flow earns a {exampleOriginationFeePercent}% fee ({formatCurrency(exampleDealCommission)}). Your {isaFinanceShare}% share earns you <strong className="text-green-600">{formatCurrency(isaExampleDealShare)}</strong>.
+                                    <strong className="font-semibold">Finance Mall:</strong> A member from your network finances a <strong className="font-mono">{formatCurrency(exampleDealSize)}</strong> trailer. TransConnect earns a {exampleOriginationFeePercent}% fee ({formatCurrency(exampleDealCommission)}). Your {isaFinanceShare}% share earns you <strong className="text-green-600">{formatCurrency(isaExampleDealShare)}</strong>.
                                 </div>
                             </li>
                              <li className="flex items-start gap-3">
                                 <CheckCircle className="h-4 w-4 text-green-600 mt-1 shrink-0" />
                                 <div>
-                                    <strong className="font-semibold">Supplier Mall:</strong> Your network collectively spends {formatCurrency(exampleSupplierSpend)} on parts. Logistics Flow earns a {supplierMallPlatformCommission*100}% commission ({formatCurrency(supplierPlatformEarnings)}). Your {isaSupplierShare}% share could earn you <strong className="text-green-600">{formatCurrency(isaSupplierEarnings)}</strong>.
+                                    <strong className="font-semibold">Supplier Mall:</strong> Your network collectively spends {formatCurrency(exampleSupplierSpend)} on parts. TransConnect earns a {supplierMallPlatformCommission*100}% commission ({formatCurrency(supplierPlatformEarnings)}). Your {isaSupplierShare}% share could earn you <strong className="text-green-600">{formatCurrency(isaSupplierEarnings)}</strong>.
                                 </div>
                             </li>
                              <li className="flex items-start gap-3">
                                 <CheckCircle className="h-4 w-4 text-green-600 mt-1 shrink-0" />
                                 <div>
-                                    <strong className="font-semibold">Buy & Sell Mall:</strong> A member sells a used truck for {formatCurrency(exampleTruckSale)}. Logistics Flow earns a {buySellMallPlatformCommission*100}% success fee ({formatCurrency(buySellPlatformEarnings)}). Your {isaBuySellShare}% share nets you <strong className="text-green-600">{formatCurrency(isaBuySellEarnings)}</strong>.
+                                    <strong className="font-semibold">Buy & Sell Mall:</strong> A member sells a used truck for {formatCurrency(exampleTruckSale)}. TransConnect earns a {buySellMallPlatformCommission*100}% success fee ({formatCurrency(buySellPlatformEarnings)}). Your {isaBuySellShare}% share nets you <strong className="text-green-600">{formatCurrency(isaBuySellEarnings)}</strong>.
                                 </div>
                             </li>
                         </ul>
@@ -151,7 +146,7 @@ export default function PitchContent() {
                         <li className="flex items-start gap-3">
                             <CheckCircle className="h-4 w-4 text-green-600 mt-1 shrink-0" />
                             <div>
-                                <strong className="font-semibold">Example: Subscription Product Sales.</strong> A subscription product costs {formatCurrency(exampleMarketplaceProductPrice)}/month. Logistics Flow earns a {formatCurrency(exampleMarketplacePlatformCommission)} (25%) commission. We share {isaMarketplaceShare}% of our commission with you, the ISA.
+                                <strong className="font-semibold">Example: Subscription Product Sales.</strong> A subscription product costs {formatCurrency(exampleMarketplaceProductPrice)}/month. TransConnect earns a {formatCurrency(exampleMarketplacePlatformCommission)} (25%) commission. We share {isaMarketplaceShare}% of our commission with you, the ISA.
                             </div>
                         </li>
                          <li className="flex items-start gap-3">

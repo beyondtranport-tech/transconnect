@@ -21,7 +21,6 @@ const agreementSchema = z.object({
     amount: z.coerce.number().optional(),
     term: z.coerce.number().optional(),
     rate: z.coerce.number().optional(),
-    residual: z.coerce.number().optional(),
     dealsPerMonth: z.coerce.number().optional(),
     recurring: z.boolean().default(true),
     startDate: z.string().optional(),
@@ -47,10 +46,10 @@ const defaultValues: FormValues = {
     quoteConversionRate: 50,
     enquiryConversionRate: 30,
     applicationConversionRate: 60,
-    loan: { enabled: true, amount: 50000, term: 12, rate: 60, residual: 0, dealsPerMonth: 1, recurring: true, startDate: '2026-02-05', firstInstallmentDate: '2026-03-05', paymentsInAdvance: false },
-    installmentSale: { enabled: true, amount: 750000, term: 60, rate: 15, residual: 0, dealsPerMonth: 1, recurring: true, startDate: '', firstInstallmentDate: '', paymentsInAdvance: false },
-    lease: { enabled: false, amount: 600000, term: 54, rate: 16, residual: 0, dealsPerMonth: 0, recurring: true, startDate: '', firstInstallmentDate: '', paymentsInAdvance: false },
-    factoring: { enabled: true, amount: 100000, term: 3, rate: 5, residual: 0, dealsPerMonth: 2, recurring: true, startDate: '', firstInstallmentDate: '', paymentsInAdvance: false },
+    loan: { enabled: true, amount: 250000, term: 48, rate: 18, dealsPerMonth: 1, recurring: true, startDate: '', firstInstallmentDate: '', paymentsInAdvance: false },
+    installmentSale: { enabled: true, amount: 750000, term: 60, rate: 15, dealsPerMonth: 1, recurring: true, startDate: '', firstInstallmentDate: '', paymentsInAdvance: false },
+    lease: { enabled: false, amount: 600000, term: 54, rate: 16, dealsPerMonth: 0, recurring: true, startDate: '', firstInstallmentDate: '', paymentsInAdvance: false },
+    factoring: { enabled: true, amount: 100000, term: 3, rate: 5, dealsPerMonth: 2, recurring: true, startDate: '', firstInstallmentDate: '', paymentsInAdvance: false },
 };
 
 export default function LendingAssumptions() {
@@ -77,14 +76,6 @@ export default function LendingAssumptions() {
                         }
                     }
                 }
-                // Ensure residual is a number, default to 0 if not present
-                (Object.keys(updated) as Array<keyof FormValues>).forEach(key => {
-                    if (typeof updated[key] === 'object' && updated[key] !== null && 'enabled' in updated[key]) {
-                        if (typeof (updated[key] as any).residual !== 'number') {
-                            (updated[key] as any).residual = 0;
-                        }
-                    }
-                });
                 return updated;
             }
             return defaultValues;
@@ -112,13 +103,13 @@ export default function LendingAssumptions() {
             principal: principal.toString(),
             rate: values.rate?.toString() || '0',
             term: values.term?.toString() || '0',
-            residual: values.residual?.toString() || '0',
+            residual: (values as any).residual?.toString() || '0', // Add residual if it exists
             startDate: values.startDate || '',
             firstInstallmentDate: values.firstInstallmentDate || '',
             paymentsInAdvance: values.paymentsInAdvance ? 'true' : 'false',
             type: agreementType
         });
-        router.push(`/backend/lending/repayment-schedule?${query.toString()}`);
+        router.push(`/lending/repayment-schedule?${query.toString()}`);
     }
 
     const renderAgreementFields = (name: "loan" | "installmentSale" | "lease" | "factoring", title: string) => (
