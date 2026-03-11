@@ -12,5 +12,4 @@ if (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'YOUR_API_KEY_H
 
 export const ai = genkit({
   plugins,
-  enableTracingAndMetrics: true,
 });
