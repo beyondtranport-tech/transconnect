@@ -33,7 +33,7 @@ import { type ColumnDef } from '@/hooks/use-data-table';
 import { AssetActionMenu } from './assets/AssetActionMenu';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-
+import { formatCurrency } from '@/lib/utils';
 
 async function performAdminAction(token: string, action: string, payload: any) {
     const response = await fetch('/api/admin', {
@@ -48,11 +48,6 @@ async function performAdminAction(token: string, action: string, payload: any) {
     }
     return result;
 }
-
-const formatCurrency = (value?: number) => {
-    if (typeof value !== 'number') return 'N/A';
-    return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(value);
-};
 
 const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
     available: 'default',

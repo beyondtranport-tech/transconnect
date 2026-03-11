@@ -9,17 +9,11 @@ import Image from 'next/image';
 import Link from 'next/link';
 import data from '@/lib/placeholder-images.json';
 import { useConfig } from '@/hooks/use-config';
+import { formatCurrency } from '@/lib/utils';
 
 const { placeholderImages } = data;
 
 const actionsImage = placeholderImages.find(p => p.id === 'tech-division');
-
-const formatPrice = (price: number) => {
-    if (typeof price !== 'number' || isNaN(price)) return 'R 0';
-    const parts = price.toFixed(0).toString().split('.');
-    const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-    return `R ${integerPart}`;
-};
 
 export default function ActionsPlanPage() {
     const { user } = useUser();
@@ -50,7 +44,7 @@ export default function ActionsPlanPage() {
                                 {isLoading ? (
                                     <Loader2 className="h-6 w-6 animate-spin text-primary mt-2" />
                                 ) : (
-                                    <p className="text-lg text-primary font-semibold">{formatPrice(pricing?.actionsPlanPrice || 50)}/month</p>
+                                    <p className="text-lg text-primary font-semibold">{formatCurrency(pricing?.actionsPlanPrice || 50)}/month</p>
                                 )}
                             </div>
                         </div>

@@ -9,13 +9,7 @@ import { useCollection, useFirestore, getClientSideAuthToken, useMemoFirebase } 
 import { collection, query, where } from 'firebase/firestore';
 import { Loader2, Gem, Wallet, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
-
-const formatCurrency = (amount: number) => {
-    if (typeof amount !== 'number' || isNaN(amount)) return 'R 0.00';
-    const parts = amount.toFixed(2).toString().split('.');
-    const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-    return `R ${integerPart}.${parts[1]}`;
-};
+import { formatCurrency } from '@/lib/utils';
 
 // Robust date formatting function
 const formatDate = (dateValue: any) => {

@@ -21,6 +21,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { getClientSideAuthToken, useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
+import { formatCurrency } from '@/lib/utils';
+import { format as formatDateFns } from 'date-fns';
 
 const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
   pending: 'secondary',
@@ -31,16 +33,11 @@ const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | '
   quote: 'outline',
 };
 
-const formatCurrency = (amount: number) => {
-    if (typeof amount !== 'number') return 'N/A';
-    return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
-};
-
 const formatDate = (isoString: any) => {
     if (!isoString) return 'N/A';
     const date = isoString.toDate ? isoString.toDate() : new Date(isoString);
     if (isNaN(date.getTime())) return 'Invalid Date';
-    return date.toLocaleString('en-ZA', { dateStyle: 'short', timeStyle: 'short' });
+    return formatDateFns(date, 'dd MMM yyyy, HH:mm');
 };
 
 

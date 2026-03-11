@@ -6,15 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Calculator } from 'lucide-react';
-
-const formatCurrency = (value: number) => {
-    if (typeof value !== 'number' || isNaN(value)) {
-        return 'R 0.00';
-    }
-    const parts = value.toFixed(2).toString().split('.');
-    const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-    return `R ${integerPart}.${parts[1]}`;
-};
+import { formatCurrency } from '@/lib/utils';
 
 export default function LoadCalculator() {
     const [distance, setDistance] = useState<number | string>('');

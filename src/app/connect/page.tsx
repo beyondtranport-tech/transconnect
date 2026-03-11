@@ -17,6 +17,7 @@ import { useConfig } from '@/hooks/use-config';
 import { useMemoFirebase } from '@/hooks/use-memo-firebase';
 import { useCollection, useFirestore } from "@/firebase";
 import { collection, query } from "firebase/firestore";
+import { formatCurrency } from "@/lib/utils";
 
 const { placeholderImages } = data;
 
@@ -27,14 +28,6 @@ const iconMap: { [key: string]: React.ElementType } = {
     "Rewards Plan": Gift,
     "Loyalty Plan": Heart,
     "Actions Plan": Zap,
-};
-
-const formatPrice = (price: number) => {
-    if (typeof price !== 'number' || isNaN(price)) return 'R 0';
-    // Manual formatting to avoid server-client inconsistencies with Intl.
-    const parts = price.toFixed(0).toString().split('.');
-    const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-    return `R ${integerPart}`;
 };
 
 export default function ConnectPage() {
@@ -208,7 +201,7 @@ export default function ConnectPage() {
                                         {isPricingLoading ? (
                                             <Loader2 className="h-5 w-5 animate-spin mt-2" />
                                         ) : (
-                                            <p className="mt-2 text-lg font-semibold text-primary">{formatPrice(plan.price)}/month</p>
+                                            <p className="mt-2 text-lg font-semibold text-primary">{formatCurrency(plan.price)}/month</p>
                                         )}
                                         <p className="mt-4 text-lg text-muted-foreground">
                                             {plan.description}
@@ -241,7 +234,7 @@ export default function ConnectPage() {
                                 <div>
                                     <div className="flex justify-between items-center mb-2">
                                         <Label htmlFor="spend-slider" className="text-lg font-medium">Monthly Spend</Label>
-                                        <span className="text-lg font-bold text-foreground">{formatPrice(monthlySpend)}</span>
+                                        <span className="text-lg font-bold text-foreground">{formatCurrency(monthlySpend)}</span>
                                     </div>
                                     <Slider
                                         id="spend-slider"
@@ -287,7 +280,7 @@ export default function ConnectPage() {
                                 <div className="border-t border-dashed pt-4">
                                     <div className="flex justify-between items-center">
                                         <p className="text-xl font-semibold">Your Potential Monthly Savings:</p>
-                                        <p className="text-3xl font-bold text-primary">{formatPrice(potentialSavings)}</p>
+                                        <p className="text-3xl font-bold text-primary">{formatCurrency(potentialSavings)}</p>
                                     </div>
                                 </div>
                             </div>

@@ -9,6 +9,7 @@ import Image from 'next/image';
 import data from '@/lib/placeholder-images.json';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { formatCurrency } from '@/lib/utils';
 
 const { placeholderImages } = data;
 const techImage = placeholderImages.find(p => p.id === "tech-home");
@@ -16,10 +17,8 @@ const techImage = placeholderImages.find(p => p.id === "tech-home");
 const formatPrice = (price?: number, perUnit = false, unit = "month") => {
     if (typeof price !== 'number' || isNaN(price)) return 'N/A';
     if (price === 0) return 'Free';
-    const parts = price.toFixed(0).toString().split('.');
-    const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-    const formatted = `R ${integerPart}`;
-    return perUnit ? `${formatted}/${unit}` : formatted;
+    const formatted = formatCurrency(price);
+    return perUnit ? `${formatted.split('.')[0]}/${unit}` : formatted;
 };
 
 export default function TechPage() {

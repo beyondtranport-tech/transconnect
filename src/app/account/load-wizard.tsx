@@ -20,13 +20,8 @@ import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { usePermissions } from '@/hooks/use-permissions';
 import { format } from 'date-fns';
+import { formatCurrency } from '@/lib/utils';
 
-const formatCurrency = (amount: number) => {
-    if (typeof amount !== 'number' || isNaN(amount)) return 'R 0.00';
-    const parts = amount.toFixed(2).toString().split('.');
-    const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-    return `R ${integerPart}.${parts[1]}`;
-};
 const formatDate = (date: any) => {
   if (!date) return 'N/A';
   const d = date.toDate ? date.toDate() : new Date(date);

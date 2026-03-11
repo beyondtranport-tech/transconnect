@@ -12,13 +12,7 @@ import EnquiriesCard from './enquiries-card';
 import QuotesCard from './quotes-card';
 import { cn } from '@/lib/utils';
 import { useMemoFirebase } from '@/hooks/use-memo-firebase';
-
-const formatCurrency = (amount: number) => {
-    if (typeof amount !== 'number' || isNaN(amount)) return 'R 0.00';
-    const parts = amount.toFixed(2).toString().split('.');
-    const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-    return `R ${integerPart}.${parts[1]}`;
-};
+import { formatCurrency } from '@/lib/utils';
 
 export default function AccountDashboard() {
     const { user, isUserLoading } = useUser();
@@ -172,7 +166,7 @@ export default function AccountDashboard() {
                          <Wallet className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{formatCurrency(companyData?.availableBalance || 0)}</div>
+                        <div className="text-2xl font-bold">{formatCurrency(companyData?.availableBalance)}</div>
                          <Button asChild variant="link" size="sm" className="p-0 h-auto">
                             <Link href="/account?view=wallet">Manage Wallet</Link>
                         </Button>

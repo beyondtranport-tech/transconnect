@@ -19,14 +19,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import PayServicesDialog from './pay-services-dialog';
-
-
-const formatCurrency = (amount: number) => {
-    if (typeof amount !== 'number' || isNaN(amount)) return 'R 0.00';
-    const parts = amount.toFixed(2).toString().split('.');
-    const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-    return `R ${integerPart}.${parts[1]}`;
-};
+import { formatCurrency } from '@/lib/utils';
 
 const formatDate = (timestamp: any) => {
     if (!timestamp) return 'N/A';
@@ -282,12 +275,12 @@ export default function WalletContent() {
                             {isCompanyLoading ? (
                                 <Loader2 className="h-6 w-6 animate-spin mt-1" />
                             ) : (
-                                <p className="text-3xl font-bold">{formatCurrency(companyData?.walletBalance || 0)}</p>
+                                <p className="text-3xl font-bold">{formatCurrency(companyData?.walletBalance)}</p>
                             )}
                         </div>
                         <div className="flex justify-between items-baseline text-orange-600">
                             <p className="text-sm">(-) Pending Balance</p>
-                            <p className="font-semibold">({formatCurrency(companyData?.pendingBalance || 0)})</p>
+                            <p className="font-semibold">({formatCurrency(companyData?.pendingBalance)})</p>
                         </div>
                         <div className="flex justify-between items-baseline border-t pt-2 mt-2">
                             <p className="text-lg font-bold text-primary">Available to Spend</p>
@@ -469,5 +462,3 @@ export default function WalletContent() {
         </Card>
     );
 }
-
-    

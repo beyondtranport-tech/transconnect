@@ -8,16 +8,12 @@ import { Badge } from '@/components/ui/badge';
 import { collection, query, orderBy } from 'firebase/firestore';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { format as formatDateFns } from 'date-fns';
+import { formatCurrency } from '@/lib/utils';
 
 const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
   pending_allocation: 'secondary',
   allocated: 'default',
   reversal: 'destructive',
-};
-
-const formatCurrency = (amount: number) => {
-    if (typeof amount !== 'number') return 'N/A';
-    return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
 };
 
 const formatDate = (dateValue: any) => {

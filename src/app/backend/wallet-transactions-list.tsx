@@ -22,6 +22,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { format as formatDateFns } from 'date-fns';
+import { formatCurrency } from '@/lib/utils';
 
 
 interface Company {
@@ -54,13 +55,6 @@ interface Transaction {
     date: any;
     memberName?: string;
 }
-
-const formatCurrency = (amount: number) => {
-    if (typeof amount !== 'number' || isNaN(amount)) return 'R 0.00';
-    const parts = amount.toFixed(2).toString().split('.');
-    const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-    return `R ${integerPart}.${parts[1]}`;
-};
 
 const formatDate = (dateValue: any) => {
     if (!dateValue) return 'N/A';

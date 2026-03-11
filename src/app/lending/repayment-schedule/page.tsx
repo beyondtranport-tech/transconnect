@@ -9,13 +9,7 @@ import { generateAmortizationSchedule } from '@/app/lending/loan-calculations';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Loader2 } from 'lucide-react';
-
-const formatCurrency = (value: number) => {
-    if (typeof value !== 'number' || isNaN(value)) return 'R 0.00';
-    const parts = value.toFixed(2).toString().split('.');
-    const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-    return `R ${integerPart}.${parts[1]}`;
-};
+import { formatCurrency } from '@/lib/utils';
 
 function RepaymentScheduleComponent() {
     const searchParams = useSearchParams();

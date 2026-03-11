@@ -7,11 +7,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFoo
 import { Loader2, DollarSign } from 'lucide-react';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
-
-const formatCurrency = (amount: number) => {
-    if (typeof amount !== 'number') return 'N/A';
-    return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
-};
+import { formatCurrency } from '@/lib/utils';
+import { format as formatDateFns } from 'date-fns';
 
 const formatDate = (dateValue: any) => {
     if (!dateValue) return 'N/A';
@@ -25,7 +22,7 @@ const formatDate = (dateValue: any) => {
     }
 
     if (isNaN(date.getTime())) return 'Invalid Date';
-    return date.toLocaleString('en-ZA', { dateStyle: 'long', timeStyle: 'short' });
+    return formatDateFns(date, 'dd MMM yyyy, HH:mm');
 };
 
 export default function PlatformTransactions() {
@@ -119,5 +116,3 @@ export default function PlatformTransactions() {
         </Card>
     );
 }
-
-    

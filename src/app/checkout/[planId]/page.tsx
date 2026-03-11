@@ -14,13 +14,7 @@ import Link from 'next/link';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useMemoFirebase } from '@/hooks/use-memo-firebase';
 import { format as formatDateFns } from 'date-fns';
-
-const formatPrice = (price: number) => {
-    if (typeof price !== 'number' || isNaN(price)) return 'R 0.00';
-    const parts = price.toFixed(2).toString().split('.');
-    const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-    return `R ${integerPart}.${parts[1]}`;
-};
+import { formatCurrency } from '@/lib/utils';
 
 function CheckoutComponent() {
   const router = useRouter();
@@ -151,11 +145,11 @@ function CheckoutComponent() {
         <div className="p-4 bg-muted/50 rounded-lg space-y-4">
             <div className="flex justify-between items-center">
                 <p className="font-medium">{plan.name} ({cycle === 'annual' ? 'Annual' : 'Monthly'})</p>
-                <p className="font-bold text-lg">{formatPrice(price)}</p>
+                <p className="font-bold text-lg">{formatCurrency(price)}</p>
             </div>
              <div className="flex justify-between items-center border-t pt-4">
                 <p className="font-medium">Your Wallet Balance</p>
-                <p className="font-bold text-lg">{formatPrice(companyData?.availableBalance || 0)}</p>
+                <p className="font-bold text-lg">{formatCurrency(companyData?.availableBalance)}</p>
             </div>
         </div>
         
@@ -171,7 +165,7 @@ function CheckoutComponent() {
 
         <Button onClick={handlePurchaseWithWallet} disabled={isProcessing || !hasSufficientFunds} className="w-full">
             {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wallet className="mr-2 h-4 w-4" />}
-            {hasSufficientFunds ? `Pay ${formatPrice(price)} with Wallet` : 'Insufficient Funds'}
+            {hasSufficientFunds ? `Pay ${formatCurrency(price)} with Wallet` : 'Insufficient Funds'}
         </Button>
       </CardContent>
        <CardFooter className="flex flex-col items-center justify-center text-xs text-muted-foreground pt-4">

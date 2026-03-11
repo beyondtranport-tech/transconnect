@@ -42,6 +42,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import Link from 'next/link';
+import { formatCurrency } from '@/lib/utils';
 
 async function performAdminAction(token: string, action: string, payload: any) {
     const response = await fetch('/api/admin', {
@@ -142,11 +143,6 @@ function FacilityActionMenu({ onEdit, onDelete }: { onEdit: () => void; onDelete
     </div>
   );
 }
-
-const formatCurrency = (value?: number) => {
-    if (typeof value !== 'number') return 'N/A';
-    return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(value);
-};
 
 const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
     pending: 'secondary',

@@ -10,6 +10,7 @@ import { Scale, Search, Clock, Hammer, ArrowRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import * as gtag from '@/lib/gtag';
+import { formatCurrency } from "@/lib/utils";
 
 const { placeholderImages } = data;
 
@@ -46,14 +47,6 @@ const featuredAuctions = [
         timeRemaining: '3d 2h',
     },
 ];
-
-const formatCurrency = (price: number) => {
-    if (typeof price !== 'number' || isNaN(price)) return 'R 0.00';
-    const parts = price.toFixed(2).toString().split('.');
-    const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-    return `R ${integerPart}.${parts[1]}`;
-};
-
 
 export default function SA_AuctionMallPage() {
 

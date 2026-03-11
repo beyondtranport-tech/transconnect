@@ -8,15 +8,9 @@ import { Database, AlertTriangle, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { generateAmortizationSchedule, type MonthlyPayment } from '@/app/lending/loan-calculations';
+import { formatCurrency } from '@/lib/utils';
 
 const LENDING_ASSUMPTIONS_KEY = 'adminLendingAssumptions_v1';
-
-const formatCurrency = (value: number) => {
-    if (typeof value !== 'number' || isNaN(value)) return 'R 0.00';
-    const parts = value.toFixed(2).toString().split('.');
-    const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-    return `R ${integerPart}.${parts[1]}`;
-};
 
 export default function LendingLoanBook() {
     const [assumptions, setAssumptions] = useState<any | null>(null);
