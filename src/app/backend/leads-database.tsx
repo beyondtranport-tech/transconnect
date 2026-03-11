@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useMemo, useEffect, Suspense, useCallback } from 'react';
@@ -7,7 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -27,7 +26,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { useCollection, useFirestore, getClientSideAuthToken, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore, getClientSideAuthToken } from '@/firebase';
+import { useMemoFirebase } from '@/hooks/use-config';
 import { collection, query } from 'firebase/firestore';
 import { Loader2, PlusCircle, Users, Edit, Trash2, Search, Check, AlertTriangle, Send, Copy } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -173,7 +173,7 @@ function InviteDialog({ lead, onInviteSent }: { lead: any; onInviteSent: () => v
             const firstName = nameParts[0] || '';
             const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
             
-            const constructedLink = `https://transconnect-v1-39578841-2a857.web.app/join?email=${encodeURIComponent(lead.email || '')}&firstName=${encodeURIComponent(firstName)}&lastName=${encodeURIComponent(lastName)}`;
+            const constructedLink = `${window.location.origin}/join?email=${encodeURIComponent(lead.email || '')}&firstName=${encodeURIComponent(firstName)}&lastName=${encodeURIComponent(lastName)}`;
             
             setInviteLink(constructedLink);
             onInviteSent();
@@ -456,7 +456,7 @@ function LeadsDatabaseComponent() {
                 <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will permanently delete the lead for {deleteLead?.companyName}.</AlertDialogDescription></AlertDialogHeader>
                 <AlertDialogFooter>
                     <AlertDialogCancel onClick={() => setDeleteLead(null)}>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDelete} variant="destructive">Delete</AlertDialogAction>
+                    <AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>

@@ -1,10 +1,11 @@
+
 'use client';
 
 import { useUser, getClientSideAuthToken } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, FileText, MoreVertical, Trash2, Edit, Eye } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { useState, useEffect, useCallback } from 'react';
@@ -247,7 +248,7 @@ export default function EnquiriesCard() {
                                                                 </AlertDialogHeader>
                                                                 <AlertDialogFooter>
                                                                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                                    <AlertDialogAction onClick={() => handleDelete(enquiry.id)} variant="destructive">
+                                                                    <AlertDialogAction onClick={() => handleDelete(enquiry.id)} className={buttonVariants({ variant: "destructive" })}>
                                                                         Delete
                                                                     </AlertDialogAction>
                                                                 </AlertDialogFooter>
