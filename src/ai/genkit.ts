@@ -1,8 +1,8 @@
 
-import { genkit, type GenkitPlugin } from 'genkit';
+import { genkit } from 'genkit';
 import { googleAI } from '@genkit-ai/google-genai';
 
-const plugins: GenkitPlugin[] = [];
+const plugins = [];
 
 // Conditionally initialize the googleAI plugin only if the API key exists.
 // This prevents the server from crashing on startup if the key is not set.
