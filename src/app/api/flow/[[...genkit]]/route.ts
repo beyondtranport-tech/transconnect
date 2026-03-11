@@ -1,3 +1,4 @@
+
 import { NextResponse } from 'next/server';
 
 // This API route is intentionally disabled to prevent build issues with its
