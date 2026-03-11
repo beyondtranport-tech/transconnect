@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview An AI-powered customer support agent.
@@ -59,7 +58,7 @@ const supportFlow = ai.defineFlow(
             system: systemPrompt,
             prompt: [
                 ...formattedHistory,
-                { role: 'user', content: [{ text: query }] }
+                { role: 'user', parts: [{ text: query }] }
             ],
         });
         
