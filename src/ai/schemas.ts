@@ -140,7 +140,7 @@ export type SocialLinkGeneratorOutput = z.infer<typeof SocialLinkGeneratorOutput
 export const SupportInputSchema = z.object({
   history: z.array(z.object({
     role: z.enum(['user', 'model']),
-    parts: z.array(z.object({ text: z.string() })),
+    content: z.array(z.object({ text: z.string() })),
   })).optional().describe('The conversation history prior to the latest query.'),
   query: z.string().min(1, "Query cannot be empty.").describe('The latest user question.'),
 });

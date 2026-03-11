@@ -52,13 +52,13 @@ const supportFlow = ai.defineFlow(
     try {
         const formattedHistory = history || [];
 
-        // Corrected: The conversation history and the new query are combined into the 'prompt' array.
+        // Corrected: Use 'messages' for chat history and pass the query as the last user message.
         const response = await ai.generate({
             model: 'gemini-1.5-flash',
             system: systemPrompt,
-            prompt: [
+            messages: [
                 ...formattedHistory,
-                { role: 'user', parts: [{ text: query }] }
+                { role: 'user', content: [{ text: query }] }
             ],
         });
         
