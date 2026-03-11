@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetFooter } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import * as React from "react";
-import { useUser, useAuth } from "@/firebase";
+import { useUser, useAuth, useFirestore, useDoc, useMemoFirebase } from "@/firebase";
 import { signOut } from "firebase/auth";
 import {
   DropdownMenu,
@@ -21,6 +21,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useCart } from "@/context/CartContext";
 import { Badge } from "@/components/ui/badge";
+import { doc } from 'firebase/firestore';
 
 const mainNavLinks = [
   { href: "/", label: "Home" },
@@ -46,8 +47,15 @@ export function Header() {
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
-  const { cartItems } = useCart();
-  
+  const { cartItems, isInitialLoad } = useCart();
+  const firestore = useFirestore();
+
+  const companyDocRef = useMemoFirebase(() => {
+    if (!firestore || !user?.companyId) return null;
+    return doc(firestore, 'companies', user.companyId);
+  }, [firestore, user?.companyId]);
+  const { data: companyData } = useDoc(companyDocRef);
+
   const handleSignOut = async () => {
     if (!auth) return;
     try {
@@ -67,6 +75,7 @@ export function Header() {
   };
 
   const isAdmin = user && (user.email === 'beyondtransport@gmail.com' || user.email === 'mkoton100@gmail.com');
+  const isWctaMember = user?.claims?.wcta === true || companyData?.referrerId === 'WCTA';
 
   const navItems = [
     { href: "/", label: "Home" },
@@ -133,7 +142,7 @@ export function Header() {
             <Button asChild variant="ghost" size="icon">
                 <Link href="/cart">
                     <ShoppingCart className="h-5 w-5" />
-                    {cartItems.length > 0 && (
+                    {!isInitialLoad && cartItems.length > 0 && (
                         <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 justify-center p-0">{cartItems.length}</Badge>
                     )}
                     <span className="sr-only">Shopping Cart</span>
@@ -164,14 +173,17 @@ export function Header() {
                     <DropdownMenuItem asChild>
                         <Link href="/account">My Account</Link>
                     </DropdownMenuItem>
-                    
-                    {/* Universal Links for Portals */}
-                    <DropdownMenuItem asChild>
-                        <Link href="/supply-chain">Supply Chain Portal</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                        <Link href="/port-logistics">Port Logistics Portal</Link>
-                    </DropdownMenuItem>
+
+                    {(isAdmin || isWctaMember) && (
+                        <>
+                            <DropdownMenuItem asChild>
+                                <Link href="/supply-chain">Supply Chain Portal</Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                                <Link href="/port-logistics">Port Logistics Portal</Link>
+                            </DropdownMenuItem>
+                        </>
+                    )}
                     
                     {isAdmin && (
                         <>
@@ -269,24 +281,29 @@ export function Header() {
                         <div className="h-10 w-full rounded-md bg-muted/50 animate-pulse" />
                     ) : user ? (
                         <div className='flex flex-col gap-2'>
-                             <Button asChild className="w-full justify-start">
-                                <Link href="/account" onClick={() => setIsSheetOpen(false)}>
-                                    <User className="mr-2 h-5 w-5" />
-                                    My Account
-                                </Link>
-                            </Button>
-                             <Button asChild className="w-full justify-start">
-                                <Link href="/supply-chain" onClick={() => setIsSheetOpen(false)}>
-                                    <Network className="mr-2 h-5 w-5" />
-                                    Supply Chain
-                                </Link>
-                            </Button>
-                            <Button asChild className="w-full justify-start">
-                                <Link href="/port-logistics" onClick={() => setIsSheetOpen(false)}>
-                                    <Ship className="mr-2 h-5 w-5" />
-                                    Port Logistics
-                                </Link>
-                            </Button>
+                             {(isAdmin || isWctaMember) ? (
+                                <>
+                                    <Button asChild className="w-full justify-start">
+                                        <Link href="/supply-chain" onClick={() => setIsSheetOpen(false)}>
+                                            <Network className="mr-2 h-5 w-5" />
+                                            Supply Chain
+                                        </Link>
+                                    </Button>
+                                    <Button asChild className="w-full justify-start">
+                                        <Link href="/port-logistics" onClick={() => setIsSheetOpen(false)}>
+                                            <Ship className="mr-2 h-5 w-5" />
+                                            Port Logistics
+                                        </Link>
+                                    </Button>
+                                </>
+                            ) : (
+                                 <Button asChild className="w-full justify-start">
+                                    <Link href="/account" onClick={() => setIsSheetOpen(false)}>
+                                        <User className="mr-2 h-5 w-5" />
+                                        My Account
+                                    </Link>
+                                </Button>
+                            )}
                              {isAdmin && (
                                 <>
                                     <Button asChild className="w-full justify-start" variant="secondary">
