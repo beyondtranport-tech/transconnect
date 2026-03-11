@@ -53,12 +53,14 @@ const supportFlow = ai.defineFlow(
     try {
         const formattedHistory = history || [];
 
-        // Corrected: Use separate top-level properties for system, history, and prompt.
+        // Corrected: The conversation history and the new query are combined into the 'prompt' array.
         const response = await ai.generate({
             model: 'gemini-1.5-flash',
             system: systemPrompt,
-            history: formattedHistory,
-            prompt: query,
+            prompt: [
+                ...formattedHistory,
+                { role: 'user', content: [{ text: query }] }
+            ],
         });
         
         const textResponse = response.text;
