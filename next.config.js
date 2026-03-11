@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  // Force server restart to fix CSS cache
+  // Forcing a server restart to clear the cache and fix styling.
   /* config options here */
   images: {
     remotePatterns: [
