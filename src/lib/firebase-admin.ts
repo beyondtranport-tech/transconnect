@@ -24,20 +24,16 @@ export function getAdminApp(): { app: App | null; error: string | null } {
 
   try {
     const serviceAccountJson = Buffer.from(encodedServiceAccount, 'base64').toString('utf8');
-    // Parse as a plain object first to inspect the actual keys from the JSON.
+    // **CORRECTION**: Parse as a generic object first, not as ServiceAccount directly.
     const serviceAccountObject = JSON.parse(serviceAccountJson);
 
-    // Validate the actual properties from the parsed JSON object.
+    // **CORRECTION**: Validate the properties that actually exist on the parsed JSON object.
     if (!serviceAccountObject.project_id || !serviceAccountObject.client_email || !serviceAccountObject.private_key) {
         throw new Error('Parsed service account is invalid or missing essential properties (project_id, client_email, private_key). Please re-generate it following the backend-setup.md guide.');
     }
     
     const projectId = serviceAccountObject.project_id;
 
-    // The storageBucket property is removed from here to prevent the main app initialization from
-    // hanging if there's a problem connecting to the bucket. This makes Auth and Firestore
-    // operations more reliable.
-    
     // The cert() function correctly handles the snake_case object.
     const app = initializeApp({
       credential: cert(serviceAccountObject as ServiceAccount),
