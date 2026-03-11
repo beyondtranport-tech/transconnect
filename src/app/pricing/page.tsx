@@ -7,7 +7,7 @@ import { Check, Star, Minus, Info } from 'lucide-react';
 import Link from 'next/link';
 import { useUser, useFirestore, useCollection } from '@/firebase';
 import { cn } from '@/lib/utils';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -16,30 +16,9 @@ import { collection, query } from 'firebase/firestore';
 import { Loader2 } from 'lucide-react';
 import { useMemoFirebase } from '@/hooks/use-memo-firebase';
 import featuresData from '@/lib/features.json';
-import { format as formatDateFns } from 'date-fns';
+import { formatCurrency, formatDateSafe } from '@/lib/utils';
 
 const { featureSections } = featuresData;
-
-const formatPrice = (price: number, perUnit = false, unit = "month") => {
-    if (typeof price !== 'number' || isNaN(price)) return 'R 0';
-    const parts = price.toFixed(0).toString().split('.');
-    const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-    const formatted = `R ${integerPart}`;
-
-    return perUnit ? `${formatted}/${unit}` : formatted;
-};
-
-const formatDate = (dateString: string | undefined) => {
-    if (!dateString) return null;
-    try {
-        const date = new Date(dateString);
-        if (isNaN(date.getTime())) return null;
-        return formatDateFns(date, 'dd MMMM yyyy');
-    } catch (e) {
-        return null;
-    }
-};
-
 
 const renderCheckmark = (isIncluded: boolean) => {
     if (isIncluded) {
@@ -52,6 +31,7 @@ export default function MembershipPage() {
   const { user } = useUser();
   const firestore = useFirestore();
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
+  const [offerStatuses, setOfferStatuses] = useState<Record<string, boolean>>({});
 
   const membershipsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -78,11 +58,32 @@ export default function MembershipPage() {
       });
   }, [tiers]);
   
+  // Client-side effect to determine if offers are active
+  useEffect(() => {
+    if (sortedTiers && sortedTiers.length > 0) {
+      const now = new Date();
+      const statuses: Record<string, boolean> = {};
+      sortedTiers.forEach(tier => {
+        const specialOfferDiscountPercent = tier.specialOfferDiscount || 0;
+        if (!specialOfferDiscountPercent || specialOfferDiscountPercent <= 0) {
+            statuses[tier.id] = false;
+            return;
+        }
+        const startDate = tier.specialOfferStartDate ? new Date(tier.specialOfferStartDate) : null;
+        const endDate = tier.specialOfferEndDate ? new Date(tier.specialOfferEndDate) : null;
+        let isActive = true;
+        if (startDate && now < startDate) isActive = false;
+        if (endDate && now > endDate) isActive = false;
+        statuses[tier.id] = isActive;
+      });
+      setOfferStatuses(statuses);
+    }
+  }, [sortedTiers]);
+
   const maxAnnualDiscount = useMemo(() => {
       if (!sortedTiers || sortedTiers.length === 0) {
           return 0;
       }
-      // Find the maximum annualDiscount among all tiers
       return Math.max(...sortedTiers.map(tier => tier.annualDiscount || 0));
   }, [sortedTiers]);
 
@@ -127,15 +128,7 @@ export default function MembershipPage() {
                   const annualDiscountPercent = tier.annualDiscount || 0;
                   const specialOfferDiscountPercent = tier.specialOfferDiscount || 0;
 
-                  const isOfferActiveNow = (() => {
-                      if (!specialOfferDiscountPercent || specialOfferDiscountPercent <= 0) return false;
-                      const now = new Date();
-                      const startDate = tier.specialOfferStartDate ? new Date(tier.specialOfferStartDate) : null;
-                      const endDate = tier.specialOfferEndDate ? new Date(tier.specialOfferEndDate) : null;
-                      if (startDate && now < startDate) return false;
-                      if (endDate && now > endDate) return false;
-                      return true;
-                  })();
+                  const isOfferActiveNow = offerStatuses[tier.id] || false;
 
                   const monthlyBeforeOffer = monthlyPrice;
                   const monthlyAfterOffer = isOfferActiveNow ? monthlyPrice * (1 - (specialOfferDiscountPercent / 100)) : monthlyPrice;
@@ -147,7 +140,7 @@ export default function MembershipPage() {
 
                   const stickerSavingAmount = billingCycle === 'annual' ? annualSavingAmount : monthlyBeforeOffer - monthlyAfterOffer;
 
-                  const formattedEndDate = formatDate(tier.specialOfferEndDate);
+                  const formattedEndDate = formatDateSafe(tier.specialOfferEndDate, "dd MMMM yyyy");
                   
                   return (
                     <Card key={tier.id} className={cn(
@@ -156,7 +149,7 @@ export default function MembershipPage() {
                     )}>
                         {isOfferActiveNow && stickerSavingAmount > 0 && (
                             <div className="absolute top-8 -left-4 bg-destructive text-destructive-foreground px-4 py-1.5 text-sm font-bold rounded-r-full shadow-lg transform -rotate-15 z-10">
-                                SAVE {formatPrice(stickerSavingAmount)}
+                                SAVE {formatCurrency(stickerSavingAmount)}
                             </div>
                         )}
                         {tier.isPopular && (
@@ -180,18 +173,18 @@ export default function MembershipPage() {
                                     {isOfferActiveNow && monthlyBeforeOffer > monthlyAfterOffer ? (
                                         <div className="text-center space-y-1">
                                             <p className="text-base text-muted-foreground">
-                                                Was <span className="line-through">{formatPrice(monthlyBeforeOffer, true)}</span>
+                                                Was <span className="line-through">{formatCurrency(monthlyBeforeOffer)}/month</span>
                                             </p>
                                             {(tier.specialOfferText || '').trim().length > 0 && <p className="text-lg font-semibold text-primary">{tier.specialOfferText}</p>}
                                             <div className="flex items-baseline justify-center gap-2 pt-1">
-                                                <span className="text-4xl font-extrabold tracking-tight">{formatPrice(monthlyAfterOffer)}</span>
+                                                <span className="text-4xl font-extrabold tracking-tight">{formatCurrency(monthlyAfterOffer)}</span>
                                                 <span className="text-muted-foreground self-end">/month</span>
                                             </div>
-                                            {formattedEndDate && <p className="text-xs text-muted-foreground">Valid until {formattedEndDate}</p>}
+                                            {formattedEndDate && formattedEndDate !== 'Invalid Date' && <p className="text-xs text-muted-foreground">Valid until {formattedEndDate}</p>}
                                         </div>
                                     ) : (
                                         <div className="flex items-baseline justify-center gap-2">
-                                            <span className="text-4xl font-extrabold tracking-tight">{formatPrice(monthlyPrice)}</span>
+                                            <span className="text-4xl font-extrabold tracking-tight">{formatCurrency(monthlyPrice)}</span>
                                             <span className="text-muted-foreground self-end">/month</span>
                                         </div>
                                     )}
@@ -201,18 +194,18 @@ export default function MembershipPage() {
                                 <div className="text-center space-y-1">
                                      {isOfferActiveNow && annualFullPrice > annualFinal && (
                                         <p className="text-base text-muted-foreground">
-                                            Was <span className="line-through">{formatPrice(annualFullPrice, true, 'year')}</span>
+                                            Was <span className="line-through">{formatCurrency(annualFullPrice)}/year</span>
                                         </p>
                                     )}
                                     {(tier.specialOfferText || '').trim().length > 0 && isOfferActiveNow && (
                                       <p className="text-lg font-semibold text-primary">{tier.specialOfferText}</p>
                                     )}
                                     <div className="flex items-baseline justify-center gap-2 pt-1">
-                                        <span className="text-4xl font-extrabold tracking-tight">{formatPrice(annualFinal)}</span>
+                                        <span className="text-4xl font-extrabold tracking-tight">{formatCurrency(annualFinal)}</span>
                                         <span className="text-muted-foreground self-end">/year</span>
                                     </div>
-                                    <p className="text-sm text-muted-foreground">which is {formatPrice(annualFinal / 12, true)}.</p>
-                                    {annualSavingAmount > 0 && <p className="text-sm font-semibold text-primary">You save {formatPrice(annualSavingAmount)} per year!</p>}
+                                    <p className="text-sm text-muted-foreground">which is {formatCurrency(annualFinal / 12)}/month.</p>
+                                    {annualSavingAmount > 0 && <p className="text-sm font-semibold text-primary">You save {formatCurrency(annualSavingAmount)} per year!</p>}
                                 </div>
                            )}
                         </div>
