@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
@@ -69,7 +70,7 @@ const formatDate = (dateValue: any) => {
     return formatDateFns(date, "dd MMM yyyy, HH:mm");
 };
 
-async function performAdminAction(token: string, action: string, payload: any) {
+async function performAdminAction(token: string, action: string, payload?: any) {
     const response = await fetch('/api/admin', {
         method: 'POST',
         headers: {
@@ -421,5 +422,3 @@ export default function WalletTransactionsList() {
         </div>
     );
 }
-
-    

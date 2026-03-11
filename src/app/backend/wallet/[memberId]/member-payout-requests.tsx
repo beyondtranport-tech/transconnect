@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
+import { format as formatDateFns } from 'date-fns';
 
 async function performAdminAction(token: string, action: string, payload: any) {
     const response = await fetch('/api/admin', {
@@ -29,8 +30,10 @@ async function performAdminAction(token: string, action: string, payload: any) {
 }
 
 const formatCurrency = (amount: number) => {
-    if (typeof amount !== 'number') return 'N/A';
-    return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
+    if (typeof amount !== 'number' || isNaN(amount)) return 'R 0.00';
+    const parts = amount.toFixed(2).toString().split('.');
+    const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    return `R ${integerPart}.${parts[1]}`;
 };
 
 const formatDate = (dateValue: any) => {
@@ -45,7 +48,7 @@ const formatDate = (dateValue: any) => {
     }
 
     if (isNaN(date.getTime())) return 'Invalid Date';
-    return date.toLocaleString('en-ZA', { dateStyle: 'short', timeStyle: 'short' });
+    return formatDateFns(date, "dd MMM yyyy, HH:mm");
 };
 
 
