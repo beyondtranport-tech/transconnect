@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { Suspense, useCallback, useEffect, useState } from 'react';
@@ -81,23 +82,34 @@ const generateDefaultValues = (months: number) => {
 function BudgetPageComponent() {
     const router = useRouter();
     const { toast } = useToast();
-    const [forecastMonths, setForecastMonths] = useState(36);
-    const [startMonth, setStartMonth] = useState(new Date().getMonth());
-    const [startYear, setStartYear] = useState(new Date().getFullYear());
+    const [forecastMonths, setForecastMonths] = useState<number | null>(null);
+    const [startMonth, setStartMonth] = useState<number | null>(null);
+    const [startYear, setStartYear] = useState<number | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
      useEffect(() => {
         if (typeof window !== 'undefined') {
             try {
                 const savedSettings = localStorage.getItem(SETUP_KEY);
+                let settings = {
+                    forecastMonths: 36,
+                    startMonth: new Date().getMonth(),
+                    startYear: new Date().getFullYear(),
+                };
                 if (savedSettings) {
                     const parsed = JSON.parse(savedSettings);
-                    setForecastMonths(parsed.forecastMonths || 36);
-                    setStartMonth(parsed.startMonth || new Date().getMonth());
-                    setStartYear(parsed.startYear || new Date().getFullYear());
+                    settings.forecastMonths = parsed.forecastMonths || 36;
+                    settings.startMonth = parsed.startMonth ?? new Date().getMonth();
+                    settings.startYear = parsed.startYear ?? new Date().getFullYear();
                 }
+                setForecastMonths(settings.forecastMonths);
+                setStartMonth(settings.startMonth);
+                setStartYear(settings.startYear);
             } catch (e) {
                 console.error("Could not parse financial setup settings for budget page.");
+                setForecastMonths(36);
+                setStartMonth(new Date().getMonth());
+                setStartYear(new Date().getFullYear());
             } finally {
                 setIsLoading(false);
             }
@@ -106,14 +118,13 @@ function BudgetPageComponent() {
 
     const form = useForm({
         defaultValues: useCallback(() => {
-            if (typeof window === 'undefined') {
-                return generateDefaultValues(forecastMonths);
+            if (typeof window === 'undefined' || forecastMonths === null) {
+                return generateDefaultValues(36);
             }
             try {
                 const savedData = localStorage.getItem(BUDGET_KEY);
                 if (savedData) {
                     const parsed = JSON.parse(savedData);
-                    // Check if month count matches between saved data and current settings
                     const firstAssumption = assumptionGroups.revenue[0].id;
                     const savedMonths = parsed.budgetInputs.revenue[firstAssumption]?.length || 0;
                     if (savedMonths === forecastMonths) {
@@ -126,17 +137,18 @@ function BudgetPageComponent() {
             return generateDefaultValues(forecastMonths);
         }, [forecastMonths])()
     });
+    
+    useEffect(() => {
+      if(forecastMonths !== null) {
+        form.reset(generateDefaultValues(forecastMonths));
+      }
+    }, [forecastMonths, form]);
 
     const { control, handleSubmit, reset } = form;
 
     const { fields: staffFields } = useFieldArray({
         control,
         name: "opexSalaries"
-    });
-
-    const monthHeaders = Array.from({ length: forecastMonths }, (_, i) => {
-        const date = new Date(startYear, startMonth + i);
-        return `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
     });
     
     const onSubmit = (data: any) => {
@@ -151,6 +163,7 @@ function BudgetPageComponent() {
     };
 
      const handleReset = () => {
+        if (forecastMonths === null) return;
         const defaults = generateDefaultValues(forecastMonths);
         reset(defaults);
         toast({
@@ -159,9 +172,14 @@ function BudgetPageComponent() {
         });
     };
 
-    if (isLoading) {
+    if (isLoading || forecastMonths === null || startMonth === null || startYear === null) {
         return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
     }
+
+    const monthHeaders = Array.from({ length: forecastMonths }, (_, i) => {
+        const date = new Date(startYear, startMonth + i);
+        return `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
+    });
 
     const renderAssumptionRows = (groupKey: keyof typeof assumptionGroups) => (
         assumptionGroups[groupKey].map((assumption) => (

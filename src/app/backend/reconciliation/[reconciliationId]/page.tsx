@@ -40,6 +40,12 @@ function ReconciliationReportComponent() {
     const { data: reconciliation, isLoading: isLoadingRecon } = useDoc(reconciliationRef);
     const [transactions, setTransactions] = useState<any[]>([]);
     const [isLoadingTxs, setIsLoadingTxs] = useState(true);
+    const [generatedAt, setGeneratedAt] = useState<string | null>(null);
+
+    useEffect(() => {
+        setGeneratedAt(new Date().toLocaleString());
+    }, []);
+
 
     useEffect(() => {
         async function fetchTransactions() {
@@ -180,7 +186,7 @@ function ReconciliationReportComponent() {
 
             </CardContent>
             <CardFooter className="bg-muted/50 p-4 border-t flex justify-end">
-                <p className="text-xs text-muted-foreground">Report Generated: {new Date().toLocaleString()}</p>
+                 <p className="text-xs text-muted-foreground">Report Generated: {generatedAt || 'Loading...'}</p>
             </CardFooter>
         </Card>
     )
