@@ -41,7 +41,7 @@ const companyFormSchema = z.object({
 type CompanyFormValues = z.infer<typeof companyFormSchema>;
 
 export default function CompanyContent() {
-  const { user, isUserLoading, forceRefreshUser } = useUser();
+  const { user, isUserLoading, forceRefresh } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
@@ -97,7 +97,7 @@ export default function CompanyContent() {
     if (!isUserLoading && user && !user.companyId) {
       setIsAwaitingCompanyId(true);
       pollInterval = setInterval(() => {
-        forceRefreshUser();
+        forceRefresh();
       }, 2000);
 
       timeout = setTimeout(() => {
@@ -123,7 +123,7 @@ export default function CompanyContent() {
       if (pollInterval) clearInterval(pollInterval);
       if (timeout) clearTimeout(timeout);
     };
-  }, [isUserLoading, user, user?.companyId, forceRefreshUser, toast]);
+  }, [isUserLoading, user, user?.companyId, forceRefresh, toast]);
 
   const onSubmit = async (values: CompanyFormValues) => {
     setIsSaving(true);
@@ -143,7 +143,7 @@ export default function CompanyContent() {
                 title: 'Company Info Updated',
                 description: 'Your company information has been saved.',
             });
-            forceRefreshUser();
+            forceRefresh();
             if (fromWallet) {
                 router.push('/account?view=wallet');
             }

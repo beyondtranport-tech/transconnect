@@ -33,7 +33,7 @@ const profileFormSchema = z.object({
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
 export default function ProfileContent() {
-  const { user, isUserLoading, forceRefresh: forceRefreshUser } = useUser();
+  const { user, isUserLoading, forceRefresh } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
@@ -85,7 +85,7 @@ export default function ProfileContent() {
           title: 'Profile Updated',
           description: 'Your personal information has been saved.',
         });
-        forceRefreshUser();
+        forceRefresh();
         router.push('/account?view=company');
       })
       .catch((serverError) => {
