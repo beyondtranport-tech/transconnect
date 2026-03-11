@@ -24,8 +24,8 @@ export function getAdminApp(): { app: App | null; error: string | null } {
 
   try {
     const serviceAccountJson = Buffer.from(encodedServiceAccount, 'base64').toString('utf8');
-    // **CORRECTION**: Parse as a generic object first, not as ServiceAccount directly.
-    const serviceAccountObject = JSON.parse(serviceAccountJson);
+    // **CORRECTION**: Parse into a generic object to avoid type mismatches.
+    const serviceAccountObject: { [key: string]: any } = JSON.parse(serviceAccountJson);
 
     // **CORRECTION**: Validate the properties that actually exist on the parsed JSON object.
     if (!serviceAccountObject.project_id || !serviceAccountObject.client_email || !serviceAccountObject.private_key) {
@@ -34,9 +34,10 @@ export function getAdminApp(): { app: App | null; error: string | null } {
     
     const projectId = serviceAccountObject.project_id;
 
-    // The cert() function correctly handles the snake_case object.
+    // The cert() function correctly handles the raw JSON object.
+    // No `as ServiceAccount` cast is needed here, which was the source of the error.
     const app = initializeApp({
-      credential: cert(serviceAccountObject as ServiceAccount),
+      credential: cert(serviceAccountObject),
       projectId: projectId,
     }, ADMIN_APP_NAME);
 
