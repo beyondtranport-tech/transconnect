@@ -38,6 +38,13 @@ async function fetchFromAdminAPI(token: string, action: string, payload?: any) {
     return result;
 }
 
+const formatDate = (dateValue: any) => {
+    if (!dateValue) return 'N/A';
+    const date = new Date(dateValue);
+    if (isNaN(date.getTime())) return 'Invalid Date';
+    return formatDateFns(date, 'dd MMM yyyy');
+};
+
 
 export default function UsersList() {
     const [users, setUsers] = useState<any[]>([]);
@@ -107,12 +114,12 @@ export default function UsersList() {
         { 
           accessorKey: 'creationTime', 
           header: 'Date Created', 
-          cell: ({row}) => formatDateFns(new Date(row.original.creationTime), 'dd MMM yyyy')
+          cell: ({row}) => formatDate(row.original.creationTime)
         },
         { 
           accessorKey: 'lastSignInTime', 
           header: 'Last Sign-In', 
-          cell: ({row}) => formatDateFns(new Date(row.original.lastSignInTime), 'dd MMM yyyy')
+          cell: ({row}) => formatDate(row.original.lastSignInTime)
         },
         {
           id: 'actions',
@@ -160,3 +167,5 @@ export default function UsersList() {
         </Card>
     );
 }
+
+    

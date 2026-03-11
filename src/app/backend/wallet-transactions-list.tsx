@@ -64,15 +64,7 @@ const formatCurrency = (amount: number) => {
 
 const formatDate = (dateValue: any) => {
     if (!dateValue) return 'N/A';
-    let date;
-    if (typeof dateValue === 'string') {
-        date = new Date(dateValue);
-    } else if (dateValue.toDate && typeof dateValue.toDate === 'function') {
-        date = dateValue.toDate();
-    } else {
-        return 'N/A';
-    }
-
+    const date = dateValue.toDate ? dateValue.toDate() : new Date(dateValue);
     if (isNaN(date.getTime())) return 'Invalid Date';
     return formatDateFns(date, "dd MMM yyyy, HH:mm");
 };
@@ -429,3 +421,5 @@ export default function WalletTransactionsList() {
         </div>
     );
 }
+
+    

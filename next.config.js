@@ -1,7 +1,8 @@
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  // Forcing one final, definitive server restart to clear any and all corrupted Next.js cache.
+  // Forcing one FINAL, DEFINITIVE server restart to clear any and all corrupted Next.js cache.
   /* config options here */
   images: {
     remotePatterns: [
@@ -40,3 +41,5 @@ const nextConfig = {
 };
 
 module.exports = nextConfig;
+
+    
