@@ -15,6 +15,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import Link from "next/link";
 import { collection, query, orderBy } from "firebase/firestore";
 import { useRouter, useSearchParams } from "next/navigation";
+import { format as formatDateFns } from 'date-fns';
+
+const formatDate = (timestamp: any) => {
+    if (!timestamp) return 'N/A';
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    if (isNaN(date.getTime())) return 'Invalid Date';
+    return formatDateFns(date, "dd MMM yyyy, HH:mm");
+}
 
 
 const manualAdjustmentTemplate = {
@@ -167,13 +175,6 @@ function ReconciliationDashboard() {
         };
         reader.readAsText(file);
     };
-    
-     const formatDate = (timestamp: any) => {
-        if (!timestamp) return 'N/A';
-        const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-        return date.toLocaleString('en-ZA', { dateStyle: 'medium', timeStyle: 'short'});
-    }
-
 
     return (
         <div className="w-full space-y-8">
