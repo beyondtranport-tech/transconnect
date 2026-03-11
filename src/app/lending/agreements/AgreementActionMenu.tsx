@@ -97,7 +97,7 @@ export function AgreementActionMenu({ agreement, onUpdate }: { agreement: any; o
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel onClick={() => setActionToConfirm(null)}>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleAction} className={buttonVariants({ variant: actionToConfirm === 'delete' ? 'destructive' : 'default' })}>Yes, proceed</AlertDialogAction>
+                        <AlertDialogAction onClick={handleAction} className={actionToConfirm === 'delete' ? buttonVariants({ variant: "destructive" }) : ''}>Yes, proceed</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>

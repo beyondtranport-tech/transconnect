@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -6,9 +7,9 @@ import { Loader2, Activity, User, Building, FileText, ShoppingCart, Users, Downl
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
-import { formatDistanceToNow } from 'date-fns';
 import { useUser, getClientSideAuthToken } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
+import { formatDateSafe } from '@/lib/utils';
 
 const getSubjectInfo = (log: any) => {
     const pathSegments = log.collectionPath.split('/');
@@ -115,18 +116,9 @@ export default function ActivityFeed() {
         }
     };
     
-    const formatDate = (isoString?: string) => {
-        if (!isoString) return 'N/A';
-        try {
-            return formatDistanceToNow(new Date(isoString), { addSuffix: true });
-        } catch {
-            return 'Invalid Date';
-        }
-    };
-
-     const handleExport = () => {
+    const handleExport = () => {
         const dataToExport = logs.map(log => ({
-            Timestamp: formatDate(log.timestamp),
+            Timestamp: formatDateSafe(log.timestamp, "dd MMM yyyy, HH:mm"),
             User: log.userName || 'A user',
             Action: log.action,
             Subject: getSubjectInfo(log).name,
@@ -197,7 +189,7 @@ export default function ActivityFeed() {
                                                     {' '}{actionInfo.text}{' '}
                                                     <Link href={subject.href} className="font-semibold hover:underline">{subject.name}</Link>
                                                 </p>
-                                                <p className="text-xs text-muted-foreground">{formatDate(log.timestamp)}</p>
+                                                <p className="text-xs text-muted-foreground">{formatDateSafe(log.timestamp, "dd MMM yyyy, HH:mm")}</p>
                                             </div>
                                             <Badge variant={actionInfo.color} className="capitalize">{log.action}</Badge>
                                         </div>

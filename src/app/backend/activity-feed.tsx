@@ -8,7 +8,7 @@ import { getClientSideAuthToken } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDateSafe } from '@/lib/utils';
 
 async function fetchFromAdminAPI(token: string, action: string, payload?: any) {
     const response = await fetch('/api/admin', {
@@ -75,15 +75,6 @@ export default function ActivityFeed() {
         loadLogs();
     }, [loadLogs]);
     
-    const formatDate = (isoString?: string) => {
-        if (!isoString) return 'N/A';
-        try {
-            return formatDistanceToNow(new Date(isoString), { addSuffix: true });
-        } catch {
-            return 'Invalid Date';
-        }
-    };
-    
     const actionConfig: { [key: string]: { color: 'default' | 'destructive' | 'secondary' | 'outline', text: string } } = {
         create: { color: 'default', text: 'created a new' },
         update: { color: 'secondary', text: 'updated the' },
@@ -140,7 +131,7 @@ export default function ActivityFeed() {
                                                     {' for '}
                                                     <span className="font-semibold text-primary">{log.companyName || 'N/A'}</span>
                                                 </p>
-                                                <p className="text-xs text-muted-foreground">{formatDate(log.timestamp)}</p>
+                                                <p className="text-xs text-muted-foreground">{formatDateSafe(log.timestamp, "dd MMM yyyy, HH:mm")}</p>
                                             </div>
                                             <Badge variant={actionInfo.color} className="capitalize">{log.action}</Badge>
                                         </div>
