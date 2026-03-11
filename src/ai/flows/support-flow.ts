@@ -53,11 +53,12 @@ const supportFlow = ai.defineFlow(
     try {
         const formattedHistory = history || [];
 
-        // Correctly combine history and the new prompt into a single array
+        // CORRECTED: Combine system prompt, history, and the new query into a single prompt array.
+        // The `system` property at the top level was causing a type conflict with this structure.
         const response = await ai.generate({
             model: 'gemini-1.5-flash',
-            system: systemPrompt,
             prompt: [
+                { role: 'system', parts: [{ text: systemPrompt }] },
                 ...formattedHistory,
                 { role: 'user', parts: [{ text: query }] }
             ],
