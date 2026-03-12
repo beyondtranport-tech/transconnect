@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Suspense, useEffect, useState, useCallback, useMemo } from 'react';
@@ -43,7 +42,7 @@ function ClientDetailPage() {
         { accessorKey: 'id', header: 'Agreement ID' },
         { accessorKey: 'type', header: 'Type' },
         { accessorKey: 'status', header: 'Status', cell: ({row}) => <Badge>{row.original.status}</Badge> },
-        { accessorKey: 'amount', header: 'Amount', cell: ({row}) => formatCurrency(row.original.amount) },
+        { accessorKey: 'totalAdvanced', header: 'Amount', cell: ({row}) => formatCurrency(row.original.totalAdvanced) },
         { id: 'actions', header: 'Actions', cell: ({row}) => <AgreementActionMenu agreement={row.original} onUpdate={refreshAgreements} /> },
     ], [refreshAgreements]);
 
