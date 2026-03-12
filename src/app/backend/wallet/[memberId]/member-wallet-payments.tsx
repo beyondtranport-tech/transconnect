@@ -61,7 +61,11 @@ export default function MemberWalletPayments({ companyId, onUpdate }: { companyI
 
     useEffect(() => {
         if (fetchedPayments) {
-            setPayments(fetchedPayments.filter(p => p.status === 'pending').sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+            setPayments(fetchedPayments.filter(p => p.status === 'pending').sort((a,b) => {
+                const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+                const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+                return dateB - dateA;
+            }));
         }
         setIsLoading(false);
     }, [fetchedPayments]);

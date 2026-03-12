@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useMemo, useState, useEffect } from 'react';
@@ -8,7 +7,7 @@ import { Database, AlertTriangle, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { generateAmortizationSchedule, type MonthlyPayment } from '@/app/lending/loan-calculations';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, formatNumber } from '@/lib/utils';
 
 const LENDING_ASSUMPTIONS_KEY = 'adminLendingAssumptions_v1';
 
@@ -17,7 +16,7 @@ export default function LendingLoanBook() {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        // This effect runs only on the client side after the component mounts
+        setIsLoading(true);
         try {
             const savedData = localStorage.getItem(LENDING_ASSUMPTIONS_KEY);
             if (savedData) {
@@ -25,6 +24,7 @@ export default function LendingLoanBook() {
             }
         } catch (e) {
             console.error("Failed to parse lending assumptions:", e);
+            setAssumptions(null);
         }
         setIsLoading(false);
     }, []);
@@ -132,7 +132,7 @@ export default function LendingLoanBook() {
                 </CardHeader>
                 <CardContent className="text-center">
                      <Button asChild variant="outline">
-                        <Link href="/backend?view=lending-assumptions">Go to Lending Assumptions</Link>
+                        <Link href="/lending?view=assumptions">Go to Lending Assumptions</Link>
                     </Button>
                 </CardContent>
             </Card>

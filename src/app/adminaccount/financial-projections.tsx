@@ -1,7 +1,6 @@
-
 'use client';
 
-import React, { useMemo, useState, useCallback, Suspense } from 'react';
+import React, { useMemo, useState, useCallback, Suspense, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -17,6 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { Slider } from '@/components/ui/slider';
 
 const formatCurrency = (value: number) => {
     if (typeof value !== 'number' || isNaN(value)) return 'R 0';
@@ -141,15 +141,24 @@ function calculateProjections(inputs: FormValues) {
 
 function FinancialProjectionsComponent() {
     const { toast } = useToast();
+    const [isClient, setIsClient] = useState(false);
     
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
-        defaultValues: useCallback(() => {
-             if (typeof window === 'undefined') return defaultValues;
-            const saved = localStorage.getItem(PROJECTIONS_KEY);
-            return saved ? JSON.parse(saved) : defaultValues;
-        }, [])()
+        defaultValues,
     });
+
+    useEffect(() => {
+        setIsClient(true);
+        try {
+            const saved = localStorage.getItem(PROJECTIONS_KEY);
+            if (saved) {
+                form.reset(JSON.parse(saved));
+            }
+        } catch (error) {
+            console.error("Could not parse saved projection data.");
+        }
+    }, [form]);
 
     const { control, handleSubmit, watch, reset } = form;
     const watchedValues = watch();
@@ -213,6 +222,10 @@ function FinancialProjectionsComponent() {
             </FormItem>
         )} />
     );
+
+    if (!isClient) {
+        return <div className="flex justify-center items-center h-64"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>
+    }
 
     return (
         <div className="space-y-8">

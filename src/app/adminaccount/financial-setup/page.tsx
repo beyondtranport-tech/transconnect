@@ -1,7 +1,6 @@
-
 'use client';
 
-import React, { useCallback, useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import { Settings, Save, Loader2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useToast } from '@/hooks/use-toast';
-import { useRouter } from 'next/navigation';
 import { Form, FormControl, FormField, FormItem } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
@@ -18,27 +16,27 @@ const SETUP_KEY = 'accountFinancialSetup_v1';
 
 
 export default function FinancialSetupPage() {
-    const router = useRouter();
     const { toast } = useToast();
-    const [isLoading, setIsLoading] = useState(true);
+    const [isClient, setIsClient] = useState(false);
 
     const form = useForm({
         defaultValues: {
-            startMonth: 0,
-            startYear: 2024,
+            startMonth: new Date().getMonth(),
+            startYear: new Date().getFullYear(),
             forecastMonths: 36,
         }
     });
 
     useEffect(() => {
-        const saved = localStorage.getItem(SETUP_KEY);
-        const initialValues = saved ? JSON.parse(saved) : {
-            startMonth: new Date().getMonth(),
-            startYear: new Date().getFullYear(),
-            forecastMonths: 36,
-        };
-        form.reset(initialValues);
-        setIsLoading(false);
+        setIsClient(true);
+        try {
+            const saved = localStorage.getItem(SETUP_KEY);
+            if (saved) {
+                form.reset(JSON.parse(saved));
+            }
+        } catch (e) {
+            console.error("Could not parse financial setup settings.");
+        }
     }, [form]);
 
     const { control, handleSubmit } = form;
@@ -51,7 +49,7 @@ export default function FinancialSetupPage() {
         });
     };
 
-    if (isLoading) {
+    if (!isClient) {
         return (
             <Card className="max-w-lg">
                 <CardHeader>

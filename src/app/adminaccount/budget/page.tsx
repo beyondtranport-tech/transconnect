@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { Suspense, useCallback, useEffect, useState } from 'react';
@@ -97,77 +96,57 @@ type FormValues = {
 function BudgetPageComponent() {
     const router = useRouter();
     const { toast } = useToast();
-    const [forecastMonths, setForecastMonths] = useState(36);
-    const [startMonth, setStartMonth] = useState(new Date().getMonth());
-    const [startYear, setStartYear] = useState(new Date().getFullYear());
-    const [isLoading, setIsLoading] = useState(true);
+    const [isClient, setIsClient] = useState(false);
+    const [settings, setSettings] = useState<{ forecastMonths: number; startMonth: number; startYear: number } | null>(null);
 
-     useEffect(() => {
-        if (typeof window !== 'undefined') {
-            try {
-                const savedSettings = localStorage.getItem(SETUP_KEY);
-                if (savedSettings) {
-                    const parsed = JSON.parse(savedSettings);
-                    setForecastMonths(parsed.forecastMonths || 36);
-                    setStartMonth(parsed.startMonth || new Date().getMonth());
-                    setStartYear(parsed.startYear || new Date().getFullYear());
-                }
-            } catch (e) {
-                console.error("Could not parse financial setup settings for budget page.");
-            } finally {
-                setIsLoading(false);
-            }
+    const form = useForm<FormValues>();
+
+    useEffect(() => {
+        setIsClient(true);
+        try {
+            const savedSettings = localStorage.getItem(SETUP_KEY);
+            const localSettings = savedSettings ? JSON.parse(savedSettings) : {
+                forecastMonths: 36,
+                startMonth: new Date().getMonth(),
+                startYear: new Date().getFullYear(),
+            };
+            setSettings(localSettings);
+            
+            const savedData = localStorage.getItem(BUDGET_KEY);
+            const savedMonths = savedData ? JSON.parse(savedData).budgetInputs.revenue.membershipFees.length : 0;
+            
+            const initialData = (savedData && savedMonths === localSettings.forecastMonths) 
+                ? JSON.parse(savedData) 
+                : generateDefaultValues(localSettings.forecastMonths);
+
+            form.reset(initialData);
+        } catch (e) {
+            console.error("Failed to parse saved budget data.", e);
+            const defaultSettings = { forecastMonths: 36, startMonth: new Date().getMonth(), startYear: new Date().getFullYear() };
+            setSettings(defaultSettings);
+            form.reset(generateDefaultValues(defaultSettings.forecastMonths));
         }
-    }, []);
-
-    const form = useForm<FormValues>({
-        defaultValues: useCallback(() => {
-            if (typeof window === 'undefined') {
-                return generateDefaultValues(forecastMonths);
-            }
-            try {
-                const savedData = localStorage.getItem(BUDGET_KEY);
-                if (savedData) {
-                    const parsed = JSON.parse(savedData);
-                    // Check if month count matches between saved data and current settings
-                    const firstAssumption = assumptionGroups.revenue[0].id;
-                    const savedMonths = parsed.budgetInputs.revenue[firstAssumption]?.length || 0;
-                    if (savedMonths === forecastMonths) {
-                        return parsed;
-                    }
-                }
-            } catch (e) {
-                console.error("Failed to parse saved budget data.", e);
-            }
-            return generateDefaultValues(forecastMonths);
-        }, [forecastMonths])()
-    });
-
+    }, [form]);
+    
     const { control, handleSubmit, reset } = form;
 
     const { fields: staffFields } = useFieldArray({
         control,
         name: "opexSalaries"
     });
-
-    const monthHeaders = Array.from({ length: forecastMonths }, (_, i) => {
-        const date = new Date(startYear, startMonth + i);
-        return `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
-    });
     
     const onSubmit = (data: any) => {
         localStorage.setItem(BUDGET_KEY, JSON.stringify(data));
-        
         toast({
             title: "Budget Saved!",
             description: "Your monthly assumptions have been saved. Redirecting to the forecast.",
         });
-
         router.push(`/adminaccount?view=income-statement`);
     };
 
      const handleReset = () => {
-        const defaults = generateDefaultValues(forecastMonths);
+        if (!settings) return;
+        const defaults = generateDefaultValues(settings.forecastMonths);
         reset(defaults);
         toast({
             title: 'Budget Reset',
@@ -175,9 +154,15 @@ function BudgetPageComponent() {
         });
     };
 
-    if (isLoading) {
+    if (!isClient || !settings) {
         return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
     }
+
+    const { forecastMonths, startMonth, startYear } = settings;
+    const monthHeaders = Array.from({ length: forecastMonths }, (_, i) => {
+        const date = new Date(startYear, startMonth + i);
+        return `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
+    });
 
     const renderAssumptionRows = (groupKey: keyof typeof assumptionGroups) => (
         assumptionGroups[groupKey].map((assumption) => (

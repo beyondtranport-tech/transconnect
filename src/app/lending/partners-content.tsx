@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
@@ -11,6 +10,7 @@ import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { useRouter } from 'next/navigation';
 import { PartnerActionMenu } from './partners/PartnerActionMenu';
+import { formatCurrency } from '@/lib/utils';
 
 async function performAdminAction(token: string, action: string, payload: any) {
     const response = await fetch('/api/admin', {
@@ -43,7 +43,6 @@ function PartnerListComponent() {
   useEffect(() => {
     const loadData = async () => {
         setIsLoading(true);
-        setError(null);
         try {
           const token = await getClientSideAuthToken();
           if (!token) throw new Error("Auth failed.");
@@ -61,16 +60,13 @@ function PartnerListComponent() {
   const columns: ColumnDef<any>[] = useMemo(() => [
     { accessorKey: 'name', header: 'Name' },
     { accessorKey: 'type', header: 'Type', cell: ({ row }) => <Badge className="capitalize">{row.original.type}</Badge> },
-    { accessorKey: 'globalFacilityLimit', header: 'Facility Limit', cell: ({ row }) => `R ${Number(row.original.globalFacilityLimit || 0).toLocaleString()}` },
+    { accessorKey: 'globalFacilityLimit', header: 'Facility Limit', cell: ({ row }) => formatCurrency(row.original.globalFacilityLimit || 0) },
     { id: 'actions', cell: ({ row }) => <PartnerActionMenu partner={row.original} onUpdate={forceRefresh} /> },
   ], [forceRefresh]);
 
   return (
       <Card>
-        <CardHeader className="flex-row justify-between items-center">
-            <CardTitle className="flex items-center gap-2"><Handshake />Lending Partners</CardTitle>
-            <Button onClick={() => router.push('/lending/partners/new')}><PlusCircle className="mr-2"/>Add Partner</Button>
-        </CardHeader>
+        <CardHeader className="flex-row justify-between items-center"><CardTitle className="flex items-center gap-2"><Handshake />Lending Partners</CardTitle><Button onClick={() => router.push('/lending/partners/new')}><PlusCircle className="mr-2"/>Add Partner</Button></CardHeader>
         <CardContent>
           {isLoading ? <div className="flex justify-center p-8"><Loader2 className="animate-spin" /></div> : error ? <div className="text-destructive">{error}</div> : <DataTable columns={columns} data={partners} />}
         </CardContent>

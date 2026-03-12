@@ -1,7 +1,6 @@
-
 'use client';
 
-import React, { useMemo, Suspense } from 'react';
+import React, { useMemo, Suspense, useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DollarSign, AlertTriangle, Loader2 } from 'lucide-react';
@@ -15,8 +14,11 @@ const formatCurrency = (value: number) => {
 };
 
 function TurnoverComponent() {
-    const { salesInputs, budgetData, settings, targets } = useMemo(() => {
-        if (typeof window === 'undefined') return { salesInputs: null, budgetData: null, settings: null, targets: null };
+    const [isClient, setIsClient] = useState(false);
+    const [data, setData] = useState<any>(null);
+
+    useEffect(() => {
+        setIsClient(true);
         try {
             const settingsString = localStorage.getItem('accountFinancialSetup_v1');
             const budgetString = localStorage.getItem('accountBudgetAssumptions_v2');
@@ -32,27 +34,27 @@ function TurnoverComponent() {
 
             const targets = targetsString ? JSON.parse(targetsString) : null;
 
-            return { 
+            setData({ 
                 salesInputs: salesRoadmap,
                 budgetData: budget, 
                 settings,
                 targets,
-            };
+            });
         } catch (e) {
             console.error("Failed to parse forecast data:", e);
-            return { salesInputs: null, budgetData: null, settings: null, targets: null };
+            setData(null);
         }
     }, []);
     
     const { totalProjection } = useMemo(() => {
-        if (!salesInputs || !settings) return { totalProjection: [] };
-        return salesRoadmapLogic(settings, salesInputs);
-    }, [salesInputs, settings]);
+        if (!isClient || !data?.salesInputs || !data?.settings) return { totalProjection: [] };
+        return salesRoadmapLogic(data.settings, data.salesInputs);
+    }, [isClient, data]);
 
     const forecastData = useMemo(() => {
-        if (totalProjection.length === 0 || !budgetData || !targets) return [];
-        return budgetLogic(totalProjection, budgetData, targets);
-    }, [totalProjection, budgetData, targets]);
+        if (totalProjection.length === 0 || !data?.budgetData || !data?.targets) return [];
+        return budgetLogic(totalProjection, data.budgetData, data.targets);
+    }, [totalProjection, data]);
 
      const yearlyTotals = useMemo(() => {
         const totals: Record<string, any> = {};
@@ -73,7 +75,11 @@ function TurnoverComponent() {
         return totals;
     }, [forecastData]);
 
-    if (!settings || !salesInputs || !budgetData || !targets || forecastData.length === 0) {
+    if (!isClient) {
+        return <div className="flex justify-center items-center h-64"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
+    }
+
+    if (!data || !data.settings || !data.salesInputs || !data.budgetData || !data.targets || forecastData.length === 0) {
         return (
             <Card className="w-full max-w-2xl mx-auto">
                 <CardHeader className="text-center">

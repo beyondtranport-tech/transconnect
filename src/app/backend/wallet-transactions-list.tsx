@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
@@ -7,8 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFoo
 import { Loader2, DollarSign, Clock, ArrowRight, CheckCircle, Send, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { useCollection, useFirestore, useMemoFirebase, getClientSideAuthToken } from '@/firebase';
-import { collection, query } from 'firebase/firestore';
+import { getClientSideAuthToken } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
@@ -22,6 +20,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { formatCurrency, formatDateSafe } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 
 
 interface Company {
@@ -74,7 +73,6 @@ async function performAdminAction(token: string, action: string, payload?: any) 
 
 
 export default function WalletTransactionsList() {
-    const firestore = useFirestore();
     const { toast } = useToast();
     const [isProcessing, setIsProcessing] = useState<string | null>(null);
 
@@ -93,8 +91,8 @@ export default function WalletTransactionsList() {
     const [isLoadingTransactions, setIsLoadingTransactions] = useState(true);
     const [transactionsError, setTransactionsError] = useState<string | null>(null);
 
-    const companiesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'companies')) : null, [firestore]);
-    const { data: companies, isLoading: isLoadingCompanies } = useCollection<Company>(companiesQuery);
+    const [companies, setCompanies] = useState<Company[]>([]);
+    const [isLoadingCompanies, setIsLoadingCompanies] = useState(true);
     
     const companyMap = useMemo(() => {
         if (!companies) return new Map();
@@ -152,6 +150,20 @@ export default function WalletTransactionsList() {
     const refreshTransactions = useCallback(() => fetchData('getWalletTransactions', setAllocatedTransactions, setIsLoadingTransactions, setTransactionsError), [fetchData]);
     
     useEffect(() => {
+        const loadInitial = async () => {
+            setIsLoadingCompanies(true);
+            try {
+                const token = await getClientSideAuthToken();
+                if (!token) throw new Error("Auth failed");
+                const companiesResult = await performAdminAction(token, 'getMembers', {});
+                setCompanies(companiesResult.data || []);
+            } catch (e: any) {
+                // handle error
+            } finally {
+                setIsLoadingCompanies(false);
+            }
+        };
+        loadInitial();
         refreshPayouts();
         refreshPayments();
         refreshTransactions();

@@ -10,6 +10,7 @@ import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { ClientActionMenu } from '@/app/lending/client-action-menu';
 import { useRouter } from 'next/navigation';
+import { formatCurrency } from '@/lib/utils';
 
 async function performAdminAction(token: string, action: string, payload: any) {
     const response = await fetch('/api/admin', {
@@ -17,8 +18,11 @@ async function performAdminAction(token: string, action: string, payload: any) {
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ action, payload }),
     });
+
     const result = await response.json();
-    if (!response.ok || !result.success) throw new Error(result.error || `API Error for action: ${action}`);
+    if (!response.ok || !result.success) {
+        throw new Error(result.error || `API Error for action: ${action}`);
+    }
     return result;
 }
 
@@ -51,7 +55,7 @@ function ClientListComponent() {
   const columns: ColumnDef<any>[] = useMemo(() => [
     { accessorKey: 'name', header: 'Name' },
     { accessorKey: 'status', header: 'Status', cell: ({ row }) => <Badge className="capitalize">{row.original.status}</Badge> },
-    { accessorKey: 'globalFacilityLimit', header: 'Facility Limit', cell: ({ row }) => `R ${Number(row.original.globalFacilityLimit || 0).toLocaleString()}` },
+    { accessorKey: 'globalFacilityLimit', header: 'Facility Limit', cell: ({ row }) => formatCurrency(row.original.globalFacilityLimit || 0) },
     { id: 'actions', cell: ({ row }) => <ClientActionMenu client={row.original} onUpdate={forceRefresh} /> },
   ], [forceRefresh, router]);
 

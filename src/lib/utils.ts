@@ -31,6 +31,7 @@ export function formatNumber(value: number | null | undefined): string {
     if (value === null || value === undefined || typeof value !== 'number' || isNaN(value)) {
         return '0';
     }
+    const fixedValue = value.toFixed(0);
     // Use a server-safe method to add commas for thousands separation
-    return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    return fixedValue.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
