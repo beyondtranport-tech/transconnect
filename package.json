@@ -8,6 +8,7 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit"
   },
+  "//": "Recovery build attempt at 2024-08-23T16:00:00Z",
   "dependencies": {
     "@genkit-ai/google-genai": "^1.0.0",
     "@hookform/resolvers": "^4.1.3",
