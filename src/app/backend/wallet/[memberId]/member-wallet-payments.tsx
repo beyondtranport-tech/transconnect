@@ -15,7 +15,7 @@ import Link from 'next/link';
 import { CheckCircle, Trash2 } from 'lucide-react';
 
 
-async function performAdminAction(token: string, action: string, payload: any) {
+async function performAdminAction(token: string, action: string, payload?: any) {
     const response = await fetch('/api/admin', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
