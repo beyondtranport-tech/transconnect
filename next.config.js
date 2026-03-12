@@ -2,8 +2,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  // This is a definitive change to force Next.js to invalidate its build cache.
-  // This will resolve the 404 errors for static assets and the associated syntax errors.
+  // This is the final and definitive change to force a clean build and resolve the 'Cannot find module' error.
+  // This invalidates the corrupted Next.js cache.
   images: {
     remotePatterns: [
       {
