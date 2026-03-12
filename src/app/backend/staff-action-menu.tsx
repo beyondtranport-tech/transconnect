@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -149,7 +148,7 @@ export default function StaffActionMenu({ staffMember, onUpdate }: { staffMember
             </AlertDialogHeader>
             <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleAction} className={actionToConfirm === 'delete' ? buttonVariants({ variant: "destructive" }) : ''}>
+                <AlertDialogAction onClick={handleAction} className={buttonVariants({ variant: actionToConfirm === 'delete' ? 'destructive' : 'default' })}>
                     Yes, proceed
                 </AlertDialogAction>
             </AlertDialogFooter>

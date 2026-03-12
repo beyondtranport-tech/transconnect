@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -22,7 +21,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Loader2, MoreVertical, CheckCircle, Eye, XCircle } from 'lucide-react';
 import { ShopPreview } from '@/components/shop-preview';
 import { collection, query } from 'firebase/firestore';
@@ -155,7 +154,7 @@ export function ShopActionMenu({ shop, onUpdate }: { shop: any, onUpdate: () => 
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleAction} variant={actionToConfirm === 'reject' ? 'destructive' : 'default'}>
+                    <AlertDialogAction onClick={handleAction} className={buttonVariants({ variant: actionToConfirm === 'reject' ? 'destructive' : 'default' })}>
                         Yes, Continue
                     </AlertDialogAction>
                 </AlertDialogFooter>

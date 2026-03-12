@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -6,7 +5,7 @@ import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
@@ -664,7 +663,7 @@ function StepProducts({ shop, canEdit }: { shop: any, canEdit: boolean }) {
         const response = await fetch('/api/deleteUserDoc', {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ path: `companies/${shop.companyId}/shops/${shop.id}/products/${productToDelete.id}` }),
+            body: JSON.stringify({ path: `companies/${shop.companyId}/shops/${shop.id}/products/${productToDelete.id}`})
         });
         
         if (!response.ok) {
@@ -747,7 +746,7 @@ function StepProducts({ shop, canEdit }: { shop: any, canEdit: boolean }) {
                                                 </AlertDialogHeader>
                                                 <AlertDialogFooter>
                                                     <AlertDialogCancel onClick={() => setProductToDelete(null)}>Cancel</AlertDialogCancel>
-                                                    <AlertDialogAction onClick={handleDeleteProduct} disabled={isDeleting} variant="destructive">
+                                                    <AlertDialogAction onClick={handleDeleteProduct} disabled={isDeleting} className={buttonVariants({ variant: "destructive" })}>
                                                         {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : 'Delete'}
                                                     </AlertDialogAction>
                                                 </AlertDialogFooter>
@@ -1142,7 +1141,7 @@ function StepLegal({ shop, onSave, canEdit }: { shop: any, onSave: (newData: any
         setIsSaving(true);
         try {
             const token = await getClientSideAuthToken();
-            if (!token) throw new Error("Authentication failed.");
+            if (!token) throw new Error("Authentication token not found.");
             await fetch('/api/updateUserDoc', { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ path: `companies/${shop.companyId}/shops/${shop.id}`, data: { ...values, updatedAt: { _methodName: 'serverTimestamp' } } }) });
             toast({ title: 'Step 6 Saved!', description: 'Your legal document links have been updated.' });
             onSave(values);
