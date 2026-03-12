@@ -27,10 +27,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Save } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { errorEmitter, useFirestore } from '@/firebase';
+import { getClientSideAuthToken } from '@/firebase/errors';
 import { usePermissions } from '@/hooks/use-permissions';
-import { doc, serverTimestamp, updateDoc } from 'firebase/firestore';
-import { FirestorePermissionError } from '@/firebase/errors';
 
 const staffFormSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
@@ -55,7 +53,6 @@ export function EditStaffDialog({ isOpen, setIsOpen, staffMember, onUpdate }: Ed
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const { can, isLoading: permissionsLoading } = usePermissions();
-  const firestore = useFirestore();
 
   const form = useForm<StaffFormValues>({
     resolver: zodResolver(staffFormSchema),
@@ -70,39 +67,33 @@ export function EditStaffDialog({ isOpen, setIsOpen, staffMember, onUpdate }: Ed
 
   const onSubmit = async (values: StaffFormValues) => {
     setIsLoading(true);
-    if (!firestore || !staffMember?.companyId || !staffMember?.id) {
-        toast({variant: 'destructive', title: 'Error', description: 'Could not identify staff member to update.'});
-        setIsLoading(false);
-        return;
-    }
-    
-    const staffDocRef = doc(firestore, `companies/${staffMember.companyId}/staff/${staffMember.id}`);
-
-    const dataToUpdate = { 
-        ...values, 
-        updatedAt: serverTimestamp() 
-    };
-
-    updateDoc(staffDocRef, dataToUpdate)
-        .then(() => {
-            toast({
-                title: 'Staff Member Updated',
-                description: `${values.firstName} ${values.lastName}'s details have been saved.`,
-            });
-            onUpdate();
-            setIsOpen(false);
-        })
-        .catch((serverError) => {
-            const permissionError = new FirestorePermissionError({
-                path: staffDocRef.path,
-                operation: 'update',
-                requestResourceData: dataToUpdate,
-            });
-            errorEmitter.emit('permission-error', permissionError);
-        })
-        .finally(() => {
-            setIsLoading(false);
+    try {
+        const token = await getClientSideAuthToken();
+        if (!token) throw new Error("Authentication failed.");
+        
+        const response = await fetch('/api/updateUserDoc', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                path: `companies/${staffMember.companyId}/staff/${staffMember.id}`,
+                data: { ...values, updatedAt: { _methodName: 'serverTimestamp' } }
+            })
         });
+
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || "Failed to update staff member.");
+
+        toast({
+            title: 'Staff Member Updated',
+            description: `${values.firstName} ${values.lastName}'s details have been saved.`,
+        });
+        onUpdate();
+        setIsOpen(false);
+    } catch (e: any) {
+        toast({ variant: 'destructive', title: 'Update Failed', description: e.message });
+    } finally {
+        setIsLoading(false);
+    }
   };
   
   const canEditStaff = can('edit', 'staff');

@@ -14,8 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useCollection, getClientSideAuthToken, useMemoFirebase } from '@/firebase';
-import { collection, query, doc, deleteDoc } from 'firebase/firestore';
-import { Label } from '@/components/ui/label';
+import { collection, query } from 'firebase/firestore';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';

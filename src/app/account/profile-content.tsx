@@ -18,10 +18,9 @@ import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
 import { Loader2, User, Save } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useUser, useFirestore, errorEmitter, useMemoFirebase } from '@/firebase';
-import { FirestorePermissionError } from '@/firebase/errors';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { useUser } from '@/firebase';
 import { useRouter } from 'next/navigation';
+import { getClientSideAuthToken } from '@/firebase/errors';
 
 
 const profileFormSchema = z.object({
@@ -34,15 +33,9 @@ type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
 export default function ProfileContent() {
   const { user, isUserLoading, forceRefresh } = useUser();
-  const firestore = useFirestore();
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
   const router = useRouter();
-
-  const userDocRef = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
-    return doc(firestore, 'users', user.uid);
-  }, [firestore, user]);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
@@ -66,39 +59,39 @@ export default function ProfileContent() {
 
   const onSubmit = async (values: ProfileFormValues) => {
     setIsSaving(true);
-    if (!userDocRef) {
+    if (!user) {
       toast({ variant: 'destructive', title: 'Error', description: 'Not logged in.' });
       setIsSaving(false);
       return;
     }
 
-    const dataToUpdate = {
-        firstName: values.firstName,
-        lastName: values.lastName,
-        phone: values.phone,
-        updatedAt: serverTimestamp(),
-    };
-    
-    setDoc(userDocRef, dataToUpdate, { merge: true })
-      .then(() => {
+    try {
+        const token = await getClientSideAuthToken();
+        if (!token) throw new Error("Authentication failed.");
+
+        const response = await fetch('/api/updateUserDoc', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                path: `users/${user.uid}`,
+                data: { ...values, updatedAt: { _methodName: 'serverTimestamp' } }
+            })
+        });
+        
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || "Failed to update profile.");
+
         toast({
           title: 'Profile Updated',
           description: 'Your personal information has been saved.',
         });
         forceRefresh();
         router.push('/account?view=company');
-      })
-      .catch((serverError) => {
-        const permissionError = new FirestorePermissionError({
-          path: userDocRef.path,
-          operation: 'update',
-          requestResourceData: dataToUpdate,
-        });
-        errorEmitter.emit('permission-error', permissionError);
-      })
-      .finally(() => {
+    } catch(e: any) {
+         toast({ variant: 'destructive', title: 'Update Failed', description: e.message });
+    } finally {
         setIsSaving(false);
-      });
+    }
   };
 
   const isLoading = isUserLoading;

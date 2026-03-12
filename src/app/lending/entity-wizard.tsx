@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -337,6 +338,7 @@ export function EntityWizard({ entity, entityType, onBack, onSaveSuccess }: { en
                              <div className="flex flex-col gap-2 border-r pr-4">
                                 {wizardSteps.map((step, index) => {
                                     const Icon = step.icon;
+                                    const isCompleted = index < currentStep; // Simplified logic
                                     return (
                                         <Button key={step.id} variant={currentStep === index ? 'secondary' : 'ghost'} className="justify-start gap-2" onClick={() => setCurrentStep(index)}>
                                             <Icon className="h-5 w-5" />

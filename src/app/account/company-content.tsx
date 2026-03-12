@@ -18,11 +18,10 @@ import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
 import { Loader2, Building, Save, Banknote, ArrowLeft } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useUser, useFirestore, errorEmitter } from '@/firebase';
-import { FirestorePermissionError } from '@/firebase/errors';
-import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { useUser } from '@/firebase';
 import { Separator } from '@/components/ui/separator';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { getClientSideAuthToken } from '@/firebase/errors';
 
 const companyFormSchema = z.object({
   companyName: z.string().min(1, 'Company name is required'),
@@ -42,7 +41,6 @@ type CompanyFormValues = z.infer<typeof companyFormSchema>;
 
 export default function CompanyContent() {
   const { user, isUserLoading, forceRefresh } = useUser();
-  const firestore = useFirestore();
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
   const router = useRouter();
@@ -128,37 +126,44 @@ export default function CompanyContent() {
   const onSubmit = async (values: CompanyFormValues) => {
     setIsSaving(true);
     const companyId = user?.companyId;
-    if (!companyId || !firestore) {
+    if (!companyId) {
       toast({ variant: 'destructive', title: 'Error', description: 'Your company profile is still being created. Please refresh the page in a moment and try again.' });
       setIsSaving(false);
       return;
     }
+    
+    try {
+        const token = await getClientSideAuthToken();
+        if (!token) throw new Error("Authentication failed.");
 
-    const docRefToUpdate = doc(firestore, 'companies', companyId);
-    const dataToUpdate = { ...values, updatedAt: serverTimestamp() };
-
-    updateDoc(docRefToUpdate, dataToUpdate)
-        .then(() => {
-            toast({
-                title: 'Company Info Updated',
-                description: 'Your company information has been saved.',
-            });
-            forceRefresh();
-            if (fromWallet) {
-                router.push('/account?view=wallet');
-            }
-        })
-        .catch((serverError) => {
-            const permissionError = new FirestorePermissionError({
-                path: docRefToUpdate.path,
-                operation: 'update',
-                requestResourceData: dataToUpdate,
-            });
-            errorEmitter.emit('permission-error', permissionError);
-        })
-        .finally(() => {
-            setIsSaving(false);
+        const response = await fetch('/api/updateUserDoc', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                path: `companies/${companyId}`,
+                data: { ...values, updatedAt: { _methodName: 'serverTimestamp' } }
+            }),
         });
+
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Failed to update company info.');
+
+        toast({
+            title: 'Company Info Updated',
+            description: 'Your company information has been saved.',
+        });
+        forceRefresh();
+        if (fromWallet) {
+            router.push('/account?view=wallet');
+        }
+    } catch(e: any) {
+         toast({ variant: 'destructive', title: 'Update Failed', description: e.message });
+    } finally {
+        setIsSaving(false);
+    }
   };
   
   const isLoading = isUserLoading || isAwaitingCompanyId;

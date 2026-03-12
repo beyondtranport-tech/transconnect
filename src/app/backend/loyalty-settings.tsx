@@ -18,8 +18,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
 import { Loader2, Save, Star, Gift, UserPlus, Store, Package, Sparkles, Edit, Video, Search, Truck, Building, Users, Handshake, Briefcase, Bot, Code, ShoppingCart, Warehouse, ShieldCheck } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { useFirestore, useDoc, useMemoFirebase, getClientSideAuthToken } from '@/firebase';
+import { doc } from 'firebase/firestore';
 import { Separator } from '@/components/ui/separator';
 
 const formSchema = z.object({
@@ -102,8 +102,18 @@ export default function LoyaltySettings() {
     setIsSaving(true);
     
     try {
-      await setDoc(configRef, { ...values, updatedAt: serverTimestamp() }, { merge: true });
-      toast({ title: 'Loyalty Settings Saved!', description: 'The loyalty tiers and action points have been updated.' });
+        const token = await getClientSideAuthToken();
+        if (!token) throw new Error("Authentication failed.");
+
+        const response = await fetch('/api/updateConfigDoc', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path: 'configuration/loyaltySettings', data: { ...values, updatedAt: { _methodName: 'serverTimestamp' } } }),
+        });
+
+        if (!response.ok) throw new Error((await response.json()).error || "Failed to save settings.");
+        
+        toast({ title: 'Loyalty Settings Saved!', description: 'The loyalty tiers and action points have been updated.' });
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Update Failed', description: e.message });
     } finally {
@@ -235,5 +245,3 @@ export default function LoyaltySettings() {
     </Card>
   );
 }
-
-    
