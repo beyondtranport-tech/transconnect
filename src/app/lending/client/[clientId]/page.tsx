@@ -42,16 +42,16 @@ function ClientDetailPage() {
     const agreementColumns: ColumnDef<any>[] = useMemo(() => [
         { accessorKey: 'id', header: 'Agreement ID' },
         { accessorKey: 'type', header: 'Type' },
-        { accessorKey: 'status', header: 'Status', cell: ({row}) => <Badge>{row.original.status}</Badge> },
-        { accessorKey: 'totalAdvanced', header: 'Amount', cell: ({row}) => formatCurrency(row.original.totalAdvanced) },
-        { id: 'actions', header: 'Actions', cell: ({row}) => <AgreementActionMenu agreement={row.original} onUpdate={refreshAgreements} /> },
+        { accessorKey: 'status', header: 'Status', cell: ({ row }) => <Badge>{row.original.status}</Badge> },
+        { accessorKey: 'totalAdvanced', header: 'Amount', cell: ({ row }) => formatCurrency(row.original.totalAdvanced) },
+        { id: 'actions', header: 'Actions', cell: ({ row }) => <AgreementActionMenu agreement={row.original} onUpdate={refreshAgreements} /> },
     ], [refreshAgreements]);
 
     const assetColumns: ColumnDef<any>[] = useMemo(() => [
         { accessorKey: 'make', header: 'Make' },
         { accessorKey: 'model', header: 'Model' },
         { accessorKey: 'year', header: 'Year' },
-        { accessorKey: 'status', header: 'Status', cell: ({row}) => <Badge>{row.original.status}</Badge> },
+        { accessorKey: 'status', header: 'Status', cell: ({ row }) => <Badge>{row.original.status}</Badge> },
     ], []);
 
 
@@ -103,8 +103,10 @@ function ClientDetailPage() {
 
 export default function Page() {
     return (
-        <Suspense fallback={<div className="flex justify-center py-20"><Loader2 className="h-16 w-16 animate-spin" /></div>}>
-            <ClientDetailPage />
-        </Suspense>
+        <div className="container mx-auto px-4 py-16">
+            <Suspense fallback={<div className="flex justify-center py-20"><Loader2 className="h-16 w-16 animate-spin" /></div>}>
+                <ClientDetailPage />
+            </Suspense>
+        </div>
     );
 }

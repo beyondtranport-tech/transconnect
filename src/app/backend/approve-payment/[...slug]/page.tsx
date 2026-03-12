@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Suspense, useEffect, useState } from 'react';
@@ -139,7 +140,7 @@ function ApprovePaymentComponent() {
                  </Button>
             </CardFooter>
         </Card>
-    );
+    )
 }
 
 export default function ApprovePaymentPage() {
@@ -149,5 +150,5 @@ export default function ApprovePaymentPage() {
                 <ApprovePaymentComponent />
             </Suspense>
         </div>
-    );
+    )
 }

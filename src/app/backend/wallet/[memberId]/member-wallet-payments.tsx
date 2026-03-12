@@ -1,35 +1,21 @@
+
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, Wallet, Trash2, CheckCircle } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Badge } from '@/components/ui/badge';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { getClientSideAuthToken, useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query } from 'firebase/firestore';
+import { useCollection, useFirestore, getClientSideAuthToken, useMemoFirebase } from '@/firebase';
+import { collection, query, where } from 'firebase/firestore';
+import { Loader2, Gem, Wallet, AlertCircle } from 'lucide-react';
 import { formatCurrency, formatDateSafe } from '@/lib/utils';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import Link from 'next/link';
+import { CheckCircle, Trash2 } from 'lucide-react';
 
-const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
-  pending: 'secondary',
-  approved: 'default',
-  rejected: 'destructive',
-};
 
-async function performAdminAction(token: string, action: string, payload?: any) {
+async function performAdminAction(token: string, action: string, payload: any) {
     const response = await fetch('/api/admin', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -74,30 +60,6 @@ export default function MemberWalletPayments({ companyId, onUpdate }: { companyI
         forceRefresh();
     }, [companyId, forceRefresh]);
     
-    const handleApprove = async (payment: any) => {
-        setIsProcessing(payment.id);
-        try {
-            const token = await getClientSideAuthToken();
-            if (!token) throw new Error("Authentication failed.");
-
-            await performAdminAction(token, 'approveWalletPayment', {
-                companyId: payment.companyId,
-                paymentId: payment.id,
-                amount: payment.amount,
-                description: payment.description,
-            });
-
-            toast({ title: 'Payment Approved', description: `Wallet credited successfully.` });
-            forceRefresh();
-            onUpdate();
-        } catch (e: any) {
-             toast({ variant: 'destructive', title: 'Approval Failed', description: e.message });
-        } finally {
-            setIsProcessing(null);
-        }
-    }
-
-
     const handleDelete = async (paymentId: string) => {
         setIsProcessing(paymentId);
          try {
@@ -161,10 +123,9 @@ export default function MemberWalletPayments({ companyId, onUpdate }: { companyI
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Date</TableHead>
+                                    <TableHead>Date Logged</TableHead>
                                     <TableHead>Description</TableHead>
                                     <TableHead>Amount</TableHead>
-                                    <TableHead>Status</TableHead>
                                     <TableHead className="text-right">Action</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -174,11 +135,6 @@ export default function MemberWalletPayments({ companyId, onUpdate }: { companyI
                                         <TableCell className="text-xs">{formatDateSafe(p.createdAt, "dd MMM yyyy, HH:mm")}</TableCell>
                                         <TableCell className="font-medium capitalize">{p.description?.replace(/_/g, ' ')}</TableCell>
                                         <TableCell>{formatCurrency(p.amount)}</TableCell>
-                                        <TableCell>
-                                            <Badge variant={statusColors[p.status] || 'secondary'} className="capitalize">
-                                                {p.status?.replace(/_/g, ' ')}
-                                            </Badge>
-                                        </TableCell>
                                         <TableCell className="text-right space-x-1">
                                              <Button asChild size="sm" variant="default">
                                                 <Link href={`/backend/approve-payment/${p.companyId}/${p.id}`}>

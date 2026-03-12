@@ -7,26 +7,12 @@ import { Loader2, DollarSign } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { collection, query, orderBy } from 'firebase/firestore';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { format as formatDateFns } from 'date-fns';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, formatDateSafe } from '@/lib/utils';
 
 const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
   pending_allocation: 'secondary',
   allocated: 'default',
   reversal: 'destructive',
-};
-
-const formatDate = (dateValue: any) => {
-    if (dateValue && typeof dateValue.toDate === 'function') {
-        return formatDateFns(dateValue.toDate(), "dd MMM yyyy, HH:mm");
-    }
-     if (typeof dateValue === 'string') {
-        const date = new Date(dateValue);
-        if (!isNaN(date.getTime())) {
-            return formatDateFns(date, "dd MMM yyyy, HH:mm");
-        }
-    }
-    return 'N/A';
 };
 
 export default function MemberTransactions({ companyId }: { companyId: string }) {
@@ -71,7 +57,7 @@ export default function MemberTransactions({ companyId }: { companyId: string })
                             <TableBody>
                                 {transactions.map(tx => (
                                     <TableRow key={tx.id}>
-                                        <TableCell className="text-xs">{formatDate(tx.date)}</TableCell>
+                                        <TableCell className="text-xs">{formatDateSafe(tx.date, "dd MMM yyyy, HH:mm")}</TableCell>
                                         <TableCell>{tx.description}</TableCell>
                                         <TableCell>
                                             <Badge variant={statusColors[tx.status] || 'secondary'} className="capitalize">
