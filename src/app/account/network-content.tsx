@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
@@ -24,6 +25,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { formatDateSafe } from '@/lib/utils';
 
 // Schema for the lead form
 const leadSchema = z.object({
@@ -268,7 +270,7 @@ function MessageDialog({ lead, companyId }: { lead: any, companyId: string }) {
                                         "bg-muted"
                                     )}>
                                         <p>{msg.text}</p>
-                                        <p className="text-xs opacity-70 mt-1 text-right">{msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}</p>
+                                        <p className="text-xs opacity-70 mt-1 text-right">{formatDateSafe(msg.timestamp, 'HH:mm')}</p>
                                     </div>
                                     {isAgent && (
                                         <Avatar className="h-8 w-8">
@@ -576,3 +578,4 @@ export default function NetworkContent() {
       </>
     );
 }
+
