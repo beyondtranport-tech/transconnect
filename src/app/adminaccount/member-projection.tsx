@@ -1,7 +1,6 @@
-
 'use client';
 
-import React, { useMemo, Suspense } from 'react';
+import React, { useMemo, Suspense, useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
@@ -14,8 +13,11 @@ import { formatNumber } from '@/lib/utils';
 
 
 function MemberProjectionComponent() {
-    const { roadmapInputs, setupInputs } = useMemo(() => {
-        if (typeof window === 'undefined') return { roadmapInputs: null, setupInputs: null };
+    const [isClient, setIsClient] = useState(false);
+    const [data, setData] = useState<any>(null);
+
+    useEffect(() => {
+        setIsClient(true);
         try {
             const salesRoadmapData = localStorage.getItem('accountSalesRoadmapScenarios_v1');
             const setupData = localStorage.getItem('accountFinancialSetup_v1');
@@ -23,20 +25,20 @@ function MemberProjectionComponent() {
             const activeScenarioName = salesRoadmapData ? JSON.parse(salesRoadmapData).activeScenario : 'Default';
             const scenarios = salesRoadmapData ? JSON.parse(salesRoadmapData).scenarios : null;
 
-            return {
+            setData({
                 roadmapInputs: scenarios ? scenarios[activeScenarioName] : null,
                 setupInputs: setupData ? JSON.parse(setupData) : null,
-            };
+            });
         } catch (e) {
             console.error("Failed to parse projection data", e);
-            return { roadmapInputs: null, setupInputs: null };
+            setData(null);
         }
     }, []);
 
     const { powerPartnerProjection, isaProjection } = useMemo(() => {
-        if (!roadmapInputs || !setupInputs) return { powerPartnerProjection: [], isaProjection: [] };
-        return salesRoadmapLogic(setupInputs, roadmapInputs);
-    }, [roadmapInputs, setupInputs]);
+        if (!isClient || !data?.roadmapInputs || !data?.setupInputs) return { powerPartnerProjection: [], isaProjection: [] };
+        return salesRoadmapLogic(data.setupInputs, data.roadmapInputs);
+    }, [isClient, data]);
     
     // Totals Calculation for Power Partners
     const powerPartnerTotals = useMemo(() => {
@@ -58,8 +60,12 @@ function MemberProjectionComponent() {
         }
     }, [isaProjection]);
 
+    if (!isClient) {
+        return <div className="flex justify-center items-center h-64"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
+    }
 
-    if (!roadmapInputs || !setupInputs) {
+
+    if (!data?.roadmapInputs || !data?.setupInputs) {
         return (
             <Card className="w-full max-w-2xl mx-auto">
                 <CardHeader className="text-center">

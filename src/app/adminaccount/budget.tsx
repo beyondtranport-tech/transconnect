@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { Suspense, useCallback, useEffect, useState } from 'react';
@@ -9,7 +8,6 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { TrendingUp, DollarSign, Users, Percent, Loader2, Save, RotateCcw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { Separator } from '@/components/ui/separator';
 import { Form, FormControl, FormField, FormItem } from '@/components/ui/form';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -82,53 +80,55 @@ const generateDefaultValues = (months: number) => {
 function BudgetPageComponent() {
     const router = useRouter();
     const { toast } = useToast();
+    const [isLoading, setIsLoading] = useState(true);
     const [forecastMonths, setForecastMonths] = useState(36);
     const [startMonth, setStartMonth] = useState(new Date().getMonth());
     const [startYear, setStartYear] = useState(new Date().getFullYear());
-    const [isLoading, setIsLoading] = useState(true);
 
-     useEffect(() => {
-        if (typeof window !== 'undefined') {
-            try {
-                const savedSettings = localStorage.getItem(SETUP_KEY);
-                if (savedSettings) {
-                    const parsed = JSON.parse(savedSettings);
-                    setForecastMonths(parsed.forecastMonths || 36);
-                    setStartMonth(parsed.startMonth || new Date().getMonth());
-                    setStartYear(parsed.startYear || new Date().getFullYear());
-                }
-            } catch (e) {
-                console.error("Could not parse financial setup settings for budget page.");
-            } finally {
-                setIsLoading(false);
-            }
-        }
-    }, []);
-
-    const form = useForm({
-        defaultValues: useCallback(() => {
-            if (typeof window === 'undefined') {
-                return generateDefaultValues(forecastMonths);
-            }
-            try {
-                const savedData = localStorage.getItem(BUDGET_KEY);
-                if (savedData) {
-                    const parsed = JSON.parse(savedData);
-                    // Check if month count matches between saved data and current settings
-                    const firstAssumption = assumptionGroups.revenue[0].id;
-                    const savedMonths = parsed.budgetInputs.revenue[firstAssumption]?.length || 0;
-                    if (savedMonths === forecastMonths) {
-                        return parsed;
-                    }
-                }
-            } catch (e) {
-                console.error("Failed to parse saved budget data.", e);
-            }
-            return generateDefaultValues(forecastMonths);
-        }, [forecastMonths])()
-    });
-
+    const form = useForm();
     const { control, handleSubmit, reset } = form;
+
+    useEffect(() => {
+        let localSettings = {
+            forecastMonths: 36,
+            startMonth: new Date().getMonth(),
+            startYear: new Date().getFullYear(),
+        };
+        try {
+            const savedSettings = localStorage.getItem(SETUP_KEY);
+            if (savedSettings) {
+                const parsed = JSON.parse(savedSettings);
+                localSettings = { ...localSettings, ...parsed };
+            }
+        } catch (e) {
+            console.error("Could not parse financial setup settings for budget page.");
+        }
+        
+        setForecastMonths(localSettings.forecastMonths);
+        setStartMonth(localSettings.startMonth);
+        setStartYear(localSettings.startYear);
+
+        let initialData;
+        try {
+            const savedData = localStorage.getItem(BUDGET_KEY);
+            if (savedData) {
+                const parsed = JSON.parse(savedData);
+                const firstAssumption = assumptionGroups.revenue[0].id;
+                const savedMonths = parsed.budgetInputs.revenue[firstAssumption]?.length || 0;
+                if (savedMonths === localSettings.forecastMonths) {
+                    initialData = parsed;
+                } else {
+                    initialData = generateDefaultValues(localSettings.forecastMonths);
+                }
+            } else {
+                initialData = generateDefaultValues(localSettings.forecastMonths);
+            }
+        } catch (e) {
+            initialData = generateDefaultValues(localSettings.forecastMonths);
+        }
+        reset(initialData);
+        setIsLoading(false);
+    }, [reset]);
 
     const { fields: staffFields } = useFieldArray({
         control,
