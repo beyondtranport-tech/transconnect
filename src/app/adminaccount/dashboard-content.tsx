@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -10,6 +11,7 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { useState, useEffect, useCallback } from 'react';
 import { formatCurrency, formatDateSafe } from '@/lib/utils';
+import { format as formatDateFns } from 'date-fns';
 
 // Centralized helper function for making authenticated API calls
 async function fetchFromAdminAPI(token: string, action: string, payload?: any) {
@@ -79,15 +81,28 @@ export default function DashboardContent() {
             setPendingAgreements(queuesRes.data.proposedAgreements || []);
             
             // Process Member Growth
-            const growth: { [key: string]: number } = {};
-            (membersRes.data || []).forEach((member: any) => {
+            const growth = (membersRes.data || []).reduce((acc: Record<string, { date: Date; members: number }>, member: any) => {
+                if (!member.createdAt) return acc;
                 const joinDate = new Date(member.createdAt);
-                if (!isNaN(joinDate.getTime())) {
-                    const monthKey = formatDateSafe(joinDate, 'yyyy-MMM');
-                    growth[monthKey] = (growth[monthKey] || 0) + 1;
+                if (isNaN(joinDate.getTime())) return acc;
+                
+                const monthKey = `${joinDate.getFullYear()}-${String(joinDate.getMonth() + 1).padStart(2, '0')}`;
+                
+                if (!acc[monthKey]) {
+                    acc[monthKey] = { date: new Date(joinDate.getFullYear(), joinDate.getMonth(), 1), members: 0 };
                 }
-            });
-            const growthData = Object.keys(growth).map(key => ({ name: key.split('-')[1], NewMembers: growth[key] })).slice(-6); // Last 6 months
+                acc[monthKey].members++;
+                return acc;
+            }, {});
+
+            const growthData = Object.values(growth)
+                .sort((a, b) => a.date.getTime() - b.date.getTime())
+                .slice(-6) // Show last 6 months for better view
+                .map(item => ({
+                    name: formatDateFns(item.date, 'MMM yy'),
+                    NewMembers: item.members
+                }));
+
             setMemberGrowthData(growthData);
 
         } catch (e: any) {
