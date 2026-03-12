@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
+import { formatDateSafe } from '@/lib/utils';
 
 export default function PerformanceContent() {
     const { user, isUserLoading } = useUser();
@@ -54,7 +55,7 @@ export default function PerformanceContent() {
 
     const memberGrowthData = networkData
         .reduce((acc, member) => {
-            const month = new Date(member.createdAt).toLocaleString('default', { month: 'short', year: 'numeric' });
+            const month = formatDateSafe(member.createdAt, 'MMM yyyy');
             if (!acc[month]) {
                 acc[month] = { name: month, NewMembers: 0 };
             }
@@ -63,7 +64,7 @@ export default function PerformanceContent() {
         }, {} as Record<string, {name: string, NewMembers: number}>);
         
     const chartData = Object.values(memberGrowthData)
-        .sort((a,b) => new Date(a.name).getTime() - new Date(b.name).getTime())
+        .sort((a: { name: string }, b: { name: string }) => new Date(a.name).getTime() - new Date(b.name).getTime())
         .slice(-6); // Last 6 months
 
     const downloadAsCSV = (data: any[], filename: string) => {

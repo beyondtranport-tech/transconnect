@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -65,7 +64,7 @@ export default function PerformanceContent() {
         }, {} as Record<string, {name: string, NewMembers: number}>);
         
     const chartData = Object.values(memberGrowthData)
-        .sort((a,b) => new Date(a.name).getTime() - new Date(b.name).getTime())
+        .sort((a: { name: string }, b: { name: string }) => new Date(a.name).getTime() - new Date(b.name).getTime())
         .slice(-6); // Last 6 months
 
     const downloadAsCSV = (data: any[], filename: string) => {
@@ -111,7 +110,7 @@ export default function PerformanceContent() {
             'Owner Email': member.ownerEmail,
             'Membership': member.membershipId,
             'Status': member.status,
-            'Joined At': formatDateSafe(member.createdAt, 'yyyy-MM-dd'),
+            'Joined At': new Date(member.createdAt).toLocaleDateString(),
         }));
         downloadAsCSV(dataToExport, 'my-network.csv');
     };
