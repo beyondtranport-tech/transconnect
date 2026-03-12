@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -198,7 +197,7 @@ function StepLoads({ loadBoard }: { loadBoard: any }) {
                 </AlertDialog>
             </div>
         )},
-    ], [canManageLoads, deletingId, handleDelete, loadBoard, forceRefresh]);
+    ], [canManageLoads, deletingId, loadBoard, forceRefresh]);
     
     return (
         <div className="space-y-4">
@@ -225,3 +224,5 @@ export function LoadWizard({ loadBoard, onUpdate }: { loadBoard: any, onUpdate: 
         </div>
     );
 }
+
+    

@@ -4,7 +4,7 @@
 import { useState, useMemo } from 'react';
 
 export interface ColumnDef<TData> {
-  accessorKey?: keyof TData | string;
+  accessorKey?: string;
   header: React.ReactNode;
   cell?: (props: { row: { original: TData } }) => React.ReactNode;
   id?: string;
@@ -69,3 +69,5 @@ export function useDataTable<TData>(data: TData[], columns: ColumnDef<TData>[]) 
     globalFilter,
   };
 }
+
+    
