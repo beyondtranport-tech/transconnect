@@ -99,45 +99,42 @@ function BudgetPageComponent() {
     const [isClient, setIsClient] = useState(false);
     const [settings, setSettings] = useState<{ forecastMonths: number; startMonth: number; startYear: number } | null>(null);
 
-    const form = useForm<FormValues>();
+    const form = useForm<FormValues>({
+        defaultValues: generateDefaultValues(36) // Static defaults
+    });
 
     useEffect(() => {
         setIsClient(true);
         let localSettings = {
             forecastMonths: 36,
-            startMonth: 0, // Static default
-            startYear: 2024, // Static default
+            startMonth: new Date().getMonth(),
+            startYear: new Date().getFullYear(),
         };
         try {
             const savedSettings = localStorage.getItem(SETUP_KEY);
             if (savedSettings) {
                 localSettings = { ...localSettings, ...JSON.parse(savedSettings) };
-            } else {
-                // Set dynamic date defaults only if no settings exist
-                localSettings.startMonth = new Date().getMonth();
-                localSettings.startYear = new Date().getFullYear();
             }
         } catch (e) {
             console.error("Could not parse financial setup settings for budget page.");
-            // Fallback to dynamic on error
-            localSettings.startMonth = new Date().getMonth();
-            localSettings.startYear = new Date().getFullYear();
         }
         setSettings(localSettings);
         
+        let initialData = generateDefaultValues(localSettings.forecastMonths);
         try {
             const savedData = localStorage.getItem(BUDGET_KEY);
-            const savedMonths = savedData ? JSON.parse(savedData).budgetInputs.revenue.membershipFees.length : 0;
-            
-            const initialData = (savedData && savedMonths === localSettings.forecastMonths) 
-                ? JSON.parse(savedData) 
-                : generateDefaultValues(localSettings.forecastMonths);
-
-            form.reset(initialData);
+            if (savedData) {
+                const parsed = JSON.parse(savedData);
+                const firstAssumption = assumptionGroups.revenue[0].id;
+                const savedMonths = parsed.budgetInputs.revenue[firstAssumption]?.length || 0;
+                if (savedMonths === localSettings.forecastMonths) {
+                    initialData = parsed;
+                }
+            }
         } catch (e) {
             console.error("Failed to parse saved budget data, using defaults.", e);
-            form.reset(generateDefaultValues(localSettings.forecastMonths));
         }
+        form.reset(initialData);
     }, [form]);
     
     const { control, handleSubmit, reset } = form;

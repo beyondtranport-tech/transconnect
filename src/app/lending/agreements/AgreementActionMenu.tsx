@@ -15,7 +15,7 @@ import { Loader2, MoreVertical, Edit, Trash2, Eye, CheckCircle, XCircle } from '
 import Link from 'next/link';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { getClientSideAuthToken } from '@/firebase';
+import { getClientSideAuthToken, useUser } from '@/firebase';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -38,8 +38,9 @@ async function performAdminAction(token: string, action: string, payload: any) {
 
 export function AgreementActionMenu({ agreement, onUpdate }: { agreement: any; onUpdate: () => void; }) {
     const [isProcessing, setIsProcessing] = useState(false);
-    const [dialog, setDialog] = useState<'accept' | 'counter' | 'view' | 'delete' | null>(null);
+    const [dialog, setDialog] = useState<'accept' | 'counter' | 'view' | 'delete' | 'updateStatus' | null>(null);
     const [counterOffer, setCounterOffer] = useState<number | string>(agreement.percentage);
+    const [newStatus, setNewStatus] = useState<string>('');
     const { user } = useUser();
     const { toast } = useToast();
     
@@ -93,6 +94,13 @@ export function AgreementActionMenu({ agreement, onUpdate }: { agreement: any; o
             setDialog(null);
         }
     };
+
+    const openConfirmation = (action: 'delete' | 'updateStatus', status?: string) => {
+        if (action === 'updateStatus') {
+            setNewStatus(status || '');
+        }
+        setDialog(action);
+    };
     
     const getAlertStrings = (action: 'delete' | 'updateStatus' | null) => {
         if (action === 'delete') {
@@ -106,15 +114,15 @@ export function AgreementActionMenu({ agreement, onUpdate }: { agreement: any; o
 
     return (
         <>
-            <AlertDialog open={dialog === 'delete' || dialog === 'accept' || (!!actionToConfirm && dialog === null)} onOpenChange={(open) => !open && setDialog(null)}>
+            <AlertDialog open={dialog === 'delete' || dialog === 'accept' || dialog === 'updateStatus'} onOpenChange={(open) => !open && setDialog(null)}>
                  <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>{getAlertStrings(actionToConfirm as 'delete' | 'updateStatus' | null).title}</AlertDialogTitle>
-                        <AlertDialogDescription>{getAlertStrings(actionToConfirm as 'delete' | 'updateStatus' | null).description}</AlertDialogDescription>
+                        <AlertDialogTitle>{getAlertStrings(dialog as 'delete' | 'updateStatus' | null).title}</AlertDialogTitle>
+                        <AlertDialogDescription>{getAlertStrings(dialog as 'delete' | 'updateStatus' | null).description}</AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel onClick={() => setDialog(null)}>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => handleAction(actionToConfirm as any, newStatus)} className={actionToConfirm === 'delete' ? buttonVariants({ variant: "destructive" }) : ''}>Yes, proceed</AlertDialogAction>
+                        <AlertDialogAction onClick={() => handleAction(dialog as any, newStatus)} className={dialog === 'delete' ? buttonVariants({ variant: "destructive" }) : ''}>Yes, proceed</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>

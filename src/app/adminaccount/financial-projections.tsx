@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useMemo, useState, useCallback, Suspense, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, Suspense } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -125,11 +125,9 @@ function FinancialProjectionsComponent() {
     const { toast } = useToast();
     const [isClient, setIsClient] = useState(false);
     
-    const form = useForm<FormValues>();
-
-    useEffect(() => {
-        setIsClient(true);
-        let defaults: FormValues = {
+    const form = useForm<FormValues>({
+        resolver: zodResolver(formSchema),
+        defaultValues: {
             forecastMonths: 36,
             startMonth: new Date().getMonth(),
             startYear: new Date().getFullYear(),
@@ -146,16 +144,19 @@ function FinancialProjectionsComponent() {
                 mallCommissionRate: 2.5,
                 opexPerMonth: 250000,
             }
-        };
+        }
+    });
+
+    useEffect(() => {
+        setIsClient(true);
         try {
             const saved = localStorage.getItem(PROJECTIONS_KEY);
             if (saved) {
-                defaults = JSON.parse(saved);
+                form.reset(JSON.parse(saved));
             }
         } catch (error) {
             console.error("Could not parse saved projection data.");
         }
-        form.reset(defaults);
     }, [form]);
 
     const { control, handleSubmit, watch, reset } = form;
@@ -175,8 +176,10 @@ function FinancialProjectionsComponent() {
         }, {} as Record<string, number>);
 
         const lastMonth = projections[projections.length - 1];
-        result.cumulativePartnerMembers = lastMonth.cumulativePartnerMembers;
-        result.cumulativeTotalMembers = lastMonth.cumulativeTotalMembers;
+        if (lastMonth) {
+            result.cumulativePartnerMembers = lastMonth.cumulativePartnerMembers;
+            result.cumulativeTotalMembers = lastMonth.cumulativeTotalMembers;
+        }
 
         return result;
     }, [projections]);
@@ -297,7 +300,7 @@ function FinancialProjectionsComponent() {
             </Form>
 
              <Tabs defaultValue="partners" className="w-full">
-                {grandTotals && (
+                {grandTotals && watchedValues.forecastMonths && (
                     <div className="mb-8">
                         <h2 className="text-xl font-semibold mb-4">Forecast Summary</h2>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -357,7 +360,7 @@ function FinancialProjectionsComponent() {
                             <TableHeader><TableRow><TableHead>Month</TableHead><TableHead>New (Partners)</TableHead><TableHead>New (ISAs)</TableHead><TableHead>Total New</TableHead><TableHead>Cumulative</TableHead></TableRow></TableHeader>
                             <TableBody>
                                 {projections.map(p => (<TableRow key={p.month}><TableCell>{p.month}</TableCell><TableCell>{formatNumber(p.partnerNewMembers)}</TableCell><TableCell>{formatNumber(p.isaNewMembers)}</TableCell><TableCell>{formatNumber(p.totalPartnerDriven)}</TableCell><TableCell className="font-bold">{formatNumber(p.cumulativePartnerMembers)}</TableCell></TableRow>))}
-                                <TableRow className="bg-muted font-bold"><TableCell>Total</TableCell><TableCell>{formatNumber(totals.partnerNewMembers)}</TableCell><TableCell>{formatNumber(totals.isaNewMembers)}</TableCell><TableCell>{formatNumber(totals.totalPartnerDriven)}</TableCell><TableCell>{formatNumber(totals.cumulativePartnerMembers)}</TableCell></TableRow>
+                                {totals.partnerNewMembers !== undefined && <TableRow className="bg-muted font-bold"><TableCell>Total</TableCell><TableCell>{formatNumber(totals.partnerNewMembers)}</TableCell><TableCell>{formatNumber(totals.isaNewMembers)}</TableCell><TableCell>{formatNumber(totals.totalPartnerDriven)}</TableCell><TableCell>{formatNumber(totals.cumulativePartnerMembers)}</TableCell></TableRow>}
                             </TableBody>
                         </Table></CardContent>
                     </Card>
@@ -369,7 +372,7 @@ function FinancialProjectionsComponent() {
                             <TableHeader><TableRow><TableHead>Month</TableHead><TableHead>New Members</TableHead><TableHead>Cumulative Members</TableHead></TableRow></TableHeader>
                             <TableBody>
                                 {projections.map(p => (<TableRow key={p.month}><TableCell>{p.month}</TableCell><TableCell>{formatNumber(p.totalPartnerDriven)}</TableCell><TableCell className="font-bold">{formatNumber(p.cumulativeTotalMembers)}</TableCell></TableRow>))}
-                                <TableRow className="bg-muted font-bold"><TableCell>Total</TableCell><TableCell>{formatNumber(totals.totalPartnerDriven)}</TableCell><TableCell>{formatNumber(totals.cumulativeTotalMembers)}</TableCell></TableRow>
+                                {totals.totalPartnerDriven !== undefined && <TableRow className="bg-muted font-bold"><TableCell>Total</TableCell><TableCell>{formatNumber(totals.totalPartnerDriven)}</TableCell><TableCell>{formatNumber(totals.cumulativeTotalMembers)}</TableCell></TableRow>}
                             </TableBody>
                         </Table></CardContent>
                     </Card>
@@ -381,7 +384,7 @@ function FinancialProjectionsComponent() {
                             <TableHeader><TableRow><TableHead>Month</TableHead><TableHead>Membership Rev.</TableHead><TableHead>Connect Plan Rev.</TableHead><TableHead>Mall Rev.</TableHead><TableHead>Total Revenue</TableHead></TableRow></TableHeader>
                             <TableBody>
                                 {projections.map(p => (<TableRow key={p.month}><TableCell>{p.month}</TableCell><TableCell>{formatCurrency(p.membershipRevenue)}</TableCell><TableCell>{formatCurrency(p.connectPlanRevenue)}</TableCell><TableCell>{formatCurrency(p.mallRevenue)}</TableCell><TableCell className="font-bold">{formatCurrency(p.totalRevenue)}</TableCell></TableRow>))}
-                                <TableRow className="bg-muted font-bold"><TableCell>Total</TableCell><TableCell>{formatCurrency(totals.membershipRevenue)}</TableCell><TableCell>{formatCurrency(totals.connectPlanRevenue)}</TableCell><TableCell>{formatCurrency(totals.mallRevenue)}</TableCell><TableCell>{formatCurrency(totals.totalRevenue)}</TableCell></TableRow>
+                                {totals.membershipRevenue !== undefined && <TableRow className="bg-muted font-bold"><TableCell>Total</TableCell><TableCell>{formatCurrency(totals.membershipRevenue)}</TableCell><TableCell>{formatCurrency(totals.connectPlanRevenue)}</TableCell><TableCell>{formatCurrency(totals.mallRevenue)}</TableCell><TableCell>{formatCurrency(totals.totalRevenue)}</TableCell></TableRow>}
                             </TableBody>
                         </Table></CardContent>
                     </Card>
@@ -393,7 +396,7 @@ function FinancialProjectionsComponent() {
                             <TableHeader><TableRow><TableHead>Month</TableHead><TableHead>Total Revenue</TableHead><TableHead>OPEX</TableHead><TableHead>Net Profit</TableHead></TableRow></TableHeader>
                             <TableBody>
                                 {projections.map(p => (<TableRow key={p.month}><TableCell>{p.month}</TableCell><TableCell>{formatCurrency(p.totalRevenue)}</TableCell><TableCell>{formatCurrency(p.opex)}</TableCell><TableCell className={`font-bold ${p.netProfit < 0 ? 'text-destructive' : 'text-green-600'}`}>{formatCurrency(p.netProfit)}</TableCell></TableRow>))}
-                                <TableRow className="bg-muted font-bold"><TableCell>Total</TableCell><TableCell>{formatCurrency(totals.totalRevenue)}</TableCell><TableCell>{formatCurrency(totals.opex)}</TableCell><TableCell className={`font-bold ${totals.netProfit < 0 ? 'text-destructive' : 'text-green-600'}`}>{formatCurrency(totals.netProfit)}</TableCell></TableRow>
+                                {totals.totalRevenue !== undefined && <TableRow className="bg-muted font-bold"><TableCell>Total</TableCell><TableCell>{formatCurrency(totals.totalRevenue)}</TableCell><TableCell>{formatCurrency(totals.opex)}</TableCell><TableCell className={`font-bold ${totals.netProfit < 0 ? 'text-destructive' : 'text-green-600'}`}>{formatCurrency(totals.netProfit)}</TableCell></TableRow>}
                             </TableBody>
                         </Table></CardContent>
                     </Card>

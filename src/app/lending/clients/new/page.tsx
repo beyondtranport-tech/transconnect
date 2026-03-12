@@ -4,11 +4,10 @@
 import { Suspense } from 'react';
 import { Loader2 } from 'lucide-react';
 import { EntityWizard } from '@/app/lending/entity-wizard';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 
 function NewClientPageContent() {
     const router = useRouter();
-    const searchParams = useSearchParams();
     
     const handleSaveSuccess = () => {
         router.push('/lending?view=clients');

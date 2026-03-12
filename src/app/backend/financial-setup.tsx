@@ -15,8 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const SETUP_KEY = 'accountFinancialSetup_v1';
 
-
-export default function FinancialSetupPage() {
+export default function FinancialSetup() {
     const { toast } = useToast();
     const [isClient, setIsClient] = useState(false);
 
