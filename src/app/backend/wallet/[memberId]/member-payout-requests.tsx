@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, Send, XCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
@@ -106,7 +106,7 @@ export default function MemberPayoutRequests({ companyId, onUpdate }: { companyI
                                                 </AlertDialogHeader>
                                                 <AlertDialogFooter>
                                                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                    <AlertDialogAction onClick={() => handleReject(p.id)} variant="destructive">
+                                                    <AlertDialogAction onClick={() => handleReject(p.id)} className={buttonVariants({ variant: 'destructive' })}>
                                                         Yes, Reject Payout
                                                     </AlertDialogAction>
                                                 </AlertDialogFooter>

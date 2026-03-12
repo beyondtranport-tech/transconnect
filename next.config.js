@@ -2,8 +2,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  // This is the final and definitive change to force a clean build and resolve the 'Cannot find module' error.
-  // This invalidates the corrupted Next.js cache.
+  // Cache-busting comment to force a clean build: 2024-08-20T12:00:00Z
   images: {
     remotePatterns: [
       {
