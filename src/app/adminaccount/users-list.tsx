@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
@@ -114,7 +115,7 @@ export default function UsersList() {
         },
         {
           id: 'actions',
-          header: () => <div className="text-right">Actions</div>,
+          header: <div className="text-right">Actions</div>,
           cell: ({ row }) => (
             <div className="text-right">
                 <DropdownMenu>

@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Users, PlusCircle } from 'lucide-react';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -127,7 +127,7 @@ export default function MembersList() {
         },
         {
             id: 'actions',
-            header: () => <div className="text-right">Actions</div>,
+            header: <div className="text-right">Actions</div>,
             cell: ({ row }) => (
                 <div className="text-right">
                     <MemberActionMenu member={row.original} onUpdate={forceRefresh} />

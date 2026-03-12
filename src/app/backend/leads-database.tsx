@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useMemo, useEffect, Suspense, useCallback } from 'react';
@@ -434,7 +435,7 @@ function LeadsDatabaseComponent() {
     { accessorKey: 'address', header: 'Address', cell: ({row}) => <div className="text-xs">{row.original.address}</div>},
     { accessorKey: 'role', header: 'Role', cell: ({row}) => <Badge variant="outline">{row.original.role}</Badge>},
     { accessorKey: 'status', header: 'Status', cell: ({row}) => <Badge className="capitalize">{row.original.status}</Badge>},
-    { id: 'actions', header: () => <div className="text-right">Actions</div>, cell: ({row}) => (
+    { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({row}) => (
         <div className="text-right flex items-center justify-end">
              <InviteDialog lead={row.original} onInviteSent={forceRefresh} />
             <Button variant="ghost" size="icon" onClick={() => { setEditLead(row.original); setIsEditLeadOpen(true); }}>
@@ -490,7 +491,5 @@ export default function LeadsDatabase() {
         </Suspense>
     );
 }
-
-    
 
     

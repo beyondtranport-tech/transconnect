@@ -1,3 +1,5 @@
+
+
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
@@ -25,8 +27,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { useCollection, useFirestore, getClientSideAuthToken } from '@/firebase';
-import { collection, query, collectionGroup } from 'firebase/firestore';
+import { useUser, useFirestore, getClientSideAuthToken, useDoc, useCollection } from '@/firebase';
+import { collection, doc, query, collectionGroup } from 'firebase/firestore';
 import { Loader2, PlusCircle, UserPlus, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import StaffActionMenu from '../backend/staff-action-menu';
@@ -34,7 +36,12 @@ import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useMemoFirebase } from '@/firebase';
+import { EditStaffDialog } from '../backend/EditStaffDialog';
+import { usePermissions } from '@/hooks/use-permissions';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { ShieldAlert } from 'lucide-react';
+import { useMemoFirebase } from '@/hooks/use-config';
+import { useRouter } from 'next/navigation';
 
 const staffFormSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
@@ -344,7 +351,7 @@ export default function StaffManagement() {
         },
         {
             id: 'actions',
-            header: () => <div className="text-right">Actions</div>,
+            header: <div className="text-right">Actions</div>,
             cell: ({ row }) => (
                 <div className="text-right">
                     <StaffActionMenu staffMember={row.original} onUpdate={forceRefresh} />
@@ -378,4 +385,3 @@ export default function StaffManagement() {
         </Card>
     );
 }
-
