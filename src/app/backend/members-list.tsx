@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
@@ -127,7 +126,7 @@ export default function MembersList() {
         },
         {
             id: 'actions',
-            header: () => <div className="text-right">Actions</div>,
+            header: 'Actions',
             cell: ({ row }) => (
                 <div className="text-right">
                     <MemberActionMenu member={row.original} onUpdate={forceRefresh} />

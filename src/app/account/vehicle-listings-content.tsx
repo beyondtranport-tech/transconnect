@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
@@ -68,7 +67,7 @@ export default function VehicleListingsContent() {
         { accessorKey: 'year', header: 'Year' },
         { accessorKey: 'price', header: 'Price', cell: ({ row }) => formatCurrency(row.original.price) },
         { accessorKey: 'status', header: 'Status', cell: ({ row }) => <Badge variant={statusColors[row.original.status] || 'secondary'} className="capitalize">{row.original.status}</Badge> },
-        { id: 'actions', header: () => <div className="text-right">Actions</div>, cell: ({ row }) => (
+        { id: 'actions', header: 'Actions', cell: ({ row }) => (
             <div className="text-right">
                 <Button variant="ghost" size="icon" onClick={() => handleEdit(row.original)}>
                     <Edit className="h-4 w-4"/>

@@ -174,7 +174,7 @@ function StepLoads({ loadBoard }: { loadBoard: any }) {
         { accessorKey: 'weight', header: 'Weight (t)', cell: ({row}) => `${row.original.weight}t`},
         { accessorKey: 'pickupDate', header: 'Pickup', cell: ({row}) => formatDate(row.original.pickupDate)},
         { accessorKey: 'deliveryDate', header: 'Delivery', cell: ({row}) => formatDate(row.original.deliveryDate)},
-        { id: 'actions', header: () => <div className="text-right">Actions</div>, cell: ({row}) => (
+        { id: 'actions', header: 'Actions', cell: ({row}) => (
             <div className="flex justify-end gap-2">
                 <LoadDialog loadBoard={loadBoard} load={row.original} onComplete={forceRefresh}>
                     <Button variant="ghost" size="icon" disabled={!canManageLoads}>
@@ -224,5 +224,3 @@ export function LoadWizard({ loadBoard, onUpdate }: { loadBoard: any, onUpdate: 
         </div>
     );
 }
-
-    

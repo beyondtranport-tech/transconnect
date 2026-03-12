@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
@@ -516,7 +515,7 @@ export default function NetworkContent() {
         },
         {
           id: 'actions',
-          header: () => <div className="text-right">Actions</div>,
+          header: 'Actions',
           cell: ({ row }) => (
             <div className="flex items-center justify-end">
               <MessageDialog lead={row.original} companyId={companyId!} />

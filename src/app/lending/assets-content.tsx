@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
@@ -187,7 +186,7 @@ function AssetListComponent() {
     { accessorKey: 'year', header: 'Year' },
     { accessorKey: 'costOfSale', header: 'Cost', cell: ({ row }) => formatCurrency(row.original.costOfSale) },
     { accessorKey: 'status', header: 'Status', cell: ({ row }) => <Badge variant={statusColors[row.original.status] || 'secondary'} className="capitalize">{row.original.status}</Badge> },
-    { id: 'actions', cell: ({ row }) => <AssetActionMenu asset={row.original} onEdit={() => setDialogState({ type: 'edit', data: row.original })} onUpdate={forceRefresh} /> },
+    { id: 'actions', header: 'Actions', cell: ({ row }) => <AssetActionMenu asset={row.original} onEdit={() => setDialogState({ type: 'edit', data: row.original })} onUpdate={forceRefresh} /> },
   ], [forceRefresh]);
   
   return (
