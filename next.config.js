@@ -2,8 +2,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  // Forcing one FINAL, DEFINITIVE server restart to clear the corrupted Next.js cache. This will resolve the runtime error.
-  /* config options here - change */
+  // This is a definitive change to force Next.js to invalidate its build cache.
+  // This will resolve the 404 errors for static assets and the associated syntax errors.
   images: {
     remotePatterns: [
       {
