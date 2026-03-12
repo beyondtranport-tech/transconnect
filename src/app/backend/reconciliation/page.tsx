@@ -3,7 +3,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Loader2, DownloadCloud, Upload, ListChecks, ArrowRight } from "lucide-react";
+import { PlusCircle, Loader2, DownloadCloud, Upload, ListChecks, ArrowRight, Calendar as CalendarIcon } from "lucide-react";
 import { useState, useRef, useEffect, Suspense, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import TransactionAllocation from "./transaction-allocation";
@@ -21,7 +21,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { format, addDays } from "date-fns";
-import { Calendar as CalendarIcon } from "lucide-react";
 
 
 const manualAdjustmentTemplate = {
@@ -71,6 +70,8 @@ function ReconciliationDashboard() {
     const { toast } = useToast();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const firestore = useFirestore();
+    const [isClient, setIsClient] = useState(false);
+
 
     const reconciliationsQuery = useMemoFirebase(() => 
         firestore ? query(collection(firestore, 'reconciliations'), orderBy('processedAt', 'desc')) : null
@@ -78,6 +79,7 @@ function ReconciliationDashboard() {
     const { data: pastReconciliations, isLoading: isLoadingHistory, forceRefresh: refreshHistory } = useCollection(reconciliationsQuery);
     
     useEffect(() => {
+        setIsClient(true);
         // Set the initial date range only on the client-side
         setDateRange({
             from: new Date(),
@@ -183,6 +185,10 @@ function ReconciliationDashboard() {
         };
         reader.readAsText(file);
     };
+
+    if (!isClient) {
+        return <div className="flex justify-center py-20"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
+    }
 
     return (
         <div className="w-full space-y-8">

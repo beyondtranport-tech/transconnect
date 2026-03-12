@@ -41,56 +41,54 @@ const generateDefaultValues = (months: number) => {
 function TargetsComponent() {
     const router = useRouter();
     const { toast } = useToast();
-    const [forecastMonths, setForecastMonths] = useState(36);
-    const [startMonth, setStartMonth] = useState(new Date().getMonth());
-    const [startYear, setStartYear] = useState(new Date().getFullYear());
-    const [isLoading, setIsLoading] = useState(true);
+    const [settings, setSettings] = useState<{ forecastMonths: number; startMonth: number; startYear: number } | null>(null);
 
-    useEffect(() => {
-        if (typeof window !== 'undefined') {
-            try {
-                const savedSettings = localStorage.getItem(SETUP_KEY);
-                if (savedSettings) {
-                    const parsed = JSON.parse(savedSettings);
-                    setForecastMonths(parsed.forecastMonths || 36);
-                    setStartMonth(parsed.startMonth || new Date().getMonth());
-                    setStartYear(parsed.startYear || new Date().getFullYear());
-                }
-            } catch (e) {
-                console.error("Could not parse financial setup settings for targets page.");
-            } finally {
-                setIsLoading(false);
-            }
-        }
-    }, []);
-
-    const form = useForm({
-        defaultValues: useCallback(() => {
-            if (typeof window === 'undefined') {
-                return generateDefaultValues(forecastMonths);
-            }
-            try {
-                const savedData = localStorage.getItem(TARGETS_KEY);
-                if (savedData) {
-                    const parsed = JSON.parse(savedData);
-                    const savedMonths = parsed.monthlyTargets[targetAssumptions[0].id]?.length || 0;
-                    if (savedMonths === forecastMonths) {
-                        return parsed;
-                    }
-                }
-            } catch (e) {
-                console.error("Failed to parse saved targets data.", e);
-            }
-            return generateDefaultValues(forecastMonths);
-        }, [forecastMonths])()
-    });
-
+    const form = useForm();
     const { control, handleSubmit, reset } = form;
 
-    const monthHeaders = Array.from({ length: forecastMonths }, (_, i) => {
-        const date = new Date(startYear, startMonth + i);
-        return `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
-    });
+    useEffect(() => {
+        let localSettings = {
+            forecastMonths: 36,
+            startMonth: 0, // Static default
+            startYear: 2024, // Static default
+        };
+        try {
+            const savedSettings = localStorage.getItem(SETUP_KEY);
+            if (savedSettings) {
+                localSettings = { ...localSettings, ...JSON.parse(savedSettings) };
+            } else {
+                localSettings.startMonth = new Date().getMonth();
+                localSettings.startYear = new Date().getFullYear();
+            }
+        } catch (e) {
+            console.error("Could not parse financial setup settings for targets page.");
+            localSettings.startMonth = new Date().getMonth();
+            localSettings.startYear = new Date().getFullYear();
+        }
+        setSettings(localSettings);
+        
+        try {
+            const savedData = localStorage.getItem(TARGETS_KEY);
+            const savedMonths = savedData ? JSON.parse(savedData).monthlyTargets[targetAssumptions[0].id]?.length : 0;
+            const initialData = (savedData && savedMonths === localSettings.forecastMonths) 
+                ? JSON.parse(savedData) 
+                : generateDefaultValues(localSettings.forecastMonths);
+            form.reset(initialData);
+        } catch (e) {
+            console.error("Failed to parse saved targets data, using defaults.", e);
+            form.reset(generateDefaultValues(localSettings.forecastMonths));
+        }
+
+    }, [form]);
+
+    const monthHeaders = useMemo(() => {
+        if (!settings) return [];
+        const { forecastMonths, startMonth, startYear } = settings;
+        return Array.from({ length: forecastMonths }, (_, i) => {
+            const date = new Date(startYear, startMonth + i);
+            return `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
+        });
+    }, [settings]);
 
     const onSubmit = (data: any) => {
         localStorage.setItem(TARGETS_KEY, JSON.stringify(data));
@@ -101,7 +99,8 @@ function TargetsComponent() {
     };
 
     const handleReset = () => {
-        const defaults = generateDefaultValues(forecastMonths);
+        if (!settings) return;
+        const defaults = generateDefaultValues(settings.forecastMonths);
         reset(defaults);
         toast({
             title: 'Targets Reset',
@@ -109,7 +108,7 @@ function TargetsComponent() {
         });
     };
     
-    if (isLoading) {
+    if (!settings) {
         return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
     }
 

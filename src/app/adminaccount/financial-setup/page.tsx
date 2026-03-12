@@ -21,6 +21,7 @@ export default function FinancialSetupPage() {
     const [isClient, setIsClient] = useState(false);
 
     const form = useForm({
+        // Use static defaults that are identical on server and client
         defaultValues: {
             startMonth: 0,
             startYear: 2024,
@@ -35,7 +36,7 @@ export default function FinancialSetupPage() {
             if (saved) {
                 form.reset(JSON.parse(saved));
             } else {
-                 // Set initial default only if nothing is in local storage
+                 // Set dynamic defaults only on the client if no saved data exists
                 form.reset({
                     startMonth: new Date().getMonth(),
                     startYear: new Date().getFullYear(),
@@ -44,7 +45,7 @@ export default function FinancialSetupPage() {
             }
         } catch (e) {
             console.error("Could not parse financial setup settings.");
-            // Fallback to safe defaults on error
+            // Fallback to safe defaults on error, calculated on client
             form.reset({
                 startMonth: new Date().getMonth(),
                 startYear: new Date().getFullYear(),
@@ -62,10 +63,10 @@ export default function FinancialSetupPage() {
             description: "Your financial forecast settings have been saved locally.",
         });
     };
-
+    
     if (!isClient) {
         return (
-            <Card className="max-w-lg">
+             <Card className="max-w-lg">
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2"><Settings /> Financial Forecast Set Up</CardTitle>
                     <CardDescription>Define the core parameters for your financial projections. These settings will apply to all financial reports.</CardDescription>

@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Map, Loader2, Save, RotateCcw, Trash2, Check, Copy } from 'lucide-react';
+import { Map, Loader2, Save, RotateCcw, Trash2, Copy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Form } from '@/components/ui/form';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
@@ -17,7 +17,7 @@ import { Label } from '@/components/ui/label';
 
 const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const SETUP_KEY = 'accountFinancialSetup_v1';
-const SALES_ROADMAP_KEY = 'accountSalesRoadmapScenarios_v1'; // New key for scenarios
+const SALES_ROADMAP_KEY = 'accountSalesRoadmapScenarios_v1';
 
 const salesRoleGroups = [
     {
@@ -108,18 +108,20 @@ function SalesRoadmapComponent() {
         let months = 36;
         let localSettings = {
             forecastMonths: 36,
-            startMonth: new Date().getMonth(),
-            startYear: new Date().getFullYear()
+            startMonth: 0, // Static default
+            startYear: 2024, // Static default
         };
-
         try {
             const savedSettings = localStorage.getItem(SETUP_KEY);
             if (savedSettings) {
                 const parsed = JSON.parse(savedSettings);
                 months = parsed.forecastMonths || 36;
                 localSettings = parsed;
+            } else {
+                 localSettings.startMonth = new Date().getMonth();
+                 localSettings.startYear = new Date().getFullYear();
             }
-            setSettings(localSettings);
+             setSettings(localSettings);
             
             const savedScenarios = localStorage.getItem(SALES_ROADMAP_KEY);
             const parsedScenarios = savedScenarios ? JSON.parse(savedScenarios) : { scenarios: { 'Default': generateDefaultValues(months) }, activeScenario: 'Default' };

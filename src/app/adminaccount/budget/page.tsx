@@ -9,7 +9,6 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { TrendingUp, DollarSign, Users, Percent, Loader2, Save, RotateCcw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { Separator } from '@/components/ui/separator';
 import { Form, FormControl, FormField, FormItem } from '@/components/ui/form';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -104,15 +103,29 @@ function BudgetPageComponent() {
 
     useEffect(() => {
         setIsClient(true);
+        let localSettings = {
+            forecastMonths: 36,
+            startMonth: 0, // Static default
+            startYear: 2024, // Static default
+        };
         try {
             const savedSettings = localStorage.getItem(SETUP_KEY);
-            const localSettings = savedSettings ? JSON.parse(savedSettings) : {
-                forecastMonths: 36,
-                startMonth: new Date().getMonth(),
-                startYear: new Date().getFullYear(),
-            };
-            setSettings(localSettings);
-            
+            if (savedSettings) {
+                localSettings = { ...localSettings, ...JSON.parse(savedSettings) };
+            } else {
+                // Set dynamic date defaults only if no settings exist
+                localSettings.startMonth = new Date().getMonth();
+                localSettings.startYear = new Date().getFullYear();
+            }
+        } catch (e) {
+            console.error("Could not parse financial setup settings for budget page.");
+            // Fallback to dynamic on error
+            localSettings.startMonth = new Date().getMonth();
+            localSettings.startYear = new Date().getFullYear();
+        }
+        setSettings(localSettings);
+        
+        try {
             const savedData = localStorage.getItem(BUDGET_KEY);
             const savedMonths = savedData ? JSON.parse(savedData).budgetInputs.revenue.membershipFees.length : 0;
             
@@ -122,10 +135,8 @@ function BudgetPageComponent() {
 
             form.reset(initialData);
         } catch (e) {
-            console.error("Failed to parse saved budget data.", e);
-            const defaultSettings = { forecastMonths: 36, startMonth: new Date().getMonth(), startYear: new Date().getFullYear() };
-            setSettings(defaultSettings);
-            form.reset(generateDefaultValues(defaultSettings.forecastMonths));
+            console.error("Failed to parse saved budget data, using defaults.", e);
+            form.reset(generateDefaultValues(localSettings.forecastMonths));
         }
     }, [form]);
     

@@ -1,12 +1,13 @@
+
 'use client';
 
-import React, { useMemo, useState, useCallback, Suspense } from 'react';
+import React, { useMemo, useState, useEffect, Suspense } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { TrendingUp, AlertTriangle, Loader2, DollarSign, Users, Map, Target, Banknote, Save, RotateCcw, Handshake, Bot } from 'lucide-react';
+import { TrendingUp, Loader2, DollarSign, Users, Map, Target, Banknote, Save, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
@@ -16,7 +17,11 @@ import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { formatCurrency, formatDateSafe } from '@/lib/utils';
+
+const formatCurrency = (value: number) => {
+    if (typeof value !== 'number' || isNaN(value)) return 'R 0';
+    return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR', maximumFractionDigits: 0 }).format(value);
+};
 
 const formatNumber = (value: number) => {
     if (typeof value !== 'number' || isNaN(value)) return '0';
@@ -51,31 +56,12 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-const defaultValues: FormValues = {
-    forecastMonths: 36,
-    startMonth: new Date().getMonth(),
-    startYear: new Date().getFullYear(),
-    salesRoadmap: {
-        powerPartners: { count: 5, oppsPerMonth: 200, conversionRate: 5 },
-        isaAgents: { count: 10, referralsPerMonth: 20, conversionRate: 10 },
-    },
-    targets: {
-        connectPlanAdoptionRate: 15,
-    },
-    budget: {
-        avgMembershipFee: 350,
-        avgMallSpend: 1500,
-        mallCommissionRate: 2.5,
-        opexPerMonth: 250000,
-    }
-};
-
 const PROJECTIONS_KEY = 'adminFinancialProjections_v1';
 
 
 // --- Calculation Logic ---
-function calculateProjections(inputs: FormValues) {
-    if (!inputs.startYear || !inputs.forecastMonths) return [];
+function calculateProjections(inputs: FormValues | null) {
+    if (!inputs || !inputs.startYear || !inputs.forecastMonths) return [];
 
     const { forecastMonths, salesRoadmap, targets, budget, startMonth, startYear } = inputs;
     
@@ -136,15 +122,42 @@ function calculateProjections(inputs: FormValues) {
 
 function FinancialProjectionsComponent() {
     const { toast } = useToast();
+    const [isClient, setIsClient] = useState(false);
+    const [initialFormValues, setInitialFormValues] = useState<FormValues | null>(null);
     
-    const form = useForm<FormValues>({
-        resolver: zodResolver(formSchema),
-        defaultValues: useCallback(() => {
-             if (typeof window === 'undefined') return defaultValues;
+    const form = useForm<FormValues>();
+
+    useEffect(() => {
+        setIsClient(true);
+        let defaults: FormValues = {
+            forecastMonths: 36,
+            startMonth: new Date().getMonth(),
+            startYear: new Date().getFullYear(),
+            salesRoadmap: {
+                powerPartners: { count: 5, oppsPerMonth: 200, conversionRate: 5 },
+                isaAgents: { count: 10, referralsPerMonth: 20, conversionRate: 10 },
+            },
+            targets: {
+                connectPlanAdoptionRate: 15,
+            },
+            budget: {
+                avgMembershipFee: 350,
+                avgMallSpend: 1500,
+                mallCommissionRate: 2.5,
+                opexPerMonth: 250000,
+            }
+        };
+        try {
             const saved = localStorage.getItem(PROJECTIONS_KEY);
-            return saved ? JSON.parse(saved) : defaultValues;
-        }, [])()
-    });
+            if (saved) {
+                defaults = JSON.parse(saved);
+            }
+        } catch (error) {
+            console.error("Could not parse saved projection data.");
+        }
+        setInitialFormValues(defaults);
+        form.reset(defaults);
+    }, [form]);
 
     const { control, handleSubmit, watch, reset } = form;
     const watchedValues = watch();
@@ -162,9 +175,11 @@ function FinancialProjectionsComponent() {
             return acc;
         }, {} as Record<string, number>);
 
-        const lastMonth = projections[projections.length - 1];
-        result.cumulativePartnerMembers = lastMonth.cumulativePartnerMembers;
-        result.cumulativeTotalMembers = lastMonth.cumulativeTotalMembers;
+        if(projections.length > 0) {
+            const lastMonth = projections[projections.length - 1];
+            result.cumulativePartnerMembers = lastMonth.cumulativePartnerMembers;
+            result.cumulativeTotalMembers = lastMonth.cumulativeTotalMembers;
+        }
 
         return result;
     }, [projections]);
@@ -195,8 +210,26 @@ function FinancialProjectionsComponent() {
     };
     
     const handleReset = () => {
+        const defaults = {
+            forecastMonths: 36,
+            startMonth: new Date().getMonth(),
+            startYear: new Date().getFullYear(),
+            salesRoadmap: {
+                powerPartners: { count: 5, oppsPerMonth: 200, conversionRate: 5 },
+                isaAgents: { count: 10, referralsPerMonth: 20, conversionRate: 10 },
+            },
+            targets: {
+                connectPlanAdoptionRate: 15,
+            },
+            budget: {
+                avgMembershipFee: 350,
+                avgMallSpend: 1500,
+                mallCommissionRate: 2.5,
+                opexPerMonth: 250000,
+            }
+        };
         localStorage.removeItem(PROJECTIONS_KEY);
-        reset(defaultValues);
+        reset(defaults);
         toast({ title: 'Projections Reset', description: 'Assumptions have been reset to default values.' });
     };
 
@@ -208,6 +241,10 @@ function FinancialProjectionsComponent() {
             </FormItem>
         )} />
     );
+
+    if (!isClient || !initialFormValues) {
+        return <div className="flex justify-center items-center h-64"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>
+    }
 
     return (
         <div className="space-y-8">
@@ -263,7 +300,7 @@ function FinancialProjectionsComponent() {
             </Form>
 
              <Tabs defaultValue="partners" className="w-full">
-                {grandTotals && (
+                {grandTotals && watchedValues.forecastMonths && (
                     <div className="mb-8">
                         <h2 className="text-xl font-semibold mb-4">Forecast Summary</h2>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -323,7 +360,7 @@ function FinancialProjectionsComponent() {
                             <TableHeader><TableRow><TableHead>Month</TableHead><TableHead>New (Partners)</TableHead><TableHead>New (ISAs)</TableHead><TableHead>Total New</TableHead><TableHead>Cumulative</TableHead></TableRow></TableHeader>
                             <TableBody>
                                 {projections.map(p => (<TableRow key={p.month}><TableCell>{p.month}</TableCell><TableCell>{formatNumber(p.partnerNewMembers)}</TableCell><TableCell>{formatNumber(p.isaNewMembers)}</TableCell><TableCell>{formatNumber(p.totalPartnerDriven)}</TableCell><TableCell className="font-bold">{formatNumber(p.cumulativePartnerMembers)}</TableCell></TableRow>))}
-                                <TableRow className="bg-muted font-bold"><TableCell>Total</TableCell><TableCell>{formatNumber(totals.partnerNewMembers)}</TableCell><TableCell>{formatNumber(totals.isaNewMembers)}</TableCell><TableCell>{formatNumber(totals.totalPartnerDriven)}</TableCell><TableCell>{formatNumber(totals.cumulativePartnerMembers)}</TableCell></TableRow>
+                                {totals.partnerNewMembers !== undefined && <TableRow className="bg-muted font-bold"><TableCell>Total</TableCell><TableCell>{formatNumber(totals.partnerNewMembers)}</TableCell><TableCell>{formatNumber(totals.isaNewMembers)}</TableCell><TableCell>{formatNumber(totals.totalPartnerDriven)}</TableCell><TableCell>{formatNumber(totals.cumulativePartnerMembers)}</TableCell></TableRow>}
                             </TableBody>
                         </Table></CardContent>
                     </Card>
@@ -335,7 +372,7 @@ function FinancialProjectionsComponent() {
                             <TableHeader><TableRow><TableHead>Month</TableHead><TableHead>New Members</TableHead><TableHead>Cumulative Members</TableHead></TableRow></TableHeader>
                             <TableBody>
                                 {projections.map(p => (<TableRow key={p.month}><TableCell>{p.month}</TableCell><TableCell>{formatNumber(p.totalPartnerDriven)}</TableCell><TableCell className="font-bold">{formatNumber(p.cumulativeTotalMembers)}</TableCell></TableRow>))}
-                                <TableRow className="bg-muted font-bold"><TableCell>Total</TableCell><TableCell>{formatNumber(totals.totalPartnerDriven)}</TableCell><TableCell>{formatNumber(totals.cumulativeTotalMembers)}</TableCell></TableRow>
+                                {totals.totalPartnerDriven !== undefined && <TableRow className="bg-muted font-bold"><TableCell>Total</TableCell><TableCell>{formatNumber(totals.totalPartnerDriven)}</TableCell><TableCell>{formatNumber(totals.cumulativeTotalMembers)}</TableCell></TableRow>}
                             </TableBody>
                         </Table></CardContent>
                     </Card>
@@ -347,7 +384,7 @@ function FinancialProjectionsComponent() {
                             <TableHeader><TableRow><TableHead>Month</TableHead><TableHead>Membership Rev.</TableHead><TableHead>Connect Plan Rev.</TableHead><TableHead>Mall Rev.</TableHead><TableHead>Total Revenue</TableHead></TableRow></TableHeader>
                             <TableBody>
                                 {projections.map(p => (<TableRow key={p.month}><TableCell>{p.month}</TableCell><TableCell>{formatCurrency(p.membershipRevenue)}</TableCell><TableCell>{formatCurrency(p.connectPlanRevenue)}</TableCell><TableCell>{formatCurrency(p.mallRevenue)}</TableCell><TableCell className="font-bold">{formatCurrency(p.totalRevenue)}</TableCell></TableRow>))}
-                                <TableRow className="bg-muted font-bold"><TableCell>Total</TableCell><TableCell>{formatCurrency(totals.membershipRevenue)}</TableCell><TableCell>{formatCurrency(totals.connectPlanRevenue)}</TableCell><TableCell>{formatCurrency(totals.mallRevenue)}</TableCell><TableCell>{formatCurrency(totals.totalRevenue)}</TableCell></TableRow>
+                                {totals.membershipRevenue !== undefined && <TableRow className="bg-muted font-bold"><TableCell>Total</TableCell><TableCell>{formatCurrency(totals.membershipRevenue)}</TableCell><TableCell>{formatCurrency(totals.connectPlanRevenue)}</TableCell><TableCell>{formatCurrency(totals.mallRevenue)}</TableCell><TableCell>{formatCurrency(totals.totalRevenue)}</TableCell></TableRow>}
                             </TableBody>
                         </Table></CardContent>
                     </Card>
@@ -359,7 +396,7 @@ function FinancialProjectionsComponent() {
                             <TableHeader><TableRow><TableHead>Month</TableHead><TableHead>Total Revenue</TableHead><TableHead>OPEX</TableHead><TableHead>Net Profit</TableHead></TableRow></TableHeader>
                             <TableBody>
                                 {projections.map(p => (<TableRow key={p.month}><TableCell>{p.month}</TableCell><TableCell>{formatCurrency(p.totalRevenue)}</TableCell><TableCell>{formatCurrency(p.opex)}</TableCell><TableCell className={`font-bold ${p.netProfit < 0 ? 'text-destructive' : 'text-green-600'}`}>{formatCurrency(p.netProfit)}</TableCell></TableRow>))}
-                                <TableRow className="bg-muted font-bold"><TableCell>Total</TableCell><TableCell>{formatCurrency(totals.totalRevenue)}</TableCell><TableCell>{formatCurrency(totals.opex)}</TableCell><TableCell className={`font-bold ${totals.netProfit < 0 ? 'text-destructive' : 'text-green-600'}`}>{formatCurrency(totals.netProfit)}</TableCell></TableRow>
+                                {totals.totalRevenue !== undefined && <TableRow className="bg-muted font-bold"><TableCell>Total</TableCell><TableCell>{formatCurrency(totals.totalRevenue)}</TableCell><TableCell>{formatCurrency(totals.opex)}</TableCell><TableCell className={`font-bold ${totals.netProfit < 0 ? 'text-destructive' : 'text-green-600'}`}>{formatCurrency(totals.netProfit)}</TableCell></TableRow>}
                             </TableBody>
                         </Table></CardContent>
                     </Card>
