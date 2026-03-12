@@ -127,7 +127,7 @@ export default function MembersList() {
         },
         {
             id: 'actions',
-            header: 'Actions',
+            header: () => <div className="text-right">Actions</div>,
             cell: ({ row }) => (
                 <div className="text-right">
                     <MemberActionMenu member={row.original} onUpdate={forceRefresh} />

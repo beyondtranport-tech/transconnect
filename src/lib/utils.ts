@@ -26,3 +26,10 @@ export function formatDateSafe(dateValue: any, formatString: string = "dd MMM yy
     if (isNaN(date.getTime())) return 'Invalid Date';
     return formatDateFns(date, formatString);
 }
+
+export function formatNumber(value: number | null | undefined): string {
+    if (value === null || value === undefined || typeof value !== 'number' || isNaN(value)) {
+        return '0';
+    }
+    return value.toLocaleString('en-US'); // Use a fixed locale like en-US to ensure consistency
+}

@@ -5,18 +5,13 @@ import React, { useMemo, Suspense } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { AlertTriangle, Users, Loader2 } from 'lucide-react';
+import { AlertTriangle, Users, Map, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { salesRoadmapLogic } from '@/app/adminaccount/forecast/calculations';
+import { salesRoadmapLogic } from '@/app/adminaccount/lib/calculations';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { formatNumber } from '@/lib/utils';
 
-
-// Helper to format numbers with commas
-const formatNumber = (value: number) => {
-    if (typeof value !== 'number' || isNaN(value)) return '0';
-    return value.toLocaleString();
-};
 
 function MemberProjectionComponent() {
     const { roadmapInputs, setupInputs } = useMemo(() => {
