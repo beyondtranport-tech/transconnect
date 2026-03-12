@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -7,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Loader2, Truck, Warehouse, Building } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { getClientSideAuthToken } from '@/firebase';
+import { formatDateSafe } from '@/lib/utils';
 
 interface Contribution {
     id: string;
@@ -70,15 +70,6 @@ export default function ContributionsList() {
         return [...contributions].sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     }, [contributions]);
 
-    const formatDate = (isoString: string | undefined) => {
-        if (!isoString) return 'N/A';
-        try {
-            return new Date(isoString).toLocaleString('en-ZA', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'});
-        } catch (e) {
-            return 'Invalid Date';
-        }
-    };
-    
     const renderCell = (item: any, field: string) => {
         const value = item.data?.[field];
         if (typeof value === 'boolean') {
@@ -102,7 +93,7 @@ export default function ContributionsList() {
                 {error && (
                      <div className="text-destructive-foreground bg-destructive/90 p-4 rounded-md">
                         <h4 className="font-semibold">Error loading contributions</h4>
-                        <p className="text-sm">{error.message}</p>
+                        <p className="text-sm">{error}</p>
                     </div>
                 )}
                 {sortedContributions && !isLoading && (
@@ -134,7 +125,7 @@ export default function ContributionsList() {
                             <TableBody>
                                 {sortedContributions.map(item => (
                                     <TableRow key={item.id}>
-                                        <TableCell>{formatDate(item.createdAt)}</TableCell>
+                                        <TableCell>{formatDateSafe(item.createdAt, "dd MMM yyyy, HH:mm")}</TableCell>
                                         <TableCell>
                                             <Badge variant={typeConfig[item.type as keyof typeof typeConfig]?.color || 'secondary'} className="capitalize">
                                                 {item.type}
