@@ -13,14 +13,7 @@ import Link from 'next/link';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { AgreementActionMenu } from '@/app/lending/agreements/AgreementActionMenu';
-import { formatCurrency } from '@/lib/utils';
-
-const formatDate = (dateValue: any) => {
-    if (!dateValue) return 'N/A';
-    const date = dateValue.toDate ? dateValue.toDate() : new Date(dateValue);
-    if (isNaN(date.getTime())) return 'Invalid Date';
-    return new Intl.DateTimeFormat('en-ZA').format(date);
-};
+import { formatCurrency, formatDateSafe } from '@/lib/utils';
 
 function ClientDetailPage() {
     const params = useParams();
