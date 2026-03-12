@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { Suspense, useCallback, useEffect, useState } from 'react';
@@ -76,6 +77,21 @@ const generateDefaultValues = (months: number) => {
     return defaults;
 };
 
+type FormValues = {
+    budgetInputs: {
+        revenue: { [key: string]: number[] };
+        cogs: { [key: string]: number[] };
+        opexOther: { [key: string]: number[] };
+    };
+    opexSalaries: {
+        role: string;
+        count: number;
+        salary: number;
+        monthlyHeadcount: number[];
+        monthlySalary: number[];
+    }[];
+};
+
 
 function BudgetPageComponent() {
     const router = useRouter();
@@ -85,7 +101,9 @@ function BudgetPageComponent() {
     const [startMonth, setStartMonth] = useState(new Date().getMonth());
     const [startYear, setStartYear] = useState(new Date().getFullYear());
 
-    const form = useForm();
+    const form = useForm<FormValues>({
+        defaultValues: generateDefaultValues(36)
+    });
     const { control, handleSubmit, reset } = form;
 
     useEffect(() => {
