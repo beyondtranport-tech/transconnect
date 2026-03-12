@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
@@ -106,7 +105,7 @@ export default function SupportChatContent() {
 
             // 2. Call the AI for a response
             const historyForApi = (messages || []).map(msg => ({
-                role: msg.senderId === user.uid ? 'user' : 'model',
+                role: (msg.senderId === user.uid ? 'user' : 'model') as 'user' | 'model',
                 content: [{ text: msg.text }],
             }));
             
