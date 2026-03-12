@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -7,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
@@ -28,6 +27,7 @@ async function performAdminAction(token: string, action: string, payload?: any) 
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ action, payload }),
     });
+
     const result = await response.json();
     if (!response.ok || !result.success) throw new Error(result.error || `API Error: ${action}`);
     return result;
@@ -258,6 +258,7 @@ export function EntityWizard({ entity, entityType, onBack, onSaveSuccess }: { en
 
     const methods = useForm<FormValues>({
         resolver: zodResolver(formSchema),
+        mode: 'onChange',
         defaultValues: entity || {
             name: '',
             status: 'draft',

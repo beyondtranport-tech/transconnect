@@ -10,6 +10,7 @@ import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { useRouter } from 'next/navigation';
 import { AgreementActionMenu } from './agreements/AgreementActionMenu';
+import { formatCurrency } from '@/lib/utils';
 
 async function performAdminAction(token: string, action: string, payload: any) {
     const response = await fetch('/api/admin', {
@@ -24,13 +25,6 @@ async function performAdminAction(token: string, action: string, payload: any) {
     }
     return result;
 }
-
-const formatCurrency = (value?: number) => {
-    if (typeof value !== 'number' || isNaN(value)) return 'R 0.00';
-    const parts = value.toFixed(2).toString().split('.');
-    const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-    return `R ${integerPart}.${parts[1]}`;
-};
 
 const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
     pending: 'secondary',

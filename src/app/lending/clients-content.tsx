@@ -57,7 +57,7 @@ function ClientListComponent() {
     { accessorKey: 'status', header: 'Status', cell: ({ row }) => <Badge className="capitalize">{row.original.status}</Badge> },
     { accessorKey: 'globalFacilityLimit', header: 'Facility Limit', cell: ({ row }) => formatCurrency(row.original.globalFacilityLimit || 0) },
     { id: 'actions', cell: ({ row }) => <ClientActionMenu client={row.original} onUpdate={forceRefresh} /> },
-  ], [forceRefresh, router]);
+  ], [forceRefresh]);
 
   return (
       <Card>

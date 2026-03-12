@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
@@ -350,7 +348,7 @@ export default function StaffManagement() {
         },
         {
             id: 'actions',
-            header: <div className="text-right">Actions</div>,
+            header: () => <div className="text-right">Actions</div>,
             cell: ({ row }) => (
                 <div className="text-right">
                     <StaffActionMenu staffMember={row.original} onUpdate={forceRefresh} />
