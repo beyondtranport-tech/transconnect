@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -16,13 +15,7 @@ import { writeBatch, doc, collection, increment, serverTimestamp, query, deleteD
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-
-const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-ZA', {
-        style: 'currency',
-        currency: 'ZAR',
-    }).format(amount);
-};
+import { formatCurrency } from '@/lib/utils';
 
 const chartOfAccounts = {
     revenue: [
@@ -404,4 +397,3 @@ export default function TransactionAllocation({ statementData, onSuccessfulPost 
         </Card>
     )
 }
-    

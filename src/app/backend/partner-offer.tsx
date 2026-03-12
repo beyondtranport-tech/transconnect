@@ -153,7 +153,7 @@ export default function PartnerOffer() {
                         <li className="flex items-start gap-3">
                             <CheckCircle className="h-4 w-4 text-green-600 mt-1 shrink-0" />
                             <div>
-                                <strong className="font-semibold">Example: Subscription Product Sales.</strong> A subscription product costs {formatCurrency(exampleMarketplaceProductPrice)}/month. TransConnect earns a {formatCurrency(exampleMarketplacePlatformCommission)} (25%) commission. We share {isaMarketplaceShare}% of our commission with you, the ISA.
+                                <strong className="font-semibold">Example: Subscription Product Sales.</strong> A subscription product costs {formatCurrency(exampleMarketplaceProductPrice)}/month. Logistics Flow earns a {formatCurrency(exampleMarketplacePlatformCommission)} (25%) commission. We share {isaMarketplaceShare}% of our commission with you, the ISA.
                             </div>
                         </li>
                          <li className="flex items-start gap-3">
@@ -183,7 +183,7 @@ export default function PartnerOffer() {
                     </div>
                      <div>
                         <h4 className="font-bold text-lg">Step 2: You Activate Your Network</h4>
-                        <p className="text-muted-foreground">You introduce TransConnect to your community. Your pitch is simple: invite them to join an ecosystem that saves them money, helps them find work, and gives them access to better financing. We equip you with offers and materials to make signing up irresistible.</p>
+                        <p className="text-muted-foreground">You introduce Logistics Flow to your community. Your pitch is simple: invite them to join an ecosystem that saves them money, helps them find work, and gives them access to better financing. We equip you with offers and materials to make signing up irresistible.</p>
                     </div>
                      <div>
                         <h4 className="font-bold text-lg">Step 3: You Earn Automatically</h4>

@@ -31,5 +31,6 @@ export function formatNumber(value: number | null | undefined): string {
     if (value === null || value === undefined || typeof value !== 'number' || isNaN(value)) {
         return '0';
     }
-    return value.toLocaleString('en-US'); // Use a fixed locale like en-US to ensure consistency
+    // Use a server-safe method to add commas for thousands separation
+    return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }

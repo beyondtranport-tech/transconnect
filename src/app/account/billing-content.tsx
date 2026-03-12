@@ -6,16 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, CreditCard } from 'lucide-react';
 import { collection, query, orderBy, doc } from 'firebase/firestore';
-import { format as formatDateFns } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
-import { formatCurrency } from '@/lib/utils';
-
-const formatDate = (dateValue: any) => {
-    if (!dateValue) return 'N/A';
-    const date = dateValue.toDate ? dateValue.toDate() : new Date(dateValue);
-    if (isNaN(date.getTime())) return 'Invalid Date';
-    return formatDateFns(date, "dd MMM yyyy, HH:mm");
-};
+import { formatCurrency, formatDateSafe } from '@/lib/utils';
 
 const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
   pending_allocation: 'secondary',
@@ -78,7 +70,7 @@ export default function BillingContent() {
                             <TableBody>
                                 {transactions.map(tx => (
                                     <TableRow key={tx.id}>
-                                        <TableCell className="text-xs text-muted-foreground">{formatDate(tx.date)}</TableCell>
+                                        <TableCell className="text-xs text-muted-foreground">{formatDateSafe(tx.date, "dd MMM yyyy, HH:mm")}</TableCell>
                                         <TableCell>{tx.description}</TableCell>
                                         <TableCell>
                                             <Badge variant={statusColors[tx.status] || 'secondary'} className="capitalize">
