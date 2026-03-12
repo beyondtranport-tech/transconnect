@@ -1,10 +1,9 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
 
 export interface ColumnDef<TData> {
-  accessorKey?: string;
+  accessorKey?: keyof TData | string; // Allow string for nested paths
   header: React.ReactNode;
   cell?: (props: { row: { original: TData } }) => React.ReactNode;
   id?: string;

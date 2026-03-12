@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
@@ -26,8 +25,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore, useDoc, useCollection, errorEmitter, useMemoFirebase } from '@/firebase';
-import { collection, doc, addDoc, serverTimestamp, query, collectionGroup } from 'firebase/firestore';
+import { useCollection, useFirestore, getClientSideAuthToken } from '@/firebase';
+import { collection, query, collectionGroup } from 'firebase/firestore';
 import { Loader2, PlusCircle, UserPlus, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import StaffActionMenu from '../backend/staff-action-menu';
@@ -35,11 +34,7 @@ import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { EditStaffDialog } from '../backend/EditStaffDialog';
-import { usePermissions } from '@/hooks/use-permissions';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { ShieldAlert } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useMemoFirebase } from '@/firebase';
 
 const staffFormSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
@@ -383,3 +378,4 @@ export default function StaffManagement() {
         </Card>
     );
 }
+
