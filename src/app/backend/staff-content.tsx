@@ -27,7 +27,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore, getClientSideAuthToken, useDoc, useCollection } from '@/firebase';
+import { useUser, useFirestore, useDoc, useCollection, errorEmitter, useMemoFirebase, getClientSideAuthToken } from '@/firebase';
 import { collection, doc, query, collectionGroup } from 'firebase/firestore';
 import { Loader2, PlusCircle, UserPlus, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -40,7 +40,6 @@ import { EditStaffDialog } from '../backend/EditStaffDialog';
 import { usePermissions } from '@/hooks/use-permissions';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ShieldAlert } from 'lucide-react';
-import { useMemoFirebase } from '@/hooks/use-config';
 import { useRouter } from 'next/navigation';
 
 const staffFormSchema = z.object({

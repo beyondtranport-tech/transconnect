@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
@@ -24,6 +25,15 @@ const formatDate = (dateValue: any) => {
     return formatDateFns(date, "dd MMM yyyy, HH:mm");
 };
 
+interface SupportMessage {
+    id: string;
+    text: string;
+    senderId: string;
+    senderName: string;
+    timestamp: any;
+}
+
+
 export default function SupportChatContent() {
     const { user, isUserLoading } = useUser();
     const firestore = useFirestore();
@@ -43,7 +53,7 @@ export default function SupportChatContent() {
         );
     }, [firestore, companyId]);
 
-    const { data: messages, isLoading: areMessagesLoading, forceRefresh } = useCollection(messagesQuery);
+    const { data: messages, isLoading: areMessagesLoading, forceRefresh } = useCollection<SupportMessage>(messagesQuery);
 
     const isLoading = isUserLoading || areMessagesLoading;
     
