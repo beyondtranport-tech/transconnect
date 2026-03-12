@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 import MemberActionMenu from './member-action-menu';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { formatDateSafe } from '@/lib/utils';
 
 interface Member {
     id: string;
@@ -122,10 +123,7 @@ export default function MembersList() {
         {
           accessorKey: 'createdAt',
           header: 'Joined',
-          cell: ({ row }) => {
-            const date = row.original.createdAt ? new Date(row.original.createdAt) : null;
-            return date ? date.toLocaleDateString('en-ZA') : 'N/A';
-          },
+          cell: ({ row }) => formatDateSafe(row.original.createdAt, 'dd MMM yyyy')
         },
         {
             id: 'actions',

@@ -9,15 +9,9 @@ import { AlertTriangle, Users, Map, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { salesRoadmapLogic } from './lib/calculations';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { formatNumber } from '@/lib/utils';
 
-const memberRoleGroups = [
-    { role: 'Vendors', id: 'Vendors' },
-    { role: 'Buyers', id: 'Buyers' },
-    { role: 'Associates', id: 'Associates' },
-    { role: 'ISA Agents', id: 'IsaAgents' },
-    { role: 'Drivers', id: 'Drivers' },
-    { role: 'Developers', id: 'Developers' }
-];
 
 function MemberProjectionComponent() {
     const { roadmapInputs, setupInputs } = useMemo(() => {
@@ -39,10 +33,31 @@ function MemberProjectionComponent() {
         }
     }, []);
 
-    const projectionData = useMemo(() => {
-        if (!roadmapInputs || !setupInputs) return [];
+    const { powerPartnerProjection, isaProjection } = useMemo(() => {
+        if (!roadmapInputs || !setupInputs) return { powerPartnerProjection: [], isaProjection: [] };
         return salesRoadmapLogic(setupInputs, roadmapInputs);
     }, [roadmapInputs, setupInputs]);
+    
+    // Totals Calculation for Power Partners
+    const powerPartnerTotals = useMemo(() => {
+        if (!powerPartnerProjection || powerPartnerProjection.length === 0) return null;
+        return {
+            newOpportunities: powerPartnerProjection.reduce((acc, p) => acc + p.newOpportunities, 0),
+            newMembers: powerPartnerProjection.reduce((acc, p) => acc + p.newMembers, 0),
+            cumulativeMembers: powerPartnerProjection[powerPartnerProjection.length - 1].cumulativeMembers,
+        }
+    }, [powerPartnerProjection]);
+
+    // Totals Calculation for ISAs
+    const isaTotals = useMemo(() => {
+        if (!isaProjection || isaProjection.length === 0) return null;
+        return {
+            newReferrals: isaProjection.reduce((acc, p) => acc + p.newReferrals, 0),
+            newMembers: isaProjection.reduce((acc, p) => acc + p.newMembers, 0),
+            cumulativeMembers: isaProjection[isaProjection.length - 1].cumulativeMembers,
+        }
+    }, [isaProjection]);
+
 
     if (!roadmapInputs || !setupInputs) {
         return (
@@ -63,59 +78,108 @@ function MemberProjectionComponent() {
         );
     }
     
-    const yearlyTotals = projectionData.reduce((acc, row) => {
-        if (!acc[row.year]) {
-            acc[row.year] = { powerPartnerNewMembers: 0, referralNewMembers: 0, totalNewMembers: 0, cumulativeMembers: 0 };
-        }
-        acc[row.year].powerPartnerNewMembers += row.powerPartnerNewMembers;
-        acc[row.year].referralNewMembers += row.referralNewMembers;
-        acc[row.year].totalNewMembers += row.totalNewMembers;
-        acc[row.year].cumulativeMembers = row.cumulativeMembers; // Take the last value for cumulative
-        return acc;
-    }, {} as Record<string, any>);
-    const years = Object.keys(yearlyTotals);
-
     return (
         <div className="space-y-8">
             <Card>
                 <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><Users /> Total Member Growth Projection</CardTitle>
+                    <CardTitle className="flex items-center gap-2"><Users /> Member Growth Projection</CardTitle>
                     <CardDescription>Month-by-month forecast of new paying members based on your sales roadmap assumptions.</CardDescription>
                 </CardHeader>
-                <CardContent>
-                    <ScrollArea className="w-full whitespace-nowrap rounded-md border">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead className="w-[120px] sticky left-0 bg-card z-10">Month</TableHead>
-                                    <TableHead className="text-right">New (Partners)</TableHead>
-                                    <TableHead className="text-right">New (Referrals)</TableHead>
-                                    <TableHead className="text-right font-bold text-primary">Total New</TableHead>
-                                    <TableHead className="text-right font-bold text-primary">Cumulative</TableHead>
-                                     {years.map(year => <TableHead key={year} className="text-right bg-muted font-bold">Total {year}</TableHead>)}
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {projectionData.map((row) => (
-                                    <TableRow key={row.month}>
-                                        <TableCell className="sticky left-0 bg-card z-10">{row.month}</TableCell>
-                                        <TableCell className="text-right">{row.powerPartnerNewMembers.toLocaleString()}</TableCell>
-                                        <TableCell className="text-right">{row.referralNewMembers.toLocaleString()}</TableCell>
-                                        <TableCell className="text-right font-bold text-primary">{row.totalNewMembers.toLocaleString()}</TableCell>
-                                        <TableCell className="text-right font-bold text-primary">{row.cumulativeMembers.toLocaleString()}</TableCell>
-                                    </TableRow>
-                                ))}
-                                <TableRow className="bg-muted font-bold">
-                                    <TableCell>Total</TableCell>
-                                    <TableCell className="text-right">{Object.values(yearlyTotals).reduce((s, y) => s + y.powerPartnerNewMembers, 0).toLocaleString()}</TableCell>
-                                    <TableCell className="text-right">{Object.values(yearlyTotals).reduce((s, y) => s + y.referralNewMembers, 0).toLocaleString()}</TableCell>
-                                    <TableCell className="text-right text-primary">{Object.values(yearlyTotals).reduce((s, y) => s + y.totalNewMembers, 0).toLocaleString()}</TableCell>
-                                    <TableCell className="text-right text-primary">{yearlyTotals[years[years.length-1]]?.cumulativeMembers.toLocaleString()}</TableCell>
-                                </TableRow>
-                            </TableBody>
-                        </Table>
-                        <ScrollBar orientation="horizontal" />
-                    </ScrollArea>
+                 <CardContent>
+                    <Tabs defaultValue="power-partners" className="w-full">
+                        <TabsList className="grid w-full grid-cols-2">
+                            <TabsTrigger value="power-partners">Power Partners</TabsTrigger>
+                            <TabsTrigger value="isa-agents">ISA Agents</TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="power-partners" className="mt-4">
+                             <ScrollArea className="w-full whitespace-nowrap rounded-md border">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead className="sticky left-0 bg-card z-10">Month</TableHead>
+                                            <TableHead className="text-right"># Power Partners</TableHead>
+                                            <TableHead className="text-right">Opps/Partner/Mo</TableHead>
+                                            <TableHead className="text-right">New Opportunities</TableHead>
+                                            <TableHead className="text-right">Cumulative Opps</TableHead>
+                                            <TableHead className="text-right">Conversion %</TableHead>
+                                            <TableHead className="text-right font-bold text-primary">New Members</TableHead>
+                                            <TableHead className="text-right font-bold text-primary">Cumulative Members</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {powerPartnerProjection.map((row) => (
+                                            <TableRow key={row.month}>
+                                                <TableCell className="sticky left-0 bg-card z-10">{row.month}</TableCell>
+                                                <TableCell className="text-right">{formatNumber(row.partners)}</TableCell>
+                                                <TableCell className="text-right">{formatNumber(row.oppsPerPartner)}</TableCell>
+                                                <TableCell className="text-right">{formatNumber(row.newOpportunities)}</TableCell>
+                                                <TableCell className="text-right">{formatNumber(row.cumulativeOpportunities)}</TableCell>
+                                                <TableCell className="text-right">{row.conversionRate.toFixed(2)}%</TableCell>
+                                                <TableCell className="text-right font-bold text-primary">{formatNumber(row.newMembers)}</TableCell>
+                                                <TableCell className="text-right font-bold text-primary">{formatNumber(row.cumulativeMembers)}</TableCell>
+                                            </TableRow>
+                                        ))}
+                                         {powerPartnerTotals && (
+                                            <TableRow className="bg-muted font-bold">
+                                                <TableCell className="sticky left-0 bg-muted z-10">Total</TableCell>
+                                                <TableCell colSpan={2}></TableCell>
+                                                <TableCell className="text-right">{formatNumber(powerPartnerTotals.newOpportunities)}</TableCell>
+                                                <TableCell></TableCell>
+                                                <TableCell></TableCell>
+                                                <TableCell className="text-right text-primary">{formatNumber(powerPartnerTotals.newMembers)}</TableCell>
+                                                <TableCell className="text-right text-primary">{formatNumber(powerPartnerTotals.cumulativeMembers)}</TableCell>
+                                            </TableRow>
+                                        )}
+                                    </TableBody>
+                                </Table>
+                                <ScrollBar orientation="horizontal" />
+                            </ScrollArea>
+                        </TabsContent>
+                         <TabsContent value="isa-agents" className="mt-4">
+                             <ScrollArea className="w-full whitespace-nowrap rounded-md border">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead className="sticky left-0 bg-card z-10">Month</TableHead>
+                                            <TableHead className="text-right"># ISAs</TableHead>
+                                            <TableHead className="text-right">Refs/ISA/Mo</TableHead>
+                                            <TableHead className="text-right">New Referrals</TableHead>
+                                            <TableHead className="text-right">Cumulative Refs</TableHead>
+                                            <TableHead className="text-right">Conversion %</TableHead>
+                                            <TableHead className="text-right font-bold text-primary">New Members</TableHead>
+                                            <TableHead className="text-right font-bold text-primary">Cumulative Members</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {isaProjection.map((row) => (
+                                            <TableRow key={row.month}>
+                                                <TableCell className="sticky left-0 bg-card z-10">{row.month}</TableCell>
+                                                <TableCell className="text-right">{formatNumber(row.isas)}</TableCell>
+                                                <TableCell className="text-right">{formatNumber(row.referralsPerIsa)}</TableCell>
+                                                <TableCell className="text-right">{formatNumber(row.newReferrals)}</TableCell>
+                                                <TableCell className="text-right">{formatNumber(row.cumulativeReferrals)}</TableCell>
+                                                <TableCell className="text-right">{row.conversionRate.toFixed(2)}%</TableCell>
+                                                <TableCell className="text-right font-bold text-primary">{formatNumber(row.newMembers)}</TableCell>
+                                                <TableCell className="text-right font-bold text-primary">{formatNumber(row.cumulativeMembers)}</TableCell>
+                                            </TableRow>
+                                        ))}
+                                         {isaTotals && (
+                                            <TableRow className="bg-muted font-bold">
+                                                <TableCell className="sticky left-0 bg-muted z-10">Total</TableCell>
+                                                <TableCell colSpan={2}></TableCell>
+                                                <TableCell className="text-right">{formatNumber(isaTotals.newReferrals)}</TableCell>
+                                                <TableCell></TableCell>
+                                                <TableCell></TableCell>
+                                                <TableCell className="text-right text-primary">{formatNumber(isaTotals.newMembers)}</TableCell>
+                                                <TableCell className="text-right text-primary">{formatNumber(isaTotals.cumulativeMembers)}</TableCell>
+                                            </TableRow>
+                                        )}
+                                    </TableBody>
+                                </Table>
+                                <ScrollBar orientation="horizontal" />
+                            </ScrollArea>
+                        </TabsContent>
+                    </Tabs>
                 </CardContent>
             </Card>
         </div>

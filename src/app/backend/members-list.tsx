@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Users, PlusCircle } from 'lucide-react';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -123,7 +123,7 @@ export default function MembersList() {
         {
           accessorKey: 'createdAt',
           header: 'Joined',
-          cell: ({ row }) => formatDateSafe(row.original.createdAt)
+          cell: ({ row }) => formatDateSafe(row.original.createdAt, 'dd MMM yyyy')
         },
         {
             id: 'actions',
