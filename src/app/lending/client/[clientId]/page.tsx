@@ -1,7 +1,8 @@
+
 'use client';
 
 import { Suspense, useEffect, useState, useCallback, useMemo } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, notFound } from 'next/navigation';
 import { getClientSideAuthToken, useDoc, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
 import { collection, doc, query, where } from 'firebase/firestore';
 import { Loader2, ArrowLeft, Users, FileText, Briefcase } from 'lucide-react';
@@ -12,18 +13,7 @@ import Link from 'next/link';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { AgreementActionMenu } from '@/app/lending/agreements/AgreementActionMenu';
-
-const formatCurrency = (amount?: number) => {
-    if (typeof amount !== 'number') return 'R 0.00';
-    return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
-};
-
-const formatDate = (dateValue: any) => {
-    if (!dateValue) return 'N/A';
-    const date = dateValue.toDate ? dateValue.toDate() : new Date(dateValue);
-    if (isNaN(date.getTime())) return 'Invalid Date';
-    return new Intl.DateTimeFormat('en-ZA').format(date);
-};
+import { formatCurrency, formatDateSafe } from '@/lib/utils';
 
 function ClientDetailPage() {
     const params = useParams();
@@ -53,7 +43,7 @@ function ClientDetailPage() {
         { accessorKey: 'id', header: 'Agreement ID' },
         { accessorKey: 'type', header: 'Type' },
         { accessorKey: 'status', header: 'Status', cell: ({row}) => <Badge>{row.original.status}</Badge> },
-        { accessorKey: 'amount', header: 'Amount', cell: ({row}) => formatCurrency(row.original.amount) },
+        { accessorKey: 'totalAdvanced', header: 'Amount', cell: ({row}) => formatCurrency(row.original.totalAdvanced) },
         { id: 'actions', header: 'Actions', cell: ({row}) => <AgreementActionMenu agreement={row.original} onUpdate={refreshAgreements} /> },
     ], [refreshAgreements]);
 

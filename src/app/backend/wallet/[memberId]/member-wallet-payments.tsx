@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -22,26 +20,13 @@ import {
 } from "@/components/ui/alert-dialog";
 import { getClientSideAuthToken, useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
-import { format as formatDateFns } from 'date-fns';
+import { formatCurrency, formatDateSafe } from '@/lib/utils';
+import Link from 'next/link';
 
 const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
   pending: 'secondary',
   approved: 'default',
   rejected: 'destructive',
-};
-
-const formatCurrency = (amount: number) => {
-    if (typeof amount !== 'number') return 'R 0.00';
-    const parts = amount.toFixed(2).toString().split('.');
-    const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-    return `R ${integerPart}.${parts[1]}`;
-};
-
-const formatDate = (isoString: any) => {
-    if (!isoString) return 'N/A';
-    const date = isoString.toDate ? isoString.toDate() : new Date(isoString);
-    if (isNaN(date.getTime())) return 'Invalid Date';
-    return formatDateFns(date, "dd MMM yyyy, HH:mm");
 };
 
 async function performAdminAction(token: string, action: string, payload?: any) {
@@ -182,7 +167,7 @@ export default function MemberWalletPayments({ companyId, onUpdate }: { companyI
                             <TableBody>
                                 {payments.map(p => (
                                     <TableRow key={p.id}>
-                                        <TableCell className="text-xs">{formatDate(p.createdAt)}</TableCell>
+                                        <TableCell className="text-xs">{formatDateSafe(p.createdAt, "dd MMM yyyy, HH:mm")}</TableCell>
                                         <TableCell className="font-medium capitalize">{p.description?.replace(/_/g, ' ')}</TableCell>
                                         <TableCell>{formatCurrency(p.amount)}</TableCell>
                                         <TableCell>
@@ -191,9 +176,11 @@ export default function MemberWalletPayments({ companyId, onUpdate }: { companyI
                                             </Badge>
                                         </TableCell>
                                         <TableCell className="text-right space-x-1">
-                                             <Button size="sm" onClick={() => handleApprove(p)} disabled={isProcessing === p.id}>
-                                                {isProcessing === p.id ? <Loader2 className="h-4 w-4 animate-spin"/> : <CheckCircle className="mr-2 h-4 w-4" />}
-                                                Approve
+                                             <Button asChild size="sm" variant="default">
+                                                <Link href={`/backend/approve-payment/${p.companyId}/${p.id}`}>
+                                                    <CheckCircle className="mr-2 h-4 w-4"/>
+                                                    Approve
+                                                </Link>
                                             </Button>
                                             <AlertDialog>
                                                 <AlertDialogTrigger asChild>
