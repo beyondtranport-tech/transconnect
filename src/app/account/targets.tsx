@@ -41,56 +41,43 @@ const generateDefaultValues = (months: number) => {
 function TargetsComponent() {
     const router = useRouter();
     const { toast } = useToast();
-    const [forecastMonths, setForecastMonths] = useState(36);
-    const [startMonth, setStartMonth] = useState(new Date().getMonth());
-    const [startYear, setStartYear] = useState(new Date().getFullYear());
-    const [isLoading, setIsLoading] = useState(true);
+    const [isClient, setIsClient] = useState(false);
+    const [settings, setSettings] = useState<{ forecastMonths: number, startMonth: number, startYear: number } | null>(null);
+
+    const form = useForm();
 
     useEffect(() => {
-        if (typeof window !== 'undefined') {
-            try {
-                const savedSettings = localStorage.getItem(SETUP_KEY);
-                if (savedSettings) {
-                    const parsed = JSON.parse(savedSettings);
-                    setForecastMonths(parsed.forecastMonths || 36);
-                    setStartMonth(parsed.startMonth || new Date().getMonth());
-                    setStartYear(parsed.startYear || new Date().getFullYear());
-                }
-            } catch (e) {
-                console.error("Could not parse financial setup settings for targets page.");
-            } finally {
-                setIsLoading(false);
+        setIsClient(true);
+        let localSettings = {
+            forecastMonths: 36,
+            startMonth: new Date().getMonth(),
+            startYear: new Date().getFullYear(),
+        };
+        try {
+            const savedSettings = localStorage.getItem(SETUP_KEY);
+            if (savedSettings) {
+                localSettings = { ...localSettings, ...JSON.parse(savedSettings) };
             }
+        } catch (e) {
+            console.error("Could not parse financial setup settings for targets page.");
         }
-    }, []);
+        setSettings(localSettings);
+        
+        try {
+            const savedData = localStorage.getItem(TARGETS_KEY);
+            const savedMonths = savedData ? JSON.parse(savedData).monthlyTargets[targetAssumptions[0].id]?.length : 0;
+            const initialData = (savedData && savedMonths === localSettings.forecastMonths) 
+                ? JSON.parse(savedData) 
+                : generateDefaultValues(localSettings.forecastMonths);
+            form.reset(initialData);
+        } catch (e) {
+            console.error("Failed to parse saved targets data, using defaults.", e);
+            form.reset(generateDefaultValues(localSettings.forecastMonths));
+        }
 
-    const form = useForm({
-        defaultValues: useCallback(() => {
-            if (typeof window === 'undefined') {
-                return generateDefaultValues(forecastMonths);
-            }
-            try {
-                const savedData = localStorage.getItem(TARGETS_KEY);
-                if (savedData) {
-                    const parsed = JSON.parse(savedData);
-                    const savedMonths = parsed.monthlyTargets[targetAssumptions[0].id]?.length || 0;
-                    if (savedMonths === forecastMonths) {
-                        return parsed;
-                    }
-                }
-            } catch (e) {
-                console.error("Failed to parse saved targets data.", e);
-            }
-            return generateDefaultValues(forecastMonths);
-        }, [forecastMonths])()
-    });
+    }, [form]);
 
     const { control, handleSubmit, reset } = form;
-
-    const monthHeaders = Array.from({ length: forecastMonths }, (_, i) => {
-        const date = new Date(startYear, startMonth + i);
-        return `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
-    });
 
     const onSubmit = (data: any) => {
         localStorage.setItem(TARGETS_KEY, JSON.stringify(data));
@@ -101,7 +88,8 @@ function TargetsComponent() {
     };
 
     const handleReset = () => {
-        const defaults = generateDefaultValues(forecastMonths);
+        if (!settings) return;
+        const defaults = generateDefaultValues(settings.forecastMonths);
         reset(defaults);
         toast({
             title: 'Targets Reset',
@@ -109,9 +97,15 @@ function TargetsComponent() {
         });
     };
     
-    if (isLoading) {
+    if (!isClient || !settings) {
         return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
     }
+
+    const { forecastMonths, startMonth, startYear } = settings;
+    const monthHeaders = Array.from({ length: forecastMonths }, (_, i) => {
+        const date = new Date(startYear, startMonth + i);
+        return `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
+    });
 
     return (
         <Form {...form}>
@@ -179,7 +173,7 @@ function TargetsComponent() {
 }
 
 
-export default function Targets() {
+export default function TargetsPage() {
     return (
         <Suspense fallback={<div className="flex justify-center items-center min-h-[calc(100vh-8rem)]"><Loader2 className="h-16 w-16 animate-spin" /></div>}>
             <TargetsComponent />

@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -21,8 +22,8 @@ export default function FinancialSetupPage() {
 
     const form = useForm({
         defaultValues: {
-            startMonth: new Date().getMonth(),
-            startYear: new Date().getFullYear(),
+            startMonth: 0,
+            startYear: 2024,
             forecastMonths: 36,
         }
     });
@@ -33,9 +34,22 @@ export default function FinancialSetupPage() {
             const saved = localStorage.getItem(SETUP_KEY);
             if (saved) {
                 form.reset(JSON.parse(saved));
+            } else {
+                 // Set initial default only if nothing is in local storage
+                form.reset({
+                    startMonth: new Date().getMonth(),
+                    startYear: new Date().getFullYear(),
+                    forecastMonths: 36,
+                });
             }
         } catch (e) {
             console.error("Could not parse financial setup settings.");
+            // Fallback to safe defaults on error
+            form.reset({
+                startMonth: new Date().getMonth(),
+                startYear: new Date().getFullYear(),
+                forecastMonths: 36,
+            });
         }
     }, [form]);
 

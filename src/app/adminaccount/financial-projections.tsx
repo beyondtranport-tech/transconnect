@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useMemo, useState, useCallback, Suspense, useEffect } from 'react';
@@ -55,25 +56,6 @@ const formSchema = z.object({
 });
 
 type FormValues = z.infer<typeof formSchema>;
-
-const defaultValues: FormValues = {
-    forecastMonths: 36,
-    startMonth: new Date().getMonth(),
-    startYear: new Date().getFullYear(),
-    salesRoadmap: {
-        powerPartners: { count: 5, oppsPerMonth: 200, conversionRate: 5 },
-        isaAgents: { count: 10, referralsPerMonth: 20, conversionRate: 10 },
-    },
-    targets: {
-        connectPlanAdoptionRate: 15,
-    },
-    budget: {
-        avgMembershipFee: 350,
-        avgMallSpend: 1500,
-        mallCommissionRate: 2.5,
-        opexPerMonth: 250000,
-    }
-};
 
 const PROJECTIONS_KEY = 'adminFinancialProjections_v1';
 
@@ -143,21 +125,37 @@ function FinancialProjectionsComponent() {
     const { toast } = useToast();
     const [isClient, setIsClient] = useState(false);
     
-    const form = useForm<FormValues>({
-        resolver: zodResolver(formSchema),
-        defaultValues,
-    });
+    const form = useForm<FormValues>();
 
     useEffect(() => {
         setIsClient(true);
+        let defaults: FormValues = {
+            forecastMonths: 36,
+            startMonth: new Date().getMonth(),
+            startYear: new Date().getFullYear(),
+            salesRoadmap: {
+                powerPartners: { count: 5, oppsPerMonth: 200, conversionRate: 5 },
+                isaAgents: { count: 10, referralsPerMonth: 20, conversionRate: 10 },
+            },
+            targets: {
+                connectPlanAdoptionRate: 15,
+            },
+            budget: {
+                avgMembershipFee: 350,
+                avgMallSpend: 1500,
+                mallCommissionRate: 2.5,
+                opexPerMonth: 250000,
+            }
+        };
         try {
             const saved = localStorage.getItem(PROJECTIONS_KEY);
             if (saved) {
-                form.reset(JSON.parse(saved));
+                defaults = JSON.parse(saved);
             }
         } catch (error) {
             console.error("Could not parse saved projection data.");
         }
+        form.reset(defaults);
     }, [form]);
 
     const { control, handleSubmit, watch, reset } = form;
@@ -209,6 +207,24 @@ function FinancialProjectionsComponent() {
     };
     
     const handleReset = () => {
+        const defaultValues: FormValues = {
+            forecastMonths: 36,
+            startMonth: new Date().getMonth(),
+            startYear: new Date().getFullYear(),
+            salesRoadmap: {
+                powerPartners: { count: 5, oppsPerMonth: 200, conversionRate: 5 },
+                isaAgents: { count: 10, referralsPerMonth: 20, conversionRate: 10 },
+            },
+            targets: {
+                connectPlanAdoptionRate: 15,
+            },
+            budget: {
+                avgMembershipFee: 350,
+                avgMallSpend: 1500,
+                mallCommissionRate: 2.5,
+                opexPerMonth: 250000,
+            }
+        };
         localStorage.removeItem(PROJECTIONS_KEY);
         reset(defaultValues);
         toast({ title: 'Projections Reset', description: 'Assumptions have been reset to default values.' });

@@ -93,50 +93,45 @@ const generateDefaultValues = (months: number) => {
 function SalesRoadmapComponent() {
     const router = useRouter();
     const { toast } = useToast();
-    const [forecastMonths, setForecastMonths] = useState(36);
-    const [startMonth, setStartMonth] = useState(new Date().getMonth());
-    const [startYear, setStartYear] = useState(new Date().getFullYear());
-    const [isLoading, setIsLoading] = useState(true);
+    const [settings, setSettings] = useState<{ forecastMonths: number; startMonth: number; startYear: number } | null>(null);
 
     // Scenario State
     const [scenarios, setScenarios] = useState<{[key: string]: any}>({});
     const [activeScenarioName, setActiveScenarioName] = useState<string>('Default');
     const [newScenarioName, setNewScenarioName] = useState<string>('');
 
-    const form = useForm({
-        defaultValues: generateDefaultValues(forecastMonths)
-    });
-
+    const form = useForm();
     const { control, handleSubmit, reset } = form;
 
     // Load settings and scenarios from local storage on mount
     useEffect(() => {
-        if (typeof window !== 'undefined') {
-            let months = 36;
-            try {
-                const savedSettings = localStorage.getItem(SETUP_KEY);
-                if (savedSettings) {
-                    const parsed = JSON.parse(savedSettings);
-                    months = parsed.forecastMonths || 36;
-                    setForecastMonths(months);
-                    setStartMonth(parsed.startMonth || new Date().getMonth());
-                    setStartYear(parsed.startYear || new Date().getFullYear());
-                }
-                
-                const savedScenarios = localStorage.getItem(SALES_ROADMAP_KEY);
-                const parsedScenarios = savedScenarios ? JSON.parse(savedScenarios) : { scenarios: { 'Default': generateDefaultValues(months) }, activeScenario: 'Default' };
-                setScenarios(parsedScenarios.scenarios);
-                setActiveScenarioName(parsedScenarios.activeScenario);
-                reset(parsedScenarios.scenarios[parsedScenarios.activeScenario] || generateDefaultValues(months));
+        let months = 36;
+        let localSettings = {
+            forecastMonths: 36,
+            startMonth: new Date().getMonth(),
+            startYear: new Date().getFullYear()
+        };
 
-            } catch (e) {
-                console.error("Could not parse saved data.");
-                const defaults = generateDefaultValues(months);
-                setScenarios({ 'Default': defaults });
-                reset(defaults);
-            } finally {
-                setIsLoading(false);
+        try {
+            const savedSettings = localStorage.getItem(SETUP_KEY);
+            if (savedSettings) {
+                const parsed = JSON.parse(savedSettings);
+                months = parsed.forecastMonths || 36;
+                localSettings = parsed;
             }
+            setSettings(localSettings);
+            
+            const savedScenarios = localStorage.getItem(SALES_ROADMAP_KEY);
+            const parsedScenarios = savedScenarios ? JSON.parse(savedScenarios) : { scenarios: { 'Default': generateDefaultValues(months) }, activeScenario: 'Default' };
+            setScenarios(parsedScenarios.scenarios);
+            setActiveScenarioName(parsedScenarios.activeScenario);
+            reset(parsedScenarios.scenarios[parsedScenarios.activeScenario] || generateDefaultValues(months));
+
+        } catch (e) {
+            console.error("Could not parse saved data.");
+            const defaults = generateDefaultValues(months);
+            setScenarios({ 'Default': defaults });
+            reset(defaults);
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [reset]);
@@ -203,7 +198,8 @@ function SalesRoadmapComponent() {
     };
 
     const handleReset = () => {
-        const defaults = generateDefaultValues(forecastMonths);
+        if (!settings) return;
+        const defaults = generateDefaultValues(settings.forecastMonths);
         reset(defaults);
         toast({
             title: 'Form Reset',
@@ -211,14 +207,15 @@ function SalesRoadmapComponent() {
         });
     };
     
+    if (!settings) {
+        return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+    }
+
+    const { forecastMonths, startMonth, startYear } = settings;
     const monthHeaders = Array.from({ length: forecastMonths }, (_, i) => {
         const date = new Date(startYear, startMonth + i);
         return `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
     });
-    
-    if (isLoading) {
-        return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
-    }
 
     return (
         <Form {...form}>

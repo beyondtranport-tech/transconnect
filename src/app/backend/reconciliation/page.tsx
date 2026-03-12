@@ -1,6 +1,7 @@
+
 'use client';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Loader2, DownloadCloud, Upload, ListChecks, ArrowRight } from "lucide-react";
 import { useState, useRef, useEffect, Suspense, useCallback } from "react";
@@ -15,6 +16,12 @@ import Link from "next/link";
 import { collection, query, orderBy } from "firebase/firestore";
 import { useRouter, useSearchParams } from "next/navigation";
 import { formatDateSafe } from "@/lib/utils";
+import { DateRange } from "react-day-picker";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
+import { format, addDays } from "date-fns";
+import { Calendar as CalendarIcon } from "lucide-react";
 
 
 const manualAdjustmentTemplate = {
@@ -60,6 +67,7 @@ function ReconciliationDashboard() {
     const [processingData, setProcessingData] = useState<any | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [useDemo, setUseDemo] = useState(false);
+    const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
     const { toast } = useToast();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const firestore = useFirestore();
@@ -69,6 +77,14 @@ function ReconciliationDashboard() {
     , [firestore]);
     const { data: pastReconciliations, isLoading: isLoadingHistory, forceRefresh: refreshHistory } = useCollection(reconciliationsQuery);
     
+    useEffect(() => {
+        // Set the initial date range only on the client-side
+        setDateRange({
+            from: new Date(),
+            to: addDays(new Date(), 30),
+        });
+    }, []);
+
     const onSuccessfulPost = useCallback(() => {
         setProcessingData(null);
         refreshHistory();
@@ -84,7 +100,7 @@ function ReconciliationDashboard() {
                  setProcessingData(null);
             }
         }
-    }, [useDemo, processingData]);
+    }, [useDemo, processingData, toast]);
 
     const handleProcessPendingEFTs = async () => {
         setIsLoading(true);
