@@ -93,7 +93,7 @@ export default function DashboardContent() {
                 }
                 acc[monthKey].members++;
                 return acc;
-            }, {});
+            }, {} as Record<string, { date: Date; members: number }>);
 
             const growthData = Object.values(growth)
                 .sort((a, b) => a.date.getTime() - b.date.getTime())

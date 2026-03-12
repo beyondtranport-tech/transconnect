@@ -55,14 +55,14 @@ export default function PerformanceContent() {
     };
 
     const memberGrowthData = networkData
-        .reduce((acc: Record<string, {name: string, NewMembers: number}>, member) => {
+        .reduce((acc, member) => {
             const month = formatDateSafe(member.createdAt, 'MMM yyyy');
             if (!acc[month]) {
                 acc[month] = { name: month, NewMembers: 0 };
             }
             acc[month].NewMembers++;
             return acc;
-        }, {});
+        }, {} as Record<string, {name: string, NewMembers: number}>);
         
     const chartData = Object.values(memberGrowthData)
         .sort((a, b) => new Date(a.name).getTime() - new Date(b.name).getTime())
