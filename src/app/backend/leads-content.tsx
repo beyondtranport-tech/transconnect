@@ -174,7 +174,7 @@ export default function LeadsContent() {
     { accessorKey: 'phone', header: 'Phone' },
     { accessorKey: 'role', header: 'Role', cell: ({row}) => <Badge variant="outline">{row.original.role}</Badge>},
     { accessorKey: 'status', header: 'Status', cell: ({row}) => <Badge className="capitalize">{row.original.status}</Badge>},
-    { id: 'actions', header: () => <div className="text-right">Actions</div>, cell: ({row}) => (
+    { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({row}) => (
         <div className="text-right">
             <LeadDialog lead={row.original} onSave={forceRefresh}><Button variant="ghost" size="icon"><Edit className="h-4 w-4" /></Button></LeadDialog>
             <AlertDialog>
