@@ -215,7 +215,7 @@ export default function CommercialNegotiations() {
         },
         { 
             id: 'actions', 
-            header: () => <div className="text-right">Actions</div>,
+            header: <div className="text-right">Actions</div>,
             cell: ({ row }) => (
                 <div className="text-right">
                     <NegotiationActionMenu agreement={row.original} onUpdate={forceRefresh} />
