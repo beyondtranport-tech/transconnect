@@ -1,5 +1,7 @@
+
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+  // Cache-busting comment: 2026-03-13T12:45:00Z
   darkMode: ['class'],
   content: [
     './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
