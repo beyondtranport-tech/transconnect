@@ -1,3 +1,4 @@
+
 'use server';
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -21,6 +22,22 @@ function serializeTimestamps(docData: any): any {
     }
     return newDocData;
 }
+
+interface LeadData {
+    id: string;
+    companyName?: string;
+    contactPerson?: string;
+    email?: string;
+    phone?: string;
+    role?: string;
+    status?: 'new' | 'contacted' | 'qualified' | 'unqualified' | 'invited' | 'registered';
+    notes?: string;
+    address?: string;
+    website?: string;
+    createdAt?: any;
+    updatedAt?: any;
+}
+
 
 export async function POST(req: NextRequest) {
     try {
@@ -761,9 +778,9 @@ export async function POST(req: NextRequest) {
             }
              case 'findDuplicateLeads': {
                 const leadsSnap = await db.collection('leads').get();
-                const leads = leadsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                const leads = leadsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as LeadData[];
 
-                const groups: { [key: string]: any[] } = {};
+                const groups: { [key: string]: LeadData[] } = {};
                 leads.forEach(lead => {
                     const key = (lead.companyName || '').trim().toLowerCase();
                     if (!key) return; // Skip leads without a company name

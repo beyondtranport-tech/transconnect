@@ -1,11 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  experimental: {
-    // This allows the Next.js development server to accept requests from the
-    // Firebase Studio environment, which is necessary for the preview to work correctly.
-    allowedDevOrigins: ["*.cloudworkstations.dev"],
-  },
+  // This allows the Next.js development server to accept requests from the
+  // Firebase Studio environment, which is necessary for the preview to work correctly.
+  allowedDevOrigins: ["*.cloudworkstations.dev"],
   images: {
     remotePatterns: [
       {
