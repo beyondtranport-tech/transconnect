@@ -23,7 +23,7 @@ const leadResearchAIFlow = ai.defineFlow(
     inputSchema: LeadResearchInputSchema,
     outputSchema: LeadResearchOutputSchema,
   },
-  async (input: LeadResearchInput) => {
+  async (input: LeadResearchInput): Promise<LeadResearchOutput> => {
     const response = await ai.generate({
         model: 'gemini-1.5-flash',
         tools: [googleSearchTool],
@@ -39,7 +39,7 @@ const leadResearchAIFlow = ai.defineFlow(
     }
     
     // Post-process the output to clean up "null" strings and invalid formats.
-    const cleanedLeads = output.leads.map(lead => {
+    const cleanedLeads = output.leads.map((lead: { companyName: string, role: string, address?: string | null, website?: string | null, phone?: string | null, email?: string | null, contactPerson?: string | null }) => {
         const cleanedLead = { ...lead };
         
         // Convert string "null" or "N/A" to actual null
