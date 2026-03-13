@@ -22,7 +22,7 @@ interface CartContextType {
   updateQuantity: (itemId: string, quantity: number) => void;
   clearCart: () => void;
   totalPrice: number;
-  isInitialLoad: boolean;
+  isCartLoading: boolean;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -31,7 +31,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const { toast } = useToast();
   const { user, isUserLoading } = useUser();
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [isCartLoading, setIsCartLoading] = useState(true);
 
   // Load cart from local storage on initial render
   useEffect(() => {
@@ -44,7 +44,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         console.error("Failed to parse cart from localStorage", error);
         localStorage.removeItem('logistics_flow_cart');
     }
-    setIsInitialLoad(false);
+    setIsCartLoading(false);
   }, []);
 
   const saveCartToLocalStorage = useCallback((items: CartItem[]) => {
@@ -62,10 +62,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   // Effect to clear cart on sign-out
   useEffect(() => {
-    if (!isInitialLoad && !isUserLoading && !user) {
+    if (!isCartLoading && !isUserLoading && !user) {
         clearCart();
     }
-  }, [user, isUserLoading, isInitialLoad, clearCart]);
+  }, [user, isUserLoading, isCartLoading, clearCart]);
   
   const addToCart = (newItem: Omit<CartItem, 'quantity'> & { quantity?: number }) => {
     setCartItems(prevItems => {
@@ -119,7 +119,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const totalPrice = cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
 
   return (
-    <CartContext.Provider value={{ cartItems, addToCart, removeFromCart, updateQuantity, clearCart, totalPrice, isInitialLoad }}>
+    <CartContext.Provider value={{ cartItems, addToCart, removeFromCart, updateQuantity, clearCart, totalPrice, isCartLoading }}>
       {children}
     </CartContext.Provider>
   );

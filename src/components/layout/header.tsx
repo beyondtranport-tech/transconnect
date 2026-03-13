@@ -48,14 +48,14 @@ export function Header() {
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
-  const { cartItems, isInitialLoad } = useCart();
+  const { cartItems, isCartLoading } = useCart();
   const firestore = useFirestore();
 
   const companyDocRef = useMemoFirebase(() => {
     if (!firestore || !user?.companyId) return null;
     return doc(firestore, 'companies', user.companyId);
   }, [firestore, user?.companyId]);
-  const { data: companyData } = useDoc(companyDocRef);
+  const { data: companyData, isLoading: isCompanyLoading } = useDoc(companyDocRef);
 
   const handleSignOut = async () => {
     if (!auth) return;
@@ -73,6 +73,7 @@ export function Header() {
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
   };
 
+  const isDataLoading = isUserLoading || isCompanyLoading;
   const isAdmin = user && (user.email === 'beyondtransport@gmail.com' || user.email === 'mkoton100@gmail.com');
   const isWctaMember = user?.claims?.wcta === true || companyData?.referrerId === 'WCTA';
 
@@ -141,7 +142,7 @@ export function Header() {
             <Button asChild variant="ghost" size="icon">
                 <Link href="/cart">
                     <ShoppingCart className="h-5 w-5" />
-                    {!isInitialLoad && cartItems.length > 0 && (
+                    {!isCartLoading && cartItems.length > 0 && (
                         <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 justify-center p-0">{cartItems.length}</Badge>
                     )}
                     <span className="sr-only">Shopping Cart</span>
@@ -175,7 +176,9 @@ export function Header() {
                         <Link href="/account">My Account</Link>
                     </DropdownMenuItem>
 
-                    {(isAdmin || isWctaMember) && (
+                    {isDataLoading ? (
+                        <DropdownMenuItem disabled><Skeleton className="h-4 w-32" /></DropdownMenuItem>
+                    ) : (isAdmin || isWctaMember) && (
                         <>
                             <DropdownMenuItem asChild>
                                 <Link href="/supply-chain">Supply Chain Portal</Link>
@@ -278,7 +281,7 @@ export function Header() {
                     </nav>
                 </div>
                 <SheetFooter className="p-4 border-t">
-                    {isUserLoading ? (
+                    {isDataLoading ? (
                         <div className="h-10 w-full rounded-md bg-muted/50 animate-pulse" />
                     ) : user ? (
                         <div className='flex flex-col gap-2'>
