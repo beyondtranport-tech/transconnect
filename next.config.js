@@ -2,7 +2,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  // Cache-busting comment to force a clean build: 2026-03-13T12:34:44Z
+  devIndicators: {
+    allowedDevOrigins: ["*.cloudworkstations.dev"],
+  },
   images: {
     remotePatterns: [
       {
