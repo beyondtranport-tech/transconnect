@@ -22,7 +22,8 @@ import {
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Sparkles, Video, Download, Save, Copy, AlertTriangle } from 'lucide-react';
-import { generateVideo, type VideoGenerateInput } from '../../ai/flows/video-generation-flow';
+import { generateVideo } from '@/ai/flows/video-generation-flow';
+import { type VideoGenerateInput } from '@/ai/schemas';
 import { Textarea } from '@/components/ui/textarea';
 import { useUser, getClientSideAuthToken } from '@/firebase';
 import { Input } from '@/components/ui/input';
