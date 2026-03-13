@@ -11,6 +11,7 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { formatDateSafe } from '@/lib/utils';
+import { format as formatDateFns } from 'date-fns';
 
 export default function PerformanceContent() {
     const { user, isUserLoading } = useUser();
@@ -54,17 +55,22 @@ export default function PerformanceContent() {
     };
 
     const memberGrowthData = networkData
-        .reduce((acc, member) => {
-            const month = formatDateSafe(member.createdAt, 'MMM yyyy');
-            if (!acc[month]) {
-                acc[month] = { name: month, NewMembers: 0 };
+        .reduce((acc: Record<string, {name: string, NewMembers: number, date: Date}>, member: any) => {
+            if (!member.createdAt) return acc;
+            const joinDate = new Date(member.createdAt);
+            if (isNaN(joinDate.getTime())) return acc;
+
+            const monthKey = formatDateFns(joinDate, 'yyyy-MMM');
+            
+            if (!acc[monthKey]) {
+                acc[monthKey] = { name: formatDateFns(joinDate, 'MMM yy'), NewMembers: 0, date: joinDate };
             }
-            acc[month].NewMembers++;
+            acc[monthKey].NewMembers++;
             return acc;
-        }, {} as Record<string, {name: string, NewMembers: number}>);
+        }, {} as Record<string, {name: string, NewMembers: number, date: Date}>);
         
     const chartData = Object.values(memberGrowthData)
-        .sort((a: { name: string }, b: { name: string }) => new Date(a.name).getTime() - new Date(b.name).getTime())
+        .sort((a, b) => a.date.getTime() - b.date.getTime())
         .slice(-6); // Last 6 months
 
     const downloadAsCSV = (data: any[], filename: string) => {

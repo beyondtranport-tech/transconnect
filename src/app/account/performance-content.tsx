@@ -55,7 +55,7 @@ export default function PerformanceContent() {
     };
 
     const memberGrowthData = networkData
-        .reduce((acc, member) => {
+        .reduce((acc: Record<string, {name: string, NewMembers: number, date: Date}>, member: any) => {
             if (!member.createdAt) return acc;
             const joinDate = new Date(member.createdAt);
             if (isNaN(joinDate.getTime())) return acc;
@@ -70,7 +70,7 @@ export default function PerformanceContent() {
         }, {} as Record<string, {name: string, NewMembers: number, date: Date}>);
         
     const chartData = Object.values(memberGrowthData)
-        .sort((a: { date: Date }, b: { date: Date }) => a.date.getTime() - b.date.getTime())
+        .sort((a, b) => a.date.getTime() - b.date.getTime())
         .slice(-6); // Last 6 months
 
     const downloadAsCSV = (data: any[], filename: string) => {
