@@ -16,6 +16,8 @@ import { supportQuery } from '@/ai/flows/support-flow';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import Link from 'next/link';
 import { format as formatDateFns } from 'date-fns';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+
 
 interface Message {
   id: string;
