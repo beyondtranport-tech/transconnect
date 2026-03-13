@@ -1,8 +1,11 @@
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  // Cache-busting comment to force a clean build: 2026-03-13T13:21:00Z
+  experimental: {
+    // This allows the Next.js development server to accept requests from the
+    // Firebase Studio environment, which is necessary for the preview to work correctly.
+    allowedDevOrigins: ["*.cloudworkstations.dev"],
+  },
   images: {
     remotePatterns: [
       {
