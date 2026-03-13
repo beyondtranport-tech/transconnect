@@ -1,6 +1,6 @@
-
 import { NextRequest, NextResponse } from 'next/server';
-import { generateVideo, VideoGenerateInput } from '@/ai/flows/video-generation-flow';
+import { generateVideo } from '@/ai/flows/video-generation-flow';
+import type { VideoGenerateInput } from '@/ai/schemas';
 
 export async function POST(req: NextRequest) {
     if (!process.env.GEMINI_API_KEY) {
