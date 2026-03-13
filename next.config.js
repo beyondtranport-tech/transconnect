@@ -39,9 +39,8 @@ const nextConfig = {
   experimental: {
     // This experimental flag is no longer needed and can cause issues.
     // serverComponentsExternalPackages: ['recharts'], 
+    allowedDevOrigins: ["https://*.cloudworkstations.dev"],
   },
-  // Correctly configure the allowed development origin at the top level.
-  allowedDevOrigins: ["https://*.cloudworkstations.dev"],
 };
 
 module.exports = nextConfig;
