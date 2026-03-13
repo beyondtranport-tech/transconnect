@@ -1,8 +1,7 @@
-
 'use client';
 
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -104,10 +103,13 @@ export default function SupportChatContent() {
             forceRefresh(); // Immediately show user's message
 
             // 2. Call the AI for a response
-            const historyForApi = (messages || []).map(msg => ({
-                role: (msg.senderId === user.uid ? 'user' : 'model') as 'user' | 'model',
-                content: [{ text: msg.text }],
-            }));
+            const historyForApi: { role: 'user' | 'model'; content: { text: string; }[] }[] = (messages || []).map(msg => {
+                const role: 'user' | 'model' = msg.senderId === user.uid ? 'user' : 'model';
+                return {
+                    role: role,
+                    content: [{ text: msg.text }],
+                };
+            });
             
 
             const aiResult = await supportQuery({ 
