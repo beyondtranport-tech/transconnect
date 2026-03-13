@@ -1,7 +1,6 @@
-
 'use client';
 
-import React, { Suspense, useCallback, useEffect, useState } from 'react';
+import React, { Suspense, useCallback, useEffect, useState, useMemo } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -41,29 +40,25 @@ const generateDefaultValues = (months: number) => {
 function TargetsComponent() {
     const router = useRouter();
     const { toast } = useToast();
-    const [settings, setSettings] = useState<{ forecastMonths: number; startMonth: number; startYear: number } | null>(null);
+    const [isClient, setIsClient] = useState(false);
+    const [settings, setSettings] = useState<{ forecastMonths: number, startMonth: number, startYear: number } | null>(null);
 
     const form = useForm();
-    const { control, handleSubmit, reset } = form;
 
     useEffect(() => {
+        setIsClient(true);
         let localSettings = {
             forecastMonths: 36,
-            startMonth: 0, // Static default
-            startYear: 2024, // Static default
+            startMonth: new Date().getMonth(),
+            startYear: new Date().getFullYear(),
         };
         try {
             const savedSettings = localStorage.getItem(SETUP_KEY);
             if (savedSettings) {
                 localSettings = { ...localSettings, ...JSON.parse(savedSettings) };
-            } else {
-                localSettings.startMonth = new Date().getMonth();
-                localSettings.startYear = new Date().getFullYear();
             }
         } catch (e) {
             console.error("Could not parse financial setup settings for targets page.");
-            localSettings.startMonth = new Date().getMonth();
-            localSettings.startYear = new Date().getFullYear();
         }
         setSettings(localSettings);
         
@@ -80,6 +75,8 @@ function TargetsComponent() {
         }
 
     }, [form]);
+
+    const { control, handleSubmit, reset } = form;
 
     const monthHeaders = useMemo(() => {
         if (!settings) return [];
@@ -108,7 +105,7 @@ function TargetsComponent() {
         });
     };
     
-    if (!settings) {
+    if (!isClient || !settings) {
         return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
     }
 
