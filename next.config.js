@@ -2,7 +2,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  // Cache-busting comment: 2026-03-13T14:15:00Z
+  // Cache-busting comment: 2026-03-14T08:00:00Z
   images: {
     remotePatterns: [
       {
@@ -36,12 +36,6 @@ const nextConfig = {
         pathname: '/**',
       },
     ],
-  },
-  experimental: {
-    // This experimental flag is no longer needed and can cause issues.
-    // serverComponentsExternalPackages: ['recharts'], 
-    // The 'allowedDevOrigins' option is not a valid experimental flag in this Next.js version.
-    // It should be a top-level property if needed, but is removed for now to fix build warnings.
   },
 };
 
