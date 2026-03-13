@@ -17,7 +17,7 @@ import { formatCurrency } from '@/lib/utils';
 
 
 export default function CartPage() {
-  const { cartItems, removeFromCart, updateQuantity, clearCart, totalPrice } = useCart();
+  const { cartItems, removeFromCart, updateQuantity, clearCart, totalPrice, isInitialLoad } = useCart();
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
@@ -76,6 +76,15 @@ export default function CartPage() {
     } finally {
         setIsProcessing(false);
     }
+  }
+
+  if (isInitialLoad) {
+      return (
+        <div className="container mx-auto px-4 py-16 text-center">
+            <Loader2 className="h-12 w-12 animate-spin mx-auto text-primary" />
+            <p className="mt-4 text-muted-foreground">Loading your cart...</p>
+        </div>
+      );
   }
 
   return (
