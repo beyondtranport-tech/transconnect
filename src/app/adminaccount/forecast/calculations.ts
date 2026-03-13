@@ -2,8 +2,37 @@
 
 const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
+interface Settings {
+    forecastMonths: number;
+    startMonth: number;
+    startYear: number;
+}
+
+interface RoadmapInputs {
+    monthlyAssumptions: { [key: string]: number[] };
+}
+
+interface BudgetData {
+  budgetInputs: {
+      revenue: { [key: string]: number[] };
+      cogs: { [key: string]: number[] };
+      opexOther: { [key: string]: number[] };
+  };
+  opexSalaries: {
+      role: string;
+      count: number;
+      salary: number;
+      monthlyHeadcount: number[];
+      monthlySalary: number[];
+  }[];
+}
+
+interface Targets {
+    monthlyTargets: { [key: string]: number[] };
+}
+
 // This function is corrected to use the right logic for sales projections.
-export function salesRoadmapLogic(settings: any, roadmapInputs: any) {
+export function salesRoadmapLogic(settings: Settings, roadmapInputs: RoadmapInputs) {
     if (!roadmapInputs || !roadmapInputs.monthlyAssumptions || !settings) {
         return [];
     }
@@ -95,7 +124,7 @@ export function salesRoadmapLogic(settings: any, roadmapInputs: any) {
 };
 
 
-export function budgetLogic(roadmapData: any[], budgetData: any, targets: any) {
+export function budgetLogic(roadmapData: any[], budgetData: BudgetData, targets: Targets) {
     if (!roadmapData || roadmapData.length === 0 || !budgetData || !budgetData.budgetInputs || !targets || !targets.monthlyTargets) return [];
     
     const { budgetInputs } = budgetData;

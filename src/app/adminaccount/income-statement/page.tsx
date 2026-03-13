@@ -5,7 +5,7 @@ import React, { useMemo, Suspense, useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { TrendingUp, AlertTriangle, Loader2 } from 'lucide-react';
-import { salesRoadmapLogic, budgetLogic } from '@/app/adminaccount/lib/calculations';
+import { salesRoadmapLogic, budgetLogic } from '@/app/adminaccount/forecast/calculations';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 
@@ -49,9 +49,10 @@ function IncomeStatementComponent() {
     
     const { totalProjection } = useMemo(() => {
         if (!data?.salesInputs || !data?.settings) {
-            return { powerPartnerProjection: [], isaProjection: [], totalProjection: [] };
+            return { totalProjection: [] };
         }
-        return salesRoadmapLogic(data.settings, data.salesInputs);
+        const result = salesRoadmapLogic(data.settings, data.salesInputs);
+        return { totalProjection: result };
     }, [data]);
 
     const forecastData = useMemo(() => {
@@ -134,7 +135,7 @@ function IncomeStatementComponent() {
                                 </TableCell>
                                 {years.map(year => (
                                     <TableCell key={`total-${item.key}-${year}`} className={`text-right bg-primary/10 font-bold font-mono text-sm ${item.isProfit && yearlyTotals[year]?.[item.key] < 0 ? 'text-destructive' : ''}`}>
-                                        {item.format && yearlyTotals[year] ? item.format(yearlyTotals[year][item.key]) : ''}
+                                        {yearlyTotals[year] ? item.format(yearlyTotals[year][item.key]) : ''}
                                     </TableCell>
                                 ))}
                             </TableRow>
