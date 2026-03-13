@@ -1,6 +1,8 @@
 
+'use server';
+
 import { NextRequest, NextResponse } from 'next/server';
-import { getFirestore, FieldValue, increment } from 'firebase-admin/firestore';
+import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase-admin';
 
@@ -11,10 +13,10 @@ export async function POST(req: NextRequest) {
     }
 
     const authorization = req.headers.get('authorization');
-    if (!authorization?.startsWith('Bearer ')) {
+    const token = authorization?.split('Bearer ')[1];
+    if (!token) {
         return NextResponse.json({ success: false, error: 'Unauthorized.' }, { status: 401 });
     }
-    const token = authorization.split('Bearer ')[1];
     
     try {
         const adminAuth = getAuth(app);

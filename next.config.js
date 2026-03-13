@@ -1,9 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  // This allows the Next.js development server to accept requests from the
-  // Firebase Studio environment, which is necessary for the preview to work correctly.
-  allowedDevOrigins: ["*.cloudworkstations.dev"],
+  // Cache-busting comment: 2026-03-13T13:29:00Z
   images: {
     remotePatterns: [
       {
