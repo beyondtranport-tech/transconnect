@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  // Cache-busting comment: 2026-03-13T13:30:00Z
+  // Cache-busting comment: 2026-03-13T14:15:00Z
   images: {
     remotePatterns: [
       {
@@ -36,6 +36,12 @@ const nextConfig = {
       },
     ],
   },
+  experimental: {
+    // This experimental flag is no longer needed and can cause issues.
+    // serverComponentsExternalPackages: ['recharts'], 
+  },
+  // Correctly configure the allowed development origin at the top level.
+  allowedDevOrigins: ["https://*.cloudworkstations.dev"],
 };
 
 module.exports = nextConfig;
