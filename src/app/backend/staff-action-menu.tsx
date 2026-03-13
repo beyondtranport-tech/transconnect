@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -22,12 +23,15 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Loader2, MoreVertical, CheckCircle, XCircle, Trash2, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
-import { EditStaffDialog } from '@/app/backend/EditStaffDialog';
+import { usePermissions } from '@/hooks/use-permissions';
 
-async function performStaffAction(token: string, action: string, payload: any) {
+async function performAdminAction(token: string, action: string, payload: any) {
     const response = await fetch('/api/admin', {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
         body: JSON.stringify({ action, payload }),
     });
 
@@ -38,20 +42,20 @@ async function performStaffAction(token: string, action: string, payload: any) {
     return result;
 }
 
-export default function StaffActionMenu({ staffMember, onUpdate }: { staffMember: any; onUpdate: () => void }) {
+export default function StaffActionMenu({ staffMember, onUpdate, onEdit }: { staffMember: any; onUpdate: () => void; onEdit: () => void; }) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
-  const [isEditOpen, setIsEditOpen] = useState(false);
   const [actionToConfirm, setActionToConfirm] = useState<'delete' | 'confirm' | 'unconfirm' | null>(null);
   const { toast } = useToast();
+  const { can, isLoading: permissionsLoading } = usePermissions();
   const [authToken, setAuthToken] = useState<string | null>(null);
 
-  // Fetch token whenever a dialog is about to open that might need it
+  // Fetch token whenever a dialog is about to open
   useEffect(() => {
-    if (isAlertOpen || isEditOpen) {
+    if (isAlertOpen) {
       getClientSideAuthToken().then(setAuthToken);
     }
-  }, [isAlertOpen, isEditOpen]);
+  }, [isAlertOpen]);
 
 
   const handleAction = async () => {
@@ -79,7 +83,7 @@ export default function StaffActionMenu({ staffMember, onUpdate }: { staffMember
             successMessage = `${staffMember.firstName}'s status updated to ${payload.status}.`;
         }
         
-        await performStaffAction(authToken, apiAction, payload);
+        await performAdminAction(authToken, apiAction, payload);
         toast({ title: 'Success', description: successMessage });
         onUpdate();
 
@@ -105,37 +109,34 @@ export default function StaffActionMenu({ staffMember, onUpdate }: { staffMember
       }
   }
 
+  const canEditStaff = can('edit', 'staff');
+  const canDeleteStaff = can('delete', 'staff');
+
 
   return (
-    <>
-      <EditStaffDialog
-        isOpen={isEditOpen}
-        setIsOpen={setIsEditOpen}
-        staffMember={staffMember}
-        onUpdate={onUpdate}
-      />
       <div className="flex justify-end items-center gap-1">
-        <Button variant="ghost" size="icon" onClick={() => setIsEditOpen(true)}>
+        <Button variant="ghost" size="icon" onClick={onEdit} disabled={!canEditStaff || permissionsLoading}>
             <Edit className="h-4 w-4" />
         </Button>
         <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
             <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" disabled={isProcessing}>
+                <Button variant="ghost" size="icon" disabled={isProcessing || permissionsLoading}>
                 {isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <MoreVertical className="h-4 w-4" />}
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-                <DropdownMenuItem onSelect={() => openConfirmation('confirm')} disabled={staffMember.status === 'confirmed'}>
+                <DropdownMenuItem onSelect={() => openConfirmation('confirm')} disabled={!canEditStaff || staffMember.status === 'confirmed'}>
                 <CheckCircle className="mr-2 h-4 w-4" /> Confirm
                 </DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => openConfirmation('unconfirm')} disabled={staffMember.status !== 'confirmed'}>
+                <DropdownMenuItem onSelect={() => openConfirmation('unconfirm')} disabled={!canEditStaff || staffMember.status !== 'confirmed'}>
                 <XCircle className="mr-2 h-4 w-4" /> Un-confirm
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                 className="text-destructive"
                 onSelect={() => openConfirmation('delete')}
+                disabled={!canDeleteStaff}
                 >
                 <Trash2 className="mr-2 h-4 w-4" /> Delete
                 </DropdownMenuItem>
@@ -155,6 +156,5 @@ export default function StaffActionMenu({ staffMember, onUpdate }: { staffMember
             </AlertDialogContent>
         </AlertDialog>
       </div>
-    </>
   );
 }
