@@ -1,3 +1,4 @@
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -39,7 +40,8 @@ const nextConfig = {
   experimental: {
     // This experimental flag is no longer needed and can cause issues.
     // serverComponentsExternalPackages: ['recharts'], 
-    allowedDevOrigins: ["https://*.cloudworkstations.dev"],
+    // The 'allowedDevOrigins' option is not a valid experimental flag in this Next.js version.
+    // It should be a top-level property if needed, but is removed for now to fix build warnings.
   },
 };
 
