@@ -4,7 +4,7 @@ import React, { useMemo, Suspense, useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DollarSign, AlertTriangle, Loader2 } from 'lucide-react';
-import { salesRoadmapLogic, budgetLogic } from '@/app/adminaccount/forecast/calculations';
+import { salesRoadmapLogic, budgetLogic } from '@/app/adminaccount/lib/calculations';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 
@@ -47,7 +47,9 @@ function TurnoverComponent() {
     }, []);
     
     const { totalProjection } = useMemo(() => {
-        if (!isClient || !data?.salesInputs || !data?.settings) return { totalProjection: [] };
+        if (!isClient || !data?.salesInputs || !data?.settings) {
+            return { totalProjection: [] };
+        }
         return salesRoadmapLogic(data.settings, data.salesInputs);
     }, [isClient, data]);
 
