@@ -244,8 +244,10 @@ export default function CommunicationsContent() {
             <CardContent>
                 {conversations.length > 0 ? (
                     <Accordion type="single" collapsible className="w-full">
-                        {conversations.map((convo) => (
-                           <Conversation key={convo.company.id + convo.lead.id} convo={convo} />
+                        {conversations
+                            .filter(convo => convo.company && convo.lead)
+                            .map((convo) => (
+                           <Conversation key={convo.company!.id + convo.lead!.id} convo={convo} />
                         ))}
                     </Accordion>
                 ) : (
