@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Check, Star, Minus, Info } from 'lucide-react';
 import Link from 'next/link';
-import { useUser, useFirestore, useCollection } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { cn } from '@/lib/utils';
 import { useState, useMemo, useEffect } from 'react';
 import { Switch } from '@/components/ui/switch';
@@ -14,7 +14,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import * as React from 'react';
 import { collection, query } from 'firebase/firestore';
 import { Loader2 } from 'lucide-react';
-import { useMemoFirebase } from '@/hooks/use-memo-firebase';
 import featuresData from '@/lib/features.json';
 import { formatCurrency, formatDateSafe } from '@/lib/utils';
 

@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useUser, useFirestore, useCollection, useDoc, getClientSideAuthToken } from '@/firebase';
+import { useUser, useFirestore, useCollection, useDoc, getClientSideAuthToken, useMemoFirebase } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Loader2, DollarSign, Wallet, Clock, Info, Gem, Send, AlertCircle, Banknote, Edit, AlertTriangle } from 'lucide-react';
@@ -11,7 +11,6 @@ import { collection, query, orderBy, limit, doc, where } from 'firebase/firestor
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useConfig } from '@/hooks/use-config';
-import { useMemoFirebase } from '@/hooks/use-memo-firebase';
 import { useToast } from '@/hooks/use-toast';
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Input } from '@/components/ui/input';

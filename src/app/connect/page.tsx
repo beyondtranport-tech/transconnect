@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from "react";
@@ -13,8 +14,7 @@ import { DataContributionModal } from "./data-contribution-modal";
 import React from "react";
 import * as gtag from '@/lib/gtag';
 import { useConfig } from '@/hooks/use-config';
-import { useMemoFirebase } from '@/hooks/use-memo-firebase';
-import { useCollection, useFirestore } from "@/firebase";
+import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
 import { collection, query } from "firebase/firestore";
 import { formatCurrency } from "@/lib/utils";
 
