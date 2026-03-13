@@ -17,12 +17,17 @@ async function handleServicePayment(db: FirebaseFirestore.Firestore, adminUid: s
     // Use a transaction to ensure all reads and writes are atomic
     await db.runTransaction(async (transaction) => {
         const companySnap = await transaction.get(companyRef);
-        const companyData = companySnap.data();
-
+        
+        if (!companySnap.exists) {
+            throw new Error("Company not found.");
+        }
+        
+        const companyData = companySnap.data()!;
+        
         // Check against AVAILABLE balance, not total balance
         const currentBalance = Number(companyData?.availableBalance || 0);
 
-        if (!companySnap.exists || isNaN(currentBalance) || currentBalance < amount) {
+        if (isNaN(currentBalance) || currentBalance < amount) {
             throw new Error(`Insufficient available funds. Available balance is less than the required amount.`);
         }
         
