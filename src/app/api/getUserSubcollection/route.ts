@@ -1,9 +1,10 @@
 
-
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase-admin';
+
+export const dynamic = 'force-dynamic';
 
 // Helper to convert Firestore Timestamps to JSON-serializable strings
 function serializeTimestamps(docData: any): any {
