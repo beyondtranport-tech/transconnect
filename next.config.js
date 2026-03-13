@@ -2,7 +2,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  // Cache-busting comment: 2026-03-14T11:00:00Z
+  // Cache-busting comment: 2026-03-14T12:00:00Z
   images: {
     remotePatterns: [
       {
