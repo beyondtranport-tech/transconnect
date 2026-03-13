@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview An AI-powered image generation flow.
@@ -20,7 +21,7 @@ const imageGenerateFlow = ai.defineFlow(
     inputSchema: ImageGenerateInputSchema,
     outputSchema: ImageGenerateOutputSchema,
   },
-  async input => {
+  async (input: ImageGenerateInput) => {
     const { media } = await ai.generate({
       model: 'googleai/imagen-4.0-fast-generate-001',
       prompt: input.prompt,

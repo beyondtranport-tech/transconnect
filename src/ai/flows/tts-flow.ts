@@ -24,7 +24,7 @@ const ttsFlow = ai.defineFlow(
     inputSchema: TTSInputSchema,
     outputSchema: TTSOutputSchema,
   },
-  async (input) => {
+  async (input: TTSInput) => {
     // Return a dummy value instead of throwing an error to prevent server crashes.
     console.warn("ttsFlow is disabled and returning an empty response.");
     return { audioDataUri: "" };

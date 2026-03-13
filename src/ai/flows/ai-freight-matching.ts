@@ -21,7 +21,7 @@ const matchFreightFlow = ai.defineFlow(
     inputSchema: MatchFreightInputSchema,
     outputSchema: MatchFreightOutputSchema,
   },
-  async (input) => {
+  async (input: MatchFreightInput) => {
 
     // Build a more detailed prompt based on user input.
     let prompt = `You are an AI assistant specialized in matching freight loads with transporters.

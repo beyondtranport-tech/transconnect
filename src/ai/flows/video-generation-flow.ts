@@ -25,7 +25,7 @@ const videoGenerateFlow = ai.defineFlow(
     inputSchema: VideoGenerateInputSchema,
     outputSchema: VideoGenerateOutputSchema,
   },
-  async (input) => {
+  async (input: VideoGenerateInput) => {
     // Return a dummy value instead of throwing an error to prevent server crashes.
     console.warn("videoGenerateFlow is disabled and returning an empty response.");
     return { videoDataUri: "" };

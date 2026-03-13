@@ -23,7 +23,7 @@ const leadResearchAIFlow = ai.defineFlow(
     inputSchema: LeadResearchInputSchema,
     outputSchema: LeadResearchOutputSchema,
   },
-  async (input) => {
+  async (input: LeadResearchInput) => {
     const response = await ai.generate({
         model: 'gemini-1.5-flash',
         tools: [googleSearchTool],

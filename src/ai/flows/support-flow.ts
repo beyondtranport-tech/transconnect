@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview An AI-powered customer support agent.
@@ -42,7 +43,7 @@ const supportFlow = ai.defineFlow(
     inputSchema: SupportInputSchema,
     outputSchema: SupportOutputSchema,
   },
-  async (input) => {
+  async (input: SupportInput) => {
     const { history, query } = input;
     
     if (!query) {
