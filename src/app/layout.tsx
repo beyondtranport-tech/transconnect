@@ -22,7 +22,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <Providers>
-          <div className="relative flex min-h-dvh flex-col bg-background">
+          <div className="flex min-h-dvh flex-col bg-background">
             <Header />
             <main className="flex-1">{children}</main>
             <Footer />
