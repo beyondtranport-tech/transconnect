@@ -81,7 +81,7 @@ export default function DashboardContent() {
             setPendingAgreements(queuesRes.data.proposedAgreements || []);
             
             // Process Member Growth
-            const growth = (membersRes.data || []).reduce((acc: Record<string, { date: Date; members: number }>, member: any) => {
+            const growth: Record<string, { date: Date; members: number }> = (membersRes.data || []).reduce((acc: Record<string, { date: Date; members: number }>, member: any) => {
                 if (!member.createdAt) return acc;
                 const joinDate = new Date(member.createdAt);
                 if (isNaN(joinDate.getTime())) return acc;
@@ -96,7 +96,7 @@ export default function DashboardContent() {
             }, {} as Record<string, { date: Date; members: number }>);
 
             const growthData = Object.values(growth)
-                .sort((a, b) => a.date.getTime() - b.date.getTime())
+                .sort((a: { date: Date }, b: { date: Date }) => a.date.getTime() - b.date.getTime())
                 .slice(-6) // Show last 6 months for better view
                 .map(item => ({
                     name: formatDateFns(item.date, 'MMM yy'),
