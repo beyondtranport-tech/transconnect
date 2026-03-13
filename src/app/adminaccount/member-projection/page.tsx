@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useMemo, Suspense, useState, useEffect } from 'react';
@@ -36,7 +37,9 @@ function MemberProjectionComponent() {
     }, []);
 
     const { powerPartnerProjection, isaProjection } = useMemo(() => {
-        if (!isClient || !data?.roadmapInputs || !data?.setupInputs) return { powerPartnerProjection: [], isaProjection: [] };
+        if (!isClient || !data?.roadmapInputs || !data?.setupInputs) {
+            return { powerPartnerProjection: [], isaProjection: [], totalProjection: [] };
+        };
         return salesRoadmapLogic(data.setupInputs, data.roadmapInputs);
     }, [isClient, data]);
     

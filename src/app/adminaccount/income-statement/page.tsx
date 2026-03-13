@@ -1,10 +1,11 @@
+
 'use client';
 
 import React, { useMemo, Suspense, useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { TrendingUp, AlertTriangle, Loader2 } from 'lucide-react';
-import { salesRoadmapLogic, budgetLogic } from '@/app/adminaccount/forecast/calculations';
+import { salesRoadmapLogic, budgetLogic } from '@/app/adminaccount/lib/calculations';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 
@@ -47,7 +48,9 @@ function IncomeStatementComponent() {
     }, []);
     
     const { totalProjection } = useMemo(() => {
-        if (!data?.salesInputs || !data?.settings) return { totalProjection: [] };
+        if (!data?.salesInputs || !data?.settings) {
+            return { powerPartnerProjection: [], isaProjection: [], totalProjection: [] };
+        }
         return salesRoadmapLogic(data.settings, data.salesInputs);
     }, [data]);
 
@@ -75,14 +78,6 @@ function IncomeStatementComponent() {
         return totals;
     }, [forecastData]);
 
-    const lineItems = [
-        { key: 'totalRevenue', label: 'Total Revenue', format: formatCurrency, isBold: true, isPrimary: true },
-        { key: 'totalCogs', label: 'Total COGS', format: formatCurrency, isBold: true },
-        { key: 'grossProfit', label: 'Gross Profit', format: formatCurrency, isBold: true, isPrimary: true },
-        { key: 'totalOpex', label: 'Total OPEX', format: formatCurrency, isBold: true },
-        { key: 'netProfit', label: 'Net Profit', format: formatCurrency, isBold: true, isPrimary: true, isProfit: true },
-    ];
-
     if (!isClient) {
         return <div className="flex justify-center items-center h-64"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
     }
@@ -107,7 +102,14 @@ function IncomeStatementComponent() {
     }
     
     const years = [...new Set(forecastData.map(d => d.year))];
-
+    const lineItems = [
+        { key: 'totalRevenue', label: 'Total Revenue', format: formatCurrency, isBold: true, isPrimary: true },
+        { key: 'totalCogs', label: 'Total COGS', format: formatCurrency, isBold: true },
+        { key: 'grossProfit', label: 'Gross Profit', format: formatCurrency, isBold: true, isPrimary: true },
+        { key: 'totalOpex', label: 'Total OPEX', format: formatCurrency, isBold: true },
+        { key: 'netProfit', label: 'Net Profit', format: formatCurrency, isBold: true, isPrimary: true, isProfit: true },
+    ];
+    
     return (
         <Card>
             <CardHeader>
