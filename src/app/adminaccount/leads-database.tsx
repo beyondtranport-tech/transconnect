@@ -489,5 +489,3 @@ export default function LeadsDatabase() {
         </Suspense>
     );
 }
-
-    
