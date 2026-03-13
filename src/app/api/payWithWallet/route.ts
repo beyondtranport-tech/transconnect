@@ -119,7 +119,7 @@ async function handleServicePayment(db: FirebaseFirestore.Firestore, adminUid: s
                 }
             }
         } else if (paymentId) { // Only delete if it's a standard service payment
-            const paymentRef = doc(firestore, `companies/${companyId}/walletPayments/${paymentId}`);
+            const paymentRef = db.doc(`companies/${companyId}/walletPayments/${paymentId}`);
             transaction.delete(paymentRef);
         }
     });
