@@ -18,10 +18,8 @@ service cloud.firestore {
     }
     
     function isCompanyOwner(companyId) {
-      // A user is the owner if their user document's companyId field
-      // matches the companyId of the document they are trying to access.
-      // This is a secure way to check ownership without circular dependencies in rules.
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId;
+      // The ownerId on the company document must match the requesting user's UID.
+      return get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid;
     }
 
     // Public read for products is handled by the /shops/{shopId} rule.
