@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
@@ -342,10 +340,10 @@ export default function StaffContent({ companyId: propCompanyId }: { companyId?:
 
   const isLoading = isUserLoading || (propCompanyId ? false : isUserDocLoading) || isStaffLoading || permissionsLoading;
 
-  const handleEdit = useCallback((staffMember: any) => {
+  const handleEdit = (staffMember: any) => {
     setSelectedStaff(staffMember);
     setIsEditDialogOpen(true);
-  }, []);
+  };
   
   const canCreateStaff = can('create', 'staff');
 
