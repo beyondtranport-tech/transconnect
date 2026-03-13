@@ -6,6 +6,7 @@ import { z } from 'zod';
 const GoogleSearchInputSchema = z.object({
   query: z.string().describe('The search query.'),
 });
+type GoogleSearchInput = z.infer<typeof GoogleSearchInputSchema>;
 
 const GoogleSearchResultSchema = z.object({
     title: z.string(),
@@ -22,7 +23,7 @@ export const googleSearchTool = ai.defineTool(
     inputSchema: GoogleSearchInputSchema,
     outputSchema: GoogleSearchOutputSchema,
   },
-  async (input) => {
+  async (input: GoogleSearchInput) => {
     const apiKey = process.env.GOOGLE_SEARCH_API_KEY;
     const cx = process.env.CUSTOM_SEARCH_ENGINE_ID;
 
