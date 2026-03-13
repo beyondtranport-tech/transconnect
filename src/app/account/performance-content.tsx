@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -71,7 +70,7 @@ export default function PerformanceContent() {
         }, {} as Record<string, {name: string, NewMembers: number, date: Date}>);
         
     const chartData = Object.values(memberGrowthData)
-        .sort((a, b) => a.date.getTime() - b.date.getTime())
+        .sort((a: { date: Date }, b: { date: Date }) => a.date.getTime() - b.date.getTime())
         .slice(-6); // Last 6 months
 
     const downloadAsCSV = (data: any[], filename: string) => {
