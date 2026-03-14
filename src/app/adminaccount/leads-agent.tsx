@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -9,7 +10,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Loader2, Sparkles, Bot, Save, Search, PlusCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { leadGenerationFlow, LeadGenerationInputSchema, type LeadGenerationOutput } from '@/ai/flows/lead-generation-flow';
+import { leadGenerationFlow, LeadGenerationInputSchema, type LeadGenerationInput, type LeadGenerationOutput } from '@/ai/flows/lead-generation-flow';
 import { useRouter } from 'next/navigation';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Textarea } from '@/components/ui/textarea';

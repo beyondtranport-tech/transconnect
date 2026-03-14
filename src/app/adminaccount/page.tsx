@@ -91,6 +91,7 @@ const StaffManagement = dynamic(() => import('@/app/backend/staff-content'), { l
 const ISAManagement = dynamic(() => import('./isa-management'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const AnalyticsDashboard = dynamic(() => import('./analytics-dashboard'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const LeadsDatabase = dynamic(() => import('@/app/backend/leads-database'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const LeadsAgent = dynamic(() => import('./leads-agent'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const TTSStudio = dynamic(() => import('./tts-studio'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const AssetGallery = dynamic(() => import('./asset-gallery'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const NetworkOffer = dynamic(() => import('../account/network-offer'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
@@ -175,6 +176,7 @@ function BackendContent() {
       
       // Sales & Marketing
       case 'leads-database': return <LeadsDatabase />;
+      case 'leads-agent': return <LeadsAgent />;
       case 'marketing-studio': return <MarketingStudio />;
       case 'audio-studio': return <TTSStudio />;
       case 'asset-gallery': return <AssetGallery />;
@@ -232,7 +234,7 @@ function BackendContent() {
 
   const navigate = (view: string) => router.push(`/adminaccount?view=${view}`, { scroll: false });
   
-  const isSalesActive = ['leads-database', 'marketing-studio', 'audio-studio', 'asset-gallery'].includes(activeView);
+  const isSalesActive = ['leads-database', 'leads-agent', 'marketing-studio', 'audio-studio', 'asset-gallery'].includes(activeView);
   const isPartnerManagementActive = ['partners-hub', 'partners', 'isa-agents', 'investors', 'developer-list'].includes(activeView);
   const isPitchingActive = [
     'partner-pitch', 'member-sales-offer', 'member-sales-emails', 
@@ -273,6 +275,7 @@ function BackendContent() {
                   <SidebarMenuButton tooltip="Sales & Marketing" isActive={isSalesActive}><Handshake /><span>Sales & Marketing</span></SidebarMenuButton>
                   <SidebarMenuSub>
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'leads-database'} onClick={() => navigate('leads-database')}><Database />Leads Database</SidebarMenuSubButton></SidebarMenuSubItem>
+                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'leads-agent'} onClick={() => navigate('leads-agent')}><Bot />AI Leads Agent</SidebarMenuSubButton></SidebarMenuSubItem>
                      <SidebarMenuSeparator />
                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-studio'} onClick={() => navigate('marketing-studio')}><Sparkles />Branding Studio</SidebarMenuSubButton></SidebarMenuSubItem>
                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'audio-studio'} onClick={() => navigate('audio-studio')}><Mic />Audio Studio</SidebarMenuSubButton></SidebarMenuSubItem>
