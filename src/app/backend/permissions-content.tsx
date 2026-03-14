@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -27,6 +26,7 @@ async function fetchFromAdminAPI(token: string, action: string, payload?: any) {
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ action, payload }),
     });
+
     const result = await response.json();
     if (!response.ok || !result.success) {
         throw new Error(result.error || `API Error for action: ${action}`);
@@ -287,7 +287,7 @@ export default function PermissionsContent() {
         {
           accessorKey: 'name',
           header: 'Staff Member',
-          cell: ({ row }) => (
+           cell: ({ row }) => (
             <div>
               <p className="font-medium">{row.original.firstName} {row.original.lastName}</p>
               <p className="text-xs text-muted-foreground">{row.original.email}</p>
@@ -326,7 +326,7 @@ export default function PermissionsContent() {
         },
         {
             id: 'actions',
-            header: <div className="text-right">Actions</div>,
+            header: 'Actions',
             cell: ({ row }) => (
                 <div className="text-right">
                     <PermissionsDialog staffMember={row.original} onSave={forceRefresh} />
