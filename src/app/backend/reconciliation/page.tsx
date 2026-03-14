@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -116,7 +115,7 @@ function ReconciliationDashboard() {
                 return;
             }
             
-            const totalAmount = pending.reduce((sum, p) => sum + p.amount, 0);
+            const totalAmount = pending.reduce((sum: number, p: any) => sum + p.amount, 0);
 
             setProcessingData({
                 statementName: `pending-efts-${new Date().toISOString()}`,
