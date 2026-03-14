@@ -44,7 +44,7 @@ const resources = [
     { id: 'supplierMall', label: 'Supplier Mall' },
     { id: 'transporterMall', label: 'Transporter Mall' },
     { id: 'financeMall', label: 'Finance Mall' },
-    { id: 'loadsMall', label: 'Loads Mall' },
+    { id: 'loads', label: 'Loads Mall' },
     { id: 'buySellMall', label: 'Buy & Sell Mall' },
     { id: 'distributionMall', label: 'Distribution Mall' },
     { id: 'warehouseMall', label: 'Warehouse Mall' },
@@ -325,7 +325,7 @@ export default function PermissionsContent() {
         },
         {
             id: 'actions',
-            header: () => <div className="text-right">Actions</div>,
+            header: <div className="text-right">Actions</div>,
             cell: ({ row }) => (
                 <div className="text-right">
                     <PermissionsDialog staffMember={row.original} onSave={forceRefresh} />
