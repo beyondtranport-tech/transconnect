@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Save, Calculator, Users, Percent, FileText } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
 import { useRouter } from 'next/navigation';
 
 const LENDING_ASSUMPTIONS_KEY = 'adminLendingAssumptions_v1';
@@ -26,6 +27,7 @@ const agreementSchema = z.object({
     startDate: z.string().optional(),
     firstInstallmentDate: z.string().optional(),
     paymentsInAdvance: z.boolean().default(false),
+    residual: z.coerce.number().optional(),
 });
 
 const formSchema = z.object({
@@ -95,7 +97,7 @@ export default function LendingAssumptions() {
             setIsLoading(false);
         }
     };
-    
+
     const handleGenerateSchedule = (agreementType: "loan" | "installmentSale" | "lease" | "factoring") => {
         const values = watch(agreementType);
         const principal = (values.amount || 0) * (values.dealsPerMonth || 1);

@@ -13,6 +13,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Save, Calculator, Users, Percent, FileText } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
+import { useRouter } from 'next/navigation';
 
 const LENDING_ASSUMPTIONS_KEY = 'adminLendingAssumptions_v1';
 
@@ -26,6 +27,7 @@ const agreementSchema = z.object({
     startDate: z.string().optional(),
     firstInstallmentDate: z.string().optional(),
     paymentsInAdvance: z.boolean().default(false),
+    residual: z.coerce.number().optional(),
 });
 
 const formSchema = z.object({
@@ -54,6 +56,7 @@ const defaultValues: FormValues = {
 
 export default function LendingAssumptions() {
     const { toast } = useToast();
+    const router = useRouter();
     const [isLoading, setIsLoading] = React.useState(false);
 
     const form = useForm<FormValues>({
@@ -81,6 +84,8 @@ export default function LendingAssumptions() {
         }, [])()
     });
 
+    const { watch } = form;
+
     const onSubmit = (values: FormValues) => {
         setIsLoading(true);
         try {
@@ -92,9 +97,25 @@ export default function LendingAssumptions() {
             setIsLoading(false);
         }
     };
+    
+    const handleGenerateSchedule = (agreementType: "loan" | "installmentSale" | "lease" | "factoring") => {
+        const values = watch(agreementType);
+        const principal = (values.amount || 0) * (values.dealsPerMonth || 1);
+        const query = new URLSearchParams({
+            principal: principal.toString(),
+            rate: values.rate?.toString() || '0',
+            term: values.term?.toString() || '0',
+            residual: (values as any).residual?.toString() || '0', // Add residual if it exists
+            startDate: values.startDate || '',
+            firstInstallmentDate: values.firstInstallmentDate || '',
+            paymentsInAdvance: values.paymentsInAdvance ? 'true' : 'false',
+            type: agreementType
+        });
+        router.push(`/lending/repayment-schedule?${query.toString()}`);
+    }
 
     const renderAgreementFields = (name: "loan" | "installmentSale" | "lease" | "factoring", title: string) => (
-        <Card>
+        <Card className="flex flex-col">
             <CardHeader>
                 <FormField
                     control={form.control}
@@ -111,13 +132,14 @@ export default function LendingAssumptions() {
                     )}
                 />
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 flex-grow">
                 <fieldset disabled={!form.watch(`${name}.enabled`)} className="space-y-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         <FormField control={form.control} name={`${name}.dealsPerMonth`} render={({ field }) => (<FormItem><FormLabel># of Deals / Month</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
                         <FormField control={form.control} name={`${name}.amount`} render={({ field }) => (<FormItem><FormLabel>Avg. Amount (R)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
                         <FormField control={form.control} name={`${name}.term`} render={({ field }) => (<FormItem><FormLabel>Avg. Term (Months)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
                         <FormField control={form.control} name={`${name}.rate`} render={({ field }) => (<FormItem><FormLabel>Avg. Rate (%)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={form.control} name={`${name}.residual`} render={({ field }) => (<FormItem><FormLabel>Residual Value (R)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
                         <FormField control={form.control} name={`${name}.startDate`} render={({ field }) => (<FormItem><FormLabel>Start Date</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>)} />
                         <FormField control={form.control} name={`${name}.firstInstallmentDate`} render={({ field }) => (<FormItem><FormLabel>First Installment Date</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>)} />
                     </div>
@@ -151,6 +173,12 @@ export default function LendingAssumptions() {
                     </div>
                 </fieldset>
             </CardContent>
+             <CardFooter>
+                 <Button className="w-full" type="button" onClick={() => handleGenerateSchedule(name)} disabled={!form.watch(`${name}.enabled`)}>
+                    <Calculator className="mr-2 h-4 w-4" />
+                    Repayment Sched.
+                </Button>
+            </CardFooter>
         </Card>
     );
 
@@ -202,5 +230,3 @@ export default function LendingAssumptions() {
         </div>
     );
 }
-
-    
