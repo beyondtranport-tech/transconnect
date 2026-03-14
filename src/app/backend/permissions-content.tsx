@@ -66,6 +66,8 @@ const actions = [
     { id: 'create', label: 'Create' },
     { id: 'edit', label: 'Edit' },
     { id: 'delete', label: 'Delete' },
+    { id: 'manage', label: 'Manage' },
+    { id: 'publish', label: 'Publish' },
 ] as const;
 
 
@@ -326,7 +328,7 @@ export default function PermissionsContent() {
         },
         {
             id: 'actions',
-            header: 'Actions',
+            header: <div className="text-right">Actions</div>,
             cell: ({ row }) => (
                 <div className="text-right">
                     <PermissionsDialog staffMember={row.original} onSave={forceRefresh} />
