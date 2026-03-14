@@ -10,13 +10,10 @@ import { Input } from '@/components/ui/input';
 import { Loader2, Sparkles, Bot, Save, Search, PlusCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { leadGenerationFlow } from '@/ai/flows/lead-generation-flow';
-import { LeadResearchInputSchema, type LeadResearchOutput } from '@/ai/schemas';
-import type { z } from 'zod';
+import { LeadResearchInputSchema, type LeadResearchOutput, type LeadResearchInput } from '@/ai/schemas';
 import { useRouter } from 'next/navigation';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Textarea } from '@/components/ui/textarea';
-
-type LeadResearchInput = z.infer<typeof LeadResearchInputSchema>;
 
 const defaultPrompt = `You are an expert market researcher specializing in the South African logistics and transport industry. Your goal is to be as thorough as possible and provide only factual, verifiable information.
 
