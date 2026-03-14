@@ -43,7 +43,7 @@ function ReconciliationReportComponent() {
 
                 const [memberTxsSnap, platformTxsSnap] = await Promise.all([
                     getDocs(memberTxsQuery),
-                    getDocs(platformTxsSnap)
+                    getDocs(platformTxsQuery)
                 ]);
 
                 let allTxs: any[] = [];
