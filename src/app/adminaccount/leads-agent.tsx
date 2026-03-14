@@ -9,7 +9,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Loader2, Sparkles, Bot, Save, Search, PlusCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { leadResearchFlow } from '@/ai/flows/lead-research-flow';
+import { leadGenerationFlow } from '@/ai/flows/lead-generation-flow';
 import { LeadResearchInputSchema, type LeadResearchOutput } from '@/ai/schemas';
 import type { z } from 'zod';
 import { useRouter } from 'next/navigation';
@@ -55,7 +55,7 @@ export default function LeadsAgent() {
         setIsLoading(true);
         setGeneratedLeads([]);
         try {
-            const result = await leadResearchFlow(values);
+            const result = await leadGenerationFlow(values);
             if (result.leads.length > 0) {
                 setGeneratedLeads(result.leads);
                 toast({ title: 'Research Complete', description: `Found ${result.leads.length} potential leads.` });
