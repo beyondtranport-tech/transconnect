@@ -17,6 +17,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { type ColumnDef } from '@/hooks/use-data-table';
+import { DataTable } from '@/components/ui/data-table';
 
 
 // --- Helper Functions and Data ---
