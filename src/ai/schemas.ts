@@ -74,25 +74,6 @@ export const ShopSeoOutputSchema = z.object({
 });
 export type ShopSeoOutput = z.infer<typeof ShopSeoOutputSchema>;
 
-// From lead-research-flow.ts
-export const LeadResearchInputSchema = z.object({
-  prompt: z.string().min(20, 'Please provide a detailed prompt.').describe('A detailed prompt for the AI agent, instructing it what to research.'),
-});
-export type LeadResearchInput = z.infer<typeof LeadResearchInputSchema>;
-
-export const LeadResearchOutputSchema = z.object({
-    leads: z.array(z.object({
-        companyName: z.string().describe('The name of the potential lead company.'),
-        role: z.string().describe('The likely role of this company in the ecosystem (e.g., Vendor, Buyer, Partner).'),
-        address: z.string().nullable().optional().describe("The company's physical address, if found."),
-        website: z.string().url().nullable().optional().describe("The company's website URL, if found."),
-        phone: z.string().nullable().optional().describe("The company's primary phone number, if found."),
-        email: z.string().email().nullable().optional().describe("A general contact email for the company (e.g., info@, sales@), if found."),
-        contactPerson: z.string().nullable().optional().describe("A potential contact person's name, if found."),
-    })).describe('A list of potential leads based on the research topic.')
-});
-export type LeadResearchOutput = z.infer<typeof LeadResearchOutputSchema>;
-
 // From video-generation-flow.ts
 export const VideoGenerateInputSchema = z.object({
   prompt: z.string().describe('The text prompt describing the desired video.'),

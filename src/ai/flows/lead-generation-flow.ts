@@ -1,35 +1,53 @@
-
 'use server';
 /**
  * @fileOverview An AI-powered research agent for generating potential sales leads.
  *
  * - leadGenerationFlow - A function that researches potential leads based on a topic.
- * - LeadResearchInput - The input type for the function.
- * - LeadResearchOutput - The return type for the function.
+ * - LeadGenerationInputSchema - The input schema for the function.
+ * - LeadGenerationOutputSchema - The output schema for the function.
  */
 
 import { ai } from '@/ai/genkit';
-import { LeadResearchInputSchema, LeadResearchOutputSchema, type LeadResearchInput, type LeadResearchOutput } from '@/ai/schemas';
 import { googleSearchTool } from '../tools/google-search';
 import { z } from 'zod';
 
-export async function leadGenerationFlow(input: LeadResearchInput): Promise<LeadResearchOutput> {
+// Define schemas directly in this file to be self-contained.
+export const LeadGenerationInputSchema = z.object({
+  prompt: z.string().min(20, 'Please provide a detailed prompt.').describe('A detailed prompt for the AI agent, instructing it what to research.'),
+});
+export type LeadGenerationInput = z.infer<typeof LeadGenerationInputSchema>;
+
+export const LeadGenerationOutputSchema = z.object({
+    leads: z.array(z.object({
+        companyName: z.string().describe('The name of the potential lead company.'),
+        role: z.string().describe('The likely role of this company in the ecosystem (e.g., Vendor, Buyer, Partner).'),
+        address: z.string().nullable().optional().describe("The company's physical address, if found."),
+        website: z.string().url().nullable().optional().describe("The company's website URL, if found."),
+        phone: z.string().nullable().optional().describe("The company's primary phone number, if found."),
+        email: z.string().email().nullable().optional().describe("A general contact email for the company (e.g., info@, sales@), if found."),
+        contactPerson: z.string().nullable().optional().describe("A potential contact person's name, if found."),
+    })).describe('A list of potential leads based on the research topic.')
+});
+export type LeadGenerationOutput = z.infer<typeof LeadGenerationOutputSchema>;
+
+
+export async function leadGenerationFlow(input: LeadGenerationInput): Promise<LeadGenerationOutput> {
   return leadGenerationAIFlow(input);
 }
 
 const leadGenerationAIFlow = ai.defineFlow(
   {
     name: 'leadGenerationAIFlow',
-    inputSchema: LeadResearchInputSchema,
-    outputSchema: LeadResearchOutputSchema,
+    inputSchema: LeadGenerationInputSchema,
+    outputSchema: LeadGenerationOutputSchema,
   },
-  async (input: LeadResearchInput): Promise<LeadResearchOutput> => {
+  async (input: LeadGenerationInput): Promise<LeadGenerationOutput> => {
     const response = await ai.generate({
         model: 'gemini-1.5-flash',
         tools: [googleSearchTool],
         prompt: input.prompt,
         output: {
-            schema: LeadResearchOutputSchema
+            schema: LeadGenerationOutputSchema
         }
     });
     

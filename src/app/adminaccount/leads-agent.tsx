@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -10,8 +9,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Loader2, Sparkles, Bot, Save, Search, PlusCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { leadGenerationFlow } from '@/ai/flows/lead-generation-flow';
-import { LeadResearchInputSchema, type LeadResearchOutput, type LeadResearchInput } from '@/ai/schemas';
+import { leadGenerationFlow, LeadGenerationInputSchema, type LeadGenerationOutput } from '@/ai/flows/lead-generation-flow';
 import { useRouter } from 'next/navigation';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Textarea } from '@/components/ui/textarea';
@@ -38,18 +36,18 @@ Generate 5 potential leads based on the following topic:
 
 export default function LeadsAgent() {
     const [isLoading, setIsLoading] = useState(false);
-    const [generatedLeads, setGeneratedLeads] = useState<LeadResearchOutput['leads']>([]);
+    const [generatedLeads, setGeneratedLeads] = useState<LeadGenerationOutput['leads']>([]);
     const { toast } = useToast();
     const router = useRouter();
 
-    const form = useForm<LeadResearchInput>({
-        resolver: zodResolver(LeadResearchInputSchema),
+    const form = useForm<LeadGenerationInput>({
+        resolver: zodResolver(LeadGenerationInputSchema),
         defaultValues: {
             prompt: defaultPrompt,
         },
     });
 
-    const onSubmit = async (values: LeadResearchInput) => {
+    const onSubmit = async (values: LeadGenerationInput) => {
         setIsLoading(true);
         setGeneratedLeads([]);
         try {
