@@ -7,7 +7,7 @@ import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, doc, getDocs, query, where, collectionGroup } from 'firebase/firestore';
 import { Loader2, ArrowLeft, Printer, FileText } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { formatCurrency, formatDateSafe } from '@/lib/utils';
