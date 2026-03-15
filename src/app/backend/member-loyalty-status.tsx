@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useMemo } from 'react';
@@ -113,5 +112,3 @@ export default function MemberLoyaltyStatus({ companies, memberships }: { compan
         </div>
     );
 }
-
-    

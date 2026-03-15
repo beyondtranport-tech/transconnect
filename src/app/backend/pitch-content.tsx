@@ -108,7 +108,7 @@ export default function PitchContent() {
                          <CardDescription>Unlock high-upside potential from ecosystem activity.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <p>Your earning potential goes far beyond subscriptions. You earn a significant share of the revenue Logistics Flow generates from your network's activity across all our Malls.</p>
+                        <p>Your earning potential goes far beyond subscriptions. You earn a significant share of the revenue TransConnect generates from your network's activity across all our Malls.</p>
                         <ul className="text-sm space-y-4 pt-2">
                             <li className="flex items-start gap-3">
                                 <CheckCircle className="h-4 w-4 text-green-600 mt-1 shrink-0" />
