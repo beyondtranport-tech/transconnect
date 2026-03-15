@@ -318,7 +318,7 @@ export default function PartnerManagement() {
                     <TableRow key={partner.id}>
                       <TableCell><div>{partner.firstName} {partner.lastName}</div></TableCell>
                       <TableCell><div>{partner.email}</div></TableCell>
-                      <TableCell><div>{partner.phone}</div></TableCell>
+                       <TableCell><div>{partner.phone}</div></TableCell>
                       <TableCell><div>{partner.companyName}</div></TableCell>
                       <TableCell><Badge className="capitalize">{partner.status}</Badge></TableCell>
                       <TableCell>

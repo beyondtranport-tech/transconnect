@@ -97,6 +97,9 @@ const FundingDivisionContent = dynamic(() => import('@/app/backend/funding-divis
 const LeadsDatabase = dynamic(() => import('@/app/backend/leads-database'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const DiscoveryContent = dynamic(() => import('@/app/lending/discovery-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const ScoringContent = dynamic(() => import('@/app/lending/scoring-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const PartnerManagement = dynamic(() => import('@/app/backend/partner-management'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const ISAManagement = dynamic(() => import('@/app/backend/isa-management'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const DeveloperManagement = dynamic(() => import('@/app/backend/developer-management'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 
 // Platform Settings
@@ -185,6 +188,11 @@ function BackendContent() {
       case 'application': return <DiscoveryContent />;
       case 'scoring': return <ScoringContent />;
 
+      // Partners
+      case 'partners-strategic': return <PartnerManagement />;
+      case 'partners-isa': return <ISAManagement />;
+      case 'partners-developer': return <DeveloperManagement />;
+
       // Platform Settings
       case 'permissions': return <PermissionsContent />;
       case 'loyalty': return <LoyaltySettings />;
@@ -219,6 +227,7 @@ function BackendContent() {
   
   const isOperationsActive = ['members', 'users', 'wallet', 'wallet-transactions', 'shops', 'reconciliation', 'contributions', 'activity', 'communications', 'support-inbox', 'commercial-negotiations'].includes(activeView);
   const isOriginationActive = ['opportunities', 'quotes', 'enquiries', 'application', 'scoring'].includes(activeView);
+  const isPartnersActive = ['partners-strategic', 'partners-isa', 'partners-developer'].includes(activeView);
   const isRevenueActive = [
     'pricing-memberships', 'pricing-connect', 'pricing-tech', 'pricing-marketplace',
     'commissions-malls', 'commissions-isa', 'incentives-sales'
@@ -273,6 +282,15 @@ function BackendContent() {
                     </SidebarMenuSub>
                  </SidebarMenuItem>
                 
+                 <SidebarMenuItem>
+                    <SidebarMenuButton tooltip="Partners" isActive={isPartnersActive}><Handshake /><span>Partners</span></SidebarMenuButton>
+                    <SidebarMenuSub>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'partners-strategic'} onClick={() => navigate('partners-strategic')}>Strategic Partners</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'partners-isa'} onClick={() => navigate('partners-isa')}>ISA Agents</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'partners-developer'} onClick={() => navigate('partners-developer')}>Developers</SidebarMenuSubButton></SidebarMenuSubItem>
+                    </SidebarMenuSub>
+                 </SidebarMenuItem>
+
                 <SidebarMenuItem>
                     <SidebarMenuButton tooltip="Revenue & Pricing" isActive={isRevenueActive}><DollarSign /><span>Revenue & Pricing</span></SidebarMenuButton>
                     <SidebarMenuSub>

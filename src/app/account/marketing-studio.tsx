@@ -1,12 +1,8 @@
 'use client';
 
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Sparkles } from "lucide-react";
-import ImageGeneratorCard from "@/app/adminaccount/image-generator-card";
-import IconGeneratorCard from "@/app/adminaccount/icon-generator-card";
-import ImageEditorCard from "@/app/adminaccount/image-editor-card";
-import VideoGeneratorCard from "@/app/adminaccount/video-generator-card";
-import VideoAnimatorCard from "@/app/adminaccount/video-animator-card";
+import { Sparkles, AlertTriangle } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export default function MarketingStudio() {
   return (
@@ -23,21 +19,14 @@ export default function MarketingStudio() {
           </div>
       </CardHeader>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <ImageGeneratorCard 
-            promptTemplate="A cinematic, professional photograph of a futuristic, gleaming white and green Scania truck driving on a high-tech highway at dusk. The road is illuminated with glowing data lines, and the sky has a vibrant sunset."
-        />
-        <IconGeneratorCard />
-        <ImageEditorCard 
-            promptTemplate="Place the truck on a winding mountain pass at sunset."
-        />
-        <VideoGeneratorCard 
-            promptTemplate="Create a short, dynamic video showcasing my truck parts shop. Start with a close-up of a shiny chrome exhaust, then show a variety of truck parts on shelves. End with my shop's logo and contact information."
-        />
-        <VideoAnimatorCard 
-            promptTemplate="Take this image of my truck. Animate the wheels spinning and have it drive across the screen from left to right. Add a subtle lens flare and a cinematic feel."
-        />
-      </div>
+      <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>AI Tools Temporarily Disabled</AlertTitle>
+          <AlertDescription>
+              The AI marketing tools are currently undergoing maintenance to resolve a build issue and will be restored shortly.
+          </AlertDescription>
+      </Alert>
+
     </div>
   );
 }
