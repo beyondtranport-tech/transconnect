@@ -21,6 +21,7 @@ const agreementSchema = z.object({
     amount: z.coerce.number().optional(),
     term: z.coerce.number().optional(),
     rate: z.coerce.number().optional(),
+    residual: z.coerce.number().optional(),
     dealsPerMonth: z.coerce.number().optional(),
     recurring: z.boolean().default(true),
     startDate: z.string().optional(),
@@ -46,10 +47,10 @@ const defaultValues: FormValues = {
     quoteConversionRate: 50,
     enquiryConversionRate: 30,
     applicationConversionRate: 60,
-    loan: { enabled: true, amount: 250000, term: 48, rate: 18, dealsPerMonth: 1, recurring: true, startDate: '', firstInstallmentDate: '', paymentsInAdvance: false },
-    installmentSale: { enabled: true, amount: 750000, term: 60, rate: 15, dealsPerMonth: 1, recurring: true, startDate: '', firstInstallmentDate: '', paymentsInAdvance: false },
-    lease: { enabled: false, amount: 600000, term: 54, rate: 16, dealsPerMonth: 0, recurring: true, startDate: '', firstInstallmentDate: '', paymentsInAdvance: false },
-    factoring: { enabled: true, amount: 100000, term: 3, rate: 5, dealsPerMonth: 2, recurring: true, startDate: '', firstInstallmentDate: '', paymentsInAdvance: false },
+    loan: { enabled: true, amount: 250000, term: 48, rate: 18, residual: 0, dealsPerMonth: 1, recurring: true, startDate: '', firstInstallmentDate: '', paymentsInAdvance: false },
+    installmentSale: { enabled: true, amount: 750000, term: 60, rate: 15, residual: 0, dealsPerMonth: 1, recurring: true, startDate: '', firstInstallmentDate: '', paymentsInAdvance: false },
+    lease: { enabled: false, amount: 600000, term: 54, rate: 16, residual: 0, dealsPerMonth: 0, recurring: true, startDate: '', firstInstallmentDate: '', paymentsInAdvance: false },
+    factoring: { enabled: true, amount: 100000, term: 3, rate: 5, residual: 0, dealsPerMonth: 2, recurring: true, startDate: '', firstInstallmentDate: '', paymentsInAdvance: false },
 };
 
 export default function LendingAssumptions() {
@@ -59,7 +60,7 @@ export default function LendingAssumptions() {
 
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
-        defaultValues: defaultValues // Initialize with static defaults
+        defaultValues: defaultValues 
     });
 
     useEffect(() => {
@@ -122,6 +123,7 @@ export default function LendingAssumptions() {
                         <FormField control={form.control} name={`${name}.amount`} render={({ field }) => (<FormItem><FormLabel>Avg. Amount (R)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
                         <FormField control={form.control} name={`${name}.term`} render={({ field }) => (<FormItem><FormLabel>Avg. Term (Months)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
                         <FormField control={form.control} name={`${name}.rate`} render={({ field }) => (<FormItem><FormLabel>Avg. Rate (%)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                         <FormField control={form.control} name={`${name}.residual`} render={({ field }) => (<FormItem><FormLabel>Residual Value (R)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
                         <FormField control={form.control} name={`${name}.startDate`} render={({ field }) => (<FormItem><FormLabel>Start Date</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>)} />
                         <FormField control={form.control} name={`${name}.firstInstallmentDate`} render={({ field }) => (<FormItem><FormLabel>First Installment Date</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>)} />
                     </div>
@@ -214,5 +216,3 @@ export default function LendingAssumptions() {
         </div>
     );
 }
-
-    
