@@ -193,14 +193,8 @@ export function Header() {
                         <>
                             <DropdownMenuSeparator/>
                             <DropdownMenuLabel>Admin</DropdownMenuLabel>
-                            <DropdownMenuItem asChild>
-                                <Link href="/adminaccount">Admin Account</Link>
-                            </DropdownMenuItem>
                              <DropdownMenuItem asChild>
                                 <Link href="/backend">App Backend</Link>
-                            </DropdownMenuItem>
-                             <DropdownMenuItem asChild>
-                                <Link href="/lending">Lending Portal</Link>
                             </DropdownMenuItem>
                         </>
                     )}
@@ -310,18 +304,6 @@ export function Header() {
                             )}
                              {isAdmin && (
                                 <>
-                                    <Button asChild className="w-full justify-start" variant="secondary">
-                                        <Link href="/adminaccount" onClick={() => setIsSheetOpen(false)}>
-                                            <Building className="mr-2 h-5 w-5" />
-                                            Admin Account
-                                        </Link>
-                                    </Button>
-                                    <Button asChild className="w-full justify-start" variant="secondary">
-                                        <Link href="/lending" onClick={() => setIsSheetOpen(false)}>
-                                            <Landmark className="mr-2 h-5 w-5" />
-                                            Lending Portal
-                                        </Link>
-                                    </Button>
                                      <Button asChild className="w-full justify-start" variant="secondary">
                                         <Link href="/backend" onClick={() => setIsSheetOpen(false)}>
                                             <ShieldCheck className="mr-2 h-5 w-5" />
