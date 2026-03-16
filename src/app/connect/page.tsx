@@ -115,7 +115,7 @@ export default function ConnectPage() {
         }
     }, [monthlySpend, supplierDiscount, loyaltyTierIndex, sortedTiers]);
     
-    const handleSliderInteraction = (setter: (value: number) => void) => (value: number[]) => {
+    const handleInteraction = () => {
         if (!hasInteracted) {
             if (process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID) {
                 gtag.event({
@@ -128,7 +128,6 @@ export default function ConnectPage() {
             setHasInteracted(true);
             setIsModalOpen(true);
         }
-        setter(value[0]);
     };
     
     const handlePlanExplore = (planId: string) => {
@@ -241,7 +240,10 @@ export default function ConnectPage() {
                                         max={100000}
                                         step={1000}
                                         value={[monthlySpend]}
-                                        onValueChange={handleSliderInteraction(setMonthlySpend)}
+                                        onValueChange={(value) => {
+                                            handleInteraction();
+                                            setMonthlySpend(value[0]);
+                                        }}
                                     />
                                 </div>
                                 <div>
@@ -255,7 +257,10 @@ export default function ConnectPage() {
                                         max={20}
                                         step={0.5}
                                         value={[supplierDiscount]}
-                                        onValueChange={handleSliderInteraction(setSupplierDiscount)}
+                                        onValueChange={(value) => {
+                                            handleInteraction();
+                                            setSupplierDiscount(value[0]);
+                                        }}
                                     />
                                 </div>
                                 <div>
@@ -271,7 +276,10 @@ export default function ConnectPage() {
                                         max={sortedTiers.length > 0 ? sortedTiers.length - 1 : 0}
                                         step={1}
                                         value={[loyaltyTierIndex]}
-                                        onValueChange={handleSliderInteraction(setLoyaltyTierIndex)}
+                                        onValueChange={(value) => {
+                                            handleInteraction();
+                                            setLoyaltyTierIndex(value[0]);
+                                        }}
                                         disabled={sortedTiers.length === 0}
                                     />
                                 </div>
