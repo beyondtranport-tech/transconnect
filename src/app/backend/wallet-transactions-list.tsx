@@ -1,10 +1,11 @@
+
 'use client';
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Loader2, DollarSign, Clock, ArrowRight, CheckCircle, Send, XCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import Link from 'next/link';
 import { getClientSideAuthToken } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
@@ -305,7 +306,7 @@ export default function WalletTransactionsList() {
                                                     </AlertDialogHeader>
                                                     <AlertDialogFooter>
                                                         <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                        <AlertDialogAction onClick={() => handleRejectPayout(p)} variant="destructive">
+                                                        <AlertDialogAction onClick={() => handleRejectPayout(p)} className={buttonVariants({ variant: "destructive" })}>
                                                             Yes, Reject Payout
                                                         </AlertDialogAction>
                                                     </AlertDialogFooter>
