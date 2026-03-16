@@ -10,20 +10,13 @@ import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 import { useDoc } from './firestore/use-doc';
 import { useMemoFirebase } from '@/hooks/use-memo-firebase';
 
-interface FirebaseProviderProps {
-  children: ReactNode;
-  firebaseApp: FirebaseApp;
-  firestore: Firestore;
-  auth: Auth;
-  storage: FirebaseStorage;
-}
-
 interface EnrichedUser extends User {
     role?: string;
     companyId?: string;
     passwordChangeRequired?: boolean;
     claims?: { [key: string]: any };
     companyData?: any; // Added to hold the entire company document
+    permissions?: string[];
 }
 
 interface UserAuthState {
@@ -121,7 +114,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     return doc(firestore, 'users', baseUser.uid);
   }, [firestore, baseUser]);
 
-  const { data: userData, isLoading: isUserDataLoading, forceRefresh } = useDoc<{ companyId?: string; passwordChangeRequired?: boolean, role?: string }>(userDocRef);
+  const { data: userData, isLoading: isUserDataLoading, forceRefresh } = useDoc<{ companyId?: string; passwordChangeRequired?: boolean, role?: string, permissions?: string[] }>(userDocRef);
   const companyId = userData?.companyId;
 
   // NEW: Fetch company document right here

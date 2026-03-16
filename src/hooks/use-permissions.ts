@@ -59,6 +59,7 @@ export function usePermissions() {
         }
         
         // Handle staff members first, as they have explicit, limited permissions
+        // Note: The `permissions` array is expected to be on the user object for staff.
         if (user.role === 'staff' && Array.isArray(user.permissions)) {
              user.permissions.forEach(p => perms.add(p));
              return perms; // Return immediately with only staff permissions
@@ -94,10 +95,10 @@ export function usePermissions() {
         if (!user) return false;
         
         if (permissions.has('manage:all')) return true;
-        if (permissions.has(`manage:${resource}`)) return true;
+        if (permissions.has('manage:' + resource)) return true;
 
         const requiredPermissions = permissionHierarchy[action];
-        return requiredPermissions.some(perm => permissions.has(`${perm}:${resource}`));
+        return requiredPermissions.some(perm => permissions.has(perm + ':' + resource));
     };
     
     return { can, isLoading: isUserLoading, permissions };
