@@ -114,7 +114,7 @@ export default function ShopsList() {
         },
         {
             id: 'actions',
-            header: () => <div className="text-right">Actions</div>,
+            header: <div className="text-right">Actions</div>,
             cell: ({ row }) => <ShopActionMenu shop={row.original} onUpdate={loadData} />
         }
     ], [loadData]);
