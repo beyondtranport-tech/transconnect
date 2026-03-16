@@ -1,4 +1,3 @@
-
 'use client';
 
 import { FirebaseClientProvider } from '@/firebase/client-provider';
@@ -15,8 +14,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
         <TooltipProvider>
           <Suspense fallback={null}>
             <Analytics />
+            {children}
           </Suspense>
-          {children}
           <Toaster />
         </TooltipProvider>
       </CartProvider>
