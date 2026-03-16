@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -47,7 +48,7 @@ export default function AIChatWidget() {
             // Build history for the API call from the messages state *before* the new user message.
             const historyForApi = messages.map(msg => ({
                 role: msg.role,
-                parts: [{ text: msg.text }],
+                content: [{ text: msg.text }],
             }));
             
             // Call the AI with the old history and the new query.
