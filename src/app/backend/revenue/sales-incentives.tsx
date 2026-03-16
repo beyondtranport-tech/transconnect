@@ -21,6 +21,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useFirestore, useDoc, getClientSideAuthToken, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { Separator } from '@/components/ui/separator';
+import { useConfig } from '@/hooks/use-config';
+import { Label } from '@/components/ui/label';
 
 const tierSchema = z.object({
   threshold: z.coerce.number().min(1, "Threshold must be at least 1"),
@@ -39,11 +41,9 @@ type FormValues = z.infer<typeof formSchema>;
 
 export default function SalesIncentives() {
   const { toast } = useToast();
-  const firestore = useFirestore();
   const [isSaving, setIsSaving] = useState(false);
 
-  const configRef = useMemoFirebase(() => firestore ? doc(firestore, 'configuration', 'salesIncentives') : null, [firestore]);
-  const { data: configData, isLoading: isConfigLoading, forceRefresh } = useDoc<FormValues>(configRef);
+  const { data: configData, isLoading: isConfigLoading, forceRefresh } = useConfig<FormValues>('salesIncentives');
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -74,7 +74,6 @@ export default function SalesIncentives() {
   }, [configData, form]);
 
   const onSubmit = async (values: FormValues) => {
-    if (!configRef) return;
     setIsSaving(true);
     
     try {
@@ -84,7 +83,7 @@ export default function SalesIncentives() {
         const response = await fetch('/api/updateConfigDoc', {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ path: configRef.path, data: { ...values, updatedAt: { _methodName: 'serverTimestamp' } } }),
+            body: JSON.stringify({ path: 'configuration/salesIncentives', data: { ...values, updatedAt: { _methodName: 'serverTimestamp' } } }),
         });
 
         if (!response.ok) throw new Error((await response.json()).error || 'Failed to save settings.');
