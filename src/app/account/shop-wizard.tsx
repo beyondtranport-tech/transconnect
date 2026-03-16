@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -1578,6 +1579,4 @@ export function ShopWizard({ shop: initialShop, onShopUpdate }: { shop: any, onS
     </div>
   );
 }
-    
-
     

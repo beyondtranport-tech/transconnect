@@ -14,8 +14,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
         <TooltipProvider>
           <Suspense>
             <Analytics />
-            {children}
           </Suspense>
+          {children}
           <Toaster />
         </TooltipProvider>
       </CartProvider>
