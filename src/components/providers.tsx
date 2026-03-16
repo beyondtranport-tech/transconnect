@@ -12,7 +12,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <FirebaseClientProvider>
       <CartProvider>
         <TooltipProvider>
-          <Suspense fallback={null}>
+          <Suspense>
             <Analytics />
             {children}
           </Suspense>

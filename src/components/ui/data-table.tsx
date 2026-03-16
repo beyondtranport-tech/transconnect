@@ -56,14 +56,16 @@ export function DataTable<TData>({ columns, data }: DataTableProps<TData>) {
                 <TableHead key={(column.id || column.accessorKey) as string}>
                   {column.id === 'actions' ? (
                      <div className="text-right">{column.header}</div>
-                  ) : (
+                  ) : column.accessorKey ? (
                     <Button
                         variant="ghost"
-                        onClick={() => column.accessorKey && handleSort(column.accessorKey as string)}
+                        onClick={() => handleSort(column.accessorKey as string)}
                     >
                         {column.header}
                         <ArrowUpDown className="ml-2 h-4 w-4" />
                     </Button>
+                  ) : (
+                    column.header
                   )}
                 </TableHead>
               ))}

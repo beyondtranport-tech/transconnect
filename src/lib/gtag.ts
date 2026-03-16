@@ -1,4 +1,3 @@
-
 export const GA_TRACKING_ID = process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID;
 
 // Augment the Window interface to include gtag
@@ -18,7 +17,7 @@ export const pageview = (url: URL) => {
     return;
   }
   window.gtag("config", GA_TRACKING_ID as string, {
-    page_path: url,
+    page_path: url.toString(),
   });
 };
 
