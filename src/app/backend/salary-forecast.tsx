@@ -134,7 +134,7 @@ function SalaryForecastContent() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {staffFields.map((item, index) => (
+                                {staffFields.map((item: any, index: number) => (
                                     <React.Fragment key={item.id}>
                                         <TableRow className="border-b-0">
                                             <TableCell className="font-medium sticky left-0 bg-background z-10 align-top pt-5">
