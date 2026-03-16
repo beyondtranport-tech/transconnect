@@ -35,7 +35,7 @@ import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useMemoFirebase } from '@/hooks/use-config';
+import { useMemoFirebase } from '@/firebase';
 
 // Updated schema to include companyId
 const staffFormSchema = z.object({
