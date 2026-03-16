@@ -39,14 +39,6 @@ export function DataTable<TData>({ columns, data }: DataTableProps<TData>) {
     setSorting([{ id: columnId, desc: isAsc }]);
   };
 
-  const renderHeader = (header: React.ReactNode) => {
-    if (typeof header === 'function') {
-      return header({});
-    }
-    return header;
-  };
-
-
   return (
     <div className="space-y-4">
       <Input
@@ -62,13 +54,13 @@ export function DataTable<TData>({ columns, data }: DataTableProps<TData>) {
               {columns.map(column => (
                 <TableHead key={(column.id || column.accessorKey) as string}>
                   {column.id === 'actions' ? (
-                     <span className="flex justify-end pr-4">{renderHeader(column.header)}</span>
+                     <div className="text-right">{column.header}</div>
                   ) : (
                     <Button
                         variant="ghost"
                         onClick={() => column.accessorKey && handleSort(column.accessorKey as string)}
                     >
-                        {renderHeader(column.header)}
+                        {column.header}
                         <ArrowUpDown className="ml-2 h-4 w-4" />
                     </Button>
                   )}
