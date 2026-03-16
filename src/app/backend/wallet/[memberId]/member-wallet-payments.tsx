@@ -7,12 +7,12 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useCollection, useFirestore, getClientSideAuthToken, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
-import { Loader2, Gem, Wallet, AlertCircle } from 'lucide-react';
+import { Loader2, Gem, Wallet, AlertCircle, CheckCircle, Trash2 } from 'lucide-react';
 import { formatCurrency, formatDateSafe } from '@/lib/utils';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import Link from 'next/link';
-import { CheckCircle, Trash2 } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 
 async function performAdminAction(token: string, action: string, payload?: any) {
