@@ -3,17 +3,22 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import TruckForm from "./truck-form";
-import { Users, Building, Truck, Warehouse } from "lucide-react";
+import { Users, Building, Truck, Warehouse, Award } from "lucide-react";
 import SupplierForm from "./supplier-form";
 import TrailerForm from "./trailer-form";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 export default function ContributePage() {
   return (
     <div className="container mx-auto px-4 py-16">
       <div className="text-center max-w-3xl mx-auto mb-12">
-        <h1 className="text-4xl md:text-5xl font-bold font-headline">Contribution Hub</h1>
+        <div className="inline-block bg-primary/10 p-4 rounded-full mb-4">
+            <Award className="h-12 w-12 text-primary" />
+        </div>
+        <h1 className="text-4xl md:text-5xl font-bold font-headline">Earn Rewards Instantly</h1>
         <p className="mt-4 text-lg md:text-xl text-muted-foreground">
-          Thank you for helping us strengthen the TransConnect community. Your anonymous data is key to unlocking better discounts for everyone.
+          The fastest way to get more resources is by contributing your knowledge. Each piece of anonymous data you share earns you valuable reward points and helps the entire community get better deals. See your current points on your <Button variant="link" asChild className="p-0 text-lg md:text-xl"><Link href="/account?view=rewards">rewards dashboard</Link></Button>.
         </p>
       </div>
 
