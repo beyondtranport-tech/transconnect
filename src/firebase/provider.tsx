@@ -26,7 +26,7 @@ interface UserAuthState {
   forceRefresh: () => void;
 }
 
-export interface FirebaseContextState {
+interface FirebaseContextState {
   firebaseApp: FirebaseApp | null;
   firestore: Firestore | null;
   auth: Auth | null;
@@ -69,7 +69,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   auth,
   storage,
 }) => {
-  const [baseUser, setBaseUser] = useState<User | null>(null);
+  const [baseUser, setBaseUser] = useState<User | null>(() => auth ? auth.currentUser : null);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [authError, setAuthError] = useState<Error | null>(null);
   const [claims, setClaims] = useState<any | null>(null);
