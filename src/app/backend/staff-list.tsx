@@ -1,11 +1,10 @@
-
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -26,8 +25,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { useCollection, useFirestore, getClientSideAuthToken } from '@/firebase';
-import { collection, query, collectionGroup } from 'firebase/firestore';
+import { useUser, useFirestore, getClientSideAuthToken, useDoc, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, doc, query, collectionGroup } from 'firebase/firestore';
 import { Loader2, PlusCircle, UserPlus, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import StaffActionMenu from './staff-action-menu';
@@ -35,9 +34,8 @@ import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useMemoFirebase } from '@/firebase';
+import { EditStaffDialog } from './EditStaffDialog';
 
-// Updated schema to include companyId
 const staffFormSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
@@ -52,11 +50,11 @@ const staffFormSchema = z.object({
 
 type StaffFormValues = z.infer<typeof staffFormSchema>;
 
-function AddStaffDialog({ onStaffAdded, canCreate }: { onStaffAdded: () => void, canCreate: boolean }) {
+function AddStaffDialog({ onStaffAdded }: { onStaffAdded: () => void }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [inviteStep, setInviteStep] = useState(false);
-  const [newUserEmail, setNewUserEmail] = useState('');
+  const [newUserInfo, setNewUserInfo] = useState({ email: '', firstName: '', lastName: '' });
   const { toast } = useToast();
   const firestore = useFirestore();
 
@@ -85,14 +83,7 @@ function AddStaffDialog({ onStaffAdded, canCreate }: { onStaffAdded: () => void,
       if (!token) throw new Error("Authentication token not found.");
       
       const staffData = {
-        firstName: values.firstName,
-        lastName: values.lastName,
-        email: values.email,
-        title: values.title,
-        role: values.role,
-        function: values.function,
-        jobDescription: values.jobDescription,
-        companyId: values.companyId,
+        ...values,
         status: 'unconfirmed',
         createdAt: { _methodName: 'serverTimestamp' },
       };
@@ -119,7 +110,7 @@ function AddStaffDialog({ onStaffAdded, canCreate }: { onStaffAdded: () => void,
         description: `A profile for ${values.firstName} has been created.`,
       });
       
-      setNewUserEmail(values.email);
+      setNewUserInfo({ email: values.email, firstName: values.firstName, lastName: values.lastName });
       setInviteStep(true);
       onStaffAdded();
     } catch (error: any) {
@@ -137,13 +128,13 @@ function AddStaffDialog({ onStaffAdded, canCreate }: { onStaffAdded: () => void,
     if (!open) {
       form.reset();
       setInviteStep(false);
-      setNewUserEmail('');
+      setNewUserInfo({ email: '', firstName: '', lastName: '' });
     }
     setIsOpen(open);
   }
 
   const copyInviteLink = () => {
-    const signupUrl = `${window.location.origin}/join?email=${encodeURIComponent(newUserEmail)}`;
+    const signupUrl = `${window.location.origin}/join?email=${encodeURIComponent(newUserInfo.email)}&firstName=${encodeURIComponent(newUserInfo.firstName)}&lastName=${encodeURIComponent(newUserInfo.lastName)}`;
     navigator.clipboard.writeText(signupUrl);
     toast({
         title: 'Sign-up Link Copied!',
@@ -154,7 +145,7 @@ function AddStaffDialog({ onStaffAdded, canCreate }: { onStaffAdded: () => void,
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
-        <Button disabled={!canCreate}>
+        <Button>
           <PlusCircle className="mr-2 h-4 w-4" /> Add Staff/Partner
         </Button>
       </DialogTrigger>
@@ -168,7 +159,7 @@ function AddStaffDialog({ onStaffAdded, canCreate }: { onStaffAdded: () => void,
                     </DialogDescription>
                 </DialogHeader>
                 <div className="py-4 space-y-4">
-                    <p className="text-sm">Please copy the sign-up link and send it to <span className="font-semibold text-primary">{newUserEmail}</span>. They must create their account using this specific email address to be correctly linked to the company.</p>
+                    <p className="text-sm">Please copy the sign-up link and send it to <span className="font-semibold text-primary">{newUserInfo.email}</span>. They must create their account using this specific email address to be correctly linked to the company.</p>
                      <Button onClick={copyInviteLink} className="w-full">Copy Sign-up Link</Button>
                 </div>
                  <DialogFooter>
@@ -227,6 +218,7 @@ function AddStaffDialog({ onStaffAdded, canCreate }: { onStaffAdded: () => void,
                             <SelectItem value="Non-Executive Director">Non-Executive Director</SelectItem>
                             <SelectItem value="Manager">Manager</SelectItem>
                             <SelectItem value="Admin">Admin</SelectItem>
+                            <SelectItem value="Partner">Partner</SelectItem>
                         </SelectContent></Select><FormMessage /></FormItem>
                     )} />
                     <FormField control={form.control} name="role" render={({ field }) => (
@@ -237,6 +229,7 @@ function AddStaffDialog({ onStaffAdded, canCreate }: { onStaffAdded: () => void,
                             <SelectItem value="logistics">Logistics</SelectItem>
                             <SelectItem value="store">Store</SelectItem>
                             <SelectItem value="sales">Sales</SelectItem>
+                            <SelectItem value="partner">Partner</SelectItem>
                         </SelectContent></Select><FormMessage /></FormItem>
                     )} />
                     <FormField control={form.control} name="function" render={({ field }) => (
@@ -270,6 +263,7 @@ function AddStaffDialog({ onStaffAdded, canCreate }: { onStaffAdded: () => void,
 
 interface StaffMember {
     id: string;
+    docId: string;
     firstName: string;
     lastName: string;
     email: string;
@@ -287,6 +281,8 @@ interface Company {
 
 export default function StaffList() {
     const firestore = useFirestore();
+    const [selectedStaff, setSelectedStaff] = useState<any | null>(null);
+    const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
     const staffQuery = useMemoFirebase(() => firestore ? query(collectionGroup(firestore, 'staff')) : null, [firestore]);
     const { data: staff, isLoading: isStaffLoading, forceRefresh } = useCollection<StaffMember>(staffQuery);
@@ -302,10 +298,16 @@ export default function StaffList() {
         
         return staff.map(s => ({
             ...s,
-            id: `${s.companyId}-${s.id}`, // Create a truly unique key for the table
+            docId: s.id,
+            id: `${s.companyId}-${s.id}`, 
             companyName: companyMap.get(s.companyId) || 'Unknown Company',
         }));
     }, [staff, companies]);
+
+    const handleEdit = useCallback((staffMember: any) => {
+        setSelectedStaff(staffMember);
+        setIsEditDialogOpen(true);
+    }, []);
 
     const columns: ColumnDef<StaffMember>[] = useMemo(() => [
         {
@@ -333,6 +335,11 @@ export default function StaffList() {
             header: 'Title',
             cell: ({ row }) => <div>{row.original.title}</div>,
         },
+         {
+            accessorKey: 'role',
+            header: 'Role',
+            cell: ({ row }) => <Badge variant="outline" className="capitalize">{row.original.role}</Badge>,
+        },
         {
             accessorKey: 'status',
             header: 'Status',
@@ -344,16 +351,28 @@ export default function StaffList() {
         },
         {
             id: 'actions',
-            header: () => <div className="text-right">Actions</div>,
+            header: <div className="text-right">Actions</div>,
             cell: ({ row }) => (
                 <div className="text-right">
-                    <StaffActionMenu staffMember={row.original} onUpdate={forceRefresh} />
+                    <StaffActionMenu staffMember={row.original} onUpdate={forceRefresh} onEdit={() => handleEdit(row.original)} />
                 </div>
             ),
         }
-    ], [forceRefresh]);
+    ], [forceRefresh, handleEdit]);
 
     return (
+        <>
+        {selectedStaff && (
+            <EditStaffDialog
+                isOpen={isEditDialogOpen}
+                setIsOpen={setIsEditDialogOpen}
+                staffMember={selectedStaff}
+                onUpdate={() => {
+                    forceRefresh();
+                    setIsEditDialogOpen(false);
+                }}
+            />
+        )}
         <Card>
             <CardHeader className="flex flex-row items-center justify-between">
                 <div>
@@ -361,10 +380,10 @@ export default function StaffList() {
                         <Users /> All Staff Members
                     </CardTitle>
                     <CardDescription>
-                        A consolidated view of all staff across all member companies.
+                        A consolidated view of all staff and partners across all member companies.
                     </CardDescription>
                 </div>
-                <AddStaffDialog onStaffAdded={forceRefresh} canCreate={true} />
+                <AddStaffDialog onStaffAdded={forceRefresh} />
             </CardHeader>
             <CardContent>
                 {isLoading ? (
@@ -376,5 +395,6 @@ export default function StaffList() {
                 )}
             </CardContent>
         </Card>
+        </>
     );
 }
