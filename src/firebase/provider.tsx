@@ -39,6 +39,14 @@ export interface FirebaseContextState {
 
 const FirebaseContext = createContext<FirebaseContextState | undefined>(undefined);
 
+interface FirebaseProviderProps {
+  children: ReactNode;
+  firebaseApp: FirebaseApp | null;
+  firestore: Firestore | null;
+  auth: Auth | null;
+  storage: FirebaseStorage | null;
+}
+
 const setSessionCookie = async (idToken: string | null) => {
     try {
         await fetch('/api/auth/session', {
