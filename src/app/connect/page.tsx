@@ -115,7 +115,7 @@ export default function ConnectPage() {
         }
     }, [monthlySpend, supplierDiscount, loyaltyTierIndex, sortedTiers]);
     
-    const handleSliderInteraction = <T extends number | number[]>(setter: React.Dispatch<React.SetStateAction<T>>) => (value: T) => {
+    const handleSliderInteraction = (setter: (value: number) => void) => (value: number[]) => {
         if (!hasInteracted) {
             if (process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID) {
                 gtag.event({
@@ -128,8 +128,8 @@ export default function ConnectPage() {
             setHasInteracted(true);
             setIsModalOpen(true);
         }
-        setter(value);
-    }
+        setter(value[0]);
+    };
     
     const handlePlanExplore = (planId: string) => {
         if (!process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID) return;
@@ -241,7 +241,7 @@ export default function ConnectPage() {
                                         max={100000}
                                         step={1000}
                                         value={[monthlySpend]}
-                                        onValueChange={handleSliderInteraction((value) => setMonthlySpend(value[0]))}
+                                        onValueChange={handleSliderInteraction(setMonthlySpend)}
                                     />
                                 </div>
                                 <div>
@@ -255,7 +255,7 @@ export default function ConnectPage() {
                                         max={20}
                                         step={0.5}
                                         value={[supplierDiscount]}
-                                        onValueChange={handleSliderInteraction((value) => setSupplierDiscount(value[0]))}
+                                        onValueChange={handleSliderInteraction(setSupplierDiscount)}
                                     />
                                 </div>
                                 <div>
@@ -271,7 +271,7 @@ export default function ConnectPage() {
                                         max={sortedTiers.length > 0 ? sortedTiers.length - 1 : 0}
                                         step={1}
                                         value={[loyaltyTierIndex]}
-                                        onValueChange={handleSliderInteraction((value) => setLoyaltyTierIndex(value[0]))}
+                                        onValueChange={handleSliderInteraction(setLoyaltyTierIndex)}
                                         disabled={sortedTiers.length === 0}
                                     />
                                 </div>
