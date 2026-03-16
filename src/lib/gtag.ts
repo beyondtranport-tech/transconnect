@@ -1,6 +1,17 @@
 
 export const GA_TRACKING_ID = process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID;
 
+// Augment the Window interface to include gtag
+declare global {
+  interface Window {
+    gtag: (
+      command: 'config' | 'event',
+      targetId: string,
+      config?: { [key: string]: any }
+    ) => void;
+  }
+}
+
 // https://developers.google.com/analytics/devguides/collection/gtagjs/pages
 export const pageview = (url: URL) => {
   if (typeof window.gtag !== 'function' || !GA_TRACKING_ID) {
