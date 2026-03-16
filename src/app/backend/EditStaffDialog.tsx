@@ -79,7 +79,7 @@ export function EditStaffDialog({ isOpen, setIsOpen, staffMember, onUpdate }: Ed
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          path: `companies/${staffMember.companyId}/staff/${staffMember.docId}`,
+          path: `companies/${staffMember.companyId}/staff/${staffMember.id}`,
           data: { ...values, updatedAt: { _methodName: 'serverTimestamp' } }
         }),
       });
