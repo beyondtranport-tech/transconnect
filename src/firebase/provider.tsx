@@ -69,7 +69,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   auth,
   storage,
 }) => {
-  const [baseUser, setBaseUser] = useState<User | null>(auth.currentUser);
+  const [baseUser, setBaseUser] = useState<User | null>(null);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [authError, setAuthError] = useState<Error | null>(null);
   const [claims, setClaims] = useState<any | null>(null);
@@ -77,6 +77,11 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
 
   // Effect for Auth state
   useEffect(() => {
+    if (!auth) {
+        setIsAuthLoading(false);
+        setBaseUser(null);
+        return;
+    }
     const unsubscribe = onIdTokenChanged(
       auth,
       async (firebaseUser) => {
