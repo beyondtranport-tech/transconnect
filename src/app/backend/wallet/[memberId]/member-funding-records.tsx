@@ -5,7 +5,7 @@ import { useState, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, FileText, Trash2, ShieldAlert } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -37,7 +37,7 @@ const formatDate = (isoString: any) => {
     if (!isoString) return 'N/A';
     const date = isoString.toDate ? isoString.toDate() : new Date(isoString);
     if (isNaN(date.getTime())) return 'Invalid Date';
-    return formatDateFns(date, 'dd MMM yyyy, HH:mm');
+    return formatDateFns(date, "dd MMM yyyy, HH:mm");
 };
 
 
@@ -182,7 +182,7 @@ export default function MemberFundingRecords({ companyId }: { companyId: string 
                                                     </AlertDialogHeader>
                                                     <AlertDialogFooter>
                                                         <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                        <AlertDialogAction onClick={() => handleDelete(rec.id, rec.recordType)} variant="destructive">
+                                                        <AlertDialogAction onClick={() => handleDelete(rec.id, rec.recordType)} className={buttonVariants({ variant: "destructive" })}>
                                                             Yes, delete it
                                                         </AlertDialogAction>
                                                     </AlertDialogFooter>
