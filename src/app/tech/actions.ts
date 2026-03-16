@@ -1,7 +1,8 @@
 
 "use server";
 
-import { matchFreight, MatchFreightInput } from '@/ai/flows/ai-freight-matching';
+import { matchFreight } from '@/ai/flows/ai-freight-matching';
+import { type MatchFreightInput } from '@/ai/schemas';
 
 export async function handleMatchFreight(data: MatchFreightInput) {
     if (!process.env.GEMINI_API_KEY) {
