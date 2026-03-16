@@ -128,7 +128,7 @@ export default function Home() {
                     In three simple steps, you can establish your digital presence, open new sales channels, and access the capital you need to expand.
                 </p>
             </div>
-            <div className="grid md:grid-cols-3 gap-8 text-center max-w-6xl mx-auto">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 text-center max-w-7xl mx-auto">
                 <Card>
                     <CardHeader className="items-center">
                         <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit mb-2">
@@ -174,8 +174,8 @@ export default function Home() {
                     We've broken the biggest constraint in transport: the disconnect between your business performance and your access to funding. Your online shop is more than a sales channel—it's the key to unlocking growth capital.
                 </p>
             </div>
-            <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto text-center">
-                <Card>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+                <Card className="text-center">
                     <CardHeader className="items-center">
                         <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit mb-2">
                             <TrendingUp className="h-8 w-8 text-primary" />
@@ -186,7 +186,7 @@ export default function Home() {
                         <p className="text-muted-foreground">Your shop is a living ledger of your business activity. Every sale and transaction builds a credible, data-driven profile of your operations.</p>
                     </CardContent>
                 </Card>
-                <Card>
+                <Card className="md:col-span-2 lg:col-span-1 text-center">
                     <CardHeader className="items-center">
                         <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit mb-2">
                            <BarChart className="h-8 w-8 text-primary" />
@@ -197,15 +197,43 @@ export default function Home() {
                         <p className="text-muted-foreground">We use your real-world operational data to assess funding applications, allowing funders to see the true health of your business beyond traditional credit scores.</p>
                     </CardContent>
                 </Card>
-                <Card>
-                    <CardHeader className="items-center">
-                        <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit mb-2">
-                           <Fuel className="h-8 w-8 text-primary" />
-                        </div>
-                        <CardTitle>Fuel Your Growth</CardTitle>
+                <Card className="md:col-span-2 lg:col-span-3">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <TrendingUp className="h-6 w-6 text-primary" />
+                            Scaling Your Application
+                        </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <p className="text-muted-foreground">This unique model means your sales success directly unlocks capital. More shop activity leads to better funding opportunities, creating a virtuous cycle of growth.</p>
+                        <p className="text-muted-foreground mb-4">
+                            As your application gains traction, you may encounter usage limits. Here are guides to help you scale smoothly.
+                        </p>
+                        <div className="grid md:grid-cols-2 gap-6">
+                            <div className="flex items-start gap-4">
+                                <div className="bg-muted p-2 rounded-lg">
+                                    <DollarSign className="h-5 w-5 text-muted-foreground" />
+                                </div>
+                                <div>
+                                    <h4 className="font-semibold">Upgrading to the Blaze Plan</h4>
+                                    <p className="text-sm text-muted-foreground">Remove hard usage caps by upgrading from the free 'Spark' plan to the 'Blaze' pay-as-you-go plan.</p>
+                                    <Button asChild variant="link" className="p-0 h-auto text-sm">
+                                        <Link href="/docs/billing-upgrade-guide.md" target="_blank">View Blaze Plan Upgrade Guide <ArrowRight className="ml-1 h-4 w-4"/></Link>
+                                    </Button>
+                                </div>
+                            </div>
+                             <div className="flex items-start gap-4">
+                                <div className="bg-muted p-2 rounded-lg">
+                                    <BarChart className="h-5 w-5 text-muted-foreground" />
+                                </div>
+                                <div>
+                                    <h4 className="font-semibold">Handling "Resource Exhausted" Errors</h4>
+                                    <p className="text-sm text-muted-foreground">If you're on the Blaze plan and still see errors, you might be hitting an API quota. Learn how to request an increase.</p>
+                                     <Button asChild variant="link" className="p-0 h-auto text-sm">
+                                        <Link href="/docs/quota-increase-guide.md" target="_blank">View Quota Increase Guide <ArrowRight className="ml-1 h-4 w-4"/></Link>
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
                     </CardContent>
                 </Card>
             </div>
