@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -685,8 +684,8 @@ function StepProducts({ shop, canEdit }: { shop: any, canEdit: boolean }) {
     <div className="space-y-4">
         <div className="flex items-center justify-between">
             <h3 className="text-xl font-semibold">Products</h3>
-            <ProductDialog shop={shop} onComplete={forceRefresh} canEdit={canEdit && canManageProducts}>
-                <Button><PlusCircle className="mr-2 h-4 w-4"/> Add Product</Button>
+             <ProductDialog shop={shop} onComplete={forceRefresh} canEdit={canEdit && canManageProducts}>
+                <Button disabled={!canEdit || !canManageProducts}><PlusCircle className="mr-2 h-4 w-4" /> Add Product</Button>
             </ProductDialog>
         </div>
 
@@ -726,7 +725,7 @@ function StepProducts({ shop, canEdit }: { shop: any, canEdit: boolean }) {
                                 <TableCell className="text-right">
                                     <div className="flex justify-end gap-2">
                                         <ProductDialog shop={shop} product={product} onComplete={forceRefresh} canEdit={canEdit && canManageProducts}>
-                                            <Button variant="ghost" size="icon">
+                                            <Button variant="ghost" size="icon" disabled={!canEdit || !canManageProducts}>
                                                 <Edit className="h-4 w-4" />
                                             </Button>
                                         </ProductDialog>
@@ -1137,7 +1136,7 @@ function StepLegal({ shop, onSave, canEdit }: { shop: any, onSave: (newData: any
         setIsSaving(true);
         try {
             const token = await getClientSideAuthToken();
-            if (!token) throw new Error("Authentication failed.");
+            if (!token) throw new Error("Authentication token not found.");
             await fetch('/api/updateUserDoc', { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ path: `companies/${shop.companyId}/shops/${shop.id}`, data: { ...values, updatedAt: { _methodName: 'serverTimestamp' } } }) });
             toast({ title: 'Step 6 Saved!', description: 'Your legal document links have been updated.' });
             onSave(values);
