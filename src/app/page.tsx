@@ -12,6 +12,7 @@ import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import * as gtag from '@/lib/gtag';
+import { generateShowcaseVideo } from './showcaseActions';
 
 
 const { placeholderImages } = data;
@@ -20,15 +21,11 @@ const newHeroImage = placeholderImages.find(p => p.id === "value-integrity");
 
 function ShowcaseButton() {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  
-  // TODO: Replace this placeholder with the actual video URL from your Asset Gallery
-  // 1. Go to Admin Account > Sales & Marketing > AI Marketing Studio
-  // 2. Use the Video Generator to create your desired video.
-  // 3. Click "Save to Cloud" and then go to the "Asset Gallery".
-  // 4. Copy the URL for your new video and paste it here.
-  const videoUrl = "https://storage.googleapis.com/your-bucket/your-video.mp4"; // <-- PASTE URL HERE
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleShowcaseClick = () => {
+  const handleShowcaseClick = async () => {
     if (process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID) {
       gtag.event({
         action: 'click_showcase',
@@ -37,7 +34,20 @@ function ShowcaseButton() {
         value: 1
       });
     }
+    
     setIsModalOpen(true);
+    
+    // Only generate if we don't have a URL yet
+    if (!videoUrl && !error) {
+      setIsLoading(true);
+      const result = await generateShowcaseVideo();
+      if (result.success) {
+        setVideoUrl(result.videoDataUri as string);
+      } else {
+        setError(result.error as string);
+      }
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -53,13 +63,24 @@ function ShowcaseButton() {
             <DialogDescription>A video demonstrating how to create your online shop.</DialogDescription>
           </DialogHeader>
           <div className="aspect-video bg-black rounded-md">
-            {videoUrl.includes('your-bucket') ? (
+            {isLoading ? (
                  <div className="flex flex-col items-center justify-center h-full text-center text-white p-4">
-                    <h3 className="text-lg font-semibold">Video Not Configured</h3>
-                    <p className="text-sm text-gray-400">Please generate a video in the admin panel and update the URL in `src/app/page.tsx`.</p>
+                    <Loader2 className="h-8 w-8 animate-spin mb-4" />
+                    <h3 className="text-lg font-semibold">Generating Showcase Video...</h3>
+                    <p className="text-sm text-gray-400">This may take a moment.</p>
                 </div>
-            ) : (
+            ) : error ? (
+                 <div className="flex flex-col items-center justify-center h-full text-center text-white p-4">
+                    <h3 className="text-lg font-semibold text-destructive">Video Generation Failed</h3>
+                    <p className="text-sm text-gray-400">{error}</p>
+                </div>
+            ) : videoUrl ? (
                 <video src={videoUrl} controls autoPlay className="w-full h-full rounded-md" />
+            ) : (
+                <div className="flex flex-col items-center justify-center h-full text-center text-white p-4">
+                  <h3 className="text-lg font-semibold">Video Not Ready</h3>
+                  <p className="text-sm text-gray-400">Click the "Showcase How" button again to generate the video.</p>
+                </div>
             )}
           </div>
         </DialogContent>

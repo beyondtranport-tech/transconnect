@@ -1,8 +1,17 @@
-// This file is temporarily modified to resolve dependency conflicts.
-// AI functionality will be disabled until dependencies are updated.
-export const ai: any = {
-    defineFlow: () => () => { throw new Error("AI functionality is temporarily disabled."); },
-    definePrompt: () => () => { throw new Error("AI functionality is temporarily disabled."); },
-    defineTool: () => () => { throw new Error("AI functionality is temporarily disabled."); },
-    generate: async () => { throw new Error("AI functionality is temporarily disabled."); },
-};
+'use server';
+
+import {genkit} from 'genkit';
+import {googleAI} from '@genkit-ai/google-genai';
+import {firebase} from '@genkit-ai/firebase';
+
+// This config is safe to share client-side
+export const ai = genkit({
+  plugins: [
+    googleAI({
+        apiVersion: 'v1beta', // Required for advanced features
+    }),
+    firebase(), // Required for Firebase integration
+  ],
+  logLevel: 'debug',
+  enableTracingAndMetrics: true,
+});

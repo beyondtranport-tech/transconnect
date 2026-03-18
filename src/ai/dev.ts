@@ -1,16 +1,15 @@
-
 // This file is for the Genkit developer UI, started with `genkit start`.
 // It is not part of the Next.js build.
 
-// import './genkit'; // Temporarily disabled to resolve dependency conflicts.
+import './genkit';
 
 // Import all flow files to register them with the Genkit dev UI.
-// import '@/ai/flows/ai-freight-matching.ts';
-// import '@/ai/flows/image-edit-flow.ts';
-// import '@/ai/flows/image-generation-flow.ts';
-// // import '@/ai/flows/video-generation-flow.ts'; // Temporarily disabled due to dependency conflicts
-// import '@/ai/flows/seo-flow.ts';
-import '@/ai/flows/lead-generation-flow.ts';
-// // import '@/ai/flows/tts-flow.ts'; // Temporarily disabled due to dependency conflicts
-// import '@/ai/flows/social-link-generator-flow.ts';
-// import '@/ai/flows/support-flow.ts';
+import '@/ai/flows/ai-freight-matching';
+import '@/ai/flows/image-edit-flow';
+import '@/ai/flows/image-generation-flow';
+import '@/ai/flows/video-generation-flow';
+import '@/ai/flows/seo-flow';
+import '@/ai/flows/lead-generation-flow';
+import '@/ai/flows/tts-flow';
+import '@/ai/flows/social-link-generator-flow';
+import '@/ai/flows/support-flow';

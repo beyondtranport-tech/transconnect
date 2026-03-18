@@ -107,11 +107,11 @@ function StepCoreIdentity({ shop, onSave, canEdit }: { shop: any, onSave: (newDa
         const response = await fetch('/api/updateUserDoc', {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${'\'\'\''}{token}`,
+                'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                path: `companies/${'\'\'\''}{shop.companyId}/shops/${'\'\'\''}{shop.id}`,
+                path: `companies/${shop.companyId}/shops/${shop.id}`,
                 data: { ...values, updatedAt: { _methodName: 'serverTimestamp' } }
             }),
         });
@@ -269,15 +269,15 @@ function AIGenerateDialog({
       if (!token) throw new Error("Authentication failed.");
 
       const isHeroBanner = title.toLowerCase().includes('hero');
-      const folder = `user-assets/${'\'\'\''}{user.uid}/${'\'\'\''}{isHeroBanner ? 'hero-images' : 'product-images'}`;
-      const fileName = `generated_${'\'\'\''}{Date.now()}.png`;
+      const folder = `user-assets/${user.uid}/${isHeroBanner ? 'hero-images' : 'product-images'}`;
+      const fileName = `generated_${Date.now()}.png`;
 
       setUploadProgress(30);
 
       const response = await fetch('/api/uploadImageAsset', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${'\'\'\''}{token}`,
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ fileDataUri: generatedImage, folder, fileName }),
@@ -304,7 +304,7 @@ function AIGenerateDialog({
         if (!generatedImage) return;
         const link = document.createElement('a');
         link.href = generatedImage;
-        link.download = `generated-image-${'\'\'\''}{Date.now()}.png`;
+        link.download = `generated-image-${Date.now()}.png`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -417,7 +417,7 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
         const token = await getClientSideAuthToken();
         if (!token) throw new Error("Authentication failed.");
         
-        const path = product ? `companies/${'\'\'\''}{shop.companyId}/shops/${'\'\'\''}{shop.id}/products/${'\'\'\''}{product.id}` : `companies/${'\'\'\''}{shop.companyId}/shops/${'\'\'\''}{shop.id}/products`;
+        const path = product ? `companies/${shop.companyId}/shops/${shop.id}/products/${product.id}` : `companies/${shop.companyId}/shops/${shop.id}/products`;
         
         const dataToSave = {
             ...values,
@@ -434,7 +434,7 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
         const response = await fetch(apiEndpoint, {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${'\'\'\''}{token}`,
+                'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify(body),
@@ -470,12 +470,12 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
         const fileDataUri = await fileToDataUri(file);
         setUploadProgress(30);
 
-        const folder = `user-assets/${'\'\'\''}{user.uid}/product-images`;
-        const fileName = `${'\'\'\''}{Date.now()}_${'\'\'\''}{file.name}`;
+        const folder = `user-assets/${user.uid}/product-images`;
+        const fileName = `${Date.now()}_${file.name}`;
         
         const response = await fetch('/api/uploadImageAsset', {
             method: 'POST',
-            headers: { 'Authorization': `Bearer ${'\'\'\''}{token}`, 'Content-Type': 'application/json' },
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({ fileDataUri, folder, fileName }),
         });
 
@@ -643,7 +643,7 @@ function StepProducts({ shop, canEdit }: { shop: any, canEdit: boolean }) {
 
   const productsQuery = useMemoFirebase(() => {
     if (!firestore || !shop?.companyId || !shop?.id) return null;
-    return collection(firestore, `companies/${'\'\'\''}{shop.companyId}/shops/${'\'\'\''}{shop.id}/products`);
+    return collection(firestore, `companies/${shop.companyId}/shops/${shop.id}/products`);
   }, [firestore, shop.companyId, shop.id]);
 
   const { data: products, isLoading, forceRefresh } = useCollection(productsQuery);
@@ -661,8 +661,8 @@ function StepProducts({ shop, canEdit }: { shop: any, canEdit: boolean }) {
         
         const response = await fetch('/api/deleteUserDoc', {
             method: 'POST',
-            headers: { 'Authorization': `Bearer ${'\'\'\''}{token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ path: `companies/${'\'\'\''}{shop.companyId}/shops/${'\'\'\''}{shop.id}/products/${'\'\'\''}{productToDelete.id}`})
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path: `companies/${shop.companyId}/shops/${shop.id}/products/${productToDelete.id}`})
         });
         
         if (!response.ok) {
@@ -812,9 +812,9 @@ function StepAppearance({ shop, onSave, canEdit }: { shop: any, onSave: (newData
             
             await fetch('/api/updateUserDoc', {
                 method: 'POST',
-                headers: { 'Authorization': `Bearer ${'\'\'\''}{token}`, 'Content-Type': 'application/json' },
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    path: `companies/${'\'\'\''}{shop.companyId}/shops/${'\'\'\''}{shop.id}`,
+                    path: `companies/${shop.companyId}/shops/${shop.id}`,
                     data: { ...values, updatedAt: { _methodName: 'serverTimestamp' } }
                 }),
             });
@@ -842,12 +842,12 @@ function StepAppearance({ shop, onSave, canEdit }: { shop: any, onSave: (newData
             const fileDataUri = await fileToDataUri(file);
             setUploadProgress(30);
 
-            const folder = `user-assets/${'\'\'\''}{user.uid}/hero-images`;
-            const fileName = `${'\'\'\''}{Date.now()}_${'\'\'\''}{file.name}`;
+            const folder = `user-assets/${user.uid}/hero-images`;
+            const fileName = `${Date.now()}_${file.name}`;
             
             const response = await fetch('/api/uploadImageAsset', {
                 method: 'POST',
-                headers: { 'Authorization': `Bearer ${'\'\'\''}{token}`, 'Content-Type': 'application/json' },
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ fileDataUri, folder, fileName }),
             });
 
@@ -900,7 +900,7 @@ function StepAppearance({ shop, onSave, canEdit }: { shop: any, onSave: (newData
                                   canEdit={canEdit}
                                   title="AI Hero Banner Generator"
                                   description="Describe the hero banner you want for your shop. Think about your brand and what you sell."
-                                  promptTemplate={`A professional, wide-angle hero banner for a truck parts shop named "${'\'\'\''}{shop.shopName}". The image should look clean and modern. Maybe show a specific truck brand if relevant.`}
+                                  promptTemplate={`A professional, wide-angle hero banner for a truck parts shop named "${shop.shopName}". The image should look clean and modern. Maybe show a specific truck brand if relevant.`}
                                   shop={shop}
                                 >
                                   <Button type="button" variant="secondary">
@@ -989,7 +989,7 @@ function StepSocialLinks({ shop, onSave, canEdit }: { shop: any, onSave: (newDat
         try {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication token not found.");
-            await fetch('/api/updateUserDoc', { method: 'POST', headers: { 'Authorization': `Bearer ${'\'\'\''}{token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ path: `companies/${'\'\'\''}{shop.companyId}/shops/${'\'\'\''}{shop.id}`, data: { ...values, updatedAt: { _methodName: 'serverTimestamp' } } }) });
+            await fetch('/api/updateUserDoc', { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ path: `companies/${shop.companyId}/shops/${shop.id}`, data: { ...values, updatedAt: { _methodName: 'serverTimestamp' } } }) });
             toast({ title: 'Step 4 Saved!', description: 'Your social media links have been updated.' });
             onSave(values);
         } catch (error: any) {
@@ -1072,7 +1072,7 @@ function StepSeo({ shop, onSave, canEdit, onSeoGenerated }: { shop: any, onSave:
         try {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication failed.");
-            await fetch('/api/updateUserDoc', { method: 'POST', headers: { 'Authorization': `Bearer ${'\'\'\''}{token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ path: `companies/${'\'\'\''}{shop.companyId}/shops/${'\'\'\''}{shop.id}`, data: { ...values, updatedAt: { _methodName: 'serverTimestamp' } } }) });
+            await fetch('/api/updateUserDoc', { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ path: `companies/${shop.companyId}/shops/${shop.id}`, data: { ...values, updatedAt: { _methodName: 'serverTimestamp' } } }) });
             toast({ title: 'Step 5 Saved!', description: 'Your SEO settings have been updated.' });
             onSave(values);
         } catch (error: any) {
@@ -1140,8 +1140,8 @@ function StepLegal({ shop, onSave, canEdit }: { shop: any, onSave: (newData: any
         setIsSaving(true);
         try {
             const token = await getClientSideAuthToken();
-            if (!token) throw new Error("Authentication token not found.");
-            await fetch('/api/updateUserDoc', { method: 'POST', headers: { 'Authorization': `Bearer ${'\'\'\''}{token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ path: `companies/${'\'\'\''}{shop.companyId}/shops/${'\'\'\''}{shop.id}`, data: { ...values, updatedAt: { _methodName: 'serverTimestamp' } } }) });
+            if (!token) throw new Error("Authentication failed.");
+            await fetch('/api/updateUserDoc', { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ path: `companies/${shop.companyId}/shops/${shop.id}`, data: { ...values, updatedAt: { _methodName: 'serverTimestamp' } } }) });
             toast({ title: 'Step 6 Saved!', description: 'Your legal document links have been updated.' });
             onSave(values);
         } catch (error: any) {
@@ -1192,7 +1192,7 @@ function StepCommercials({ shop, onSave, canEdit, agreements, activeAgreement }:
             
              const response = await fetch('/api/proposeCommercialAgreement', {
                 method: 'POST',
-                headers: { 'Authorization': `Bearer ${'\'\'\''}{token}`, 'Content-Type': 'application/json' },
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ companyId: shop.companyId, shopId: shop.id, percentage: values.percentage }),
             });
             
@@ -1379,13 +1379,13 @@ export function ShopWizard({ shop: initialShop, onShopUpdate }: { shop: any, onS
   
   const productsQuery = useMemoFirebase(() => {
     if (!firestore || !shopData?.companyId || !shopData?.id) return null;
-    return collection(firestore, `companies/${'\'\'\''}{shopData.companyId}/shops/${'\'\'\''}{shopData.id}/products`);
+    return collection(firestore, `companies/${shopData.companyId}/shops/${shopData.id}/products`);
   }, [firestore, shopData.companyId, shopData.id]);
   const { data: products, forceRefresh: forceRefreshProducts } = useCollection(productsQuery);
 
   const agreementsQuery = useMemoFirebase(() => {
     if (!firestore || !shopData?.companyId || !shopData?.id) return null;
-    return collection(firestore, `companies/${'\'\'\''}{shopData.companyId}/shops/${'\'\'\''}{shopData.id}/agreements`);
+    return collection(firestore, `companies/${shopData.companyId}/shops/${shopData.id}/agreements`);
   }, [firestore, shopData.companyId, shopData.id]);
   const { data: agreements } = useCollection(agreementsQuery);
   const activeAgreement = useMemo(() => agreements?.find(a => a.status === 'active'), [agreements]);
@@ -1422,9 +1422,9 @@ export function ShopWizard({ shop: initialShop, onShopUpdate }: { shop: any, onS
 
         await fetch('/api/updateUserDoc', {
             method: 'POST',
-            headers: { 'Authorization': `Bearer ${'\'\'\''}{token}`, 'Content-Type': 'application/json' },
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                path: `companies/${'\'\'\''}{shopData.companyId}/shops/${'\'\'\''}{shopData.id}`,
+                path: `companies/${shopData.companyId}/shops/${shopData.id}`,
                 data: { status: 'pending_review', updatedAt: { _methodName: 'serverTimestamp' } }
             }),
         });
@@ -1450,7 +1450,7 @@ export function ShopWizard({ shop: initialShop, onShopUpdate }: { shop: any, onS
 
         const response = await fetch('/api/admin', {
             method: 'POST',
-            headers: { 'Authorization': `Bearer ${'\'\'\''}{token}`, 'Content-Type': 'application/json' },
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
                 action: 'unpublishShop', 
                 payload: { companyId: shopData.companyId, shopId: shopData.id }
@@ -1577,6 +1577,4 @@ export function ShopWizard({ shop: initialShop, onShopUpdate }: { shop: any, onS
     </div>
   );
 }
-    
-
     

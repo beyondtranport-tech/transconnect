@@ -6,13 +6,12 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Loader2, Sparkles, Download, Mic, AlertTriangle } from 'lucide-react';
+import { Loader2, Sparkles, Download, Mic } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
 import { TTSInputSchema, type TTSInput } from '@/ai/schemas';
 import { generateAudio } from '@/ai/flows/tts-flow';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const voices = [
     { id: 'Algenib', name: 'Algenib (Male)' },
@@ -78,15 +77,7 @@ export default function TTSStudio() {
             <CardContent>
                  <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                        <Alert variant="destructive">
-                            <AlertTriangle className="h-4 w-4" />
-                            <AlertTitle>Feature Temporarily Disabled</AlertTitle>
-                            <AlertDescription>
-                                Text-to-Speech is currently unavailable due to a necessary package downgrade. This feature will be re-enabled after a future platform upgrade.
-                            </AlertDescription>
-                        </Alert>
-
-                        <fieldset disabled>
+                        <fieldset disabled={isLoading}>
                             <FormField
                             control={form.control}
                             name="script"
@@ -128,12 +119,24 @@ export default function TTSStudio() {
                             />
                         </fieldset>
                         
-                        <Button type="submit" disabled={true} className="w-full">
+                        <Button type="submit" disabled={isLoading} className="w-full">
                             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4" />}
                             Generate Audio
                         </Button>
                     </form>
                 </Form>
+
+                {generatedAudio && (
+                    <div className="mt-8 space-y-4">
+                        <h4 className="font-semibold">Generated Audio</h4>
+                        <audio controls src={generatedAudio} className="w-full">
+                            Your browser does not support the audio element.
+                        </audio>
+                        <Button onClick={handleDownload} variant="outline" className="w-full">
+                            <Download className="mr-2 h-4 w-4" /> Download WAV
+                        </Button>
+                    </div>
+                )}
             </CardContent>
         </Card>
     );
