@@ -193,8 +193,14 @@ export function Header() {
                         <>
                             <DropdownMenuSeparator/>
                             <DropdownMenuLabel>Admin</DropdownMenuLabel>
+                            <DropdownMenuItem asChild>
+                                <Link href="/adminaccount">Admin Account</Link>
+                            </DropdownMenuItem>
                              <DropdownMenuItem asChild>
                                 <Link href="/backend">App Backend</Link>
+                            </DropdownMenuItem>
+                             <DropdownMenuItem asChild>
+                                <Link href="/lending">Lending Portal</Link>
                             </DropdownMenuItem>
                         </>
                     )}
