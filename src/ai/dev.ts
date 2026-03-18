@@ -1,7 +1,7 @@
 // This file is for the Genkit developer UI, started with `genkit start`.
 // It is not part of the Next.js build.
 
-import './genkit';
+import '@/ai';
 
 // Import all flow files to register them with the Genkit dev UI.
 import '@/ai/flows/ai-freight-matching';
