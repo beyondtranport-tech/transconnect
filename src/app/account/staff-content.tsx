@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
@@ -313,7 +312,7 @@ function AddStaffDialog({ companyId, onStaffAdded, canCreate }: { companyId: str
                   </form>
                 </Form>
             </>
-        )}
+         )}
       </DialogContent>
     </Dialog>
   );
@@ -394,7 +393,7 @@ export default function StaffContent({ companyId: propCompanyId }: { companyId?:
             </div>
         ),
     },
-  ], [forceRefresh]);
+  ], [forceRefresh, handleEdit]);
 
   return (
     <>
@@ -445,3 +444,5 @@ export default function StaffContent({ companyId: propCompanyId }: { companyId?:
     </>
   );
 }
+
+    
