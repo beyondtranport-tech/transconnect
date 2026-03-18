@@ -132,7 +132,8 @@ function AddStaffDialog({ companyId, onStaffAdded, canCreate }: { companyId: str
   }
 
   const copyInviteLink = () => {
-    const signupUrl = `${window.location.origin}/join?email=${encodeURIComponent(newUserInfo.email)}&firstName=${encodeURIComponent(newUserInfo.firstName)}&lastName=${encodeURIComponent(newUserInfo.lastName)}`;
+    const baseUrl = 'https://studio--ecosystem-hub.us-central1.hosted.app';
+    const signupUrl = `${baseUrl}/join?email=${encodeURIComponent(newUserInfo.email)}&firstName=${encodeURIComponent(newUserInfo.firstName)}&lastName=${encodeURIComponent(newUserInfo.lastName)}`;
     navigator.clipboard.writeText(signupUrl);
     toast({
         title: 'Sign-up Link Copied!',
@@ -444,6 +445,3 @@ export default function StaffContent({ companyId: propCompanyId }: { companyId?:
     </>
   );
 }
-
-
-    
