@@ -9,7 +9,14 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { MatchFreightInputSchema, MatchFreightOutputSchema, type MatchFreightInput, type MatchFreightOutput } from '@/ai/schemas';
+import { z } from 'genkit'; // Use the zod instance re-exported by Genkit
+import { MatchFreightInputSchema as ClientInputSchema, MatchFreightOutputSchema as ClientOutputSchema, type MatchFreightInput, type MatchFreightOutput } from '@/ai/schemas';
+
+// Re-define the schemas using the 'z' from 'genkit' to ensure type compatibility for the flow.
+// This avoids duplicating the entire schema definition by just referencing the shape.
+const MatchFreightInputSchema = z.object(ClientInputSchema.shape);
+const MatchFreightOutputSchema = z.object(ClientOutputSchema.shape);
+
 
 export async function matchFreight(input: MatchFreightInput): Promise<MatchFreightOutput> {
   return matchFreightFlow(input);
