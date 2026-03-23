@@ -12,9 +12,8 @@ import {
   SidebarFooter,
   SidebarInset,
   SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSeparator,
   SidebarMenuSubItem,
+  SidebarMenuSubButton,
 } from '@/components/ui/sidebar';
 import {
   LogOut,

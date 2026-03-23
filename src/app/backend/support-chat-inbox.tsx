@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
@@ -7,19 +6,15 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Loader2, MessageSquare, Send, Bot, AlertTriangle } from 'lucide-react';
+import { Loader2, MessageSquare, Send, Bot } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useCollection, getClientSideAuthToken, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, serverTimestamp, collectionGroup } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
-import { supportQuery } from '@/ai/flows/support-flow';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import Link from 'next/link';
 import { format as formatDateFns } from 'date-fns';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
-
-interface Message {
+interface SupportMessage {
   id: string;
   path: string;
   text: string;
@@ -27,19 +22,12 @@ interface Message {
   senderName: string;
   timestamp: any;
   companyId: string;
-  leadId: string;
 }
 
 interface Company {
     id: string;
     companyName: string;
     ownerId: string;
-}
-
-interface Lead {
-    id: string;
-    companyName: string;
-    contactPerson?: string;
 }
 
 const formatDate = (dateValue: any) => {
@@ -49,48 +37,38 @@ const formatDate = (dateValue: any) => {
     return formatDateFns(date, "dd MMM yyyy, HH:mm");
 };
 
-export default function CommunicationsContent() {
+export default function SupportChatInbox() {
     const firestore = useFirestore();
     const { user: adminUser } = useUser();
     const { toast } = useToast();
 
-    // Fetch all necessary data
-    const messagesQuery = useMemoFirebase(() => firestore ? query(collectionGroup(firestore, 'messages')) : null, [firestore]);
-    const { data: messages, isLoading: areMessagesLoading, forceRefresh } = useCollection<Message>(messagesQuery);
+    // Fetch all support messages and companies
+    const messagesQuery = useMemoFirebase(() => firestore ? query(collectionGroup(firestore, 'supportMessages')) : null, [firestore]);
+    const { data: messages, isLoading: areMessagesLoading, forceRefresh } = useCollection<SupportMessage>(messagesQuery);
 
     const companiesQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'companies')) : null, [firestore]);
     const { data: companies, isLoading: areCompaniesLoading } = useCollection<Company>(companiesQuery);
 
-    const leadsQuery = useMemoFirebase(() => firestore ? query(collectionGroup(firestore, 'leads')) : null, [firestore]);
-    const { data: leads, isLoading: areLeadsLoading } = useCollection<Lead>(leadsQuery);
-
-    const isLoading = areMessagesLoading || areCompaniesLoading || areLeadsLoading;
+    const isLoading = areMessagesLoading || areCompaniesLoading;
 
     const conversations = useMemo(() => {
-        if (!messages || !companies || !leads) return [];
+        if (!messages || !companies) return [];
 
         const companyMap = new Map(companies.map(c => [c.id, c]));
-        const leadMap = new Map(leads.map(l => [l.id, l]));
 
         const grouped = messages.reduce((acc, message) => {
-            const pathSegments = message.path.split('/');
-            if(pathSegments.length < 4) return acc;
-
-            const companyId = pathSegments[1];
-            const leadId = pathSegments[3];
+            const companyId = message.companyId;
+            if (!companyId) return acc;
             
-            const conversationId = `${companyId}-${leadId}`;
-            
-            if (!acc[conversationId]) {
-                acc[conversationId] = {
+            if (!acc[companyId]) {
+                acc[companyId] = {
                     company: companyMap.get(companyId),
-                    lead: leadMap.get(leadId),
                     messages: [],
                 };
             }
-            acc[conversationId].messages.push(message);
+            acc[companyId].messages.push(message);
             return acc;
-        }, {} as Record<string, { company?: Company; lead?: Lead; messages: Message[] }>);
+        }, {} as Record<string, { company?: Company; messages: SupportMessage[] }>);
         
         Object.values(grouped).forEach(convo => {
             if (convo.messages) {
@@ -103,32 +81,34 @@ export default function CommunicationsContent() {
         });
         
         return Object.values(grouped).sort((a,b) => {
+            if (!a.messages.length || !b.messages.length) return 0;
             const lastMsgA = a.messages[a.messages.length - 1];
             const lastMsgB = b.messages[b.messages.length - 1];
             const dateA = lastMsgA?.timestamp?.toDate ? lastMsgA.timestamp.toDate() : new Date(0);
             const dateB = lastMsgB?.timestamp?.toDate ? lastMsgB.timestamp.toDate() : new Date(0);
             return dateB.getTime() - dateA.getTime();
         });
-    }, [messages, companies, leads]);
+    }, [messages, companies]);
 
     const Conversation = ({ convo }: { convo: any }) => {
         const [adminInput, setAdminInput] = useState('');
         const [isSending, setIsSending] = useState(false);
         
         const handleAdminSend = async () => {
-            if (!adminUser || !adminInput.trim() || !convo.company?.id || !convo.lead?.id) return;
+            if (!adminUser || !adminInput.trim() || !convo.company?.id) return;
             setIsSending(true);
 
             try {
                 const token = await getClientSideAuthToken();
                 if (!token) throw new Error("Authentication failed.");
                 
-                const path = `companies/${convo.company.id}/leads/${convo.lead.id}/messages`;
+                const path = `companies/${convo.company.id}/supportMessages`;
                 const messageData = {
                     text: adminInput,
                     senderId: adminUser.uid,
+                    senderName: 'Support Team',
                     timestamp: serverTimestamp(),
-                    read: false,
+                    companyId: convo.company.id,
                 };
                 
                 const response = await fetch('/api/addUserDoc', {
@@ -156,12 +136,10 @@ export default function CommunicationsContent() {
         };
 
         return (
-            <AccordionItem value={convo.company.id + convo.lead.id} key={convo.company.id + convo.lead.id}>
+            <AccordionItem value={convo.company.id} key={convo.company.id}>
                 <AccordionTrigger>
                     <div>
-                        <p className="font-semibold text-left">
-                            <span className="text-primary">{convo.company?.companyName || 'Unknown Company'}</span> &harr; <span className="text-primary">{convo.lead?.companyName || 'Unknown Lead'}</span>
-                        </p>
+                        <p className="font-semibold text-left text-primary">{convo.company?.companyName || 'Unknown Company'}</p>
                          <p className="text-xs text-muted-foreground text-left">
                             {convo.messages.length} message(s) | Last message: {formatDate(convo.messages[convo.messages.length - 1].timestamp)}
                         </p>
@@ -171,31 +149,35 @@ export default function CommunicationsContent() {
                     <div className="p-4 border rounded-lg bg-muted/50 h-[60vh] flex flex-col">
                         <ScrollArea className="flex-1 w-full pr-4 mb-4">
                              <div className="space-y-4">
-                                {convo.messages.map((message: Message) => {
-                                    const isAgent = message.senderId === convo.company?.ownerId;
+                                {convo.messages.map((message: SupportMessage) => {
+                                    const isMember = message.senderId === convo.company?.ownerId;
                                     const isAdmin = message.senderId === adminUser?.uid;
-                                    const alignment = (isAgent || isAdmin) ? "justify-end" : "justify-start";
+                                    const isAI = message.senderId === 'ai-assistant';
+                                    const alignment = isMember ? "justify-start" : "justify-end";
 
                                     return (
                                         <div key={message.id} className={cn("flex items-end gap-2", alignment)}>
-                                            {!(isAgent || isAdmin) && (
+                                            {isMember && (
                                                 <Avatar className="h-8 w-8">
-                                                    <AvatarFallback className="bg-muted">L</AvatarFallback>
+                                                    <AvatarFallback className="bg-muted">
+                                                        {convo.company?.companyName?.charAt(0) || 'M'}
+                                                    </AvatarFallback>
                                                 </Avatar>
                                             )}
                                             <div className={cn(
                                                 "rounded-lg px-3 py-2 max-w-[80%] text-sm", 
                                                 isAdmin ? "bg-secondary text-secondary-foreground" :
-                                                isAgent ? "bg-primary text-primary-foreground" : 
+                                                isAI ? "bg-blue-200 text-blue-900" :
                                                 "bg-background border"
                                             )}>
+                                                <p className="font-semibold text-xs mb-1">{message.senderName}</p>
                                                 <p>{message.text}</p>
                                                 <p className="text-xs opacity-70 mt-1 text-right">{formatDate(message.timestamp)}</p>
                                             </div>
-                                             {(isAgent || isAdmin) && (
+                                             {(isAdmin || isAI) && (
                                                 <Avatar className="h-8 w-8">
-                                                    <AvatarFallback className={isAdmin ? 'bg-secondary' : 'bg-primary'}>
-                                                        {isAdmin ? 'AD' : 'AG'}
+                                                    <AvatarFallback className={isAdmin ? 'bg-secondary' : 'bg-blue-500 text-white'}>
+                                                        {isAdmin ? 'AD' : <Bot className="h-5 w-5" />}
                                                     </AvatarFallback>
                                                 </Avatar>
                                             )}
@@ -206,7 +188,7 @@ export default function CommunicationsContent() {
                         </ScrollArea>
                         <div className="mt-auto flex items-center gap-2 pt-4 border-t">
                             <Input 
-                                placeholder="Type as Admin to join discussion..." 
+                                placeholder="Type as Support to reply..." 
                                 value={adminInput}
                                 onChange={e => setAdminInput(e.target.value)}
                                 onKeyDown={e => e.key === 'Enter' && !isSending && handleAdminSend()}
@@ -226,7 +208,7 @@ export default function CommunicationsContent() {
         return (
             <Card>
                 <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><MessageSquare /> Communication Logs</CardTitle>
+                    <CardTitle className="flex items-center gap-2"><MessageSquare /> Member Support Inbox</CardTitle>
                 </CardHeader>
                 <CardContent className="flex justify-center items-center py-20">
                     <Loader2 className="h-10 w-10 animate-spin text-primary" />
@@ -238,23 +220,23 @@ export default function CommunicationsContent() {
     return (
         <Card>
             <CardHeader>
-                <CardTitle className="flex items-center gap-2"><MessageSquare /> Communication Logs</CardTitle>
-                <CardDescription>Review all chat conversations between agents and their leads. You can join the discussion by typing in the message box below each conversation.</CardDescription>
+                <CardTitle className="flex items-center gap-2"><MessageSquare /> Member Support Inbox</CardTitle>
+                <CardDescription>Review all member support conversations. You can join the discussion by typing in the message box below each conversation.</CardDescription>
             </CardHeader>
             <CardContent>
                 {conversations.length > 0 ? (
                     <Accordion type="single" collapsible className="w-full">
                         {conversations
-                            .filter(convo => convo.company && convo.lead)
+                            .filter(convo => convo.company)
                             .map((convo) => (
-                           <Conversation key={convo.company!.id + convo.lead!.id} convo={convo} />
+                           <Conversation key={convo.company!.id} convo={convo} />
                         ))}
                     </Accordion>
                 ) : (
                     <div className="text-center py-20 border-dashed border-2 rounded-lg">
                         <MessageSquare className="mx-auto h-12 w-12 text-muted-foreground" />
-                        <h3 className="mt-4 text-xl font-semibold">No Conversations Found</h3>
-                        <p className="mt-2 text-muted-foreground">No messages have been sent between agents and leads yet.</p>
+                        <h3 className="mt-4 text-xl font-semibold">Inbox Zero!</h3>
+                        <p className="mt-2 text-muted-foreground">There are no active support conversations.</p>
                     </div>
                 )}
             </CardContent>
