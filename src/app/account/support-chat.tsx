@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
@@ -92,6 +93,7 @@ export default function SupportChatContent() {
                 senderName: user.displayName || 'Member',
                 timestamp: serverTimestamp(),
                 readByAdmin: false,
+                companyId: companyId, // Ensure companyId is included
             };
             const userMessageResponse = await fetch('/api/addUserDoc', {
                 method: 'POST',
@@ -124,6 +126,7 @@ export default function SupportChatContent() {
                 senderName: 'AI Assistant',
                 timestamp: serverTimestamp(),
                 readByAdmin: false,
+                companyId: companyId, // Ensure companyId is included
             };
             const aiMessageResponse = await fetch('/api/addUserDoc', {
                 method: 'POST',
@@ -182,7 +185,7 @@ export default function SupportChatContent() {
                                         <div className={cn(
                                             "rounded-lg px-3 py-2 max-w-[80%] text-sm", 
                                             isMember ? "bg-primary text-primary-foreground" : 
-                                            isAI ? "bg-secondary text-secondary-foreground" :
+                                            isAI ? "bg-blue-200 text-blue-900" :
                                             "bg-muted"
                                         )}>
                                             <p className="font-semibold text-xs mb-1">{msg.senderName || 'Support'}</p>
