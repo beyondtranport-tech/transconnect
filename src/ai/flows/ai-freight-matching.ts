@@ -10,12 +10,34 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit'; // Use the zod instance re-exported by Genkit
-import { MatchFreightInputSchema as ClientInputSchema, MatchFreightOutputSchema as ClientOutputSchema, type MatchFreightInput, type MatchFreightOutput } from '@/ai/schemas';
 
-// Re-define the schemas using the 'z' from 'genkit' to ensure type compatibility for the flow.
-// This avoids duplicating the entire schema definition by just referencing the shape.
-const MatchFreightInputSchema = z.object(ClientInputSchema.shape);
-const MatchFreightOutputSchema = z.object(ClientOutputSchema.shape);
+// Define schemas locally using z from genkit to avoid type conflicts.
+const MatchFreightInputSchema = z.object({
+  location: z.string().describe('The current location of the transporter.'),
+  destination: z.string().describe('The desired destination for the transporter.'),
+  vehicleType: z.string().describe('The type of vehicle the transporter has (e.g., truck, van).'),
+  capacity: z.string().describe('The carrying capacity of the vehicle.'),
+  preferences: z.string().optional().describe('Any specific preferences or requirements of the transporter.'),
+  rate: z.number().optional().describe('The desired rate per kilometer.'),
+  isPartLoad: z.boolean().optional().describe('Whether the transporter is looking for a partial load.'),
+  palletCount: z.number().optional().describe('The number of pallets the transporter wants to load, if it is a part load. Assume 1 pallet is roughly 1 ton.'),
+});
+export type MatchFreightInput = z.infer<typeof MatchFreightInputSchema>;
+
+const MatchFreightOutputSchema = z.object({
+  matches: z.array(
+    z.object({
+      loadId: z.string().describe('The ID of the freight load.'),
+      origin: z.string().describe('The origin location of the freight load.'),
+      destination: z.string().describe('The destination location of the freight load.'),
+      weight: z.string().describe('The weight of the freight load.'),
+      size: z.string().describe('The size of the freight load.'),
+      price: z.string().describe('The price offered for the freight load.'),
+      requirements: z.string().optional().describe('Any special requirements for the freight load.'),
+    })
+  ).describe('A list of freight loads that match the transporter criteria.'),
+});
+export type MatchFreightOutput = z.infer<typeof MatchFreightOutputSchema>;
 
 
 export async function matchFreight(input: MatchFreightInput): Promise<MatchFreightOutput> {
