@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -14,7 +15,6 @@ import {
 import {
   LogOut,
   Loader2,
-  LayoutDashboard,
   User,
   FileSearch,
   Star,
@@ -34,7 +34,7 @@ import dynamic from 'next/dynamic';
 import React from 'react';
 
 // --- Dynamic Imports for Business Components ---
-const LendingDashboard = dynamic(() => import('@/app/backend/dashboard-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const FundingDivisionContent = dynamic(() => import('@/app/backend/funding-division-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const LendingAssumptions = dynamic(() => import('./lending-assumptions'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const LoanBook = dynamic(() => import('./loan-book'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const DiscoveryContent = dynamic(() => import('./discovery-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
@@ -44,7 +44,7 @@ const ScoringContent = dynamic(() => import('./scoring-content'), { loading: () 
 function LendingPortalContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const initialView = searchParams.get('view') || 'assumptions';
+  const initialView = searchParams.get('view') || 'opportunities';
   const [activeView, setActiveView] = useState(initialView);
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
@@ -72,11 +72,12 @@ function LendingPortalContent() {
 
   const renderContent = useCallback(() => {
     switch (activeView) {
+      case 'opportunities': return <FundingDivisionContent />;
       case 'assumptions': return <LendingAssumptions />;
       case 'loan-book': return <LoanBook />;
       case 'discovery': return <DiscoveryContent />;
       case 'scoring': return <ScoringContent />;
-      default: return <LendingDashboard />;
+      default: return <FundingDivisionContent />;
     }
   }, [activeView]);
   
@@ -104,6 +105,11 @@ function LendingPortalContent() {
           </SidebarHeader>
           <SidebarContent>
             <SidebarGroup>
+                <SidebarMenuItem>
+                    <SidebarMenuButton tooltip="Opportunities" isActive={activeView === 'opportunities'} onClick={() => navigate('opportunities')}>
+                        <FileSearch /><span>Opportunities</span>
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
                 <SidebarMenuItem>
                     <SidebarMenuButton tooltip="Assumptions" isActive={activeView === 'assumptions'} onClick={() => navigate('assumptions')}>
                         <Calculator /><span>Assumptions</span>
