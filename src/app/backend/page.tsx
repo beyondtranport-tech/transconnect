@@ -71,7 +71,6 @@ import Link from 'next/link';
 
 import { useUser, useAuth } from '@/firebase';
 import { signOut } from 'firebase/auth';
-
 import dynamic from 'next/dynamic';
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -91,10 +90,6 @@ const CommunicationsContent = dynamic(() => import('@/app/backend/communications
 const SupportChatInbox = dynamic(() => import('@/app/backend/support-chat-inbox'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const UsersList = dynamic(() => import('@/app/backend/users-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const CommercialNegotiations = dynamic(() => import('@/app/backend/commercial-negotiations'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const PartnerManagement = dynamic(() => import('@/app/backend/partner-management'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const ISAManagement = dynamic(() => import('@/app/backend/isa-management'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const DeveloperManagement = dynamic(() => import('@/app/backend/developer-management'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-
 
 // Platform Settings
 const PermissionsContent = dynamic(() => import('@/app/backend/permissions-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
@@ -175,11 +170,6 @@ function BackendContent() {
       case 'communications': return <CommunicationsContent />;
       case 'support-inbox': return <SupportChatInbox />;
       
-      // Partners
-      case 'partners-strategic': return <PartnerManagement />;
-      case 'partners-isa': return <ISAManagement />;
-      case 'partners-developer': return <DeveloperManagement />;
-
       // Platform Settings
       case 'permissions': return <PermissionsContent />;
       case 'loyalty': return <LoyaltySettings />;
@@ -213,7 +203,6 @@ function BackendContent() {
   const navigate = (view: string) => router.push(`/backend?view=${view}`, { scroll: false });
   
   const isOperationsActive = ['members', 'users', 'wallet', 'wallet-transactions', 'shops', 'reconciliation', 'contributions', 'activity', 'communications', 'support-inbox', 'commercial-negotiations'].includes(activeView);
-  const isPartnersActive = ['partners-strategic', 'partners-isa', 'partners-developer'].includes(activeView);
   const isRevenueActive = [
     'pricing-memberships', 'pricing-connect', 'pricing-tech', 'pricing-marketplace',
     'commissions-malls', 'commissions-isa', 'incentives-sales'
@@ -256,15 +245,6 @@ function BackendContent() {
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'commercial-negotiations'} onClick={() => navigate('commercial-negotiations')}><Handshake />Commercials</SidebarMenuSubButton></SidebarMenuSubItem>
                   </SidebarMenuSub>
                 </SidebarMenuItem>
-                
-                 <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Partners" isActive={isPartnersActive}><Handshake /><span>Partners</span></SidebarMenuButton>
-                    <SidebarMenuSub>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'partners-strategic'} onClick={() => navigate('partners-strategic')}>Strategic Partners</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'partners-isa'} onClick={() => navigate('partners-isa')}>ISA Agents</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'partners-developer'} onClick={() => navigate('partners-developer')}>Developers</SidebarMenuSubButton></SidebarMenuSubItem>
-                    </SidebarMenuSub>
-                 </SidebarMenuItem>
 
                 <SidebarMenuItem>
                     <SidebarMenuButton tooltip="Revenue & Pricing" isActive={isRevenueActive}><DollarSign /><span>Revenue & Pricing</span></SidebarMenuButton>
