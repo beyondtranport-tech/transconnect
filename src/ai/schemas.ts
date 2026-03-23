@@ -78,7 +78,7 @@ export type ShopSeoOutput = z.infer<typeof ShopSeoOutputSchema>;
 export const VideoGenerateInputSchema = z.object({
   prompt: z.string().describe('The text prompt describing the desired video.'),
   imageDataUri: z.string().optional().describe("An optional starting image for the video, as a data URI."),
-  durationSeconds: z.number().optional().default(5).describe('The duration of the video in seconds.'),
+  durationSeconds: z.number().optional().describe('The duration of the video in seconds.'),
 });
 export type VideoGenerateInput = z.infer<typeof VideoGenerateInputSchema>;
 
