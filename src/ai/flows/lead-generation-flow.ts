@@ -9,7 +9,7 @@
 
 import { ai } from '@/ai/genkit';
 import { googleSearchTool } from '../tools/google-search';
-import { z } from 'genkit';
+import { z } from 'zod';
 
 // Define schemas directly in this file to be self-contained.
 export const LeadGenerationInputSchema = z.object({
