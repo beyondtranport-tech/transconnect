@@ -1,10 +1,10 @@
 
-
 'use client';
 
+import { Suspense } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, Filter, Handshake, Target, Sparkles, UserPlus } from "lucide-react";
+import { ArrowRight, Filter, Handshake, Target, Sparkles, UserPlus, Loader2 } from "lucide-react";
 import Image from "next/image";
 import data from "@/lib/placeholder-images.json";
 import Link from "next/link";
@@ -35,7 +35,7 @@ const benefits = [
     }
 ]
 
-export default function ForFinanciersPage() {
+function ForFinanciersContent() {
     const { user, isUserLoading } = useUser();
     const searchParams = useSearchParams();
     const financierType = searchParams.get('type');
@@ -150,5 +150,13 @@ export default function ForFinanciersPage() {
                  </div>
             </section>
         </div>
+    )
+}
+
+export default function ForFinanciersPage() {
+    return (
+        <Suspense fallback={<div className="flex w-full h-[80vh] items-center justify-center"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>}>
+            <ForFinanciersContent />
+        </Suspense>
     )
 }
