@@ -3,21 +3,21 @@
  * @fileOverview An AI-powered research agent for generating potential sales leads.
  *
  * - leadGenerationFlow - A function that researches potential leads based on a topic.
- * - LeadGenerationInputSchema - The input schema for the function.
- * - LeadGenerationOutputSchema - The output schema for the function.
+ * - LeadGenerationInput - The input type for the function.
+ * - LeadGenerationOutput - The return type for the function.
  */
 
 import { ai } from '@/ai/genkit';
 import { googleSearchTool } from '../tools/google-search';
-import { z } from 'zod';
+import { z } from 'genkit'; // Use the zod instance re-exported by Genkit
 
-// Define schemas directly in this file to be self-contained.
-export const LeadGenerationInputSchema = z.object({
+// Define schemas locally using z from genkit to ensure type compatibility for the flow.
+const LeadGenerationInputSchema = z.object({
   prompt: z.string().min(20, 'Please provide a detailed prompt.').describe('A detailed prompt for the AI agent, instructing it what to research.'),
 });
 export type LeadGenerationInput = z.infer<typeof LeadGenerationInputSchema>;
 
-export const LeadGenerationOutputSchema = z.object({
+const LeadGenerationOutputSchema = z.object({
     leads: z.array(z.object({
         companyName: z.string().describe('The name of the potential lead company.'),
         role: z.string().describe('The likely role of this company in the ecosystem (e.g., Vendor, Buyer, Partner).'),

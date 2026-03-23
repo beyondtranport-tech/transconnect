@@ -130,3 +130,19 @@ export const SupportOutputSchema = z.object({
   response: z.string().describe("The AI assistant's helpful response."),
 });
 export type SupportOutput = z.infer<typeof SupportOutputSchema>;
+
+// From lead-generation-flow.ts
+export const LeadGenerationInputSchema = z.object({
+  prompt: z.string().min(20, 'Please provide a detailed prompt.').describe('A detailed prompt for the AI agent, instructing it what to research.'),
+});
+export const LeadGenerationOutputSchema = z.object({
+    leads: z.array(z.object({
+        companyName: z.string().describe('The name of the potential lead company.'),
+        role: z.string().describe('The likely role of this company in the ecosystem (e.g., Vendor, Buyer, Partner).'),
+        address: z.string().nullable().optional().describe("The company's physical address, if found."),
+        website: z.string().url().nullable().optional().describe("The company's website URL, if found."),
+        phone: z.string().nullable().optional().describe("The company's primary phone number, if found."),
+        email: z.string().email().nullable().optional().describe("A general contact email for the company (e.g., info@, sales@), if found."),
+        contactPerson: z.string().nullable().optional().describe("A potential contact person's name, if found."),
+    })).describe('A list of potential leads based on the research topic.')
+});

@@ -10,7 +10,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Bot, Sparkles, UserPlus } from 'lucide-react';
-import { leadGenerationFlow, LeadGenerationInputSchema, type LeadGenerationInput } from '@/ai/flows/lead-generation-flow';
+import { leadGenerationFlow, type LeadGenerationInput } from '@/ai/flows/lead-generation-flow';
+import { LeadGenerationInputSchema } from '@/ai/schemas';
 
 const defaultPrompt = `You are an AI research assistant. Your goal is to find 5 potential leads for transport companies in South Africa that would be good candidates for our logistics platform. For each lead, find the company name, their likely role (e.g., "Vendor", "Buyer", "Transporter"), a physical address, a website, a phone number, and an email address if possible. Format the output as a list of leads.`;
 
