@@ -11,6 +11,9 @@ import {
   SidebarMenuButton,
   SidebarFooter,
   SidebarInset,
+  SidebarMenuSub,
+  SidebarMenuSubItem,
+  SidebarMenuSubButton,
 } from '@/components/ui/sidebar';
 import {
   LogOut,
@@ -21,6 +24,9 @@ import {
   Calculator,
   Banknote,
   Landmark,
+  Lightbulb,
+  FileSignature,
+  ClipboardList,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -73,10 +79,10 @@ function LendingPortalContent() {
   const renderContent = useCallback(() => {
     switch (activeView) {
       case 'opportunities': return <FundingDivisionContent />;
+      case 'application': return <DiscoveryContent />;
+      case 'scoring': return <ScoringContent />;
       case 'assumptions': return <LendingAssumptions />;
       case 'loan-book': return <LoanBook />;
-      case 'discovery': return <DiscoveryContent />;
-      case 'scoring': return <ScoringContent />;
       default: return <FundingDivisionContent />;
     }
   }, [activeView]);
@@ -91,6 +97,9 @@ function LendingPortalContent() {
   }
 
   const navigate = (view: string) => router.push(`/lending?view=${view}`, { scroll: false });
+
+  const isOriginationActive = ['opportunities', 'application', 'scoring'].includes(activeView);
+  const isModellingActive = ['assumptions', 'loan-book'].includes(activeView);
   
   return (
       <SidebarProvider>
@@ -106,29 +115,43 @@ function LendingPortalContent() {
           <SidebarContent>
             <SidebarGroup>
                 <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Opportunities" isActive={activeView === 'opportunities'} onClick={() => navigate('opportunities')}>
-                        <FileSearch /><span>Opportunities</span>
+                    <SidebarMenuButton tooltip="Origination" isActive={isOriginationActive}>
+                        <Lightbulb /><span>Origination</span>
                     </SidebarMenuButton>
+                    <SidebarMenuSub>
+                        <SidebarMenuSubItem>
+                            <SidebarMenuSubButton isActive={activeView === 'opportunities'} onClick={() => navigate('opportunities')}>
+                                <FileSearch />Opportunities
+                            </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                        <SidebarMenuSubItem>
+                            <SidebarMenuSubButton isActive={activeView === 'application'} onClick={() => navigate('application')}>
+                                <FileSignature />Application
+                            </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                        <SidebarMenuSubItem>
+                            <SidebarMenuSubButton isActive={activeView === 'scoring'} onClick={() => navigate('scoring')}>
+                                <Star />Scoring
+                            </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                    </SidebarMenuSub>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Assumptions" isActive={activeView === 'assumptions'} onClick={() => navigate('assumptions')}>
-                        <Calculator /><span>Assumptions</span>
+                    <SidebarMenuButton tooltip="Modelling" isActive={isModellingActive}>
+                        <Calculator /><span>Modelling</span>
                     </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Loan Book" isActive={activeView === 'loan-book'} onClick={() => navigate('loan-book')}>
-                        <Banknote /><span>Loan Book</span>
-                    </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Discovery" isActive={activeView === 'discovery'} onClick={() => navigate('discovery')}>
-                        <FileSearch /><span>Discovery</span>
-                    </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Scoring" isActive={activeView === 'scoring'} onClick={() => navigate('scoring')}>
-                        <Star /><span>Scoring</span>
-                    </SidebarMenuButton>
+                    <SidebarMenuSub>
+                        <SidebarMenuSubItem>
+                            <SidebarMenuSubButton isActive={activeView === 'assumptions'} onClick={() => navigate('assumptions')}>
+                                <Calculator />Assumptions
+                            </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                        <SidebarMenuSubItem>
+                            <SidebarMenuSubButton isActive={activeView === 'loan-book'} onClick={() => navigate('loan-book')}>
+                                <Banknote />Loan Book
+                            </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                    </SidebarMenuSub>
                 </SidebarMenuItem>
             </SidebarGroup>
           </SidebarContent>
