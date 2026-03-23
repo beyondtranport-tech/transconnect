@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview An AI-powered Text-to-Speech (TTS) flow.
@@ -9,8 +8,19 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { TTSInputSchema, TTSOutputSchema, type TTSInput, type TTSOutput } from '@/ai/schemas';
+import { z } from 'genkit';
 import wav from 'wav';
+
+const TTSInputSchema = z.object({
+  script: z.string().min(1, 'Script cannot be empty.'),
+  voice: z.string().optional().default('Algenib'),
+});
+export type TTSInput = z.infer<typeof TTSInputSchema>;
+
+const TTSOutputSchema = z.object({
+  audioDataUri: z.string().describe('The generated audio as a data URI.'),
+});
+export type TTSOutput = z.infer<typeof TTSOutputSchema>;
 
 async function toWav(
   pcmData: Buffer,

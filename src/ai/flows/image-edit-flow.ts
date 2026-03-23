@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview An AI-powered image editing flow.
@@ -9,32 +8,51 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { ImageEditInputSchema, ImageEditOutputSchema, type ImageEditInput, type ImageEditOutput } from '@/ai/schemas';
+import { z } from 'genkit';
+
+const ImageEditInputSchema = z.object({
+  photoDataUri: z
+    .string()
+    .describe(
+      "A photo to edit, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
+    ),
+  prompt: z.string().describe('The text prompt describing the desired edit.'),
+});
+export type ImageEditInput = z.infer<typeof ImageEditInputSchema>;
+
+const ImageEditOutputSchema = z.object({
+  enhancedImageDataUri: z
+    .string()
+    .describe('The edited image as a data URI.'),
+});
+export type ImageEditOutput = z.infer<typeof ImageEditOutputSchema>;
 
 export async function imageEdit(input: ImageEditInput): Promise<ImageEditOutput> {
-  const { media } = await ai.generate({
-    model: 'googleai/gemini-2.5-flash-image',
-    prompt: [
-      { media: { url: input.photoDataUri } },
-      { text: input.prompt },
-    ],
-    config: {
-        responseModalities: ['TEXT', 'IMAGE'],
-    },
-  });
-
-  if (!media?.url) {
-    throw new Error('Image generation failed to return an image.');
-  }
-  
-  return { enhancedImageDataUri: media.url };
+  return imageEditFlow(input);
 }
 
-ai.defineFlow(
+const imageEditFlow = ai.defineFlow(
   {
     name: 'imageEditFlow',
     inputSchema: ImageEditInputSchema,
     outputSchema: ImageEditOutputSchema,
   },
-  imageEdit
+  async (input) => {
+    const { media } = await ai.generate({
+      model: 'googleai/gemini-2.5-flash-image',
+      prompt: [
+        { media: { url: input.photoDataUri } },
+        { text: input.prompt },
+      ],
+      config: {
+          responseModalities: ['TEXT', 'IMAGE'],
+      },
+    });
+
+    if (!media?.url) {
+      throw new Error('Image generation failed to return an image.');
+    }
+    
+    return { enhancedImageDataUri: media.url };
+  }
 );

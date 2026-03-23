@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview An AI-powered image generation flow.
@@ -9,7 +8,19 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { ImageGenerateInputSchema, ImageGenerateOutputSchema, type ImageGenerateInput, type ImageGenerateOutput } from '@/ai/schemas';
+import { z } from 'genkit';
+
+const ImageGenerateInputSchema = z.object({
+  prompt: z.string().describe('The text prompt describing the desired image.'),
+});
+export type ImageGenerateInput = z.infer<typeof ImageGenerateInputSchema>;
+
+const ImageGenerateOutputSchema = z.object({
+  imageDataUri: z
+    .string()
+    .describe('The generated image as a data URI.'),
+});
+export type ImageGenerateOutput = z.infer<typeof ImageGenerateOutputSchema>;
 
 export async function generateImage(input: ImageGenerateInput): Promise<ImageGenerateOutput> {
   return imageGenerateFlow(input);

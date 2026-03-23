@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview An AI-powered flow to suggest social media links for a shop.
@@ -9,7 +8,21 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { SocialLinkGeneratorInputSchema, SocialLinkGeneratorOutputSchema, type SocialLinkGeneratorInput, type SocialLinkGeneratorOutput } from '@/ai/schemas';
+import { z } from 'genkit';
+
+const SocialLinkGeneratorInputSchema = z.object({
+  shopName: z.string().describe('The name of the shop.'),
+});
+export type SocialLinkGeneratorInput = z.infer<typeof SocialLinkGeneratorInputSchema>;
+
+const SocialLinkGeneratorOutputSchema = z.object({
+  facebookLink: z.string().url().optional(),
+  instagramLink: z.string().url().optional(),
+  twitterLink: z.string().url().optional(),
+  linkedinLink: z.string().url().optional(),
+  youtubeLink: z.string().url().optional(),
+});
+export type SocialLinkGeneratorOutput = z.infer<typeof SocialLinkGeneratorOutputSchema>;
 
 export async function generateSocialLinks(input: SocialLinkGeneratorInput): Promise<SocialLinkGeneratorOutput> {
   return socialLinkGeneratorFlow(input);

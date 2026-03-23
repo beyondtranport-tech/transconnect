@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview An AI-powered video generation flow.
@@ -9,7 +8,21 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { VideoGenerateInputSchema, VideoGenerateOutputSchema, type VideoGenerateInput, type VideoGenerateOutput } from '@/ai/schemas';
+import { z } from 'genkit';
+
+const VideoGenerateInputSchema = z.object({
+  prompt: z.string().describe('The text prompt describing the desired video.'),
+  imageDataUri: z.string().optional().describe("An optional starting image for the video, as a data URI."),
+  durationSeconds: z.number().optional().default(5).describe('The duration of the video in seconds.'),
+});
+export type VideoGenerateInput = z.infer<typeof VideoGenerateInputSchema>;
+
+const VideoGenerateOutputSchema = z.object({
+  videoDataUri: z
+    .string()
+    .describe('The generated video as a data URI.'),
+});
+export type VideoGenerateOutput = z.infer<typeof VideoGenerateOutputSchema>;
 
 export async function generateVideo(input: VideoGenerateInput): Promise<VideoGenerateOutput> {  
   return videoGenerateFlow(input);

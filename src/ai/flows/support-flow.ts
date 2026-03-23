@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview An AI-powered customer support agent.
@@ -9,7 +8,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { SupportInputSchema, SupportOutputSchema, type SupportInput, type SupportOutput } from '@/ai/schemas';
+import { z } from 'genkit';
 
 const systemPrompt = `You are a helpful and friendly AI assistant for Logistics Flow, a digital ecosystem for the logistics industry in South Africa.
 
@@ -31,6 +30,20 @@ Key Platform Areas:
 - **Admin Backend:** For platform administrators to manage the entire system.
 
 Keep your answers concise, helpful, and encouraging.`;
+
+const SupportInputSchema = z.object({
+  history: z.array(z.object({
+    role: z.enum(['user', 'model']),
+    content: z.array(z.object({ text: z.string() })),
+  })).optional().describe('The conversation history prior to the latest query.'),
+  query: z.string().min(1, "Query cannot be empty.").describe('The latest user question.'),
+});
+export type SupportInput = z.infer<typeof SupportInputSchema>;
+
+const SupportOutputSchema = z.object({
+  response: z.string().describe("The AI assistant's helpful response."),
+});
+export type SupportOutput = z.infer<typeof SupportOutputSchema>;
 
 
 export async function supportQuery(input: SupportInput): Promise<SupportOutput> {
