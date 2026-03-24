@@ -38,6 +38,7 @@ const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | '
 };
 
 export default function AgreementsContent() {
+    const [view, setView] = useState<'list' | 'wizard'>('list');
     const [agreements, setAgreements] = useState<any[]>([]);
     const [clients, setClients] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -45,7 +46,6 @@ export default function AgreementsContent() {
     const { toast } = useToast();
     
     const [isStdDialogOpen, setIsStdDialogOpen] = useState(false);
-    const [isWizardOpen, setIsWizardOpen] = useState(false);
     const [selectedAgreement, setSelectedAgreement] = useState<any | null>(null);
 
     const clientMap = useMemo(() => new Map(clients.map(c => [c.id, c.name])), [clients]);
@@ -76,14 +76,34 @@ export default function AgreementsContent() {
     useEffect(() => {
         forceRefresh();
     }, [forceRefresh]);
+    
+    const handleNewStandardAgreement = () => {
+        setSelectedAgreement(null);
+        setIsStdDialogOpen(true);
+    };
+    
+    const handleNewInstallmentSale = () => {
+        setSelectedAgreement(null);
+        setView('wizard');
+    };
 
     const handleEdit = (agreement: any) => {
         setSelectedAgreement(agreement);
         if (agreement.type === 'installment-sale') {
-            setIsWizardOpen(true);
+            setView('wizard');
         } else {
             setIsStdDialogOpen(true);
         }
+    };
+    
+    const handleBackToList = () => {
+        setView('list');
+        setSelectedAgreement(null);
+    };
+
+    const handleSaveSuccess = () => {
+        forceRefresh();
+        handleBackToList();
     };
 
     const columns: ColumnDef<any>[] = useMemo(() => [
@@ -109,6 +129,17 @@ export default function AgreementsContent() {
         return <Card className="bg-destructive/10 border-destructive text-destructive-foreground"><CardHeader><CardTitle>Error</CardTitle></CardHeader><CardContent>{error}</CardContent></Card>
     }
 
+    if (view === 'wizard') {
+        return (
+            <InstallmentSaleWizard 
+                agreement={selectedAgreement}
+                clients={clients}
+                onSaveSuccess={handleSaveSuccess}
+                onBack={handleBackToList}
+            />
+        );
+    }
+
     return (
         <>
             <EditAgreementDialog 
@@ -117,16 +148,6 @@ export default function AgreementsContent() {
                 agreement={selectedAgreement}
                 clients={clients}
                 onSave={forceRefresh}
-            />
-             <InstallmentSaleWizard
-                isOpen={isWizardOpen}
-                onOpenChange={setIsWizardOpen}
-                clients={clients}
-                agreement={selectedAgreement}
-                onSave={() => {
-                    forceRefresh();
-                    setIsWizardOpen(false);
-                }}
             />
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
@@ -139,10 +160,10 @@ export default function AgreementsContent() {
                             <Button><PlusCircle className="mr-2 h-4 w-4"/>New Agreement</Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent>
-                            <DropdownMenuItem onSelect={() => { setSelectedAgreement(null); setIsWizardOpen(true); }}>
+                            <DropdownMenuItem onSelect={handleNewInstallmentSale}>
                                 Installment Sale Wizard
                             </DropdownMenuItem>
-                            <DropdownMenuItem onSelect={() => { setSelectedAgreement(null); setIsStdDialogOpen(true); }}>
+                            <DropdownMenuItem onSelect={handleNewStandardAgreement}>
                                 Standard Agreement (Loan, etc.)
                             </DropdownMenuItem>
                         </DropdownMenuContent>

@@ -1,23 +1,20 @@
-
-
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useForm, FormProvider, useFormContext } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, ArrowRight, ArrowLeft, FileSignature, Truck, Paperclip, Eye } from 'lucide-react';
+import { Loader2, Save, ArrowRight, ArrowLeft, FileSignature, Truck, Paperclip, Eye, CheckCircle } from 'lucide-react';
 import { getClientSideAuthToken, useDoc, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Progress } from '@/components/ui/progress';
+import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
 import { query, collection, doc } from 'firebase/firestore';
-
 
 // API Helper
 async function performAdminAction(token: string, action: string, payload: any) {
@@ -118,14 +115,13 @@ const steps = [
 ];
 
 interface InstallmentSaleWizardProps {
-  isOpen: boolean;
-  onOpenChange: (open: boolean) => void;
   clients: any[];
-  onSave: () => void;
+  onSaveSuccess: () => void;
+  onBack: () => void;
   agreement?: any; // Make agreement optional for create/edit
 }
 
-export function InstallmentSaleWizard({ isOpen, onOpenChange, clients, onSave, agreement }: InstallmentSaleWizardProps) {
+export function InstallmentSaleWizard({ clients, onSaveSuccess, onBack, agreement }: InstallmentSaleWizardProps) {
     const [currentStep, setCurrentStep] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
     const { toast } = useToast();
@@ -138,45 +134,45 @@ export function InstallmentSaleWizard({ isOpen, onOpenChange, clients, onSave, a
         if (!firestore || !agreement?.assetId) return null;
         return doc(firestore, 'lendingAssets', agreement.assetId);
     }, [firestore, agreement]);
-    const { data: assetData } = useDoc(assetRef);
+    const { data: assetData, isLoading: isAssetLoading } = useDoc(assetRef);
 
     const securityQuery = useMemoFirebase(() => {
         if (!firestore || !agreement) return null;
         return query(collection(firestore, `lendingClients/${agreement.clientId}/agreements/${agreement.id}/securities`));
     }, [firestore, agreement]);
-    const { data: securityData } = useCollection(securityQuery);
+    const { data: securityData, isLoading: isSecurityLoading } = useCollection(securityQuery);
     const securityDoc = securityData?.[0];
+    
+    const isEditing = !!agreement;
+    const isEditDataLoading = isEditing && (isAssetLoading || isSecurityLoading);
 
     useEffect(() => {
-        if (isOpen && agreement) {
-            // Populate form with existing data when all data is loaded
-            if (assetData && securityDoc !== undefined) {
-                 methods.reset({
-                    agreement: { 
-                        clientId: agreement.clientId,
-                        description: agreement.description,
-                        totalAdvanced: agreement.totalAdvanced,
-                        interestRate: agreement.interestRate,
-                        numberOfInstallments: agreement.numberOfInstallments
-                    },
-                    asset: { 
-                        make: assetData.make,
-                        model: assetData.model,
-                        year: assetData.year,
-                        costOfSale: assetData.costOfSale,
-                        registrationNumber: assetData.registrationNumber
-                    },
-                    security: {
-                        documentName: securityDoc.documentName,
-                        documentType: securityDoc.documentType,
-                        fileUrl: securityDoc.fileUrl,
-                    }
-                });
-            }
-        } else if (isOpen && !agreement) {
+        if (isEditing && assetData && securityDoc !== undefined) {
+             methods.reset({
+                agreement: { 
+                    clientId: agreement.clientId,
+                    description: agreement.description,
+                    totalAdvanced: agreement.totalAdvanced,
+                    interestRate: agreement.interestRate,
+                    numberOfInstallments: agreement.numberOfInstallments
+                },
+                asset: { 
+                    make: assetData.make,
+                    model: assetData.model,
+                    year: assetData.year,
+                    costOfSale: assetData.costOfSale,
+                    registrationNumber: assetData.registrationNumber
+                },
+                security: {
+                    documentName: securityDoc.documentName,
+                    documentType: securityDoc.documentType,
+                    fileUrl: securityDoc.fileUrl,
+                }
+            });
+        } else if (!isEditing) {
             methods.reset({}); // Reset for new entry
         }
-    }, [isOpen, agreement, assetData, securityDoc, methods]);
+    }, [isEditing, agreement, assetData, securityDoc, methods]);
 
 
     const onSubmit = async (values: WizardFormValues) => {
@@ -186,6 +182,7 @@ export function InstallmentSaleWizard({ isOpen, onOpenChange, clients, onSave, a
             if (!token) throw new Error("Authentication failed.");
 
             if (agreement) { // UPDATE LOGIC
+                // This is a simplified update. A real-world scenario might need more complex logic.
                 await performAdminAction(token, 'saveLendingAgreement', { agreement: { id: agreement.id, ...values.agreement } });
                 if (assetData) {
                     await performAdminAction(token, 'saveLendingAsset', { asset: { id: assetData.id, ...values.asset, clientId: values.agreement.clientId } });
@@ -198,8 +195,7 @@ export function InstallmentSaleWizard({ isOpen, onOpenChange, clients, onSave, a
                 await performAdminAction(token, 'saveInstallmentSalePackage', values);
                 toast({ title: 'Installment Sale Agreement Created!' });
             }
-            onSave();
-            onOpenChange(false);
+            onSaveSuccess();
             setCurrentStep(0);
         } catch (e: any) {
             toast({ variant: 'destructive', title: 'Save Failed', description: e.message });
@@ -211,60 +207,93 @@ export function InstallmentSaleWizard({ isOpen, onOpenChange, clients, onSave, a
     const handleNext = async () => {
         const stepFields = steps[currentStep].fields;
         const isValid = await methods.trigger(stepFields as any);
-        if (isValid) {
+        if (isValid && currentStep < steps.length - 1) {
             setCurrentStep(prev => prev + 1);
-        } else {
+        } else if (!isValid) {
             toast({ variant: "destructive", title: "Please complete all required fields for this step." });
         }
     };
     
-    const handleBack = () => setCurrentStep(prev => prev - 1);
+    const handleBackStep = () => setCurrentStep(prev => prev - 1);
     
-    const StepIcon = steps[currentStep].icon;
+     const isStepValid = (stepIndex: number) => {
+        if (stepIndex < 0 || stepIndex >= steps.length) return true;
+        const step = steps[stepIndex];
+        if (!step.fields || step.fields.length === 0) return true;
+        const fields = step.fields as (keyof WizardFormValues)[];
+        // This is a simplification; for nested objects, you'd need a more robust check
+        return fields.every(field => !methods.formState.errors[field as keyof typeof methods.formState.errors]);
+    };
+    
+    const renderStepContent = () => {
+        if (isEditDataLoading) {
+            return <div className="flex justify-center items-center h-full"><Loader2 className="h-8 w-8 animate-spin"/></div>
+        }
+        const stepId = steps[currentStep]?.id;
+        switch (stepId) {
+            case 'agreement': return <StepAgreement clients={clients} />;
+            case 'asset': return <StepAsset />;
+            case 'security': return <StepSecurity />;
+            case 'review': return <div className="text-center p-8"><p>Review all details and click {agreement ? 'Update Agreement' : 'Create Agreement'}.</p></div>
+            default: return <div>Step not found</div>;
+        }
+    };
 
     return (
-        <Dialog open={isOpen} onOpenChange={(open) => { onOpenChange(open); if(!open) setCurrentStep(0); }}>
-            <DialogContent className="sm:max-w-3xl">
-                 <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2"><StepIcon className="w-6 h-6" /> {steps[currentStep].title}</DialogTitle>
-                    <DialogDescription>
-                        {currentStep === 0 && "Enter the main financial terms of the installment sale."}
-                        {currentStep === 1 && "Provide the details of the asset being financed."}
-                        {currentStep === 2 && "Attach the primary security document for this agreement."}
-                        {currentStep === 3 && "Please review all details before submitting the agreement."}
-                    </DialogDescription>
-                </DialogHeader>
-                <Progress value={(currentStep + 1) / steps.length * 100} className="w-full" />
-                <FormProvider {...methods}>
-                    <form onSubmit={methods.handleSubmit(onSubmit)}>
-                        <div className="py-4 space-y-6 max-h-[60vh] overflow-y-auto pr-2">
-                            {currentStep === 0 && <StepAgreement clients={clients} />}
-                            {currentStep === 1 && <StepAsset />}
-                            {currentStep === 2 && <StepSecurity />}
-                            {currentStep === 3 && (
-                               <div className="space-y-4">
-                                  <p>Review the details and click {agreement ? 'Update' : 'Submit'}.</p>
-                                </div>
-                            )}
+        <Card>
+             <FormProvider {...methods}>
+                <form onSubmit={methods.handleSubmit(onSubmit)}>
+                    <CardHeader>
+                         <div className="flex justify-between items-start">
+                             <div>
+                                <h2 className="text-2xl font-bold font-headline">{agreement ? 'Edit' : 'Create'} Installment Sale</h2>
+                                <p className="text-muted-foreground">{steps[currentStep].title}</p>
+                            </div>
+                             <Button type="button" variant="ghost" onClick={onBack}><ArrowLeft className="mr-2 h-4 w-4"/> Back to List</Button>
                         </div>
-                        <DialogFooter className="pt-4 border-t">
-                            <Button type="button" variant="outline" onClick={handleBack} disabled={currentStep === 0 || isLoading}>
-                                <ArrowLeft className="mr-2"/> Back
+                    </CardHeader>
+                    <CardContent>
+                        <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] gap-8">
+                             <div className="flex flex-col gap-2 border-r pr-4">
+                                {steps.map((step, index) => {
+                                    const isCompleted = index < currentStep && isStepValid(index);
+                                    return (
+                                        <Button 
+                                            key={step.id} 
+                                            type="button"
+                                            variant={currentStep === index ? 'secondary' : 'ghost'}
+                                            className="justify-start gap-2" 
+                                            onClick={() => setCurrentStep(index)} 
+                                            disabled={index > currentStep && !isStepValid(currentStep - 1)}
+                                        >
+                                            {isCompleted ? <CheckCircle className="h-5 w-5 text-green-500" /> : <div className={cn("h-5 w-5 rounded-full flex items-center justify-center text-xs font-bold", currentStep >= index ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>{index + 1}</div>}
+                                            {step.title}
+                                        </Button>
+                                    );
+                                })}
+                            </div>
+                             <div className="space-y-6 min-h-[400px]">
+                                {renderStepContent()}
+                             </div>
+                        </div>
+                    </CardContent>
+                    <CardFooter className="flex justify-between border-t pt-6 mt-6">
+                        <Button type="button" variant="outline" onClick={handleBackStep} disabled={currentStep === 0 || isLoading}>
+                            <ArrowLeft className="mr-2 h-4 w-4" /> Back
+                        </Button>
+                        {currentStep < steps.length - 1 ? (
+                            <Button type="button" onClick={handleNext}>
+                                Next <ArrowRight className="ml-2 h-4 w-4"/>
                             </Button>
-                            {currentStep < steps.length - 1 ? (
-                                <Button type="button" onClick={handleNext}>
-                                    Next <ArrowRight className="ml-2"/>
-                                </Button>
-                            ) : (
-                                <Button type="submit" disabled={isLoading}>
-                                    {isLoading ? <Loader2 className="mr-2 animate-spin"/> : <Save className="mr-2"/>}
-                                    {agreement ? 'Update Agreement' : 'Submit'}
-                                </Button>
-                            )}
-                        </DialogFooter>
-                    </form>
-                </FormProvider>
-            </DialogContent>
-        </Dialog>
+                        ) : (
+                            <Button type="submit" disabled={isLoading}>
+                                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                                {agreement ? 'Update Agreement' : 'Create Agreement'}
+                            </Button>
+                        )}
+                    </CardFooter>
+                </form>
+            </FormProvider>
+        </Card>
     );
 }
