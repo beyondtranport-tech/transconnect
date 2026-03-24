@@ -79,9 +79,13 @@ export default function AgreementsContent() {
         forceRefresh();
     }, [forceRefresh]);
 
-    const handleOpenEditDialog = (agreement: any) => {
+    const handleEdit = (agreement: any) => {
         setSelectedAgreement(agreement);
-        setIsStdDialogOpen(true);
+        if (agreement.type === 'installment-sale') {
+            setIsWizardOpen(true);
+        } else {
+            setIsStdDialogOpen(true);
+        }
     };
 
     const columns: ColumnDef<any>[] = useMemo(() => [
@@ -96,7 +100,7 @@ export default function AgreementsContent() {
         { accessorKey: 'createDate', header: 'Date Created', cell: ({row}) => formatDateSafe(row.original.createDate) },
         { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
             <div className="text-right">
-                 <Button variant="ghost" size="icon" onClick={() => handleOpenEditDialog(row.original)}>
+                 <Button variant="ghost" size="icon" onClick={() => handleEdit(row.original)}>
                     <Edit className="h-4 w-4" />
                 </Button>
             </div>
@@ -120,6 +124,7 @@ export default function AgreementsContent() {
                 isOpen={isWizardOpen}
                 onOpenChange={setIsWizardOpen}
                 clients={clients}
+                agreement={selectedAgreement}
                 onSave={() => {
                     forceRefresh();
                     setIsWizardOpen(false);
@@ -139,7 +144,7 @@ export default function AgreementsContent() {
                             <DropdownMenuItem onSelect={() => setIsWizardOpen(true)}>
                                 Installment Sale Wizard
                             </DropdownMenuItem>
-                            <DropdownMenuItem onSelect={() => handleOpenDialog(null)}>
+                            <DropdownMenuItem onSelect={() => handleEdit(null)}>
                                 Standard Agreement (Loan, etc.)
                             </DropdownMenuItem>
                         </DropdownMenuContent>

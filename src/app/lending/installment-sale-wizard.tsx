@@ -2,7 +2,7 @@
 
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm, FormProvider, useFormContext } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -13,9 +13,11 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Save, ArrowRight, ArrowLeft, FileSignature, Truck, Paperclip, Eye } from 'lucide-react';
-import { getClientSideAuthToken } from '@/firebase';
+import { getClientSideAuthToken, useDoc, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
+import { query, collection, doc } from 'firebase/firestore';
+
 
 // API Helper
 async function performAdminAction(token: string, action: string, payload: any) {
@@ -115,33 +117,97 @@ const steps = [
     { id: 'review', title: 'Review & Submit', icon: Eye, fields: [] },
 ];
 
+interface InstallmentSaleWizardProps {
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+  clients: any[];
+  onSave: () => void;
+  agreement?: any; // Make agreement optional for create/edit
+}
 
-export function InstallmentSaleWizard({ isOpen, onOpenChange, clients, onSave }: { isOpen: boolean, onOpenChange: (open: boolean) => void, clients: any[], onSave: () => void }) {
+export function InstallmentSaleWizard({ isOpen, onOpenChange, clients, onSave, agreement }: InstallmentSaleWizardProps) {
     const [currentStep, setCurrentStep] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
     const { toast } = useToast();
+    const firestore = useFirestore();
 
-    const methods = useForm<WizardFormValues>({
-        resolver: zodResolver(wizardSchema),
-    });
+    const methods = useForm<WizardFormValues>({ resolver: zodResolver(wizardSchema) });
+
+    // Fetch related data if in edit mode
+    const assetRef = useMemoFirebase(() => {
+        if (!firestore || !agreement?.assetId) return null;
+        return doc(firestore, 'lendingAssets', agreement.assetId);
+    }, [firestore, agreement]);
+    const { data: assetData } = useDoc(assetRef);
+
+    const securityQuery = useMemoFirebase(() => {
+        if (!firestore || !agreement) return null;
+        return query(collection(firestore, `lendingClients/${agreement.clientId}/agreements/${agreement.id}/securities`));
+    }, [firestore, agreement]);
+    const { data: securityData } = useCollection(securityQuery);
+    const securityDoc = securityData?.[0];
+
+    useEffect(() => {
+        if (isOpen && agreement) {
+            // Populate form with existing data when all data is loaded
+            if (assetData && securityDoc !== undefined) {
+                 methods.reset({
+                    agreement: { 
+                        clientId: agreement.clientId,
+                        description: agreement.description,
+                        totalAdvanced: agreement.totalAdvanced,
+                        interestRate: agreement.interestRate,
+                        numberOfInstallments: agreement.numberOfInstallments
+                    },
+                    asset: { 
+                        make: assetData.make,
+                        model: assetData.model,
+                        year: assetData.year,
+                        costOfSale: assetData.costOfSale,
+                        registrationNumber: assetData.registrationNumber
+                    },
+                    security: {
+                        documentName: securityDoc.documentName,
+                        documentType: securityDoc.documentType,
+                        fileUrl: securityDoc.fileUrl,
+                    }
+                });
+            }
+        } else if (isOpen && !agreement) {
+            methods.reset({}); // Reset for new entry
+        }
+    }, [isOpen, agreement, assetData, securityDoc, methods]);
+
 
     const onSubmit = async (values: WizardFormValues) => {
         setIsLoading(true);
         try {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication failed.");
-            await performAdminAction(token, 'saveInstallmentSalePackage', values);
-            toast({ title: 'Installment Sale Agreement Created!', description: 'All related documents have been saved.' });
+
+            if (agreement) { // UPDATE LOGIC
+                await performAdminAction(token, 'saveLendingAgreement', { agreement: { id: agreement.id, ...values.agreement } });
+                if (assetData) {
+                    await performAdminAction(token, 'saveLendingAsset', { asset: { id: assetData.id, ...values.asset, clientId: values.agreement.clientId } });
+                }
+                if (securityDoc) {
+                    await performAdminAction(token, 'saveLendingSecurity', { security: { id: securityDoc.id, ...values.security, clientId: values.agreement.clientId, agreementId: agreement.id } });
+                }
+                toast({ title: 'Installment Sale Agreement Updated!' });
+            } else { // CREATE LOGIC
+                await performAdminAction(token, 'saveInstallmentSalePackage', values);
+                toast({ title: 'Installment Sale Agreement Created!' });
+            }
             onSave();
             onOpenChange(false);
-            setCurrentStep(0); // Reset wizard on close
+            setCurrentStep(0);
         } catch (e: any) {
             toast({ variant: 'destructive', title: 'Save Failed', description: e.message });
         } finally {
             setIsLoading(false);
         }
     };
-
+    
     const handleNext = async () => {
         const stepFields = steps[currentStep].fields;
         const isValid = await methods.trigger(stepFields as any);
@@ -165,7 +231,7 @@ export function InstallmentSaleWizard({ isOpen, onOpenChange, clients, onSave }:
                         {currentStep === 0 && "Enter the main financial terms of the installment sale."}
                         {currentStep === 1 && "Provide the details of the asset being financed."}
                         {currentStep === 2 && "Attach the primary security document for this agreement."}
-                        {currentStep === 3 && "Please review all details before creating the agreement."}
+                        {currentStep === 3 && "Please review all details before submitting the agreement."}
                     </DialogDescription>
                 </DialogHeader>
                 <Progress value={(currentStep + 1) / steps.length * 100} className="w-full" />
@@ -177,7 +243,7 @@ export function InstallmentSaleWizard({ isOpen, onOpenChange, clients, onSave }:
                             {currentStep === 2 && <StepSecurity />}
                             {currentStep === 3 && (
                                <div className="space-y-4">
-                                  <p>Review the details and click Submit.</p>
+                                  <p>Review the details and click {agreement ? 'Update' : 'Submit'}.</p>
                                 </div>
                             )}
                         </div>
@@ -192,7 +258,7 @@ export function InstallmentSaleWizard({ isOpen, onOpenChange, clients, onSave }:
                             ) : (
                                 <Button type="submit" disabled={isLoading}>
                                     {isLoading ? <Loader2 className="mr-2 animate-spin"/> : <Save className="mr-2"/>}
-                                    Submit
+                                    {agreement ? 'Update Agreement' : 'Submit'}
                                 </Button>
                             )}
                         </DialogFooter>
