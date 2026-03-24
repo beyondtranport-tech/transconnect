@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -12,7 +11,6 @@ import {
   SidebarFooter,
   SidebarInset,
   SidebarMenuSub,
-  SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
 import {
