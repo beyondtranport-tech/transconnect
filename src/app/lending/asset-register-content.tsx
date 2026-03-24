@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -10,7 +11,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { getClientSideAuthToken } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { formatCurrency } from '@/lib/utils';
-import { EditAssetDialog } from './edit-asset';
+import { EditAssetWizard } from './edit-asset';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 
@@ -42,7 +43,7 @@ export default function AssetRegisterContent() {
     const [error, setError] = useState<string | null>(null);
     const { toast } = useToast();
     
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [view, setView] = useState<'list' | 'wizard'>('list');
     const [selectedAsset, setSelectedAsset] = useState<any | null>(null);
     const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
     const [assetToDelete, setAssetToDelete] = useState<any | null>(null);
@@ -76,9 +77,24 @@ export default function AssetRegisterContent() {
         forceRefresh();
     }, [forceRefresh]);
 
-    const handleOpenDialog = (asset: any | null = null) => {
+    const handleEdit = (asset: any) => {
         setSelectedAsset(asset);
-        setIsDialogOpen(true);
+        setView('wizard');
+    };
+
+    const handleAddNew = () => {
+        setSelectedAsset(null);
+        setView('wizard');
+    };
+
+    const handleBackToList = () => {
+        setView('list');
+        setSelectedAsset(null);
+    };
+
+    const handleSaveSuccess = () => {
+        forceRefresh();
+        handleBackToList();
     };
 
     const handleDelete = async () => {
@@ -108,7 +124,7 @@ export default function AssetRegisterContent() {
         { accessorKey: 'registrationNumber', header: 'Registration #' },
         { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
             <div className="text-right">
-                <Button variant="ghost" size="icon" onClick={() => handleOpenDialog(row.original)}><Edit className="h-4 w-4" /></Button>
+                <Button variant="ghost" size="icon" onClick={() => handleEdit(row.original)}><Edit className="h-4 w-4" /></Button>
                 <Button variant="ghost" size="icon" onClick={() => { setAssetToDelete(row.original); setIsDeleteAlertOpen(true); }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
             </div>
         )},
@@ -118,15 +134,12 @@ export default function AssetRegisterContent() {
         return <Card className="bg-destructive/10 border-destructive text-destructive-foreground"><CardHeader><CardTitle>Error</CardTitle></CardHeader><CardContent>{error}</CardContent></Card>
     }
 
+    if (view === 'wizard') {
+        return <EditAssetWizard asset={selectedAsset} clients={clients} onSave={handleSaveSuccess} onBack={handleBackToList} />;
+    }
+
     return (
         <>
-            <EditAssetDialog 
-                isOpen={isDialogOpen}
-                onOpenChange={setIsDialogOpen}
-                asset={selectedAsset}
-                clients={clients}
-                onSave={forceRefresh}
-            />
             <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
@@ -145,7 +158,7 @@ export default function AssetRegisterContent() {
                         <CardTitle className="flex items-center gap-2"><Truck /> Asset Register</CardTitle>
                         <CardDescription>Manage all financed assets in the lending system.</CardDescription>
                     </div>
-                    <Button onClick={() => handleOpenDialog(null)}><PlusCircle className="mr-2 h-4 w-4"/>Add Asset</Button>
+                    <Button onClick={handleAddNew}><PlusCircle className="mr-2 h-4 w-4"/>Add Asset</Button>
                 </CardHeader>
                 <CardContent>
                     {isLoading ? (

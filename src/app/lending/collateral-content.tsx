@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -9,7 +10,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { getClientSideAuthToken } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { formatDateSafe } from '@/lib/utils';
-import { EditSecurityDialog } from './edit-security';
+import { EditSecurityWizard } from './edit-security';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import Link from 'next/link';
 
@@ -35,7 +36,7 @@ export default function CollateralContent() {
     const [error, setError] = useState<string | null>(null);
     const { toast } = useToast();
     
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [view, setView] = useState<'list' | 'wizard'>('list');
     const [selectedSecurity, setSelectedSecurity] = useState<any | null>(null);
     const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
     const [securityToDelete, setSecurityToDelete] = useState<any | null>(null);
@@ -72,9 +73,24 @@ export default function CollateralContent() {
         forceRefresh();
     }, [forceRefresh]);
 
-    const handleOpenDialog = (security: any | null = null) => {
+    const handleEdit = (security: any) => {
         setSelectedSecurity(security);
-        setIsDialogOpen(true);
+        setView('wizard');
+    };
+
+    const handleAddNew = () => {
+        setSelectedSecurity(null);
+        setView('wizard');
+    };
+    
+    const handleBackToList = () => {
+        setView('list');
+        setSelectedSecurity(null);
+    };
+    
+    const handleSaveSuccess = () => {
+        forceRefresh();
+        handleBackToList();
     };
 
     const handleDelete = async () => {
@@ -108,7 +124,7 @@ export default function CollateralContent() {
         { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
             <div className="text-right">
                 <Button asChild variant="ghost" size="icon"><a href={row.original.fileUrl} target="_blank" rel="noopener noreferrer" title="Download"><Download className="h-4 w-4"/></a></Button>
-                <Button variant="ghost" size="icon" onClick={() => handleOpenDialog(row.original)} title="Edit"><Edit className="h-4 w-4" /></Button>
+                <Button variant="ghost" size="icon" onClick={() => handleEdit(row.original)} title="Edit"><Edit className="h-4 w-4" /></Button>
                 <Button variant="ghost" size="icon" onClick={() => { setSecurityToDelete(row.original); setIsDeleteAlertOpen(true); }} title="Delete"><Trash2 className="h-4 w-4 text-destructive" /></Button>
             </div>
         )},
@@ -117,17 +133,13 @@ export default function CollateralContent() {
     if (error) {
         return <Card className="bg-destructive/10 border-destructive text-destructive-foreground"><CardHeader><CardTitle>Error</CardTitle></CardHeader><CardContent>{error}</CardContent></Card>
     }
+    
+    if (view === 'wizard') {
+        return <EditSecurityWizard security={selectedSecurity} clients={clients} agreements={agreements} onSave={handleSaveSuccess} onBack={handleBackToList} />;
+    }
 
     return (
         <>
-            <EditSecurityDialog 
-                isOpen={isDialogOpen}
-                onOpenChange={setIsDialogOpen}
-                security={selectedSecurity}
-                clients={clients}
-                agreements={agreements}
-                onSave={forceRefresh}
-            />
             <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
@@ -146,7 +158,7 @@ export default function CollateralContent() {
                         <CardTitle className="flex items-center gap-2"><Paperclip /> Collateral Management</CardTitle>
                         <CardDescription>Manage all security documents related to lending agreements.</CardDescription>
                     </div>
-                    <Button onClick={() => handleOpenDialog(null)}><PlusCircle className="mr-2 h-4 w-4"/>Add Document</Button>
+                    <Button onClick={handleAddNew}><PlusCircle className="mr-2 h-4 w-4"/>Add Document</Button>
                 </CardHeader>
                 <CardContent>
                     {isLoading ? (

@@ -12,7 +12,7 @@ import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import Link from 'next/link';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { EditClient } from './edit-client';
+import { EditClientWizard } from './edit-client';
 
 // API Helper
 async function performAdminAction(token: string, action: string, payload: any) {
@@ -35,7 +35,7 @@ export default function ClientsContent() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    const [view, setView] = useState<'list' | 'edit'>('list');
+    const [view, setView] = useState<'list' | 'wizard'>('list');
     const [selectedClient, setSelectedClient] = useState<any | null>(null);
     const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
     const [clientToDelete, setClientToDelete] = useState<any | null>(null);
@@ -62,22 +62,23 @@ export default function ClientsContent() {
 
     const handleEdit = (client: any) => {
         setSelectedClient(client);
-        setView('edit');
+        setView('wizard');
     };
 
     const handleAddNew = () => {
         setSelectedClient(null);
-        setView('edit');
+        setView('wizard');
     };
     
     const handleBackToList = () => {
-        setView('list');
+        setView('wizard');
         setSelectedClient(null);
     };
 
     const handleSaveSuccess = () => {
         forceRefresh();
-        handleBackToList();
+        setView('list');
+        setSelectedClient(null);
     };
 
     const handleDelete = async () => {
@@ -113,8 +114,8 @@ export default function ClientsContent() {
         return <Card className="bg-destructive/10 border-destructive text-destructive-foreground"><CardHeader><CardTitle>Error</CardTitle></CardHeader><CardContent>{error}</CardContent></Card>
     }
 
-    if (view === 'edit') {
-        return <EditClient client={selectedClient} onSave={handleSaveSuccess} onBack={handleBackToList} />;
+    if (view === 'wizard') {
+        return <EditClientWizard client={selectedClient} onSave={handleSaveSuccess} onBack={handleBackToList} />;
     }
 
     return (

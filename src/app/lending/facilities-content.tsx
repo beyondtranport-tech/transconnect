@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -10,7 +11,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { getClientSideAuthToken } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { formatCurrency } from '@/lib/utils';
-import { EditFacilityDialog } from './edit-facility';
+import { EditFacilityWizard } from './edit-facility';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 
@@ -42,7 +43,7 @@ export default function FacilitiesContent() {
     const [error, setError] = useState<string | null>(null);
     const { toast } = useToast();
     
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [view, setView] = useState<'list' | 'wizard'>('list');
     const [selectedFacility, setSelectedFacility] = useState<any | null>(null);
     const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
     const [facilityToDelete, setFacilityToDelete] = useState<any | null>(null);
@@ -79,9 +80,24 @@ export default function FacilitiesContent() {
         forceRefresh();
     }, [forceRefresh]);
 
-    const handleOpenDialog = (facility: any | null = null) => {
+    const handleEdit = (facility: any) => {
         setSelectedFacility(facility);
-        setIsDialogOpen(true);
+        setView('wizard');
+    };
+
+    const handleAddNew = () => {
+        setSelectedFacility(null);
+        setView('wizard');
+    };
+    
+    const handleBackToList = () => {
+        setView('list');
+        setSelectedFacility(null);
+    };
+
+    const handleSaveSuccess = () => {
+        forceRefresh();
+        handleBackToList();
     };
     
     const handleDelete = async () => {
@@ -111,7 +127,7 @@ export default function FacilitiesContent() {
         { accessorKey: 'status', header: 'Status', cell: ({row}) => <Badge variant={statusColors[row.original.status] || 'secondary'} className="capitalize">{row.original.status?.replace(/_/g, ' ')}</Badge> },
         { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
             <div className="text-right">
-                <Button variant="ghost" size="icon" onClick={() => handleOpenDialog(row.original)}><Edit className="h-4 w-4" /></Button>
+                <Button variant="ghost" size="icon" onClick={() => handleEdit(row.original)}><Edit className="h-4 w-4" /></Button>
                 <Button variant="ghost" size="icon" onClick={() => { setFacilityToDelete(row.original); setIsDeleteAlertOpen(true); }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
             </div>
         )},
@@ -120,17 +136,13 @@ export default function FacilitiesContent() {
     if (error) {
         return <Card className="bg-destructive/10 border-destructive text-destructive-foreground"><CardHeader><CardTitle>Error</CardTitle></CardHeader><CardContent>{error}</CardContent></Card>
     }
+    
+    if (view === 'wizard') {
+        return <EditFacilityWizard facility={selectedFacility} clients={clients} partners={partners} onSave={handleSaveSuccess} onBack={handleBackToList} />;
+    }
 
     return (
         <>
-            <EditFacilityDialog 
-                isOpen={isDialogOpen}
-                onOpenChange={setIsDialogOpen}
-                facility={selectedFacility}
-                clients={clients}
-                partners={partners}
-                onSave={forceRefresh}
-            />
              <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
@@ -149,7 +161,7 @@ export default function FacilitiesContent() {
                         <CardTitle className="flex items-center gap-2"><Banknote /> Credit Facilities</CardTitle>
                         <CardDescription>Manage all credit facilities granted to clients.</CardDescription>
                     </div>
-                    <Button onClick={() => handleOpenDialog(null)}><PlusCircle className="mr-2 h-4 w-4"/>New Facility</Button>
+                    <Button onClick={handleAddNew}><PlusCircle className="mr-2 h-4 w-4"/>New Facility</Button>
                 </CardHeader>
                 <CardContent>
                     {isLoading ? (
