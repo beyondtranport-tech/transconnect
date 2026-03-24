@@ -62,7 +62,7 @@ function SignInFormComponent() {
         const defaultRedirect = isAdmin ? '/adminaccount' : '/account';
         router.push(redirectParam || defaultRedirect);
     }
-  }, [authActionInitiated, isUserLoading, user, router, redirectParam]);
+  }, [authActionInitiated, isUserLoading, user, router, redirectParam, toast]);
 
 
   const form = useForm<SignInFormValues>({
@@ -137,14 +137,26 @@ function SignInFormComponent() {
           body: JSON.stringify({ idToken }),
       });
       
-      // Run in the background without blocking UI
-      fetch('/api/checkAndCreateUser', {
+      // FIX: Wait for the user document to be created/verified before proceeding.
+      const checkAndCreateResponse = await fetch('/api/checkAndCreateUser', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({}),
-      }).catch(e => console.error("Non-critical background profile check failed:", e));
+      });
+
+      if (!checkAndCreateResponse.ok) {
+        const errorResult = await checkAndCreateResponse.json();
+        // This is not a critical failure for sign-in, as the user might exist.
+        // Log it and show a non-blocking toast.
+        console.error("Background profile check/creation failed:", errorResult.error);
+        toast({
+            variant: "destructive",
+            title: "Profile Check Failed",
+            description: "There was a problem verifying your profile. Some features may not work correctly."
+        })
+      }
       
-      // Trigger the redirect process
+      // Trigger the client-side data refresh process
       setAuthActionInitiated(true);
       forceRefresh();
 
