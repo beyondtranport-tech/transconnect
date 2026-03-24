@@ -1,8 +1,9 @@
 
+
 'use client';
 
 import React, { useState } from 'react';
-import { useForm, FormProvider } from 'react-hook-form';
+import { useForm, FormProvider, useFormContext } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
@@ -50,7 +51,7 @@ const assetSchema = z.object({
 const securitySchema = z.object({
   documentName: z.string().min(1, 'Document name is required'),
   documentType: z.string().min(1, 'Document type is required'),
-  fileUrl: z.string().url('A valid file URL is required after upload.'),
+  fileUrl: z.string().url('A valid file URL is required after upload.').optional().or(z.literal('')),
 });
 
 const wizardSchema = z.object({
@@ -62,47 +63,55 @@ const wizardSchema = z.object({
 type WizardFormValues = z.infer<typeof wizardSchema>;
 
 // Step Components
-const StepAgreement = ({ clients }: { clients: any[] }) => (
-    <div className="space-y-4">
-        <FormField control={useForm<WizardFormValues>().control} name="agreement.clientId" render={({ field }) => (<FormItem><FormLabel>Client</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a client..." /></SelectTrigger></FormControl><SelectContent>{clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
-        <FormField control={useForm<WizardFormValues>().control} name="agreement.description" render={({ field }) => (<FormItem><FormLabel>Agreement Description</FormLabel><FormControl><Textarea placeholder="e.g., Asset finance for Scania R500" {...field} /></FormControl><FormMessage /></FormItem>)} />
-        <div className="grid grid-cols-3 gap-4">
-            <FormField control={useForm<WizardFormValues>().control} name="agreement.totalAdvanced" render={({ field }) => (<FormItem><FormLabel>Amount (R)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
-            <FormField control={useForm<WizardFormValues>().control} name="agreement.interestRate" render={({ field }) => (<FormItem><FormLabel>Rate (%)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
-            <FormField control={useForm<WizardFormValues>().control} name="agreement.numberOfInstallments" render={({ field }) => (<FormItem><FormLabel>Term (Months)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+const StepAgreement = ({ clients }: { clients: any[] }) => {
+    const { control } = useFormContext<WizardFormValues>();
+    return (
+        <div className="space-y-4">
+            <FormField control={control} name="agreement.clientId" render={({ field }) => (<FormItem><FormLabel>Client</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a client..." /></SelectTrigger></FormControl><SelectContent>{clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
+            <FormField control={control} name="agreement.description" render={({ field }) => (<FormItem><FormLabel>Agreement Description</FormLabel><FormControl><Textarea placeholder="e.g., Asset finance for Scania R500" {...field} /></FormControl><FormMessage /></FormItem>)} />
+            <div className="grid grid-cols-3 gap-4">
+                <FormField control={control} name="agreement.totalAdvanced" render={({ field }) => (<FormItem><FormLabel>Amount (R)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={control} name="agreement.interestRate" render={({ field }) => (<FormItem><FormLabel>Rate (%)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={control} name="agreement.numberOfInstallments" render={({ field }) => (<FormItem><FormLabel>Term (Months)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+            </div>
         </div>
-    </div>
-);
+    );
+};
 
-const StepAsset = () => (
-    <div className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <FormField control={useForm<WizardFormValues>().control} name="asset.make" render={({ field }) => (<FormItem><FormLabel>Make</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-            <FormField control={useForm<WizardFormValues>().control} name="asset.model" render={({ field }) => (<FormItem><FormLabel>Model</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-            <FormField control={useForm<WizardFormValues>().control} name="asset.year" render={({ field }) => (<FormItem><FormLabel>Year</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+const StepAsset = () => {
+     const { control } = useFormContext<WizardFormValues>();
+     return (
+        <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <FormField control={control} name="asset.make" render={({ field }) => (<FormItem><FormLabel>Make</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={control} name="asset.model" render={({ field }) => (<FormItem><FormLabel>Model</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={control} name="asset.year" render={({ field }) => (<FormItem><FormLabel>Year</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField control={control} name="asset.costOfSale" render={({ field }) => (<FormItem><FormLabel>Cost (Excl. VAT)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={control} name="asset.registrationNumber" render={({ field }) => (<FormItem><FormLabel>Registration #</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+            </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField control={useForm<WizardFormValues>().control} name="asset.costOfSale" render={({ field }) => (<FormItem><FormLabel>Cost (Excl. VAT)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
-            <FormField control={useForm<WizardFormValues>().control} name="asset.registrationNumber" render={({ field }) => (<FormItem><FormLabel>Registration #</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-        </div>
-    </div>
-);
+    );
+};
 
-const StepSecurity = () => (
-    <div className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-            <FormField control={useForm<WizardFormValues>().control} name="security.documentName" render={({ field }) => (<FormItem><FormLabel>Document Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-            <FormField control={useForm<WizardFormValues>().control} name="security.documentType" render={({ field }) => (<FormItem><FormLabel>Document Type</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select type..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="surety">Surety</SelectItem><SelectItem value="pledge">Pledge</SelectItem><SelectItem value="cession">Cession</SelectItem><SelectItem value="notarial_bond">Notarial Bond</SelectItem><SelectItem value="other">Other</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
+const StepSecurity = () => {
+    const { control } = useFormContext<WizardFormValues>();
+    return (
+        <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+                <FormField control={control} name="security.documentName" render={({ field }) => (<FormItem><FormLabel>Document Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={control} name="security.documentType" render={({ field }) => (<FormItem><FormLabel>Document Type</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select type..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="surety">Surety</SelectItem><SelectItem value="pledge">Pledge</SelectItem><SelectItem value="cession">Cession</SelectItem><SelectItem value="notarial_bond">Notarial Bond</SelectItem><SelectItem value="other">Other</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
+            </div>
+            <FormField control={control} name="security.fileUrl" render={({ field }) => (<FormItem><FormLabel>File URL (Upload Later)</FormLabel><FormControl><Input {...field} placeholder="URL will be generated after upload" /></FormControl><FormMessage /></FormItem>)} />
         </div>
-        <FormField control={useForm<WizardFormValues>().control} name="security.fileUrl" render={({ field }) => (<FormItem><FormLabel>File URL</FormLabel><FormControl><Input {...field} placeholder="Upload file to get URL" /></FormControl><FormMessage /></FormItem>)} />
-    </div>
-);
-
+    );
+};
 
 const steps = [
     { id: 'agreement', title: 'Agreement Details', icon: FileSignature, fields: ['agreement.clientId', 'agreement.description', 'agreement.totalAdvanced', 'agreement.interestRate', 'agreement.numberOfInstallments'] },
     { id: 'asset', title: 'Asset Details', icon: Truck, fields: ['asset.make', 'asset.model', 'asset.year', 'asset.costOfSale'] },
-    { id: 'security', title: 'Security Document', icon: Paperclip, fields: ['security.documentName', 'security.documentType', 'security.fileUrl'] },
+    { id: 'security', title: 'Security Document', icon: Paperclip, fields: ['security.documentName', 'security.documentType'] },
     { id: 'review', title: 'Review & Submit', icon: Eye, fields: [] },
 ];
 
@@ -125,6 +134,7 @@ export function InstallmentSaleWizard({ isOpen, onOpenChange, clients, onSave }:
             toast({ title: 'Installment Sale Agreement Created!', description: 'All related documents have been saved.' });
             onSave();
             onOpenChange(false);
+            setCurrentStep(0); // Reset wizard on close
         } catch (e: any) {
             toast({ variant: 'destructive', title: 'Save Failed', description: e.message });
         } finally {
@@ -167,7 +177,6 @@ export function InstallmentSaleWizard({ isOpen, onOpenChange, clients, onSave }:
                             {currentStep === 2 && <StepSecurity />}
                             {currentStep === 3 && (
                                <div className="space-y-4">
-                                  {/* Review content could be more detailed */}
                                   <p>Review the details and click Submit.</p>
                                 </div>
                             )}
