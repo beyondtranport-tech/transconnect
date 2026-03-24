@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -16,7 +14,7 @@ import { EditAgreementDialog } from './edit-agreement';
 import { InstallmentSaleWizard } from './installment-sale-wizard';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
-async function fetchFromAdminAPI(token: string, action: string, payload?: any) {
+async function performAdminAction(token: string, action: string, payload?: any) {
     const response = await fetch('/api/admin', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -60,8 +58,8 @@ export default function AgreementsContent() {
             if (!token) throw new Error("Authentication failed.");
             
             const [agreementsRes, clientsRes] = await Promise.all([
-                fetchFromAdminAPI(token, 'getLendingData', { collectionName: 'agreements' }),
-                fetchFromAdminAPI(token, 'getLendingData', { collectionName: 'lendingClients' })
+                performAdminAction(token, 'getLendingData', { collectionName: 'agreements' }),
+                performAdminAction(token, 'getLendingData', { collectionName: 'lendingClients' })
             ]);
             
             setAgreements(agreementsRes.data || []);
@@ -141,10 +139,10 @@ export default function AgreementsContent() {
                             <Button><PlusCircle className="mr-2 h-4 w-4"/>New Agreement</Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent>
-                            <DropdownMenuItem onSelect={() => setIsWizardOpen(true)}>
+                            <DropdownMenuItem onSelect={() => { setSelectedAgreement(null); setIsWizardOpen(true); }}>
                                 Installment Sale Wizard
                             </DropdownMenuItem>
-                            <DropdownMenuItem onSelect={() => handleEdit(null)}>
+                            <DropdownMenuItem onSelect={() => { setSelectedAgreement(null); setIsStdDialogOpen(true); }}>
                                 Standard Agreement (Loan, etc.)
                             </DropdownMenuItem>
                         </DropdownMenuContent>
