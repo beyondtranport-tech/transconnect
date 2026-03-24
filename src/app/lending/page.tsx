@@ -12,14 +12,13 @@ import {
   SidebarFooter,
   SidebarInset,
   SidebarMenuSub,
-  SidebarMenuSubItem,
   SidebarMenuSubButton,
+  SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
 import {
   LogOut,
   Loader2,
   User,
-  FileSearch,
   Star,
   Calculator,
   Banknote,
@@ -27,6 +26,12 @@ import {
   Lightbulb,
   FileSignature,
   ClipboardList,
+  Users,
+  Handshake,
+  Truck,
+  Repeat,
+  Paperclip,
+  CalendarCheck,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -45,6 +50,15 @@ const LendingAssumptions = dynamic(() => import('./lending-assumptions'), { load
 const LoanBook = dynamic(() => import('./loan-book'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const DiscoveryContent = dynamic(() => import('./discovery-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const ScoringContent = dynamic(() => import('./scoring-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const ClientsContent = dynamic(() => import('./clients-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const PartnersContent = dynamic(() => import('./partners-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const AgreementsContent = dynamic(() => import('./agreements-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const AssetRegisterContent = dynamic(() => import('./asset-register-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const TransactionsContent = dynamic(() => import('./transactions-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const FacilitiesContent = dynamic(() => import('./facilities-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const CollateralContent = dynamic(() => import('./collateral-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const PaymentsContent = dynamic(() => import('./payments-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const FinancialModel = dynamic(() => import('./financial-model'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 
 function LendingPortalContent() {
@@ -79,8 +93,17 @@ function LendingPortalContent() {
   const renderContent = useCallback(() => {
     switch (activeView) {
       case 'opportunities': return <FundingDivisionContent />;
-      case 'application': return <DiscoveryContent />;
+      case 'discovery': return <DiscoveryContent />;
       case 'scoring': return <ScoringContent />;
+      case 'clients': return <ClientsContent />;
+      case 'partners': return <PartnersContent />;
+      case 'agreements': return <AgreementsContent />;
+      case 'asset-register': return <AssetRegisterContent />;
+      case 'transactions': return <TransactionsContent />;
+      case 'facilities': return <FacilitiesContent />;
+      case 'collateral': return <CollateralContent />;
+      case 'payments': return <PaymentsContent />;
+      case 'financial-model': return <FinancialModel />;
       case 'assumptions': return <LendingAssumptions />;
       case 'loan-book': return <LoanBook />;
       default: return <FundingDivisionContent />;
@@ -98,8 +121,9 @@ function LendingPortalContent() {
 
   const navigate = (view: string) => router.push(`/lending?view=${view}`, { scroll: false });
 
-  const isOriginationActive = ['opportunities', 'application', 'scoring'].includes(activeView);
-  const isModellingActive = ['assumptions', 'loan-book'].includes(activeView);
+  const isOriginationActive = ['opportunities', 'discovery', 'scoring'].includes(activeView);
+  const isPortfolioActive = ['clients', 'partners', 'agreements', 'asset-register', 'transactions', 'facilities', 'collateral', 'payments'].includes(activeView);
+  const isModellingActive = ['financial-model', 'assumptions', 'loan-book'].includes(activeView);
   
   return (
       <SidebarProvider>
@@ -121,17 +145,64 @@ function LendingPortalContent() {
                     <SidebarMenuSub>
                         <SidebarMenuSubItem>
                             <SidebarMenuSubButton isActive={activeView === 'opportunities'} onClick={() => navigate('opportunities')}>
-                                <FileSearch />Opportunities
+                                Opportunities
                             </SidebarMenuSubButton>
                         </SidebarMenuSubItem>
                         <SidebarMenuSubItem>
-                            <SidebarMenuSubButton isActive={activeView === 'application'} onClick={() => navigate('application')}>
-                                <FileSignature />Application
+                            <SidebarMenuSubButton isActive={activeView === 'discovery'} onClick={() => navigate('discovery')}>
+                                Discovery
                             </SidebarMenuSubButton>
                         </SidebarMenuSubItem>
                         <SidebarMenuSubItem>
                             <SidebarMenuSubButton isActive={activeView === 'scoring'} onClick={() => navigate('scoring')}>
-                                <Star />Scoring
+                                Scoring
+                            </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                    </SidebarMenuSub>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                    <SidebarMenuButton tooltip="Portfolio Management" isActive={isPortfolioActive}>
+                        <ClipboardList /><span>Portfolio</span>
+                    </SidebarMenuButton>
+                     <SidebarMenuSub>
+                        <SidebarMenuSubItem>
+                            <SidebarMenuSubButton isActive={activeView === 'clients'} onClick={() => navigate('clients')}>
+                                <Users />Clients (Debtors)
+                            </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                        <SidebarMenuSubItem>
+                            <SidebarMenuSubButton isActive={activeView === 'partners'} onClick={() => navigate('partners')}>
+                                <Handshake />Partners (Co-funders)
+                            </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                         <SidebarMenuSubItem>
+                            <SidebarMenuSubButton isActive={activeView === 'agreements'} onClick={() => navigate('agreements')}>
+                                <FileSignature />Agreements
+                            </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                         <SidebarMenuSubItem>
+                            <SidebarMenuSubButton isActive={activeView === 'asset-register'} onClick={() => navigate('asset-register')}>
+                                <Truck />Asset Register
+                            </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                        <SidebarMenuSubItem>
+                            <SidebarMenuSubButton isActive={activeView === 'transactions'} onClick={() => navigate('transactions')}>
+                                <Repeat />Transactions
+                            </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                         <SidebarMenuSubItem>
+                            <SidebarMenuSubButton isActive={activeView === 'facilities'} onClick={() => navigate('facilities')}>
+                                <Banknote />Facilities
+                            </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                         <SidebarMenuSubItem>
+                            <SidebarMenuSubButton isActive={activeView === 'collateral'} onClick={() => navigate('collateral')}>
+                                <Paperclip />Collateral
+                            </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                         <SidebarMenuSubItem>
+                            <SidebarMenuSubButton isActive={activeView === 'payments'} onClick={() => navigate('payments')}>
+                                <CalendarCheck />Payments
                             </SidebarMenuSubButton>
                         </SidebarMenuSubItem>
                     </SidebarMenuSub>
@@ -142,13 +213,18 @@ function LendingPortalContent() {
                     </SidebarMenuButton>
                     <SidebarMenuSub>
                         <SidebarMenuSubItem>
+                            <SidebarMenuSubButton isActive={activeView === 'financial-model'} onClick={() => navigate('financial-model')}>
+                                Financial Model
+                            </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                         <SidebarMenuSubItem>
                             <SidebarMenuSubButton isActive={activeView === 'assumptions'} onClick={() => navigate('assumptions')}>
-                                <Calculator />Assumptions
+                                Assumptions
                             </SidebarMenuSubButton>
                         </SidebarMenuSubItem>
                         <SidebarMenuSubItem>
                             <SidebarMenuSubButton isActive={activeView === 'loan-book'} onClick={() => navigate('loan-book')}>
-                                <Banknote />Loan Book
+                                Loan Book
                             </SidebarMenuSubButton>
                         </SidebarMenuSubItem>
                     </SidebarMenuSub>
