@@ -1,7 +1,8 @@
 
+
 'use client';
 
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, PlusCircle, FileSignature, Edit, Eye } from "lucide-react";
 import { DataTable } from '@/components/ui/data-table';
@@ -12,6 +13,8 @@ import { getClientSideAuthToken } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { formatCurrency, formatDateSafe } from '@/lib/utils';
 import { EditAgreementDialog } from './edit-agreement';
+import { InstallmentSaleWizard } from './installment-sale-wizard';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 async function fetchFromAdminAPI(token: string, action: string, payload?: any) {
     const response = await fetch('/api/admin', {
@@ -43,7 +46,8 @@ export default function AgreementsContent() {
     const [error, setError] = useState<string | null>(null);
     const { toast } = useToast();
     
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [isStdDialogOpen, setIsStdDialogOpen] = useState(false);
+    const [isWizardOpen, setIsWizardOpen] = useState(false);
     const [selectedAgreement, setSelectedAgreement] = useState<any | null>(null);
 
     const clientMap = useMemo(() => new Map(clients.map(c => [c.id, c.name])), [clients]);
@@ -75,9 +79,9 @@ export default function AgreementsContent() {
         forceRefresh();
     }, [forceRefresh]);
 
-    const handleOpenDialog = (agreement: any | null = null) => {
+    const handleOpenEditDialog = (agreement: any) => {
         setSelectedAgreement(agreement);
-        setIsDialogOpen(true);
+        setIsStdDialogOpen(true);
     };
 
     const columns: ColumnDef<any>[] = useMemo(() => [
@@ -92,7 +96,7 @@ export default function AgreementsContent() {
         { accessorKey: 'createDate', header: 'Date Created', cell: ({row}) => formatDateSafe(row.original.createDate) },
         { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
             <div className="text-right">
-                 <Button variant="ghost" size="icon" onClick={() => handleOpenDialog(row.original)}>
+                 <Button variant="ghost" size="icon" onClick={() => handleOpenEditDialog(row.original)}>
                     <Edit className="h-4 w-4" />
                 </Button>
             </div>
@@ -106,11 +110,20 @@ export default function AgreementsContent() {
     return (
         <>
             <EditAgreementDialog 
-                isOpen={isDialogOpen}
-                onOpenChange={setIsDialogOpen}
+                isOpen={isStdDialogOpen}
+                onOpenChange={setIsStdDialogOpen}
                 agreement={selectedAgreement}
                 clients={clients}
                 onSave={forceRefresh}
+            />
+             <InstallmentSaleWizard
+                isOpen={isWizardOpen}
+                onOpenChange={setIsWizardOpen}
+                clients={clients}
+                onSave={() => {
+                    forceRefresh();
+                    setIsWizardOpen(false);
+                }}
             />
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
@@ -118,7 +131,19 @@ export default function AgreementsContent() {
                         <CardTitle className="flex items-center gap-2"><FileSignature /> Lending Agreements</CardTitle>
                         <CardDescription>Manage all active and pending lending agreements.</CardDescription>
                     </div>
-                    <Button onClick={() => handleOpenDialog(null)}><PlusCircle className="mr-2 h-4 w-4"/>New Agreement</Button>
+                     <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button><PlusCircle className="mr-2 h-4 w-4"/>New Agreement</Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                            <DropdownMenuItem onSelect={() => setIsWizardOpen(true)}>
+                                Installment Sale Wizard
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onSelect={() => handleOpenDialog(null)}>
+                                Standard Agreement (Loan, etc.)
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 </CardHeader>
                 <CardContent>
                     {isLoading ? (

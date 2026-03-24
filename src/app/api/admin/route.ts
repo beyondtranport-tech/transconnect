@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -87,6 +88,53 @@ export async function POST(req: NextRequest) {
         // --- END AUTHORIZATION ---
 
         switch (action) {
+            case 'saveInstallmentSalePackage': {
+                if (!isAdmin) throw new Error("Forbidden: Admin access required.");
+                const { agreement, asset, security } = payload;
+                if (!agreement || !asset || !security || !agreement.clientId) {
+                    throw new Error("Agreement, Asset, Security, and ClientID data are required.");
+                }
+
+                const clientId = agreement.clientId;
+
+                await db.runTransaction(async (transaction) => {
+                    // 1. Create Asset
+                    const assetRef = db.collection('lendingAssets').doc();
+                    transaction.set(assetRef, { 
+                        ...asset, 
+                        id: assetRef.id, 
+                        clientId,
+                        status: 'financed', // Asset is immediately financed by this agreement
+                        createdAt: FieldValue.serverTimestamp(),
+                        updatedAt: FieldValue.serverTimestamp(),
+                    });
+
+                    // 2. Create Agreement, linking the new assetId
+                    const agreementRef = db.collection(`lendingClients/${clientId}/agreements`).doc();
+                    transaction.set(agreementRef, {
+                        ...agreement,
+                        id: agreementRef.id,
+                        assetId: assetRef.id, // Link to the asset
+                        type: 'installment-sale', // Ensure type is correct
+                        status: 'pending', // Agreements start as pending
+                        createdAt: FieldValue.serverTimestamp(),
+                        updatedAt: FieldValue.serverTimestamp(),
+                    });
+                    
+                    // 3. Create Security document, linking to new agreement
+                    const securityRef = db.collection(`lendingClients/${clientId}/agreements/${agreementRef.id}/securities`).doc();
+                    transaction.set(securityRef, {
+                        ...security,
+                        id: securityRef.id,
+                        clientId,
+                        agreementId: agreementRef.id,
+                        createdAt: FieldValue.serverTimestamp(),
+                        updatedAt: FieldValue.serverTimestamp(),
+                    });
+                });
+
+                return NextResponse.json({ success: true, message: 'Installment sale package created successfully.' });
+            }
             case 'saveLendingSecurity': {
                 if (!isAdmin) throw new Error("Forbidden: Admin access required.");
                 const { security } = payload;
