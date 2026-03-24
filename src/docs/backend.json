@@ -630,8 +630,16 @@
         "description": "Collateral or security provided for a loan.",
         "type": "object",
         "properties": {
-            "id": { "type": "string" }
-        }
+            "id": { "type": "string" },
+            "clientId": { "type": "string" },
+            "agreementId": { "type": "string" },
+            "documentName": { "type": "string" },
+            "documentType": { "type": "string", "enum": ["surety", "pledge", "cession", "notarial_bond", "other"]},
+            "fileUrl": { "type": "string", "format": "uri" },
+            "createdAt": { "type": "object" },
+            "updatedAt": { "type": "object" }
+        },
+        "required": ["id", "clientId", "agreementId", "documentName", "fileUrl"]
     },
     "Payment": {
         "$schema": "http://json-schema.org/draft-07/schema#",
@@ -1034,3 +1042,4 @@
     
     
     
+

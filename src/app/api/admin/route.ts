@@ -87,6 +87,33 @@ export async function POST(req: NextRequest) {
         // --- END AUTHORIZATION ---
 
         switch (action) {
+            case 'saveLendingSecurity': {
+                if (!isAdmin) throw new Error("Forbidden: Admin access required.");
+                const { security } = payload;
+                if (!security || !security.clientId || !security.agreementId) throw new Error("clientId, agreementId, and security data are required.");
+                
+                const { id: securityId, ...dataToSave } = security;
+                const collectionRef = db.collection(`lendingClients/${dataToSave.clientId}/agreements/${dataToSave.agreementId}/securities`);
+                
+                if (securityId) { // Update
+                    const docRef = collectionRef.doc(securityId);
+                    await docRef.set({ ...dataToSave, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+                    return NextResponse.json({ success: true, id: securityId });
+                } else { // Create
+                    const newDocRef = collectionRef.doc();
+                    await newDocRef.set({ ...dataToSave, id: newDocRef.id, createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
+                    return NextResponse.json({ success: true, id: newDocRef.id });
+                }
+            }
+            case 'deleteLendingSecurity': {
+                if (!isAdmin) throw new Error("Forbidden: Admin access required.");
+                const { clientId, agreementId, securityId } = payload;
+                if (!clientId || !agreementId || !securityId) throw new Error("clientId, agreementId, and securityId are required.");
+                
+                // TODO: Also delete file from storage
+                await db.doc(`lendingClients/${clientId}/agreements/${agreementId}/securities/${securityId}`).delete();
+                return NextResponse.json({ success: true, message: "Security document deleted." });
+            }
             case 'getLendingClientById': {
                 if (!isAdmin) throw new Error("Forbidden: Admin access required.");
                 const { clientId } = payload;
@@ -121,12 +148,12 @@ export async function POST(req: NextRequest) {
             case 'getLendingData': {
                 if (!isAdmin) throw new Error("Forbidden: Admin access required.");
                 const { collectionName } = payload;
-                if (!collectionName || !['lendingClients', 'lendingPartners', 'lendingAssets', 'agreements', 'facilities', 'transactions'].includes(collectionName)) {
+                if (!collectionName || !['lendingClients', 'lendingPartners', 'lendingAssets', 'agreements', 'facilities', 'transactions', 'securities'].includes(collectionName)) {
                     throw new Error("Invalid or missing collectionName for getLendingData.");
                 }
 
                 let snapshot;
-                if (['agreements', 'facilities', 'transactions'].includes(collectionName)) {
+                if (['agreements', 'facilities', 'transactions', 'securities'].includes(collectionName)) {
                     snapshot = await db.collectionGroup(collectionName).get();
                 } else {
                     snapshot = await db.collection(collectionName).get();
@@ -142,8 +169,15 @@ export async function POST(req: NextRequest) {
                     } else if (docData.clientId) {
                        clientId = docData.clientId
                     }
+
+                    let agreementId;
+                    if (pathSegments.includes('agreements')) {
+                        agreementId = pathSegments[pathSegments.indexOf('agreements') + 1];
+                    } else if (docData.agreementId) {
+                        agreementId = docData.agreementId;
+                    }
                     
-                    return { id: doc.id, ...serializeTimestamps(docData), clientId };
+                    return { id: doc.id, ...serializeTimestamps(docData), clientId, agreementId };
                 }).filter(Boolean);
 
                 return NextResponse.json({ success: true, data });
