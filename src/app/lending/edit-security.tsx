@@ -161,9 +161,9 @@ export function EditSecurityWizard({ security, clients, agreements, onSave, onBa
         if (stepIndex < 0 || stepIndex >= steps.length) return true;
         const step = steps[stepIndex];
         if (!step.fields || step.fields.length === 0) return true;
-        return fields.every(field => !methods.formState.errors[field as keyof typeof methods.formState.errors]);
+        return step.fields.every(field => !methods.formState.errors[field as keyof typeof methods.formState.errors]);
     };
-
+    
     const renderStepContent = () => {
         switch (currentStep) {
             case 0: return (
@@ -236,7 +236,9 @@ export function EditSecurityWizard({ security, clients, agreements, onSave, onBa
                             <ArrowLeft className="mr-2 h-4 w-4" /> Back
                         </Button>
                         {currentStep < steps.length - 1 ? (
-                            <Button type="button" onClick={handleNext}>Next <ArrowRight className="ml-2 h-4 w-4"/></Button>
+                            <Button type="button" onClick={handleNext}>
+                                Next <ArrowRight className="ml-2 h-4 w-4"/>
+                            </Button>
                         ) : (
                             <Button type="submit" disabled={isLoading || uploading}>
                                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
