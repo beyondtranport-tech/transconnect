@@ -46,7 +46,7 @@ interface EditClientProps {
   onBack: () => void;
 }
 
-export function EditClient({ client, onSave, onBack }: EditClientProps) {
+export function EditClientWizard({ client, onSave, onBack }: EditClientProps) {
     const [isLoading, setIsLoading] = useState(false);
     const { toast } = useToast();
 
