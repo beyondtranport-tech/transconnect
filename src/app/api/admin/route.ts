@@ -121,12 +121,12 @@ export async function POST(req: NextRequest) {
             case 'getLendingData': {
                 if (!isAdmin) throw new Error("Forbidden: Admin access required.");
                 const { collectionName } = payload;
-                if (!collectionName || !['lendingClients', 'lendingPartners', 'lendingAssets', 'agreements', 'facilities'].includes(collectionName)) {
+                if (!collectionName || !['lendingClients', 'lendingPartners', 'lendingAssets', 'agreements', 'facilities', 'transactions'].includes(collectionName)) {
                     throw new Error("Invalid or missing collectionName for getLendingData.");
                 }
 
                 let snapshot;
-                if (['agreements', 'facilities'].includes(collectionName)) {
+                if (['agreements', 'facilities', 'transactions'].includes(collectionName)) {
                     snapshot = await db.collectionGroup(collectionName).get();
                 } else {
                     snapshot = await db.collection(collectionName).get();
@@ -136,10 +136,15 @@ export async function POST(req: NextRequest) {
                     const docData = doc.data();
                     const pathSegments = doc.ref.path.split('/');
                     
-                    const clientId = pathSegments.includes('lendingClients') ? pathSegments[pathSegments.indexOf('lendingClients') + 1] : docData.clientId;
+                    let clientId;
+                    if (pathSegments.includes('lendingClients')) {
+                       clientId = pathSegments[pathSegments.indexOf('lendingClients') + 1];
+                    } else if (docData.clientId) {
+                       clientId = docData.clientId
+                    }
                     
                     return { id: doc.id, ...serializeTimestamps(docData), clientId };
-                }).filter(Boolean); // Remove null entries
+                }).filter(Boolean);
 
                 return NextResponse.json({ success: true, data });
             }
