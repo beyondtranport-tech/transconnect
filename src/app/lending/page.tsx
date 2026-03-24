@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -172,7 +171,7 @@ function LendingPortalContent() {
                         </SidebarMenuSubItem>
                         <SidebarMenuSubItem>
                             <SidebarMenuSubButton isActive={activeView === 'partners'} onClick={() => navigate('partners')}>
-                                <Handshake />Partners (Co-funders)
+                                <Handshake />Partners
                             </SidebarMenuSubButton>
                         </SidebarMenuSubItem>
                          <SidebarMenuSubItem>
