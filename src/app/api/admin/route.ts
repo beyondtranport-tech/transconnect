@@ -148,12 +148,12 @@ export async function POST(req: NextRequest) {
             case 'getLendingData': {
                 if (!isAdmin) throw new Error("Forbidden: Admin access required.");
                 const { collectionName } = payload;
-                if (!collectionName || !['lendingClients', 'lendingPartners', 'lendingAssets', 'agreements', 'facilities', 'transactions', 'securities'].includes(collectionName)) {
+                if (!collectionName || !['lendingClients', 'lendingPartners', 'lendingAssets', 'agreements', 'facilities', 'transactions', 'securities', 'payments'].includes(collectionName)) {
                     throw new Error("Invalid or missing collectionName for getLendingData.");
                 }
 
                 let snapshot;
-                if (['agreements', 'facilities', 'transactions', 'securities'].includes(collectionName)) {
+                if (['agreements', 'facilities', 'transactions', 'securities', 'payments'].includes(collectionName)) {
                     snapshot = await db.collectionGroup(collectionName).get();
                 } else {
                     snapshot = await db.collection(collectionName).get();
