@@ -1,6 +1,7 @@
 
 'use client';
 
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Handshake } from "lucide-react";
 
