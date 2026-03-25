@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, PlusCircle, Truck, Edit, Trash2, Warehouse, Wrench, ArrowLeft } from "lucide-react";
+import { Loader2, PlusCircle, Truck, Edit, Trash2, Warehouse, Wrench, ArrowLeft, FileText, Handshake } from "lucide-react";
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { Badge } from '@/components/ui/badge';
@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { formatCurrency } from '@/lib/utils';
 import { EditAssetWizard } from './edit-asset';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import Link from 'next/link';
 
 // API Helper
 async function performAdminAction(token: string, action: string, payload: any) {
@@ -40,6 +41,8 @@ function AssetTypeSelection({ onSelect, onBack }: { onSelect: (type: string) => 
         { id: 'truck', label: 'Truck', icon: Truck },
         { id: 'trailer', label: 'Trailer', icon: Warehouse },
         { id: 'equipment', label: 'Equipment', icon: Wrench },
+        { id: 'invoice', label: 'Invoice', icon: FileText },
+        { id: 'rights', label: 'Rights', icon: Handshake },
     ];
 
     return (
@@ -53,7 +56,7 @@ function AssetTypeSelection({ onSelect, onBack }: { onSelect: (type: string) => 
                     <Button variant="ghost" onClick={onBack}><ArrowLeft className="mr-2 h-4 w-4"/> Back to List</Button>
                 </div>
             </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6">
+            <CardContent className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6 pt-6">
                 {types.map(type => {
                     const Icon = type.icon;
                     return (
@@ -170,7 +173,6 @@ export default function AssetRegisterContent() {
                 <Button variant="ghost" size="icon" onClick={() => { setAssetToDelete(row.original); setIsDeleteAlertOpen(true); }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
             </div>
         )},
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     ], [clientMap]);
     
     if (error) {
