@@ -90,7 +90,8 @@ export default function PartnersContent() {
 
     const handleSaveSuccess = () => {
         forceRefresh();
-        handleBackToList();
+        setView('list');
+        setSelectedPartner(null);
     };
     
     const handleDelete = async () => {
@@ -107,7 +108,7 @@ export default function PartnersContent() {
             toast({ variant: 'destructive', title: 'Delete Failed', description: e.message });
         }
     };
-    
+
     const columns: ColumnDef<any>[] = useMemo(() => [
         { accessorKey: 'name', header: 'Name', cell: ({row}) => <div>{row.original.name}</div> },
         { accessorKey: 'contactPerson', header: 'Contact Person', cell: ({row}) => <div>{row.original.contactPerson}</div> },
