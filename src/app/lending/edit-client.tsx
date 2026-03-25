@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -13,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Save, ArrowLeft, ArrowRight, CheckCircle, User, Building, Phone, Mail, Globe, Users, Banknote, FileText, BarChart, PlusCircle, Trash2 } from 'lucide-react';
 import { getClientSideAuthToken } from '@/firebase';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardHeader, CardContent, CardFooter, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -234,6 +232,7 @@ const steps = [
 export function EditClientWizard({ client, onSave, onBack }: { client?: any, onSave: () => void, onBack: () => void }) {
     const [isLoading, setIsLoading] = useState(false);
     const [currentStep, setCurrentStep] = useState(0);
+    const [completedSteps, setCompletedSteps] = useState(new Set<string>());
     const { toast } = useToast();
 
     const methods = useForm<ClientFormValues>({
@@ -243,7 +242,28 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
     });
 
     useEffect(() => {
-        methods.reset(client || { status: 'draft', vatRegistered: false, contacts: [], owners: [], management: [], bankAccounts: [], balanceSheets: [], incomeStatements: [] });
+        const initialValues = client || { status: 'draft', vatRegistered: false, contacts: [], owners: [], management: [], bankAccounts: [], balanceSheets: [], incomeStatements: [] };
+        methods.reset(initialValues);
+
+        const validateInitialSteps = async () => {
+            const initiallyCompleted = new Set<string>();
+            for (let i = 0; i < steps.length; i++) {
+                const step = steps[i];
+                if (step.fields.length > 0) {
+                    const isValid = await methods.trigger(step.fields as any);
+                    if (isValid) {
+                        initiallyCompleted.add(step.id);
+                    }
+                }
+            }
+            setCompletedSteps(initiallyCompleted);
+        };
+
+        if (client) {
+            validateInitialSteps();
+        } else {
+            setCompletedSteps(new Set());
+        }
     }, [client, methods]);
 
     const onSubmit = async (values: ClientFormValues) => {
@@ -260,41 +280,46 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
             setIsLoading(false);
         }
     };
-
+    
     const handleNext = async () => {
         const stepFields = steps[currentStep].fields;
+        if (!stepFields || stepFields.length === 0) {
+            if (currentStep < steps.length - 1) {
+                setCompletedSteps(prev => new Set(prev).add(steps[currentStep].id));
+                setCurrentStep(prev => prev + 1);
+            }
+            return;
+        }
+
         const isValid = await methods.trigger(stepFields as any);
-        if (isValid && currentStep < steps.length - 1) {
-            setCurrentStep(prev => prev + 1);
-        } else if (!isValid) {
+        if (isValid) {
+            setCompletedSteps(prev => new Set(prev).add(steps[currentStep].id));
+            if (currentStep < steps.length - 1) {
+                setCurrentStep(prev => prev + 1);
+            }
+        } else {
             toast({ variant: "destructive", title: "Please complete all required fields for this step." });
         }
     };
     
     const handleBackStep = () => setCurrentStep(prev => prev - 1);
-    
-     const isStepValid = (stepIndex: number) => {
-        if (stepIndex < 0 || stepIndex >= steps.length) return true;
-        const step = steps[stepIndex];
-        if (!step.fields || step.fields.length === 0) return true;
-        return step.fields.every(field => !methods.formState.errors[field as keyof typeof methods.formState.errors]);
-    };
-    
+
     const renderStepContent = () => {
-        switch (currentStep) {
-            case 0: return <StepMain />;
-            case 1: return <StepAddress />;
-            case 2: return <StepContact />;
-            case 3: return <ArrayStep name="owners" title="Owner" fieldsConfig={[
+        const stepId = steps[currentStep]?.id;
+        switch (stepId) {
+            case 'main': return <StepMain />;
+            case 'address': return <StepAddress />;
+            case 'contact': return <StepContact />;
+            case 'owners': return <ArrayStep name="owners" title="Owner" fieldsConfig={[
                 { id: 'name', label: 'Name', type: 'text' }, { id: 'idNumber', label: 'ID Number', type: 'text' }, { id: 'cell', label: 'Cell', type: 'text'}, { id: 'percentageHeld', label: '% Held', type: 'number'}
             ]} />;
-             case 4: return <ArrayStep name="management" title="Manager" fieldsConfig={[
+             case 'management': return <ArrayStep name="management" title="Manager" fieldsConfig={[
                 { id: 'name', label: 'Name', type: 'text' }, { id: 'idNumber', label: 'ID Number', type: 'text' }, { id: 'cell', label: 'Cell', type: 'text'}, { id: 'position', label: 'Position', type: 'text'}
             ]} />;
-            case 5: return <ArrayStep name="bankAccounts" title="Bank Account" fieldsConfig={[
+            case 'bankAccounts': return <ArrayStep name="bankAccounts" title="Bank Account" fieldsConfig={[
                 { id: 'bankName', label: 'Bank Name', type: 'text' }, { id: 'accountNumber', label: 'Account #', type: 'text' }, { id: 'branchCode', label: 'Branch Code', type: 'text'}
             ]} />;
-            case 6: return <ArrayStep name="balanceSheets" title="Balance Sheet" fieldsConfig={[
+            case 'balanceSheet': return <ArrayStep name="balanceSheets" title="Balance Sheet" fieldsConfig={[
                 { id: 'periodEndDate', label: 'Period End', type: 'date' },
                 { id: 'propertyPlantEquipment', label: 'Property, Plant & Equip.', type: 'number' },
                 { id: 'intangibleAssets', label: 'Intangible Assets', type: 'number' },
@@ -316,7 +341,7 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
                 { id: 'currentPortionOfLongTermDebt', label: 'Current Portion of LT Debt', type: 'number' },
                 { id: 'currentTaxPayable', label: 'Current Tax Payable', type: 'number' },
             ]} />;
-            case 7: return <ArrayStep name="incomeStatements" title="Income Statement" fieldsConfig={[
+            case 'incomeStatement': return <ArrayStep name="incomeStatements" title="Income Statement" fieldsConfig={[
                 { id: 'periodEndDate', label: 'Period End Date', type: 'date' },
                 { id: 'revenue', label: 'Revenue', type: 'number' },
                 { id: 'costOfSales', label: 'Cost of Sales', type: 'number' },
@@ -328,7 +353,7 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
                 { id: 'financeCosts', label: 'Finance Costs', type: 'number' },
                 { id: 'incomeTaxExpense', label: 'Income Tax Expense', type: 'number' },
             ]} />;
-            case 8: return (
+            case 'review': return (
                 <div className="text-center p-8">
                     <h3 className="text-lg font-semibold">Review and Submit</h3>
                     <p className="text-muted-foreground">Please confirm all details before saving the client.</p>
@@ -355,12 +380,10 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
                         <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] gap-8">
                             <div className="flex flex-col gap-2 border-r pr-4">
                                 {steps.map((step, index) => {
-                                    const isCompleted = index < currentStep && isStepValid(index);
-                                    const Icon = step.icon;
+                                    const isCompleted = completedSteps.has(step.id);
                                     return (
-                                        <Button key={step.id} type="button" variant={currentStep === index ? 'secondary' : 'ghost'} className="justify-start gap-2" onClick={() => setCurrentStep(index)} disabled={index > currentStep && !isStepValid(currentStep - 1)}>
+                                        <Button key={step.id} type="button" variant={currentStep === index ? 'secondary' : 'ghost'} className="justify-start gap-2" onClick={() => setCurrentStep(index)}>
                                             {isCompleted ? <CheckCircle className="h-5 w-5 text-green-500" /> : <div className={cn("h-5 w-5 rounded-full flex items-center justify-center text-xs font-bold", currentStep >= index ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>{index + 1}</div>}
-                                            <Icon className="h-4 w-4" />
                                             {step.title}
                                         </Button>
                                     );
