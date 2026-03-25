@@ -508,6 +508,235 @@
             "after": { "type": "object", "description": "State of the document after the change." }
         },
         "required": ["collectionPath", "documentId", "userId", "action", "timestamp"]
+    },
+    "Client": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "Client",
+        "description": "Represents a debtor entity in the lending system.",
+        "type": "object",
+        "properties": {
+            "id": { "type": "string" },
+            "name": { "type": "string" },
+            "status": { "type": "string" },
+            "globalFacilityLimit": { "type": "number" },
+            "code": { "type": "string" },
+            "type": { "type": "string" },
+            "category": { "type": "string" },
+            "language": { "type": "string" },
+            "vatRegistered": { "type": "boolean" },
+            "registrationId": { "type": "string" },
+            "physicalAddress": { "type": "string" },
+            "physicalPostalCode": { "type": "string" },
+            "postalAddress": { "type": "string" },
+            "postalPostalCode": { "type": "string" },
+            "url": { "type": "string", "format": "uri" },
+            "contacts": { "type": "array", "items": { "$ref": "#/entities/ContactDetails" } },
+            "owners": { "type": "array", "items": { "$ref": "#/entities/OwnerDetails" } },
+            "management": { "type": "array", "items": { "$ref": "#/entities/ManagementDetails" } },
+            "bankAccounts": { "type": "array", "items": { "$ref": "#/entities/BankAccount" } },
+            "balanceSheets": { "type": "array", "items": { "$ref": "#/entities/BalanceSheet" } },
+            "incomeStatements": { "type": "array", "items": { "$ref": "#/entities/IncomeStatement" } }
+        }
+    },
+    "Agreement": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "Agreement",
+        "description": "Represents a single lending agreement with a client.",
+        "type": "object",
+        "properties": {
+            "id": { "type": "string" },
+            "clientId": { "type": "string", "description": "The ID of the client this agreement belongs to."},
+            "assetId": { "type": "string", "description": "The ID of the asset being financed under this agreement."},
+            "type": { "type": "string", "enum": ["loan", "installment-sale", "lease", "factoring"], "description": "The type of lending agreement."},
+            "status": { "type": "string", "enum": ["pending", "credit", "payout", "active", "completed", "defaulted"], "description": "The current status of the agreement."},
+            "description": { "type": "string", "description": "A description for the agreement." },
+            "totalAdvanced": { "type": "number", "description": "The principal amount of the agreement, inclusive of VAT." },
+            "interestRate": { "type": "number", "description": "The annual interest rate." },
+            "arrearInterest": { "type": "boolean", "description": "Is interest calculated in arrears?" },
+            "createDate": { "type": "string", "format": "date-time", "description": "The creation date of the agreement." },
+            "capitalizationDate": { "type": "string", "format": "date-time", "description": "The date from which interest is capitalized." },
+            "firstInstallmentDate": { "type": "string", "format": "date-time", "description": "The date of the first payment." },
+            "numberOfInstallments": { "type": "number", "description": "The total number of installments." },
+            "interval": { "type": "string", "enum": ["daily", "weekly", "bi-monthly", "monthly"], "description": "The payment interval." },
+            "paymentMethod": { "type": "string", "enum": ["debit_order", "eft"], "description": "The method of payment." },
+            "bankAccountId": { "type": "string", "description": "ID of the client's bank account to be used." }
+        }
+    },
+    "Facility": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "Facility",
+        "description": "Represents a credit facility granted to a client, often linked to a partner and a specific agreement.",
+        "type": "object",
+        "properties": {
+            "id": { "type": "string" },
+            "agreementId": { "type": "string", "description": "The ID of the lending agreement this facility is tied to." },
+            "partnerId": { "type": "string", "description": "The ID of the lending partner providing funds for this facility." },
+            "limit": { "type": "number", "description": "The maximum amount for this specific facility." },
+            "type": { "type": "string", "enum": ["loan", "lease", "factoring", "installment_sale"], "description": "The type of facility provided." },
+            "status": { "type": "string", "enum": ["active", "inactive", "pending"], "description": "The status of the facility." }
+        }
+    },
+    "LendingTransaction": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "Lending Transaction",
+        "description": "A transaction record related to a specific lending agreement.",
+        "type": "object",
+        "properties": {
+            "id": { "type": "string" }
+        }
+    },
+    "Asset": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "Asset",
+        "description": "An asset belonging to a client.",
+        "type": "object",
+        "properties": {
+            "id": { "type": "string" },
+            "clientId": { "type": "string" },
+            "make": { "type": "string" },
+            "model": { "type": "string" },
+            "year": { "type": "string" },
+            "registrationNumber": { "type": "string" },
+            "registerNumber": { "type": "string" },
+            "vin": { "type": "string" },
+            "engineNumber": { "type": "string" },
+            "tare": { "type": "string" },
+            "gvm": { "type": "string" },
+            "titleholder": { "type": "string" },
+            "owner": { "type": "string" },
+            "firstRegistrationDate": { "type": "string" },
+            "classification": { "type": "string" },
+            "costOfSale": { "type": "number", "description": "The cost price of the asset, excluding VAT." },
+            "status": { "type": "string", "enum": ["available", "financed", "sold", "decommissioned"], "description": "The current status of the asset." },
+            "documents": {
+                "type": "object",
+                "properties": {
+                    "invoice": { "type": "string", "format": "uri" },
+                    "rc1": { "type": "string", "format": "uri" },
+                    "licenseDisk": { "type": "string", "format": "uri" },
+                    "deliveryNote": { "type": "string", "format": "uri" }
+                }
+            }
+        }
+    },
+    "Security": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "Security",
+        "description": "Collateral or security provided for a loan.",
+        "type": "object",
+        "properties": {
+            "id": { "type": "string" },
+            "clientId": { "type": "string" },
+            "agreementId": { "type": "string" },
+            "documentName": { "type": "string" },
+            "documentType": { "type": "string", "enum": ["surety", "pledge", "cession", "notarial_bond", "other"]},
+            "fileUrl": { "type": "string", "format": "uri" },
+            "createdAt": { "type": "object" },
+            "updatedAt": { "type": "object" }
+        },
+        "required": ["id", "clientId", "agreementId", "documentName", "fileUrl"]
+    },
+    "Payment": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "Payment",
+        "description": "A scheduled or recorded payment for a loan.",
+        "type": "object",
+        "properties": {
+            "id": { "type": "string" },
+            "agreementId": { "type": "string", "description": "The ID of the agreement this payment belongs to." },
+            "clientId": { "type": "string", "description": "The ID of the client this payment belongs to." },
+            "dueDate": { "type": "string", "format": "date-time", "description": "The date the payment is due." },
+            "paidDate": { "type": "string", "format": "date-time", "description": "The date the payment was made." },
+            "amount": { "type": "number", "description": "The amount due for this payment." },
+            "status": { "type": "string", "enum": ["due", "paid", "overdue", "skipped"], "description": "The status of the payment." }
+        },
+        "required": ["id", "agreementId", "clientId", "dueDate", "amount", "status"]
+    },
+    "LendingPartner": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "Lending Partner",
+        "description": "A partner or co-funder in the lending process.",
+        "type": "object",
+        "properties": {
+            "id": { "type": "string" },
+            "name": { "type": "string" },
+            "type": { "type": "string", "enum": ["supplier", "vendor", "associate", "debtor"] },
+            "globalFacilityLimit": { "type": "number", "description": "The maximum total exposure allowed for this partner across all client facilities." },
+            "code": { "type": "string" },
+            "status": { "type": "string" },
+            "category": { "type": "string" },
+            "language": { "type": "string" },
+            "vatRegistered": { "type": "boolean" },
+            "registrationId": { "type": "string" },
+            "physicalAddress": { "type": "string" },
+            "physicalPostalCode": { "type": "string" },
+            "postalAddress": { "type": "string" },
+            "postalPostalCode": { "type": "string" },
+            "contactPerson": { "type": "string" },
+            "telWork": { "type": "string" },
+            "telHome": { "type": "string" },
+            "fax": { "type": "string" },
+            "cell": { "type": "string" },
+            "email": { "type": "string", "format": "email" },
+            "url": { "type": "string", "format": "uri" },
+            "owners": { "type": "array", "items": { "$ref": "#/entities/OwnerDetails" } },
+            "management": { "type": "array", "items": { "$ref": "#/entities/ManagementDetails" } },
+            "bankAccounts": { "type": "array", "items": { "$ref": "#/entities/BankAccount" } },
+            "balanceSheets": { "type": "array", "items": { "$ref": "#/entities/BalanceSheet" } },
+            "incomeStatements": { "type": "array", "items": { "$ref": "#/entities/IncomeStatement" } }
+        },
+        "required": ["id", "name", "type"]
+    },
+    "ContactDetails": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "Contact Details",
+        "type": "object",
+        "properties": {
+            "name": { "type": "string" },
+            "position": { "type": "string" },
+            "cell": { "type": "string" },
+            "email": { "type": "string", "format": "email" }
+        }
+    },
+    "OwnerDetails": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "Owner Details",
+        "type": "object",
+        "properties": {
+            "name": { "type": "string" }, "address": { "type": "string" }, "suburb": { "type": "string" }, "city": { "type": "string" }, "postCode": { "type": "string" }, "idNumber": { "type": "string" }, "cell": { "type": "string" }, "position": { "type": "string" }, "qualification": { "type": "string" }, "since": { "type": "string" }, "percentageHeld": { "type": "number" }
+        }
+    },
+    "ManagementDetails": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "Management Details",
+        "type": "object",
+        "properties": {
+            "name": { "type": "string" }, "address": { "type": "string" }, "suburb": { "type": "string" }, "city": { "type": "string" }, "postCode": { "type": "string" }, "idNumber": { "type": "string" }, "cell": { "type": "string" }, "position": { "type": "string" }, "qualification": { "type": "string" }, "since": { "type": "string" }
+        }
+    },
+    "BankAccount": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "Bank Account",
+        "type": "object",
+        "properties": {
+            "bankName": { "type": "string" }, "branchCode": { "type": "string" }, "accountNumber": { "type": "string" }, "branchName": { "type": "string" }, "bankCode": { "type": "string" }, "address": { "type": "string" }, "postCode": { "type": "string" }, "phone": { "type": "string" }, "email": { "type": "string", "format": "email" }, "contactPerson": { "type": "string" }
+        }
+    },
+    "BalanceSheet": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "Balance Sheet",
+        "type": "object",
+        "properties": {
+            "periodEndDate": { "type": "string" }, "propertyPlantEquipment": { "type": "number" }, "intangibleAssets": { "type": "number" }, "inventory": { "type": "number" }, "tradeReceivables": { "type": "number" }, "cashEquivalents": { "type": "number" }, "shareCapital": { "type": "number" }, "retainedEarnings": { "type": "number" }, "longTermLoans": { "type": "number" }, "tradePayables": { "type": "number" }, "shortTermLoans": { "type": "number" }
+        }
+    },
+    "IncomeStatement": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "Income Statement",
+        "type": "object",
+        "properties": {
+            "periodEndDate": { "type": "string" }, "revenue": { "type": "number" }, "cogs": { "type": "number" }, "operatingExpenses": { "type": "number" }, "interestExpense": { "type": "number" }, "taxation": { "type": "number" }
+        }
     }
   },
   "auth": {
@@ -753,6 +982,70 @@
           "entityName": "Lead",
           "schema": { "$ref": "#/entities/Lead" },
           "description": "Admin-managed collection of sales leads."
+        }
+      },
+      {
+        "path": "/lendingClients/{clientId}",
+        "definition": {
+            "entityName": "Client",
+            "schema": { "$ref": "#/entities/Client" },
+            "description": "DMS: Main collection for lending clients (debtors)."
+        }
+      },
+      {
+        "path": "/lendingClients/{clientId}/agreements/{agreementId}",
+        "definition": {
+            "entityName": "Agreement",
+            "schema": { "$ref": "#/entities/Agreement" },
+            "description": "DMS: Lending agreements for a specific client."
+        }
+      },
+      {
+        "path": "/lendingClients/{clientId}/facilities/{facilityId}",
+        "definition": {
+            "entityName": "Facility",
+            "schema": { "$ref": "#/entities/Facility" },
+            "description": "DMS: Credit facilities approved for a specific client."
+        }
+      },
+      {
+        "path": "/lendingClients/{clientId}/agreements/{agreementId}/transactions/{transactionId}",
+        "definition": {
+            "entityName": "LendingTransaction",
+            "schema": { "$ref": "#/entities/LendingTransaction" },
+            "description": "DMS: Individual loan transactions (disbursements, repayments) for an agreement."
+        }
+      },
+      {
+        "path": "/lendingClients/{clientId}/assets/{assetId}",
+        "definition": {
+            "entityName": "Asset",
+            "schema": { "$ref": "#/entities/Asset" },
+            "description": "DMS: Asset(s) belonging to a client."
+        }
+      },
+      {
+        "path": "/lendingClients/{clientId}/agreements/{agreementId}/securities/{securityId}",
+        "definition": {
+            "entityName": "Security",
+            "schema": { "$ref": "#/entities/Security" },
+            "description": "DMS: Collateral documents/information for an agreement."
+        }
+      },
+      {
+        "path": "/lendingClients/{clientId}/agreements/{agreementId}/payments/{paymentId}",
+        "definition": {
+            "entityName": "Payment",
+            "schema": { "$ref": "#/entities/Payment" },
+            "description": "DMS: Payment schedules or records for an agreement."
+        }
+      },
+      {
+        "path": "/lendingPartners/{partnerId}",
+        "definition": {
+            "entityName": "LendingPartner",
+            "schema": { "$ref": "#/entities/LendingPartner" },
+            "description": "DMS: Top-level collection for lending partners, co-funders, or brokers."
         }
       }
     ],

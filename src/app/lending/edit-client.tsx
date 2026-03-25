@@ -34,6 +34,13 @@ async function performAdminAction(token: string, action: string, payload: any) {
 
 
 // --- ZOD Schemas ---
+const contactSchema = z.object({
+    name: z.string().optional(),
+    position: z.string().optional(),
+    cell: z.string().optional(),
+    email: z.string().email().optional().or(z.literal('')),
+});
+
 const ownerSchema = z.object({
     name: z.string().optional(), address: z.string().optional(), suburb: z.string().optional(), city: z.string().optional(),
     postCode: z.string().optional(), idNumber: z.string().optional(), cell: z.string().optional(), position: z.string().optional(),
@@ -72,13 +79,8 @@ const clientSchema = z.object({
   physicalPostalCode: z.string().optional(),
   postalAddress: z.string().optional(),
   postalPostalCode: z.string().optional(),
-  contactPerson: z.string().optional(),
-  cell: z.string().optional(),
-  email: z.string().email().optional().or(z.literal('')),
-  telWork: z.string().optional(),
-  telHome: z.string().optional(),
-  fax: z.string().optional(),
   url: z.string().url().optional().or(z.literal('')),
+  contacts: z.array(contactSchema).optional(),
   owners: z.array(ownerSchema).optional(),
   management: z.array(managementSchema).optional(),
   bankAccounts: z.array(bankAccountSchema).optional(),
@@ -123,20 +125,28 @@ const StepAddress = () => {
         </div>
     )
 };
+
 const StepContact = () => {
-     const { control } = useFormContext<ClientFormValues>();
+    const { control } = useFormContext<ClientFormValues>();
+    const { fields, append, remove } = useFieldArray({ control, name: "contacts" });
+
     return (
         <div className="space-y-4">
-             <FormField control={control} name="contactPerson" render={({ field }) => (<FormItem><FormLabel>Primary Contact Person</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-            <div className="grid grid-cols-2 gap-4">
-                <FormField control={control} name="cell" render={({ field }) => (<FormItem><FormLabel>Mobile Number</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                <FormField control={control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" /></FormControl><FormMessage /></FormItem>)} />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-                <FormField control={control} name="telWork" render={({ field }) => (<FormItem><FormLabel>Work Tel (Optional)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                <FormField control={control} name="telHome" render={({ field }) => (<FormItem><FormLabel>Home Tel (Optional)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-            </div>
-            <FormField control={control} name="url" render={({ field }) => (<FormItem><FormLabel>Website (Optional)</FormLabel><FormControl><Input {...field} type="url" /></FormControl><FormMessage /></FormItem>)} />
+            {fields.map((item, index) => (
+                <div key={item.id} className="p-4 border rounded-lg relative space-y-4">
+                    <h4 className="font-medium">Contact #{index + 1}</h4>
+                    <div className="grid grid-cols-2 gap-4">
+                        <FormField control={control} name={`contacts.${index}.name`} render={({ field }) => (<FormItem><FormLabel>Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={control} name={`contacts.${index}.position`} render={({ field }) => (<FormItem><FormLabel>Position</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={control} name={`contacts.${index}.cell`} render={({ field }) => (<FormItem><FormLabel>Mobile Number</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={control} name={`contacts.${index}.email`} render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                    </div>
+                    <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => remove(index)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                </div>
+            ))}
+            <Button type="button" variant="outline" onClick={() => append({ name: '', position: '', cell: '', email: '' })}>
+                <PlusCircle className="mr-2 h-4 w-4" /> Add Contact
+            </Button>
         </div>
     )
 };
@@ -187,7 +197,7 @@ const ArrayStep = ({ name, title, fieldsConfig }: { name: any, title: string, fi
 const steps = [
     { id: 'main', title: 'Main', icon: User, fields: ['name', 'type', 'status', 'registrationId', 'vatRegistered'] },
     { id: 'address', title: 'Address', icon: Building, fields: ['physicalAddress', 'physicalPostalCode', 'postalAddress', 'postalPostalCode'] },
-    { id: 'contact', title: 'Contact', icon: Phone, fields: ['contactPerson', 'cell', 'email', 'telWork', 'telHome', 'url'] },
+    { id: 'contact', title: 'Contact', icon: Phone, fields: ['contacts'] },
     { id: 'owners', title: 'Owners', icon: Users, fields: ['owners'] },
     { id: 'management', title: 'Management', icon: Users, fields: ['management'] },
     { id: 'bankAccounts', title: 'Bank Accounts', icon: Banknote, fields: ['bankAccounts'] },
@@ -204,11 +214,11 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
     const methods = useForm<ClientFormValues>({
         resolver: zodResolver(clientSchema),
         mode: 'onChange',
-        defaultValues: client || { status: 'draft', vatRegistered: false, owners: [], management: [], bankAccounts: [], balanceSheets: [], incomeStatements: [] },
+        defaultValues: client || { status: 'draft', vatRegistered: false, contacts: [], owners: [], management: [], bankAccounts: [], balanceSheets: [], incomeStatements: [] },
     });
 
     useEffect(() => {
-        methods.reset(client || { status: 'draft', vatRegistered: false, owners: [], management: [], bankAccounts: [], balanceSheets: [], incomeStatements: [] });
+        methods.reset(client || { status: 'draft', vatRegistered: false, contacts: [], owners: [], management: [], bankAccounts: [], balanceSheets: [], incomeStatements: [] });
     }, [client, methods]);
 
     const onSubmit = async (values: ClientFormValues) => {
@@ -225,7 +235,7 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
             setIsLoading(false);
         }
     };
-    
+
     const handleNext = async () => {
         const stepFields = steps[currentStep].fields;
         const isValid = await methods.trigger(stepFields as any);
@@ -274,7 +284,7 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
             default: return null;
         }
     };
-
+    
     return (
         <Card>
             <FormProvider {...methods}>
@@ -290,7 +300,7 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
                     </CardHeader>
                     <CardContent>
                         <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] gap-8">
-                             <div className="flex flex-col gap-2 border-r pr-4">
+                            <div className="flex flex-col gap-2 border-r pr-4">
                                 {steps.map((step, index) => {
                                     const isCompleted = index < currentStep && isStepValid(index);
                                     const Icon = step.icon;
