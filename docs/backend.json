@@ -723,20 +723,48 @@
         }
     },
     "BalanceSheet": {
-        "$schema": "http://json-schema.org/draft-07/schema#",
-        "title": "Balance Sheet",
-        "type": "object",
-        "properties": {
-            "periodEndDate": { "type": "string" }, "propertyPlantEquipment": { "type": "number" }, "intangibleAssets": { "type": "number" }, "inventory": { "type": "number" }, "tradeReceivables": { "type": "number" }, "cashEquivalents": { "type": "number" }, "shareCapital": { "type": "number" }, "retainedEarnings": { "type": "number" }, "longTermLoans": { "type": "number" }, "tradePayables": { "type": "number" }, "shortTermLoans": { "type": "number" }
-        }
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Balance Sheet",
+      "type": "object",
+      "properties": {
+        "periodEndDate": { "type": "string" },
+        "propertyPlantEquipment": { "type": "number" },
+        "intangibleAssets": { "type": "number" },
+        "financialAssetsNonCurrent": { "type": "number" },
+        "deferredTaxAssets": { "type": "number" },
+        "inventories": { "type": "number" },
+        "tradeAndOtherReceivables": { "type": "number" },
+        "cashAndCashEquivalents": { "type": "number" },
+        "financialAssetsCurrent": { "type": "number" },
+        "shareCapital": { "type": "number" },
+        "retainedEarnings": { "type": "number" },
+        "revaluationSurplus": { "type": "number" },
+        "otherReserves": { "type": "number" },
+        "longTermBorrowings": { "type": "number" },
+        "longTermLeaseLiabilities": { "type": "number" },
+        "deferredTaxLiabilities": { "type": "number" },
+        "tradeAndOtherPayables": { "type": "number" },
+        "shortTermBorrowings": { "type": "number" },
+        "currentPortionOfLongTermDebt": { "type": "number" },
+        "currentTaxPayable": { "type": "number" }
+      }
     },
     "IncomeStatement": {
-        "$schema": "http://json-schema.org/draft-07/schema#",
-        "title": "Income Statement",
-        "type": "object",
-        "properties": {
-            "periodEndDate": { "type": "string" }, "revenue": { "type": "number" }, "cogs": { "type": "number" }, "operatingExpenses": { "type": "number" }, "interestExpense": { "type": "number" }, "taxation": { "type": "number" }
-        }
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Income Statement",
+      "type": "object",
+      "properties": {
+        "periodEndDate": { "type": "string" },
+        "revenue": { "type": "number" },
+        "costOfSales": { "type": "number" },
+        "otherIncome": { "type": "number" },
+        "distributionCosts": { "type": "number" },
+        "administrativeExpenses": { "type": "number" },
+        "otherExpenses": { "type": "number" },
+        "financeIncome": { "type": "number" },
+        "financeCosts": { "type": "number" },
+        "incomeTaxExpense": { "type": "number" }
+      }
     }
   },
   "auth": {

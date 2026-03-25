@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -57,14 +58,38 @@ const bankAccountSchema = z.object({
     email: z.string().email().optional().or(z.literal('')), contactPerson: z.string().optional(),
 });
 const balanceSheetSchema = z.object({
-    periodEndDate: z.string().optional(), propertyPlantEquipment: z.coerce.number().optional(), intangibleAssets: z.coerce.number().optional(),
-    inventory: z.coerce.number().optional(), tradeReceivables: z.coerce.number().optional(), cashEquivalents: z.coerce.number().optional(),
-    shareCapital: z.coerce.number().optional(), retainedEarnings: z.coerce.number().optional(), longTermLoans: z.coerce.number().optional(),
-    tradePayables: z.coerce.number().optional(), shortTermLoans: z.coerce.number().optional(),
+    periodEndDate: z.string().optional(),
+    propertyPlantEquipment: z.coerce.number().optional(),
+    intangibleAssets: z.coerce.number().optional(),
+    financialAssetsNonCurrent: z.coerce.number().optional(),
+    deferredTaxAssets: z.coerce.number().optional(),
+    inventories: z.coerce.number().optional(),
+    tradeAndOtherReceivables: z.coerce.number().optional(),
+    cashAndCashEquivalents: z.coerce.number().optional(),
+    financialAssetsCurrent: z.coerce.number().optional(),
+    shareCapital: z.coerce.number().optional(),
+    retainedEarnings: z.coerce.number().optional(),
+    revaluationSurplus: z.coerce.number().optional(),
+    otherReserves: z.coerce.number().optional(),
+    longTermBorrowings: z.coerce.number().optional(),
+    longTermLeaseLiabilities: z.coerce.number().optional(),
+    deferredTaxLiabilities: z.coerce.number().optional(),
+    tradeAndOtherPayables: z.coerce.number().optional(),
+    shortTermBorrowings: z.coerce.number().optional(),
+    currentPortionOfLongTermDebt: z.coerce.number().optional(),
+    currentTaxPayable: z.coerce.number().optional(),
 });
 const incomeStatementSchema = z.object({
-    periodEndDate: z.string().optional(), revenue: z.coerce.number().optional(), cogs: z.coerce.number().optional(),
-    operatingExpenses: z.coerce.number().optional(), interestExpense: z.coerce.number().optional(), taxation: z.coerce.number().optional(),
+    periodEndDate: z.string().optional(),
+    revenue: z.coerce.number().optional(),
+    costOfSales: z.coerce.number().optional(),
+    otherIncome: z.coerce.number().optional(),
+    distributionCosts: z.coerce.number().optional(),
+    administrativeExpenses: z.coerce.number().optional(),
+    otherExpenses: z.coerce.number().optional(),
+    financeIncome: z.coerce.number().optional(),
+    financeCosts: z.coerce.number().optional(),
+    incomeTaxExpense: z.coerce.number().optional(),
 });
 
 const clientSchema = z.object({
@@ -248,7 +273,7 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
     
     const handleBackStep = () => setCurrentStep(prev => prev - 1);
     
-    const isStepValid = (stepIndex: number) => {
+     const isStepValid = (stepIndex: number) => {
         if (stepIndex < 0 || stepIndex >= steps.length) return true;
         const step = steps[stepIndex];
         if (!step.fields || step.fields.length === 0) return true;
@@ -270,10 +295,38 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
                 { id: 'bankName', label: 'Bank Name', type: 'text' }, { id: 'accountNumber', label: 'Account #', type: 'text' }, { id: 'branchCode', label: 'Branch Code', type: 'text'}
             ]} />;
             case 6: return <ArrayStep name="balanceSheets" title="Balance Sheet" fieldsConfig={[
-                { id: 'periodEndDate', label: 'Period End Date', type: 'date' }, { id: 'totalAssets', label: 'Total Assets', type: 'number' }, { id: 'totalLiabilities', label: 'Total Liabilities', type: 'number'}, { id: 'equity', label: 'Equity', type: 'number'}
+                { id: 'periodEndDate', label: 'Period End', type: 'date' },
+                { id: 'propertyPlantEquipment', label: 'Property, Plant & Equip.', type: 'number' },
+                { id: 'intangibleAssets', label: 'Intangible Assets', type: 'number' },
+                { id: 'financialAssetsNonCurrent', label: 'Financial Assets (Non-Current)', type: 'number' },
+                { id: 'deferredTaxAssets', label: 'Deferred Tax Assets', type: 'number' },
+                { id: 'inventories', label: 'Inventories', type: 'number' },
+                { id: 'tradeAndOtherReceivables', label: 'Trade & Other Receivables', type: 'number' },
+                { id: 'cashAndCashEquivalents', label: 'Cash & Equivalents', type: 'number' },
+                { id: 'financialAssetsCurrent', label: 'Financial Assets (Current)', type: 'number' },
+                { id: 'shareCapital', label: 'Share Capital', type: 'number' },
+                { id: 'retainedEarnings', label: 'Retained Earnings', type: 'number' },
+                { id: 'revaluationSurplus', label: 'Revaluation Surplus', type: 'number' },
+                { id: 'otherReserves', label: 'Other Reserves', type: 'number' },
+                { id: 'longTermBorrowings', label: 'Long-Term Borrowings', type: 'number' },
+                { id: 'longTermLeaseLiabilities', label: 'Long-Term Lease Liabilities', type: 'number' },
+                { id: 'deferredTaxLiabilities', label: 'Deferred Tax Liabilities', type: 'number' },
+                { id: 'tradeAndOtherPayables', label: 'Trade & Other Payables', type: 'number' },
+                { id: 'shortTermBorrowings', label: 'Short-Term Borrowings', type: 'number' },
+                { id: 'currentPortionOfLongTermDebt', label: 'Current Portion of LT Debt', type: 'number' },
+                { id: 'currentTaxPayable', label: 'Current Tax Payable', type: 'number' },
             ]} />;
             case 7: return <ArrayStep name="incomeStatements" title="Income Statement" fieldsConfig={[
-                { id: 'periodEndDate', label: 'Period End Date', type: 'date' }, { id: 'revenue', label: 'Revenue', type: 'number' }, { id: 'netProfit', label: 'Net Profit', type: 'number'}
+                { id: 'periodEndDate', label: 'Period End Date', type: 'date' },
+                { id: 'revenue', label: 'Revenue', type: 'number' },
+                { id: 'costOfSales', label: 'Cost of Sales', type: 'number' },
+                { id: 'otherIncome', label: 'Other Income', type: 'number' },
+                { id: 'distributionCosts', label: 'Distribution Costs', type: 'number' },
+                { id: 'administrativeExpenses', label: 'Admin Expenses', type: 'number' },
+                { id: 'otherExpenses', label: 'Other Expenses', type: 'number' },
+                { id: 'financeIncome', label: 'Finance Income', type: 'number' },
+                { id: 'financeCosts', label: 'Finance Costs', type: 'number' },
+                { id: 'incomeTaxExpense', label: 'Income Tax Expense', type: 'number' },
             ]} />;
             case 8: return (
                 <div className="text-center p-8">
@@ -307,6 +360,7 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
                                     return (
                                         <Button key={step.id} type="button" variant={currentStep === index ? 'secondary' : 'ghost'} className="justify-start gap-2" onClick={() => setCurrentStep(index)} disabled={index > currentStep && !isStepValid(currentStep - 1)}>
                                             {isCompleted ? <CheckCircle className="h-5 w-5 text-green-500" /> : <div className={cn("h-5 w-5 rounded-full flex items-center justify-center text-xs font-bold", currentStep >= index ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>{index + 1}</div>}
+                                            <Icon className="h-4 w-4" />
                                             {step.title}
                                         </Button>
                                     );
