@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -59,35 +60,22 @@ const balanceSheetSchema = z.object({
     periodEndDate: z.string().optional(),
     propertyPlantEquipment: z.coerce.number().optional(),
     intangibleAssets: z.coerce.number().optional(),
-    financialAssetsNonCurrent: z.coerce.number().optional(),
-    deferredTaxAssets: z.coerce.number().optional(),
-    inventories: z.coerce.number().optional(),
-    tradeAndOtherReceivables: z.coerce.number().optional(),
-    cashAndCashEquivalents: z.coerce.number().optional(),
-    financialAssetsCurrent: z.coerce.number().optional(),
+    inventory: z.coerce.number().optional(),
+    tradeReceivables: z.coerce.number().optional(),
+    cashEquivalents: z.coerce.number().optional(),
     shareCapital: z.coerce.number().optional(),
     retainedEarnings: z.coerce.number().optional(),
-    revaluationSurplus: z.coerce.number().optional(),
-    otherReserves: z.coerce.number().optional(),
-    longTermBorrowings: z.coerce.number().optional(),
-    longTermLeaseLiabilities: z.coerce.number().optional(),
-    deferredTaxLiabilities: z.coerce.number().optional(),
-    tradeAndOtherPayables: z.coerce.number().optional(),
-    shortTermBorrowings: z.coerce.number().optional(),
-    currentPortionOfLongTermDebt: z.coerce.number().optional(),
-    currentTaxPayable: z.coerce.number().optional(),
+    longTermLoans: z.coerce.number().optional(),
+    tradePayables: z.coerce.number().optional(),
+    shortTermLoans: z.coerce.number().optional(),
 });
 const incomeStatementSchema = z.object({
     periodEndDate: z.string().optional(),
     revenue: z.coerce.number().optional(),
-    costOfSales: z.coerce.number().optional(),
-    otherIncome: z.coerce.number().optional(),
-    distributionCosts: z.coerce.number().optional(),
-    administrativeExpenses: z.coerce.number().optional(),
-    otherExpenses: z.coerce.number().optional(),
-    financeIncome: z.coerce.number().optional(),
-    financeCosts: z.coerce.number().optional(),
-    incomeTaxExpense: z.coerce.number().optional(),
+    cogs: z.coerce.number().optional(),
+    operatingExpenses: z.coerce.number().optional(),
+    interestExpense: z.coerce.number().optional(),
+    taxation: z.coerce.number().optional(),
 });
 
 const clientSchema = z.object({
@@ -149,31 +137,6 @@ const StepAddress = () => {
     )
 };
 
-const StepContact = () => {
-    const { control } = useFormContext<ClientFormValues>();
-    const { fields, append, remove } = useFieldArray({ control, name: "contacts" });
-
-    return (
-        <div className="space-y-4">
-            {fields.map((item, index) => (
-                <div key={item.id} className="p-4 border rounded-lg relative space-y-4">
-                    <h4 className="font-medium">Contact #{index + 1}</h4>
-                    <div className="grid grid-cols-2 gap-4">
-                        <FormField control={control} name={`contacts.${index}.name`} render={({ field }) => (<FormItem><FormLabel>Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        <FormField control={control} name={`contacts.${index}.position`} render={({ field }) => (<FormItem><FormLabel>Position</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        <FormField control={control} name={`contacts.${index}.cell`} render={({ field }) => (<FormItem><FormLabel>Mobile Number</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        <FormField control={control} name={`contacts.${index}.email`} render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                    </div>
-                    <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => remove(index)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                </div>
-            ))}
-            <Button type="button" variant="outline" onClick={() => append({ name: '', position: '', cell: '', email: '' })}>
-                <PlusCircle className="mr-2 h-4 w-4" /> Add Contact
-            </Button>
-        </div>
-    )
-};
-
 const ArrayStep = ({ name, title, fieldsConfig }: { name: any, title: string, fieldsConfig: {id: string, label: string, type: string}[] }) => {
     const { control } = useFormContext<ClientFormValues>();
     const { fields, append, remove } = useFieldArray({ control, name });
@@ -188,7 +151,7 @@ const ArrayStep = ({ name, title, fieldsConfig }: { name: any, title: string, fi
                             <FormField
                                 control={control}
                                 key={`${item.id}-${config.id}`}
-                                name={`${name}.${index}.${config.id}`}
+                                name={`${name}.${index}.${config.id}` as any}
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>{config.label}</FormLabel>
@@ -229,7 +192,13 @@ const steps = [
     { id: 'review', title: 'Review & Submit', icon: CheckCircle, fields: [] },
 ];
 
-export function EditClientWizard({ client, onSave, onBack }: { client?: any, onSave: () => void, onBack: () => void }) {
+interface EditClientWizardProps {
+  client?: any;
+  onSave: () => void;
+  onBack: () => void;
+}
+
+export function EditClientWizard({ client, onSave, onBack }: EditClientWizardProps) {
     const [isLoading, setIsLoading] = useState(false);
     const [currentStep, setCurrentStep] = useState(0);
     const [completedSteps, setCompletedSteps] = useState(new Set<string>());
@@ -262,7 +231,7 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
         if (client) {
             validateInitialSteps();
         } else {
-            setCompletedSteps(new Set());
+             setCompletedSteps(new Set());
         }
     }, [client, methods]);
 
@@ -303,68 +272,25 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
     };
     
     const handleBackStep = () => setCurrentStep(prev => prev - 1);
-
+    
     const renderStepContent = () => {
         const stepId = steps[currentStep]?.id;
         switch (stepId) {
             case 'main': return <StepMain />;
             case 'address': return <StepAddress />;
-            case 'contact': return <StepContact />;
-            case 'owners': return <ArrayStep name="owners" title="Owner" fieldsConfig={[
-                { id: 'name', label: 'Name', type: 'text' }, { id: 'idNumber', label: 'ID Number', type: 'text' }, { id: 'cell', label: 'Cell', type: 'text'}, { id: 'percentageHeld', label: '% Held', type: 'number'}
-            ]} />;
-             case 'management': return <ArrayStep name="management" title="Manager" fieldsConfig={[
-                { id: 'name', label: 'Name', type: 'text' }, { id: 'idNumber', label: 'ID Number', type: 'text' }, { id: 'cell', label: 'Cell', type: 'text'}, { id: 'position', label: 'Position', type: 'text'}
-            ]} />;
-            case 'bankAccounts': return <ArrayStep name="bankAccounts" title="Bank Account" fieldsConfig={[
-                { id: 'bankName', label: 'Bank Name', type: 'text' }, { id: 'accountNumber', label: 'Account #', type: 'text' }, { id: 'branchCode', label: 'Branch Code', type: 'text'}
-            ]} />;
-            case 'balanceSheet': return <ArrayStep name="balanceSheets" title="Balance Sheet" fieldsConfig={[
-                { id: 'periodEndDate', label: 'Period End', type: 'date' },
-                { id: 'propertyPlantEquipment', label: 'Property, Plant & Equip.', type: 'number' },
-                { id: 'intangibleAssets', label: 'Intangible Assets', type: 'number' },
-                { id: 'financialAssetsNonCurrent', label: 'Financial Assets (Non-Current)', type: 'number' },
-                { id: 'deferredTaxAssets', label: 'Deferred Tax Assets', type: 'number' },
-                { id: 'inventories', label: 'Inventories', type: 'number' },
-                { id: 'tradeAndOtherReceivables', label: 'Trade & Other Receivables', type: 'number' },
-                { id: 'cashAndCashEquivalents', label: 'Cash & Equivalents', type: 'number' },
-                { id: 'financialAssetsCurrent', label: 'Financial Assets (Current)', type: 'number' },
-                { id: 'shareCapital', label: 'Share Capital', type: 'number' },
-                { id: 'retainedEarnings', label: 'Retained Earnings', type: 'number' },
-                { id: 'revaluationSurplus', label: 'Revaluation Surplus', type: 'number' },
-                { id: 'otherReserves', label: 'Other Reserves', type: 'number' },
-                { id: 'longTermBorrowings', label: 'Long-Term Borrowings', type: 'number' },
-                { id: 'longTermLeaseLiabilities', label: 'Long-Term Lease Liabilities', type: 'number' },
-                { id: 'deferredTaxLiabilities', label: 'Deferred Tax Liabilities', type: 'number' },
-                { id: 'tradeAndOtherPayables', label: 'Trade & Other Payables', type: 'number' },
-                { id: 'shortTermBorrowings', label: 'Short-Term Borrowings', type: 'number' },
-                { id: 'currentPortionOfLongTermDebt', label: 'Current Portion of LT Debt', type: 'number' },
-                { id: 'currentTaxPayable', label: 'Current Tax Payable', type: 'number' },
-            ]} />;
-            case 'incomeStatement': return <ArrayStep name="incomeStatements" title="Income Statement" fieldsConfig={[
-                { id: 'periodEndDate', label: 'Period End Date', type: 'date' },
-                { id: 'revenue', label: 'Revenue', type: 'number' },
-                { id: 'costOfSales', label: 'Cost of Sales', type: 'number' },
-                { id: 'otherIncome', label: 'Other Income', type: 'number' },
-                { id: 'distributionCosts', label: 'Distribution Costs', type: 'number' },
-                { id: 'administrativeExpenses', label: 'Admin Expenses', type: 'number' },
-                { id: 'otherExpenses', label: 'Other Expenses', type: 'number' },
-                { id: 'financeIncome', label: 'Finance Income', type: 'number' },
-                { id: 'financeCosts', label: 'Finance Costs', type: 'number' },
-                { id: 'incomeTaxExpense', label: 'Income Tax Expense', type: 'number' },
-            ]} />;
-            case 'review': return (
-                <div className="text-center p-8">
-                    <h3 className="text-lg font-semibold">Review and Submit</h3>
-                    <p className="text-muted-foreground">Please confirm all details before saving the client.</p>
-                </div>
-            );
+            case 'contact': return <ArrayStep name="contacts" title="Contact" fieldsConfig={[ { id: 'name', label: 'Name', type: 'text' }, { id: 'position', label: 'Position', type: 'text' }, { id: 'cell', label: 'Cell', type: 'text'}, { id: 'email', label: 'Email', type: 'email'} ]} />;
+            case 'owners': return <ArrayStep name="owners" title="Owner" fieldsConfig={[ { id: 'name', label: 'Name', type: 'text' }, { id: 'idNumber', label: 'ID Number', type: 'text' }, { id: 'cell', label: 'Cell', type: 'text'}, { id: 'percentageHeld', label: '% Held', type: 'number'} ]} />;
+            case 'management': return <ArrayStep name="management" title="Manager" fieldsConfig={[ { id: 'name', label: 'Name', type: 'text' }, { id: 'idNumber', label: 'ID Number', type: 'text' }, { id: 'cell', label: 'Cell', type: 'text'}, { id: 'position', label: 'Position', type: 'text'} ]} />;
+            case 'bankAccounts': return <ArrayStep name="bankAccounts" title="Bank Account" fieldsConfig={[ { id: 'bankName', label: 'Bank Name', type: 'text' }, { id: 'accountNumber', label: 'Account #', type: 'text' }, { id: 'branchCode', label: 'Branch Code', type: 'text'} ]} />;
+            case 'balanceSheet': return <ArrayStep name="balanceSheets" title="Balance Sheet" fieldsConfig={[ { id: 'periodEndDate', label: 'Period End', type: 'date' }, { id: 'propertyPlantEquipment', label: 'Property, Plant & Equip.', type: 'number' }, { id: 'intangibleAssets', label: 'Intangible Assets', type: 'number' }, { id: 'inventory', label: 'Inventory', type: 'number' }, { id: 'tradeReceivables', label: 'Trade Receivables', type: 'number' }, { id: 'cashEquivalents', label: 'Cash & Equivalents', type: 'number' }, { id: 'shareCapital', label: 'Share Capital', type: 'number' }, { id: 'retainedEarnings', label: 'Retained Earnings', type: 'number' }, { id: 'longTermLoans', label: 'Long-Term Loans', type: 'number' }, { id: 'tradePayables', label: 'Trade Payables', type: 'number' }, { id: 'shortTermLoans', label: 'Short-Term Loans', type: 'number' } ]} />;
+            case 'incomeStatement': return <ArrayStep name="incomeStatements" title="Income Statement" fieldsConfig={[ { id: 'periodEndDate', label: 'Period End Date', type: 'date' }, { id: 'revenue', label: 'Revenue', type: 'number' }, { id: 'cogs', label: 'Cost of Goods Sold', type: 'number' }, { id: 'operatingExpenses', label: 'Operating Expenses', type: 'number' }, { id: 'interestExpense', label: 'Interest Expense', type: 'number' }, { id: 'taxation', label: 'Taxation', type: 'number' } ]} />;
+            case 'review': return <div className="text-center p-8"><h3 className="text-lg font-semibold">Review and Submit</h3><p className="text-muted-foreground">Please confirm all details before saving the client.</p></div>;
             default: return null;
         }
     };
     
     return (
-        <Card>
+         <Card>
             <FormProvider {...methods}>
                 <form onSubmit={methods.handleSubmit(onSubmit)}>
                     <CardHeader>
@@ -380,6 +306,7 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
                         <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] gap-8">
                             <div className="flex flex-col gap-2 border-r pr-4">
                                 {steps.map((step, index) => {
+                                    const Icon = step.icon;
                                     const isCompleted = completedSteps.has(step.id);
                                     return (
                                         <Button key={step.id} type="button" variant={currentStep === index ? 'secondary' : 'ghost'} className="justify-start gap-2" onClick={() => setCurrentStep(index)}>
@@ -414,3 +341,4 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
         </Card>
     );
 }
+

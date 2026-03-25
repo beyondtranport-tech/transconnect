@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -30,6 +31,7 @@ async function performAdminAction(token: string, action: string, payload: any) {
     }
     return result;
 }
+
 
 // --- ZOD Schemas ---
 const contactSchema = z.object({
@@ -125,12 +127,17 @@ const StepMain = () => {
                 <FormField control={control} name="type" render={({ field }) => (<FormItem><FormLabel>Type</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a type..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="supplier">Supplier</SelectItem><SelectItem value="vendor">Vendor</SelectItem><SelectItem value="associate">Affiliate</SelectItem><SelectItem value="debtor">Debtor</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
                 <FormField control={control} name="status" render={({ field }) => (<FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent><SelectItem value="draft">Draft</SelectItem><SelectItem value="active">Active</SelectItem><SelectItem value="inactive">Inactive</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
             </div>
-            <FormField control={control} name="registrationId" render={({ field }) => (<FormItem><FormLabel>Registration ID</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-            <FormField control={control} name="vatRegistered" render={({ field }) => (<FormItem className="flex items-center space-x-2 pt-2"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><Label>VAT Registered?</Label></FormItem>)} />
+            <div className="grid grid-cols-2 gap-4">
+                 <FormField control={control} name="registrationId" render={({ field }) => (<FormItem><FormLabel>Registration ID</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                 <FormField control={control} name="vatRegistered" render={({ field }) => (<FormItem className="flex items-center space-x-2 pt-8"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel>VAT Registered?</FormLabel></FormItem>)} />
+            </div>
+             <div className="grid grid-cols-2 gap-4">
+                <FormField control={control} name="category" render={({ field }) => (<FormItem><FormLabel>Category</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={control} name="code" render={({ field }) => (<FormItem><FormLabel>Code</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+            </div>
         </div>
     );
 };
-
 const StepAddress = () => {
     const { control } = useFormContext<PartnerWizardFormValues>();
     return (
@@ -153,7 +160,6 @@ const StepAddress = () => {
     );
 };
 
-
 const ArrayStep = ({ name, title, fieldsConfig }: { name: any, title: string, fieldsConfig: {id: string, label: string, type: string}[] }) => {
     const { control } = useFormContext<PartnerWizardFormValues>();
     const { fields, append, remove } = useFieldArray({ control, name });
@@ -168,7 +174,7 @@ const ArrayStep = ({ name, title, fieldsConfig }: { name: any, title: string, fi
                             <FormField
                                 control={control}
                                 key={`${item.id}-${config.id}`}
-                                name={`${name}.${index}.${config.id}`}
+                                name={`${name}.${index}.${config.id}` as any}
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>{config.label}</FormLabel>
@@ -195,7 +201,6 @@ const ArrayStep = ({ name, title, fieldsConfig }: { name: any, title: string, fi
         </div>
     );
 };
-
 
 const steps = [
     { id: 'main', title: 'Main', icon: Handshake, fields: ['name', 'type', 'status', 'registrationId', 'vatRegistered'] },
@@ -230,7 +235,7 @@ export function EditLendingPartnerWizard({ partner, onSave, onBack }: EditLendin
     useEffect(() => {
         const initialValues = partner || { status: 'draft', vatRegistered: false, contacts: [], owners: [], management: [], bankAccounts: [], balanceSheets: [], incomeStatements: [] };
         methods.reset(initialValues);
-
+        
         const validateInitialSteps = async () => {
             const initiallyCompleted = new Set<string>();
             for (let i = 0; i < steps.length; i++) {
@@ -244,11 +249,11 @@ export function EditLendingPartnerWizard({ partner, onSave, onBack }: EditLendin
             }
             setCompletedSteps(initiallyCompleted);
         };
-        
+
         if (partner) {
             validateInitialSteps();
         } else {
-             setCompletedSteps(new Set());
+            setCompletedSteps(new Set());
         }
     }, [partner, methods]);
 
@@ -269,9 +274,17 @@ export function EditLendingPartnerWizard({ partner, onSave, onBack }: EditLendin
     
     const handleNext = async () => {
         const stepFields = steps[currentStep].fields;
+        if (!stepFields || stepFields.length === 0) {
+             if (currentStep < steps.length - 1) {
+                setCompletedSteps(prev => new Set(prev).add(steps[currentStep].id));
+                setCurrentStep(prev => prev + 1);
+            }
+            return;
+        }
+
         const isValid = await methods.trigger(stepFields as any);
         if (isValid) {
-            setCompletedSteps(prev => new Set(prev).add(steps[currentStep].id));
+             setCompletedSteps(prev => new Set(prev).add(steps[currentStep].id));
             if (currentStep < steps.length - 1) {
                 setCurrentStep(prev => prev + 1);
             }
@@ -291,8 +304,8 @@ export function EditLendingPartnerWizard({ partner, onSave, onBack }: EditLendin
             case 'owners': return <ArrayStep name="owners" title="Owner" fieldsConfig={[ { id: 'name', label: 'Name', type: 'text' }, { id: 'idNumber', label: 'ID Number', type: 'text' }, { id: 'cell', label: 'Cell', type: 'text'}, { id: 'percentageHeld', label: '% Held', type: 'number'} ]} />;
             case 'management': return <ArrayStep name="management" title="Manager" fieldsConfig={[ { id: 'name', label: 'Name', type: 'text' }, { id: 'idNumber', label: 'ID Number', type: 'text' }, { id: 'cell', label: 'Cell', type: 'text'}, { id: 'position', label: 'Position', type: 'text'} ]} />;
             case 'bankAccounts': return <ArrayStep name="bankAccounts" title="Bank Account" fieldsConfig={[ { id: 'bankName', label: 'Bank Name', type: 'text' }, { id: 'accountNumber', label: 'Account #', type: 'text' }, { id: 'branchCode', label: 'Branch Code', type: 'text'} ]} />;
-            case 'balanceSheet': return <ArrayStep name="balanceSheets" title="Balance Sheet" fieldsConfig={[ { id: 'periodEndDate', label: 'Period End', type: 'date' }, { id: 'propertyPlantEquipment', label: 'Property, Plant & Equip.', type: 'number' }, { id: 'intangibleAssets', label: 'Intangible Assets', type: 'number' }, { id: 'financialAssetsNonCurrent', label: 'Financial Assets (Non-Current)', type: 'number' }, { id: 'deferredTaxAssets', label: 'Deferred Tax Assets', type: 'number' }, { id: 'inventories', label: 'Inventories', type: 'number' }, { id: 'tradeAndOtherReceivables', label: 'Trade & Other Receivables', type: 'number' }, { id: 'cashAndCashEquivalents', label: 'Cash & Equivalents', type: 'number' }, { id: 'financialAssetsCurrent', label: 'Financial Assets (Current)', type: 'number' }, { id: 'shareCapital', label: 'Share Capital', type: 'number' }, { id: 'retainedEarnings', label: 'Retained Earnings', type: 'number' }, { id: 'revaluationSurplus', label: 'Revaluation Surplus', type: 'number' }, { id: 'otherReserves', label: 'Other Reserves', type: 'number' }, { id: 'longTermBorrowings', label: 'Long-Term Borrowings', type: 'number' }, { id: 'longTermLeaseLiabilities', label: 'Long-Term Lease Liabilities', type: 'number' }, { id: 'deferredTaxLiabilities', label: 'Deferred Tax Liabilities', type: 'number' }, { id: 'tradeAndOtherPayables', label: 'Trade & Other Payables', type: 'number' }, { id: 'shortTermBorrowings', label: 'Short-Term Borrowings', type: 'number' }, { id: 'currentPortionOfLongTermDebt', label: 'Current Portion of LT Debt', type: 'number' }, { id: 'currentTaxPayable', label: 'Current Tax Payable', type: 'number' }, ]} />;
-            case 'incomeStatement': return <ArrayStep name="incomeStatements" title="Income Statement" fieldsConfig={[ { id: 'periodEndDate', label: 'Period End Date', type: 'date' }, { id: 'revenue', label: 'Revenue', type: 'number' }, { id: 'costOfSales', label: 'Cost of Sales', type: 'number' }, { id: 'otherIncome', label: 'Other Income', type: 'number' }, { id: 'distributionCosts', label: 'Distribution Costs', type: 'number' }, { id: 'administrativeExpenses', label: 'Admin Expenses', type: 'number' }, { id: 'otherExpenses', label: 'Other Expenses', type: 'number' }, { id: 'financeIncome', label: 'Finance Income', type: 'number' }, { id: 'financeCosts', label: 'Finance Costs', type: 'number' }, { id: 'incomeTaxExpense', label: 'Income Tax Expense', type: 'number' }, ]} />;
+            case 'balanceSheet': return <ArrayStep name="balanceSheets" title="Balance Sheet" fieldsConfig={[ { id: 'periodEndDate', label: 'Period End', type: 'date' }, { id: 'propertyPlantEquipment', label: 'Property, Plant & Equip.', type: 'number' }, { id: 'intangibleAssets', label: 'Intangible Assets', type: 'number' }, { id: 'inventory', label: 'Inventory', type: 'number' }, { id: 'tradeReceivables', label: 'Trade Receivables', type: 'number' }, { id: 'cashEquivalents', label: 'Cash & Equivalents', type: 'number' }, { id: 'shareCapital', label: 'Share Capital', type: 'number' }, { id: 'retainedEarnings', label: 'Retained Earnings', type: 'number' }, { id: 'longTermLoans', label: 'Long-Term Loans', type: 'number' }, { id: 'tradePayables', label: 'Trade Payables', type: 'number' }, { id: 'shortTermLoans', label: 'Short-Term Loans', type: 'number' } ]} />;
+            case 'incomeStatement': return <ArrayStep name="incomeStatements" title="Income Statement" fieldsConfig={[ { id: 'periodEndDate', label: 'Period End Date', type: 'date' }, { id: 'revenue', label: 'Revenue', type: 'number' }, { id: 'cogs', label: 'Cost of Goods Sold', type: 'number' }, { id: 'operatingExpenses', label: 'Operating Expenses', type: 'number' }, { id: 'interestExpense', label: 'Interest Expense', type: 'number' }, { id: 'taxation', label: 'Taxation', type: 'number' } ]} />;
             case 'review': return <div className="text-center p-8"><h3 className="text-lg font-semibold">Review and Submit</h3><p className="text-muted-foreground">Please confirm all details before saving the partner.</p></div>;
             default: return null;
         }
