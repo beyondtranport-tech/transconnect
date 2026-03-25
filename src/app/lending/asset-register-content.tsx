@@ -1,9 +1,8 @@
-
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, PlusCircle, Truck, Edit, Trash2 } from "lucide-react";
+import { Loader2, PlusCircle, Truck, Edit, Trash2, Warehouse, Wrench, ArrowLeft } from "lucide-react";
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { Badge } from '@/components/ui/badge';
@@ -13,7 +12,6 @@ import { useToast } from '@/hooks/use-toast';
 import { formatCurrency } from '@/lib/utils';
 import { EditAssetWizard } from './edit-asset';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-
 
 // API Helper
 async function performAdminAction(token: string, action: string, payload: any) {
@@ -36,6 +34,42 @@ const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | '
     decommissioned: 'destructive'
 };
 
+// New component for type selection
+function AssetTypeSelection({ onSelect, onBack }: { onSelect: (type: string) => void, onBack: () => void }) {
+    const types = [
+        { id: 'truck', label: 'Truck', icon: Truck },
+        { id: 'trailer', label: 'Trailer', icon: Warehouse },
+        { id: 'equipment', label: 'Equipment', icon: Wrench },
+    ];
+
+    return (
+        <Card>
+            <CardHeader>
+                <div className="flex justify-between items-start">
+                    <div>
+                        <CardTitle>Add New Asset</CardTitle>
+                        <CardDescription>First, select the type of asset you want to register.</CardDescription>
+                    </div>
+                    <Button variant="ghost" onClick={onBack}><ArrowLeft className="mr-2 h-4 w-4"/> Back to List</Button>
+                </div>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6">
+                {types.map(type => {
+                    const Icon = type.icon;
+                    return (
+                        <Card key={type.id} className="text-center hover:shadow-lg hover:border-primary transition-all cursor-pointer" onClick={() => onSelect(type.label)}>
+                            <CardContent className="p-6">
+                                <Icon className="h-12 w-12 mx-auto text-primary" />
+                                <h3 className="mt-4 text-lg font-semibold">{type.label}</h3>
+                            </CardContent>
+                        </Card>
+                    );
+                })}
+            </CardContent>
+        </Card>
+    );
+}
+
 export default function AssetRegisterContent() {
     const [assets, setAssets] = useState<any[]>([]);
     const [clients, setClients] = useState<any[]>([]);
@@ -43,8 +77,9 @@ export default function AssetRegisterContent() {
     const [error, setError] = useState<string | null>(null);
     const { toast } = useToast();
     
-    const [view, setView] = useState<'list' | 'wizard'>('list');
+    const [view, setView] = useState<'list' | 'wizard' | 'select-type'>('list');
     const [selectedAsset, setSelectedAsset] = useState<any | null>(null);
+    const [assetType, setAssetType] = useState<string | null>(null);
     const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
     const [assetToDelete, setAssetToDelete] = useState<any | null>(null);
 
@@ -79,22 +114,29 @@ export default function AssetRegisterContent() {
 
     const handleEdit = (asset: any) => {
         setSelectedAsset(asset);
+        setAssetType(asset.classification || null);
         setView('wizard');
     };
 
     const handleAddNew = () => {
-        setSelectedAsset(null);
-        setView('wizard');
+        setView('select-type');
     };
-
+    
     const handleBackToList = () => {
         setView('list');
         setSelectedAsset(null);
+        setAssetType(null);
     };
 
     const handleSaveSuccess = () => {
         forceRefresh();
         handleBackToList();
+    };
+
+    const handleTypeSelect = (type: string) => {
+        setSelectedAsset(null);
+        setAssetType(type);
+        setView('wizard');
     };
 
     const handleDelete = async () => {
@@ -128,14 +170,19 @@ export default function AssetRegisterContent() {
                 <Button variant="ghost" size="icon" onClick={() => { setAssetToDelete(row.original); setIsDeleteAlertOpen(true); }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
             </div>
         )},
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     ], [clientMap]);
     
     if (error) {
         return <Card className="bg-destructive/10 border-destructive text-destructive-foreground"><CardHeader><CardTitle>Error</CardTitle></CardHeader><CardContent>{error}</CardContent></Card>
     }
 
+    if (view === 'select-type') {
+        return <AssetTypeSelection onSelect={handleTypeSelect} onBack={handleBackToList} />;
+    }
+
     if (view === 'wizard') {
-        return <EditAssetWizard asset={selectedAsset} clients={clients} onSave={handleSaveSuccess} onBack={handleBackToList} />;
+        return <EditAssetWizard asset={selectedAsset} assetType={assetType} clients={clients} onSave={handleSaveSuccess} onBack={handleBackToList} />;
     }
 
     return (

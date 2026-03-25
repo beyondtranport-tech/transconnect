@@ -1,7 +1,6 @@
-
 'use client';
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -30,6 +29,13 @@ async function performAdminAction(token: string, action: string, payload: any) {
     return result;
 }
 
+const fileToDataUri = (file: File) => new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = error => reject(error);
+    reader.readAsDataURL(file);
+});
+
 const assetSchema = z.object({
   clientId: z.string().min(1, 'Client is required'),
   make: z.string().min(1, 'Make is required'),
@@ -38,11 +44,13 @@ const assetSchema = z.object({
   registrationNumber: z.string().optional(),
   costOfSale: z.coerce.number().positive('Cost must be positive'),
   status: z.enum(['available', 'financed', 'sold', 'decommissioned']).default('available'),
+  classification: z.string().optional(),
 });
+
 type AssetFormValues = z.infer<typeof assetSchema>;
 
 const steps = [
-    { id: 'details', title: 'Asset Details', fields: ['clientId', 'make', 'model', 'year', 'costOfSale', 'status'] },
+    { id: 'details', title: 'Asset Details', fields: ['clientId', 'make', 'model', 'year', 'costOfSale', 'status', 'classification'] },
     { id: 'identifiers', title: 'Identifiers', fields: ['registrationNumber'] },
 ];
 
@@ -51,21 +59,31 @@ interface EditAssetWizardProps {
   clients: any[];
   onSave: () => void;
   onBack: () => void;
+  assetType?: string | null;
 }
 
-export function EditAssetWizard({ asset, clients, onSave, onBack }: EditAssetWizardProps) {
+export function EditAssetWizard({ asset, clients, onSave, onBack, assetType }: EditAssetWizardProps) {
     const [isLoading, setIsLoading] = useState(false);
     const [currentStep, setCurrentStep] = useState(0);
     const { toast } = useToast();
-
+    
     const methods = useForm<AssetFormValues>({
         resolver: zodResolver(assetSchema),
-        mode: 'onChange'
+        mode: 'onChange',
     });
 
     useEffect(() => {
-        methods.reset(asset || { clientId: '', make: '', model: '', year: '', registrationNumber: '', costOfSale: 0, status: 'available' });
-    }, [asset, methods]);
+        methods.reset(asset || { 
+            clientId: '', 
+            make: '', 
+            model: '', 
+            year: '', 
+            registrationNumber: '',
+            costOfSale: 0,
+            classification: assetType || '',
+            status: 'available' 
+        });
+    }, [asset, assetType, methods]);
 
     const onSubmit = async (values: AssetFormValues) => {
         setIsLoading(true);
@@ -100,10 +118,23 @@ export function EditAssetWizard({ asset, clients, onSave, onBack }: EditAssetWiz
         return step.fields.every(field => !methods.formState.errors[field as keyof typeof methods.formState.errors]);
     };
     
-    const renderStepContent = () => {
+     const renderStepContent = () => {
         switch (currentStep) {
             case 0: return (
                 <div className="space-y-4">
+                    <FormField 
+                        control={methods.control} 
+                        name="classification" 
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Asset Type</FormLabel>
+                                <FormControl>
+                                    <Input {...field} readOnly className="font-semibold bg-muted/50" />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )} 
+                    />
                     <FormField control={methods.control} name="clientId" render={({ field }) => (<FormItem><FormLabel>Client (Owner)</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a client..." /></SelectTrigger></FormControl><SelectContent>{clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <FormField control={methods.control} name="make" render={({ field }) => (<FormItem><FormLabel>Make</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
@@ -124,7 +155,7 @@ export function EditAssetWizard({ asset, clients, onSave, onBack }: EditAssetWiz
             default: return null;
         }
     };
-
+    
     return (
         <Card>
             <FormProvider {...methods}>
@@ -138,9 +169,9 @@ export function EditAssetWizard({ asset, clients, onSave, onBack }: EditAssetWiz
                             <Button type="button" variant="ghost" onClick={onBack}><ArrowLeft className="mr-2 h-4 w-4"/>Back to List</Button>
                         </div>
                     </CardHeader>
-                     <CardContent>
+                        <CardContent>
                         <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] gap-8">
-                            <div className="flex flex-col gap-2 border-r pr-4">
+                             <div className="flex flex-col gap-2 border-r pr-4">
                                 {steps.map((step, index) => {
                                     const isCompleted = index < currentStep && isStepValid(index);
                                     return (
@@ -151,9 +182,9 @@ export function EditAssetWizard({ asset, clients, onSave, onBack }: EditAssetWiz
                                     );
                                 })}
                             </div>
-                            <div className="space-y-6 min-h-[400px]">
+                             <div className="space-y-6 min-h-[400px]">
                                 {renderStepContent()}
-                            </div>
+                             </div>
                         </div>
                     </CardContent>
                     <CardFooter className="flex justify-between border-t pt-6 mt-6">
@@ -161,7 +192,9 @@ export function EditAssetWizard({ asset, clients, onSave, onBack }: EditAssetWiz
                             <ArrowLeft className="mr-2 h-4 w-4" /> Back
                         </Button>
                         {currentStep < steps.length - 1 ? (
-                            <Button type="button" onClick={handleNext}>Next <ArrowRight className="ml-2 h-4 w-4"/></Button>
+                            <Button type="button" onClick={handleNext}>
+                                Next <ArrowRight className="ml-2 h-4 w-4"/>
+                            </Button>
                         ) : (
                             <Button type="submit" disabled={isLoading}>
                                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
