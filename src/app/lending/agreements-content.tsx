@@ -10,9 +10,7 @@ import { Button } from '@/components/ui/button';
 import { getClientSideAuthToken } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { formatCurrency, formatDateSafe } from '@/lib/utils';
-import { EditAgreementDialog } from './edit-agreement';
-import { InstallmentSaleWizard } from './installment-sale-wizard';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { AgreementWizard } from './edit-agreement';
 
 async function performAdminAction(token: string, action: string, payload?: any) {
     const response = await fetch('/api/admin', {
@@ -41,11 +39,11 @@ export default function AgreementsContent() {
     const [view, setView] = useState<'list' | 'wizard'>('list');
     const [agreements, setAgreements] = useState<any[]>([]);
     const [clients, setClients] = useState<any[]>([]);
+    const [facilities, setFacilities] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const { toast } = useToast();
     
-    const [isStdDialogOpen, setIsStdDialogOpen] = useState(false);
     const [selectedAgreement, setSelectedAgreement] = useState<any | null>(null);
 
     const clientMap = useMemo(() => new Map(clients.map(c => [c.id, c.name])), [clients]);
@@ -57,13 +55,15 @@ export default function AgreementsContent() {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication failed.");
             
-            const [agreementsRes, clientsRes] = await Promise.all([
+            const [agreementsRes, clientsRes, facilitiesRes] = await Promise.all([
                 performAdminAction(token, 'getLendingData', { collectionName: 'agreements' }),
-                performAdminAction(token, 'getLendingData', { collectionName: 'lendingClients' })
+                performAdminAction(token, 'getLendingData', { collectionName: 'lendingClients' }),
+                performAdminAction(token, 'getLendingData', { collectionName: 'facilities' })
             ]);
             
             setAgreements(agreementsRes.data || []);
             setClients(clientsRes.data || []);
+            setFacilities(facilitiesRes.data || []);
 
         } catch (e: any) {
             setError(e.message);
@@ -77,23 +77,14 @@ export default function AgreementsContent() {
         forceRefresh();
     }, [forceRefresh]);
     
-    const handleNewStandardAgreement = () => {
-        setSelectedAgreement(null);
-        setIsStdDialogOpen(true);
-    };
-    
-    const handleNewInstallmentSale = () => {
+    const handleAddNew = () => {
         setSelectedAgreement(null);
         setView('wizard');
     };
 
     const handleEdit = (agreement: any) => {
         setSelectedAgreement(agreement);
-        if (agreement.type === 'installment-sale') {
-            setView('wizard');
-        } else {
-            setIsStdDialogOpen(true);
-        }
+        setView('wizard');
     };
     
     const handleBackToList = () => {
@@ -131,52 +122,32 @@ export default function AgreementsContent() {
 
     if (view === 'wizard') {
         return (
-            <InstallmentSaleWizard 
+            <AgreementWizard
                 agreement={selectedAgreement}
                 clients={clients}
-                onSaveSuccess={handleSaveSuccess}
+                facilities={facilities}
+                onSave={handleSaveSuccess}
                 onBack={handleBackToList}
             />
         );
     }
 
     return (
-        <>
-            <EditAgreementDialog 
-                isOpen={isStdDialogOpen}
-                onOpenChange={setIsStdDialogOpen}
-                agreement={selectedAgreement}
-                clients={clients}
-                onSave={forceRefresh}
-            />
-            <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                    <div>
-                        <CardTitle className="flex items-center gap-2"><FileSignature /> Lending Agreements</CardTitle>
-                        <CardDescription>Manage all active and pending lending agreements.</CardDescription>
-                    </div>
-                     <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button><PlusCircle className="mr-2 h-4 w-4"/>New Agreement</Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent>
-                            <DropdownMenuItem onSelect={handleNewInstallmentSale}>
-                                Installment Sale Wizard
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onSelect={handleNewStandardAgreement}>
-                                Standard Agreement (Loan, etc.)
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                </CardHeader>
-                <CardContent>
-                    {isLoading ? (
-                        <div className="flex justify-center items-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
-                    ) : (
-                        <DataTable columns={columns} data={agreements} />
-                    )}
-                </CardContent>
-            </Card>
-        </>
+        <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                    <CardTitle className="flex items-center gap-2"><FileSignature /> Lending Agreements</CardTitle>
+                    <CardDescription>Manage all active and pending lending agreements.</CardDescription>
+                </div>
+                <Button onClick={handleAddNew}><PlusCircle className="mr-2 h-4 w-4"/>New Agreement</Button>
+            </CardHeader>
+            <CardContent>
+                {isLoading ? (
+                    <div className="flex justify-center items-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+                ) : (
+                    <DataTable columns={columns} data={agreements} />
+                )}
+            </CardContent>
+        </Card>
     );
 }
