@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -105,8 +104,13 @@ const partnerWizardSchema = z.object({
   physicalPostalCode: z.string().optional(),
   postalAddress: z.string().optional(),
   postalPostalCode: z.string().optional(),
+  contactPerson: z.string().optional(),
+  telWork: z.string().optional(),
+  telHome: z.string().optional(),
+  fax: z.string().optional(),
+  cell: z.string().optional(),
+  email: z.string().email().optional().or(z.literal('')),
   url: z.string().url().optional().or(z.literal('')),
-  contacts: z.array(contactSchema).optional(),
   owners: z.array(ownerSchema).optional(),
   management: z.array(managementSchema).optional(),
   bankAccounts: z.array(bankAccountSchema).optional(),
@@ -121,22 +125,23 @@ type PartnerWizardFormValues = z.infer<typeof partnerWizardSchema>;
 const StepMain = () => {
     const { control } = useFormContext<PartnerWizardFormValues>();
     return (
-        <div className="space-y-4">
+         <div className="space-y-4">
             <FormField control={control} name="name" render={({ field }) => (<FormItem><FormLabel>Partner Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             <div className="grid grid-cols-2 gap-4">
                 <FormField control={control} name="type" render={({ field }) => (<FormItem><FormLabel>Type</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a type..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="supplier">Supplier</SelectItem><SelectItem value="vendor">Vendor</SelectItem><SelectItem value="associate">Affiliate</SelectItem><SelectItem value="debtor">Debtor</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
                 <FormField control={control} name="status" render={({ field }) => (<FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent><SelectItem value="draft">Draft</SelectItem><SelectItem value="active">Active</SelectItem><SelectItem value="inactive">Inactive</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+             <div className="grid grid-cols-2 gap-4">
                  <FormField control={control} name="registrationId" render={({ field }) => (<FormItem><FormLabel>Registration ID</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                 <FormField control={control} name="vatRegistered" render={({ field }) => (<FormItem className="flex items-center space-x-2 pt-8"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel>VAT Registered?</FormLabel></FormItem>)} />
+                 <FormField control={control} name="vatRegistered" render={({ field }) => (<FormItem className="flex items-center space-x-2 pt-8"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><Label>VAT Registered?</Label></FormItem>)} />
             </div>
              <div className="grid grid-cols-2 gap-4">
                 <FormField control={control} name="category" render={({ field }) => (<FormItem><FormLabel>Category</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
                 <FormField control={control} name="code" render={({ field }) => (<FormItem><FormLabel>Code</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
+             <FormField control={control} name="globalFacilityLimit" render={({ field }) => (<FormItem><FormLabel>Global Facility Limit (R)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
         </div>
-    );
+    )
 };
 const StepAddress = () => {
     const { control } = useFormContext<PartnerWizardFormValues>();
@@ -182,7 +187,6 @@ const ArrayStep = ({ name, title, fieldsConfig }: { name: any, title: string, fi
                                             <Input
                                                 type={config.type}
                                                 {...field}
-                                                // @ts-ignore - Handle coercion for number inputs
                                                 onChange={e => field.onChange(config.type === 'number' ? parseFloat(e.target.value) || '' : e.target.value)}
                                             />
                                         </FormControl>
@@ -199,13 +203,14 @@ const ArrayStep = ({ name, title, fieldsConfig }: { name: any, title: string, fi
                 <PlusCircle className="mr-2 h-4 w-4" /> Add {title}
             </Button>
         </div>
-    );
-};
+    )
+}
 
+// --- WIZARD COMPONENT ---
 const steps = [
     { id: 'main', title: 'Main', icon: Handshake, fields: ['name', 'type', 'status', 'registrationId', 'vatRegistered'] },
     { id: 'address', title: 'Address', icon: Building, fields: ['physicalAddress', 'physicalPostalCode', 'postalAddress', 'postalPostalCode'] },
-    { id: 'contact', title: 'Contact', icon: User, fields: ['contacts'] },
+    { id: 'contact', title: 'Contact', icon: User, fields: ['contactPerson', 'telWork', 'email', 'cell', 'url'] },
     { id: 'owners', title: 'Owners', icon: Users, fields: ['owners'] },
     { id: 'management', title: 'Management', icon: Users, fields: ['management'] },
     { id: 'bankAccounts', title: 'Bank Accounts', icon: Banknote, fields: ['bankAccounts'] },
@@ -253,7 +258,7 @@ export function EditLendingPartnerWizard({ partner, onSave, onBack }: EditLendin
         if (partner) {
             validateInitialSteps();
         } else {
-            setCompletedSteps(new Set());
+             setCompletedSteps(new Set());
         }
     }, [partner, methods]);
 
@@ -304,8 +309,8 @@ export function EditLendingPartnerWizard({ partner, onSave, onBack }: EditLendin
             case 'owners': return <ArrayStep name="owners" title="Owner" fieldsConfig={[ { id: 'name', label: 'Name', type: 'text' }, { id: 'idNumber', label: 'ID Number', type: 'text' }, { id: 'cell', label: 'Cell', type: 'text'}, { id: 'percentageHeld', label: '% Held', type: 'number'} ]} />;
             case 'management': return <ArrayStep name="management" title="Manager" fieldsConfig={[ { id: 'name', label: 'Name', type: 'text' }, { id: 'idNumber', label: 'ID Number', type: 'text' }, { id: 'cell', label: 'Cell', type: 'text'}, { id: 'position', label: 'Position', type: 'text'} ]} />;
             case 'bankAccounts': return <ArrayStep name="bankAccounts" title="Bank Account" fieldsConfig={[ { id: 'bankName', label: 'Bank Name', type: 'text' }, { id: 'accountNumber', label: 'Account #', type: 'text' }, { id: 'branchCode', label: 'Branch Code', type: 'text'} ]} />;
-            case 'balanceSheet': return <ArrayStep name="balanceSheets" title="Balance Sheet" fieldsConfig={[ { id: 'periodEndDate', label: 'Period End', type: 'date' }, { id: 'propertyPlantEquipment', label: 'Property, Plant & Equip.', type: 'number' }, { id: 'intangibleAssets', label: 'Intangible Assets', type: 'number' }, { id: 'inventory', label: 'Inventory', type: 'number' }, { id: 'tradeReceivables', label: 'Trade Receivables', type: 'number' }, { id: 'cashEquivalents', label: 'Cash & Equivalents', type: 'number' }, { id: 'shareCapital', label: 'Share Capital', type: 'number' }, { id: 'retainedEarnings', label: 'Retained Earnings', type: 'number' }, { id: 'longTermLoans', label: 'Long-Term Loans', type: 'number' }, { id: 'tradePayables', label: 'Trade Payables', type: 'number' }, { id: 'shortTermLoans', label: 'Short-Term Loans', type: 'number' } ]} />;
-            case 'incomeStatement': return <ArrayStep name="incomeStatements" title="Income Statement" fieldsConfig={[ { id: 'periodEndDate', label: 'Period End Date', type: 'date' }, { id: 'revenue', label: 'Revenue', type: 'number' }, { id: 'cogs', label: 'Cost of Goods Sold', type: 'number' }, { id: 'operatingExpenses', label: 'Operating Expenses', type: 'number' }, { id: 'interestExpense', label: 'Interest Expense', type: 'number' }, { id: 'taxation', label: 'Taxation', type: 'number' } ]} />;
+            case 'balanceSheet': return <ArrayStep name="balanceSheets" title="Balance Sheet" fieldsConfig={[ { id: 'periodEndDate', label: 'Period End', type: 'date' }, { id: 'propertyPlantEquipment', label: 'Property, Plant & Equip.', type: 'number' }, { id: 'intangibleAssets', label: 'Intangible Assets', type: 'number' }, { id: 'financialAssetsNonCurrent', label: 'Financial Assets (Non-Current)', type: 'number'}, { id: 'deferredTaxAssets', label: 'Deferred Tax Assets', type: 'number'}, { id: 'inventories', label: 'Inventory', type: 'number' }, { id: 'tradeAndOtherReceivables', label: 'Trade & Other Receivables', type: 'number' }, { id: 'cashAndCashEquivalents', label: 'Cash & Equivalents', type: 'number' }, { id: 'financialAssetsCurrent', label: 'Financial Assets (Current)', type: 'number' }, { id: 'shareCapital', label: 'Share Capital', type: 'number' }, { id: 'retainedEarnings', label: 'Retained Earnings', type: 'number' }, { id: 'revaluationSurplus', label: 'Revaluation Surplus', type: 'number'}, { id: 'otherReserves', label: 'Other Reserves', type: 'number' }, { id: 'longTermBorrowings', label: 'Long-Term Loans/Borrowings', type: 'number' }, { id: 'longTermLeaseLiabilities', label: 'Long-Term Lease Liabilities', type: 'number' }, { id: 'deferredTaxLiabilities', label: 'Deferred Tax Liabilities', type: 'number' }, { id: 'tradeAndOtherPayables', label: 'Trade & Other Payables', type: 'number' }, { id: 'shortTermBorrowings', label: 'Short-Term Loans/Borrowings', type: 'number' }, { id: 'currentPortionOfLongTermDebt', label: 'Current Portion of Long-Term Debt', type: 'number' }, { id: 'currentTaxPayable', label: 'Current Tax Payable', type: 'number' } ]} />;
+            case 'incomeStatement': return <ArrayStep name="incomeStatements" title="Income Statement" fieldsConfig={[ { id: 'periodEndDate', label: 'Period End Date', type: 'date' }, { id: 'revenue', label: 'Revenue', type: 'number' }, { id: 'costOfSales', label: 'Cost of Sales', type: 'number' }, { id: 'otherIncome', label: 'Other Income', type: 'number' }, { id: 'distributionCosts', label: 'Distribution Costs', type: 'number'}, { id: 'administrativeExpenses', label: 'Administrative Expenses', type: 'number'}, { id: 'otherExpenses', label: 'Other Expenses', type: 'number'}, { id: 'financeIncome', label: 'Finance Income', type: 'number'}, { id: 'financeCosts', label: 'Finance Costs', type: 'number'}, { id: 'incomeTaxExpense', label: 'Income Tax Expense', type: 'number' } ]} />;
             case 'review': return <div className="text-center p-8"><h3 className="text-lg font-semibold">Review and Submit</h3><p className="text-muted-foreground">Please confirm all details before saving the partner.</p></div>;
             default: return null;
         }
@@ -328,7 +333,6 @@ export function EditLendingPartnerWizard({ partner, onSave, onBack }: EditLendin
                         <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] gap-8">
                             <div className="flex flex-col gap-2 border-r pr-4">
                                 {steps.map((step, index) => {
-                                    const Icon = step.icon;
                                     const isCompleted = completedSteps.has(step.id);
                                     return (
                                         <Button key={step.id} type="button" variant={currentStep === index ? 'secondary' : 'ghost'} className="justify-start gap-2" onClick={() => setCurrentStep(index)}>
