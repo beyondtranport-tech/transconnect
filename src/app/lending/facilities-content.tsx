@@ -81,12 +81,12 @@ export default function FacilitiesContent() {
         forceRefresh();
     }, [forceRefresh]);
     
-    // This effect handles the redirection from the agreement wizard.
     useEffect(() => {
         if (searchParams.get('action') === 'create') {
-            setSelectedFacility(null); // Clear previous selection
+            const clientId = searchParams.get('clientId');
+            const prefilledData = clientId ? { clientId } : null;
+            setSelectedFacility(prefilledData);
             setView('wizard');
-            // Clean the URL query params to prevent re-triggering on refresh
             router.replace('/lending?view=facilities', { scroll: false });
         }
     }, [searchParams, router]);

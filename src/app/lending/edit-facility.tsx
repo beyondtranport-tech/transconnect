@@ -8,12 +8,15 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, ArrowLeft, ArrowRight, Banknote, Users, CheckCircle } from 'lucide-react';
+import { Loader2, Save, ArrowLeft, ArrowRight, Banknote, Users, CheckCircle, Handshake } from 'lucide-react';
 import { getClientSideAuthToken } from '@/firebase';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardHeader, CardContent, CardFooter, CardTitle, CardDescription } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import Link from 'next/link';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
 
 // API Helper
 async function performAdminAction(token: string, action: string, payload: any) {
@@ -40,9 +43,10 @@ const facilitySchema = z.object({
 type FacilityFormValues = z.infer<typeof facilitySchema>;
 
 const steps = [
-    { id: 'association', title: 'Association', fields: ['clientId'] },
-    { id: 'details', title: 'Facility Details', fields: ['type', 'status', 'limit'] },
-    { id: 'review', title: 'Review & Submit', fields: [] },
+    { id: 'entityType', title: 'Facility For', icon: Users, fields: [] },
+    { id: 'association', title: 'Association', icon: Handshake, fields: ['clientId'] },
+    { id: 'details', title: 'Facility Details', icon: Banknote, fields: ['type', 'status', 'limit'] },
+    { id: 'review', title: 'Review & Submit', icon: CheckCircle, fields: [] },
 ];
 
 interface EditFacilityWizardProps {
@@ -56,25 +60,26 @@ interface EditFacilityWizardProps {
 export function EditFacilityWizard({ facility, clients, partners, onSave, onBack }: EditFacilityWizardProps) {
     const [isLoading, setIsLoading] = useState(false);
     const [currentStep, setCurrentStep] = useState(0);
+    const [facilityFor, setFacilityFor] = useState<'client' | 'partner' | null>(null);
     const { toast } = useToast();
-    const searchParams = useSearchParams();
-
+    
     const methods = useForm<FacilityFormValues>({
         resolver: zodResolver(facilitySchema),
-        mode: 'onChange'
+        mode: 'onChange',
     });
 
     useEffect(() => {
-        const clientIdFromUrl = searchParams.get('clientId');
-        const initialValues = facility || {
-            clientId: clientIdFromUrl || '',
-            partnerId: '',
-            type: '',
-            status: 'pending',
-            limit: 0,
-        };
+        const initialValues = facility || { status: 'pending', limit: 0 };
         methods.reset(initialValues);
-    }, [facility, searchParams, methods]);
+
+        if (initialValues.clientId) {
+            setFacilityFor('client');
+            setCurrentStep(1); // Skip entity type selection if client is pre-filled
+        } else {
+            setCurrentStep(0);
+            setFacilityFor(null);
+        }
+    }, [facility, methods]);
 
     const onSubmit = async (values: FacilityFormValues) => {
         setIsLoading(true);
@@ -92,6 +97,15 @@ export function EditFacilityWizard({ facility, clients, partners, onSave, onBack
     };
     
     const handleNext = async () => {
+        if (currentStep === 0) { // Entity Type selection step
+            if (facilityFor === 'client') {
+                setCurrentStep(1);
+            } else {
+                toast({ variant: 'destructive', title: 'Selection Required', description: 'Please select "Client" to proceed.' });
+            }
+            return;
+        }
+
         const stepFields = steps[currentStep].fields;
         const isValid = await methods.trigger(stepFields as any);
         if (isValid && currentStep < steps.length - 1) {
@@ -109,16 +123,43 @@ export function EditFacilityWizard({ facility, clients, partners, onSave, onBack
         if (!step.fields || step.fields.length === 0) return true;
         return step.fields.every(field => !methods.formState.errors[field as keyof typeof methods.formState.errors]);
     };
-    
+
     const renderStepContent = () => {
-        switch (currentStep) {
-            case 0: return (
+        const stepId = steps[currentStep]?.id;
+        switch (stepId) {
+            case 'entityType': return (
+                 <div>
+                    <Label className="text-lg font-semibold">Who is this facility for?</Label>
+                    <RadioGroup onValueChange={(value) => setFacilityFor(value as any)} value={facilityFor || ''} className="mt-4 space-y-2">
+                        <FormItem className="flex items-center space-x-3 space-y-0 p-4 border rounded-md has-[:checked]:border-primary">
+                            <FormControl><RadioGroupItem value="client" /></FormControl>
+                            <FormLabel className="font-normal w-full cursor-pointer">A Client (Debtor) - to provide them with a credit facility.</FormLabel>
+                        </FormItem>
+                         <FormItem className="flex items-center space-x-3 space-y-0 p-4 border rounded-md has-[:checked]:border-primary">
+                            <FormControl><RadioGroupItem value="partner" /></FormControl>
+                            <FormLabel className="font-normal w-full cursor-pointer">A Lending Partner (Co-funder) - to set their global limit.</FormLabel>
+                        </FormItem>
+                    </RadioGroup>
+                    {facilityFor === 'partner' && (
+                        <Alert className="mt-4" variant="destructive">
+                            <AlertTitle className="font-bold">Incorrect Workflow</AlertTitle>
+                            <AlertDescription>
+                                To set a Global Facility Limit for a Lending Partner, please go to the Partners section and edit their profile directly. This wizard is only for creating specific credit facilities for Clients.
+                                <Button asChild variant="link" className="p-0 h-auto ml-1 font-semibold">
+                                    <Link href="/lending?view=partners">Go to Partners section</Link>
+                                </Button>
+                            </AlertDescription>
+                        </Alert>
+                    )}
+                </div>
+            );
+            case 'association': return (
                 <div className="space-y-4">
                     <FormField control={methods.control} name="clientId" render={({ field }) => (<FormItem><FormLabel>Client</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a client..." /></SelectTrigger></FormControl><SelectContent>{clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
                     <FormField control={methods.control} name="partnerId" render={({ field }) => (<FormItem><FormLabel>Co-funding Partner (Optional)</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a partner..." /></SelectTrigger></FormControl><SelectContent>{partners.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
                 </div>
             );
-            case 1: return (
+             case 'details': return (
                 <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                         <FormField control={methods.control} name="type" render={({ field }) => (<FormItem><FormLabel>Facility Type</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select type..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="loan">Loan</SelectItem><SelectItem value="lease">Lease</SelectItem><SelectItem value="factoring">Factoring</SelectItem><SelectItem value="installment_sale">Installment Sale</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
@@ -127,24 +168,19 @@ export function EditFacilityWizard({ facility, clients, partners, onSave, onBack
                     <FormField control={methods.control} name="limit" render={({ field }) => (<FormItem><FormLabel>Facility Limit (R)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
                 </div>
             );
-            case 2: return (
-                <div className="text-center p-8">
-                    <h3 className="text-lg font-semibold">Review and Submit</h3>
-                    <p className="text-muted-foreground">Please confirm all details before saving the facility.</p>
-                </div>
-            );
+            case 'review': return <div className="text-center p-8"><h3 className="text-lg font-semibold">Review and Submit</h3><p className="text-muted-foreground">Please confirm all details before saving.</p></div>
             default: return null;
         }
     };
     
     return (
-         <Card>
+        <Card>
             <FormProvider {...methods}>
                 <form onSubmit={methods.handleSubmit(onSubmit)}>
                     <CardHeader>
                         <div className="flex justify-between items-start">
                             <div>
-                                <h2 className="text-2xl font-bold font-headline">{facility ? 'Edit' : 'Add'} Facility</h2>
+                                <h2 className="text-2xl font-bold font-headline">{facility ? 'Edit' : 'Create New'} Facility</h2>
                                 <p className="text-muted-foreground">{steps[currentStep].title}</p>
                             </div>
                             <Button type="button" variant="ghost" onClick={onBack}><ArrowLeft className="mr-2 h-4 w-4"/>Back to List</Button>
@@ -154,10 +190,12 @@ export function EditFacilityWizard({ facility, clients, partners, onSave, onBack
                         <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] gap-8">
                              <div className="flex flex-col gap-2 border-r pr-4">
                                 {steps.map((step, index) => {
+                                    const Icon = step.icon;
                                     const isCompleted = index < currentStep && isStepValid(index);
                                     return (
                                         <Button key={step.id} type="button" variant={currentStep === index ? 'secondary' : 'ghost'} className="justify-start gap-2" onClick={() => setCurrentStep(index)} disabled={index > currentStep && !isStepValid(currentStep - 1)}>
                                             {isCompleted ? <CheckCircle className="h-5 w-5 text-green-500" /> : <div className={cn("h-5 w-5 rounded-full flex items-center justify-center text-xs font-bold", currentStep >= index ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>{index + 1}</div>}
+                                            <Icon className="h-4 w-4 mr-1" />
                                             {step.title}
                                         </Button>
                                     );
@@ -173,7 +211,7 @@ export function EditFacilityWizard({ facility, clients, partners, onSave, onBack
                             <ArrowLeft className="mr-2 h-4 w-4" /> Back
                         </Button>
                         {currentStep < steps.length - 1 ? (
-                            <Button type="button" onClick={handleNext}>
+                            <Button type="button" onClick={handleNext} disabled={facilityFor === 'partner'}>
                                 Next <ArrowRight className="ml-2 h-4 w-4"/>
                             </Button>
                         ) : (

@@ -122,8 +122,9 @@ export function AgreementWizard({ agreement, clients, facilities, onSave, onBack
     const handleBackStep = () => setCurrentStep(prev => prev - 1);
 
     const isStepValid = (stepIndex: number) => {
-        if (stepIndex < 0) return true;
+        if (stepIndex < 0 || stepIndex >= steps.length) return true;
         const step = steps[stepIndex];
+        if (!step.fields || step.fields.length === 0) return true;
         return step.fields.every(field => !methods.formState.errors[field as keyof typeof methods.formState.errors]);
     };
     
@@ -143,7 +144,7 @@ export function AgreementWizard({ agreement, clients, facilities, onSave, onBack
                             </AlertDescription>
                             <div className="mt-4">
                                 <Button asChild>
-                                    <Link href="/lending?view=facilities">
+                                    <Link href={`/lending?view=facilities&action=create&clientId=${selectedClientId}`}>
                                         <PlusCircle className="mr-2 h-4 w-4" /> Create Facility
                                     </Link>
                                 </Button>
@@ -173,7 +174,7 @@ export function AgreementWizard({ agreement, clients, facilities, onSave, onBack
     };
     
     return (
-         <Card>
+        <Card>
             <FormProvider {...methods}>
                 <form onSubmit={methods.handleSubmit(onSubmit)}>
                     <CardHeader>
