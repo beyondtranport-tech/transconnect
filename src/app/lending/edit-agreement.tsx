@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { useForm, FormProvider } from 'react-hook-form';
+import { useForm, FormProvider, useFormContext } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,7 @@ import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card'
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 // API Helper
 async function performAdminAction(token: string, action: string, payload: any) {
@@ -63,6 +64,7 @@ export function AgreementWizard({ agreement, clients, facilities, onSave, onBack
     const [isLoading, setIsLoading] = useState(false);
     const [currentStep, setCurrentStep] = useState(0);
     const { toast } = useToast();
+    const router = useRouter();
 
     const methods = useForm<AgreementFormValues>({
         resolver: zodResolver(agreementSchema),
@@ -128,10 +130,24 @@ export function AgreementWizard({ agreement, clients, facilities, onSave, onBack
         return step.fields.every(field => !methods.formState.errors[field as keyof typeof methods.formState.errors]);
     };
     
+     const handleCreateFacility = () => {
+        const clientId = methods.getValues('clientId');
+        if (clientId) {
+            router.push(`/lending?view=facilities&action=create&clientId=${clientId}`);
+        } else {
+            toast({
+                variant: 'destructive',
+                title: 'Client Not Selected',
+                description: 'Please go back to the previous step and select a client.',
+            });
+        }
+    };
+    
     const renderStepContent = () => {
-        switch (currentStep) {
-            case 0: return <FormField control={methods.control} name="clientId" render={({ field }) => (<FormItem><FormLabel>Client</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a client..." /></SelectTrigger></FormControl><SelectContent>{clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />;
-            case 1: return (
+        const stepId = steps[currentStep]?.id;
+        switch (stepId) {
+            case 'client': return <FormField control={methods.control} name="clientId" render={({ field }) => (<FormItem><FormLabel>Client</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a client..." /></SelectTrigger></FormControl><SelectContent>{clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />;
+            case 'facilities': return (
                 <div>
                     {availableTypes.length > 0 ? (
                          <FormField control={methods.control} name="type" render={({ field }) => (<FormItem><FormLabel>Agreement Type</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select an available agreement type..." /></SelectTrigger></FormControl><SelectContent>{availableTypes.map(type => <SelectItem key={type} value={type} className="capitalize">{type.replace(/_/g, ' ')}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
@@ -143,17 +159,15 @@ export function AgreementWizard({ agreement, clients, facilities, onSave, onBack
                                 This client does not have any active credit facilities. You must create a facility for them before you can create an agreement.
                             </AlertDescription>
                             <div className="mt-4">
-                                <Button asChild>
-                                    <Link href={`/lending?view=facilities&action=create&clientId=${selectedClientId}`}>
-                                        <PlusCircle className="mr-2 h-4 w-4" /> Create Facility
-                                    </Link>
+                               <Button type="button" onClick={handleCreateFacility}>
+                                    <PlusCircle className="mr-2 h-4 w-4" /> Create Facility
                                 </Button>
                             </div>
                         </Alert>
                     )}
                 </div>
             );
-            case 2: return (
+            case 'details': return (
                  <div className="space-y-4">
                     <FormField control={methods.control} name="description" render={({ field }) => (<FormItem><FormLabel>Agreement Description</FormLabel><FormControl><Textarea placeholder="e.g., Asset finance for Scania R500" {...field} /></FormControl><FormMessage /></FormItem>)} />
                     <div className="grid grid-cols-3 gap-4">
@@ -163,7 +177,7 @@ export function AgreementWizard({ agreement, clients, facilities, onSave, onBack
                     </div>
                 </div>
             );
-            case 3: return (
+            case 'review': return (
                 <div className="text-center p-8">
                     <h3 className="text-lg font-semibold">Review and Submit</h3>
                     <p className="text-muted-foreground">Please confirm all details before saving the agreement.</p>
@@ -210,7 +224,11 @@ export function AgreementWizard({ agreement, clients, facilities, onSave, onBack
                         <Button type="button" variant="outline" onClick={handleBackStep} disabled={currentStep === 0 || isLoading}>
                             <ArrowLeft className="mr-2 h-4 w-4" /> Back
                         </Button>
-                        {currentStep < steps.length - 1 ? (
+                        {currentStep === 0 ? (
+                            <Button type="button" onClick={handleNext}>
+                                Save & Continue <ArrowRight className="ml-2 h-4 w-4"/>
+                            </Button>
+                        ) : currentStep < steps.length - 1 ? (
                             <Button type="button" onClick={handleNext}>
                                 Next <ArrowRight className="ml-2 h-4 w-4"/>
                             </Button>
