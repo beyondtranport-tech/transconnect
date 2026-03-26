@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -81,14 +80,13 @@ export default function FacilitiesContent() {
     useEffect(() => {
         forceRefresh();
     }, [forceRefresh]);
-
+    
+    // This effect handles the redirection from the agreement wizard.
     useEffect(() => {
-        const action = searchParams.get('action');
-        const clientId = searchParams.get('clientId');
-
-        if (action === 'create' && clientId) {
-            setSelectedFacility({ clientId: clientId });
+        if (searchParams.get('action') === 'create') {
+            setSelectedFacility(null); // Clear previous selection
             setView('wizard');
+            // Clean the URL query params to prevent re-triggering on refresh
             router.replace('/lending?view=facilities', { scroll: false });
         }
     }, [searchParams, router]);

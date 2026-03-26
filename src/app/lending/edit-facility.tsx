@@ -1,7 +1,6 @@
-
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -14,7 +13,7 @@ import { getClientSideAuthToken } from '@/firebase';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardHeader, CardContent, CardFooter, CardTitle, CardDescription } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-
+import { useRouter, useSearchParams } from 'next/navigation';
 
 // API Helper
 async function performAdminAction(token: string, action: string, payload: any) {
@@ -41,7 +40,7 @@ const facilitySchema = z.object({
 type FacilityFormValues = z.infer<typeof facilitySchema>;
 
 const steps = [
-    { id: 'association', title: 'Association', fields: ['clientId', 'partnerId'] },
+    { id: 'association', title: 'Association', fields: ['clientId'] },
     { id: 'details', title: 'Facility Details', fields: ['type', 'status', 'limit'] },
     { id: 'review', title: 'Review & Submit', fields: [] },
 ];
@@ -58,6 +57,7 @@ export function EditFacilityWizard({ facility, clients, partners, onSave, onBack
     const [isLoading, setIsLoading] = useState(false);
     const [currentStep, setCurrentStep] = useState(0);
     const { toast } = useToast();
+    const searchParams = useSearchParams();
 
     const methods = useForm<FacilityFormValues>({
         resolver: zodResolver(facilitySchema),
@@ -65,14 +65,16 @@ export function EditFacilityWizard({ facility, clients, partners, onSave, onBack
     });
 
     useEffect(() => {
-        methods.reset(facility || {
-            clientId: '',
+        const clientIdFromUrl = searchParams.get('clientId');
+        const initialValues = facility || {
+            clientId: clientIdFromUrl || '',
             partnerId: '',
             type: '',
             status: 'pending',
             limit: 0,
-        });
-    }, [facility, methods]);
+        };
+        methods.reset(initialValues);
+    }, [facility, searchParams, methods]);
 
     const onSubmit = async (values: FacilityFormValues) => {
         setIsLoading(true);
@@ -113,7 +115,7 @@ export function EditFacilityWizard({ facility, clients, partners, onSave, onBack
             case 0: return (
                 <div className="space-y-4">
                     <FormField control={methods.control} name="clientId" render={({ field }) => (<FormItem><FormLabel>Client</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a client..." /></SelectTrigger></FormControl><SelectContent>{clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
-                    <FormField control={methods.control} name="partnerId" render={({ field }) => (<FormItem><FormLabel>Partner (Optional)</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a partner..." /></SelectTrigger></FormControl><SelectContent>{partners.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
+                    <FormField control={methods.control} name="partnerId" render={({ field }) => (<FormItem><FormLabel>Co-funding Partner (Optional)</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a partner..." /></SelectTrigger></FormControl><SelectContent>{partners.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
                 </div>
             );
             case 1: return (
@@ -150,7 +152,7 @@ export function EditFacilityWizard({ facility, clients, partners, onSave, onBack
                     </CardHeader>
                     <CardContent>
                         <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] gap-8">
-                            <div className="flex flex-col gap-2 border-r pr-4">
+                             <div className="flex flex-col gap-2 border-r pr-4">
                                 {steps.map((step, index) => {
                                     const isCompleted = index < currentStep && isStepValid(index);
                                     return (
@@ -161,9 +163,9 @@ export function EditFacilityWizard({ facility, clients, partners, onSave, onBack
                                     );
                                 })}
                             </div>
-                            <div className="space-y-6 min-h-[400px]">
+                             <div className="space-y-6 min-h-[400px]">
                                 {renderStepContent()}
-                            </div>
+                             </div>
                         </div>
                     </CardContent>
                     <CardFooter className="flex justify-between border-t pt-6 mt-6">
@@ -171,7 +173,9 @@ export function EditFacilityWizard({ facility, clients, partners, onSave, onBack
                             <ArrowLeft className="mr-2 h-4 w-4" /> Back
                         </Button>
                         {currentStep < steps.length - 1 ? (
-                            <Button type="button" onClick={handleNext}>Next <ArrowRight className="ml-2 h-4 w-4"/></Button>
+                            <Button type="button" onClick={handleNext}>
+                                Next <ArrowRight className="ml-2 h-4 w-4"/>
+                            </Button>
                         ) : (
                             <Button type="submit" disabled={isLoading}>
                                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
