@@ -1,8 +1,9 @@
+
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, PlusCircle, FileSignature, Edit, Eye } from "lucide-react";
+import { Loader2, PlusCircle, FileSignature, Edit, Eye, ArrowLeft, Banknote, Users, CheckCircle, AlertCircle } from "lucide-react";
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { Badge } from '@/components/ui/badge';
@@ -11,14 +12,15 @@ import { getClientSideAuthToken } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { formatCurrency, formatDateSafe } from '@/lib/utils';
 import { AgreementWizard } from './edit-agreement';
+import Link from 'next/link';
 
-async function performAdminAction(token: string, action: string, payload?: any) {
+// API Helper
+async function performAdminAction(token: string, action: string, payload: any) {
     const response = await fetch('/api/admin', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ action, payload }),
     });
-
     const result = await response.json();
     if (!response.ok || !result.success) {
         throw new Error(result.error || `API Error for action: ${action}`);
@@ -88,13 +90,14 @@ export default function AgreementsContent() {
     };
     
     const handleBackToList = () => {
-        setView('list');
+        setView('wizard');
         setSelectedAgreement(null);
     };
 
     const handleSaveSuccess = () => {
         forceRefresh();
-        handleBackToList();
+        setView('list');
+        setSelectedAgreement(null);
     };
 
     const columns: ColumnDef<any>[] = useMemo(() => [

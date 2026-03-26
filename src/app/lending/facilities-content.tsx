@@ -13,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { formatCurrency } from '@/lib/utils';
 import { EditFacilityWizard } from './edit-facility';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-
+import { useRouter, useSearchParams } from 'next/navigation';
 
 // API Helper
 async function performAdminAction(token: string, action: string, payload: any) {
@@ -42,6 +42,8 @@ export default function FacilitiesContent() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const { toast } = useToast();
+    const router = useRouter();
+    const searchParams = useSearchParams();
     
     const [view, setView] = useState<'list' | 'wizard'>('list');
     const [selectedFacility, setSelectedFacility] = useState<any | null>(null);
@@ -79,6 +81,18 @@ export default function FacilitiesContent() {
     useEffect(() => {
         forceRefresh();
     }, [forceRefresh]);
+
+    useEffect(() => {
+        const action = searchParams.get('action');
+        const clientId = searchParams.get('clientId');
+
+        if (action === 'create' && clientId) {
+            setSelectedFacility({ clientId: clientId });
+            setView('wizard');
+            router.replace('/lending?view=facilities', { scroll: false });
+        }
+    }, [searchParams, router]);
+
 
     const handleEdit = (facility: any) => {
         setSelectedFacility(facility);
