@@ -1,7 +1,8 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { useForm, FormProvider } from 'react-hook-form';
+import { useForm, FormProvider, useFormContext } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
@@ -17,6 +18,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import Link from 'next/link';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
+import { useRouter } from 'next/navigation';
 
 // API Helper
 async function performAdminAction(token: string, action: string, payload: any) {
@@ -36,7 +38,6 @@ const facilitySchema = z.object({
   clientId: z.string().min(1, 'Client is required'),
   partnerId: z.string().optional(),
   type: z.string().min(1, 'Facility type is required'),
-  status: z.enum(['pending', 'active', 'inactive']).default('pending'),
   limit: z.coerce.number().positive('Limit must be a positive number'),
 });
 
@@ -45,7 +46,7 @@ type FacilityFormValues = z.infer<typeof facilitySchema>;
 const steps = [
     { id: 'entityType', title: 'Facility For', icon: Users, fields: [] },
     { id: 'association', title: 'Association', icon: Handshake, fields: ['clientId'] },
-    { id: 'details', title: 'Facility Details', icon: Banknote, fields: ['type', 'status', 'limit'] },
+    { id: 'details', title: 'Facility Details', icon: Banknote, fields: ['type', 'limit'] },
     { id: 'review', title: 'Review & Submit', icon: CheckCircle, fields: [] },
 ];
 
@@ -62,6 +63,7 @@ export function EditFacilityWizard({ facility, clients, partners, onSave, onBack
     const [currentStep, setCurrentStep] = useState(0);
     const [facilityFor, setFacilityFor] = useState<'client' | 'partner' | null>(null);
     const { toast } = useToast();
+    const router = useRouter();
     
     const methods = useForm<FacilityFormValues>({
         resolver: zodResolver(facilitySchema),
@@ -69,12 +71,12 @@ export function EditFacilityWizard({ facility, clients, partners, onSave, onBack
     });
 
     useEffect(() => {
-        const initialValues = facility || { status: 'pending', limit: 0 };
+        const initialValues = facility || { limit: 0 };
         methods.reset(initialValues);
 
         if (initialValues.clientId) {
             setFacilityFor('client');
-            setCurrentStep(1); // Skip entity type selection if client is pre-filled
+            setCurrentStep(1);
         } else {
             setCurrentStep(0);
             setFacilityFor(null);
@@ -97,7 +99,7 @@ export function EditFacilityWizard({ facility, clients, partners, onSave, onBack
     };
     
     const handleNext = async () => {
-        if (currentStep === 0) { // Entity Type selection step
+        if (currentStep === 0) {
             if (facilityFor === 'client') {
                 setCurrentStep(1);
             } else {
@@ -116,14 +118,14 @@ export function EditFacilityWizard({ facility, clients, partners, onSave, onBack
     };
     
     const handleBackStep = () => setCurrentStep(prev => prev - 1);
-
+    
     const isStepValid = (stepIndex: number) => {
         if (stepIndex < 0 || stepIndex >= steps.length) return true;
         const step = steps[stepIndex];
         if (!step.fields || step.fields.length === 0) return true;
         return step.fields.every(field => !methods.formState.errors[field as keyof typeof methods.formState.errors]);
     };
-
+    
     const renderStepContent = () => {
         const stepId = steps[currentStep]?.id;
         switch (stepId) {
@@ -163,7 +165,7 @@ export function EditFacilityWizard({ facility, clients, partners, onSave, onBack
                 <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                         <FormField control={methods.control} name="type" render={({ field }) => (<FormItem><FormLabel>Facility Type</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select type..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="loan">Loan</SelectItem><SelectItem value="lease">Lease</SelectItem><SelectItem value="factoring">Factoring</SelectItem><SelectItem value="installment_sale">Installment Sale</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
-                        <FormField control={methods.control} name="status" render={({ field }) => (<FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent><SelectItem value="pending">Pending</SelectItem><SelectItem value="active">Active</SelectItem><SelectItem value="inactive">Inactive</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
+                        {/* Status field is removed from here */}
                     </div>
                     <FormField control={methods.control} name="limit" render={({ field }) => (<FormItem><FormLabel>Facility Limit (R)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
                 </div>

@@ -1,8 +1,9 @@
+
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, PlusCircle, Banknote, Edit, Trash2 } from "lucide-react";
+import { Loader2, PlusCircle, Banknote, Edit, Trash2, CheckCircle, XCircle, MoreVertical, Ban } from "lucide-react";
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { Badge } from '@/components/ui/badge';
@@ -13,6 +14,7 @@ import { formatCurrency } from '@/lib/utils';
 import { EditFacilityWizard } from './edit-facility';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 
 // API Helper
 async function performAdminAction(token: string, action: string, payload: any) {
@@ -48,6 +50,8 @@ export default function FacilitiesContent() {
     const [selectedFacility, setSelectedFacility] = useState<any | null>(null);
     const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
     const [facilityToDelete, setFacilityToDelete] = useState<any | null>(null);
+
+    const [statusChangeAlert, setStatusChangeAlert] = useState<{ open: boolean; facility: any; newStatus: 'active' | 'inactive' | 'pending' | null }>({ open: false, facility: null, newStatus: null });
 
     const clientMap = useMemo(() => new Map(clients.map(c => [c.id, c.name])), [clients]);
     const partnerMap = useMemo(() => new Map(partners.map(p => [p.id, p.name])), [partners]);
@@ -111,6 +115,29 @@ export default function FacilitiesContent() {
         forceRefresh();
         handleBackToList();
     };
+
+    const processStatusChange = async () => {
+        const { facility, newStatus } = statusChangeAlert;
+        if (!facility || !newStatus) return;
+
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication failed.");
+            
+            await performAdminAction(token, 'updateFacilityStatus', {
+                clientId: facility.clientId,
+                facilityId: facility.id,
+                status: newStatus
+            });
+            
+            toast({ title: `Status Updated`, description: `Facility status set to ${newStatus}.` });
+            forceRefresh();
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: 'Update Failed', description: e.message });
+        } finally {
+            setStatusChangeAlert({ open: false, facility: null, newStatus: null });
+        }
+    };
     
     const handleDelete = async () => {
         if (!facilityToDelete) return;
@@ -139,8 +166,42 @@ export default function FacilitiesContent() {
         { accessorKey: 'status', header: 'Status', cell: ({row}) => <Badge variant={statusColors[row.original.status] || 'secondary'} className="capitalize">{row.original.status?.replace(/_/g, ' ')}</Badge> },
         { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
             <div className="text-right">
-                <Button variant="ghost" size="icon" onClick={() => handleEdit(row.original)}><Edit className="h-4 w-4" /></Button>
-                <Button variant="ghost" size="icon" onClick={() => { setFacilityToDelete(row.original); setIsDeleteAlertOpen(true); }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                 <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => handleEdit(row.original)}>
+                            <Edit className="mr-2 h-4 w-4" /> Edit Details
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                            onClick={() => setStatusChangeAlert({ open: true, facility: row.original, newStatus: 'active' })}
+                            disabled={row.original.status === 'active'}
+                        >
+                            <CheckCircle className="mr-2 h-4 w-4" /> Set Active
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                            onClick={() => setStatusChangeAlert({ open: true, facility: row.original, newStatus: 'inactive' })}
+                            disabled={row.original.status === 'inactive'}
+                        >
+                            <XCircle className="mr-2 h-4 w-4" /> Set Inactive
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                            onClick={() => setStatusChangeAlert({ open: true, facility: row.original, newStatus: 'pending' })}
+                            disabled={row.original.status === 'pending'}
+                        >
+                            <Ban className="mr-2 h-4 w-4" /> Revert to Pending
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                            className="text-destructive"
+                            onSelect={() => { setFacilityToDelete(row.original); setIsDeleteAlertOpen(true); }}
+                        >
+                            <Trash2 className="mr-2 h-4 w-4" /> Delete
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
             </div>
         )},
     ], [clientMap, partnerMap]);
@@ -164,6 +225,20 @@ export default function FacilitiesContent() {
                     <AlertDialogFooter>
                         <AlertDialogCancel onClick={() => setFacilityToDelete(null)}>Cancel</AlertDialogCancel>
                         <AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Yes, delete</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+            <AlertDialog open={statusChangeAlert.open} onOpenChange={(open) => !open && setStatusChangeAlert({ open: false, facility: null, newStatus: null })}>
+                <AlertDialogContent>
+                     <AlertDialogHeader>
+                        <AlertDialogTitle>Confirm Status Change</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Are you sure you want to change the status of this facility to <span className="font-bold capitalize">{statusChangeAlert.newStatus}</span>?
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={processStatusChange}>Yes, Change Status</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>

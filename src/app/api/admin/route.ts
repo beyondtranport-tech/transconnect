@@ -88,6 +88,24 @@ export async function POST(req: NextRequest) {
         // --- END AUTHORIZATION ---
 
         switch (action) {
+            case 'updateFacilityStatus': {
+                if (!isAdmin) throw new Error("Forbidden: Admin access required.");
+                const { clientId, facilityId, status } = payload;
+                if (!clientId || !facilityId || !status) {
+                    throw new Error("clientId, facilityId, and status are required.");
+                }
+                const validStatuses = ['active', 'inactive', 'pending'];
+                if (!validStatuses.includes(status)) {
+                    throw new Error(`Invalid status. Must be one of: ${validStatuses.join(', ')}`);
+                }
+
+                const facilityRef = db.doc(`lendingClients/${clientId}/facilities/${facilityId}`);
+                await facilityRef.update({
+                    status: status,
+                    updatedAt: FieldValue.serverTimestamp(),
+                });
+                return NextResponse.json({ success: true, message: `Facility status updated to ${status}.` });
+            }
             case 'saveInstallmentSalePackage': {
                 if (!isAdmin) throw new Error("Forbidden: Admin access required.");
                 const { agreement, asset, security } = payload;
@@ -176,15 +194,21 @@ export async function POST(req: NextRequest) {
                 if (!isAdmin) throw new Error("Forbidden: Admin access required.");
                 const { facility } = payload;
                 if (!facility || !facility.clientId) throw new Error("Client ID and facility data are required.");
-                const { id, ...data } = facility;
+                
+                // Destructure to separate id and status from the rest of the data
+                const { id, status, ...data } = facility;
+                
                 const collectionRef = db.collection(`lendingClients/${facility.clientId}/facilities`);
                 if (id) {
+                    // On update, we do NOT allow status changes through this endpoint.
                     await collectionRef.doc(id).set({ ...data, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+                    return NextResponse.json({ success: true, id });
                 } else {
                     const newDoc = collectionRef.doc();
-                    await newDoc.set({ ...data, id: newDoc.id, createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
+                    // On create, forcefully set status to 'pending'.
+                    await newDoc.set({ ...data, id: newDoc.id, status: 'pending', createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
+                    return NextResponse.json({ success: true, id: newDoc.id });
                 }
-                return NextResponse.json({ success: true });
             }
             case 'deleteLendingFacility': {
                  if (!isAdmin) throw new Error("Forbidden: Admin access required.");
