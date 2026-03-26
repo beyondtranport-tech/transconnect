@@ -9,7 +9,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, ArrowLeft, ArrowRight, CheckCircle, FileSignature, AlertCircle, Banknote, User } from 'lucide-react';
+import { Loader2, Save, ArrowLeft, ArrowRight, CheckCircle, FileSignature, AlertCircle, Banknote, User, PlusCircle } from 'lucide-react';
 import { getClientSideAuthToken } from '@/firebase';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card';
@@ -54,7 +54,7 @@ interface AgreementWizardProps {
 
 const steps = [
     { id: 'client', title: 'Select Client', icon: User, fields: ['clientId'] },
-    { id: 'type', title: 'Select Type', icon: Banknote, fields: ['type'] },
+    { id: 'facilities', title: 'Facilities', icon: Banknote, fields: ['type'] },
     { id: 'details', title: 'Agreement Details', icon: FileSignature, fields: ['description', 'totalAdvanced', 'interestRate', 'numberOfInstallments'] },
     { id: 'review', title: 'Review & Submit', icon: CheckCircle, fields: [] },
 ];
@@ -124,7 +124,6 @@ export function AgreementWizard({ agreement, clients, facilities, onSave, onBack
     const isStepValid = (stepIndex: number) => {
         if (stepIndex < 0) return true;
         const step = steps[stepIndex];
-        if (step.fields.length === 0) return true;
         return step.fields.every(field => !methods.formState.errors[field as keyof typeof methods.formState.errors]);
     };
     
@@ -141,10 +140,14 @@ export function AgreementWizard({ agreement, clients, facilities, onSave, onBack
                             <AlertTitle>No Active Facilities Found</AlertTitle>
                             <AlertDescription>
                                 This client does not have any active credit facilities. You must create a facility for them before you can create an agreement.
-                                <Button asChild variant="link" className="p-0 h-auto ml-1">
-                                    <Link href="/lending?view=facilities">Go to Facilities</Link>
-                                </Button>
                             </AlertDescription>
+                            <div className="mt-4">
+                                <Button asChild>
+                                    <Link href="/lending?view=facilities">
+                                        <PlusCircle className="mr-2 h-4 w-4" /> Create Facility
+                                    </Link>
+                                </Button>
+                            </div>
                         </Alert>
                     )}
                 </div>
@@ -162,7 +165,7 @@ export function AgreementWizard({ agreement, clients, facilities, onSave, onBack
             case 3: return (
                 <div className="text-center p-8">
                     <h3 className="text-lg font-semibold">Review and Submit</h3>
-                    <p className="text-muted-foreground">Please confirm all details before saving.</p>
+                    <p className="text-muted-foreground">Please confirm all details before saving the agreement.</p>
                 </div>
             )
             default: return null;
@@ -184,7 +187,7 @@ export function AgreementWizard({ agreement, clients, facilities, onSave, onBack
                     </CardHeader>
                     <CardContent>
                         <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] gap-8">
-                            <div className="flex flex-col gap-2 border-r pr-4">
+                             <div className="flex flex-col gap-2 border-r pr-4">
                                 {steps.map((step, index) => {
                                     const Icon = step.icon;
                                     const isCompleted = index < currentStep && isStepValid(index);
@@ -197,9 +200,9 @@ export function AgreementWizard({ agreement, clients, facilities, onSave, onBack
                                     );
                                 })}
                             </div>
-                            <div className="space-y-6 min-h-[400px]">
+                             <div className="space-y-6 min-h-[400px]">
                                 {renderStepContent()}
-                            </div>
+                             </div>
                         </div>
                     </CardContent>
                     <CardFooter className="flex justify-between border-t pt-6 mt-6">
