@@ -146,3 +146,20 @@ export const LeadGenerationOutputSchema = z.object({
         contactPerson: z.string().nullable().optional().describe("A potential contact person's name, if found."),
     })).describe('A list of potential leads based on the research topic.')
 });
+
+// From negotiation-flow.ts
+export const NegotiationInputSchema = z.object({
+    companyId: z.string(),
+    shopId: z.string(),
+    agreementId: z.string(),
+    proposedRate: z.number(),
+});
+export type NegotiationInput = z.infer<typeof NegotiationInputSchema>;
+
+export const NegotiationOutputSchema = z.object({
+    decision: z.enum(['accept', 'reject', 'counter']),
+    counterOfferRate: z.number().optional().describe('The new commission rate to propose, if making a counter-offer.'),
+    justification: z.string().describe('A detailed justification for the decision, citing data from the tools used.'),
+    agentTrace: z.array(z.string()).describe('A log of the tools the agent used and the data it retrieved.'),
+});
+export type NegotiationOutput = z.infer<typeof NegotiationOutputSchema>;

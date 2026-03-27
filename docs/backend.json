@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "User": {
@@ -186,7 +187,12 @@
             "expiryDate": { "type": "string", "format": "date-time", "description": "Optional: The date this agreement expires." },
             "volumeThreshold": { "type": "number", "description": "Optional: The sales volume threshold for this agreement to apply." },
             "createdAt": { "type": "object" },
-            "updatedAt": { "type": "object" }
+            "updatedAt": { "type": "object" },
+            "aiStatus": { "type": "string", "enum": ["idle", "negotiating", "completed", "failed"], "description": "The status of the AI negotiation agent." },
+            "aiDecision": { "type": "string", "enum": ["accept", "reject", "counter"], "description": "The final decision made by the AI agent." },
+            "aiJustification": { "type": "string", "description": "The justification for the AI's decision." },
+            "aiCounterOffer": { "type": "number", "description": "The counter-offer rate proposed by the AI." },
+            "aiTrace": { "type": "array", "items": { "type": "string" }, "description": "A log of the tools and data used by the AI agent." }
         },
         "required": ["id", "percentage", "status", "effectiveDate", "proposedBy"]
     },
