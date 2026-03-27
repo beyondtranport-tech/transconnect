@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
-import { ShoppingCart, Mail, Phone, ImageIcon } from 'lucide-react';
+import { ShoppingCart, Mail, Phone, ImageIcon, ArrowRight } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
@@ -113,11 +113,20 @@ export function ShopPreview({ shop, products }: { shop: any, products: any[] }) 
             <header className="bg-white/80 backdrop-blur-sm sticky top-0 z-10 border-b">
                 <div className="container mx-auto px-6 py-3 flex justify-between items-center">
                     <h1 className={cn("text-xl font-bold", theme.primary)}>{shop.shopName}</h1>
-                    <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
-                        <a href="#products" className="hover:text-gray-900">Products</a>
-                        <a href="#promotions" className="hover:text-gray-900">Specials</a>
-                        <a href="#contact" className="hover:text-gray-900">Contact</a>
-                    </nav>
+                    <div className="flex items-center gap-4">
+                        <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
+                            <a href="#products" className="hover:text-gray-900">Products</a>
+                            <a href="#promotions" className="hover:text-gray-900">Specials</a>
+                            <a href="#contact" className="hover:text-gray-900">Contact</a>
+                        </nav>
+                         {shop.websiteUrl && (
+                            <Button asChild size="sm">
+                                <a href={shop.websiteUrl} target="_blank" rel="noopener noreferrer">
+                                    Visit Website <ArrowRight className="ml-2 h-4 w-4" />
+                                </a>
+                            </Button>
+                        )}
+                    </div>
                 </div>
             </header>
 
@@ -167,6 +176,9 @@ export function ShopPreview({ shop, products }: { shop: any, products: any[] }) 
                         <div className="text-center py-16 border-2 border-dashed rounded-lg bg-white">
                             <ShoppingCart className="h-12 w-12 text-gray-400 mx-auto"/>
                             <p className="mt-4 text-gray-500">No products have been added yet.</p>
+                             {shop.websiteUrl && (
+                                <p className="mt-2 text-gray-500">Visit our main website to see our full catalog.</p>
+                            )}
                         </div>
                     )}
                 </section>
@@ -212,3 +224,5 @@ export function ShopPreview({ shop, products }: { shop: any, products: any[] }) 
         </div>
     );
 }
+
+    

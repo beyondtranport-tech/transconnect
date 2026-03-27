@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -144,6 +145,9 @@ function StepCoreIdentity({ shop, onSave, canEdit }: { shop: any, onSave: (newDa
             <FormItem>
                 <FormLabel>Shop Description</FormLabel>
                 <FormControl><Textarea placeholder="Describe what your shop sells..." {...field} /></FormControl>
+                <FormDescription>
+                    You can link to your existing website in a later step instead of adding all your products here.
+                </FormDescription>
                 <FormMessage />
             </FormItem>
             )} />
@@ -758,7 +762,7 @@ function StepProducts({ shop, canEdit }: { shop: any, canEdit: boolean }) {
             <Alert>
                 <ShoppingCart className="h-4 w-4" />
                 <AlertTitle>No products yet!</AlertTitle>
-                <AlertDescription>Add your first product to start selling.</AlertDescription>
+                <AlertDescription>Add your first product to start selling. If you have an existing website, you can link to it in the "Social Links" step instead of adding products manually.</AlertDescription>
             </Alert>
         )}
     </div>
@@ -940,6 +944,7 @@ function StepAppearance({ shop, onSave, canEdit }: { shop: any, onSave: (newData
 
 // ====== STEP 4: Social Links ======
 const shopStep4Schema = z.object({
+  websiteUrl: z.string().url("Must be a valid URL").optional().or(z.literal('')),
   facebookLink: z.string().url("Must be a valid URL").optional().or(z.literal('')),
   instagramLink: z.string().url("Must be a valid URL").optional().or(z.literal('')),
   twitterLink: z.string().url("Must be a valid URL").optional().or(z.literal('')),
@@ -958,6 +963,7 @@ function StepSocialLinks({ shop, onSave, canEdit }: { shop: any, onSave: (newDat
      const form = useForm<Step4FormValues>({
         resolver: zodResolver(shopStep4Schema),
         defaultValues: {
+            websiteUrl: shop.websiteUrl || '',
             facebookLink: shop.facebookLink || '',
             instagramLink: shop.instagramLink || '',
             twitterLink: shop.twitterLink || '',
@@ -1007,6 +1013,8 @@ function StepSocialLinks({ shop, onSave, canEdit }: { shop: any, onSave: (newDat
                     </Button>
                 </div>
                  <fieldset disabled={!canEdit} className="space-y-4">
+                    <FormField control={form.control} name="websiteUrl" render={({ field }) => (<FormItem><FormLabel>Main Website URL</FormLabel><FormControl><Input placeholder="https://your-main-website.com" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                    <Separator />
                     <FormField control={form.control} name="facebookLink" render={({ field }) => (<FormItem><FormLabel>Facebook</FormLabel><FormControl><Input placeholder="https://facebook.com/your-shop" {...field} /></FormControl><FormMessage /></FormItem>)} />
                     <FormField control={form.control} name="instagramLink" render={({ field }) => (<FormItem><FormLabel>Instagram</FormLabel><FormControl><Input placeholder="https://instagram.com/your-shop" {...field} /></FormControl><FormMessage /></FormItem>)} />
                     <FormField control={form.control} name="twitterLink" render={({ field }) => (<FormItem><FormLabel>X (Twitter)</FormLabel><FormControl><Input placeholder="https://x.com/your-shop" {...field} /></FormControl><FormMessage /></FormItem>)} />
@@ -1473,7 +1481,7 @@ export function ShopWizard({ shop: initialShop, onShopUpdate }: { shop: any, onS
         'Core Identity': !!(shopData.shopName && shopData.shopDescription && shopData.category),
         'Products': !!(products && products.length > 0),
         'Appearance': !!shopData.heroBannerUrl,
-        'Social Links': !!(shopData.facebookLink || shopData.instagramLink || shopData.twitterLink),
+        'Social Links': !!(shopData.websiteUrl || shopData.facebookLink || shopData.instagramLink || shopData.twitterLink),
         'SEO': !!(shopData.metaTitle && shopData.metaDescription && shopData.tags?.length > 0),
         'Legal Docs': !!(shopData.termsUrl || shopData.returnsPolicyUrl || shopData.privacyPolicyUrl),
         'Commercials': !!activeAgreement,
@@ -1573,4 +1581,6 @@ export function ShopWizard({ shop: initialShop, onShopUpdate }: { shop: any, onS
     </div>
   );
 }
+    
+
     
