@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -73,6 +72,8 @@ const shopStep1Schema = z.object({
   shopName: z.string().min(1, "Shop name is required."),
   shopDescription: z.string().min(1, "Please provide a brief description for your shop."),
   category: z.string().min(1, "Please select a category."),
+  websiteUrl: z.string().url("Must be a valid URL.").optional().or(z.literal('')),
+  discountCode: z.string().optional(),
   contactEmail: z.string().email("Please enter a valid email.").optional().or(z.literal('')),
   contactPhone: z.string().optional(),
 });
@@ -90,6 +91,8 @@ function StepCoreIdentity({ shop, onSave, canEdit }: { shop: any, onSave: (newDa
       shopName: shop.shopName || '',
       shopDescription: shop.shopDescription || '',
       category: shop.category || '',
+      websiteUrl: shop.websiteUrl || '',
+      discountCode: shop.discountCode || '',
       contactEmail: shop.contactEmail || '',
       contactPhone: shop.contactPhone || '',
     }
@@ -145,9 +148,6 @@ function StepCoreIdentity({ shop, onSave, canEdit }: { shop: any, onSave: (newDa
             <FormItem>
                 <FormLabel>Shop Description</FormLabel>
                 <FormControl><Textarea placeholder="Describe what your shop sells..." {...field} /></FormControl>
-                <FormDescription>
-                    You can link to your existing website in a later step instead of adding all your products here.
-                </FormDescription>
                 <FormMessage />
             </FormItem>
             )} />
@@ -165,6 +165,22 @@ function StepCoreIdentity({ shop, onSave, canEdit }: { shop: any, onSave: (newDa
                 </Select>
                 <FormMessage />
             </FormItem>
+            )} />
+             <FormField control={form.control} name="websiteUrl" render={({ field }) => (
+                <FormItem>
+                    <FormLabel>Main Website URL (Optional)</FormLabel>
+                    <FormControl><Input placeholder="https://your-main-website.com" {...field} /></FormControl>
+                    <FormDescription>If you have an existing website with a product catalog, enter the full URL here.</FormDescription>
+                    <FormMessage />
+                </FormItem>
+            )} />
+             <FormField control={form.control} name="discountCode" render={({ field }) => (
+                <FormItem>
+                    <FormLabel>Member Discount Code (Optional)</FormLabel>
+                    <FormControl><Input placeholder="e.g., TRANSCONNECT15" {...field} /></FormControl>
+                    <FormDescription>If using an external website, provide a discount code here for Logistics Flow members to use at your checkout.</FormDescription>
+                    <FormMessage />
+                </FormItem>
             )} />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField control={form.control} name="contactEmail" render={({ field }) => (
@@ -695,7 +711,7 @@ function StepProducts({ shop, canEdit }: { shop: any, canEdit: boolean }) {
 
         {isLoading ? (
             <div className="flex justify-center items-center py-10">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <Loader2 className="h-8 w-8 animate-spin" />
             </div>
         ) : products && products.length > 0 ? (
             <div className="rounded-md border">
@@ -944,7 +960,6 @@ function StepAppearance({ shop, onSave, canEdit }: { shop: any, onSave: (newData
 
 // ====== STEP 4: Social Links ======
 const shopStep4Schema = z.object({
-  websiteUrl: z.string().url("Must be a valid URL").optional().or(z.literal('')),
   facebookLink: z.string().url("Must be a valid URL").optional().or(z.literal('')),
   instagramLink: z.string().url("Must be a valid URL").optional().or(z.literal('')),
   twitterLink: z.string().url("Must be a valid URL").optional().or(z.literal('')),
@@ -963,7 +978,6 @@ function StepSocialLinks({ shop, onSave, canEdit }: { shop: any, onSave: (newDat
      const form = useForm<Step4FormValues>({
         resolver: zodResolver(shopStep4Schema),
         defaultValues: {
-            websiteUrl: shop.websiteUrl || '',
             facebookLink: shop.facebookLink || '',
             instagramLink: shop.instagramLink || '',
             twitterLink: shop.twitterLink || '',
@@ -1006,15 +1020,13 @@ function StepSocialLinks({ shop, onSave, canEdit }: { shop: any, onSave: (newDat
          <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 <div className="flex justify-between items-center">
-                    <h3 className="text-lg font-semibold">Social Media & Website Links</h3>
+                    <h3 className="text-lg font-semibold">Social Media Links</h3>
                     <Button type="button" variant="outline" size="sm" onClick={handleGenerateLinks} disabled={isGenerating || !canEdit}>
                         {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
                         Generate with AI
                     </Button>
                 </div>
                  <fieldset disabled={!canEdit} className="space-y-4">
-                    <FormField control={form.control} name="websiteUrl" render={({ field }) => (<FormItem><FormLabel>Main Website URL</FormLabel><FormControl><Input placeholder="https://your-main-website.com" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                    <Separator />
                     <FormField control={form.control} name="facebookLink" render={({ field }) => (<FormItem><FormLabel>Facebook</FormLabel><FormControl><Input placeholder="https://facebook.com/your-shop" {...field} /></FormControl><FormMessage /></FormItem>)} />
                     <FormField control={form.control} name="instagramLink" render={({ field }) => (<FormItem><FormLabel>Instagram</FormLabel><FormControl><Input placeholder="https://instagram.com/your-shop" {...field} /></FormControl><FormMessage /></FormItem>)} />
                     <FormField control={form.control} name="twitterLink" render={({ field }) => (<FormItem><FormLabel>X (Twitter)</FormLabel><FormControl><Input placeholder="https://x.com/your-shop" {...field} /></FormControl><FormMessage /></FormItem>)} />
@@ -1479,9 +1491,9 @@ export function ShopWizard({ shop: initialShop, onShopUpdate }: { shop: any, onS
   const stepCompleteness = useMemo(() => {
     return {
         'Core Identity': !!(shopData.shopName && shopData.shopDescription && shopData.category),
-        'Products': !!(products && products.length > 0),
+        'Products': !!(products && products.length > 0) || !!shopData.websiteUrl,
         'Appearance': !!shopData.heroBannerUrl,
-        'Social Links': !!(shopData.websiteUrl || shopData.facebookLink || shopData.instagramLink || shopData.twitterLink),
+        'Social Links': !!(shopData.facebookLink || shopData.instagramLink || shopData.twitterLink),
         'SEO': !!(shopData.metaTitle && shopData.metaDescription && shopData.tags?.length > 0),
         'Legal Docs': !!(shopData.termsUrl || shopData.returnsPolicyUrl || shopData.privacyPolicyUrl),
         'Commercials': !!activeAgreement,
