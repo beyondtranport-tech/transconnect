@@ -119,7 +119,35 @@ function RewardDialog({ reward, onSave }: { reward?: any, onSave: () => void }) 
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                         <FormField control={form.control} name="title" render={({field}) => <FormItem><FormLabel>Title</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage/></FormItem>} />
-                        <FormField control={form.control} name="type" render={({field}) => <FormItem><FormLabel>Type</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a type..."/></SelectTrigger></FormControl><SelectContent><SelectItem value="voucher">Voucher</SelectItem><SelectItem value="discount">Discount</SelectItem><SelectItem value="product">Product</SelectItem></SelectContent></Select><FormMessage/></FormItem>} />
+                        <FormField control={form.control} name="type" render={({field}) => (
+                            <FormItem>
+                                <FormLabel>Type</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl><SelectTrigger><SelectValue placeholder="Select a type..."/></SelectTrigger></FormControl>
+                                    <SelectContent>
+                                        <SelectItem value="voucher">
+                                            <div>
+                                                <p>Voucher</p>
+                                                <p className="text-xs text-muted-foreground">e.g., R100 Fuel Voucher</p>
+                                            </div>
+                                        </SelectItem>
+                                        <SelectItem value="discount">
+                                            <div>
+                                                <p>Discount</p>
+                                                <p className="text-xs text-muted-foreground">e.g., 10% off next purchase</p>
+                                            </div>
+                                        </SelectItem>
+                                        <SelectItem value="product">
+                                             <div>
+                                                <p>Product</p>
+                                                <p className="text-xs text-muted-foreground">e.g., Free branded cap</p>
+                                            </div>
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage/>
+                            </FormItem>
+                        )} />
                         <DialogFooter>
                             <Button type="submit" disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null} Save</Button>
                         </DialogFooter>
