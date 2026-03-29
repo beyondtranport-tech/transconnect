@@ -1,95 +1,215 @@
 
 'use client';
 
-import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import React, { useState, useMemo, useCallback } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Loader2, Award, PlusCircle, Edit, Trash2 } from "lucide-react";
+import { DataTable } from '@/components/ui/data-table';
+import { type ColumnDef } from '@/hooks/use-data-table';
+import { Badge } from '@/components/ui/badge';
+import { Button, buttonVariants } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
+import { getClientSideAuthToken, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query } from 'firebase/firestore';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Award, Bot, Briefcase, Code, Handshake, Search, ShieldCheck, ShoppingCart, Sparkles, Truck, UserPlus, Users, Video, Wand2, Warehouse } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-const rewardActions = [
-    { category: 'Vendors', icon: ShoppingCart, actions: [
-        { id: 'shopCreationPoints', name: 'Shop Creation' },
-        { id: 'productAddPoints', name: 'Product Add' },
-        { id: 'supplierContributionPoints', name: 'Supplier Contribution' },
-        { id: 'debtorContributionPoints', name: 'Debtor Contribution' },
-    ]},
-    { category: 'Transporters (Buyers)', icon: Truck, actions: [
-        { id: 'truckContributionPoints', name: 'Truck Contribution' },
-        { id: 'trailerContributionPoints', name: 'Trailer Contribution' },
-    ]},
-    { category: 'Partners & Referrals', icon: Handshake, actions: [
-        { id: 'partnerReferralPoints', name: 'Member Referral' },
-        { id: 'isaSaleCommissionPoints', name: 'ISA Sale' },
-    ]},
-    { category: 'Associates', icon: Briefcase, actions: [
-        { id: 'associateServiceListingPoints', name: 'Service Listing' },
-    ]},
-    { category: 'Drivers', icon: Users, actions: [
-        { id: 'driverSafetyRecordPoints', name: 'Safety Record Submission' },
-    ]},
-    { category: 'Developers', icon: Code, actions: [
-        { id: 'developerApiIntegrationPoints', name: 'API Integration' },
-    ]},
-    { category: 'General & AI Actions', icon: Sparkles, actions: [
-        { id: 'userSignupPoints', name: 'User Sign-up' },
-        { id: 'seoBoosterPoints', name: 'AI SEO Booster Use' },
-        { id: 'aiImageGeneratorPoints', name: 'AI Image Generation' },
-        { id: 'imageEnhancerPoints', name: 'AI Image Enhancement' },
-        { id: 'aiVideoGeneratorPoints', name: 'AI Video Generation' },
-    ]},
-];
+// API Helper
+async function performAdminAction(token: string, action: string, payload?: any) {
+    const response = await fetch('/api/admin', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, payload }),
+    });
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+        throw new Error(result.error || `API Error for action: ${action}`);
+    }
+    return result;
+}
+
+
+const rewardSchema = z.object({
+  id: z.string().optional(),
+  title: z.string().min(1, 'Title is required'),
+  description: z.string().optional(),
+  pointsCost: z.coerce.number().min(0, 'Points cost must be non-negative.'),
+  type: z.enum(['voucher', 'discount', 'product']),
+  isActive: z.boolean().default(true),
+  imageUrl: z.string().url().optional().or(z.literal('')),
+});
+type RewardFormValues = z.infer<typeof rewardSchema>;
+
+function RewardDialog({ reward, onSave }: { reward?: RewardFormValues, onSave: () => void }) {
+    const [isOpen, setIsOpen] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const { toast } = useToast();
+
+    const form = useForm<RewardFormValues>({
+        resolver: zodResolver(rewardSchema),
+    });
+    
+    React.useEffect(() => {
+        if(isOpen) {
+            form.reset(reward || {
+                title: '',
+                description: '',
+                pointsCost: 0,
+                type: 'voucher',
+                isActive: true,
+                imageUrl: '',
+            });
+        }
+    }, [isOpen, reward, form]);
+
+    const onSubmit = async (values: RewardFormValues) => {
+        setIsLoading(true);
+        try {
+            const token = await getClientSideAuthToken();
+            if(!token) throw new Error("Authentication failed.");
+
+            const dataToSave = { ...values };
+            const path = `rewards/${reward?.id || dataToSave.title.toLowerCase().replace(/\s+/g, '-')}`;
+            delete dataToSave.id;
+
+            const response = await fetch('/api/updateConfigDoc', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ path, data: { ...dataToSave, updatedAt: { _methodName: 'serverTimestamp' } } }),
+            });
+
+            if (!response.ok) throw new Error((await response.json()).error || 'Failed to save reward.');
+            
+            toast({ title: reward ? 'Reward Updated' : 'Reward Created' });
+            onSave();
+            setIsOpen(false);
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: 'Save Failed', description: e.message });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    return (
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>
+                {reward ? (
+                    <Button variant="ghost" size="icon"><Edit className="h-4 w-4"/></Button>
+                ) : (
+                    <Button><PlusCircle className="mr-2 h-4 w-4"/>Add Reward</Button>
+                )}
+            </DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>{reward ? 'Edit' : 'Create'} Reward</DialogTitle>
+                    <DialogDescription>Define a reward that members can redeem with their points.</DialogDescription>
+                </DialogHeader>
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                        <FormField control={form.control} name="title" render={({field}) => <FormItem><FormLabel>Title</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage/></FormItem>} />
+                        <FormField control={form.control} name="description" render={({field}) => <FormItem><FormLabel>Description</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage/></FormItem>} />
+                        <div className="grid grid-cols-2 gap-4">
+                            <FormField control={form.control} name="pointsCost" render={({field}) => <FormItem><FormLabel>Points Cost</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage/></FormItem>} />
+                            <FormField control={form.control} name="type" render={({field}) => <FormItem><FormLabel>Type</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent><SelectItem value="voucher">Voucher</SelectItem><SelectItem value="discount">Discount</SelectItem><SelectItem value="product">Product</SelectItem></SelectContent></Select><FormMessage/></FormItem>} />
+                        </div>
+                        <FormField control={form.control} name="imageUrl" render={({field}) => <FormItem><FormLabel>Image URL (Optional)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage/></FormItem>} />
+                        <FormField control={form.control} name="isActive" render={({field}) => <FormItem className="flex items-center space-x-2"><FormControl><Switch checked={field.value} onCheckedChange={field.onChange}/></FormControl><FormLabel>Active</FormLabel></FormItem>} />
+                        <DialogFooter>
+                            <Button type="submit" disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null} Save</Button>
+                        </DialogFooter>
+                    </form>
+                </Form>
+            </DialogContent>
+        </Dialog>
+    );
+}
 
 export default function RewardsManagement() {
+    const firestore = useFirestore();
+    const { toast } = useToast();
+    const [rewardToDelete, setRewardToDelete] = useState<any | null>(null);
 
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2"><Award className="h-6 w-6" />Reward Status Framework</CardTitle>
-        <CardDescription>
-          This dashboard outlines the structure for tracking member rewards. It shows each action, the points required per tier to unlock benefits from that action, the member's actual earned points, and the resulting financial savings.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="border rounded-lg overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-1/3">Action</TableHead>
-                <TableHead className="text-center">Target (Bronze)</TableHead>
-                <TableHead className="text-center">Target (Silver)</TableHead>
-                <TableHead className="text-center">Target (Gold)</TableHead>
-                <TableHead className="text-center">Actual Points</TableHead>
-                <TableHead className="text-right">Result (Savings)</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rewardActions.map(section => (
-                <React.Fragment key={section.category}>
-                  <TableRow className="bg-muted/50">
-                    <TableCell colSpan={6}>
-                      <h3 className="font-semibold text-primary flex items-center gap-2">
-                        <section.icon className="h-5 w-5" />
-                        {section.category}
-                      </h3>
-                    </TableCell>
-                  </TableRow>
-                  {section.actions.map(action => (
-                    <TableRow key={action.id}>
-                      <TableCell className="font-medium pl-8">{action.name}</TableCell>
-                      <TableCell><Input type="number" defaultValue="0" className="text-center" /></TableCell>
-                      <TableCell><Input type="number" defaultValue="100" className="text-center" /></TableCell>
-                      <TableCell><Input type="number" defaultValue="500" className="text-center" /></TableCell>
-                      <TableCell><Input type="number" placeholder="-" className="text-center" disabled /></TableCell>
-                      <TableCell className="text-right"><Input type="text" placeholder="R 0.00" className="text-right font-mono" disabled /></TableCell>
-                    </TableRow>
-                  ))}
-                </React.Fragment>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      </CardContent>
-    </Card>
-  );
+    const rewardsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'rewards')) : null, [firestore]);
+    const { data: rewards, isLoading, forceRefresh } = useCollection(rewardsQuery);
+
+    const handleDelete = async () => {
+        if (!rewardToDelete) return;
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication failed.");
+            await fetch('/api/deleteConfigDoc', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ path: `rewards/${rewardToDelete.id}` }),
+            });
+            toast({ title: "Reward Deleted" });
+            forceRefresh();
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: "Deletion Failed", description: e.message });
+        } finally {
+            setRewardToDelete(null);
+        }
+    };
+    
+    const columns: ColumnDef<RewardFormValues>[] = useMemo(() => [
+        { accessorKey: 'title', header: 'Title' },
+        { accessorKey: 'pointsCost', header: 'Points Cost' },
+        { accessorKey: 'type', header: 'Type' },
+        { accessorKey: 'isActive', header: 'Status', cell: ({row}) => <Badge variant={row.original.isActive ? 'default' : 'secondary'}>{row.original.isActive ? 'Active' : 'Inactive'}</Badge> },
+        { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({row}) => (
+            <div className="flex justify-end items-center">
+                <RewardDialog reward={row.original} onSave={forceRefresh} />
+                <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="icon" onClick={() => setRewardToDelete(row.original)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                            <AlertDialogDescription>This will permanently delete the reward "{row.original.title}".</AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel onClick={() => setRewardToDelete(null)}>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: 'destructive' })}>Delete</AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+            </div>
+        )},
+    ], [forceRefresh]);
+
+    return (
+        <Card>
+            <CardHeader className="flex flex-row justify-between items-start">
+                <div>
+                    <CardTitle className="flex items-center gap-2"><Award className="h-6 w-6" />Rewards Management</CardTitle>
+                    <CardDescription>Create and manage the redeemable rewards for the loyalty program.</CardDescription>
+                </div>
+                <RewardDialog onSave={forceRefresh} />
+            </CardHeader>
+            <CardContent>
+                {isLoading ? (
+                    <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin" /></div>
+                ) : (
+                    <DataTable columns={columns} data={rewards || []} />
+                )}
+            </CardContent>
+        </Card>
+    )
 }
