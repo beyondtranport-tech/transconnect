@@ -4,7 +4,7 @@ import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import {
   Form,
   FormControl,
@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, Star, UserPlus, Store, Package, Sparkles, Edit, Video, Search, Truck, Building, Users, Handshake, Briefcase, Bot, Code, ShieldCheck, Warehouse, PlusCircle, Gift, Trash2 } from 'lucide-react';
+import { Loader2, Save, Star, UserPlus, Store, Package, Sparkles, Edit, Video, Search, Truck, Building, Users, Handshake, Briefcase, Bot, Code, ShieldCheck, Warehouse, PlusCircle, Gift, Trash2, MoreVertical, Eye, CheckCircle, XCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { getClientSideAuthToken } from '@/firebase';
 import { useConfig } from '@/hooks/use-config';
@@ -23,6 +23,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Switch } from '@/components/ui/switch';
+
 
 const iconMap: { [key: string]: React.ElementType } = {
     Star, UserPlus, Store, Package, Search, Sparkles, Edit, Video, Truck, Building, Users, Handshake, Briefcase, Bot, Code, ShieldCheck, Warehouse, Gift
@@ -32,50 +36,52 @@ const initialActionGroups = [
     {
         groupTitle: 'General Platform Actions',
         actions: [
-            { id: 'userSignupPoints', label: 'Sign up for an account', icon: 'UserPlus' },
-            { id: 'shopCreationPoints', label: 'Create a Vendor Shop', icon: 'Store' },
-            { id: 'productAddPoints', label: 'Add a Product to Shop', icon: 'Package' },
-            { id: 'loadBoardCreationPoints', label: 'Create a Load Board', icon: 'Truck' },
+            { id: 'userSignupPoints', label: 'Sign up for an account', icon: 'UserPlus', isActive: true },
+            { id: 'shopCreationPoints', label: 'Create a Vendor Shop', icon: 'Store', isActive: true },
+            { id: 'productAddPoints', label: 'Add a Product to Shop', icon: 'Package', isActive: true },
+            { id: 'loadBoardCreationPoints', label: 'Create a Load Board', icon: 'Truck', isActive: true },
         ]
     },
     {
         groupTitle: 'AI Marketing & Content Studio',
         actions: [
-            { id: 'seoBoosterPoints', label: 'Use AI SEO Booster', icon: 'Search' },
-            { id: 'aiImageGeneratorPoints', label: 'Use AI Image Generator', icon: 'Sparkles' },
-            { id: 'imageEnhancerPoints', label: 'Use AI Image Enhancer', icon: 'Edit' },
-            { id: 'aiVideoGeneratorPoints', label: 'Use AI Video Ad Generator', icon: 'Video' },
+            { id: 'seoBoosterPoints', label: 'Use AI SEO Booster', icon: 'Search', isActive: true },
+            { id: 'aiImageGeneratorPoints', label: 'Use AI Image Generator', icon: 'Sparkles', isActive: true },
+            { id: 'imageEnhancerPoints', label: 'Use AI Image Enhancer', icon: 'Edit', isActive: true },
+            { id: 'aiVideoGeneratorPoints', label: 'Use AI Video Ad Generator', icon: 'Video', isActive: true },
         ]
     },
     {
         groupTitle: 'Data Contributions',
         actions: [
-            { id: 'truckContributionPoints', label: 'Contribute Truck Data', icon: 'Truck' },
-            { id: 'trailerContributionPoints', label: 'Contribute Trailer Data', icon: 'Warehouse' },
-            { id: 'supplierContributionPoints', label: 'Contribute Supplier Data', icon: 'Building' },
-            { id: 'debtorContributionPoints', label: 'Contribute Debtor Data', icon: 'Users' },
+            { id: 'truckContributionPoints', label: 'Contribute Truck Data', icon: 'Truck', isActive: true },
+            { id: 'trailerContributionPoints', label: 'Contribute Trailer Data', icon: 'Warehouse', isActive: true },
+            { id: 'supplierContributionPoints', label: 'Contribute Supplier Data', icon: 'Building', isActive: true },
+            { id: 'debtorContributionPoints', label: 'Contribute Debtor Data', icon: 'Users', isActive: true },
         ]
     },
     {
         groupTitle: 'Partner & Network Actions',
         actions: [
-            { id: 'partnerReferralPoints', label: 'Refer a New Member', icon: 'Handshake' },
-            { id: 'associateServiceListingPoints', label: 'Associate Lists a Service', icon: 'Briefcase' },
-            { id: 'isaSaleCommissionPoints', label: 'ISA Completes a Sale', icon: 'Bot' },
-            { id: 'driverSafetyRecordPoints', label: 'Driver Uploads Safety Record', icon: 'ShieldCheck' },
-            { id: 'developerApiIntegrationPoints', label: 'Developer Completes API Integration', icon: 'Code' },
+            { id: 'partnerReferralPoints', label: 'Refer a New Member', icon: 'Handshake', isActive: true },
+            { id: 'associateServiceListingPoints', label: 'Associate Lists a Service', icon: 'Briefcase', isActive: true },
+            { id: 'isaSaleCommissionPoints', label: 'ISA Completes a Sale', icon: 'Bot', isActive: true },
+            { id: 'driverSafetyRecordPoints', label: 'Driver Uploads Safety Record', icon: 'ShieldCheck', isActive: true },
+            { id: 'developerApiIntegrationPoints', label: 'Developer Completes API Integration', icon: 'Code', isActive: true },
         ]
     }
 ];
 
 const availableIcons = Object.keys(iconMap);
 
-const addActionSchema = z.object({
-    label: z.string().min(3, "Label must be at least 3 characters."),
-    group: z.string().min(1, "Please select a group."),
-    icon: z.string().min(1, "Please select an icon."),
+const actionSchema = z.object({
+  id: z.string().optional(),
+  label: z.string().min(3, "Label must be at least 3 characters."),
+  group: z.string().min(1, "Please select a group."),
+  icon: z.string().min(1, "Please select an icon."),
+  isActive: z.boolean().default(true),
 });
-type AddActionFormValues = z.infer<typeof addActionSchema>;
+type ActionFormValues = z.infer<typeof actionSchema>;
 
 // Zod schema for the points form
 const pointsSchema = z.object({
@@ -84,16 +90,33 @@ const pointsSchema = z.object({
 type PointsFormValues = z.infer<typeof pointsSchema>;
 
 
-function AddActionDialog({ actionGroups, onActionAdded }: { actionGroups: any[], onActionAdded: (action: any) => void }) {
+function ActionDialog({ action, actionGroups, onSave }: { action?: any, actionGroups: any[], onSave: (action: any) => void }) {
     const [isOpen, setIsOpen] = useState(false);
-    const addActionForm = useForm<AddActionFormValues>({
-        resolver: zodResolver(addActionSchema),
-        defaultValues: { label: '', group: '', icon: '' }
+    
+    const form = useForm<ActionFormValues>({
+        resolver: zodResolver(actionSchema),
     });
 
     const existingGroups = useMemo(() => [...new Set(actionGroups.map(g => g.groupTitle))], [actionGroups]);
 
-    const handleAddAction = (values: AddActionFormValues) => {
+    useEffect(() => {
+        if(isOpen) {
+            if (action) {
+                form.reset({
+                    id: action.id,
+                    label: action.label,
+                    group: action.groupTitle,
+                    icon: action.icon,
+                    isActive: action.isActive,
+                });
+            } else {
+                form.reset({ label: '', group: '', icon: '', isActive: true });
+            }
+        }
+    }, [isOpen, action, form]);
+
+
+    const handleSave = (values: ActionFormValues) => {
         const generateId = (label: string) => {
             const camelCase = label.replace(/\s(.)/g, function(a) { return a.toUpperCase(); })
                                  .replace(/\s/g, '')
@@ -102,82 +125,34 @@ function AddActionDialog({ actionGroups, onActionAdded }: { actionGroups: any[],
         };
         
         const newAction = {
-            id: generateId(values.label),
+            id: values.id || generateId(values.label),
             label: values.label,
             icon: values.icon,
-            group: values.group,
+            groupTitle: values.group,
+            isActive: values.isActive
         };
-        onActionAdded(newAction);
+        onSave(newAction);
         setIsOpen(false);
-        addActionForm.reset();
+        form.reset();
     };
 
     return (
          <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
-                <Button variant="outline"><PlusCircle className="mr-2 h-4 w-4" /> Add Action</Button>
+                {action ? <DropdownMenuItem onSelect={e=>e.preventDefault()}>Edit</DropdownMenuItem> : <Button variant="outline"><PlusCircle className="mr-2 h-4 w-4" /> Add Action</Button>}
             </DialogTrigger>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Add New Loyalty Action</DialogTitle>
+                    <DialogTitle>{action ? 'Edit' : 'Add New'} Loyalty Action</DialogTitle>
                     <DialogDescription>Define a new action that members can perform.</DialogDescription>
                 </DialogHeader>
-                <Form {...addActionForm}>
-                    <form onSubmit={addActionForm.handleSubmit(handleAddAction)} className="space-y-4">
-                        <FormField
-                            control={addActionForm.control}
-                            name="label"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Action Label</FormLabel>
-                                    <FormControl><Input {...field} placeholder="e.g., Review a Product" /></FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                         <FormField
-                            control={addActionForm.control}
-                            name="group"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Group</FormLabel>
-                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                        <FormControl><SelectTrigger><SelectValue placeholder="Select a group..." /></SelectTrigger></FormControl>
-                                        <SelectContent>{existingGroups.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                         <FormField
-                            control={addActionForm.control}
-                            name="icon"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Icon</FormLabel>
-                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                        <FormControl><SelectTrigger><SelectValue placeholder="Select an icon..." /></SelectTrigger></FormControl>
-                                        <SelectContent>
-                                            {availableIcons.map(iconName => {
-                                                const IconComponent = iconMap[iconName];
-                                                return (
-                                                    <SelectItem key={iconName} value={iconName}>
-                                                        <div className="flex items-center gap-2">
-                                                            <IconComponent className="h-4 w-4"/>
-                                                            {iconName}
-                                                        </div>
-                                                    </SelectItem>
-                                                )
-                                            })}
-                                        </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <DialogFooter>
-                            <Button type="submit">Add Action</Button>
-                        </DialogFooter>
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(handleSave)} className="space-y-4">
+                        <FormField control={form.control} name="label" render={({ field }) => ( <FormItem><FormLabel>Action Label</FormLabel><FormControl><Input {...field} placeholder="e.g., Review a Product" /></FormControl><FormMessage /></FormItem> )} />
+                         <FormField control={form.control} name="group" render={({ field }) => ( <FormItem><FormLabel>Group</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a group..." /></SelectTrigger></FormControl><SelectContent>{existingGroups.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
+                         <FormField control={form.control} name="icon" render={({ field }) => ( <FormItem><FormLabel>Icon</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select an icon..." /></SelectTrigger></FormControl><SelectContent> {availableIcons.map(iconName => { const IconComponent = iconMap[iconName]; return ( <SelectItem key={iconName} value={iconName}><div className="flex items-center gap-2"><IconComponent className="h-4 w-4"/>{iconName}</div></SelectItem> ) })} </SelectContent></Select><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="isActive" render={({ field }) => ( <FormItem className="flex items-center space-x-2 pt-2"><FormControl><Switch checked={field.value} onCheckedChange={field.onChange}/></FormControl><FormLabel>Active</FormLabel></FormItem> )} />
+                        <DialogFooter><Button type="submit">Save Action</Button></DialogFooter>
                     </form>
                 </Form>
             </DialogContent>
@@ -185,17 +160,53 @@ function AddActionDialog({ actionGroups, onActionAdded }: { actionGroups: any[],
     );
 }
 
+function ActionMenu({ action, onEdit, onDelete, onToggleStatus }: { action: any, onEdit: () => void, onDelete: () => void, onToggleStatus: (newStatus: boolean) => void }) {
+    const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
+    
+    return (
+        <>
+            <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
+                 <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuItem onSelect={onEdit}><Edit className="mr-2 h-4 w-4" />Edit</DropdownMenuItem>
+                        {action.isActive ? (
+                            <DropdownMenuItem onSelect={() => onToggleStatus(false)}><XCircle className="mr-2 h-4 w-4" />Deactivate</DropdownMenuItem>
+                        ) : (
+                            <DropdownMenuItem onSelect={() => onToggleStatus(true)}><CheckCircle className="mr-2 h-4 w-4" />Activate</DropdownMenuItem>
+                        )}
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem className="text-destructive" onSelect={() => setIsDeleteAlertOpen(true)}><Trash2 className="mr-2 h-4 w-4" />Delete</DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>This will permanently delete the action "{action.label}".</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={onDelete} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+        </>
+    );
+}
+
+
 export default function ActionPlanSettings() {
     const { toast } = useToast();
     const [isSaving, setIsSaving] = useState(false);
     
-    // Config for action definitions (labels, icons, groups)
     const { data: definitionsConfig, isLoading: isDefLoading, forceRefresh: forceRefreshDefs } = useConfig<any>('loyaltyActionDefinitions');
-
-    // Config for action values (points) and tier thresholds
     const { data: valuesConfig, isLoading: isValuesLoading, forceRefresh: forceRefreshValues } = useConfig<any>('loyaltySettings');
 
     const [actionGroups, setActionGroups] = useState(initialActionGroups);
+    const [editAction, setEditAction] = useState<any | null>(null);
+    const [isEditOpen, setIsEditOpen] = useState(false);
     
     const form = useForm<PointsFormValues>({
         resolver: zodResolver(pointsSchema),
@@ -218,23 +229,33 @@ export default function ActionPlanSettings() {
         }
     }, [valuesConfig, actionGroups, form]);
     
-    const handleActionAdded = useCallback((newAction: { id: string, label: string, icon: string, group: string }) => {
+    const handleActionSave = useCallback((newActionData: any) => {
         setActionGroups(currentGroups => {
             const newGroups = JSON.parse(JSON.stringify(currentGroups));
-            const groupIndex = newGroups.findIndex((g: any) => g.groupTitle === newAction.group);
-            if (groupIndex !== -1) {
-                // Check if action ID already exists to prevent duplicates
-                if (!newGroups[groupIndex].actions.some((a: any) => a.id === newAction.id)) {
-                    newGroups[groupIndex].actions.push({ id: newAction.id, label: newAction.label, icon: newAction.icon });
-                    // Set a default point value for the new action in the form
-                    form.setValue(`points.${newAction.id}`, 0);
+            let found = false;
+            // Try to update existing action
+            for (let group of newGroups) {
+                const actionIndex = group.actions.findIndex((a: any) => a.id === newActionData.id);
+                if (actionIndex !== -1) {
+                    group.actions[actionIndex] = { ...group.actions[actionIndex], ...newActionData };
+                    found = true;
+                    break;
+                }
+            }
+            // If not found, add it
+            if (!found) {
+                const groupIndex = newGroups.findIndex((g: any) => g.groupTitle === newActionData.groupTitle);
+                if (groupIndex !== -1) {
+                    newGroups[groupIndex].actions.push({ id: newActionData.id, label: newActionData.label, icon: newActionData.icon, isActive: newActionData.isActive });
+                    form.setValue(`points.${newActionData.id}`, 0);
                 } else {
-                     toast({ variant: 'destructive', title: 'Action already exists' });
+                     // If group doesn't exist, create it (shouldn't happen with the dialog)
+                     newGroups.push({ groupTitle: newActionData.groupTitle, actions: [newActionData] });
                 }
             }
             return newGroups;
         });
-    }, [form, toast]);
+    }, [form]);
 
     const handleActionDeleted = useCallback((groupTitle: string, actionId: string) => {
         setActionGroups(currentGroups => currentGroups.map(group => {
@@ -245,13 +266,25 @@ export default function ActionPlanSettings() {
                 };
             }
             return group;
-        }).filter(group => group.actions.length > 0)); // Optional: remove empty groups
+        }).filter(group => group.actions.length > 0)); 
         
         const currentPoints = form.getValues('points');
         delete currentPoints[actionId];
         form.setValue('points', currentPoints);
-
     }, [form]);
+
+    const handleToggleStatus = useCallback((groupTitle: string, actionId: string, newStatus: boolean) => {
+        setActionGroups(currentGroups => currentGroups.map(group => {
+             if (group.groupTitle === groupTitle) {
+                return {
+                    ...group,
+                    actions: group.actions.map((a: any) => a.id === actionId ? { ...a, isActive: newStatus } : a)
+                };
+            }
+            return group;
+        }));
+    }, []);
+
     
     const onPointsSubmit = async (data: PointsFormValues) => {
         setIsSaving(true);
@@ -259,7 +292,6 @@ export default function ActionPlanSettings() {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication failed.");
 
-            // 1. Save the action definitions (structure)
             await fetch('/api/updateConfigDoc', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -269,9 +301,8 @@ export default function ActionPlanSettings() {
                 }),
             });
 
-            // 2. Save the points values
             const newSettings = {
-                ...valuesConfig, // Preserve existing settings like tier thresholds
+                ...valuesConfig, 
                 ...data.points,
                 updatedAt: { _methodName: 'serverTimestamp' }
             };
@@ -302,9 +333,15 @@ export default function ActionPlanSettings() {
         actionGroups.flatMap(group => 
             group.actions.map(action => ({ ...action, groupTitle: group.groupTitle }))
         ), [actionGroups]);
+        
+    const openEditDialog = (action: any) => {
+        setEditAction(action);
+        setIsEditOpen(true);
+    };
 
     return (
         <Card className="w-full max-w-5xl">
+            {editAction && <ActionDialog open={isEditOpen} onOpenChange={setIsEditOpen} action={editAction} actionGroups={actionGroups} onSave={handleActionSave} />}
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onPointsSubmit)}>
                     <CardHeader className="flex-row items-center justify-between">
@@ -317,7 +354,7 @@ export default function ActionPlanSettings() {
                                 </CardDescription>
                             </div>
                         </div>
-                        <AddActionDialog actionGroups={actionGroups} onActionAdded={handleActionAdded} />
+                        <ActionDialog actionGroups={actionGroups} onSave={handleActionSave} />
                     </CardHeader>
                     <CardContent>
                         {isLoading ? (
@@ -329,11 +366,12 @@ export default function ActionPlanSettings() {
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
-                                            <TableHead className="w-[40%]">Action</TableHead>
+                                            <TableHead className="w-[30%]">Action</TableHead>
                                             <TableHead>Group</TableHead>
                                             <TableHead>Icon</TableHead>
-                                            <TableHead className="w-[180px] text-right">Points Awarded</TableHead>
-                                            <TableHead className="w-[80px] text-right">Manage</TableHead>
+                                            <TableHead>Status</TableHead>
+                                            <TableHead className="w-[180px]">Points Awarded</TableHead>
+                                            <TableHead className="text-right w-[80px]">Action</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -341,19 +379,11 @@ export default function ActionPlanSettings() {
                                             const IconComponent = iconMap[action.icon] || Star;
                                             return (
                                                 <TableRow key={action.id}>
-                                                    <TableCell className="font-medium">
-                                                        {action.label}
-                                                    </TableCell>
+                                                    <TableCell className="font-medium">{action.label}</TableCell>
+                                                    <TableCell><Badge variant="outline">{action.groupTitle}</Badge></TableCell>
+                                                    <TableCell><div className="flex items-center gap-2"><IconComponent className="h-4 w-4 text-muted-foreground" /><span className="font-mono text-xs">{action.icon}</span></div></TableCell>
+                                                    <TableCell><Badge variant={action.isActive ? 'default' : 'secondary'}>{action.isActive ? 'Active' : 'Inactive'}</Badge></TableCell>
                                                     <TableCell>
-                                                        <Badge variant="outline">{action.groupTitle}</Badge>
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <div className="flex items-center gap-2">
-                                                            <IconComponent className="h-4 w-4 text-muted-foreground" />
-                                                            <span className="font-mono text-xs">{action.icon}</span>
-                                                        </div>
-                                                    </TableCell>
-                                                    <TableCell className="text-right">
                                                         <FormField
                                                             control={form.control}
                                                             name={`points.${action.id}`}
@@ -365,9 +395,12 @@ export default function ActionPlanSettings() {
                                                         />
                                                     </TableCell>
                                                     <TableCell className="text-right">
-                                                        <Button type="button" variant="ghost" size="icon" onClick={() => handleActionDeleted(action.groupTitle, action.id)}>
-                                                            <Trash2 className="h-4 w-4 text-destructive" />
-                                                        </Button>
+                                                        <ActionMenu 
+                                                          action={action} 
+                                                          onEdit={() => openEditDialog(action)}
+                                                          onDelete={() => handleActionDeleted(action.groupTitle, action.id)}
+                                                          onToggleStatus={(newStatus) => handleToggleStatus(action.groupTitle, action.id, newStatus)}
+                                                        />
                                                     </TableCell>
                                                 </TableRow>
                                             );
