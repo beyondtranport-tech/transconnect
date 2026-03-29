@@ -1,7 +1,6 @@
-
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -11,26 +10,26 @@ import {
   FormControl,
   FormField,
   FormItem,
-  FormLabel,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Save, Award, Trash2, PlusCircle, Gift } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { useConfig } from '@/hooks/use-config';
 import { getClientSideAuthToken } from '@/firebase';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
-// Schema for a single benefit key-value pair
-const benefitFieldSchema = z.object({
-  key: z.string().min(1, "Benefit name cannot be empty."),
-  value: z.string().min(1, "Benefit value cannot be empty."),
+
+// Schema for a single benefit row
+const benefitRowSchema = z.object({
+  name: z.string().min(1, "Benefit name cannot be empty."),
+  bronzeValue: z.string().optional(),
+  silverValue: z.string().optional(),
+  goldValue: z.string().optional(),
 });
 
-// Schema for the entire form
 const formSchema = z.object({
-  bronzeBenefits: z.array(benefitFieldSchema),
-  silverBenefits: z.array(benefitFieldSchema),
-  goldBenefits: z.array(benefitFieldSchema),
+  benefits: z.array(benefitRowSchema),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -44,32 +43,42 @@ export default function RewardsManagement() {
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
         defaultValues: {
-            bronzeBenefits: [],
-            silverBenefits: [],
-            goldBenefits: [],
+            benefits: [],
         },
     });
 
     useEffect(() => {
         if (configData) {
-            // Helper to convert old object format to new array format for backward compatibility
-            const transformBenefits = (benefits: any) => {
-                if (Array.isArray(benefits)) {
-                    return benefits; // Already in new format
-                }
-                if (typeof benefits === 'object' && benefits !== null) {
-                    return Object.entries(benefits).map(([key, value]) => ({ key, value: String(value) }));
-                }
-                return [];
-            };
+            if (Array.isArray(configData.benefits)) {
+                // Data is already in the new format
+                form.reset({ benefits: configData.benefits });
+            } else {
+                // Transform old data structure to new one for backward compatibility
+                const allKeys = new Set<string>();
+                const bronzeMap = new Map((configData.bronzeBenefits || []).map((b: any) => [b.key, b.value]));
+                const silverMap = new Map((configData.silverBenefits || []).map((b: any) => [b.key, b.value]));
+                const goldMap = new Map((configData.goldBenefits || []).map((b: any) => [b.key, b.value]));
 
-            form.reset({
-                bronzeBenefits: transformBenefits(configData.bronzeBenefits),
-                silverBenefits: transformBenefits(configData.silverBenefits),
-                goldBenefits: transformBenefits(configData.goldBenefits),
-            });
+                (configData.bronzeBenefits || []).forEach((b: any) => b.key && allKeys.add(b.key));
+                (configData.silverBenefits || []).forEach((b: any) => b.key && allKeys.add(b.key));
+                (configData.goldBenefits || []).forEach((b: any) => b.key && allKeys.add(b.key));
+
+                const transformedBenefits = Array.from(allKeys).map(key => ({
+                    name: key,
+                    bronzeValue: bronzeMap.get(key) || '',
+                    silverValue: silverMap.get(key) || '',
+                    goldValue: goldMap.get(key) || '',
+                }));
+
+                form.reset({ benefits: transformedBenefits });
+            }
         }
     }, [configData, form]);
+
+    const { fields, append, remove } = useFieldArray({
+        control: form.control,
+        name: 'benefits',
+    });
 
     const onSubmit = async (values: FormValues) => {
         setIsSaving(true);
@@ -77,14 +86,17 @@ export default function RewardsManagement() {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication failed.");
 
-            // Merge the new benefits data with existing loyaltySettings (like point thresholds)
-            const dataToSave = {
-                ...configData, 
-                ...values,
-                updatedAt: { _methodName: 'serverTimestamp' }
-            };
+            const dataToSave: any = { ...configData };
+            
+            dataToSave.benefits = values.benefits;
 
-            const response = await fetch('/api/updateConfigDoc', {
+            delete dataToSave.bronzeBenefits;
+            delete dataToSave.silverBenefits;
+            delete dataToSave.goldBenefits;
+            
+            dataToSave.updatedAt = { _methodName: 'serverTimestamp' };
+
+            await fetch('/api/updateConfigDoc', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -92,8 +104,6 @@ export default function RewardsManagement() {
                     data: dataToSave
                 }),
             });
-
-            if (!response.ok) throw new Error((await response.json()).error || 'Failed to save settings.');
             
             toast({ title: 'Rewards Plan Benefits Saved!', description: 'The benefits for each loyalty tier have been updated.' });
             forceRefresh();
@@ -103,84 +113,78 @@ export default function RewardsManagement() {
             setIsSaving(false);
         }
     };
-
-    const TierCard = ({ tier, title }: { tier: 'bronze' | 'silver' | 'gold', title: string }) => {
-        const { fields, append, remove } = useFieldArray({
-            control: form.control,
-            name: `${tier}Benefits`,
-        });
-
-        return (
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><Award className="h-5 w-5" /> {title}</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    {fields.map((field, index) => (
-                        <div key={field.id} className="flex items-end gap-2">
-                             <FormField
-                                control={form.control}
-                                name={`${tier}Benefits.${index}.key`}
-                                render={({ field }) => (
-                                    <FormItem className="flex-1">
-                                        <FormLabel>Benefit Name</FormLabel>
-                                        <FormControl><Input placeholder="e.g., Commission Share" {...field} /></FormControl>
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name={`${tier}Benefits.${index}.value`}
-                                render={({ field }) => (
-                                    <FormItem className="flex-1">
-                                        <FormLabel>Value</FormLabel>
-                                        <FormControl><Input placeholder="e.g., 5%" {...field} /></FormControl>
-                                    </FormItem>
-                                )}
-                            />
-                            <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}>
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                        </div>
-                    ))}
-                    <Button type="button" variant="outline" size="sm" onClick={() => append({ key: '', value: '' })}>
-                        <PlusCircle className="mr-2 h-4 w-4" /> Add Benefit
-                    </Button>
-                </CardContent>
-            </Card>
-        );
-    }
-
+    
     return (
-        <Card className="w-full max-w-4xl">
+        <Card className="w-full max-w-5xl">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2"><Gift className="h-6 w-6" />Rewards Plan Benefits</CardTitle>
                 <CardDescription>
                     Define the specific benefits a member receives when they reach a loyalty tier. These are automatically applied.
                 </CardDescription>
             </CardHeader>
-            <CardContent>
-                {isConfigLoading ? (
-                    <div className="flex justify-center items-center py-20"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div>
-                ) : (
-                    <Form {...form}>
-                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                             <div className="space-y-6">
-                                <TierCard tier="bronze" title="Bronze Tier Benefits" />
-                                <TierCard tier="silver" title="Silver Tier Benefits" />
-                                <TierCard tier="gold" title="Gold Tier Benefits" />
+             <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)}>
+                    <CardContent>
+                        {isConfigLoading ? (
+                             <div className="flex justify-center items-center py-20"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div>
+                        ) : (
+                            <div className="border rounded-lg">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead className="w-[30%]">Benefit Name</TableHead>
+                                            <TableHead>Bronze Value</TableHead>
+                                            <TableHead>Silver Value</TableHead>
+                                            <TableHead>Gold Value</TableHead>
+                                            <TableHead className="w-[50px]"></TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {fields.map((field, index) => (
+                                            <TableRow key={field.id}>
+                                                <TableCell>
+                                                    <FormField control={form.control} name={`benefits.${index}.name`} render={({ field }) => (
+                                                        <Input {...field} placeholder="e.g., Commission Share" />
+                                                    )}/>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <FormField control={form.control} name={`benefits.${index}.bronzeValue`} render={({ field }) => (
+                                                        <Input {...field} placeholder="e.g., 5%" />
+                                                    )}/>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <FormField control={form.control} name={`benefits.${index}.silverValue`} render={({ field }) => (
+                                                        <Input {...field} placeholder="e.g., 10%" />
+                                                    )}/>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <FormField control={form.control} name={`benefits.${index}.goldValue`} render={({ field }) => (
+                                                        <Input {...field} placeholder="e.g., 15%" />
+                                                    )}/>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}>
+                                                        <Trash2 className="h-4 w-4 text-destructive" />
+                                                    </Button>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
                             </div>
-                            
-                            <div className="border-t pt-6">
-                                <Button type="submit" disabled={isSaving}>
-                                    {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                                    Save All Benefits
-                                </Button>
-                            </div>
-                        </form>
-                    </Form>
-                )}
-            </CardContent>
+                        )}
+                        <Button type="button" variant="outline" size="sm" className="mt-4" onClick={() => append({ name: '', bronzeValue: '', silverValue: '', goldValue: '' })}>
+                            <PlusCircle className="mr-2 h-4 w-4" /> Add Benefit Row
+                        </Button>
+                    </CardContent>
+                    <CardFooter>
+                         <Button type="submit" disabled={isSaving}>
+                            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                            Save Benefits
+                        </Button>
+                    </CardFooter>
+                </form>
+            </Form>
         </Card>
     );
 }
