@@ -1,24 +1,25 @@
-
 'use client';
 
 import { useUser, useFirestore, useDoc } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Award, FileText, Gem, User, Loader2, DollarSign, HeartHandshake, ArrowRight, Sparkles, Wallet, ShieldAlert, Landmark, Star } from "lucide-react";
+import { Award, FileText, Gem, User, Loader2, DollarSign, HeartHandshake, ArrowRight, Sparkles, Wallet, ShieldAlert, Landmark, Star, CheckCircle } from "lucide-react";
 import { doc } from 'firebase/firestore';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import EnquiriesCard from './enquiries-card';
 import QuotesCard from './quotes-card';
 import { cn } from '@/lib/utils';
 import { useMemoFirebase } from '@/hooks/use-memo-firebase';
 import { formatCurrency } from '@/lib/utils';
+import { useConfig } from '@/hooks/use-config';
 
 export default function AccountDashboard() {
     const { user, isUserLoading } = useUser();
     const firestore = useFirestore();
 
     const isAdmin = user && (user.email === 'beyondtransport@gmail.com' || user.email === 'mkoton100@gmail.com');
+    const { data: loyaltySettings, isLoading: isSettingsLoading } = useConfig<any>('loyaltySettings');
 
     const userDocRef = useMemoFirebase(() => {
         if (isAdmin || !firestore || !user) return null;
@@ -41,6 +42,17 @@ export default function AccountDashboard() {
         silver: 'bg-slate-200 text-slate-800',
         gold: 'bg-yellow-200 text-yellow-800',
     }
+
+    const userBenefits = useMemo(() => {
+        if (!loyaltySettings || !companyData) return [];
+        const tier = companyData.loyaltyTier || 'bronze';
+        const benefitsConfig = loyaltySettings.benefits || [];
+        
+        return benefitsConfig.map((benefit: any) => ({
+            name: benefit.name,
+            value: benefit[`${tier}Value`] || 'N/A',
+        })).filter((b: any) => b.value && b.value !== 'N/A' && b.value !== '0');
+    }, [loyaltySettings, companyData]);
     
     // Admin View
     if (isAdmin) {
@@ -73,7 +85,7 @@ export default function AccountDashboard() {
         )
     }
 
-    if (isUserLoading || (user && isCompanyLoading)) {
+    if (isUserLoading || (user && (isCompanyLoading || isSettingsLoading))) {
         return (
             <div className="flex justify-center items-center min-h-[calc(100vh-8rem)] w-full">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -189,6 +201,37 @@ export default function AccountDashboard() {
                     </CardContent>
                 </Card>
             </div>
+            
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <Award className="h-5 w-5 text-primary" />
+                        My Loyalty Benefits
+                    </CardTitle>
+                    <CardDescription>
+                        You are on the <span className="font-semibold text-primary capitalize">{loyaltyTier}</span> tier. Here are your active benefits:
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {userBenefits.length > 0 ? (
+                        <ul className="space-y-3">
+                            {userBenefits.map((benefit: any) => (
+                                <li key={benefit.name} className="flex items-center gap-3">
+                                    <CheckCircle className="h-5 w-5 text-green-500" />
+                                    <span>{benefit.name}: <span className="font-bold">{benefit.value}</span></span>
+                                </li>
+                            ))}
+                        </ul>
+                    ) : (
+                        <p className="text-muted-foreground">No benefits are currently configured for your tier. Keep earning points!</p>
+                    )}
+                </CardContent>
+                 <CardFooter>
+                    <Button variant="outline" asChild>
+                        <Link href="/connect?view=rewards">View Rewards Store</Link>
+                    </Button>
+                </CardFooter>
+            </Card>
 
             <Card>
                 <CardHeader>

@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useMemo, useCallback, useEffect, useState } from 'react';
@@ -69,16 +68,21 @@ export default function MemberLoyaltyStatus() {
         loadData();
     }, [loadData]);
 
+    const displayedBenefits = useMemo(() => (loyaltySettings?.benefits || []).slice(0, 2), [loyaltySettings]);
 
     const enrichedMembers = useMemo(() => {
         if (!companies || !loyaltySettings) return [];
         return companies.map((company: Company) => {
             const tier = company.loyaltyTier || 'bronze';
-            const benefits = loyaltySettings[`${tier}Benefits`];
             const currentPoints = company.rewardPoints || 0;
             const nextTier = tier === 'bronze' ? 'silver' : 'gold';
             const nextTierPoints = loyaltySettings[`${nextTier}Points`];
             const progress = tier === 'gold' ? 100 : nextTierPoints > 0 ? (currentPoints / nextTierPoints) * 100 : 0;
+            
+            const benefits: Record<string, string> = {};
+            displayedBenefits.forEach((benefit: any) => {
+                benefits[benefit.name] = benefit[`${tier}Value`] || 'N/A';
+            });
 
             return {
                 companyId: company.id,
@@ -88,13 +92,12 @@ export default function MemberLoyaltyStatus() {
                 email: company.email,
                 loyaltyTier: tier,
                 rewardPoints: currentPoints,
-                commissionShare: benefits?.commissionShare || 0,
-                discountShare: benefits?.discountShare || 0,
+                benefits,
                 progressToNext: progress,
                 nextTierName: tier !== 'gold' ? nextTier : null,
             };
         }).sort((a,b) => b.rewardPoints - a.rewardPoints);
-    }, [companies, loyaltySettings]);
+    }, [companies, loyaltySettings, displayedBenefits]);
     
     const isLoading = isLoadingData || isSettingsLoading;
 
@@ -116,8 +119,7 @@ export default function MemberLoyaltyStatus() {
                                     <TableHead>Tier</TableHead>
                                     <TableHead>Points</TableHead>
                                     <TableHead>Progress to Next Tier</TableHead>
-                                    <TableHead className="text-center">Commission Share</TableHead>
-                                    <TableHead className="text-center">Discount Share</TableHead>
+                                    {displayedBenefits.map((b: any) => <TableHead key={b.name} className="text-center">{b.name}</TableHead>)}
                                     <TableHead className="text-right">Actions</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -142,8 +144,9 @@ export default function MemberLoyaltyStatus() {
                                             <span className="text-xs font-semibold text-primary">Max Tier Reached</span>
                                         )}
                                     </TableCell>
-                                    <TableCell className="text-center font-semibold text-primary">{member.commissionShare}%</TableCell>
-                                    <TableCell className="text-center font-semibold text-primary">{member.discountShare}%</TableCell>
+                                    {displayedBenefits.map((b: any) => (
+                                        <TableCell key={b.name} className="text-center font-semibold text-primary">{member.benefits[b.name] || 'N/A'}</TableCell>
+                                    ))}
                                     <TableCell className="text-right">
                                         <Button asChild variant="outline" size="sm">
                                             <Link href={`/backend?view=wallet&memberId=${member.companyId}`}>
@@ -154,7 +157,7 @@ export default function MemberLoyaltyStatus() {
                                 </TableRow>
                                )) : (
                                 <TableRow>
-                                    <TableCell colSpan={7} className="h-24 text-center">
+                                    <TableCell colSpan={displayedBenefits.length + 5} className="h-24 text-center">
                                         No member data found.
                                     </TableCell>
                                 </TableRow>
