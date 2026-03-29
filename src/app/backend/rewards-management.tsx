@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -200,7 +199,7 @@ export default function RewardsManagement() {
         <Card>
             <CardHeader className="flex flex-row justify-between items-start">
                 <div>
-                    <CardTitle className="flex items-center gap-2"><Gift className="h-6 w-6" />Rewards Plan</CardTitle>
+                    <CardTitle className="flex items-center gap-2"><Gift className="h-6 w-6" />Rewards Plan Settings</CardTitle>
                     <CardDescription>Create and manage the redeemable rewards for the loyalty program.</CardDescription>
                 </div>
                 <RewardDialog onSave={forceRefresh} />

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,7 +17,7 @@ export default function TierBenefits() {
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                     <Award className="h-6 w-6" />
-                    Loyalty Plan Benefits
+                    Loyalty Plan Settings
                 </CardTitle>
                 <CardDescription>Define the features and benefits that are automatically unlocked when a member reaches a new loyalty tier.</CardDescription>
             </CardHeader>
