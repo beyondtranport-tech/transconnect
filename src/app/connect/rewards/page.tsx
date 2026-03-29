@@ -16,7 +16,7 @@ const rewardsImage = placeholderImages.find(p => p.id === 'mall-division');
 
 export default function RewardsPlanPage() {
     const { user } = useUser();
-    const ctaLink = user ? '/account' : '/signin';
+    const ctaLink = user ? '/account?view=connect-rewards' : '/join?redirect=/account?view=connect-rewards';
     const { data: pricing, isLoading } = useConfig<{ rewardsPlanPrice: number }>('connectPlans');
     
     return (
@@ -50,20 +50,20 @@ export default function RewardsPlanPage() {
                     </CardHeader>
                     <CardContent className="p-6 space-y-6">
                         <p className="text-lg text-muted-foreground">
-                            The Rewards Plan is your key to unlocking tangible benefits from being part of the TransConnect community. Supercharge your membership by earning points on everyday purchases within our ecosystem and redeem them for items that directly impact your bottom line.
+                            The Rewards Plan is your key to unlocking tangible benefits from being part of the TransConnect community. Earn points by completing actions and redeem them in our Rewards Store for items that directly impact your bottom line.
                         </p>
                         
                         <div>
                             <h3 className="text-xl font-semibold mb-3">How It Works:</h3>
                             <ul className="list-disc list-inside space-y-2 text-muted-foreground">
-                                <li><span className="font-semibold text-foreground">Earn on Everything:</span> Every time you make a purchase in the TransConnect Mall—from parts to consumables—you accumulate reward points.</li>
-                                <li><span className="font-semibold text-foreground">Redeem for Value:</span> Your points are as good as cash. Redeem them for high-value items like fuel vouchers, toll passes, or premium services.</li>
-                                <li><span className="font-semibold text-foreground">Exclusive Access:</span> As a Rewards Plan member, you gain access to a curated selection of products and special deals that are not available to other members.</li>
+                                <li><span className="font-semibold text-foreground">Earn Points:</span> Complete actions like listing products, contributing data, or referring members to earn loyalty points.</li>
+                                <li><span className="font-semibold text-foreground">Redeem for Value:</span> Your points are as good as cash. Redeem them for high-value items like fuel vouchers, service discounts, or premium features in the Rewards Store.</li>
+                                <li><span className="font-semibold text-foreground">Exclusive Rewards:</span> As a Rewards Plan member, you gain access to a curated selection of rewards that are not available to other members.</li>
                             </ul>
                         </div>
                         
                         <p className="text-lg text-muted-foreground">
-                           This plan is designed for the active transporter who wants to get more value from their regular business spending. It's not just a plan; it's a financial tool to help you save and succeed.
+                           This plan is designed for the active transporter who wants to get more value from their engagement with the platform.
                         </p>
                         
                         <div className="text-center pt-6">

@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -30,15 +29,12 @@ import {
   Activity,
   Handshake,
   TrendingUp,
-  Presentation,
   Mail,
   Sparkles,
   MessageSquare,
   Truck,
-  Network,
   Heart,
   Zap,
-  Award,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -70,6 +66,9 @@ import MarketingStudio from './marketing-studio';
 import SupportChatContent from './support-chat';
 import LoadBoardContent from './load-board-content';
 import VehicleListingsContent from './vehicle-listings-content';
+import LoyaltyPlanPage from '@/app/connect/loyalty/page';
+import RewardsPlanPage from '@/app/connect/rewards/page';
+import ActionsPlanPage from '@/app/connect/actions/page';
 
 
 // Placeholder components for sections under construction
@@ -143,6 +142,11 @@ function AccountPageContent() {
       case 'performance': return <PerformanceContent />;
       case 'offer': return <NetworkOffer />;
       case 'emails': return <NetworkEmails />;
+
+      // Connect Plans
+      case 'connect-loyalty': return <LoyaltyPlanPage />;
+      case 'connect-rewards': return <RewardsPlanPage />;
+      case 'connect-actions': return <ActionsPlanPage />;
       
       // Placeholders
       case 'documents': return <DocumentsContent />;
@@ -167,6 +171,7 @@ function AccountPageContent() {
   };
   
   const isSalesActive = ['network', 'performance', 'offer', 'emails'].includes(activeView);
+  const isConnectActive = ['connect-loyalty', 'connect-rewards', 'connect-actions'].includes(activeView);
 
   return (
     <SidebarProvider>
@@ -249,12 +254,34 @@ function AccountPageContent() {
                     </SidebarMenuSubItem>
                     <SidebarMenuSubItem>
                         <SidebarMenuSubButton isActive={activeView === 'offer'} onClick={() => navigate('offer')}>
-                            <Presentation />The Offer
+                            <Gift />The Offer
                         </SidebarMenuSubButton>
                     </SidebarMenuSubItem>
                     <SidebarMenuSubItem>
                         <SidebarMenuSubButton isActive={activeView === 'emails'} onClick={() => navigate('emails')}>
                             <Mail />Email Templates
+                        </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                </SidebarMenuSub>
+              </SidebarMenuItem>
+                <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Connect Plans" isActive={isConnectActive}>
+                    <Zap /><span>Connect</span>
+                </SidebarMenuButton>
+                <SidebarMenuSub>
+                    <SidebarMenuSubItem>
+                        <SidebarMenuSubButton isActive={activeView === 'connect-loyalty'} onClick={() => navigate('connect-loyalty')}>
+                            <Heart />Loyalty Plan
+                        </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                    <SidebarMenuSubItem>
+                        <SidebarMenuSubButton isActive={activeView === 'connect-rewards'} onClick={() => navigate('connect-rewards')}>
+                            <Gift />Rewards Plan
+                        </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                    <SidebarMenuSubItem>
+                        <SidebarMenuSubButton isActive={activeView === 'connect-actions'} onClick={() => navigate('connect-actions')}>
+                            <Zap />Actions Plan
                         </SidebarMenuSubButton>
                     </SidebarMenuSubItem>
                 </SidebarMenuSub>
@@ -267,8 +294,8 @@ function AccountPageContent() {
               </SidebarMenuItem>
                <SidebarMenuItem>
                 <SidebarMenuButton tooltip="Loyalty & Rewards" isActive={activeView === 'rewards'} onClick={() => navigate('rewards')}>
-                  <Award />
-                  <span>Loyalty & Rewards</span>
+                  <Gift />
+                  <span>Rewards Store</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
                 <SidebarMenuItem>
