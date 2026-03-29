@@ -10,16 +10,17 @@ import {
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
-import { Loader2, Save, Star, UserPlus, Store, Package, Sparkles, Edit, Video, Search, Truck, Building, Users, Handshake, Briefcase, Bot, Code, ShoppingCart, Warehouse, ShieldCheck } from 'lucide-react';
+import { Loader2, Save, Star, UserPlus, Store, Package, Sparkles, Edit, Video, Search, Truck, Building, Users, Handshake, Briefcase, Bot, Code, ShieldCheck, Warehouse } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { getClientSideAuthToken } from '@/firebase';
-import { Separator } from '@/components/ui/separator';
 import { useConfig } from '@/hooks/use-config';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import React from 'react';
+
 
 const formSchema = z.object({
   // General Platform Actions
@@ -48,6 +49,47 @@ const formSchema = z.object({
 });
 
 type ActionPlanSettingsFormValues = z.infer<typeof formSchema>;
+
+const actionGroups = [
+    {
+        groupTitle: 'General Platform Actions',
+        actions: [
+            { id: 'userSignupPoints', label: 'Sign up for an account', icon: UserPlus },
+            { id: 'shopCreationPoints', label: 'Create a Vendor Shop', icon: Store },
+            { id: 'productAddPoints', label: 'Add a Product to Shop', icon: Package },
+            { id: 'loadBoardCreationPoints', label: 'Create a Load Board', icon: Truck },
+        ]
+    },
+    {
+        groupTitle: 'AI Marketing & Content Studio',
+        actions: [
+            { id: 'seoBoosterPoints', label: 'Use AI SEO Booster', icon: Search },
+            { id: 'aiImageGeneratorPoints', label: 'Use AI Image Generator', icon: Sparkles },
+            { id: 'imageEnhancerPoints', label: 'Use AI Image Enhancer', icon: Edit },
+            { id: 'aiVideoGeneratorPoints', label: 'Use AI Video Generator', icon: Video },
+        ]
+    },
+    {
+        groupTitle: 'Data Contributions',
+        actions: [
+            { id: 'truckContributionPoints', label: 'Contribute Truck Data', icon: Truck },
+            { id: 'trailerContributionPoints', label: 'Contribute Trailer Data', icon: Warehouse },
+            { id: 'supplierContributionPoints', label: 'Contribute Supplier Data', icon: Building },
+            { id: 'debtorContributionPoints', label: 'Contribute Debtor Data', icon: Users },
+        ]
+    },
+    {
+        groupTitle: 'Partner & Network Actions',
+        actions: [
+            { id: 'partnerReferralPoints', label: 'Refer a New Member', icon: Handshake },
+            { id: 'associateServiceListingPoints', label: 'Associate Lists a Service', icon: Briefcase },
+            { id: 'isaSaleCommissionPoints', label: 'ISA Completes a Sale', icon: Bot },
+            { id: 'driverSafetyRecordPoints', label: 'Driver Uploads Safety Record', icon: ShieldCheck },
+            { id: 'developerApiIntegrationPoints', label: 'Developer Completes API Integration', icon: Code },
+        ]
+    }
+];
+
 
 export default function ActionPlanSettings() {
   const { toast } = useToast();
@@ -107,27 +149,9 @@ export default function ActionPlanSettings() {
         setIsSaving(false);
     }
   };
-  
-   const renderPointsField = (name: keyof ActionPlanSettingsFormValues, label: string, icon: React.ElementType) => {
-      const Icon = icon;
-      return (
-        <FormField
-            control={form.control}
-            name={name}
-            render={({ field }) => (
-                <FormItem>
-                    <FormLabel className="flex items-center"><Icon className="mr-2 h-4 w-4"/>{label}</FormLabel>
-                    <FormControl><Input type="number" {...field} /></FormControl>
-                    <FormMessage />
-                </FormItem>
-            )}
-        />
-      );
-  }
-
 
   return (
-    <Card className="w-full max-w-5xl">
+    <Card className="w-full max-w-4xl">
         <CardHeader>
             <div className="flex items-center gap-4">
                 <Star className="h-8 w-8 text-primary"/>
@@ -147,62 +171,51 @@ export default function ActionPlanSettings() {
             ) : (
                 <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                     <div className="space-y-6">
-                        <div>
-                            <h3 className="font-semibold text-lg mb-4 flex items-center gap-2"><ShoppingCart className="h-5 w-5 text-muted-foreground"/>Vendors</h3>
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                                {renderPointsField('shopCreationPoints', 'Points Per Shop Creation', Store)}
-                                {renderPointsField('productAddPoints', 'Points Per Product', Package)}
-                                {renderPointsField('supplierContributionPoints', 'Points Per Supplier', Building)}
-                                {renderPointsField('debtorContributionPoints', 'Points Per Debtor', Users)}
-                            </div>
-                        </div>
-                         <div>
-                            <h3 className="font-semibold text-lg mb-4 flex items-center gap-2"><Truck className="h-5 w-5 text-muted-foreground"/>Transporters (Buyers)</h3>
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                                 {renderPointsField('truckContributionPoints', 'Points Per Truck', Truck)}
-                                 {renderPointsField('trailerContributionPoints', 'Points Per Trailer', Warehouse)}
-                                 {renderPointsField('loadBoardCreationPoints', 'Points Per Load Board Creation', Truck)}
-                            </div>
-                        </div>
-                        <div>
-                            <h3 className="font-semibold text-lg mb-4 flex items-center gap-2"><Handshake className="h-5 w-5 text-muted-foreground"/>Partners & Referrals</h3>
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                                {renderPointsField('partnerReferralPoints', 'Points Per Member Referral', UserPlus)}
-                                {renderPointsField('isaSaleCommissionPoints', 'Points for ISA Sale', Bot)}
-                            </div>
-                        </div>
-                         <div>
-                            <h3 className="font-semibold text-lg mb-4 flex items-center gap-2"><Briefcase className="h-5 w-5 text-muted-foreground"/>Associates</h3>
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                                {renderPointsField('associateServiceListingPoints', 'Points Per Service Listing', Package)}
-                            </div>
-                        </div>
-                        
-                         <div>
-                            <h3 className="font-semibold text-lg mb-4 flex items-center gap-2"><Users className="h-5 w-5 text-muted-foreground"/>Drivers</h3>
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                                {renderPointsField('driverSafetyRecordPoints', 'Points Per Safety Record', ShieldCheck)}
-                            </div>
-                        </div>
-                        <div>
-                            <h3 className="font-semibold text-lg mb-4 flex items-center gap-2"><Code className="h-5 w-5 text-muted-foreground"/>Developers</h3>
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                                {renderPointsField('developerApiIntegrationPoints', 'Points Per API Integration', Code)}
-                            </div>
-                        </div>
-
-                        <Separator />
-
-                        <h3 className="font-semibold text-lg mb-4 pt-4">General Platform & AI Actions</h3>
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                            {renderPointsField('userSignupPoints', 'Points Per Sign-up', UserPlus)}
-                            {renderPointsField('seoBoosterPoints', 'Points Per AI SEO Use', Search)}
-                            {renderPointsField('aiImageGeneratorPoints', 'Points Per AI Image', Sparkles)}
-                            {renderPointsField('imageEnhancerPoints', 'Points Per Image Enhance', Edit)}
-                            {renderPointsField('aiVideoGeneratorPoints', 'Points Per AI Video', Video)}
-                        </div>
-                    </div>
+                     <div className="border rounded-lg">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead className="w-2/3">Action</TableHead>
+                                    <TableHead className="w-1/3 text-right">Points Awarded</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {actionGroups.map((group) => (
+                                    <React.Fragment key={group.groupTitle}>
+                                        <TableRow className="bg-muted/50 hover:bg-muted/50">
+                                            <TableCell colSpan={2} className="font-semibold text-primary">{group.groupTitle}</TableCell>
+                                        </TableRow>
+                                        {group.actions.map(action => {
+                                            const Icon = action.icon;
+                                            return (
+                                                <TableRow key={action.id}>
+                                                    <TableCell>
+                                                        <FormLabel htmlFor={action.id} className="flex items-center gap-3 font-normal">
+                                                            <Icon className="h-4 w-4 text-muted-foreground" />
+                                                            {action.label}
+                                                        </FormLabel>
+                                                    </TableCell>
+                                                    <TableCell className="text-right">
+                                                         <FormField
+                                                            control={form.control}
+                                                            name={action.id as keyof ActionPlanSettingsFormValues}
+                                                            render={({ field }) => (
+                                                                <FormItem>
+                                                                    <FormControl>
+                                                                        <Input id={action.id} type="number" className="w-24 text-right ml-auto" {...field} />
+                                                                    </FormControl>
+                                                                </FormItem>
+                                                            )}
+                                                        />
+                                                    </TableCell>
+                                                </TableRow>
+                                            );
+                                        })}
+                                    </React.Fragment>
+                                ))}
+                            </TableBody>
+                        </Table>
+                     </div>
                     <Button type="submit" disabled={isSaving} className="mt-8">
                         {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                         Save All Settings
