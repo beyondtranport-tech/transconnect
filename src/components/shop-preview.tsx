@@ -118,14 +118,6 @@ export function ShopPreview({ shop, products }: { shop: any, products: any[] }) 
                             <a href="#promotions" className="hover:text-gray-900">Specials</a>
                             <a href="#contact" className="hover:text-gray-900">Contact</a>
                         </nav>
-                         {shop.discountCode && (
-                            <div className="hidden md:flex items-center gap-2">
-                                <Badge variant="secondary">Code: <span className="font-bold ml-1">{shop.discountCode}</span></Badge>
-                                <Button size="sm" variant="outline" onClick={() => { navigator.clipboard.writeText(shop.discountCode); toast({ title: "Code Copied!" }); }}>
-                                    <ClipboardCopy className="h-4 w-4" />
-                                </Button>
-                            </div>
-                        )}
                         {shop.websiteUrl && (
                             <Button asChild size="sm">
                                 <a href={shop.websiteUrl} target="_blank" rel="noopener noreferrer">

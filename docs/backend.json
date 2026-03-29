@@ -149,7 +149,6 @@
         "tags": { "type": "array", "items": { "type": "string" } },
         "heroBannerUrl": { "type": "string" },
         "websiteUrl": { "type": "string", "format": "uri", "description": "URL to the shop's main website or online catalog." },
-        "discountCode": { "type": "string", "description": "An exclusive discount code for Logistics Flow members to use on the supplier's external website." },
         "facebookLink": { "type": "string", "format": "uri", "description": "URL to the shop's Facebook page." },
         "instagramLink": { "type": "string", "format": "uri", "description": "URL to the shop's Instagram profile." },
         "twitterLink": { "type": "string", "format": "uri", "description": "URL to the shop's Twitter (X) profile." },
