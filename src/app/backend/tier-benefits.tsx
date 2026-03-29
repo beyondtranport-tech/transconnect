@@ -93,7 +93,10 @@ export default function TierBenefits() {
                     <Award className="h-6 w-6" />
                     Loyalty Plan Settings
                 </CardTitle>
-                <CardDescription>Define point thresholds for loyalty tiers. Point values for specific actions will be configured on this page in a future update.</CardDescription>
+                <CardDescription>
+                    Define the point <span className="font-bold">thresholds</span> required to reach each loyalty tier. 
+                    To set the points awarded for specific actions, visit the <Link href="/backend?view=action-plan" className="underline text-primary">Action Plan</Link> page.
+                </CardDescription>
             </CardHeader>
             <CardContent>
                 <Form {...form}>
@@ -142,13 +145,8 @@ export default function TierBenefits() {
                         </Button>
                     </form>
                 </Form>
-                 <div className="mt-8 border-t pt-8">
-                    <h3 className="text-lg font-semibold">Points per Action</h3>
-                    <p className="text-muted-foreground text-sm mt-1">
-                        First, define the available actions on the <Link href="/backend?view=action-plan" className="underline text-primary">Action Plan</Link> page. Then, you will be able to set the points for each action here.
-                    </p>
-                 </div>
             </CardContent>
         </Card>
     );
 }
+
