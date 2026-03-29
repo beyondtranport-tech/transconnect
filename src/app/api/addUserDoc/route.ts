@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
     
     // Allow admin to bypass ownership check
     if (!isAuthorized) {
-        const isAdmin = decodedToken.email === 'beyondtransport@gmail.com';
+        const isAdmin = decodedToken.email === 'beyondtransport@gmail.com' || decodedToken.email === 'mkoton100@gmail.com';
         if (!isAdmin) {
           return NextResponse.json({ success: false, error: 'Forbidden: You can only add documents to your own subcollections.' }, { status: 403 });
         }
