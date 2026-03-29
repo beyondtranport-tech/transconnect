@@ -1,11 +1,17 @@
+
 'use client';
 
-import { useMemo } from 'react';
+import React, { useMemo, useCallback, useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Gem, Percent, Star, DollarSign } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Award, Gem, Loader2, Percent, Star, UserCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { useConfig } from '@/hooks/use-config';
+import { getClientSideAuthToken } from '@/firebase';
+import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
+import { Progress } from '@/components/ui/progress';
 
 interface Company {
     id: string;
@@ -19,96 +25,145 @@ interface Company {
     email?: string;
 }
 
-interface Membership {
-    id: string;
-    name: string;
-    commissionShare?: number;
-    discountShare?: number;
-}
-
-interface EnrichedMember {
-    companyId: string;
-    ownerId: string;
-    companyName?: string;
-    ownerName?: string;
-    email?: string;
-    loyaltyTier?: 'bronze' | 'silver' | 'gold';
-    rewardPoints?: number;
-    membershipTier?: string;
-    commissionShare?: number;
-    discountShare?: number;
-    savingsEarned?: number; // Placeholder for future calculation
-}
-
 const tierColors: { [key: string]: string } = {
     bronze: 'bg-orange-200 text-orange-800',
     silver: 'bg-slate-200 text-slate-800',
     gold: 'bg-yellow-200 text-yellow-800',
 };
 
-export default function MemberLoyaltyStatus({ companies, memberships }: { companies: Company[], memberships: Membership[] }) {
-    const membershipMap = useMemo(() => new Map<string, Membership>(memberships.map(m => [m.id, m])), [memberships]);
+
+async function fetchFromAdminAPI(token: string, action: string, payload?: any) {
+    const response = await fetch('/api/admin', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, payload }),
+    });
+
+    const result = await response.json();
+    if (!response.ok || !result.success) throw new Error(result.error || `API Error for action: ${action}`);
+    return result.data;
+}
+
+
+export default function MemberLoyaltyStatus() {
+    const { toast } = useToast();
+    const [companies, setCompanies] = useState<Company[]>([]);
+    const { data: loyaltySettings, isLoading: isSettingsLoading } = useConfig<any>('loyaltySettings');
+    const [isLoadingData, setIsLoadingData] = useState(true);
+
+    const loadData = useCallback(async () => {
+        setIsLoadingData(true);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication failed.");
+            const companyData = await fetchFromAdminAPI(token, 'getMembers', {});
+            setCompanies(companyData);
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: 'Error Loading Data', description: e.message });
+        } finally {
+            setIsLoadingData(false);
+        }
+    }, [toast]);
+    
+    useEffect(() => {
+        loadData();
+    }, [loadData]);
+
 
     const enrichedMembers = useMemo(() => {
-        const data = companies.map((company: Company) => {
-            const membership = membershipMap.get(company.membershipId || '');
+        if (!companies || !loyaltySettings) return [];
+        return companies.map((company: Company) => {
+            const tier = company.loyaltyTier || 'bronze';
+            const benefits = loyaltySettings[`${tier}Benefits`];
+            const currentPoints = company.rewardPoints || 0;
+            const nextTier = tier === 'bronze' ? 'silver' : 'gold';
+            const nextTierPoints = loyaltySettings[`${nextTier}Points`];
+            const progress = tier === 'gold' ? 100 : nextTierPoints > 0 ? (currentPoints / nextTierPoints) * 100 : 0;
+
             return {
                 companyId: company.id,
                 ownerId: company.ownerId,
                 companyName: company.companyName,
                 ownerName: `${company.firstName || ''} ${company.lastName || ''}`.trim() || 'N/A',
                 email: company.email,
-                loyaltyTier: company.loyaltyTier,
-                rewardPoints: company.rewardPoints,
-                membershipTier: membership?.name || company.membershipId,
-                commissionShare: membership?.commissionShare,
-                discountShare: membership?.discountShare,
-                savingsEarned: 0, // Placeholder
+                loyaltyTier: tier,
+                rewardPoints: currentPoints,
+                commissionShare: benefits?.commissionShare || 0,
+                discountShare: benefits?.discountShare || 0,
+                progressToNext: progress,
+                nextTierName: tier !== 'gold' ? nextTier : null,
             };
-        });
-        data.sort((a, b) => (b.rewardPoints || 0) - (a.rewardPoints || 0));
-        return data;
-    }, [companies, membershipMap]);
+        }).sort((a,b) => b.rewardPoints - a.rewardPoints);
+    }, [companies, loyaltySettings]);
+    
+    const isLoading = isLoadingData || isSettingsLoading;
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {enrichedMembers.map(member => (
-                <Card key={member.companyId} className="flex flex-col">
-                    <CardHeader>
-                        <CardTitle className="text-base font-semibold">{member.ownerName}</CardTitle>
-                        <CardDescription>{member.companyName}</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4 flex-grow">
-                        <div className="flex justify-between items-center p-2 bg-muted/50 rounded-md">
-                            <span className="text-sm font-medium flex items-center gap-1.5"><Star className="h-4 w-4"/> Loyalty Tier</span>
-                            <span className={cn("font-bold capitalize px-2 py-0.5 rounded-full text-sm", tierColors[member.loyaltyTier || 'bronze'])}>{member.loyaltyTier || 'bronze'}</span>
-                        </div>
-                        <div className="flex justify-between items-center p-2">
-                            <span className="text-sm font-medium flex items-center gap-1.5"><Gem className="h-4 w-4"/> Reward Points</span>
-                            <span className="font-bold font-mono">{member.rewardPoints?.toLocaleString() || 0}</span>
-                        </div>
-                         <div className="flex justify-between items-center p-2">
-                            <span className="text-sm font-medium flex items-center gap-1.5"><Percent className="h-4 w-4"/> Commission Share</span>
-                            <span className="font-bold font-mono">{member.commissionShare || 0}%</span>
-                        </div>
-                        <div className="flex justify-between items-center p-2">
-                            <span className="text-sm font-medium flex items-center gap-1.5"><Percent className="h-4 w-4"/> Discount Share</span>
-                            <span className="font-bold font-mono">{member.discountShare || 0}%</span>
-                        </div>
-                        <div className="flex justify-between items-center p-3 bg-primary/10 rounded-md mt-2">
-                            <span className="text-sm font-bold flex items-center gap-1.5"><DollarSign className="h-4 w-4"/> Total Savings Earned</span>
-                            <span className="font-bold text-lg text-primary">R {member.savingsEarned?.toFixed(2) || '0.00'}</span>
-                        </div>
-                    </CardContent>
-                     <CardFooter>
-                        <Button variant="outline" size="sm" asChild>
-                            <Link href={`/backend?view=wallet&memberId=${member.companyId}`}>
-                                View Member Details
-                            </Link>
-                        </Button>
-                    </CardFooter>
-                </Card>
-            ))}
-        </div>
-    );
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Award/> Member Loyalty Overview</CardTitle>
+                <CardDescription>A live look at all member loyalty statuses, points, and earned benefits.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                {isLoading ? (
+                    <div className="flex justify-center items-center py-20"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div>
+                ) : (
+                    <div className="border rounded-lg overflow-x-auto">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Member</TableHead>
+                                    <TableHead>Tier</TableHead>
+                                    <TableHead>Points</TableHead>
+                                    <TableHead>Progress to Next Tier</TableHead>
+                                    <TableHead className="text-center">Commission Share</TableHead>
+                                    <TableHead className="text-center">Discount Share</TableHead>
+                                    <TableHead className="text-right">Actions</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                               {enrichedMembers.length > 0 ? enrichedMembers.map(member => (
+                                <TableRow key={member.companyId}>
+                                    <TableCell>
+                                        <p className="font-semibold">{member.ownerName}</p>
+                                        <p className="text-xs text-muted-foreground">{member.companyName}</p>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Badge className={cn("capitalize", tierColors[member.loyaltyTier || 'bronze'])}>{member.loyaltyTier}</Badge>
+                                    </TableCell>
+                                    <TableCell className="font-mono font-semibold">{member.rewardPoints.toLocaleString()}</TableCell>
+                                    <TableCell>
+                                        {member.nextTierName ? (
+                                            <>
+                                                <Progress value={member.progressToNext} className="h-2 w-full" />
+                                                <p className="text-xs text-muted-foreground mt-1">To {member.nextTierName}</p>
+                                            </>
+                                        ) : (
+                                            <span className="text-xs font-semibold text-primary">Max Tier Reached</span>
+                                        )}
+                                    </TableCell>
+                                    <TableCell className="text-center font-semibold text-primary">{member.commissionShare}%</TableCell>
+                                    <TableCell className="text-center font-semibold text-primary">{member.discountShare}%</TableCell>
+                                    <TableCell className="text-right">
+                                        <Button asChild variant="outline" size="sm">
+                                            <Link href={`/backend?view=wallet&memberId=${member.companyId}`}>
+                                                View Member
+                                            </Link>
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                               )) : (
+                                <TableRow>
+                                    <TableCell colSpan={7} className="h-24 text-center">
+                                        No member data found.
+                                    </TableCell>
+                                </TableRow>
+                               )}
+                            </TableBody>
+                        </Table>
+                    </div>
+                )}
+            </CardContent>
+        </Card>
+    )
 }

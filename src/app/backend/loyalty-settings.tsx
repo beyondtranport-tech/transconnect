@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useForm } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
@@ -16,16 +16,25 @@ import {
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
-import { Loader2, Save, Star, Gift, UserPlus, Store, Package, Sparkles, Edit, Video, Search, Truck, Building, Users, Handshake, Briefcase, Bot, Code, ShoppingCart, Warehouse, ShieldCheck } from 'lucide-react';
+import { Loader2, Save, Star, Gift, UserPlus, Store, Package, Sparkles, Edit, Video, Search, Truck, Building, Users, Handshake, Briefcase, Bot, Code, ShoppingCart, Warehouse, ShieldCheck, Percent } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useFirestore, useDoc, useMemoFirebase, getClientSideAuthToken } from '@/firebase';
+import { getClientSideAuthToken, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { Separator } from '@/components/ui/separator';
 
+const tierBenefitSchema = z.object({
+    commissionShare: z.coerce.number().min(0, "Must be >= 0").max(100, "Must be <= 100"),
+    discountShare: z.coerce.number().min(0, "Must be >= 0").max(100, "Must be <= 100"),
+});
+
 const formSchema = z.object({
-  bronze: z.coerce.number().min(0, 'Points must be 0 or more.'),
-  silver: z.coerce.number().min(0, 'Points must be 0 or more.'),
-  gold: z.coerce.number().min(0, 'Points must be 0 or more.'),
+  bronzePoints: z.coerce.number().min(0, 'Points must be 0 or more.'),
+  silverPoints: z.coerce.number().min(0, 'Points must be 0 or more.'),
+  goldPoints: z.coerce.number().min(0, 'Points must be 0 or more.'),
+
+  bronzeBenefits: tierBenefitSchema,
+  silverBenefits: tierBenefitSchema,
+  goldBenefits: tierBenefitSchema,
   
   // General Platform Actions
   userSignupPoints: z.coerce.number().min(0, 'Points must be 0 or more.'),
@@ -60,14 +69,17 @@ export default function LoyaltySettings() {
   const [isSaving, setIsSaving] = useState(false);
 
   const configRef = useMemoFirebase(() => firestore ? doc(firestore, 'configuration', 'loyaltySettings') : null, [firestore]);
-  const { data: loyaltyConfig, isLoading: isConfigLoading } = useDoc<LoyaltySettingsFormValues>(configRef);
+  const { data: loyaltyConfig, isLoading: isConfigLoading, forceRefresh } = useDoc<LoyaltySettingsFormValues>(configRef);
 
   const form = useForm<LoyaltySettingsFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      bronze: 0,
-      silver: 1000,
-      gold: 5000,
+      bronzePoints: 0,
+      silverPoints: 1000,
+      goldPoints: 5000,
+      bronzeBenefits: { commissionShare: 95, discountShare: 10 },
+      silverBenefits: { commissionShare: 97.5, discountShare: 20 },
+      goldBenefits: { commissionShare: 99, discountShare: 30 },
       userSignupPoints: 50,
       shopCreationPoints: 100,
       productAddPoints: 5,
@@ -114,6 +126,7 @@ export default function LoyaltySettings() {
         if (!response.ok) throw new Error((await response.json()).error || "Failed to save settings.");
         
         toast({ title: 'Loyalty Settings Saved!', description: 'The loyalty tiers and action points have been updated.' });
+        forceRefresh();
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Update Failed', description: e.message });
     } finally {
@@ -139,14 +152,14 @@ export default function LoyaltySettings() {
   }
 
   return (
-    <Card className="w-full max-w-4xl">
+    <Card className="w-full max-w-5xl">
         <CardHeader>
             <div className="flex items-center gap-4">
                 <Star className="h-8 w-8 text-primary"/>
                 <div>
-                    <CardTitle>Loyalty & Points Settings</CardTitle>
+                    <CardTitle>Loyalty & Rewards Settings</CardTitle>
                     <CardDescription>
-                        Define point thresholds for loyalty tiers and points awarded for member actions.
+                        Define point thresholds, tier benefits, and points awarded for member actions.
                     </CardDescription>
                 </div>
             </div>
@@ -159,15 +172,43 @@ export default function LoyaltySettings() {
             ) : (
                 <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                    <div>
-                        <h3 className="text-lg font-medium flex items-center gap-2"><Star className="h-5 w-5" /> Loyalty Tier Thresholds</h3>
-                        <p className="text-sm text-muted-foreground mt-1">Set the minimum points needed to enter each tier.</p>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-                            <FormField control={form.control} name="bronze" render={({ field }) => (<FormItem><FormLabel>Bronze Tier</FormLabel><FormControl><Input type="number" {...field} disabled /></FormControl><FormMessage /></FormItem>)} />
-                            <FormField control={form.control} name="silver" render={({ field }) => (<FormItem><FormLabel>Silver Tier</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                            <FormField control={form.control} name="gold" render={({ field }) => (<FormItem><FormLabel>Gold Tier</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div>
+                            <h3 className="text-lg font-medium flex items-center gap-2 mb-4"><Star className="h-5 w-5" /> Loyalty Tier Thresholds</h3>
+                            <div className="space-y-4">
+                                <FormField control={form.control} name="bronzePoints" render={({ field }) => (<FormItem><FormLabel>Bronze Tier</FormLabel><FormControl><Input type="number" {...field} disabled /></FormControl><FormMessage /></FormItem>)} />
+                                <FormField control={form.control} name="silverPoints" render={({ field }) => (<FormItem><FormLabel>Silver Tier</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                <FormField control={form.control} name="goldPoints" render={({ field }) => (<FormItem><FormLabel>Gold Tier</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            </div>
+                        </div>
+                        <div>
+                            <h3 className="text-lg font-medium flex items-center gap-2 mb-4"><Percent className="h-5 w-5" /> Tier Benefits</h3>
+                            <div className="space-y-4">
+                               <Card>
+                                    <CardHeader><CardTitle className="text-base">Bronze Benefits</CardTitle></CardHeader>
+                                    <CardContent className="grid grid-cols-2 gap-4">
+                                        <FormField control={form.control} name="bronzeBenefits.commissionShare" render={({ field }) => (<FormItem><FormLabel>Commission Share (%)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                        <FormField control={form.control} name="bronzeBenefits.discountShare" render={({ field }) => (<FormItem><FormLabel>Discount Share (%)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                    </CardContent>
+                               </Card>
+                               <Card>
+                                    <CardHeader><CardTitle className="text-base">Silver Benefits</CardTitle></CardHeader>
+                                    <CardContent className="grid grid-cols-2 gap-4">
+                                        <FormField control={form.control} name="silverBenefits.commissionShare" render={({ field }) => (<FormItem><FormLabel>Commission Share (%)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                        <FormField control={form.control} name="silverBenefits.discountShare" render={({ field }) => (<FormItem><FormLabel>Discount Share (%)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                    </CardContent>
+                               </Card>
+                                <Card>
+                                    <CardHeader><CardTitle className="text-base">Gold Benefits</CardTitle></CardHeader>
+                                    <CardContent className="grid grid-cols-2 gap-4">
+                                        <FormField control={form.control} name="goldBenefits.commissionShare" render={({ field }) => (<FormItem><FormLabel>Commission Share (%)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                        <FormField control={form.control} name="goldBenefits.discountShare" render={({ field }) => (<FormItem><FormLabel>Discount Share (%)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                    </CardContent>
+                               </Card>
+                            </div>
                         </div>
                     </div>
+
 
                     <Separator />
 
