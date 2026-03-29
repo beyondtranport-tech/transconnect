@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview An AI-powered research agent for generating potential sales leads.
@@ -9,7 +10,7 @@
 
 import { ai } from '@/ai/genkit';
 import { googleSearchTool } from '../tools/google-search';
-import { z } from 'genkit'; // Use the zod instance re-exported by Genkit
+import { z } from 'zod'; 
 
 // Define schemas locally using z from genkit to ensure type compatibility for the flow.
 const LeadGenerationInputSchema = z.object({

@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview An AI-powered flow to suggest social media links for a shop.
@@ -8,7 +9,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { z } from 'zod';
 
 const SocialLinkGeneratorInputSchema = z.object({
   shopName: z.string().describe('The name of the shop.'),

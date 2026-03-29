@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview An AI-powered SEO content generation flow for shops.
@@ -8,7 +9,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { z } from 'zod';
 
 const ShopSeoInputSchema = z.object({
   shopName: z.string().describe('The name of the online shop.'),

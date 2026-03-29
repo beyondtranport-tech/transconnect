@@ -9,7 +9,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit'; // Use the zod instance re-exported by Genkit
+import { z } from 'zod'; 
 
 // Define schemas locally using z from genkit to avoid type conflicts.
 const MatchFreightInputSchema = z.object({
