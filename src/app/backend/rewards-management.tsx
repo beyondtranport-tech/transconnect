@@ -14,7 +14,6 @@ import { collection, query } from 'firebase/firestore';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Switch } from '@/components/ui/switch';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import {
@@ -26,9 +25,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 // API Helper
@@ -49,15 +46,11 @@ async function performAdminAction(token: string, action: string, payload?: any) 
 const rewardSchema = z.object({
   id: z.string().optional(),
   title: z.string().min(1, 'Title is required'),
-  description: z.string().optional(),
-  pointsCost: z.coerce.number().min(0, 'Points cost must be non-negative.'),
   type: z.enum(['voucher', 'discount', 'product']),
-  isActive: z.boolean().default(true),
-  imageUrl: z.string().url().optional().or(z.literal('')),
 });
 type RewardFormValues = z.infer<typeof rewardSchema>;
 
-function RewardDialog({ reward, onSave }: { reward?: RewardFormValues, onSave: () => void }) {
+function RewardDialog({ reward, onSave }: { reward?: any, onSave: () => void }) {
     const [isOpen, setIsOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const { toast } = useToast();
@@ -68,13 +61,10 @@ function RewardDialog({ reward, onSave }: { reward?: RewardFormValues, onSave: (
     
     useEffect(() => {
         if(isOpen) {
-            form.reset(reward || {
-                title: '',
-                description: '',
-                pointsCost: 0,
-                type: 'voucher',
-                isActive: true,
-                imageUrl: '',
+            form.reset({
+                id: reward?.id,
+                title: reward?.title || '',
+                type: reward?.type || 'voucher',
             });
         }
     }, [isOpen, reward, form]);
@@ -85,9 +75,14 @@ function RewardDialog({ reward, onSave }: { reward?: RewardFormValues, onSave: (
             const token = await getClientSideAuthToken();
             if(!token) throw new Error("Authentication failed.");
 
-            const dataToSave = { ...values };
+            // Keep existing values when editing, only update what's in the form
+            const dataToSave = { 
+                ...reward, // Keep old data
+                ...values, // Overwrite with new data from form
+                isActive: reward?.isActive ?? true // Ensure isActive is set on create
+            };
             const path = `rewards/${reward?.id || dataToSave.title.toLowerCase().replace(/\s+/g, '-')}`;
-            delete dataToSave.id;
+            delete dataToSave.id; // Don't save the ID inside the doc
 
             const response = await fetch('/api/updateConfigDoc', {
                 method: 'POST',
@@ -124,13 +119,7 @@ function RewardDialog({ reward, onSave }: { reward?: RewardFormValues, onSave: (
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                         <FormField control={form.control} name="title" render={({field}) => <FormItem><FormLabel>Title</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage/></FormItem>} />
-                        <FormField control={form.control} name="description" render={({field}) => <FormItem><FormLabel>Description</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage/></FormItem>} />
-                        <div className="grid grid-cols-2 gap-4">
-                            <FormField control={form.control} name="pointsCost" render={({field}) => <FormItem><FormLabel>Points Cost</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage/></FormItem>} />
-                            <FormField control={form.control} name="type" render={({field}) => <FormItem><FormLabel>Type</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent><SelectItem value="voucher">Voucher</SelectItem><SelectItem value="discount">Discount</SelectItem><SelectItem value="product">Product</SelectItem></SelectContent></Select><FormMessage/></FormItem>} />
-                        </div>
-                        <FormField control={form.control} name="imageUrl" render={({field}) => <FormItem><FormLabel>Image URL (Optional)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage/></FormItem>} />
-                        <FormField control={form.control} name="isActive" render={({field}) => <FormItem className="flex items-center space-x-2"><FormControl><Switch checked={field.value} onCheckedChange={field.onChange}/></FormControl><FormLabel>Active</FormLabel></FormItem>} />
+                        <FormField control={form.control} name="type" render={({field}) => <FormItem><FormLabel>Type</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a type..."/></SelectTrigger></FormControl><SelectContent><SelectItem value="voucher">Voucher</SelectItem><SelectItem value="discount">Discount</SelectItem><SelectItem value="product">Product</SelectItem></SelectContent></Select><FormMessage/></FormItem>} />
                         <DialogFooter>
                             <Button type="submit" disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null} Save</Button>
                         </DialogFooter>
@@ -193,7 +182,7 @@ export default function RewardsManagement() {
                 </AlertDialog>
             </div>
         )},
-    ], [forceRefresh]);
+    ], [forceRefresh, handleDelete]);
 
     return (
         <Card>
