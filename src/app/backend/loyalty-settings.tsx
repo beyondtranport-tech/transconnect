@@ -17,7 +17,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Save, Star, UserPlus, Store, Package, Sparkles, Edit, Video, Search, Truck, Building, Users, Handshake, Briefcase, Bot, Code, ShieldCheck, Warehouse, PlusCircle, Gift, Trash2 } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { getClientSideAuthToken } from '@/firebase';
 import { useConfig } from '@/hooks/use-config';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -305,7 +305,7 @@ export default function ActionPlanSettings() {
                         <div className="flex items-center gap-4">
                             <Star className="h-8 w-8 text-primary"/>
                             <div>
-                                <CardTitle>Action Plan</CardTitle>
+                                <CardTitle>Action Plan Settings</CardTitle>
                                 <CardDescription>
                                 Define actions members can perform and set the loyalty points awarded for each.
                                 </CardDescription>
