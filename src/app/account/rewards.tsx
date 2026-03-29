@@ -38,8 +38,6 @@ export default function RewardsContent() {
         silver: 'bg-slate-200 text-slate-800',
         gold: 'bg-yellow-200 text-yellow-800',
     }
-
-    const tierBenefits = loyaltySettings ? loyaltySettings[`${tier}Benefits`] : null;
     
     const earningActions = [
         { points: loyaltySettings?.userSignupPoints, name: 'Sign up for an account', icon: User, cta: { label: 'Completed!', href: '#', disabled: true } },
@@ -86,31 +84,12 @@ export default function RewardsContent() {
                                         <p className="text-5xl font-extrabold text-primary">{companyData.rewardPoints || 0}</p>
                                     </CardContent>
                                 </Card>
-                                 <Card className="bg-muted/50">
-                                    <CardHeader>
-                                        <CardTitle className="flex items-center gap-2"><Percent /> Your Tier Benefits</CardTitle>
-                                         <CardDescription>The direct financial benefits of your loyalty status.</CardDescription>
-                                    </CardHeader>
-                                    <CardContent className="space-y-4">
-                                         <div className="flex justify-between items-center text-lg">
-                                            <p>Commission Share:</p>
-                                            <p className="font-bold text-primary">{tierBenefits?.commissionShare || 0}%</p>
-                                        </div>
-                                         <div className="flex justify-between items-center text-lg">
-                                            <p>Discount Share:</p>
-                                            <p className="font-bold text-primary">{tierBenefits?.discountShare || 0}%</p>
-                                        </div>
-                                    </CardContent>
-                                     <CardFooter>
-                                        <p className="text-xs text-muted-foreground">A higher Commission Share means you keep more of the revenue from your sales.</p>
-                                     </CardFooter>
-                                </Card>
                             </div>
                             <div className="lg:col-span-2">
                                 <Card>
                                     <CardHeader>
-                                        <CardTitle>How to Earn Points</CardTitle>
-                                        <CardDescription>Complete actions to earn points and climb the loyalty tiers.</CardDescription>
+                                        <CardTitle>How to Earn Points & Unlock Features</CardTitle>
+                                        <CardDescription>Complete actions to earn points. Higher loyalty tiers unlock more powerful platform features, such as premium shop templates and better visibility in the marketplace.</CardDescription>
                                     </CardHeader>
                                     <CardContent>
                                         <Table>

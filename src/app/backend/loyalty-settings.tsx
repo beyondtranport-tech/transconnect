@@ -22,19 +22,10 @@ import { getClientSideAuthToken, useDoc, useFirestore, useMemoFirebase } from '@
 import { doc } from 'firebase/firestore';
 import { Separator } from '@/components/ui/separator';
 
-const tierBenefitSchema = z.object({
-    commissionShare: z.coerce.number().min(0, "Must be >= 0").max(100, "Must be <= 100"),
-    discountShare: z.coerce.number().min(0, "Must be >= 0").max(100, "Must be <= 100"),
-});
-
 const formSchema = z.object({
   bronzePoints: z.coerce.number().min(0, 'Points must be 0 or more.'),
   silverPoints: z.coerce.number().min(0, 'Points must be 0 or more.'),
   goldPoints: z.coerce.number().min(0, 'Points must be 0 or more.'),
-
-  bronzeBenefits: tierBenefitSchema,
-  silverBenefits: tierBenefitSchema,
-  goldBenefits: tierBenefitSchema,
   
   // General Platform Actions
   userSignupPoints: z.coerce.number().min(0, 'Points must be 0 or more.'),
@@ -77,9 +68,6 @@ export default function LoyaltySettings() {
       bronzePoints: 0,
       silverPoints: 1000,
       goldPoints: 5000,
-      bronzeBenefits: { commissionShare: 95, discountShare: 10 },
-      silverBenefits: { commissionShare: 97.5, discountShare: 20 },
-      goldBenefits: { commissionShare: 99, discountShare: 30 },
       userSignupPoints: 50,
       shopCreationPoints: 100,
       productAddPoints: 5,
@@ -159,7 +147,7 @@ export default function LoyaltySettings() {
                 <div>
                     <CardTitle>Loyalty & Rewards Settings</CardTitle>
                     <CardDescription>
-                        Define point thresholds, tier benefits, and points awarded for member actions.
+                        Define point thresholds and points awarded for member actions.
                     </CardDescription>
                 </div>
             </div>
@@ -172,43 +160,14 @@ export default function LoyaltySettings() {
             ) : (
                 <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div>
-                            <h3 className="text-lg font-medium flex items-center gap-2 mb-4"><Star className="h-5 w-5" /> Loyalty Tier Thresholds</h3>
-                            <div className="space-y-4">
-                                <FormField control={form.control} name="bronzePoints" render={({ field }) => (<FormItem><FormLabel>Bronze Tier</FormLabel><FormControl><Input type="number" {...field} disabled /></FormControl><FormMessage /></FormItem>)} />
-                                <FormField control={form.control} name="silverPoints" render={({ field }) => (<FormItem><FormLabel>Silver Tier</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                                <FormField control={form.control} name="goldPoints" render={({ field }) => (<FormItem><FormLabel>Gold Tier</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                            </div>
-                        </div>
-                        <div>
-                            <h3 className="text-lg font-medium flex items-center gap-2 mb-4"><Percent className="h-5 w-5" /> Tier Benefits</h3>
-                            <div className="space-y-4">
-                               <Card>
-                                    <CardHeader><CardTitle className="text-base">Bronze Benefits</CardTitle></CardHeader>
-                                    <CardContent className="grid grid-cols-2 gap-4">
-                                        <FormField control={form.control} name="bronzeBenefits.commissionShare" render={({ field }) => (<FormItem><FormLabel>Commission Share (%)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                                        <FormField control={form.control} name="bronzeBenefits.discountShare" render={({ field }) => (<FormItem><FormLabel>Discount Share (%)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                                    </CardContent>
-                               </Card>
-                               <Card>
-                                    <CardHeader><CardTitle className="text-base">Silver Benefits</CardTitle></CardHeader>
-                                    <CardContent className="grid grid-cols-2 gap-4">
-                                        <FormField control={form.control} name="silverBenefits.commissionShare" render={({ field }) => (<FormItem><FormLabel>Commission Share (%)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                                        <FormField control={form.control} name="silverBenefits.discountShare" render={({ field }) => (<FormItem><FormLabel>Discount Share (%)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                                    </CardContent>
-                               </Card>
-                                <Card>
-                                    <CardHeader><CardTitle className="text-base">Gold Benefits</CardTitle></CardHeader>
-                                    <CardContent className="grid grid-cols-2 gap-4">
-                                        <FormField control={form.control} name="goldBenefits.commissionShare" render={({ field }) => (<FormItem><FormLabel>Commission Share (%)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                                        <FormField control={form.control} name="goldBenefits.discountShare" render={({ field }) => (<FormItem><FormLabel>Discount Share (%)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                                    </CardContent>
-                               </Card>
-                            </div>
+                    <div>
+                        <h3 className="text-lg font-medium flex items-center gap-2 mb-4"><Star className="h-5 w-5" /> Loyalty Tier Thresholds</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <FormField control={form.control} name="bronzePoints" render={({ field }) => (<FormItem><FormLabel>Bronze Tier</FormLabel><FormControl><Input type="number" {...field} disabled /></FormControl><FormMessage /></FormItem>)} />
+                            <FormField control={form.control} name="silverPoints" render={({ field }) => (<FormItem><FormLabel>Silver Tier</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            <FormField control={form.control} name="goldPoints" render={({ field }) => (<FormItem><FormLabel>Gold Tier</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
                         </div>
                     </div>
-
 
                     <Separator />
 

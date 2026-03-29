@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -39,7 +40,7 @@ const rewardActions = [
     ]},
 ];
 
-export default function RewardStatus() {
+export default function RewardsManagement() {
 
   return (
     <Card>
