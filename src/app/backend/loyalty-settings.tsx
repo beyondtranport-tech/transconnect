@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -23,6 +22,7 @@ import { useConfig } from '@/hooks/use-config';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 
 const iconMap: { [key: string]: React.ElementType } = {
     Star, UserPlus, Store, Package, Search, Sparkles, Edit, Video, Truck, Building, Users, Handshake, Briefcase, Bot, Code, ShieldCheck, Warehouse, Gift
@@ -44,7 +44,7 @@ const initialActionGroups = [
             { id: 'seoBoosterPoints', label: 'Use AI SEO Booster', icon: 'Search' },
             { id: 'aiImageGeneratorPoints', label: 'Use AI Image Generator', icon: 'Sparkles' },
             { id: 'imageEnhancerPoints', label: 'Use AI Image Enhancer', icon: 'Edit' },
-            { id: 'aiVideoGeneratorPoints', label: 'Use AI Video Generator', icon: 'Video' },
+            { id: 'aiVideoGeneratorPoints', label: 'Use AI Video Ad Generator', icon: 'Video' },
         ]
     },
     {
@@ -297,8 +297,14 @@ export default function ActionPlanSettings() {
     
     const isLoading = isDefLoading || isValuesLoading;
 
+    // Flatten the action groups for table rendering
+    const allActions = useMemo(() => 
+        actionGroups.flatMap(group => 
+            group.actions.map(action => ({ ...action, groupTitle: group.groupTitle }))
+        ), [actionGroups]);
+
     return (
-        <Card className="w-full max-w-4xl">
+        <Card className="w-full max-w-5xl">
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onPointsSubmit)}>
                     <CardHeader className="flex-row items-center justify-between">
@@ -323,48 +329,49 @@ export default function ActionPlanSettings() {
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
-                                            <TableHead className="w-full">Action</TableHead>
+                                            <TableHead className="w-[40%]">Action</TableHead>
+                                            <TableHead>Group</TableHead>
+                                            <TableHead>Icon</TableHead>
                                             <TableHead className="w-[180px] text-right">Points Awarded</TableHead>
-                                            <TableHead className="text-right">Manage</TableHead>
+                                            <TableHead className="w-[80px] text-right">Manage</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {actionGroups.map((group) => (
-                                            <React.Fragment key={group.groupTitle}>
-                                                <TableRow className="bg-muted/50 hover:bg-muted/50">
-                                                    <TableCell colSpan={3} className="font-semibold text-primary">{group.groupTitle}</TableCell>
+                                        {allActions.map((action: any) => {
+                                            const IconComponent = iconMap[action.icon] || Star;
+                                            return (
+                                                <TableRow key={action.id}>
+                                                    <TableCell className="font-medium">
+                                                        {action.label}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <Badge variant="outline">{action.groupTitle}</Badge>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <div className="flex items-center gap-2">
+                                                            <IconComponent className="h-4 w-4 text-muted-foreground" />
+                                                            <span className="font-mono text-xs">{action.icon}</span>
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell className="text-right">
+                                                        <FormField
+                                                            control={form.control}
+                                                            name={`points.${action.id}`}
+                                                            render={({ field }) => (
+                                                                <FormItem>
+                                                                    <FormControl><Input type="number" className="h-8 w-24 text-right" {...field} /></FormControl>
+                                                                </FormItem>
+                                                            )}
+                                                        />
+                                                    </TableCell>
+                                                    <TableCell className="text-right">
+                                                        <Button type="button" variant="ghost" size="icon" onClick={() => handleActionDeleted(action.groupTitle, action.id)}>
+                                                            <Trash2 className="h-4 w-4 text-destructive" />
+                                                        </Button>
+                                                    </TableCell>
                                                 </TableRow>
-                                                {group.actions.map((action: any) => {
-                                                    const IconComponent = iconMap[action.icon] || Star;
-                                                    return (
-                                                        <TableRow key={action.id}>
-                                                            <TableCell>
-                                                                <div className="flex items-center gap-3 font-normal">
-                                                                    <IconComponent className="h-4 w-4 text-muted-foreground" />
-                                                                    {action.label}
-                                                                </div>
-                                                            </TableCell>
-                                                            <TableCell className="text-right">
-                                                                <FormField
-                                                                    control={form.control}
-                                                                    name={`points.${action.id}`}
-                                                                    render={({ field }) => (
-                                                                        <FormItem>
-                                                                            <FormControl><Input type="number" className="h-8 w-24 text-right" {...field} /></FormControl>
-                                                                        </FormItem>
-                                                                    )}
-                                                                />
-                                                            </TableCell>
-                                                            <TableCell className="text-right">
-                                                                <Button variant="ghost" size="icon" onClick={() => handleActionDeleted(group.groupTitle, action.id)}>
-                                                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                                                </Button>
-                                                            </TableCell>
-                                                        </TableRow>
-                                                    );
-                                                })}
-                                            </React.Fragment>
-                                        ))}
+                                            );
+                                        })}
                                     </TableBody>
                                 </Table>
                              </div>
@@ -381,4 +388,3 @@ export default function ActionPlanSettings() {
         </Card>
     );
 }
-
