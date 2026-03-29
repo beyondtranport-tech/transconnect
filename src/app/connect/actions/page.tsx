@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection } from '@/firebase';
@@ -120,6 +121,9 @@ export default function ActionsPlanPage() {
                 <CardDescription>
                     This is your action hub. Complete these tasks to earn loyalty points, climb the loyalty tiers, and unlock powerful rewards and benefits for your business.
                 </CardDescription>
+                <p className="text-sm text-muted-foreground pt-1">
+                    See your current points on your <Link href="/account?view=rewards" className="font-semibold text-primary hover:underline">rewards dashboard</Link>.
+                </p>
             </CardHeader>
             <CardContent>
                 {isLoading ? (
