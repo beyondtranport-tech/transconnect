@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, Star, UserPlus, Store, Package, Sparkles, Edit, Video, Search, Truck, Building, Users, Handshake, Briefcase, Bot, Code, ShieldCheck, Warehouse, PlusCircle, Gift } from 'lucide-react';
+import { Loader2, Save, Star, UserPlus, Store, Package, Sparkles, Edit, Video, Search, Truck, Building, Users, Handshake, Briefcase, Bot, Code, ShieldCheck, Warehouse, PlusCircle, Gift, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { getClientSideAuthToken } from '@/firebase';
 import { useConfig } from '@/hooks/use-config';
@@ -91,7 +91,7 @@ function AddActionDialog({ actionGroups, onActionAdded }: { actionGroups: any[],
             const camelCase = label.replace(/\s(.)/g, function(a) { return a.toUpperCase(); })
                                  .replace(/\s/g, '')
                                  .replace(/^(.)/, function(b) { return b.toLowerCase(); });
-            return `${camelCase.replace(/[^a-zA-Z0-9]/g, '')}Points`;
+            return `${camelCase.replace(/[^a-zA-Z0-9]/g, '')}Action`; // Use 'Action' instead of 'Points'
         };
         
         const newAction = {
@@ -113,7 +113,7 @@ function AddActionDialog({ actionGroups, onActionAdded }: { actionGroups: any[],
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>Add New Loyalty Action</DialogTitle>
-                    <DialogDescription>Define a new action that members can perform to earn points.</DialogDescription>
+                    <DialogDescription>Define a new action that members can perform.</DialogDescription>
                 </DialogHeader>
                 <Form {...addActionForm}>
                     <form onSubmit={addActionForm.handleSubmit(handleAddAction)} className="space-y-4">
@@ -179,77 +179,66 @@ function AddActionDialog({ actionGroups, onActionAdded }: { actionGroups: any[],
 }
 
 export default function ActionPlanSettings() {
-  const { toast } = useToast();
-  const [isSaving, setIsSaving] = useState(false);
-  const [actionGroups, setActionGroups] = useState(initialActionGroups);
-
-  const formSchema = useMemo(() => {
-    const shape: Record<string, z.ZodTypeAny> = {};
-    actionGroups.forEach(group => {
-        group.actions.forEach(action => {
-            shape[action.id] = z.coerce.number().min(0, 'Points must be 0 or more.');
-        });
-    });
-    return z.object(shape);
-  }, [actionGroups]);
-
-  type ActionPlanSettingsFormValues = z.infer<typeof formSchema>;
-
-  const { data: configData, isLoading: isConfigLoading, forceRefresh } = useConfig<ActionPlanSettingsFormValues>('loyaltySettings');
-
-  const form = useForm<ActionPlanSettingsFormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {},
-  });
-  
-  useEffect(() => {
-    if (configData) {
-      const allActionIds = actionGroups.flatMap(g => g.actions.map(a => a.id));
-      const defaultValues: any = {};
-      allActionIds.forEach(id => {
-        defaultValues[id] = configData[id] ?? 0;
-      });
-      form.reset(defaultValues);
-    }
-  }, [configData, form, actionGroups]);
-
-  const handleActionAdded = (newAction: { id: string, label: string, icon: string, group: string }) => {
-    setActionGroups(currentGroups => {
-        const newGroups = JSON.parse(JSON.stringify(currentGroups)); // Deep copy
-        const groupIndex = newGroups.findIndex((g: any) => g.groupTitle === newAction.group);
-        if (groupIndex !== -1) {
-            newGroups[groupIndex].actions.push({ id: newAction.id, label: newAction.label, icon: newAction.icon });
-        }
-        return newGroups;
-    });
-    // Set a default value for the new form field
-    form.setValue(newAction.id as any, 0);
-  };
-
-
-  const onSubmit = async (values: ActionPlanSettingsFormValues) => {
-    setIsSaving(true);
+    const { toast } = useToast();
+    const [isSaving, setIsSaving] = useState(false);
     
-    try {
-        const token = await getClientSideAuthToken();
-        if (!token) throw new Error("Authentication failed.");
+    const { data: configData, isLoading: isConfigLoading, forceRefresh } = useConfig<any>('loyaltyActionDefinitions');
 
-        const response = await fetch('/api/updateConfigDoc', {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ path: 'configuration/loyaltySettings', data: { ...values, updatedAt: { _methodName: 'serverTimestamp' } } }),
+    const [actionGroups, setActionGroups] = useState(initialActionGroups);
+    
+    useEffect(() => {
+        if (configData && configData.actionGroups) {
+          setActionGroups(configData.actionGroups);
+        }
+    }, [configData]);
+    
+    const handleActionAdded = (newAction: { id: string, label: string, icon: string, group: string }) => {
+        setActionGroups(currentGroups => {
+            const newGroups = JSON.parse(JSON.stringify(currentGroups));
+            const groupIndex = newGroups.findIndex((g: any) => g.groupTitle === newAction.group);
+            if (groupIndex !== -1) {
+                newGroups[groupIndex].actions.push({ id: newAction.id, label: newAction.label, icon: newAction.icon });
+            }
+            return newGroups;
         });
+    };
 
-        if (!response.ok) throw new Error((await response.json()).error || "Failed to save settings.");
-        
-        toast({ title: 'Action Plan Settings Saved!', description: 'The action points have been updated.' });
-        forceRefresh();
-    } catch (e: any) {
-      toast({ variant: 'destructive', title: 'Update Failed', description: e.message });
-    } finally {
-        setIsSaving(false);
-    }
-  };
+    const handleActionDeleted = (groupTitle: string, actionId: string) => {
+        setActionGroups(currentGroups => {
+            const newGroups = JSON.parse(JSON.stringify(currentGroups));
+            const groupIndex = newGroups.findIndex((g: any) => g.groupTitle === groupTitle);
+            if (groupIndex !== -1) {
+                newGroups[groupIndex].actions = newGroups[groupIndex].actions.filter((a: any) => a.id !== actionId);
+            }
+            return newGroups;
+        });
+    };
+    
+    const handleSaveChanges = async () => {
+        setIsSaving(true);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication failed.");
+
+            await fetch('/api/updateConfigDoc', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    path: 'configuration/loyaltyActionDefinitions',
+                    data: { actionGroups, updatedAt: { _methodName: 'serverTimestamp' } }
+                }),
+            });
+            
+            toast({ title: 'Action Plan Saved!', description: 'Your list of available actions has been updated.' });
+            forceRefresh();
+
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: 'Update Failed', description: e.message });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
 
   return (
     <Card className="w-full max-w-4xl">
@@ -259,7 +248,7 @@ export default function ActionPlanSettings() {
                 <div>
                     <CardTitle>Action Plan</CardTitle>
                     <CardDescription>
-                       Define how many loyalty points are awarded for specific member actions.
+                       Define the list of actions members can perform. Point values are set in the Loyalty Plan.
                     </CardDescription>
                 </div>
             </div>
@@ -271,14 +260,13 @@ export default function ActionPlanSettings() {
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
             ) : (
-                <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                <div className="space-y-8">
                      <div className="border rounded-lg">
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead className="w-2/3">Action</TableHead>
-                                    <TableHead className="w-1/3 text-right">Points Awarded</TableHead>
+                                    <TableHead className="w-full">Action</TableHead>
+                                    <TableHead className="text-right">Manage</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -287,28 +275,20 @@ export default function ActionPlanSettings() {
                                         <TableRow className="bg-muted/50 hover:bg-muted/50">
                                             <TableCell colSpan={2} className="font-semibold text-primary">{group.groupTitle}</TableCell>
                                         </TableRow>
-                                        {group.actions.map(action => {
+                                        {group.actions.map((action: any) => {
                                             const IconComponent = iconMap[action.icon] || Star;
                                             return (
                                                 <TableRow key={action.id}>
                                                     <TableCell>
-                                                        <FormLabel htmlFor={action.id} className="flex items-center gap-3 font-normal">
+                                                        <div className="flex items-center gap-3 font-normal">
                                                             <IconComponent className="h-4 w-4 text-muted-foreground" />
                                                             {action.label}
-                                                        </FormLabel>
+                                                        </div>
                                                     </TableCell>
                                                     <TableCell className="text-right">
-                                                         <FormField
-                                                            control={form.control}
-                                                            name={action.id as keyof ActionPlanSettingsFormValues}
-                                                            render={({ field }) => (
-                                                                <FormItem>
-                                                                    <FormControl>
-                                                                        <Input id={action.id} type="number" className="w-24 text-right ml-auto" {...field} />
-                                                                    </FormControl>
-                                                                </FormItem>
-                                                            )}
-                                                        />
+                                                         <Button variant="ghost" size="icon" onClick={() => handleActionDeleted(group.groupTitle, action.id)}>
+                                                            <Trash2 className="h-4 w-4 text-destructive" />
+                                                        </Button>
                                                     </TableCell>
                                                 </TableRow>
                                             );
@@ -318,12 +298,11 @@ export default function ActionPlanSettings() {
                             </TableBody>
                         </Table>
                      </div>
-                    <Button type="submit" disabled={isSaving} className="mt-8">
+                    <Button onClick={handleSaveChanges} disabled={isSaving} className="mt-8">
                         {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                        Save All Settings
+                        Save Action List
                     </Button>
-                </form>
-                </Form>
+                </div>
             )}
         </CardContent>
     </Card>
