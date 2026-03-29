@@ -2,6 +2,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, PlusCircle, Edit, Trash2, Gift } from "lucide-react";
 import { DataTable } from '@/components/ui/data-table';
@@ -26,6 +27,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -198,7 +200,7 @@ export default function RewardsManagement() {
         <Card>
             <CardHeader className="flex flex-row justify-between items-start">
                 <div>
-                    <CardTitle className="flex items-center gap-2"><Gift className="h-6 w-6" />Rewards Plan Management</CardTitle>
+                    <CardTitle className="flex items-center gap-2"><Gift className="h-6 w-6" />Rewards Plan</CardTitle>
                     <CardDescription>Create and manage the redeemable rewards for the loyalty program.</CardDescription>
                 </div>
                 <RewardDialog onSave={forceRefresh} />
