@@ -17,8 +17,8 @@ export default function TierBenefits() {
         <Card>
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                    <Star className="h-6 w-6" />
-                    Loyalty Tier Benefits
+                    <Award className="h-6 w-6" />
+                    Loyalty Plan Benefits
                 </CardTitle>
                 <CardDescription>Define the features and benefits that are automatically unlocked when a member reaches a new loyalty tier.</CardDescription>
             </CardHeader>

@@ -3,7 +3,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Award, PlusCircle, Edit, Trash2 } from "lucide-react";
+import { Loader2, PlusCircle, Edit, Trash2, Gift } from "lucide-react";
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { Badge } from '@/components/ui/badge';
@@ -198,7 +198,7 @@ export default function RewardsManagement() {
         <Card>
             <CardHeader className="flex flex-row justify-between items-start">
                 <div>
-                    <CardTitle className="flex items-center gap-2"><Award className="h-6 w-6" />Rewards Management</CardTitle>
+                    <CardTitle className="flex items-center gap-2"><Gift className="h-6 w-6" />Rewards Plan Management</CardTitle>
                     <CardDescription>Create and manage the redeemable rewards for the loyalty program.</CardDescription>
                 </div>
                 <RewardDialog onSave={forceRefresh} />

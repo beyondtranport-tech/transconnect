@@ -21,6 +21,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { getClientSideAuthToken, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { Separator } from '@/components/ui/separator';
+import { useConfig } from '@/hooks/use-config';
 
 const formSchema = z.object({
   bronzePoints: z.coerce.number().min(0, 'Points must be 0 or more.'),
@@ -113,7 +114,7 @@ export default function LoyaltySettings() {
 
         if (!response.ok) throw new Error((await response.json()).error || "Failed to save settings.");
         
-        toast({ title: 'Loyalty Settings Saved!', description: 'The loyalty tiers and action points have been updated.' });
+        toast({ title: 'Action Plan Settings Saved!', description: 'The loyalty tiers and action points have been updated.' });
         forceRefresh();
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Update Failed', description: e.message });
@@ -145,7 +146,7 @@ export default function LoyaltySettings() {
             <div className="flex items-center gap-4">
                 <Star className="h-8 w-8 text-primary"/>
                 <div>
-                    <CardTitle>Loyalty & Rewards Settings</CardTitle>
+                    <CardTitle>Action Plan Settings</CardTitle>
                     <CardDescription>
                         Define point thresholds and points awarded for member actions.
                     </CardDescription>
