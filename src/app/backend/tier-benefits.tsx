@@ -1,7 +1,6 @@
-
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -95,7 +94,7 @@ export default function TierBenefits() {
                 </CardTitle>
                 <CardDescription>
                     Define the point <span className="font-bold">thresholds</span> required to reach each loyalty tier. 
-                    To set the points awarded for specific actions, visit the <Link href="/backend?view=action-plan" className="underline text-primary">Action Plan</Link> page.
+                    To set the benefits for each tier, visit the <Link href="/backend?view=rewards-plan" className="underline text-primary">Rewards Plan</Link> page.
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -149,4 +148,3 @@ export default function TierBenefits() {
         </Card>
     );
 }
-

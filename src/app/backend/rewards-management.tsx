@@ -1,231 +1,160 @@
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, PlusCircle, Edit, Trash2, Gift } from "lucide-react";
-import { DataTable } from '@/components/ui/data-table';
-import { type ColumnDef } from '@/hooks/use-data-table';
-import { Badge } from '@/components/ui/badge';
-import { Button, buttonVariants } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
-import { getClientSideAuthToken, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query } from 'firebase/firestore';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { Button } from '@/components/ui/button';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { useToast } from '@/hooks/use-toast';
+import { Loader2, Save, Gift, Award } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { getClientSideAuthToken } from '@/firebase';
+import { useConfig } from '@/hooks/use-config';
 
-// API Helper
-async function performAdminAction(token: string, action: string, payload?: any) {
-    const response = await fetch('/api/admin', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, payload }),
-    });
-    const result = await response.json();
-    if (!response.ok || !result.success) {
-        throw new Error(result.error || `API Error for action: ${action}`);
-    }
-    return result;
-}
-
-
-const rewardSchema = z.object({
-  id: z.string().optional(),
-  title: z.string().min(1, 'Title is required'),
-  type: z.enum(['voucher', 'discount', 'product']),
+// Define the schema for a single tier's benefits
+const benefitsSchema = z.object({
+  commissionShare: z.coerce.number().min(0, "Must be >= 0").max(100, "Must be <= 100"),
+  discountShare: z.coerce.number().min(0, "Must be >= 0").max(100, "Must be <= 100"),
+  // Add other benefit fields here in the future
 });
-type RewardFormValues = z.infer<typeof rewardSchema>;
 
-function RewardDialog({ reward, onSave }: { reward?: any, onSave: () => void }) {
-    const [isOpen, setIsOpen] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
+// Define the main form schema
+const formSchema = z.object({
+  bronzeBenefits: benefitsSchema,
+  silverBenefits: benefitsSchema,
+  goldBenefits: benefitsSchema,
+});
+
+type FormValues = z.infer<typeof formSchema>;
+
+export default function RewardsManagement() {
     const { toast } = useToast();
-
-    const form = useForm<RewardFormValues>({
-        resolver: zodResolver(rewardSchema),
-    });
+    const [isSaving, setIsSaving] = useState(false);
     
+    // Fetch the single 'loyaltySettings' document from the 'configuration' collection
+    const { data: configData, isLoading: isConfigLoading, forceRefresh } = useConfig<any>('loyaltySettings');
+
+    const form = useForm<FormValues>({
+        resolver: zodResolver(formSchema),
+        defaultValues: {
+            bronzeBenefits: { commissionShare: 0, discountShare: 3 },
+            silverBenefits: { commissionShare: 2.5, discountShare: 6 },
+            goldBenefits: { commissionShare: 5, discountShare: 9 },
+        },
+    });
+
     useEffect(() => {
-        if(isOpen) {
+        if (configData) {
             form.reset({
-                id: reward?.id,
-                title: reward?.title || '',
-                type: reward?.type || 'voucher',
+                bronzeBenefits: configData.bronzeBenefits || { commissionShare: 0, discountShare: 3 },
+                silverBenefits: configData.silverBenefits || { commissionShare: 2.5, discountShare: 6 },
+                goldBenefits: configData.goldBenefits || { commissionShare: 5, discountShare: 9 },
             });
         }
-    }, [isOpen, reward, form]);
+    }, [configData, form]);
 
-    const onSubmit = async (values: RewardFormValues) => {
-        setIsLoading(true);
+    const onSubmit = async (values: FormValues) => {
+        setIsSaving(true);
         try {
             const token = await getClientSideAuthToken();
-            if(!token) throw new Error("Authentication failed.");
+            if (!token) throw new Error("Authentication failed.");
 
-            // Keep existing values when editing, only update what's in the form
-            const dataToSave = { 
-                ...reward, // Keep old data
-                ...values, // Overwrite with new data from form
-                isActive: reward?.isActive ?? true // Ensure isActive is set on create
+            // Merge the new benefits data with existing loyaltySettings
+            const dataToSave = {
+                ...configData, // Preserve existing settings like point thresholds
+                ...values,     // Overwrite with the new benefits data
+                updatedAt: { _methodName: 'serverTimestamp' }
             };
-            const path = `rewards/${reward?.id || dataToSave.title.toLowerCase().replace(/\s+/g, '-')}`;
-            delete dataToSave.id; // Don't save the ID inside the doc
 
             const response = await fetch('/api/updateConfigDoc', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ path, data: { ...dataToSave, updatedAt: { _methodName: 'serverTimestamp' } } }),
+                body: JSON.stringify({
+                    path: 'configuration/loyaltySettings',
+                    data: dataToSave
+                }),
             });
 
-            if (!response.ok) throw new Error((await response.json()).error || 'Failed to save reward.');
+            if (!response.ok) throw new Error((await response.json()).error || 'Failed to save settings.');
             
-            toast({ title: reward ? 'Reward Updated' : 'Reward Created' });
-            onSave();
-            setIsOpen(false);
-        } catch (e: any) {
-            toast({ variant: 'destructive', title: 'Save Failed', description: e.message });
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    return (
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogTrigger asChild>
-                {reward ? (
-                    <Button variant="ghost" size="icon"><Edit className="h-4 w-4"/></Button>
-                ) : (
-                    <Button><PlusCircle className="mr-2 h-4 w-4"/>Add Reward</Button>
-                )}
-            </DialogTrigger>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>{reward ? 'Edit' : 'Create'} Reward</DialogTitle>
-                    <DialogDescription>Define a reward that members can redeem with their points.</DialogDescription>
-                </DialogHeader>
-                <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                        <FormField control={form.control} name="title" render={({field}) => <FormItem><FormLabel>Title</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage/></FormItem>} />
-                        <FormField control={form.control} name="type" render={({field}) => (
-                            <FormItem>
-                                <FormLabel>Type</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <FormControl><SelectTrigger><SelectValue placeholder="Select a type..."/></SelectTrigger></FormControl>
-                                    <SelectContent>
-                                        <SelectItem value="voucher">
-                                            <div>
-                                                <p>Voucher</p>
-                                                <p className="text-xs text-muted-foreground">e.g., R100 Fuel Voucher</p>
-                                            </div>
-                                        </SelectItem>
-                                        <SelectItem value="discount">
-                                            <div>
-                                                <p>Discount</p>
-                                                <p className="text-xs text-muted-foreground">e.g., 10% off next purchase</p>
-                                            </div>
-                                        </SelectItem>
-                                        <SelectItem value="product">
-                                             <div>
-                                                <p>Product</p>
-                                                <p className="text-xs text-muted-foreground">e.g., Free branded cap</p>
-                                            </div>
-                                        </SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                <FormMessage/>
-                            </FormItem>
-                        )} />
-                        <DialogFooter>
-                            <Button type="submit" disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null} Save</Button>
-                        </DialogFooter>
-                    </form>
-                </Form>
-            </DialogContent>
-        </Dialog>
-    );
-}
-
-export default function RewardsManagement() {
-    const firestore = useFirestore();
-    const { toast } = useToast();
-    const [rewardToDelete, setRewardToDelete] = useState<any | null>(null);
-
-    const rewardsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'rewards')) : null, [firestore]);
-    const { data: rewards, isLoading, forceRefresh } = useCollection(rewardsQuery);
-
-    const handleDelete = async () => {
-        if (!rewardToDelete) return;
-        try {
-            const token = await getClientSideAuthToken();
-            if (!token) throw new Error("Authentication failed.");
-            await fetch('/api/deleteConfigDoc', {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ path: `rewards/${rewardToDelete.id}` }),
-            });
-            toast({ title: "Reward Deleted" });
+            toast({ title: 'Rewards Plan Benefits Saved!', description: 'The benefits for each loyalty tier have been updated.' });
             forceRefresh();
         } catch (e: any) {
-            toast({ variant: 'destructive', title: "Deletion Failed", description: e.message });
+            toast({ variant: 'destructive', title: 'Update Failed', description: e.message });
         } finally {
-            setRewardToDelete(null);
+            setIsSaving(false);
         }
     };
-    
-    const columns: ColumnDef<RewardFormValues>[] = useMemo(() => [
-        { accessorKey: 'title', header: 'Title' },
-        { accessorKey: 'pointsCost', header: 'Points Cost' },
-        { accessorKey: 'type', header: 'Type' },
-        { accessorKey: 'isActive', header: 'Status', cell: ({row}) => <Badge variant={row.original.isActive ? 'default' : 'secondary'}>{row.original.isActive ? 'Active' : 'Inactive'}</Badge> },
-        { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({row}) => (
-            <div className="flex justify-end items-center">
-                <RewardDialog reward={row.original} onSave={forceRefresh} />
-                <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon" onClick={() => setRewardToDelete(row.original)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                        <AlertDialogHeader>
-                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                            <AlertDialogDescription>This will permanently delete the reward "{row.original.title}".</AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                            <AlertDialogCancel onClick={() => setRewardToDelete(null)}>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: 'destructive' })}>Delete</AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
-            </div>
-        )},
-    ], [forceRefresh, handleDelete]);
+
+    const renderTierCard = (tier: 'bronze' | 'silver' | 'gold', title: string) => (
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Award className="h-5 w-5" /> {title}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                 <FormField
+                    control={form.control}
+                    name={`${tier}Benefits.commissionShare`}
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Commission Share (%)</FormLabel>
+                            <FormControl><Input type="number" placeholder="e.g., 5" {...field} /></FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                 <FormField
+                    control={form.control}
+                    name={`${tier}Benefits.discountShare`}
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Discount Share (%)</FormLabel>
+                            <FormControl><Input type="number" placeholder="e.g., 10" {...field} /></FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+            </CardContent>
+        </Card>
+    );
 
     return (
-        <Card>
-            <CardHeader className="flex flex-row justify-between items-start">
-                <div>
-                    <CardTitle className="flex items-center gap-2"><Gift className="h-6 w-6" />Rewards Plan Settings</CardTitle>
-                    <CardDescription>Create and manage the redeemable rewards for the loyalty program.</CardDescription>
-                </div>
-                <RewardDialog onSave={forceRefresh} />
+        <Card className="w-full max-w-5xl">
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Gift className="h-6 w-6" />Rewards Plan Benefits</CardTitle>
+                <CardDescription>
+                    Define the specific benefits a member receives when they reach a loyalty tier. These are automatically applied.
+                </CardDescription>
             </CardHeader>
             <CardContent>
-                {isLoading ? (
-                    <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin" /></div>
+                {isConfigLoading ? (
+                    <div className="flex justify-center items-center py-20"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div>
                 ) : (
-                    <DataTable columns={columns} data={rewards || []} />
+                    <Form {...form}>
+                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                {renderTierCard('bronze', 'Bronze Tier')}
+                                {renderTierCard('silver', 'Silver Tier')}
+                                {renderTierCard('gold', 'Gold Tier')}
+                            </div>
+                            
+                            <div className="border-t pt-6">
+                                <Button type="submit" disabled={isSaving}>
+                                    {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                                    Save All Benefits
+                                </Button>
+                            </div>
+                        </form>
+                    </Form>
                 )}
             </CardContent>
         </Card>
