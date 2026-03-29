@@ -95,7 +95,7 @@ function RewardDialog({ reward, onSave }: { reward?: RewardFormValues, onSave: (
             });
 
             if (!response.ok) throw new Error((await response.json()).error || 'Failed to save reward.');
-
+            
             toast({ title: reward ? 'Reward Updated' : 'Reward Created' });
             onSave();
             setIsOpen(false);
