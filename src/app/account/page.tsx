@@ -38,6 +38,7 @@ import {
   Network,
   Heart,
   Zap,
+  Award,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -166,8 +167,6 @@ function AccountPageContent() {
   };
   
   const isSalesActive = ['network', 'performance', 'offer', 'emails'].includes(activeView);
-  const isConnectActive = pathname.startsWith('/connect');
-
 
   return (
     <SidebarProvider>
@@ -260,28 +259,6 @@ function AccountPageContent() {
                     </SidebarMenuSubItem>
                 </SidebarMenuSub>
               </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Connect Plans" isActive={isConnectActive}>
-                    <Handshake /><span>Connect</span>
-                </SidebarMenuButton>
-                <SidebarMenuSub>
-                    <SidebarMenuSubItem>
-                        <SidebarMenuSubButton href="/connect/loyalty">
-                            <Heart />Loyalty Plan
-                        </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
-                    <SidebarMenuSubItem>
-                        <SidebarMenuSubButton href="/connect/rewards">
-                            <Gift />Rewards Plan
-                        </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
-                    <SidebarMenuSubItem>
-                        <SidebarMenuSubButton href="/connect/actions">
-                            <Zap />Actions Plan
-                        </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
-                </SidebarMenuSub>
-              </SidebarMenuItem>
                <SidebarMenuItem>
                 <SidebarMenuButton tooltip="Wallet" isActive={activeView === 'wallet'} onClick={() => navigate('wallet')}>
                   <Wallet />
@@ -289,9 +266,9 @@ function AccountPageContent() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
                <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Rewards" isActive={activeView === 'rewards'} onClick={() => navigate('rewards')}>
-                  <Gift />
-                  <span>Rewards</span>
+                <SidebarMenuButton tooltip="Loyalty & Rewards" isActive={activeView === 'rewards'} onClick={() => navigate('rewards')}>
+                  <Award />
+                  <span>Loyalty & Rewards</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
                 <SidebarMenuItem>
