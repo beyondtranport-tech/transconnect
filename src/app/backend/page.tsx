@@ -63,6 +63,7 @@ import {
   ClipboardList,
   MessageSquare,
   Code,
+  Gift,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -103,6 +104,7 @@ const ConnectPlanPricing = dynamic(() => import('@/app/backend/revenue/connect-p
 const MarketplaceFees = dynamic(() => import('@/app/backend/revenue/marketplace-fees'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const SalesIncentives = dynamic(() => import('@/app/backend/revenue/sales-incentives'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const LoyaltySettings = dynamic(() => import('@/app/backend/loyalty-settings'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const TierBenefits = dynamic(() => import('@/app/backend/tier-benefits'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const ISAPitchSettings = dynamic(() => import('@/app/backend/revenue/isa-pitch-settings'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const RewardsManagement = dynamic(() => import('@/app/backend/rewards-management'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
@@ -175,6 +177,7 @@ function BackendContent() {
       // Platform Settings
       case 'permissions': return <PermissionsContent />;
       case 'loyalty': return <LoyaltySettings />;
+      case 'tier-benefits': return <TierBenefits />;
       case 'rewards-management': return <RewardsManagement />;
       case 'pricing-memberships': return <PricingManagement />;
       case 'pricing-connect': return <ConnectPlanPricing />;
@@ -211,7 +214,7 @@ function BackendContent() {
     'commissions-malls', 'commissions-isa', 'incentives-sales'
   ].includes(activeView);
   const isPlatformSettingsActive = [
-    'permissions', 'loyalty', 'tasks', 'settings-bank', 'rewards-management'
+    'permissions', 'loyalty', 'tasks', 'settings-bank', 'rewards-management', 'tier-benefits'
   ].includes(activeView);
 
   return (
@@ -265,8 +268,9 @@ function BackendContent() {
                   <SidebarMenuButton tooltip="Platform Settings" isActive={isPlatformSettingsActive}><Settings /><span>Platform Settings</span></SidebarMenuButton>
                   <SidebarMenuSub>
                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'permissions'} onClick={() => navigate('permissions')}><Lock />Permissions</SidebarMenuSubButton></SidebarMenuSubItem>
-                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'loyalty'} onClick={() => navigate('loyalty')}><Star />Loyalty & Points</SidebarMenuSubButton></SidebarMenuSubItem>
-                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'rewards-management'} onClick={() => navigate('rewards-management')}><Award />Rewards Management</SidebarMenuSubButton></SidebarMenuSubItem>
+                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'loyalty'} onClick={() => navigate('loyalty')}><Star />Action Points</SidebarMenuSubButton></SidebarMenuSubItem>
+                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'tier-benefits'} onClick={() => navigate('tier-benefits')}><Award />Tier Benefits</SidebarMenuSubButton></SidebarMenuSubItem>
+                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'rewards-management'} onClick={() => navigate('rewards-management')}><Gift />Rewards Store</SidebarMenuSubButton></SidebarMenuSubItem>
                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'settings-bank'} onClick={() => navigate('settings-bank')}><Banknote />Bank Details</SidebarMenuSubButton></SidebarMenuSubItem>
                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'tasks'} onClick={() => navigate('tasks')}><Wrench />Platform Tasks</SidebarMenuSubButton></SidebarMenuSubItem>
                   </SidebarMenuSub>
