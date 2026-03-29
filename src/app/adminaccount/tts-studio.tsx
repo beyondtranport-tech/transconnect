@@ -1,16 +1,17 @@
+
 'use client';
 
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Loader2, Sparkles, Download, Mic } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
-import { TTSInputSchema, type TTSInput } from '@/ai/schemas';
-import { generateAudio } from '@/ai/flows/tts-flow';
+import { generateAudio, type TTSInput } from '@/ai/flows/tts-flow';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const voices = [
@@ -21,6 +22,11 @@ const voices = [
     { id: 'Antares', name: 'Antares (Male)' },
     { id: 'Spica', name: 'Spica (Female)' },
 ];
+
+const TTSInputSchema = z.object({
+  script: z.string().min(1, 'Script cannot be empty.'),
+  voice: z.string().optional().default('Algenib'),
+});
 
 export default function TTSStudio() {
     const [isLoading, setIsLoading] = useState(false);

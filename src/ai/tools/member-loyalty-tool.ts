@@ -3,7 +3,7 @@
 
 import { ai } from '@/ai/genkit';
 import { getFirestore } from 'firebase-admin/firestore';
-import { z } from 'zod';
+import { z } from 'genkit';
 import { getAdminApp } from '@/lib/firebase-admin';
 
 const MemberLoyaltyInputSchema = z.object({

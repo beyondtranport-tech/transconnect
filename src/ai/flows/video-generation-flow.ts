@@ -9,7 +9,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'zod';
+import { z } from 'genkit';
 
 const VideoGenerateInputSchema = z.object({
   prompt: z.string().describe('The text prompt describing the desired video.'),

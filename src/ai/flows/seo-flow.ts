@@ -9,7 +9,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'zod';
+import { z } from 'genkit';
 
 const ShopSeoInputSchema = z.object({
   shopName: z.string().describe('The name of the online shop.'),

@@ -10,7 +10,7 @@
 
 import { ai } from '@/ai/genkit';
 import { googleSearchTool } from '../tools/google-search';
-import { z } from 'zod'; 
+import { z } from 'genkit'; 
 
 // Define schemas locally using z from genkit to ensure type compatibility for the flow.
 const LeadGenerationInputSchema = z.object({

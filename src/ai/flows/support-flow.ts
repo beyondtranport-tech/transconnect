@@ -9,7 +9,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'zod';
+import { z } from 'genkit';
 
 const systemPrompt = `You are a helpful and friendly AI assistant for Logistics Flow, a digital ecosystem for the logistics industry in South Africa.
 

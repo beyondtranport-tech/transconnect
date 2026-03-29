@@ -1,4 +1,5 @@
-import { z } from 'zod';
+
+import { z } from 'genkit';
 
 // From ai-freight-matching.ts
 export const MatchFreightInputSchema = z.object({

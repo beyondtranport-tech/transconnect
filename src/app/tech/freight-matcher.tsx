@@ -4,10 +4,9 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { MatchFreightInputSchema, type MatchFreightOutput, type MatchFreightInput } from "@/ai/schemas";
-
-
+import { z } from 'zod';
 import { handleMatchFreight } from "./actions";
+import type { MatchFreightInput, MatchFreightOutput } from "@/ai/flows/ai-freight-matching";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,6 +35,16 @@ const vehicleTypes = [
 
 const locations = provinces.flatMap(p => p.cities.map(c => `${c}, ${p.name}`));
 
+const MatchFreightInputSchema = z.object({
+  location: z.string().min(1, "Please select an origin."),
+  destination: z.string().min(1, "Please select a destination."),
+  vehicleType: z.string().min(1, "Please select a vehicle type."),
+  capacity: z.string().min(1, "Please enter vehicle capacity."),
+  preferences: z.string().optional(),
+  rate: z.coerce.number().positive().optional(),
+  isPartLoad: z.boolean().optional(),
+  palletCount: z.coerce.number().int().positive().optional(),
+});
 
 export default function FreightMatcher() {
     const [isLoading, setIsLoading] = useState(false);

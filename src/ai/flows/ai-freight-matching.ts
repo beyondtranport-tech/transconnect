@@ -9,7 +9,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'zod';
+import { z } from 'genkit';
 import { MatchFreightInputSchema, MatchFreightOutputSchema } from '../schemas';
 
 export type MatchFreightInput = z.infer<typeof MatchFreightInputSchema>;
@@ -57,7 +57,7 @@ const matchFreightFlow = ai.defineFlow(
 
     prompt += `
 
-Find available freight loads that match these criteria. Critically, if it is a part load, only return loads that would fit the specified pallet count.`;
+Find available freight loads that match these criteria. Critically, if it is a part load, only return loads that would fit the specified palletCount.`;
 
     const response = await ai.generate({
         model: 'gemini-1.5-flash',
