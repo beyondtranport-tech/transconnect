@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
@@ -159,7 +160,7 @@ export default function ShopContent() {
     }
 
     if (view === 'wizard' && userShop) {
-      return <ShopWizard shop={userShop} onShopUpdate={forceRefreshAll} />;
+      return <ShopWizard shop={userShop} onUpdate={forceRefreshAll} />;
     }
 
     // Default to 'overview'

@@ -9,7 +9,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { z } from 'zod';
 import { MatchFreightInputSchema, MatchFreightOutputSchema } from '../schemas';
 
 export type MatchFreightInput = z.infer<typeof MatchFreightInputSchema>;
