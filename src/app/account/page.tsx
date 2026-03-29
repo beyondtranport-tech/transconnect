@@ -13,8 +13,6 @@ import {
   SidebarInset,
   SidebarMenuSub,
   SidebarMenuSubButton,
-  SidebarMenuSeparator,
-  SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
 import {
   Users,
@@ -37,10 +35,12 @@ import {
   MessageSquare,
   Truck,
   Network,
+  Heart,
+  Zap,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useState, useEffect, Suspense, useCallback } from 'react';
 import { useUser, useAuth } from '@/firebase';
 import { signOut } from 'firebase/auth';
@@ -93,6 +93,7 @@ function AccountPageContent() {
   const router = useRouter();
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
+  const pathname = usePathname();
   
   const searchParams = useSearchParams();
   const initialView = searchParams.get('view') || 'dashboard';
@@ -164,6 +165,7 @@ function AccountPageContent() {
   };
   
   const isSalesActive = ['network', 'performance', 'offer', 'emails'].includes(activeView);
+  const isConnectActive = pathname.startsWith('/connect');
 
 
   return (
@@ -253,6 +255,28 @@ function AccountPageContent() {
                     <SidebarMenuSubItem>
                         <SidebarMenuSubButton isActive={activeView === 'emails'} onClick={() => navigate('emails')}>
                             <Mail />Email Templates
+                        </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                </SidebarMenuSub>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Connect Plans" isActive={isConnectActive}>
+                    <Handshake /><span>Connect</span>
+                </SidebarMenuButton>
+                <SidebarMenuSub>
+                    <SidebarMenuSubItem>
+                        <SidebarMenuSubButton href="/connect/loyalty">
+                            <Heart />Loyalty Plan
+                        </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                    <SidebarMenuSubItem>
+                        <SidebarMenuSubButton href="/connect/rewards">
+                            <Gift />Rewards Plan
+                        </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                    <SidebarMenuSubItem>
+                        <SidebarMenuSubButton href="/connect/actions">
+                            <Zap />Actions Plan
                         </SidebarMenuSubButton>
                     </SidebarMenuSubItem>
                 </SidebarMenuSub>
