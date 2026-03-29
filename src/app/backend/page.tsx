@@ -48,6 +48,7 @@ import {
   Store,
   Lock,
   Star,
+  Award,
   Banknote,
   FileText,
   Landmark,
