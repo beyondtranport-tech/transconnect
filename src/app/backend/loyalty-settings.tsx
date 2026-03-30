@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -96,15 +97,17 @@ const pointsSchema = z.object({
 });
 type PointsFormValues = z.infer<typeof pointsSchema>;
 
-
-function ActionDialog({ action, actionGroups, onSave, children, open, onOpenChange }: {
+interface ActionDialogProps {
   action?: any;
   actionGroups: any[];
   onSave: (action: any) => void;
   children?: React.ReactNode;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
-}) {
+}
+
+
+function ActionDialog({ action, actionGroups, onSave, children, open, onOpenChange }: ActionDialogProps) {
     const [internalIsOpen, setInternalIsOpen] = useState(false);
 
     const isControlled = open !== undefined && onOpenChange !== undefined;
@@ -186,7 +189,7 @@ function ActionDialog({ action, actionGroups, onSave, children, open, onOpenChan
                                                 name="roles"
                                                 render={({ field }) => {
                                                     return (
-                                                        <FormItem key={role.id} className="flex flex-row items-center space-x-2 space-y-0">
+                                                        <FormItem key={role.id} className="flex flex-row items-center space-x-3 space-y-0">
                                                             <FormControl>
                                                                 <Checkbox
                                                                     checked={field.value?.includes(role.id)}
@@ -510,12 +513,3 @@ export default function ActionPlanSettings() {
         </Card>
     );
 }
-```
-- `src/lib/data.ts`
-- `src/app/backend/isa-management.tsx`
-- `src/app/backend/partner-offer.tsx`
-- `src/app/backend/pitch-content.tsx`
-- `src/app/lending/partners-content.tsx`
-- `src/app/lending/edit-lending-partner.tsx`
-- `src/app/backend/member-loyalty-status.tsx`
-- `src/app/backend/loyalty-settings.tsx`

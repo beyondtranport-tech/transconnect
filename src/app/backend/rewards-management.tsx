@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Button, buttonVariants } from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
 import {
   Form,
   FormControl,
@@ -61,9 +61,9 @@ export default function RewardsManagement() {
                 // This is for backward compatibility with an older, more complex data structure.
                 const transformedBenefits = (configData.benefitNames || []).map((name: string) => ({
                     name,
-                    bronzeValue: (configData.bronzeBenefits && configData.bronzeBenefits[name]) || '', // FIX: Default to empty string
-                    silverValue: (configData.silverBenefits && configData.silverBenefits[name]) || '', // FIX: Default to empty string
-                    goldValue: (configData.goldBenefits && configData.goldBenefits[name]) || '', // FIX: Default to empty string
+                    bronzeValue: String((configData.bronzeBenefits && configData.bronzeBenefits[name]) || ''),
+                    silverValue: String((configData.silverBenefits && configData.silverBenefits[name]) || ''),
+                    goldValue: String((configData.goldBenefits && configData.goldBenefits[name]) || ''),
                 }));
                 form.reset({ benefits: transformedBenefits });
             }
