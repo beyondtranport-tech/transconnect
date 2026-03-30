@@ -5,7 +5,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'zod';
+import { z } from 'genkit';
 import { getShopPerformanceTool } from '../tools/shop-performance-tool';
 import { getMemberLoyaltyTool } from '../tools/member-loyalty-tool';
 import { NegotiationInputSchema, NegotiationOutputSchema } from '../schemas';
