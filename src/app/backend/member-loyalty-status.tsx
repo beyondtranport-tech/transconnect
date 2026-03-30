@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useMemo, useCallback, useEffect, useState } from 'react';
@@ -11,6 +12,7 @@ import { getClientSideAuthToken } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
 
 interface Company {
     id: string;
@@ -39,7 +41,9 @@ async function fetchFromAdminAPI(token: string, action: string, payload?: any) {
     });
 
     const result = await response.json();
-    if (!response.ok || !result.success) throw new Error(result.error || `API Error for action: ${action}`);
+    if (!response.ok || !result.success) {
+        throw new Error(result.error || `API Error for action: ${action}`);
+    }
     return result.data;
 }
 
