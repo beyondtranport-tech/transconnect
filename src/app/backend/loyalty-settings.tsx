@@ -1,8 +1,7 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -31,10 +30,11 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { roles as availableRolesList } from '@/lib/roles';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { DataTable } from '@/components/ui/data-table';
 
 
 const iconMap: { [key: string]: React.ElementType } = {
-    Star, UserPlus, Store, Package, Search, Sparkles, Edit, Video, Truck, Building, Users, Handshake, Briefcase, Bot, Code, ShieldCheck, Warehouse, Gift, FileText
+    Star, UserPlus, Store, Package, Search, Sparkles, Edit, Video, Building, Truck, Users, Handshake, Briefcase, Bot, Code, ShieldCheck, Warehouse, Gift, FileText
 };
 
 const initialActionGroups = [
@@ -42,7 +42,7 @@ const initialActionGroups = [
         groupTitle: 'General Platform Actions',
         actions: [
             { id: 'userSignupPoints', label: 'Sign up for an account', icon: 'UserPlus', isActive: true, roles: ['all'] },
-            { id: 'aiVideoGeneratorPoints', label: 'Use AI Video Ad Generator', icon: 'Video', isActive: true, roles: ['all'] },
+            { id: 'partnerReferralPoints', label: 'Refer a New Member', icon: 'Handshake', isActive: true, roles: ['all'] },
         ]
     },
     {
@@ -54,6 +54,7 @@ const initialActionGroups = [
             { id: 'aiImageGeneratorPoints', label: 'Use AI Image Generator', icon: 'Sparkles', isActive: true, roles: ['vendor'] },
             { id: 'imageEnhancerPoints', label: 'Use AI Image Enhancer', icon: 'Edit', isActive: true, roles: ['vendor'] },
             { id: 'supplierContributionPoints', label: 'Contribute Supplier Data', icon: 'Building', isActive: true, roles: ['vendor'] },
+            { id: 'aiVideoGeneratorPoints', label: 'Use AI Video Ad Generator', icon: 'Video', isActive: true, roles: ['vendor'] },
         ]
     },
      {
@@ -69,7 +70,6 @@ const initialActionGroups = [
     {
         groupTitle: 'Partner & Network Actions',
         actions: [
-            { id: 'partnerReferralPoints', label: 'Refer a New Member', icon: 'Handshake', isActive: true, roles: ['all'] },
             { id: 'associateServiceListingPoints', label: 'Associate Lists a Service', icon: 'Briefcase', isActive: true, roles: ['associate'] },
             { id: 'isaSaleCommissionPoints', label: 'ISA Completes a Sale', icon: 'Bot', isActive: true, roles: ['isa-agent'] },
             { id: 'driverSafetyRecordPoints', label: 'Driver Uploads Safety Record', icon: 'ShieldCheck', isActive: true, roles: ['driver'] },
@@ -86,7 +86,7 @@ const actionSchema = z.object({
   group: z.string().min(1, "Please select a group."),
   icon: z.string().min(1, "Please select an icon."),
   isActive: z.boolean().default(true),
-  roles: z.array(z.string()).optional(),
+  roles: z.array(z.string()).min(1, "Please select at least one role."),
 });
 type ActionFormValues = z.infer<typeof actionSchema>;
 
@@ -97,15 +97,15 @@ const pointsSchema = z.object({
 type PointsFormValues = z.infer<typeof pointsSchema>;
 
 
-function ActionDialog({ action, actionGroups, onSave, open, onOpenChange }: { 
-    action?: any, 
-    actionGroups: any[], 
-    onSave: (action: any) => void,
-    open?: boolean,
-    onOpenChange?: (open: boolean) => void 
+function ActionDialog({ action, actionGroups, onSave, children, open, onOpenChange }: {
+  action?: any;
+  actionGroups: any[];
+  onSave: (action: any) => void;
+  children?: React.ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
     const [internalIsOpen, setInternalIsOpen] = useState(false);
-    const { toast } = useToast();
 
     const isControlled = open !== undefined && onOpenChange !== undefined;
     const isOpen = isControlled ? open : internalIsOpen;
@@ -152,7 +152,7 @@ function ActionDialog({ action, actionGroups, onSave, open, onOpenChange }: {
             roles: values.roles,
         };
         onSave(newAction);
-        setIsOpen(false);
+        if(setIsOpen) setIsOpen(false);
         form.reset();
     };
 
@@ -160,11 +160,7 @@ function ActionDialog({ action, actionGroups, onSave, open, onOpenChange }: {
 
     return (
          <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            {!isControlled && (
-                <DialogTrigger asChild>
-                    <Button variant="outline"><PlusCircle className="mr-2 h-4 w-4" /> Add Action</Button>
-                </DialogTrigger>
-            )}
+            {children && <DialogTrigger asChild>{children}</DialogTrigger>}
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>{action ? 'Edit' : 'Add New'} Loyalty Action</DialogTitle>
@@ -267,7 +263,7 @@ export default function ActionPlanSettings() {
     const [actionGroups, setActionGroups] = useState(initialActionGroups);
     const [editAction, setEditAction] = useState<any | null>(null);
     const [isEditOpen, setIsEditOpen] = useState(false);
-    const [isAddOpen, setIsAddOpen] = useState(false);
+    const [activeRole, setActiveRole] = useState('all');
     
     const form = useForm<PointsFormValues>({
         resolver: zodResolver(pointsSchema),
@@ -406,15 +402,66 @@ export default function ActionPlanSettings() {
         actionGroups.flatMap(group => 
             group.actions.map(action => ({ ...action, groupTitle: group.groupTitle }))
         ), [actionGroups]);
+
+    const filteredActions = useMemo(() => {
+        if (activeRole === 'all') return allActions;
+        return allActions.filter(action => action.roles?.includes(activeRole) || action.roles?.includes('all'));
+    }, [allActions, activeRole]);
         
     const openEditDialog = (action: any) => {
         setEditAction(action);
         setIsEditOpen(true);
     };
+    
+    const columns: ColumnDef<any>[] = useMemo(() => [
+        {
+            header: 'Action',
+            cell: ({ row }) => {
+                const Icon = iconMap[row.original.icon] || Star;
+                return <div className="font-medium flex items-center gap-2"><Icon className="h-4 w-4 text-muted-foreground" /> {row.original.label}</div>
+            }
+        },
+        { header: 'Group', cell: ({row}) => <Badge variant="outline">{row.original.groupTitle}</Badge> },
+        {
+            header: 'Roles',
+            cell: ({ row }) => (
+                <div className="flex flex-wrap gap-1">
+                    {(row.original.roles || []).map((role: string) => <Badge key={role} variant="secondary" className="capitalize">{role}</Badge>)}
+                </div>
+            )
+        },
+        { header: 'Status', cell: ({row}) => <Badge variant={row.original.isActive ? 'default' : 'secondary'}>{row.original.isActive ? 'Active' : 'Inactive'}</Badge> },
+        {
+            header: 'Points Awarded',
+            cell: ({ row }) => (
+                <FormField
+                    control={form.control}
+                    name={`points.${row.original.id}`}
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormControl><Input type="number" className="h-8 w-24 text-right" {...field} /></FormControl>
+                        </FormItem>
+                    )}
+                />
+            )
+        },
+        {
+            header: <div className="text-right">Actions</div>,
+            cell: ({ row }) => (
+                <div className="text-right">
+                    <ActionMenu 
+                        action={row.original} 
+                        onEdit={() => openEditDialog(row.original)}
+                        onDelete={() => handleActionDeleted(row.original.groupTitle, row.original.id)}
+                        onToggleStatus={(newStatus) => handleToggleStatus(row.original.groupTitle, row.original.id, newStatus)}
+                    />
+                </div>
+            )
+        }
+    ], [form, handleActionDeleted, handleToggleStatus]);
 
     return (
         <Card className="w-full max-w-6xl">
-            {isAddOpen && <ActionDialog open={isAddOpen} onOpenChange={setIsAddOpen} actionGroups={actionGroups} onSave={handleActionSave} />}
             {editAction && <ActionDialog open={isEditOpen} onOpenChange={setIsEditOpen} action={editAction} actionGroups={actionGroups} onSave={handleActionSave} />}
             
             <Form {...form}>
@@ -429,9 +476,9 @@ export default function ActionPlanSettings() {
                                 </CardDescription>
                             </div>
                         </div>
-                        <Button type="button" variant="outline" onClick={() => setIsAddOpen(true)}>
-                            <PlusCircle className="mr-2 h-4 w-4" /> Add Action
-                        </Button>
+                        <ActionDialog actionGroups={actionGroups} onSave={handleActionSave}>
+                          <Button type="button" variant="outline"><PlusCircle className="mr-2 h-4 w-4" /> Add Action</Button>
+                        </ActionDialog>
                     </CardHeader>
                     <CardContent>
                         {isLoading ? (
@@ -439,60 +486,17 @@ export default function ActionPlanSettings() {
                                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
                             </div>
                         ) : (
-                             <div className="border rounded-lg">
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead className="w-[30%]">Action</TableHead>
-                                            <TableHead>Group</TableHead>
-                                            <TableHead>Roles</TableHead>
-                                            <TableHead>Status</TableHead>
-                                            <TableHead className="w-[180px]">Points Awarded</TableHead>
-                                            <TableHead className="text-right w-[80px]">Action</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {allActions.map((action: any) => {
-                                            return (
-                                                <TableRow key={action.id}>
-                                                    <TableCell className="font-medium flex items-center gap-2">
-                                                        {iconMap[action.icon] && React.createElement(iconMap[action.icon], { className: "h-4 w-4 text-muted-foreground" })}
-                                                        {action.label}
-                                                    </TableCell>
-                                                    <TableCell><Badge variant="outline">{action.groupTitle}</Badge></TableCell>
-                                                     <TableCell>
-                                                        <div className="flex flex-wrap gap-1">
-                                                            {(action.roles || []).map((role: string) => (
-                                                                <Badge key={role} variant="secondary" className="capitalize">{role}</Badge>
-                                                            ))}
-                                                        </div>
-                                                    </TableCell>
-                                                    <TableCell><Badge variant={action.isActive ? 'default' : 'secondary'}>{action.isActive ? 'Active' : 'Inactive'}</Badge></TableCell>
-                                                    <TableCell>
-                                                        <FormField
-                                                            control={form.control}
-                                                            name={`points.${action.id}`}
-                                                            render={({ field }) => (
-                                                                <FormItem>
-                                                                    <FormControl><Input type="number" className="h-8 w-24 text-right" {...field} /></FormControl>
-                                                                </FormItem>
-                                                            )}
-                                                        />
-                                                    </TableCell>
-                                                    <TableCell className="text-right">
-                                                        <ActionMenu 
-                                                          action={action} 
-                                                          onEdit={() => openEditDialog(action)}
-                                                          onDelete={() => handleActionDeleted(action.groupTitle, action.id)}
-                                                          onToggleStatus={(newStatus) => handleToggleStatus(action.groupTitle, action.id, newStatus)}
-                                                        />
-                                                    </TableCell>
-                                                </TableRow>
-                                            );
-                                        })}
-                                    </TableBody>
-                                </Table>
-                             </div>
+                             <Tabs value={activeRole} onValueChange={setActiveRole} className="w-full">
+                                <TabsList>
+                                    <TabsTrigger value="all">All Actions</TabsTrigger>
+                                    {availableRolesList.map(role => (
+                                        <TabsTrigger key={role.id} value={role.id}>{role.title}</TabsTrigger>
+                                    ))}
+                                </TabsList>
+                                <TabsContent value={activeRole} className="mt-4">
+                                     <DataTable columns={columns} data={filteredActions} />
+                                </TabsContent>
+                             </Tabs>
                         )}
                     </CardContent>
                     <CardFooter>
@@ -506,89 +510,12 @@ export default function ActionPlanSettings() {
         </Card>
     );
 }
-
 ```
-- src/lib/roles.ts
-<content><![CDATA[
-import { ShoppingCart, Truck, Handshake, Briefcase, Bot, Users, Code } from "lucide-react";
-import * as React from "react";
-import data from '@/lib/placeholder-images.json';
-
-const { placeholderImages } = data;
-
-const roleImages = {
-    vendor: placeholderImages.find(p => p.id === 'mall-division')!,
-    transporter: placeholderImages.find(p => p.id === 'marketplace-division')!,
-    partner: placeholderImages.find(p => p.id === 'funding-division')!,
-    associate: placeholderImages.find(p => p.id === 'value-integrity')!,
-    'isa-agent': placeholderImages.find(p => p.id === 'tech-home')!,
-    driver: placeholderImages.find(p => p.id === 'value-community')!,
-    developer: placeholderImages.find(p => p.id === 'tech-division')!,
-};
-
-
-export const roles = [
-    {
-        id: "vendor",
-        icon: ShoppingCart,
-        title: "Vendors",
-        description: "Sell parts, equipment, and services directly to a targeted market of transport professionals.",
-        cta: "Become a Vendor",
-        longDescription: "As a vendor, you gain direct access to a dedicated marketplace of transport businesses actively seeking parts, equipment, and essential services. Showcase your products, reach qualified buyers, and grow your business by becoming a trusted supplier within the Logistics Flow ecosystem.",
-        image: roleImages.vendor
-    },
-    {
-        id: "transporter",
-        icon: Truck,
-        title: "Transporters",
-        description: "Sell transport services. Source parts, services and products to buy from a trusted community network",
-        cta: "Become a Transporter",
-        longDescription: "As a transporter, you can efficiently source high-quality vehicles, parts, and services from a network of vetted vendors and fellow transporters, while also marketing your own transport services to the community. Leverage our marketplace to find competitive pricing, reliable partners, and new customers, ensuring your fleet stays on the road and operates efficiently.",
-        image: roleImages.transporter
-    },
-    {
-        id: "partner",
-        icon: Handshake,
-        title: "Partners",
-        description: "Collaborate with us as a strategic partner to enable growth and provide value-added services.",
-        cta: "Become a Partner",
-        longDescription: "Strategic partners are the enablers of our ecosystem. Whether you're in finance, insurance, or another value-added service, partnering with Logistics Flow allows you to offer your solutions to a captive audience of transport professionals, creating synergistic growth opportunities.",
-        image: roleImages.partner
-    },
-    {
-        id: "affiliate",
-        icon: Briefcase,
-        title: "Affiliates",
-        description: "Join as a professional marketer and earn. Generate opportunities for our ecosystem and earn commission.",
-        cta: "Become an Affiliate",
-        longDescription: "Affiliates are marketing professionals who drive growth by generating opportunities for the Logistics Flow ecosystem. If you have a knack for digital marketing, content creation, or lead generation, this role is for you. You'll earn commissions for new members you bring in and for the activity they generate, turning your marketing skills into a revenue stream.",
-        image: roleImages.associate
-    },
-    {
-        id: "isa-agent",
-        icon: Bot,
-        title: "ISA Agents",
-        description: "Top-performing referrers can achieve ISA status, unlocking higher commission tiers and exclusive bonuses.",
-        cta: "Become an ISA Agent",
-        longDescription: "The Independent Sales Agent (ISA) program is an elite tier for our most active and successful referrers. By consistently bringing new members and facilitating service sales, you can be invited to the ISA program, which grants access to higher commissions, performance bonuses, and a closer working relationship with the Logistics Flow team. It's the ultimate level for those who want to turn referrals into a significant revenue stream.",
-        image: roleImages['isa-agent']
-    },
-    {
-        id: "driver",
-        icon: Users,
-        title: "Drivers",
-        description: "Find job opportunities, access resources, and connect with other professional drivers.",
-        cta: "Become a Driver",
-        longDescription: "Professional drivers are the backbone of the industry. As a driver member, you can find job opportunities, access training resources, and connect with a community of your peers. Whether you're an owner-operator or looking for your next role, Logistics Flow is your partner on the road.",
-        image: roleImages.driver
-    },
-    {
-        id: "developer",
-        icon: Code,
-        title: "Developers",
-        description: "Integrate with our APIs and build innovative applications on top of the Logistics Flow platform.",
-        cta: "Become a Developer",
-        longDescription: "Innovate with us. As a developer, you can access Logistics Flow's powerful APIs to build new applications and integrations that serve the transport industry. Join our developer community to create the next generation of logistics technology.",
-        image: roleImages.developer
-    }
-]
+- `src/lib/data.ts`
+- `src/app/backend/isa-management.tsx`
+- `src/app/backend/partner-offer.tsx`
+- `src/app/backend/pitch-content.tsx`
+- `src/app/lending/partners-content.tsx`
+- `src/app/lending/edit-lending-partner.tsx`
+- `src/app/backend/member-loyalty-status.tsx`
+- `src/app/backend/loyalty-settings.tsx`

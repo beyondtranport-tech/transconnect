@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -16,445 +16,163 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, Star, UserPlus, Store, Package, Sparkles, Edit, Video, Search, Truck, Building, Users, Handshake, Briefcase, Bot, Code, ShieldCheck, Warehouse, PlusCircle, Gift, Trash2, MoreVertical, Eye, CheckCircle, XCircle } from 'lucide-react';
+import { Loader2, Save, Gift, Trash2, PlusCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { getClientSideAuthToken } from '@/firebase';
 import { useConfig } from '@/hooks/use-config';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
+import { getClientSideAuthToken } from '@/firebase';
 
-
-const iconMap: { [key: string]: React.ElementType } = {
-    Star, UserPlus, Store, Package, Search, Sparkles, Edit, Video, Truck, Building, Users, Handshake, Briefcase, Bot, Code, ShieldCheck, Warehouse, Gift
-};
-
-const initialActionGroups = [
-    {
-        groupTitle: 'General Platform Actions',
-        actions: [
-            { id: 'userSignupPoints', label: 'Sign up for an account', icon: 'UserPlus', isActive: true },
-            { id: 'shopCreationPoints', label: 'Create a Vendor Shop', icon: 'Store', isActive: true },
-            { id: 'productAddPoints', label: 'Add a Product to Shop', icon: 'Package', isActive: true },
-            { id: 'loadBoardCreationPoints', label: 'Create a Load Board', icon: 'Truck', isActive: true },
-        ]
-    },
-    {
-        groupTitle: 'AI Marketing & Content Studio',
-        actions: [
-            { id: 'seoBoosterPoints', label: 'Use AI SEO Booster', icon: 'Search', isActive: true },
-            { id: 'aiImageGeneratorPoints', label: 'Use AI Image Generator', icon: 'Sparkles', isActive: true },
-            { id: 'imageEnhancerPoints', label: 'Use AI Image Enhancer', icon: 'Edit', isActive: true },
-            { id: 'aiVideoGeneratorPoints', label: 'Use AI Video Ad Generator', icon: 'Video', isActive: true },
-        ]
-    },
-    {
-        groupTitle: 'Data Contributions',
-        actions: [
-            { id: 'truckContributionPoints', label: 'Contribute Truck Data', icon: 'Truck', isActive: true },
-            { id: 'trailerContributionPoints', label: 'Contribute Trailer Data', icon: 'Warehouse', isActive: true },
-            { id: 'supplierContributionPoints', label: 'Contribute Supplier Data', icon: 'Building', isActive: true },
-            { id: 'debtorContributionPoints', label: 'Contribute Debtor Data', icon: 'Users', isActive: true },
-        ]
-    },
-    {
-        groupTitle: 'Partner & Network Actions',
-        actions: [
-            { id: 'partnerReferralPoints', label: 'Refer a New Member', icon: 'Handshake', isActive: true },
-            { id: 'associateServiceListingPoints', label: 'Associate Lists a Service', icon: 'Briefcase', isActive: true },
-            { id: 'isaSaleCommissionPoints', label: 'ISA Completes a Sale', icon: 'Bot', isActive: true },
-            { id: 'driverSafetyRecordPoints', label: 'Driver Uploads Safety Record', icon: 'ShieldCheck', isActive: true },
-            { id: 'developerApiIntegrationPoints', label: 'Developer Completes API Integration', icon: 'Code', isActive: true },
-        ]
-    }
-];
-
-const availableIcons = Object.keys(iconMap);
-
-const actionSchema = z.object({
-  id: z.string().optional(),
-  label: z.string().min(3, "Label must be at least 3 characters."),
-  group: z.string().min(1, "Please select a group."),
-  icon: z.string().min(1, "Please select an icon."),
-  isActive: z.boolean().default(true),
+const benefitSchema = z.object({
+  name: z.string().min(1, "Benefit name is required"),
+  bronzeValue: z.string().optional(),
+  silverValue: z.string().optional(),
+  goldValue: z.string().optional(),
 });
-type ActionFormValues = z.infer<typeof actionSchema>;
 
-// Zod schema for the points form
-const pointsSchema = z.object({
-  points: z.record(z.string(), z.coerce.number().min(0, "Points must be non-negative.").optional()),
+const formSchema = z.object({
+  benefits: z.array(benefitSchema),
 });
-type PointsFormValues = z.infer<typeof pointsSchema>;
 
+type FormValues = z.infer<typeof formSchema>;
 
-function ActionDialog({ action, actionGroups, onSave, open, onOpenChange }: { 
-    action?: any, 
-    actionGroups: any[], 
-    onSave: (action: any) => void,
-    open?: boolean,
-    onOpenChange?: (open: boolean) => void 
-}) {
-    const [internalIsOpen, setInternalIsOpen] = useState(false);
-    const { toast } = useToast();
-
-    const isControlled = open !== undefined && onOpenChange !== undefined;
-    const isOpen = isControlled ? open : internalIsOpen;
-    const setIsOpen = isControlled ? onOpenChange : setInternalIsOpen;
-
-    const form = useForm<ActionFormValues>({
-        resolver: zodResolver(actionSchema),
-    });
-
-    const existingGroups = useMemo(() => [...new Set(actionGroups.map(g => g.groupTitle))], [actionGroups]);
-
-    useEffect(() => {
-        if(isOpen) {
-            if (action) {
-                form.reset({
-                    id: action.id,
-                    label: action.label,
-                    group: action.groupTitle,
-                    icon: action.icon,
-                    isActive: action.isActive,
-                });
-            } else {
-                form.reset({ label: '', group: '', icon: '', isActive: true });
-            }
-        }
-    }, [isOpen, action, form]);
-
-
-    const handleSave = (values: ActionFormValues) => {
-        const generateId = (label: string) => {
-            const camelCase = label.replace(/\s(.)/g, function(a) { return a.toUpperCase(); })
-                                 .replace(/\s/g, '')
-                                 .replace(/^(.)/, function(b) { return b.toLowerCase(); });
-            return `${camelCase.replace(/[^a-zA-Z0-9]/g, '')}Points`;
-        };
-        
-        const newAction = {
-            id: values.id || generateId(values.label),
-            label: values.label,
-            icon: values.icon,
-            groupTitle: values.group,
-            isActive: values.isActive
-        };
-        onSave(newAction);
-        setIsOpen(false);
-        form.reset();
-    };
-
-    return (
-         <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            {!isControlled && (
-                <DialogTrigger asChild>
-                    <Button variant="outline"><PlusCircle className="mr-2 h-4 w-4" /> Add Action</Button>
-                </DialogTrigger>
-            )}
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>{action ? 'Edit' : 'Add New'} Loyalty Action</DialogTitle>
-                    <DialogDescription>Define a new action that members can perform.</DialogDescription>
-                </DialogHeader>
-                <Form {...form}>
-                    <form onSubmit={form.handleSubmit(handleSave)} className="space-y-4">
-                        <FormField control={form.control} name="label" render={({ field }) => ( <FormItem><FormLabel>Action Label</FormLabel><FormControl><Input {...field} placeholder="e.g., Review a Product" /></FormControl><FormMessage /></FormItem> )} />
-                         <FormField control={form.control} name="group" render={({ field }) => ( <FormItem><FormLabel>Group</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a group..." /></SelectTrigger></FormControl><SelectContent>{existingGroups.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
-                         <FormField control={form.control} name="icon" render={({ field }) => ( <FormItem><FormLabel>Icon</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select an icon..." /></SelectTrigger></FormControl><SelectContent> {availableIcons.map(iconName => { const IconComponent = iconMap[iconName]; return ( <SelectItem key={iconName} value={iconName}><div className="flex items-center gap-2"><IconComponent className="h-4 w-4"/>{iconName}</div></SelectItem> ) })} </SelectContent></Select><FormMessage /></FormItem> )} />
-                        <FormField control={form.control} name="isActive" render={({ field }) => ( <FormItem className="flex items-center space-x-2 pt-2"><FormControl><Switch checked={field.value} onCheckedChange={field.onChange}/></FormControl><FormLabel>Active</FormLabel></FormItem> )} />
-                        <DialogFooter><Button type="submit">Save Action</Button></DialogFooter>
-                    </form>
-                </Form>
-            </DialogContent>
-        </Dialog>
-    );
-}
-
-function ActionMenu({ action, onEdit, onDelete, onToggleStatus }: { action: any, onEdit: () => void, onDelete: () => void, onToggleStatus: (newStatus: boolean) => void }) {
-    const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
-    
-    return (
-        <>
-            <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
-                 <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        <DropdownMenuItem onSelect={onEdit}><Edit className="mr-2 h-4 w-4" />Edit</DropdownMenuItem>
-                        {action.isActive ? (
-                            <DropdownMenuItem onSelect={() => onToggleStatus(false)}><XCircle className="mr-2 h-4 w-4" />Deactivate</DropdownMenuItem>
-                        ) : (
-                            <DropdownMenuItem onSelect={() => onToggleStatus(true)}><CheckCircle className="mr-2 h-4 w-4" />Activate</DropdownMenuItem>
-                        )}
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-destructive" onSelect={() => setIsDeleteAlertOpen(true)}><Trash2 className="mr-2 h-4 w-4" />Delete</DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                        <AlertDialogDescription>This will permanently delete the action "{action.label}".</AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={onDelete} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
-        </>
-    );
-}
-
-
-export default function ActionPlanSettings() {
+export default function RewardsManagement() {
     const { toast } = useToast();
     const [isSaving, setIsSaving] = useState(false);
     
-    const { data: definitionsConfig, isLoading: isDefLoading, forceRefresh: forceRefreshDefs } = useConfig<any>('loyaltyActionDefinitions');
-    const { data: valuesConfig, isLoading: isValuesLoading, forceRefresh: forceRefreshValues } = useConfig<any>('loyaltySettings');
+    const { data: configData, isLoading: isConfigLoading, forceRefresh } = useConfig<any>('loyaltySettings');
 
-    const [actionGroups, setActionGroups] = useState(initialActionGroups);
-    const [editAction, setEditAction] = useState<any | null>(null);
-    const [isEditOpen, setIsEditOpen] = useState(false);
-    const [isAddOpen, setIsAddOpen] = useState(false);
-    
-    const form = useForm<PointsFormValues>({
-        resolver: zodResolver(pointsSchema),
-        defaultValues: { points: {} }
+    const form = useForm<FormValues>({
+        resolver: zodResolver(formSchema),
+        defaultValues: {
+            benefits: [],
+        },
+    });
+
+    const { fields, append, remove } = useFieldArray({
+        control: form.control,
+        name: "benefits"
     });
 
     useEffect(() => {
-        if (definitionsConfig?.actionGroups) {
-            setActionGroups(definitionsConfig.actionGroups);
+        if (configData) {
+            // This handles the new, simplified `benefits` array structure
+            if (configData.benefits && Array.isArray(configData.benefits)) {
+                form.reset({ benefits: configData.benefits });
+            } else {
+                // This is for backward compatibility with an older, more complex data structure.
+                const transformedBenefits = (configData.benefitNames || []).map((name: string) => ({
+                    name,
+                    bronzeValue: (configData.bronzeBenefits && configData.bronzeBenefits[name]) || '', // FIX: Default to empty string
+                    silverValue: (configData.silverBenefits && configData.silverBenefits[name]) || '', // FIX: Default to empty string
+                    goldValue: (configData.goldBenefits && configData.goldBenefits[name]) || '', // FIX: Default to empty string
+                }));
+                form.reset({ benefits: transformedBenefits });
+            }
         }
-    }, [definitionsConfig]);
+    }, [configData, form]);
 
-    useEffect(() => {
-        if (valuesConfig) {
-            const pointValues = actionGroups.flatMap(g => g.actions).reduce((acc, action) => {
-                acc[action.id] = valuesConfig[action.id] ?? 0;
-                return acc;
-            }, {} as Record<string, number>);
-            form.reset({ points: pointValues });
-        }
-    }, [valuesConfig, actionGroups, form]);
-    
-    const handleActionSave = useCallback((newActionData: any) => {
-        setActionGroups(currentGroups => {
-            const newGroups = JSON.parse(JSON.stringify(currentGroups));
-            let found = false;
-            // Try to update existing action
-            for (let group of newGroups) {
-                const actionIndex = group.actions.findIndex((a: any) => a.id === newActionData.id);
-                if (actionIndex !== -1) {
-                    // This is an edit
-                    const existingAction = group.actions[actionIndex];
-                    group.actions[actionIndex] = { ...existingAction, ...newActionData };
-                    found = true;
-                    // If group changed, move it
-                    if (existingAction.groupTitle !== newActionData.groupTitle) {
-                        group.actions.splice(actionIndex, 1);
-                        const newGroupIndex = newGroups.findIndex((g:any) => g.groupTitle === newActionData.groupTitle);
-                        if (newGroupIndex !== -1) {
-                            newGroups[newGroupIndex].actions.push(group.actions[actionIndex]);
-                        } else {
-                             newGroups.push({ groupTitle: newActionData.groupTitle, actions: [group.actions[actionIndex]] });
-                        }
-                    }
-                    break;
-                }
-            }
-            // If not found, add it
-            if (!found) {
-                const groupIndex = newGroups.findIndex((g: any) => g.groupTitle === newActionData.groupTitle);
-                const actionToAdd = { id: newActionData.id, label: newActionData.label, icon: newActionData.icon, isActive: newActionData.isActive };
-                if (groupIndex !== -1) {
-                    newGroups[groupIndex].actions.push(actionToAdd);
-                } else {
-                     newGroups.push({ groupTitle: newActionData.groupTitle, actions: [actionToAdd] });
-                }
-                form.setValue(`points.${newActionData.id}`, 0);
-            }
-            return newGroups;
-        });
-    }, [form]);
-
-    const handleActionDeleted = useCallback((groupTitle: string, actionId: string) => {
-        setActionGroups(currentGroups => currentGroups.map(group => {
-            if (group.groupTitle === groupTitle) {
-                return {
-                    ...group,
-                    actions: group.actions.filter((a: any) => a.id !== actionId)
-                };
-            }
-            return group;
-        }).filter(group => group.actions.length > 0)); 
-        
-        const currentPoints = form.getValues('points');
-        delete currentPoints[actionId];
-        form.setValue('points', currentPoints);
-    }, [form]);
-
-    const handleToggleStatus = useCallback((groupTitle: string, actionId: string, newStatus: boolean) => {
-        setActionGroups(currentGroups => currentGroups.map(group => {
-             if (group.groupTitle === groupTitle) {
-                return {
-                    ...group,
-                    actions: group.actions.map((a: any) => a.id === actionId ? { ...a, isActive: newStatus } : a)
-                };
-            }
-            return group;
-        }));
-    }, []);
-
-    
-    const onPointsSubmit = async (data: PointsFormValues) => {
+    const onSubmit = async (values: FormValues) => {
         setIsSaving(true);
         try {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication failed.");
 
-            await fetch('/api/updateConfigDoc', {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    path: 'configuration/loyaltyActionDefinitions',
-                    data: { actionGroups, updatedAt: { _methodName: 'serverTimestamp' } }
-                }),
-            });
-
-            const newSettings = {
-                ...valuesConfig, 
-                ...data.points,
+            const updatedConfig = {
+                ...configData, // Preserve other loyalty settings
+                benefits: values.benefits, // Set the new benefits array
                 updatedAt: { _methodName: 'serverTimestamp' }
             };
-            await fetch('/api/updateConfigDoc', {
+
+            // Remove legacy properties to clean up the document
+            delete updatedConfig.benefitNames;
+            delete updatedConfig.bronzeBenefits;
+            delete updatedConfig.silverBenefits;
+            delete updatedConfig.goldBenefits;
+
+            const response = await fetch('/api/updateConfigDoc', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     path: 'configuration/loyaltySettings',
-                    data: newSettings
+                    data: updatedConfig
                 }),
             });
-            
-            toast({ title: 'Settings Saved!', description: 'Actions and their point values have been updated.' });
-            forceRefreshDefs();
-            forceRefreshValues();
 
+            if (!response.ok) throw new Error((await response.json()).error || 'Failed to save settings.');
+
+            toast({ title: 'Rewards Plan Benefits Saved!', description: 'The benefits for each tier have been updated.' });
+            forceRefresh();
         } catch (e: any) {
             toast({ variant: 'destructive', title: 'Update Failed', description: e.message });
         } finally {
             setIsSaving(false);
         }
     };
-    
-    const isLoading = isDefLoading || isValuesLoading;
 
-    // Flatten the action groups for table rendering
-    const allActions = useMemo(() => 
-        actionGroups.flatMap(group => 
-            group.actions.map(action => ({ ...action, groupTitle: group.groupTitle }))
-        ), [actionGroups]);
-        
-    const openEditDialog = (action: any) => {
-        setEditAction(action);
-        setIsEditOpen(true);
-    };
+    if (isConfigLoading) {
+        return <div className="flex justify-center items-center py-20"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div>;
+    }
 
     return (
-        <Card className="w-full max-w-5xl">
-            <ActionDialog open={isAddOpen} onOpenChange={setIsAddOpen} actionGroups={actionGroups} onSave={handleActionSave} />
-            {editAction && <ActionDialog open={isEditOpen} onOpenChange={setIsEditOpen} action={editAction} actionGroups={actionGroups} onSave={handleActionSave} />}
-            
-            <Form {...form}>
-                <form onSubmit={form.handleSubmit(onPointsSubmit)}>
-                    <CardHeader className="flex-row items-center justify-between">
-                        <div className="flex items-center gap-4">
-                            <Star className="h-8 w-8 text-primary"/>
-                            <div>
-                                <CardTitle>Action Plan Settings</CardTitle>
-                                <CardDescription>
-                                Define actions members can perform and set the loyalty points awarded for each.
-                                </CardDescription>
-                            </div>
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                    <Gift className="h-6 w-6" />
+                    Rewards Plan (Tier Benefits)
+                </CardTitle>
+                <CardDescription>
+                    Define the specific benefits each loyalty tier receives. These are displayed on the member's dashboard.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                        <div className="space-y-4">
+                            {fields.map((field, index) => (
+                                <div key={field.id} className="grid grid-cols-12 gap-4 items-end p-4 border rounded-lg">
+                                    <div className="col-span-12 md:col-span-3">
+                                        <FormField
+                                            control={form.control}
+                                            name={`benefits.${index}.name`}
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Benefit Name</FormLabel>
+                                                    <FormControl><Input placeholder="e.g., Mall Discount" {...field} /></FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </div>
+                                    <div className="col-span-12 md:col-span-8 grid grid-cols-3 gap-4">
+                                         <FormField control={form.control} name={`benefits.${index}.bronzeValue`} render={({ field }) => (<FormItem><FormLabel>Bronze Value</FormLabel><FormControl><Input placeholder="e.g., 2.5%" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                         <FormField control={form.control} name={`benefits.${index}.silverValue`} render={({ field }) => (<FormItem><FormLabel>Silver Value</FormLabel><FormControl><Input placeholder="e.g., 5%" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                         <FormField control={form.control} name={`benefits.${index}.goldValue`} render={({ field }) => (<FormItem><FormLabel>Gold Value</FormLabel><FormControl><Input placeholder="e.g., 10%" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                    </div>
+                                    <div className="col-span-12 md:col-span-1 flex justify-end">
+                                        <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}>
+                                            <Trash2 className="h-4 w-4 text-destructive" />
+                                        </Button>
+                                    </div>
+                                </div>
+                            ))}
+                             <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => append({ name: "", bronzeValue: "", silverValue: "", goldValue: "" })}
+                                >
+                                <PlusCircle className="mr-2 h-4 w-4" />
+                                Add Benefit
+                            </Button>
                         </div>
-                        <Button type="button" variant="outline" onClick={() => setIsAddOpen(true)}>
-                            <PlusCircle className="mr-2 h-4 w-4" /> Add Action
-                        </Button>
-                    </CardHeader>
-                    <CardContent>
-                        {isLoading ? (
-                            <div className="flex justify-center items-center py-10">
-                                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                            </div>
-                        ) : (
-                             <div className="border rounded-lg">
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead className="w-[30%]">Action</TableHead>
-                                            <TableHead>Group</TableHead>
-                                            <TableHead>Icon</TableHead>
-                                            <TableHead>Status</TableHead>
-                                            <TableHead className="w-[180px]">Points Awarded</TableHead>
-                                            <TableHead className="text-right w-[80px]">Action</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {allActions.map((action: any) => {
-                                            const IconComponent = iconMap[action.icon] || Star;
-                                            return (
-                                                <TableRow key={action.id}>
-                                                    <TableCell className="font-medium">{action.label}</TableCell>
-                                                    <TableCell><Badge variant="outline">{action.groupTitle}</Badge></TableCell>
-                                                    <TableCell><div className="flex items-center gap-2"><IconComponent className="h-4 w-4 text-muted-foreground" /><span className="font-mono text-xs">{action.icon}</span></div></TableCell>
-                                                    <TableCell><Badge variant={action.isActive ? 'default' : 'secondary'}>{action.isActive ? 'Active' : 'Inactive'}</Badge></TableCell>
-                                                    <TableCell>
-                                                        <FormField
-                                                            control={form.control}
-                                                            name={`points.${action.id}`}
-                                                            render={({ field }) => (
-                                                                <FormItem>
-                                                                    <FormControl><Input type="number" className="h-8 w-24 text-right" {...field} /></FormControl>
-                                                                </FormItem>
-                                                            )}
-                                                        />
-                                                    </TableCell>
-                                                    <TableCell className="text-right">
-                                                        <ActionMenu 
-                                                          action={action} 
-                                                          onEdit={() => openEditDialog(action)}
-                                                          onDelete={() => handleActionDeleted(action.groupTitle, action.id)}
-                                                          onToggleStatus={(newStatus) => handleToggleStatus(action.groupTitle, action.id, newStatus)}
-                                                        />
-                                                    </TableCell>
-                                                </TableRow>
-                                            );
-                                        })}
-                                    </TableBody>
-                                </Table>
-                             </div>
-                        )}
-                    </CardContent>
-                    <CardFooter>
-                         <Button type="submit" disabled={isSaving}>
-                            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                            Save All Settings
-                        </Button>
-                    </CardFooter>
-                </form>
-            </Form>
+                        <CardFooter className="px-0 pt-6">
+                             <Button type="submit" disabled={isSaving}>
+                                {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                                Save Tier Benefits
+                            </Button>
+                        </CardFooter>
+                    </form>
+                </Form>
+            </CardContent>
         </Card>
     );
 }
-
-  
-
-    
