@@ -1,21 +1,7 @@
 "use server";
 
 import { matchFreight } from '@/ai/flows/ai-freight-matching';
-import { z } from 'zod';
-
-// Define types locally to avoid importing from a server file on the client.
-const MatchFreightInputSchema = z.object({
-  location: z.string(),
-  destination: z.string(),
-  vehicleType: z.string(),
-  capacity: z.string(),
-  preferences: z.string().optional(),
-  rate: z.number().positive().optional(),
-  isPartLoad: z.boolean().optional(),
-  palletCount: z.number().int().positive().optional(),
-});
-type MatchFreightInput = z.infer<typeof MatchFreightInputSchema>;
-
+import type { MatchFreightInput } from '@/ai/flows/ai-freight-matching';
 
 export async function handleMatchFreight(data: MatchFreightInput) {
     if (!process.env.GEMINI_API_KEY) {
