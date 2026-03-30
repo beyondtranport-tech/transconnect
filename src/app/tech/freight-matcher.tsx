@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -6,7 +5,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from 'zod';
 import { handleMatchFreight } from "./actions";
-import type { MatchFreightInput, MatchFreightOutput } from "@/ai/flows/ai-freight-matching";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,6 +43,22 @@ const MatchFreightInputSchema = z.object({
   isPartLoad: z.boolean().optional(),
   palletCount: z.coerce.number().int().positive().optional(),
 });
+type MatchFreightInput = z.infer<typeof MatchFreightInputSchema>;
+
+const MatchFreightOutputSchema = z.object({
+  matches: z.array(
+    z.object({
+      loadId: z.string(),
+      origin: z.string(),
+      destination: z.string(),
+      weight: z.string(),
+      size: z.string(),
+      price: z.string(),
+      requirements: z.string().optional(),
+    })
+  ),
+});
+type MatchFreightOutput = z.infer<typeof MatchFreightOutputSchema>;
 
 export default function FreightMatcher() {
     const [isLoading, setIsLoading] = useState(false);
