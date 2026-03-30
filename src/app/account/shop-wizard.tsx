@@ -1,7 +1,8 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm, useFieldArray, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -774,4 +775,311 @@ function StepProducts({ shop, canEdit }: { shop: any, canEdit: boolean }) {
     </div>
   );
 }
-//... Omitted for brevity: a lot of other steps here.
+
+// ... Re-add other steps and ShopWizard main component
+const shopStep3Schema = z.object({
+  theme: z.string().min(1, "Please select a theme."),
+  template: z.string().min(1, "Please select a layout."),
+  heroBannerUrl: z.string().url("Must be a valid URL.").optional().or(z.literal('')),
+});
+
+type Step3FormValues = z.infer<typeof shopStep3Schema>;
+
+function StepAppearance({ shop, onSave, canEdit }: { shop: any, onSave: (newData: any) => void, canEdit: boolean }) {
+    const { user } = useUser();
+    const { toast } = useToast();
+    const [isSaving, setIsSaving] = useState(false);
+    const [uploading, setUploading] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+    const form = useForm<Step3FormValues>({
+        resolver: zodResolver(shopStep3Schema),
+        defaultValues: {
+            theme: shop.theme || 'forest-green',
+            template: shop.template || 'classic-grid',
+            heroBannerUrl: shop.heroBannerUrl || '',
+        }
+    });
+
+    const handleImageGenerated = (newUrl: string) => {
+        form.setValue('heroBannerUrl', newUrl);
+    };
+
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file || !user) return;
+
+        setUploading(true);
+        setUploadProgress(10);
+
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication failed.");
+            const fileDataUri = await fileToDataUri(file);
+            setUploadProgress(30);
+
+            const folder = `user-assets/${user.uid}/hero-images`;
+            const fileName = `${Date.now()}_${file.name}`;
+            
+            const response = await fetch('/api/uploadImageAsset', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ fileDataUri, folder, fileName }),
+            });
+            setUploadProgress(80);
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error);
+            
+            form.setValue('heroBannerUrl', result.url, { shouldValidate: true });
+            setUploadProgress(100);
+            toast({ title: 'Hero Image Uploaded!' });
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
+        } finally {
+            if (fileInputRef.current) fileInputRef.current.value = '';
+            setUploading(false);
+            setUploadProgress(0);
+        }
+    };
+    
+    const onSubmit = async (values: Step3FormValues) => {
+        if (!user || !shop.companyId) return;
+        setIsSaving(true);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Auth failed.");
+            const response = await fetch('/api/updateUserDoc', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    path: `companies/${shop.companyId}/shops/${shop.id}`,
+                    data: { ...values, updatedAt: { _methodName: 'serverTimestamp' } }
+                })
+            });
+            if (!response.ok) throw new Error((await response.json()).error);
+            toast({ title: 'Step 3 Saved!', description: 'Your shop appearance has been updated.' });
+            onSave(values);
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+    
+     return (
+        <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <fieldset disabled={!canEdit || uploading} className="space-y-6">
+                    <FormField control={form.control} name="theme" render={({ field }) => (
+                        <FormItem><FormLabel>Color Theme</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="forest-green">Forest Green</SelectItem><SelectItem value="ocean-blue">Ocean Blue</SelectItem><SelectItem value="industrial-grey">Industrial Grey</SelectItem><SelectItem value="sunset-orange">Sunset Orange</SelectItem></SelectContent></Select><FormMessage /></FormItem>
+                    )} />
+                    <FormField control={form.control} name="template" render={({ field }) => (
+                        <FormItem><FormLabel>Product Layout</FormLabel><FormControl><RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex gap-4 pt-2"><FormItem><FormControl><RadioGroupItem value="classic-grid" id="grid"/></FormControl><Label htmlFor="grid" className="cursor-pointer flex items-center gap-2"><LayoutGrid/>Grid</Label></FormItem><FormItem><FormControl><RadioGroupItem value="classic-list" id="list"/></FormControl><Label htmlFor="list" className="cursor-pointer flex items-center gap-2"><List/>List</Label></FormItem></RadioGroup></FormControl><FormMessage /></FormItem>
+                    )} />
+                    <FormField control={form.control} name="heroBannerUrl" render={({ field }) => (
+                        <FormItem><FormLabel>Hero Banner Image</FormLabel><FormControl><Input {...field} readOnly placeholder="Upload or generate an image below" /></FormControl><FormMessage /></FormItem>
+                    )} />
+                    {uploading && <Progress value={uploadProgress} />}
+                     <div className="flex items-center justify-between">
+                          <Button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading || !canEdit}>
+                              {uploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <UploadCloud className="mr-2 h-4 w-4"/>}
+                              Upload Banner
+                          </Button>
+                          <Input ref={fileInputRef} type="file" id="image-upload" className="hidden" onChange={handleFileChange} disabled={uploading || !canEdit} accept="image/*" />
+                           <AIGenerateDialog 
+                              onGenerate={handleImageGenerated} 
+                              canEdit={canEdit}
+                              title="AI Hero Banner Generator"
+                              description="Describe the hero banner image you want for your shop's homepage."
+                              promptTemplate={`A wide, cinematic photo of [Your Product Category, e.g., truck parts] in a professional setting. The image should be high-quality and visually appealing, representing the brand "${shop.shopName}".`}
+                              shop={shop}
+                          >
+                              <Button type="button" variant="secondary" disabled={uploading || !canEdit}>
+                                  <Wand2 className="mr-2 h-4 w-4" /> Generate Banner
+                              </Button>
+                          </AIGenerateDialog>
+                      </div>
+                </fieldset>
+                <Button type="submit" disabled={isSaving || !canEdit || uploading}>
+                    {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                    Save & Continue
+                </Button>
+            </form>
+        </Form>
+    );
+}
+
+const shopStep4Schema = z.object({
+  metaTitle: z.string().optional(),
+  metaDescription: z.string().optional(),
+  tags: z.array(z.string()).optional(),
+});
+type Step4FormValues = z.infer<typeof shopStep4Schema>;
+
+function StepSEO({ shop, onSave, canEdit }: { shop: any, onSave: (newData: any) => void, canEdit: boolean }) {
+  const { toast } = useToast();
+  const [isSaving, setIsSaving] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const form = useForm<Step4FormValues>({
+    resolver: zodResolver(shopStep4Schema),
+    defaultValues: {
+      metaTitle: shop.metaTitle || '',
+      metaDescription: shop.metaDescription || '',
+      tags: shop.tags || [],
+    }
+  });
+
+  const onSubmit = async (values: Step4FormValues) => {
+    setIsSaving(true);
+    try {
+        const token = await getClientSideAuthToken();
+        if (!token) throw new Error("Auth failed.");
+        const response = await fetch('/api/updateUserDoc', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                path: `companies/${shop.companyId}/shops/${shop.id}`,
+                data: { ...values, updatedAt: { _methodName: 'serverTimestamp' } }
+            })
+        });
+        if (!response.ok) throw new Error((await response.json()).error);
+        toast({ title: 'Step 4 Saved!', description: 'Your SEO details have been updated.' });
+        onSave(values);
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
+    } finally {
+        setIsSaving(false);
+    }
+  };
+
+  const handleGenerateSeo = async () => {
+    setIsGenerating(true);
+    try {
+      const result = await generateShopSeo({
+        shopName: shop.shopName,
+        shopDescription: shop.shopDescription,
+      });
+      form.setValue('metaTitle', result.metaTitle);
+      form.setValue('metaDescription', result.metaDescription);
+      form.setValue('tags', result.tags);
+      toast({ title: 'SEO Content Generated!' });
+    } catch(e: any) {
+      toast({ variant: 'destructive', title: 'Generation failed', description: e.message });
+    } finally {
+      setIsGenerating(false);
+    }
+  }
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <fieldset disabled={!canEdit} className="space-y-6">
+            <Button type="button" onClick={handleGenerateSeo} disabled={isGenerating || !canEdit} variant="outline" className="w-full">
+              {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4" />}
+              Generate SEO Content with AI
+            </Button>
+            <Separator />
+            <FormField control={form.control} name="metaTitle" render={({ field }) => (<FormItem><FormLabel>Meta Title</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+            <FormField control={form.control} name="metaDescription" render={({ field }) => (<FormItem><FormLabel>Meta Description</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>)} />
+            <FormField control={form.control} name="tags" render={({ field }) => (<FormItem><FormLabel>Tags / Keywords</FormLabel><FormControl><Input {...field} onChange={e => field.onChange(e.target.value.split(',').map(s => s.trim()))} placeholder="tag1, tag2, tag3" /></FormControl><FormDescription>Separate tags with commas.</FormDescription><FormMessage /></FormItem>)} />
+        </fieldset>
+        <Button type="submit" disabled={isSaving || !canEdit}>
+          {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+          Save & Continue
+        </Button>
+      </form>
+    </Form>
+  );
+}
+
+function StepPublish({ shop, onSave, canPublish }: { shop: any, onSave: () => void, canPublish: boolean }) {
+    const { toast } = useToast();
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const handleSubmitForReview = async () => {
+        setIsSubmitting(true);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Auth failed.");
+            await fetch('/api/updateUserDoc', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    path: `companies/${shop.companyId}/shops/${shop.id}`,
+                    data: { status: 'pending_review', updatedAt: { _methodName: 'serverTimestamp' } }
+                })
+            });
+            toast({ title: "Shop Submitted for Review!", description: "An admin will review your shop shortly." });
+            onSave();
+        } catch (e:any) {
+            toast({ variant: "destructive", title: "Submission Failed", description: e.message });
+        } finally {
+            setIsSubmitting(false);
+        }
+    }
+
+    return (
+        <div className="text-center space-y-6 py-10">
+            <h3 className="text-2xl font-bold">You're All Set!</h3>
+            {shop.status === 'approved' ? (
+                <Alert variant="default" className="text-left"><CheckCircle className="h-4 w-4" /><AlertTitle>Your Shop is Live!</AlertTitle><AlertDescription>Your shop is approved and visible in the Supplier Mall. Any new changes will be published automatically.</AlertDescription></Alert>
+            ) : shop.status === 'pending_review' ? (
+                <Alert variant="default" className="text-left"><Loader2 className="h-4 w-4 animate-spin" /><AlertTitle>Your Shop is Under Review</AlertTitle><AlertDescription>An administrator will review your shop soon. You will be notified upon approval.</AlertDescription></Alert>
+            ) : shop.status === 'rejected' ? (
+                <Alert variant="destructive" className="text-left"><XCircle className="h-4 w-4"/><AlertTitle>Your Shop Was Rejected</AlertTitle><AlertDescription>An administrator has rejected your submission. Please review your shop details and resubmit.</AlertDescription></Alert>
+            ) : (
+                <p className="text-muted-foreground">When you're ready, submit your shop for admin approval to make it public.</p>
+            )}
+
+            <Button onClick={handleSubmitForReview} disabled={isSubmitting || shop.status === 'pending_review' || !canPublish} size="lg">
+                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                {shop.status === 'rejected' ? 'Re-submit for Review' : 'Submit for Review'}
+            </Button>
+            {!canPublish && (
+                 <p className="text-sm text-destructive flex items-center justify-center gap-2"><ShieldAlert className="h-4 w-4" />You do not have permission to publish a shop. Please upgrade your plan.</p>
+            )}
+        </div>
+    );
+}
+
+export function ShopWizard({ shop, onUpdate }: { shop: any, onUpdate: () => void }) {
+    const [currentStep, setCurrentStep] = useState(0);
+    const { can } = usePermissions();
+    const canEditShop = can('edit', 'shop');
+    const canPublishShop = can('publish', 'shop');
+
+    const wizardSteps = [
+        { id: 'details', name: 'Core Details', component: <StepCoreIdentity shop={shop} onSave={onUpdate} canEdit={canEditShop} /> },
+        { id: 'products', name: 'Products', component: <StepProducts shop={shop} canEdit={canEditShop} /> },
+        { id: 'appearance', name: 'Appearance', component: <StepAppearance shop={shop} onSave={onUpdate} canEdit={canEditShop} /> },
+        { id: 'seo', name: 'SEO & Tags', component: <StepSEO shop={shop} onSave={onUpdate} canEdit={canEditShop} /> },
+        { id: 'publish', name: 'Publish', component: <StepPublish shop={shop} onSave={onUpdate} canPublish={canPublishShop} /> },
+    ];
+    
+    return (
+        <div className="space-y-6">
+            <Progress value={((currentStep + 1) / wizardSteps.length) * 100} />
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div className="md:col-span-1">
+                    <nav className="flex flex-col gap-2">
+                        {wizardSteps.map((step, index) => (
+                             <Button
+                                key={step.id}
+                                variant={currentStep === index ? 'secondary' : 'ghost'}
+                                className="justify-start"
+                                onClick={() => setCurrentStep(index)}
+                            >
+                                {step.name}
+                            </Button>
+                        ))}
+                    </nav>
+                </div>
+                <div className="md:col-span-3">
+                    {wizardSteps[currentStep].component}
+                </div>
+            </div>
+        </div>
+    );
+}
