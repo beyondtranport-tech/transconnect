@@ -1,22 +1,14 @@
-
 'use server';
-/**
- * @fileOverview An AI-powered freight matching tool for transporters.
- *
- * - matchFreight - A function that matches freight loads with available transporters.
- * - MatchFreightInput - The input type for the matchFreight function.
- * - MatchFreightOutput - The return type for the matchFreight function.
- */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'zod';
+import { z } from 'genkit';
 
 const MatchFreightInputSchema = z.object({
-  location: z.string().describe('The current location of the transporter.'),
-  destination: z.string().describe('The desired destination for the transporter.'),
-  vehicleType: z.string().describe('The type of vehicle the transporter has (e.g., truck, van).'),
-  capacity: z.string().describe('The carrying capacity of the vehicle.'),
-  preferences: z.string().optional().describe('Any specific preferences or requirements of the transporter.'),
+  location: z.string().min(1, "Please select an origin."),
+  destination: z.string().min(1, "Please select a destination."),
+  vehicleType: z.string().min(1, "Please select a vehicle type."),
+  capacity: z.string().min(1, "Please enter vehicle capacity."),
+  preferences: z.string().optional(),
   rate: z.number().positive().optional(),
   isPartLoad: z.boolean().optional(),
   palletCount: z.number().int().positive().optional(),

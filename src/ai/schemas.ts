@@ -1,5 +1,5 @@
 
-import { z } from 'zod';
+import { z } from 'genkit';
 
 // From image-edit-flow.ts
 export const ImageEditInputSchema = z.object({
@@ -137,15 +137,16 @@ export const NegotiationOutputSchema = z.object({
 export type NegotiationOutput = z.infer<typeof NegotiationOutputSchema>;
 
 // From ai-freight-matching.ts
+// This is now only used on the server, so it's safe to use genkit's zod.
 export const MatchFreightInputSchema = z.object({
   location: z.string().describe('The current location of the transporter.'),
   destination: z.string().describe('The desired destination for the transporter.'),
   vehicleType: z.string().describe('The type of vehicle the transporter has (e.g., truck, van).'),
   capacity: z.string().describe('The carrying capacity of the vehicle.'),
   preferences: z.string().optional().describe('Any specific preferences or requirements of the transporter.'),
-  rate: z.coerce.number().positive().optional(),
+  rate: z.number().positive().optional(),
   isPartLoad: z.boolean().optional(),
-  palletCount: z.coerce.number().int().positive().optional(),
+  palletCount: z.number().int().positive().optional(),
 });
 export type MatchFreightInput = z.infer<typeof MatchFreightInputSchema>;
 
