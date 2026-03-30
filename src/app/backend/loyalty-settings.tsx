@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -26,6 +26,8 @@ import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
 
 
 const iconMap: { [key: string]: React.ElementType } = {
@@ -90,9 +92,20 @@ const pointsSchema = z.object({
 type PointsFormValues = z.infer<typeof pointsSchema>;
 
 
-function ActionDialog({ action, actionGroups, onSave }: { action?: any, actionGroups: any[], onSave: (action: any) => void }) {
-    const [isOpen, setIsOpen] = useState(false);
-    
+function ActionDialog({ action, actionGroups, onSave, open, onOpenChange }: { 
+    action?: any, 
+    actionGroups: any[], 
+    onSave: (action: any) => void,
+    open?: boolean,
+    onOpenChange?: (open: boolean) => void 
+}) {
+    const [internalIsOpen, setInternalIsOpen] = useState(false);
+    const { toast } = useToast();
+
+    const isControlled = open !== undefined && onOpenChange !== undefined;
+    const isOpen = isControlled ? open : internalIsOpen;
+    const setIsOpen = isControlled ? onOpenChange : setInternalIsOpen;
+
     const form = useForm<ActionFormValues>({
         resolver: zodResolver(actionSchema),
     });
@@ -138,9 +151,11 @@ function ActionDialog({ action, actionGroups, onSave }: { action?: any, actionGr
 
     return (
          <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogTrigger asChild>
-                {action ? <DropdownMenuItem onSelect={e=>e.preventDefault()}>Edit</DropdownMenuItem> : <Button variant="outline"><PlusCircle className="mr-2 h-4 w-4" /> Add Action</Button>}
-            </DialogTrigger>
+            {!isControlled && (
+                <DialogTrigger asChild>
+                    <Button variant="outline"><PlusCircle className="mr-2 h-4 w-4" /> Add Action</Button>
+                </DialogTrigger>
+            )}
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>{action ? 'Edit' : 'Add New'} Loyalty Action</DialogTitle>
@@ -207,6 +222,7 @@ export default function ActionPlanSettings() {
     const [actionGroups, setActionGroups] = useState(initialActionGroups);
     const [editAction, setEditAction] = useState<any | null>(null);
     const [isEditOpen, setIsEditOpen] = useState(false);
+    const [isAddOpen, setIsAddOpen] = useState(false);
     
     const form = useForm<PointsFormValues>({
         resolver: zodResolver(pointsSchema),
@@ -237,21 +253,33 @@ export default function ActionPlanSettings() {
             for (let group of newGroups) {
                 const actionIndex = group.actions.findIndex((a: any) => a.id === newActionData.id);
                 if (actionIndex !== -1) {
-                    group.actions[actionIndex] = { ...group.actions[actionIndex], ...newActionData };
+                    // This is an edit
+                    const existingAction = group.actions[actionIndex];
+                    group.actions[actionIndex] = { ...existingAction, ...newActionData };
                     found = true;
+                    // If group changed, move it
+                    if (existingAction.groupTitle !== newActionData.groupTitle) {
+                        group.actions.splice(actionIndex, 1);
+                        const newGroupIndex = newGroups.findIndex((g:any) => g.groupTitle === newActionData.groupTitle);
+                        if (newGroupIndex !== -1) {
+                            newGroups[newGroupIndex].actions.push(group.actions[actionIndex]);
+                        } else {
+                            newGroups.push({ groupTitle: newActionData.groupTitle, actions: [group.actions[actionIndex]] });
+                        }
+                    }
                     break;
                 }
             }
             // If not found, add it
             if (!found) {
                 const groupIndex = newGroups.findIndex((g: any) => g.groupTitle === newActionData.groupTitle);
+                const actionToAdd = { id: newActionData.id, label: newActionData.label, icon: newActionData.icon, isActive: newActionData.isActive };
                 if (groupIndex !== -1) {
-                    newGroups[groupIndex].actions.push({ id: newActionData.id, label: newActionData.label, icon: newActionData.icon, isActive: newActionData.isActive });
-                    form.setValue(`points.${newActionData.id}`, 0);
+                    newGroups[groupIndex].actions.push(actionToAdd);
                 } else {
-                     // If group doesn't exist, create it (shouldn't happen with the dialog)
-                     newGroups.push({ groupTitle: newActionData.groupTitle, actions: [newActionData] });
+                     newGroups.push({ groupTitle: newActionData.groupTitle, actions: [actionToAdd] });
                 }
+                form.setValue(`points.${newActionData.id}`, 0);
             }
             return newGroups;
         });
@@ -341,7 +369,9 @@ export default function ActionPlanSettings() {
 
     return (
         <Card className="w-full max-w-5xl">
+            <ActionDialog open={isAddOpen} onOpenChange={setIsAddOpen} actionGroups={actionGroups} onSave={handleActionSave} />
             {editAction && <ActionDialog open={isEditOpen} onOpenChange={setIsEditOpen} action={editAction} actionGroups={actionGroups} onSave={handleActionSave} />}
+            
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onPointsSubmit)}>
                     <CardHeader className="flex-row items-center justify-between">
@@ -354,7 +384,9 @@ export default function ActionPlanSettings() {
                                 </CardDescription>
                             </div>
                         </div>
-                        <ActionDialog actionGroups={actionGroups} onSave={handleActionSave} />
+                        <Button type="button" variant="outline" onClick={() => setIsAddOpen(true)}>
+                            <PlusCircle className="mr-2 h-4 w-4" /> Add Action
+                        </Button>
                     </CardHeader>
                     <CardContent>
                         {isLoading ? (
@@ -421,3 +453,5 @@ export default function ActionPlanSettings() {
         </Card>
     );
 }
+
+  
