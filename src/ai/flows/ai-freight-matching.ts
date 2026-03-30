@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview An AI-powered freight matching tool for transporters.
@@ -16,9 +17,9 @@ const MatchFreightInputSchema = z.object({
   vehicleType: z.string().describe('The type of vehicle the transporter has (e.g., truck, van).'),
   capacity: z.string().describe('The carrying capacity of the vehicle.'),
   preferences: z.string().optional().describe('Any specific preferences or requirements of the transporter.'),
-  rate: z.coerce.number().positive().optional(),
+  rate: z.number().positive().optional(),
   isPartLoad: z.boolean().optional(),
-  palletCount: z.coerce.number().int().positive().optional(),
+  palletCount: z.number().int().positive().optional(),
 });
 
 const MatchFreightOutputSchema = z.object({
