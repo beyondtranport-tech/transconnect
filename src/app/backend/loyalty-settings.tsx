@@ -32,6 +32,7 @@ import { Separator } from '@/components/ui/separator';
 import { roles as availableRolesList } from '@/lib/roles';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DataTable } from '@/components/ui/data-table';
+import { Checkbox } from '@/components/ui/checkbox';
 
 
 const iconMap: { [key: string]: React.ElementType } = {
@@ -200,7 +201,7 @@ function ActionDialog({ action, actionGroups, onSave, children, open, onOpenChan
                                                                     }}
                                                                 />
                                                             </FormControl>
-                                                            <FormLabel className="text-sm font-normal">{role.title}</FormLabel>
+                                                            <FormLabel className="font-normal text-sm">{role.title}</FormLabel>
                                                         </FormItem>
                                                     );
                                                 }}
