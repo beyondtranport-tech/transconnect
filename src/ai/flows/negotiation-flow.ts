@@ -5,7 +5,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { z } from 'zod';
 import { getShopPerformanceTool } from '../tools/shop-performance-tool';
 import { getMemberLoyaltyTool } from '../tools/member-loyalty-tool';
 import { NegotiationInputSchema, NegotiationOutputSchema } from '../schemas';
@@ -55,7 +55,7 @@ const negotiationAgentFlow = ai.defineFlow(
         const toolRequests = response.toolRequests;
 
         // Basic agent trace for now. In a real scenario, you'd log more detailed info.
-        const agentTrace = toolRequests.map(req => `Used tool: ${req.name}`);
+        const agentTrace = toolRequests.map(req => `Used tool: ${req.toolRequest.name}`);
 
         const output = response.output;
         if (!output) {
