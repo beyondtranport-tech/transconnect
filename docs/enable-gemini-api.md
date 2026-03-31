@@ -1,6 +1,6 @@
 # How to Fix AI Feature "403 Forbidden" Errors
 
-If you are seeing a "403 Forbidden" or "API is blocked" error when trying to use AI features, it means the necessary Google Cloud APIs are not enabled or your project does not have billing enabled.
+If you are seeing a "403 Forbidden" or "API is blocked" error when trying to use AI features, it means the necessary Google Cloud APIs are not enabled, billing is not set up, or your backend does not have the correct permissions.
 
 **This is the most common error when using AI features for the first time.** Follow these steps carefully to resolve it.
 
@@ -18,9 +18,28 @@ AI services require a Google Cloud project with an active billing account.
 
 ---
 
-### Step 2: Enable the "Generative Language API"
+### Step 2: Grant Permissions to the Backend Service
 
-Once billing is confirmed, you need to enable the specific API for Gemini.
+Your application's backend code runs with a special identity called a service account. You must grant this account permission to use the AI services.
+
+1.  Go to the **IAM & Admin** page in the Google Cloud Console:
+    **[https://console.cloud.google.com/iam-admin/iam?project=ecosystem-hub](https://console.cloud.google.com/iam-admin/iam?project=ecosystem-hub)**
+
+2.  Find the principal (member) with an email address that ends in **`@gcp-sa-apphosting.iam.gserviceaccount.com`**. Its name will be "Service Agent for App Hosting".
+
+3.  Click the **pencil icon** (Edit principal) on that row.
+
+4.  Click **"+ ADD ANOTHER ROLE"**.
+
+5.  In the "Select a role" dropdown, search for and select **"Vertex AI User"**. This role provides the necessary permissions to use the Generative AI models.
+
+6.  Click **Save**.
+
+---
+
+### Step 3: Enable the "Generative Language API"
+
+Once billing is confirmed and permissions are granted, you need to enable the specific API for Gemini.
 
 1.  Go to the API Library page for the Generative Language API using this direct link:
     **[https://console.cloud.google.com/apis/library/generativelanguage.googleapis.com?project=ecosystem-hub](https://console.cloud.google.com/apis/library/generativelanguage.googleapis.com?project=ecosystem-hub)**
@@ -29,8 +48,8 @@ Once billing is confirmed, you need to enable the specific API for Gemini.
 
 ---
 
-### Step 3: Wait and Retry
+### Step 4: Wait and Retry
 
-After enabling the API, please wait **at least 2-3 minutes** for the changes to take effect across all of Google's systems.
+After enabling the API and granting permissions, please wait **at least 2-3 minutes** for the changes to take effect across all of Google's systems.
 
 Then, try using the AI feature in your application again. The "403 Forbidden" error should now be resolved.
