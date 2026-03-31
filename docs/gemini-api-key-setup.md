@@ -1,6 +1,6 @@
 # Setting up Your Gemini API Key
 
-To enable the AI features in your application, such as the Lead Research Agent, you need a Gemini API key. This is a separate key from the Google Search API key.
+To enable the AI features in your application, you need a Gemini API key.
 
 ## Step 1: Get Your Gemini API Key
 
@@ -17,4 +17,8 @@ You now have the required key. Paste it into your `.env` file in the root of you
 GEMINI_API_KEY=YOUR_API_KEY_HERE
 ```
 
-That's it! Once you save the `.env` file, the AI features in your application will be fully functional.
+## Step 3: Enable the API & Restart
+
+For the key to work, you must also enable the correct API in your Google Cloud project.
+
+Please see the full instructions in the **`docs/enable-gemini-api.md`** guide. After updating your `.env` file, you must **restart your application**.
