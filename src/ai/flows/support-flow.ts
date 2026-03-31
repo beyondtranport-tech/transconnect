@@ -69,7 +69,7 @@ const supportFlow = ai.defineFlow(
 
         // Corrected: Use 'messages' for chat history and pass the query as the last user message.
         const response = await ai.generate({
-            model: 'gemini-1.5-flash',
+            model: 'gemini-pro',
             system: systemPrompt,
             messages: [
                 ...formattedHistory,
