@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -24,6 +25,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Sparkles, Image as ImageIcon } from 'lucide-react';
 import Image from 'next/image';
 import { generateImage } from '@/ai/flows/image-generation-flow';
+import Link from 'next/link';
+import React from 'react';
 
 export default function ImageGeneratorCard() {
   const [isOpen, setIsOpen] = useState(false);
@@ -53,11 +56,18 @@ export default function ImageGeneratorCard() {
         description: 'Your new image is ready.',
       });
     } catch (e: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Generation Failed',
-        description: e.message,
-      });
+      let description: React.ReactNode = e.message;
+      if (e.message?.includes('403 Forbidden') || e.message?.includes('API is not enabled')) {
+          description = (
+              <>
+                  The AI API is not enabled for your project, or billing is not set up.
+                  <Button asChild variant="link" className="p-0 h-auto ml-1 text-xs -translate-y-px">
+                      <Link href="/docs/enable-gemini-api.md" target="_blank">View Setup Guide</Link>
+                  </Button>
+              </>
+          );
+      }
+      toast({ variant: 'destructive', title: 'Generation Failed', description });
     } finally {
       setIsLoading(false);
     }

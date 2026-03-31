@@ -25,6 +25,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Sparkles, Video } from 'lucide-react';
 import { generateVideo } from '@/ai/flows/video-generation-flow';
 import type { VideoGenerateInput } from '@/ai/schemas';
+import Link from 'next/link';
+import React from 'react';
 
 export default function VideoGeneratorCard() {
   const [isOpen, setIsOpen] = useState(false);
@@ -54,11 +56,18 @@ export default function VideoGeneratorCard() {
         description: 'Your new video is ready.',
       });
     } catch (e: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Generation Failed',
-        description: e.message,
-      });
+      let description: React.ReactNode = e.message;
+      if (e.message?.includes('403 Forbidden') || e.message?.includes('API is not enabled')) {
+          description = (
+              <>
+                  The AI API is not enabled for your project, or billing is not set up.
+                  <Button asChild variant="link" className="p-0 h-auto ml-1 text-xs -translate-y-px">
+                      <Link href="/docs/enable-gemini-api.md" target="_blank">View Setup Guide</Link>
+                  </Button>
+              </>
+          );
+      }
+      toast({ variant: 'destructive', title: 'Generation Failed', description });
     } finally {
       setIsLoading(false);
     }

@@ -260,7 +260,18 @@ function AIGenerateDialog({
       setGeneratedImage(result.imageDataUri);
       toast({ title: 'Image Generated!', description: 'Review the image below and choose an action.' });
     } catch (e: any) {
-      toast({ variant: 'destructive', title: 'Generation Failed', description: e.message });
+        let description: React.ReactNode = e.message;
+        if (e.message?.includes('403 Forbidden') || e.message?.includes('API is not enabled')) {
+            description = (
+                <>
+                    The AI API is not enabled for your project, or billing is not set up.
+                    <Button asChild variant="link" className="p-0 h-auto ml-1 text-xs -translate-y-px">
+                        <Link href="/docs/enable-gemini-api.md" target="_blank">View Setup Guide</Link>
+                    </Button>
+                </>
+            );
+        }
+        toast({ variant: 'destructive', title: 'Generation Failed', description });
     } finally {
       setIsLoading(false);
     }

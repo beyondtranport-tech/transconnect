@@ -72,7 +72,16 @@ function ShowcaseButton() {
             ) : error ? (
                  <div className="flex flex-col items-center justify-center h-full text-center text-white p-4">
                     <h3 className="text-lg font-semibold text-destructive">Video Generation Failed</h3>
-                    <p className="text-sm text-gray-400">{error}</p>
+                    {(error.includes('403 Forbidden') || error.includes('API is not enabled')) ? (
+                      <>
+                        <p className="text-sm text-gray-400">The AI API is not enabled for your project, or billing is not set up.</p>
+                        <Button asChild variant="link" className="mt-2 text-white">
+                          <Link href="/docs/enable-gemini-api.md" target="_blank">View AI Setup Guide</Link>
+                        </Button>
+                      </>
+                    ) : (
+                      <p className="text-sm text-gray-400">{error}</p>
+                    )}
                 </div>
             ) : videoUrl ? (
                 <video src={videoUrl} controls autoPlay className="w-full h-full rounded-md" />
