@@ -25,7 +25,7 @@ import Image from 'next/image';
 import { generateImage } from '@/ai/flows/image-generation-flow';
 import Link from 'next/link';
 import React from 'react';
-import { Textarea } from '../ui/textarea';
+import { Textarea } from '@/components/ui/textarea';
 
 export default function ImageGeneratorCard() {
   const [isOpen, setIsOpen] = useState(false);
