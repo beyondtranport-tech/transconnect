@@ -30,7 +30,7 @@ import { Textarea } from '@/components/ui/textarea';
 export default function ImageGeneratorCard() {
   const [isOpen, setIsOpen] = useState(false);
   const [prompt, setPrompt] = useState(
-    'A photorealistic image of a futuristic forest green truck driving on a highway through a mountain pass at golden hour. The truck should look sleek and modern.'
+    "A clean, professional studio photograph of a [Your Product Name, e.g., chrome truck exhaust pipe] on a white background. The lighting should be bright and highlight the product's details."
   );
   const [isLoading, setIsLoading] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
