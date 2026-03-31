@@ -37,7 +37,7 @@ const shopSeoFlow = ai.defineFlow(
   },
   async (input: ShopSeoInput) => {
     const response = await ai.generate({
-        model: 'gemini-1.5-flash',
+        model: 'googleai/gemini-1.5-flash',
         prompt: `You are an SEO expert for e-commerce websites in the transport and logistics industry. 
   
         Based on the following shop details:
