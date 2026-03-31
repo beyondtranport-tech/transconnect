@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -113,47 +112,49 @@ export default function ImageEditorCard() {
           <DialogTrigger asChild>
             <Button className="w-full">Start Editing</Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[725px]">
+          <DialogContent className="sm:max-w-[725px] flex flex-col max-h-[90vh]">
             <DialogHeader>
               <DialogTitle>AI Image Editor (Image-to-Image)</DialogTitle>
               <DialogDescription>
                 Upload an image and describe the changes you want to make.
               </DialogDescription>
             </DialogHeader>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="image-upload">1. Upload Original Image</Label>
-                  <Input id="image-upload" type="file" accept="image/*" onChange={handleImageUpload} />
+            <div className="flex-1 overflow-y-auto py-4 pr-4 -mr-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="image-upload">1. Upload Original Image</Label>
+                    <Input id="image-upload" type="file" accept="image/*" onChange={handleImageUpload} />
+                  </div>
+                  {originalImage && (
+                      <div className="relative aspect-square w-full">
+                          <Image src={originalImage} alt="Original" fill className="rounded-md object-contain" />
+                          <Button variant="destructive" size="sm" onClick={clearOriginalImage} className="absolute top-2 right-2">Change</Button>
+                      </div>
+                  )}
+                   <div className="space-y-2">
+                      <Label htmlFor="prompt">2. Describe Your Edit</Label>
+                      <Input id="prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="e.g., place this truck in a forest" />
+                   </div>
                 </div>
-                {originalImage && (
-                    <div className="relative aspect-square w-full">
-                        <Image src={originalImage} alt="Original" fill className="rounded-md object-contain" />
-                        <Button variant="destructive" size="sm" onClick={clearOriginalImage} className="absolute top-2 right-2">Change</Button>
-                    </div>
-                )}
-                 <div className="space-y-2">
-                    <Label htmlFor="prompt">2. Describe Your Edit</Label>
-                    <Input id="prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="e.g., place this truck in a forest" />
-                 </div>
-              </div>
-              <div className="space-y-4">
-                <Label>3. Edited Image</Label>
-                <div className="relative aspect-square w-full rounded-md border border-dashed flex items-center justify-center bg-muted">
-                    {isLoading ? (
-                        <div className="text-center">
-                            <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
-                            <p className="mt-2 text-sm text-muted-foreground">Editing...</p>
-                        </div>
-                    ) : editedImage ? (
-                         <Image src={editedImage} alt="Edited" fill className="rounded-md object-contain" />
-                    ) : (
-                        <p className="text-sm text-muted-foreground">Your result will appear here.</p>
-                    )}
+                <div className="space-y-4">
+                  <Label>3. Edited Image</Label>
+                  <div className="relative aspect-square w-full rounded-md border border-dashed flex items-center justify-center bg-muted">
+                      {isLoading ? (
+                          <div className="text-center">
+                              <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
+                              <p className="mt-2 text-sm text-muted-foreground">Editing...</p>
+                          </div>
+                      ) : editedImage ? (
+                           <Image src={editedImage} alt="Edited" fill className="rounded-md object-contain" />
+                      ) : (
+                          <p className="text-sm text-muted-foreground">Your result will appear here.</p>
+                      )}
+                  </div>
                 </div>
               </div>
             </div>
-            <DialogFooter>
+            <DialogFooter className="mt-auto pt-4 border-t">
               <Button onClick={handleEdit} disabled={isLoading}>
                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
                 Generate Edit
