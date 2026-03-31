@@ -18,7 +18,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Sparkles, Image as ImageIcon } from 'lucide-react';
@@ -26,10 +25,13 @@ import Image from 'next/image';
 import { generateImage } from '@/ai/flows/image-generation-flow';
 import Link from 'next/link';
 import React from 'react';
+import { Textarea } from '../ui/textarea';
 
 export default function ImageGeneratorCard() {
   const [isOpen, setIsOpen] = useState(false);
-  const [prompt, setPrompt] = useState('');
+  const [prompt, setPrompt] = useState(
+    'A photorealistic image of a futuristic forest green truck driving on a highway through a mountain pass at golden hour. The truck should look sleek and modern.'
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const { toast } = useToast();
@@ -97,7 +99,13 @@ export default function ImageGeneratorCard() {
             <div className="flex-1 overflow-y-auto py-4 space-y-4 pr-4 -mr-4">
                 <div className="space-y-2">
                   <Label htmlFor="generate-prompt">Your Prompt</Label>
-                  <Input id="generate-prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="e.g., A red Scania truck driving on a mountain pass at sunset" />
+                  <Textarea
+                    id="generate-prompt"
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
+                    placeholder="e.g., A red Scania truck driving on a mountain pass at sunset"
+                    rows={5}
+                  />
                 </div>
                 <div className="relative aspect-square w-full rounded-md border border-dashed flex items-center justify-center bg-muted">
                      {isLoading ? (
