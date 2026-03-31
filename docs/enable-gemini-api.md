@@ -27,7 +27,7 @@ If you are seeing a "403 Forbidden" or "API is blocked" error when using AI feat
 This API must be enabled for your key to work.
 
 1.  Go to the API Library page for the Generative Language API using this direct link:
-    **[https://console.cloud.google.com/apis/library/generativelanguage.googleapis.com?project=ecosystem-hub](https://console.cloud.google.com/apis/library/generativelanguage.googleapis.com?project=ecosystem-hub)**
+    **[https://console.cloud.google.com/apis/library/generativelanguage.googleapis.com?project=ecosystem-hub]**(https://console.cloud.google.com/apis/library/generativelanguage.googleapis.com?project=ecosystem-hub)
 
 2.  Click the blue **"Enable"** button. If it says "Manage", the API is already enabled.
 

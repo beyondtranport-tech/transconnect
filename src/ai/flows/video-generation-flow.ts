@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview An AI-powered video generation flow.
@@ -74,16 +73,16 @@ const videoGenerateFlow = ai.defineFlow(
 
     // The Veo API returns a URL that needs an API key to download.
     // We'll fetch it on the server and convert it to a data URI to send to the client.
-    const fetch = (await import('node-fetch')).default;
     const videoDownloadResponse = await fetch(
         `${video.media!.url}&key=${process.env.GEMINI_API_KEY}`
     );
 
-    if (!videoDownloadResponse.ok || !videoDownloadResponse.body) {
+    if (!videoDownloadResponse.ok) {
         throw new Error(`Failed to download generated video. Status: ${videoDownloadResponse.status}`);
     }
     
-    const buffer = await videoDownloadResponse.buffer();
+    const arrayBuffer = await videoDownloadResponse.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
     const base64Video = buffer.toString('base64');
     
     return { videoDataUri: `data:video/mp4;base64,${base64Video}` };
