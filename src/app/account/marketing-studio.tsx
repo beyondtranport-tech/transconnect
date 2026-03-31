@@ -1,10 +1,73 @@
 'use client';
 
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Sparkles, AlertTriangle } from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useUser } from '@/firebase';
+import { PremiumFeaturePrompt } from '@/components/PremiumFeaturePrompt';
+import { Card, CardDescription, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Sparkles, Image as ImageIcon, Wand2, Video, Film } from "lucide-react";
+import { Button } from '@/components/ui/button';
+import { Loader2 } from 'lucide-react';
+
+import ImageGeneratorCard from "@/app/backend/image-generator-card";
+import ImageEditorCard from "@/app/backend/image-editor-card";
+import VideoGeneratorCard from "@/app/backend/video-generator-card";
+
+// Placeholder for new components
+const IconGeneratorCard = () => (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <ImageIcon /> AI Icon Generator
+        </CardTitle>
+        <CardDescription>
+          Create custom icons for your app or member shops using a descriptive prompt.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Button className="w-full" disabled>Coming Soon</Button>
+      </CardContent>
+    </Card>
+);
+
+const VideoAnimatorCard = () => (
+     <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Film /> AI Video Animator
+        </CardTitle>
+        <CardDescription>
+          Bring static images and screenshots to life with a text prompt.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Button className="w-full" disabled>Coming Soon</Button>
+      </CardContent>
+    </Card>
+);
+
 
 export default function MarketingStudio() {
+    const { user, isUserLoading } = useUser();
+    const isAdmin = user?.claims?.admin === true || user?.email === 'mkoton100@gmail.com' || user?.email === 'beyondtransport@gmail.com';
+    const hasPremiumPlan = user?.companyData?.membershipId && user.companyData.membershipId !== 'free';
+
+    if (isUserLoading) {
+        return (
+            <div className="flex justify-center items-center py-20">
+                <Loader2 className="h-10 w-10 animate-spin text-primary" />
+            </div>
+        );
+    }
+
+    if (!isAdmin && !hasPremiumPlan) {
+        return (
+            <PremiumFeaturePrompt 
+                icon={Sparkles} 
+                title="AI Marketing Studio" 
+                description="This suite of powerful AI tools helps you create professional marketing assets in minutes." 
+            />
+        );
+    }
+  
   return (
     <div className="space-y-8">
       <CardHeader className="px-0">
@@ -19,14 +82,13 @@ export default function MarketingStudio() {
           </div>
       </CardHeader>
       
-      <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>AI Tools Temporarily Disabled</AlertTitle>
-          <AlertDescription>
-              The AI marketing tools are currently undergoing maintenance to resolve a build issue and will be restored shortly.
-          </AlertDescription>
-      </Alert>
-
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <ImageGeneratorCard />
+            <IconGeneratorCard />
+            <ImageEditorCard />
+            <VideoGeneratorCard />
+            <VideoAnimatorCard />
+        </div>
     </div>
   );
 }
