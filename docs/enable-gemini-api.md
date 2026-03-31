@@ -18,14 +18,14 @@ AI services require a Google Cloud project with an active billing account.
 
 ---
 
-### Step 2: Grant Permissions to the Backend Service
+### Step 2: Grant Permissions to the Backend Service Account
 
 Your application's backend code runs with a special identity called a service account. You must grant this account permission to use the AI services.
 
 1.  Go to the **IAM & Admin** page in the Google Cloud Console:
     **[https://console.cloud.google.com/iam-admin/iam?project=ecosystem-hub](https://console.cloud.google.com/iam-admin/iam?project=ecosystem-hub)**
 
-2.  Find the principal (member) with an email address that ends in **`@gcp-sa-apphosting.iam.gserviceaccount.com`**. Its name will be "Service Agent for App Hosting".
+2.  Find the principal (member) named **"Compute Engine default service account"**. Its email address will look like `[your-project-number]-compute@developer.gserviceaccount.com`.
 
 3.  Click the **pencil icon** (Edit principal) on that row.
 
