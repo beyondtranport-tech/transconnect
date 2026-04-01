@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview An AI-powered research agent for generating potential sales leads.
@@ -44,7 +43,7 @@ const leadGenerationAIFlow = ai.defineFlow(
   },
   async (input: LeadGenerationInput): Promise<LeadGenerationOutput> => {
     const response = await ai.generate({
-        model: 'googleai/gemini-1.5-pro',
+        model: 'googleai/gemini-pro',
         tools: [googleSearchTool],
         prompt: input.prompt,
         output: {

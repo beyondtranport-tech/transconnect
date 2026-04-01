@@ -1,4 +1,3 @@
-
 'use server';
 
 import { ai } from '@/ai/genkit';
@@ -53,7 +52,7 @@ const matchFreightFlow = ai.defineFlow(
 Find available freight loads that match these criteria. Critically, if it is a part load, only return loads that would fit the specified palletCount.`;
 
     const response = await ai.generate({
-        model: 'googleai/gemini-1.5-pro',
+        model: 'googleai/gemini-pro',
         prompt: prompt,
         output: {
             schema: MatchFreightOutputSchema

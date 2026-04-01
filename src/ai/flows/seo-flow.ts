@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview An AI-powered SEO content generation flow for shops.
@@ -37,7 +36,7 @@ const shopSeoFlow = ai.defineFlow(
   },
   async (input: ShopSeoInput) => {
     const response = await ai.generate({
-        model: 'googleai/gemini-1.5-pro',
+        model: 'googleai/gemini-pro',
         prompt: `You are an SEO expert for e-commerce websites in the transport and logistics industry. 
   
         Based on the following shop details:
