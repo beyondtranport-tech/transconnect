@@ -36,7 +36,7 @@ const socialLinkGeneratorFlow = ai.defineFlow(
   },
   async (input: SocialLinkGeneratorInput) => {
     const response = await ai.generate({
-        model: 'googleai/gemini-pro',
+        model: 'googleai/gemma-2b-it',
         prompt: `You are an assistant that creates plausible social media URLs for a business.
         Given the shop name "${input.shopName}", create conventional, best-guess URLs for the following platforms: Facebook, Instagram, Twitter (X), LinkedIn (as a company page), and YouTube.
         - Sanitize the shop name to be URL-friendly (remove spaces, special characters).
