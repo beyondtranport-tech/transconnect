@@ -9,6 +9,8 @@ To enable the AI features in your application, you need a Gemini API key.
 3.  Click the "**Create API key**" button.
 4.  A new API key will be generated for you. **Copy this key immediately** and save it somewhere safe. This is your `GEMINI_API_KEY`.
 
+**Important:** If you see multiple keys listed (e.g., "Gemini API Key" and "Generative Language API Key"), you must choose the one named **"Generative Language API Key"**. This is the key the application is configured to use.
+
 ## Step 2: Update Your `.env` File
 
 You now have the required key. Paste it into your `.env` file in the root of your project.
