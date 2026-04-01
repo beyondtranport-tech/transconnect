@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview An AI-powered customer support agent.
@@ -69,7 +68,7 @@ const supportFlow = ai.defineFlow(
 
         // Corrected: Use 'messages' for chat history and pass the query as the last user message.
         const response = await ai.generate({
-            model: 'googleai/gemini-pro',
+            model: 'googleai/gemini-1.5-flash-latest',
             system: systemPrompt,
             messages: [
                 ...formattedHistory,
