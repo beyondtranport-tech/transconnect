@@ -53,7 +53,7 @@ const matchFreightFlow = ai.defineFlow(
 Find available freight loads that match these criteria. Critically, if it is a part load, only return loads that would fit the specified palletCount.`;
 
     const response = await ai.generate({
-        model: 'gemini-3-flash-preview',
+        model: 'gemini-pro',
         prompt: prompt,
         output: {
             schema: MatchFreightOutputSchema
