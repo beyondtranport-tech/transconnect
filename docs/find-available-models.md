@@ -6,12 +6,15 @@ This guide will walk you through finding the exact, correct model names to use w
 
 ---
 
-### Step 1: Visit Google AI Studio
+### Step 1: Visit and Sign In to Google AI Studio
 
-1.  Open the Google AI Studio website in your browser.
+1.  **Open the Google AI Studio website:**
     **[https://makersuite.google.com/](https://makersuite.google.com/)**
 
-2.  Sign in with the same Google Account associated with your Google Cloud project and Gemini API Key.
+2.  **Sign In:**
+    *   Look for a **"Sign In"** or **"Sign in with Google"** button, usually in the **top-right corner** of the page. Click it.
+    *   If you don't see a sign-in button, you may already be logged in. You can verify this by looking for your profile picture or initial in the top-right corner.
+    *   **CRITICAL:** You **must** sign in with the **same Google Account** that is associated with your Google Cloud project (`ecosystem-hub`). This is the account you used to create the `GEMINI_API_KEY`. If you are logged into a different account, you will need to sign out and sign back in with the correct one.
 
 ### Step 2: Open a Prompting Interface
 
