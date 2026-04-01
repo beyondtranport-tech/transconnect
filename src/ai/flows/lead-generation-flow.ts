@@ -44,7 +44,7 @@ const leadGenerationAIFlow = ai.defineFlow(
   },
   async (input: LeadGenerationInput): Promise<LeadGenerationOutput> => {
     const response = await ai.generate({
-        model: 'gemini-1.5-flash-latest',
+        model: 'gemini-3-flash-preview',
         tools: [googleSearchTool],
         prompt: input.prompt,
         output: {
