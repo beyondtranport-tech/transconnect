@@ -27,7 +27,7 @@ const negotiationAgentFlow = ai.defineFlow(
         const { companyId, shopId, proposedRate } = input;
 
         const response = await ai.generate({
-            model: 'googleai/gemini-pro',
+            model: 'googleai/gemini-1.5-pro',
             tools: [getShopPerformanceTool, getMemberLoyaltyTool],
             system: `You are a commercial negotiation agent for a logistics platform. Your goal is to evaluate a commission rate proposal from a member for their online shop.
 
