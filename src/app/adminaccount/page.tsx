@@ -64,6 +64,12 @@ import {
   MessageSquare,
   Code,
   Gift,
+  BarChart3,
+  Palette,
+  GalleryVertical,
+  Users2,
+  UserCheck2,
+  Code2
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
