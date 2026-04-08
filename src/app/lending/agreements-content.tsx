@@ -3,16 +3,27 @@
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, PlusCircle, FileSignature, Edit, Eye, ArrowLeft, Banknote, Users, CheckCircle, AlertCircle } from "lucide-react";
+import { Loader2, PlusCircle, FileSignature, Edit, Eye, Trash2 } from "lucide-react";
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { getClientSideAuthToken } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { formatCurrency, formatDateSafe } from '@/lib/utils';
 import { AgreementWizard } from './edit-agreement';
 import Link from 'next/link';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+
 
 // API Helper
 async function performAdminAction(token: string, action: string, payload: any) {
@@ -47,6 +58,9 @@ export default function AgreementsContent() {
     const { toast } = useToast();
     
     const [selectedAgreement, setSelectedAgreement] = useState<any | null>(null);
+    const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
+    const [agreementToDelete, setAgreementToDelete] = useState<any | null>(null);
+
 
     const clientMap = useMemo(() => new Map(clients.map(c => [c.id, c.name])), [clients]);
 
@@ -90,7 +104,7 @@ export default function AgreementsContent() {
     };
     
     const handleBackToList = () => {
-        setView('wizard');
+        setView('list');
         setSelectedAgreement(null);
     };
 
@@ -99,11 +113,31 @@ export default function AgreementsContent() {
         setView('list');
         setSelectedAgreement(null);
     };
+    
+    const handleDelete = async () => {
+        if (!agreementToDelete) return;
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication failed.");
+            await performAdminAction(token, 'deleteLendingAgreement', { 
+                clientId: agreementToDelete.clientId, 
+                agreementId: agreementToDelete.id 
+            });
+            toast({ title: 'Agreement Deleted' });
+            forceRefresh();
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: 'Delete Failed', description: e.message });
+        } finally {
+            setAgreementToDelete(null);
+            setIsDeleteAlertOpen(false);
+        }
+    };
+
 
     const columns: ColumnDef<any>[] = useMemo(() => [
         { 
             header: 'Client',
-            cell: ({ row }) => <div>{clientMap.get(row.original.clientId) || 'Unknown Client'}</div>
+            cell: ({ row }) => <Link href={`/lending/clients/${row.original.clientId}`} className="text-primary hover:underline">{clientMap.get(row.original.clientId) || 'Unknown Client'}</Link>
         },
         { accessorKey: 'description', header: 'Description' },
         { accessorKey: 'totalAdvanced', header: 'Amount', cell: ({ row }) => formatCurrency(row.original.totalAdvanced) },
@@ -111,9 +145,17 @@ export default function AgreementsContent() {
         { accessorKey: 'status', header: 'Status', cell: ({row}) => <Badge variant={statusColors[row.original.status] || 'secondary'} className="capitalize">{row.original.status?.replace(/_/g, ' ')}</Badge> },
         { accessorKey: 'createDate', header: 'Date Created', cell: ({row}) => formatDateSafe(row.original.createDate) },
         { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
-            <div className="text-right">
-                 <Button variant="ghost" size="icon" onClick={() => handleEdit(row.original)}>
+            <div className="flex justify-end items-center gap-1">
+                 <Button asChild variant="ghost" size="icon">
+                    <Link href={`/lending/clients/${row.original.clientId}`}>
+                        <Eye className="h-4 w-4" />
+                    </Link>
+                </Button>
+                <Button variant="ghost" size="icon" onClick={() => handleEdit(row.original)}>
                     <Edit className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon" onClick={() => { setAgreementToDelete(row.original); setIsDeleteAlertOpen(true); }}>
+                    <Trash2 className="h-4 w-4 text-destructive" />
                 </Button>
             </div>
         )},
@@ -136,21 +178,36 @@ export default function AgreementsContent() {
     }
 
     return (
-        <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                    <CardTitle className="flex items-center gap-2"><FileSignature /> Lending Agreements</CardTitle>
-                    <CardDescription>Manage all active and pending lending agreements.</CardDescription>
-                </div>
-                <Button onClick={handleAddNew}><PlusCircle className="mr-2 h-4 w-4"/>New Agreement</Button>
-            </CardHeader>
-            <CardContent>
-                {isLoading ? (
-                    <div className="flex justify-center items-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
-                ) : (
-                    <DataTable columns={columns} data={agreements} />
-                )}
-            </CardContent>
-        </Card>
+        <>
+            <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>This will permanently delete agreement "{agreementToDelete?.description}".</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => setAgreementToDelete(null)}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Yes, delete</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <div>
+                        <CardTitle className="flex items-center gap-2"><FileSignature /> Lending Agreements</CardTitle>
+                        <CardDescription>Manage all active and pending lending agreements.</CardDescription>
+                    </div>
+                    <Button onClick={handleAddNew}><PlusCircle className="mr-2 h-4 w-4"/>New Agreement</Button>
+                </CardHeader>
+                <CardContent>
+                    {isLoading ? (
+                        <div className="flex justify-center items-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+                    ) : (
+                        <DataTable columns={columns} data={agreements} />
+                    )}
+                </CardContent>
+            </Card>
+        </>
     );
 }
+
