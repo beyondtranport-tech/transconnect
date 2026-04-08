@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -48,11 +49,13 @@ Dear [Supplier Name],
 
 I hope this email finds you well.
 
-My name is [Your Name], and I'm reaching out from Logistics Flow. We've developed a digital ecosystem for the transport industry, and we're actively looking for high-quality ${supplierType} suppliers to partner with.
+My name is [Your Name], and I'm reaching out from Logistics Flow. We've developed a comprehensive digital ecosystem for the transport industry, built on four core divisions: Funding, Mall, Marketplace, and Tech.
 
-Our platform connects suppliers like you directly to a captive audience of transport operators who are actively looking for your products.
+We're actively looking for high-quality ${supplierType} suppliers to partner with because our platform does more than just connect you with buyers—we actively help you close deals.
 
-Would you be open to a brief chat next week to explore how we can drive new business your way?
+A key feature is our Funding division, which provides transporters with the capital they need to purchase from suppliers like you. By joining our network, your customers can get financing directly through the platform, making it easier for them to buy your products and increasing your sales velocity.
+
+Would you be open to a brief chat next week to explore how we can drive new, funded business your way?
 
 Best regards,
 
