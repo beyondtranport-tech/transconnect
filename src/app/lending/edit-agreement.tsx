@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -11,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Save, ArrowLeft, ArrowRight, CheckCircle, FileSignature, Truck, Building, User, Banknote } from 'lucide-react';
-import { getClientSideAuthToken, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { getClientSideAuthToken, useDoc, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -52,11 +51,28 @@ const assetSubSchema = z.object({
   registrationNumber: z.string().optional(),
   supplierName: z.string().optional(),
   supplierContact: z.string().optional(),
+  // New fields from RC1
+  vin: z.string().optional(),
+  engineNumber: z.string().optional(),
+  tare: z.string().optional(),
+  gvm: z.string().optional(),
+  registerNumber: z.string().optional(),
+  titleholder: z.string().optional(),
+  owner: z.string().optional(),
+  firstRegistrationDate: z.string().optional(),
+  classification: z.string().optional(),
+});
+
+const securitySchema = z.object({
+  documentName: z.string().min(1, 'Document name is required'),
+  documentType: z.string().min(1, 'Document type is required'),
+  fileUrl: z.string().url('A valid file URL is required after upload.').optional().or(z.literal('')),
 });
 
 const wizardSchema = z.object({
   agreement: agreementSubSchema,
   asset: assetSubSchema,
+  security: securitySchema,
 });
 
 type WizardFormValues = z.infer<typeof wizardSchema>;
@@ -65,7 +81,7 @@ type WizardFormValues = z.infer<typeof wizardSchema>;
 const steps = [
     { id: 'client', title: 'Client & Facility', icon: User, fields: ['agreement.clientId', 'agreement.type'] },
     { id: 'details', title: 'Agreement Details', icon: FileSignature, fields: ['agreement.description', 'agreement.totalAdvanced', 'agreement.interestRate', 'agreement.numberOfInstallments'] },
-    { id: 'asset', title: 'Asset Details', icon: Truck, fields: ['asset.make', 'asset.model', 'asset.year', 'asset.costOfSale'] },
+    { id: 'asset', title: 'Asset Details', icon: Truck, fields: ['asset.make', 'asset.model', 'asset.year', 'asset.costOfSale', 'asset.vin', 'asset.engineNumber', 'asset.tare', 'asset.gvm', 'asset.registerNumber', 'asset.titleholder', 'asset.owner', 'asset.firstRegistrationDate', 'asset.classification'] },
     { id: 'supplier', title: 'Supplier Details', icon: Building, fields: ['asset.supplierName', 'asset.supplierContact'] },
     { id: 'review', title: 'Review & Submit', icon: CheckCircle, fields: [] },
 ];
@@ -75,11 +91,31 @@ const StepAsset = () => {
     return (
         <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <FormField control={control} name="asset.make" render={({ field }) => (<FormItem><FormLabel>Make</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                <FormField control={control} name="asset.model" render={({ field }) => (<FormItem><FormLabel>Model</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                <FormField control={control} name="asset.year" render={({ field }) => (<FormItem><FormLabel>Year</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={control} name="asset.make" render={({ field }) => (<FormItem><FormLabel>Make</FormLabel><FormControl><Input placeholder="e.g., Scania" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={control} name="asset.model" render={({ field }) => (<FormItem><FormLabel>Model</FormLabel><FormControl><Input placeholder="e.g., R 560" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={control} name="asset.year" render={({ field }) => (<FormItem><FormLabel>Year</FormLabel><FormControl><Input type="number" placeholder="e.g., 2020" {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
-            <FormField control={control} name="asset.costOfSale" render={({ field }) => (<FormItem><FormLabel>Cost (Excl. VAT)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField control={control} name="asset.costOfSale" render={({ field }) => (<FormItem><FormLabel>Cost (Excl. VAT)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={control} name="asset.registrationNumber" render={({ field }) => (<FormItem><FormLabel>Registration No.</FormLabel><FormControl><Input placeholder="e.g., AB 12 CD GP" {...field} /></FormControl><FormMessage /></FormItem>)} />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField control={control} name="asset.vin" render={({ field }) => (<FormItem><FormLabel>VIN</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={control} name="asset.engineNumber" render={({ field }) => (<FormItem><FormLabel>Engine No.</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField control={control} name="asset.tare" render={({ field }) => (<FormItem><FormLabel>Tare (kg)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={control} name="asset.gvm" render={({ field }) => (<FormItem><FormLabel>GVM (kg)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+            </div>
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField control={control} name="asset.registerNumber" render={({ field }) => (<FormItem><FormLabel>Register No.</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                 <FormField control={control} name="asset.firstRegistrationDate" render={({ field }) => (<FormItem><FormLabel>Date of First Registration</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>)} />
+            </div>
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField control={control} name="asset.titleholder" render={({ field }) => (<FormItem><FormLabel>Titleholder</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={control} name="asset.owner" render={({ field }) => (<FormItem><FormLabel>Owner</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+            </div>
+             <FormField control={control} name="asset.classification" render={({ field }) => (<FormItem><FormLabel>Classification</FormLabel><FormControl><Input placeholder="e.g., Goods Vehicle" {...field} /></FormControl><FormMessage /></FormItem>)} />
         </div>
     );
 };
@@ -120,9 +156,16 @@ export function AgreementWizard({ agreement, clients, facilities, onSave, onBack
         return doc(firestore, 'lendingAssets', agreement.assetId);
     }, [firestore, agreement]);
     const { data: assetData, isLoading: isAssetLoading } = useDoc(assetRef);
+
+    const securityQuery = useMemoFirebase(() => {
+        if (!firestore || !agreement) return null;
+        return query(collection(firestore, `lendingClients/${agreement.clientId}/agreements/${agreement.id}/securities`));
+    }, [firestore, agreement]);
+    const { data: securityData, isLoading: isSecurityLoading } = useCollection(securityQuery);
+    const securityDoc = securityData?.[0];
     
     const isEditing = !!agreement;
-    const isEditDataLoading = isEditing && isAssetLoading;
+    const isEditDataLoading = isEditing && (isAssetLoading || isSecurityLoading);
 
     const selectedClientId = methods.watch('agreement.clientId');
 
@@ -137,28 +180,44 @@ export function AgreementWizard({ agreement, clients, facilities, onSave, onBack
     }, [availableFacilities]);
     
     useEffect(() => {
-        if (agreement) {
-            methods.reset({
-                agreement: {
-                    clientId: agreement.clientId || '',
-                    type: agreement.type || '',
-                    description: agreement.description || '',
-                    totalAdvanced: agreement.totalAdvanced || 0,
-                    interestRate: agreement.interestRate || 0,
-                    numberOfInstallments: agreement.numberOfInstallments || 0,
+        if (isEditing && assetData && securityDoc !== undefined) {
+             methods.reset({
+                agreement: { 
+                    clientId: agreement.clientId,
+                    type: agreement.type,
+                    description: agreement.description,
+                    totalAdvanced: agreement.totalAdvanced,
+                    interestRate: agreement.interestRate,
+                    numberOfInstallments: agreement.numberOfInstallments
                 },
-                asset: assetData ? {
+                asset: { 
                     make: assetData.make || '',
                     model: assetData.model || '',
                     year: assetData.year || '',
                     costOfSale: assetData.costOfSale || 0,
                     registrationNumber: assetData.registrationNumber || '',
+                    vin: assetData.vin || '',
+                    engineNumber: assetData.engineNumber || '',
+                    tare: assetData.tare || '',
+                    gvm: assetData.gvm || '',
+                    registerNumber: assetData.registerNumber || '',
+                    titleholder: assetData.titleholder || '',
+                    owner: assetData.owner || '',
+                    firstRegistrationDate: assetData.firstRegistrationDate || '',
+                    classification: assetData.classification || '',
                     supplierName: assetData.supplierName || '',
                     supplierContact: assetData.supplierContact || '',
-                } : {}
+                },
+                security: {
+                    documentName: securityDoc.documentName,
+                    documentType: securityDoc.documentType,
+                    fileUrl: securityDoc.fileUrl,
+                }
             });
+        } else if (!isEditing) {
+            methods.reset({}); // Reset for new entry
         }
-    }, [agreement, assetData, methods]);
+    }, [isEditing, agreement, assetData, securityDoc, methods]);
 
 
     const onSubmit = async (values: WizardFormValues) => {
@@ -216,6 +275,9 @@ export function AgreementWizard({ agreement, clients, facilities, onSave, onBack
     };
     
      const renderStepContent = () => {
+        if (isEditDataLoading) {
+            return <div className="flex justify-center items-center h-full"><Loader2 className="h-8 w-8 animate-spin"/></div>
+        }
         const stepId = steps[currentStep]?.id;
         switch (stepId) {
             case 'client': return (
@@ -245,7 +307,7 @@ export function AgreementWizard({ agreement, clients, facilities, onSave, onBack
             );
             case 'asset': return <StepAsset />;
             case 'supplier': return <StepSupplier />;
-            case 'review': return <div className="text-center p-8"><h3 className="text-lg font-semibold">Review and Submit</h3></div>
+            case 'review': return <div className="text-center p-8"><h3 className="text-lg font-semibold">Review and Submit</h3><p className="text-muted-foreground">Please confirm all details before saving the client.</p></div>;
             default: return null;
         }
     };
@@ -272,13 +334,14 @@ export function AgreementWizard({ agreement, clients, facilities, onSave, onBack
                                     return (
                                         <Button key={step.id} type="button" variant={currentStep === index ? 'secondary' : 'ghost'} className="justify-start gap-2" onClick={() => setCurrentStep(index)} disabled={index > currentStep && !isStepValid(currentStep - 1)}>
                                             {isCompleted ? <CheckCircle className="h-5 w-5 text-green-500" /> : <div className={cn("h-5 w-5 rounded-full flex items-center justify-center text-xs font-bold", currentStep >= index ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>{index + 1}</div>}
+                                            <Icon className="h-4 w-4 mr-1" />
                                             {step.title}
                                         </Button>
                                     );
                                 })}
                             </div>
                              <div className="space-y-6 min-h-[400px]">
-                                {isEditDataLoading ? <div className="flex justify-center items-center h-full"><Loader2 className="h-8 w-8 animate-spin"/></div> : renderStepContent()}
+                                {renderStepContent()}
                              </div>
                         </div>
                     </CardContent>
