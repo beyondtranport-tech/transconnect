@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -74,6 +73,7 @@ const PitchCompanyProfile = dynamic(() => import('./pitch-company-profile'), { l
 const PitchTechArchitecture = dynamic(() => import('./pitch-tech-architecture'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PitchRevenueModel = dynamic(() => import('./pitch-revenue-model'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PitchMemberOffer = dynamic(() => import('@/app/account/network-offer'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const PitchTyreSuppliers = dynamic(() => import('./pitch-tyre-suppliers'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PitchPartner = dynamic(() => import('@/app/backend/pitch-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PitchPartnerFramework = dynamic(() => import('./pitch-partner-framework'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const EmailSequence = dynamic(() => import('@/app/account/partner-email-sequence'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
@@ -125,6 +125,7 @@ function AdminAccountContent() {
       case 'pitch-tech-architecture': return <PitchTechArchitecture />;
       case 'pitch-revenue-model': return <PitchRevenueModel />;
       case 'pitch-member-offer': return <PitchMemberOffer />;
+      case 'pitch-tyre-suppliers': return <PitchTyreSuppliers />;
       case 'pitch-partner': return <PitchPartner />;
       case 'pitch-partner-framework': return <PitchPartnerFramework />;
       case 'pitch-isa-emails': return <EmailSequence />;
@@ -226,6 +227,7 @@ function AdminAccountContent() {
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'pitch-tech-architecture'} onClick={() => navigate('pitch-tech-architecture')}><Wrench />Tech Architecture</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'pitch-revenue-model'} onClick={() => navigate('pitch-revenue-model')}><DollarSign />Revenue Model</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'pitch-member-offer'} onClick={() => navigate('pitch-member-offer')}><Gift />Member Offer</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'pitch-tyre-suppliers'} onClick={() => navigate('pitch-tyre-suppliers')}><Handshake />Tyre Supplier Pitch</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'pitch-partner'} onClick={() => navigate('pitch-partner')}><FileText />Partner Pitch</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'pitch-partner-framework'} onClick={() => navigate('pitch-partner-framework')}><Handshake />Partner Framework</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'pitch-isa-emails'} onClick={() => navigate('pitch-isa-emails')}><Mail />ISA Email Seq.</SidebarMenuSubButton></SidebarMenuSubItem>
