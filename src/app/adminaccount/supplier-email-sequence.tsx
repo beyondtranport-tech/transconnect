@@ -53,6 +53,8 @@ The central focus of our platform is to provide suppliers like you with a profes
 
 We make it easier for them to buy from you. Our platform includes a Funding division that gives transporters direct access to capital, enabling them to purchase from you.
 
+Furthermore, we offer a unique partnership model where you can earn recurring revenue by introducing your own network to the platform.
+
 Our ecosystem is built on four core divisions: a Supplier Mall (where your shop will live), a Funding division to facilitate sales, a Reseller Marketplace, and advanced Tech tools for transporters.
 
 Would you be open to a brief chat next week to explore how we can drive new, funded business your way at no upfront cost?
