@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -49,13 +48,13 @@ Hi [Supplier Name],
 
 I'm reaching out with an opportunity to list your business on Logistics Flow, a digital ecosystem for the transport industry, completely free of charge.
 
-The central focus of our platform is to provide suppliers like you with a professional online shop. This isn't just another directory listing; it's a digital storefront exposed to a closed-loop community of transport operators and fleet owners actively looking for the products and services you provide.
+The central focus of our platform is to provide you with a digital twin of your business. This isn't just a simple storefront; it's a comprehensive digital branch that includes your shop, staff, payment mechanisms, and branding, all exposed to a closed-loop community of transport operators and fleet owners actively looking for your products.
 
 We make it easier for them to buy from you. Our platform includes a Funding division that gives transporters direct access to capital, enabling them to purchase from you.
 
 Furthermore, we offer a unique partnership model where you can earn recurring revenue by introducing your own network to the platform.
 
-Our ecosystem is built on four core divisions: a Supplier Mall (where your shop will live), a Funding division to facilitate sales, a Reseller Marketplace, and advanced Tech tools for transporters.
+Our ecosystem is built on four core divisions: a Supplier Mall (where your digital branch will live), a Funding division to facilitate sales, a Reseller Marketplace, and advanced Tech tools for transporters.
 
 Would you be open to a brief chat next week to explore how we can drive new, funded business your way at no upfront cost?
 
