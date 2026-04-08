@@ -121,6 +121,9 @@ export function AgreementWizard({ agreement, clients, facilities, onSave, onBack
     }, [firestore, agreement]);
     const { data: assetData, isLoading: isAssetLoading } = useDoc(assetRef);
     
+    const isEditing = !!agreement;
+    const isEditDataLoading = isEditing && isAssetLoading;
+
     const selectedClientId = methods.watch('agreement.clientId');
 
     const availableFacilities = useMemo(() => {
@@ -208,10 +211,11 @@ export function AgreementWizard({ agreement, clients, facilities, onSave, onBack
     const isStepValid = (stepIndex: number) => {
         if (stepIndex < 0 || stepIndex >= steps.length) return true;
         const step = steps[stepIndex];
+        if (!step.fields || step.fields.length === 0) return true;
         return step.fields.every(field => !methods.formState.errors[field as keyof typeof methods.formState.errors]);
     };
     
-    const renderStepContent = () => {
+     const renderStepContent = () => {
         const stepId = steps[currentStep]?.id;
         switch (stepId) {
             case 'client': return (
@@ -259,7 +263,7 @@ export function AgreementWizard({ agreement, clients, facilities, onSave, onBack
                             <Button type="button" variant="ghost" onClick={onBack}><ArrowLeft className="mr-2 h-4 w-4"/>Back to List</Button>
                         </div>
                     </CardHeader>
-                    <CardContent>
+                        <CardContent>
                         <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] gap-8">
                              <div className="flex flex-col gap-2 border-r pr-4">
                                 {steps.map((step, index) => {
@@ -268,7 +272,6 @@ export function AgreementWizard({ agreement, clients, facilities, onSave, onBack
                                     return (
                                         <Button key={step.id} type="button" variant={currentStep === index ? 'secondary' : 'ghost'} className="justify-start gap-2" onClick={() => setCurrentStep(index)} disabled={index > currentStep && !isStepValid(currentStep - 1)}>
                                             {isCompleted ? <CheckCircle className="h-5 w-5 text-green-500" /> : <div className={cn("h-5 w-5 rounded-full flex items-center justify-center text-xs font-bold", currentStep >= index ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>{index + 1}</div>}
-                                            <Icon className="h-4 w-4 mr-1" />
                                             {step.title}
                                         </Button>
                                     );
