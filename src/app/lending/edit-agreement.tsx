@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -9,14 +10,15 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, ArrowLeft, ArrowRight, CheckCircle, FileSignature, AlertCircle, Banknote, User, PlusCircle } from 'lucide-react';
-import { getClientSideAuthToken } from '@/firebase';
+import { Loader2, Save, ArrowLeft, ArrowRight, CheckCircle, FileSignature, Truck, Building, User, Banknote } from 'lucide-react';
+import { getClientSideAuthToken, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { doc, collection, query } from 'firebase/firestore';
 
 // API Helper
 async function performAdminAction(token: string, action: string, payload: any) {
@@ -32,18 +34,66 @@ async function performAdminAction(token: string, action: string, payload: any) {
     return result;
 }
 
-const agreementSchema = z.object({
+// Schemas
+const agreementSubSchema = z.object({
   clientId: z.string().min(1, 'Client is required'),
   type: z.string().min(1, 'Agreement type is required'),
   description: z.string().min(1, 'Description is required'),
-  status: z.enum(['pending', 'credit', 'payout', 'active', 'completed', 'defaulted']).default('pending'),
   totalAdvanced: z.coerce.number().positive('Amount must be positive'),
   interestRate: z.coerce.number().min(0, "Rate can't be negative"),
   numberOfInstallments: z.coerce.number().int().positive('Term must be a positive integer'),
-  createDate: z.string().optional(),
-  firstInstallmentDate: z.string().optional(),
 });
-type AgreementFormValues = z.infer<typeof agreementSchema>;
+
+const assetSubSchema = z.object({
+  make: z.string().optional(),
+  model: z.string().optional(),
+  year: z.string().optional(),
+  costOfSale: z.coerce.number().optional(),
+  registrationNumber: z.string().optional(),
+  supplierName: z.string().optional(),
+  supplierContact: z.string().optional(),
+});
+
+const wizardSchema = z.object({
+  agreement: agreementSubSchema,
+  asset: assetSubSchema,
+});
+
+type WizardFormValues = z.infer<typeof wizardSchema>;
+
+
+const steps = [
+    { id: 'client', title: 'Client & Facility', icon: User, fields: ['agreement.clientId', 'agreement.type'] },
+    { id: 'details', title: 'Agreement Details', icon: FileSignature, fields: ['agreement.description', 'agreement.totalAdvanced', 'agreement.interestRate', 'agreement.numberOfInstallments'] },
+    { id: 'asset', title: 'Asset Details', icon: Truck, fields: ['asset.make', 'asset.model', 'asset.year', 'asset.costOfSale'] },
+    { id: 'supplier', title: 'Supplier Details', icon: Building, fields: ['asset.supplierName', 'asset.supplierContact'] },
+    { id: 'review', title: 'Review & Submit', icon: CheckCircle, fields: [] },
+];
+
+const StepAsset = () => {
+    const { control } = useFormContext<WizardFormValues>();
+    return (
+        <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <FormField control={control} name="asset.make" render={({ field }) => (<FormItem><FormLabel>Make</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={control} name="asset.model" render={({ field }) => (<FormItem><FormLabel>Model</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={control} name="asset.year" render={({ field }) => (<FormItem><FormLabel>Year</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+            </div>
+            <FormField control={control} name="asset.costOfSale" render={({ field }) => (<FormItem><FormLabel>Cost (Excl. VAT)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+        </div>
+    );
+};
+
+const StepSupplier = () => {
+    const { control } = useFormContext<WizardFormValues>();
+    return (
+         <div className="space-y-4">
+            <FormField control={control} name="asset.supplierName" render={({ field }) => (<FormItem><FormLabel>Supplier Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+            <FormField control={control} name="asset.supplierContact" render={({ field }) => (<FormItem><FormLabel>Supplier Contact</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+        </div>
+    );
+};
+
 
 interface AgreementWizardProps {
   agreement?: any;
@@ -53,28 +103,25 @@ interface AgreementWizardProps {
   onBack: () => void;
 }
 
-const steps = [
-    { id: 'client', title: 'Select Client', icon: User, fields: ['clientId'] },
-    { id: 'facilities', title: 'Facilities', icon: Banknote, fields: ['type'] },
-    { id: 'details', title: 'Agreement Details', icon: FileSignature, fields: ['description', 'totalAdvanced', 'interestRate', 'numberOfInstallments'] },
-    { id: 'review', title: 'Review & Submit', icon: CheckCircle, fields: [] },
-];
-
 export function AgreementWizard({ agreement, clients, facilities, onSave, onBack }: AgreementWizardProps) {
     const [isLoading, setIsLoading] = useState(false);
     const [currentStep, setCurrentStep] = useState(0);
     const { toast } = useToast();
     const router = useRouter();
+    const firestore = useFirestore();
 
-    const methods = useForm<AgreementFormValues>({
-        resolver: zodResolver(agreementSchema),
+    const methods = useForm<WizardFormValues>({
+        resolver: zodResolver(wizardSchema),
         mode: 'onChange',
-        defaultValues: agreement || {
-            status: 'pending',
-        }
     });
     
-    const selectedClientId = methods.watch('clientId');
+    const assetRef = useMemoFirebase(() => {
+        if (!firestore || !agreement?.assetId) return null;
+        return doc(firestore, 'lendingAssets', agreement.assetId);
+    }, [firestore, agreement]);
+    const { data: assetData, isLoading: isAssetLoading } = useDoc(assetRef);
+    
+    const selectedClientId = methods.watch('agreement.clientId');
 
     const availableFacilities = useMemo(() => {
         if (!selectedClientId) return [];
@@ -83,25 +130,60 @@ export function AgreementWizard({ agreement, clients, facilities, onSave, onBack
 
     const availableTypes = useMemo(() => {
         const types = availableFacilities.map(f => f.type);
-        return [...new Set(types)]; // Unique types
+        return [...new Set(types)];
     }, [availableFacilities]);
     
     useEffect(() => {
         if (agreement) {
             methods.reset({
-                ...agreement,
-                createDate: agreement.createDate ? new Date(agreement.createDate).toISOString().split('T')[0] : undefined,
-                firstInstallmentDate: agreement.firstInstallmentDate ? new Date(agreement.firstInstallmentDate).toISOString().split('T')[0] : undefined,
+                agreement: {
+                    clientId: agreement.clientId || '',
+                    type: agreement.type || '',
+                    description: agreement.description || '',
+                    totalAdvanced: agreement.totalAdvanced || 0,
+                    interestRate: agreement.interestRate || 0,
+                    numberOfInstallments: agreement.numberOfInstallments || 0,
+                },
+                asset: assetData ? {
+                    make: assetData.make || '',
+                    model: assetData.model || '',
+                    year: assetData.year || '',
+                    costOfSale: assetData.costOfSale || 0,
+                    registrationNumber: assetData.registrationNumber || '',
+                    supplierName: assetData.supplierName || '',
+                    supplierContact: assetData.supplierContact || '',
+                } : {}
             });
         }
-    }, [agreement, methods]);
+    }, [agreement, assetData, methods]);
 
-    const onSubmit = async (values: AgreementFormValues) => {
+
+    const onSubmit = async (values: WizardFormValues) => {
         setIsLoading(true);
         try {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication failed.");
-            await performAdminAction(token, 'saveLendingAgreement', { agreement: { id: agreement?.id, ...values } });
+
+            let assetId = agreement?.assetId;
+            const assetPayload: any = { ...values.asset, clientId: values.agreement.clientId };
+
+            // Save/Update Asset if there's data for it
+            if (Object.values(values.asset).some(v => v)) {
+                if (assetId) {
+                    assetPayload.id = assetId;
+                }
+                const assetResult = await performAdminAction(token, 'saveLendingAsset', { asset: assetPayload });
+                assetId = assetResult.id;
+            }
+
+            // Save Agreement
+            const agreementPayload = {
+                id: agreement?.id,
+                ...values.agreement,
+                assetId: assetId,
+            };
+            await performAdminAction(token, 'saveLendingAgreement', { agreement: agreementPayload });
+
             toast({ title: agreement ? 'Agreement Updated' : 'Agreement Created' });
             onSave();
         } catch (e: any) {
@@ -122,67 +204,44 @@ export function AgreementWizard({ agreement, clients, facilities, onSave, onBack
     };
     
     const handleBackStep = () => setCurrentStep(prev => prev - 1);
-
+    
     const isStepValid = (stepIndex: number) => {
         if (stepIndex < 0 || stepIndex >= steps.length) return true;
         const step = steps[stepIndex];
-        if (!step.fields || step.fields.length === 0) return true;
         return step.fields.every(field => !methods.formState.errors[field as keyof typeof methods.formState.errors]);
-    };
-    
-     const handleCreateFacility = () => {
-        const clientId = methods.getValues('clientId');
-        if (clientId) {
-            router.push(`/lending?view=facilities&action=create&clientId=${clientId}`);
-        } else {
-            toast({
-                variant: 'destructive',
-                title: 'Client Not Selected',
-                description: 'Please go back to the previous step and select a client.',
-            });
-        }
     };
     
     const renderStepContent = () => {
         const stepId = steps[currentStep]?.id;
         switch (stepId) {
-            case 'client': return <FormField control={methods.control} name="clientId" render={({ field }) => (<FormItem><FormLabel>Client</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a client..." /></SelectTrigger></FormControl><SelectContent>{clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />;
-            case 'facilities': return (
-                <div>
-                    {availableTypes.length > 0 ? (
-                         <FormField control={methods.control} name="type" render={({ field }) => (<FormItem><FormLabel>Agreement Type</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select an available agreement type..." /></SelectTrigger></FormControl><SelectContent>{availableTypes.map(type => <SelectItem key={type} value={type} className="capitalize">{type.replace(/_/g, ' ')}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
-                    ) : (
-                        <Alert>
-                            <AlertCircle className="h-4 w-4" />
-                            <AlertTitle>No Active Facilities Found</AlertTitle>
-                            <AlertDescription>
-                                This client does not have any active credit facilities. You must create a facility for them before you can create an agreement.
-                            </AlertDescription>
-                            <div className="mt-4">
-                               <Button type="button" onClick={handleCreateFacility}>
-                                    <PlusCircle className="mr-2 h-4 w-4" /> Create Facility
-                                </Button>
-                            </div>
-                        </Alert>
+            case 'client': return (
+                 <div className="space-y-4">
+                    <FormField control={methods.control} name="agreement.clientId" render={({ field }) => (<FormItem><FormLabel>Client</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a client..." /></SelectTrigger></FormControl><SelectContent>{clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
+                    {selectedClientId && (
+                        availableTypes.length > 0 ? (
+                            <FormField control={methods.control} name="agreement.type" render={({ field }) => (<FormItem><FormLabel>Facility Type</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select an agreement type..." /></SelectTrigger></FormControl><SelectContent>{availableTypes.map(type => <SelectItem key={type} value={type} className="capitalize">{type.replace(/_/g, ' ')}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
+                        ) : (
+                            <Alert>
+                                <AlertTitle>No Active Facilities</AlertTitle>
+                                <AlertDescription>This client has no active credit facilities. You must create one before creating an agreement.</AlertDescription>
+                            </Alert>
+                        )
                     )}
-                </div>
+                 </div>
             );
             case 'details': return (
                  <div className="space-y-4">
-                    <FormField control={methods.control} name="description" render={({ field }) => (<FormItem><FormLabel>Agreement Description</FormLabel><FormControl><Textarea placeholder="e.g., Asset finance for Scania R500" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={methods.control} name="agreement.description" render={({ field }) => (<FormItem><FormLabel>Agreement Description</FormLabel><FormControl><Textarea placeholder="e.g., Asset finance for Scania R500" {...field} /></FormControl><FormMessage /></FormItem>)} />
                     <div className="grid grid-cols-3 gap-4">
-                        <FormField control={methods.control} name="totalAdvanced" render={({ field }) => (<FormItem><FormLabel>Amount (R)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        <FormField control={methods.control} name="interestRate" render={({ field }) => (<FormItem><FormLabel>Rate (%)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        <FormField control={methods.control} name="numberOfInstallments" render={({ field }) => (<FormItem><FormLabel>Term (Months)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={methods.control} name="agreement.totalAdvanced" render={({ field }) => (<FormItem><FormLabel>Amount (R)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={methods.control} name="agreement.interestRate" render={({ field }) => (<FormItem><FormLabel>Rate (%)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={methods.control} name="agreement.numberOfInstallments" render={({ field }) => (<FormItem><FormLabel>Term (Months)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
                     </div>
                 </div>
             );
-            case 'review': return (
-                <div className="text-center p-8">
-                    <h3 className="text-lg font-semibold">Review and Submit</h3>
-                    <p className="text-muted-foreground">Please confirm all details before saving the agreement.</p>
-                </div>
-            )
+            case 'asset': return <StepAsset />;
+            case 'supplier': return <StepSupplier />;
+            case 'review': return <div className="text-center p-8"><h3 className="text-lg font-semibold">Review and Submit</h3></div>
             default: return null;
         }
     };
@@ -216,7 +275,7 @@ export function AgreementWizard({ agreement, clients, facilities, onSave, onBack
                                 })}
                             </div>
                              <div className="space-y-6 min-h-[400px]">
-                                {renderStepContent()}
+                                {isEditDataLoading ? <div className="flex justify-center items-center h-full"><Loader2 className="h-8 w-8 animate-spin"/></div> : renderStepContent()}
                              </div>
                         </div>
                     </CardContent>
@@ -224,11 +283,7 @@ export function AgreementWizard({ agreement, clients, facilities, onSave, onBack
                         <Button type="button" variant="outline" onClick={handleBackStep} disabled={currentStep === 0 || isLoading}>
                             <ArrowLeft className="mr-2 h-4 w-4" /> Back
                         </Button>
-                        {currentStep === 0 ? (
-                            <Button type="button" onClick={handleNext}>
-                                Save & Continue <ArrowRight className="ml-2 h-4 w-4"/>
-                            </Button>
-                        ) : currentStep < steps.length - 1 ? (
+                        {currentStep < steps.length - 1 ? (
                             <Button type="button" onClick={handleNext}>
                                 Next <ArrowRight className="ml-2 h-4 w-4"/>
                             </Button>
