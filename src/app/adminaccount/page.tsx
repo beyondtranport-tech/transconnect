@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -104,6 +103,7 @@ const PitchTechArchitecture = dynamic(() => import('./pitch-tech-architecture'),
 const PitchRevenueModel = dynamic(() => import('./pitch-revenue-model'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PitchMemberOffer = dynamic(() => import('@/app/account/network-offer'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const SupplierPitch = dynamic(() => import('./supplier-pitch'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const SupplierEmailSequence = dynamic(() => import('./supplier-email-sequence'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PitchPartner = dynamic(() => import('@/app/backend/pitch-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PitchPartnerFramework = dynamic(() => import('./pitch-partner-framework'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const EmailSequence = dynamic(() => import('@/app/account/partner-email-sequence'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
@@ -156,6 +156,7 @@ function AdminAccountContent() {
       case 'pitch-revenue-model': return <PitchRevenueModel />;
       case 'pitch-member-offer': return <PitchMemberOffer />;
       case 'supplier-pitch': return <SupplierPitch />;
+      case 'supplier-emails': return <SupplierEmailSequence />;
       case 'pitch-partner': return <PitchPartner />;
       case 'pitch-partner-framework': return <PitchPartnerFramework />;
       case 'pitch-isa-emails': return <EmailSequence />;
@@ -198,7 +199,7 @@ function AdminAccountContent() {
   
   const isSalesActive = ['leads-agent', 'leads-database', 'branding-studio', 'audio-studio', 'asset-gallery'].includes(activeView);
   const isPartnersActive = ['partners-strategic', 'partners-isa', 'partners-investor', 'partners-developer'].includes(activeView);
-  const isPitchingActive = activeView.startsWith('pitch-') || activeView === 'supplier-pitch';
+  const isPitchingActive = activeView.startsWith('pitch-') || activeView.startsWith('supplier-');
   const isFinancialsInputsActive = activeView.startsWith('financials-') && !activeView.includes('projections');
   const isFinancialsProjectionsActive = activeView.startsWith('financials-projections');
 
