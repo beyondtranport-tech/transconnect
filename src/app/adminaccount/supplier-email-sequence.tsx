@@ -43,19 +43,19 @@ const EmailTemplate = ({ subject, content }: { subject: string, content: string 
 
 const getTemplates = (supplierType: string) => ({
     intro: {
-        subject: `Partnership Opportunity: Reaching the Transport Sector`,
+        subject: `Partnership Opportunity: A New Sales Channel for Your ${supplierType} Business`,
         content: `
-Dear [Supplier Name],
+Hi [Supplier Name],
 
-I hope this email finds you well.
+I'm reaching out with an opportunity to list your business on Logistics Flow, a digital ecosystem for the transport industry, completely free of charge.
 
-My name is [Your Name], and I'm reaching out from Logistics Flow. We've developed a comprehensive digital ecosystem for the transport industry, built on four core divisions: Funding, Mall, Marketplace, and Tech.
+The central focus of our platform is to provide suppliers like you with a professional online shop. This isn't just another directory listing; it's a digital storefront exposed to a closed-loop community of transport operators and fleet owners actively looking for the products and services you provide.
 
-We're actively looking for high-quality ${supplierType} suppliers to partner with because our platform does more than just connect you with buyers—we actively help you close deals.
+We make it easier for them to buy from you. Our platform includes a Funding division that gives transporters direct access to capital, enabling them to purchase from you.
 
-A key feature is our Funding division, which provides transporters with the capital they need to purchase from suppliers like you. By joining our network, your customers can get financing directly through the platform, making it easier for them to buy your products and increasing your sales velocity.
+Our ecosystem is built on four core divisions: a Supplier Mall (where your shop will live), a Funding division to facilitate sales, a Reseller Marketplace, and advanced Tech tools for transporters.
 
-Would you be open to a brief chat next week to explore how we can drive new, funded business your way?
+Would you be open to a brief chat next week to explore how we can drive new, funded business your way at no upfront cost?
 
 Best regards,
 
@@ -85,7 +85,7 @@ Best regards,
         `
     },
     revenue: {
-        subject: `A New Revenue Stream for Your Business with Logistics Flow`,
+        subject: "A New Revenue Stream for Your Business with Logistics Flow",
         content: `
 Dear [Supplier Name],
 
@@ -106,7 +106,7 @@ Best regards,
         `
     },
     explanation: {
-        subject: `Leverage Your Client Network with Logistics Flow`,
+        subject: "Leverage Your Client Network with Logistics Flow",
         content: `
 Dear [Supplier Name],
 
@@ -152,7 +152,7 @@ This guide explains how to use your account to invite your clients and start ear
 
 By actively inviting your clients, you build a recurring revenue stream that grows with the ecosystem. The more your network transacts, the more you earn.
         `
-    },
+    }
 });
 
 const tabs = [
