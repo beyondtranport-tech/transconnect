@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -17,45 +18,68 @@ import {
 import {
   LogOut,
   Loader2,
-  LayoutDashboard,
-  User,
-  Bot,
-  Mic,
-  BarChart3,
-  Search,
-  Database,
-  Palette,
-  GalleryVertical,
-  Handshake,
-  Users2,
-  UserCheck2,
-  Code2,
-  Presentation,
-  Building,
-  Wrench,
-  DollarSign,
-  Gift,
-  FileText,
-  Mail,
   TrendingUp,
-  Settings,
-  Banknote,
   Map,
-  Target,
-  Calculator,
   Sheet as FinancialSheetIcon,
+  Presentation,
+  User,
+  LayoutDashboard,
+  Mail,
+  Calculator,
+  Target,
+  Info,
+  Bot,
+  Database,
+  ImageIcon,
+  Briefcase,
+  Scale,
+  Handshake,
+  DollarSign,
+  Sparkles,
+  Settings,
+  Users,
+  Mic,
   LineChart,
+  Shield,
+  Activity,
+  Wrench,
+  Wallet,
+  ListTodo,
+  Store,
+  Lock,
+  Star,
+  Award,
+  Banknote,
+  FileText,
+  Landmark,
+  Truck,
+  ShieldCheck,
+  Repeat,
+  FileSignature,
+  Building,
+  FileSearch,
+  UserPlus,
+  Filter,
+  ClipboardList,
+  MessageSquare,
+  Code,
+  Gift,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect, Suspense, useCallback } from 'react';
+import Link from 'next/link';
+
 import { useUser, useAuth } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import dynamic from 'next/dynamic';
 import React from 'react';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
-// Dynamically import all the content components
+// --- Dynamic Imports for Business Components ---
+
+// Operations
 const DashboardContent = dynamic(() => import('./dashboard'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const AnalyticsContent = dynamic(() => import('./analytics'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const LeadsAgent = dynamic(() => import('./leads-agent'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
@@ -73,7 +97,7 @@ const PitchCompanyProfile = dynamic(() => import('./pitch-company-profile'), { l
 const PitchTechArchitecture = dynamic(() => import('./pitch-tech-architecture'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PitchRevenueModel = dynamic(() => import('./pitch-revenue-model'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PitchMemberOffer = dynamic(() => import('@/app/account/network-offer'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const PitchTyreSuppliers = dynamic(() => import('./pitch-tyre-suppliers'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const SupplierPitch = dynamic(() => import('./supplier-pitch'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PitchPartner = dynamic(() => import('@/app/backend/pitch-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PitchPartnerFramework = dynamic(() => import('./pitch-partner-framework'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const EmailSequence = dynamic(() => import('@/app/account/partner-email-sequence'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
@@ -125,7 +149,7 @@ function AdminAccountContent() {
       case 'pitch-tech-architecture': return <PitchTechArchitecture />;
       case 'pitch-revenue-model': return <PitchRevenueModel />;
       case 'pitch-member-offer': return <PitchMemberOffer />;
-      case 'pitch-tyre-suppliers': return <PitchTyreSuppliers />;
+      case 'supplier-pitch': return <SupplierPitch />;
       case 'pitch-partner': return <PitchPartner />;
       case 'pitch-partner-framework': return <PitchPartnerFramework />;
       case 'pitch-isa-emails': return <EmailSequence />;
@@ -168,7 +192,7 @@ function AdminAccountContent() {
   
   const isSalesActive = ['leads-agent', 'leads-database', 'branding-studio', 'audio-studio', 'asset-gallery'].includes(activeView);
   const isPartnersActive = ['partners-strategic', 'partners-isa', 'partners-investor', 'partners-developer'].includes(activeView);
-  const isPitchingActive = activeView.startsWith('pitch-');
+  const isPitchingActive = activeView.startsWith('pitch-') || activeView === 'supplier-pitch';
   const isFinancialsInputsActive = activeView.startsWith('financials-') && !activeView.includes('projections');
   const isFinancialsProjectionsActive = activeView.startsWith('financials-projections');
 
@@ -227,7 +251,7 @@ function AdminAccountContent() {
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'pitch-tech-architecture'} onClick={() => navigate('pitch-tech-architecture')}><Wrench />Tech Architecture</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'pitch-revenue-model'} onClick={() => navigate('pitch-revenue-model')}><DollarSign />Revenue Model</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'pitch-member-offer'} onClick={() => navigate('pitch-member-offer')}><Gift />Member Offer</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'pitch-tyre-suppliers'} onClick={() => navigate('pitch-tyre-suppliers')}><Handshake />Tyre Supplier Pitch</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'supplier-pitch'} onClick={() => navigate('supplier-pitch')}><Handshake />Supplier Pitch</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'pitch-partner'} onClick={() => navigate('pitch-partner')}><FileText />Partner Pitch</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'pitch-partner-framework'} onClick={() => navigate('pitch-partner-framework')}><Handshake />Partner Framework</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'pitch-isa-emails'} onClick={() => navigate('pitch-isa-emails')}><Mail />ISA Email Seq.</SidebarMenuSubButton></SidebarMenuSubItem>
