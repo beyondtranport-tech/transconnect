@@ -104,6 +104,8 @@ const PitchRevenueModel = dynamic(() => import('./pitch-revenue-model'), { loadi
 const PitchMemberOffer = dynamic(() => import('@/app/account/network-offer'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const SupplierPitch = dynamic(() => import('./supplier-pitch'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const SupplierEmailSequence = dynamic(() => import('./supplier-email-sequence'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const TransporterPitch = dynamic(() => import('./transporter-pitch'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const TransporterEmailSequence = dynamic(() => import('./transporter-email-sequence'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PitchPartner = dynamic(() => import('@/app/backend/pitch-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PitchPartnerFramework = dynamic(() => import('./pitch-partner-framework'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const EmailSequence = dynamic(() => import('@/app/account/partner-email-sequence'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
@@ -157,6 +159,8 @@ function AdminAccountContent() {
       case 'pitch-member-offer': return <PitchMemberOffer />;
       case 'supplier-pitch': return <SupplierPitch />;
       case 'supplier-emails': return <SupplierEmailSequence />;
+      case 'transporter-pitch': return <TransporterPitch />;
+      case 'transporter-emails': return <TransporterEmailSequence />;
       case 'pitch-partner': return <PitchPartner />;
       case 'pitch-partner-framework': return <PitchPartnerFramework />;
       case 'pitch-isa-emails': return <EmailSequence />;
@@ -199,7 +203,7 @@ function AdminAccountContent() {
   
   const isSalesActive = ['leads-agent', 'leads-database', 'branding-studio', 'audio-studio', 'asset-gallery'].includes(activeView);
   const isPartnersActive = ['partners-strategic', 'partners-isa', 'partners-investor', 'partners-developer'].includes(activeView);
-  const isPitchingActive = activeView.startsWith('pitch-') || activeView.startsWith('supplier-');
+  const isPitchingActive = activeView.startsWith('pitch-') || activeView.startsWith('supplier-') || activeView.startsWith('transporter-');
   const isFinancialsInputsActive = activeView.startsWith('financials-') && !activeView.includes('projections');
   const isFinancialsProjectionsActive = activeView.startsWith('financials-projections');
 
@@ -259,6 +263,7 @@ function AdminAccountContent() {
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'pitch-revenue-model'} onClick={() => navigate('pitch-revenue-model')}><DollarSign />Revenue Model</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'pitch-member-offer'} onClick={() => navigate('pitch-member-offer')}><Gift />Member Offer</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'supplier-pitch'} onClick={() => navigate('supplier-pitch')}><Handshake />Supplier Pitch</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'transporter-pitch'} onClick={() => navigate('transporter-pitch')}><Truck />Transporter Pitch</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'pitch-partner'} onClick={() => navigate('pitch-partner')}><FileText />Partner Pitch</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'pitch-partner-framework'} onClick={() => navigate('pitch-partner-framework')}><Handshake />Partner Framework</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'pitch-isa-emails'} onClick={() => navigate('pitch-isa-emails')}><Mail />ISA Email Seq.</SidebarMenuSubButton></SidebarMenuSubItem>
