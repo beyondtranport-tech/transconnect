@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -40,7 +39,7 @@ export default function NetworkOffer() {
         <div className="space-y-8">
             <div>
                 <h1 className="text-3xl font-bold font-headline">The Network Offer</h1>
-                <p className="text-lg text-muted-foreground mt-2">This is the value proposition for new members joining the TransConnect network. It's a pathway to savings, growth, and earning potential.</p>
+                <p className="text-lg text-muted-foreground mt-2">This is the value proposition for new members joining the Logistics Flow network. It's a pathway to savings, growth, and earning potential.</p>
             </div>
 
             <Card>
@@ -48,7 +47,7 @@ export default function NetworkOffer() {
                     <CardTitle className="flex items-center gap-2"><Gift className="h-6 w-6 text-primary"/>The Core Offer: A Foundation of Value</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <p className="text-lg">As a member of TransConnect, you gain immediate access to an ecosystem designed to reduce your costs and increase your opportunities. This includes access to our Malls for funding, parts, and collaboration.</p>
+                    <p className="text-lg">As a member of Logistics Flow, you gain immediate access to an ecosystem designed to reduce your costs and increase your opportunities. This includes access to our Malls for funding, parts, and collaboration.</p>
                 </CardContent>
             </Card>
 
@@ -83,12 +82,12 @@ export default function NetworkOffer() {
                          <CardDescription>Earn from the activity within your network.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <p>Your earning potential grows as your network uses the platform. You earn a <strong className="text-primary">{networkTransactionalShare}% share</strong> of the revenue TransConnect generates from your network's activity across the malls.</p>
+                        <p>Your earning potential grows as your network uses the platform. You earn a <strong className="text-primary">{networkTransactionalShare}% share</strong> of the revenue Logistics Flow generates from your network's activity across the malls.</p>
                         <ul className="text-sm space-y-4 pt-2">
                             <li className="flex items-start gap-3">
                                 <CheckCircle className="h-4 w-4 text-green-600 mt-1 shrink-0" />
                                 <div>
-                                    <strong className="font-semibold">Finance Mall Example:</strong> A member from your network finances a <strong className="font-mono">{formatCurrency(exampleDealSize)}</strong> truck. TransConnect earns a {exampleOriginationFeePercent}% fee ({formatCurrency(exampleDealCommission)}). Your {networkTransactionalShare}% share earns you <strong className="text-green-600">{formatCurrency(networkExampleDealShare)}</strong>.
+                                    <strong className="font-semibold">Finance Mall Example:</strong> A member from your network finances a <strong className="font-mono">{formatCurrency(exampleDealSize)}</strong> truck. Logistics Flow earns a {exampleOriginationFeePercent}% fee ({formatCurrency(exampleDealCommission)}). Your {networkTransactionalShare}% share earns you <strong className="text-green-600">{formatCurrency(networkExampleDealShare)}</strong>.
                                 </div>
                             </li>
                              <li className="flex items-start gap-3">
@@ -108,7 +107,7 @@ export default function NetworkOffer() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <p className="text-lg">We believe in rewarding growth and commitment. If you can demonstrate a significant network base (a minimum of <strong className="text-primary">500 potential opportunities</strong>), you can apply to become a full Independent Sales Agent (ISA) Partner.</p>
-                    <p className="text-muted-foreground">As a Partner, you unlock higher commission tiers, performance bonuses, and a closer working relationship with the TransConnect team. This is the ultimate level for those who want to turn referrals into a significant business.</p>
+                    <p className="text-muted-foreground">As a Partner, you unlock higher commission tiers, performance bonuses, and a closer working relationship with the Logistics Flow team. This is the ultimate level for those who want to turn referrals into a significant business.</p>
                 </CardContent>
                  <CardFooter>
                     <p className="text-lg font-semibold">Start by building your network, and we'll provide the tools and rewards for your success.</p>
