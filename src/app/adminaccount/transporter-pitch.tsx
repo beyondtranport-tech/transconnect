@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -24,7 +25,7 @@ const PitchComponent = ({ category }: { category: string }) => {
                 Use our pre-written email templates to start a conversation with potential members in this category.
             </p>
             <Button asChild className="mt-6">
-                <Link href={`/adminaccount?view=transporter-emails&type=${encodeURIComponent(category)}`}>
+                <Link href={`/adminaccount?view=pitch-transporter-emails&type=${encodeURIComponent(category)}`}>
                     View Email Sequence <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
             </Button>
@@ -56,3 +57,5 @@ export default function TransporterPitch() {
         </Tabs>
     );
 }
+
+    

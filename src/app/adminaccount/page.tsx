@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -68,7 +69,8 @@ import {
   GalleryVertical,
   Users2,
   UserCheck2,
-  Code2
+  Code2,
+  BookOpen
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -143,35 +145,40 @@ function AdminAccountContent() {
     switch (activeView) {
       case 'dashboard': return <DashboardContent />;
       case 'analytics': return <AnalyticsContent />;
+      
+      // Sales & Marketing
       case 'leads-agent': return <LeadsAgent />;
       case 'leads-database': return <LeadsDatabase />;
       case 'branding-studio': return <BrandingStudio />;
       case 'audio-studio': return <AudioStudio />;
       case 'asset-gallery': return <AssetGallery />;
+      
+      // Partner Lifecycle
       case 'partners-strategic': return <PartnerManagement />;
       case 'partners-isa': return <ISAManagement />;
       case 'partners-investor': return <InvestorManagement />;
       case 'partners-developer': return <DeveloperManagement />;
 
+      // Pitch Library
       case 'pitch-company-profile': return <PitchCompanyProfile />;
       case 'pitch-tech-architecture': return <PitchTechArchitecture />;
       case 'pitch-revenue-model': return <PitchRevenueModel />;
       case 'pitch-member-offer': return <PitchMemberOffer />;
-      case 'supplier-pitch': return <SupplierPitch />;
-      case 'supplier-emails': return <SupplierEmailSequence />;
-      case 'transporter-pitch': return <TransporterPitch />;
-      case 'transporter-emails': return <TransporterEmailSequence />;
-      case 'pitch-partner': return <PitchPartner />;
+      case 'pitch-supplier': return <SupplierPitch />;
+      case 'pitch-supplier-emails': return <SupplierEmailSequence />;
+      case 'pitch-transporter': return <TransporterPitch />;
+      case 'pitch-transporter-emails': return <TransporterEmailSequence />;
+      case 'pitch-partner-deck': return <PitchPartner />;
       case 'pitch-partner-framework': return <PitchPartnerFramework />;
-      case 'pitch-isa-emails': return <EmailSequence />;
       case 'pitch-partner-emails': return <EmailSequence />;
-      case 'pitch-investor': return <InvestorOffer />;
+      case 'pitch-investor-deck': return <InvestorOffer />;
       case 'pitch-investor-offer': return <InvestorOffer />;
       case 'pitch-investor-emails': return <EmailSequence />;
-      case 'pitch-developer': return <DeveloperOffer />;
+      case 'pitch-developer-deck': return <DeveloperOffer />;
       case 'pitch-developer-offer': return <DeveloperOffer />;
       case 'pitch-developer-emails': return <EmailSequence />;
       
+      // Financials
       case 'financials-setup': return <FinancialsSetup />;
       case 'financials-general-settings': return <FinancialsGeneralSettings />;
       case 'financials-bank-details': return <FinancialsBankDetails />;
@@ -202,8 +209,8 @@ function AdminAccountContent() {
   const navigate = (view: string) => router.push(`/adminaccount?view=${view}`, { scroll: false });
   
   const isSalesActive = ['leads-agent', 'leads-database', 'branding-studio', 'audio-studio', 'asset-gallery'].includes(activeView);
-  const isPartnersActive = ['partners-strategic', 'partners-isa', 'partners-investor', 'partners-developer'].includes(activeView);
-  const isPitchingActive = activeView.startsWith('pitch-') || activeView.startsWith('supplier-') || activeView.startsWith('transporter-');
+  const isPartnerLifecycleActive = activeView.startsWith('partners-');
+  const isPitchLibraryActive = activeView.startsWith('pitch-') || activeView.includes('-emails') || activeView.includes('-pitch');
   const isFinancialsInputsActive = activeView.startsWith('financials-') && !activeView.includes('projections');
   const isFinancialsProjectionsActive = activeView.startsWith('financials-projections');
 
@@ -243,8 +250,8 @@ function AdminAccountContent() {
                     </SidebarMenuSub>
                 </SidebarMenuItem>
                  <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Partner Management" isActive={isPartnersActive}>
-                        <Handshake /><span>Partner Management</span>
+                    <SidebarMenuButton tooltip="Partner Lifecycle" isActive={isPartnerLifecycleActive}>
+                        <Handshake /><span>Partner Lifecycle</span>
                     </SidebarMenuButton>
                     <SidebarMenuSub>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'partners-strategic'} onClick={() => navigate('partners-strategic')}><Users2 />Strategic Partners</SidebarMenuSubButton></SidebarMenuSubItem>
@@ -254,26 +261,23 @@ function AdminAccountContent() {
                     </SidebarMenuSub>
                 </SidebarMenuItem>
                  <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Pitching" isActive={isPitchingActive}>
-                        <Presentation /><span>Pitching</span>
+                    <SidebarMenuButton tooltip="Pitch Library" isActive={isPitchLibraryActive}>
+                        <BookOpen /><span>Pitch Library</span>
                     </SidebarMenuButton>
                      <SidebarMenuSub>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'pitch-company-profile'} onClick={() => navigate('pitch-company-profile')}><Building />Company Profile</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'pitch-tech-architecture'} onClick={() => navigate('pitch-tech-architecture')}><Wrench />Tech Architecture</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'pitch-revenue-model'} onClick={() => navigate('pitch-revenue-model')}><DollarSign />Revenue Model</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'pitch-member-offer'} onClick={() => navigate('pitch-member-offer')}><Gift />Member Offer</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'supplier-pitch'} onClick={() => navigate('supplier-pitch')}><Handshake />Supplier Pitch</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'transporter-pitch'} onClick={() => navigate('transporter-pitch')}><Truck />Transporter Pitch</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'pitch-partner'} onClick={() => navigate('pitch-partner')}><FileText />Partner Pitch</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'pitch-supplier'} onClick={() => navigate('pitch-supplier')}><Handshake />Supplier Pitch</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'pitch-transporter'} onClick={() => navigate('pitch-transporter')}><Truck />Transporter Pitch</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'pitch-partner-deck'} onClick={() => navigate('pitch-partner-deck')}><FileText />Partner Pitch</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'pitch-partner-framework'} onClick={() => navigate('pitch-partner-framework')}><Handshake />Partner Framework</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'pitch-isa-emails'} onClick={() => navigate('pitch-isa-emails')}><Mail />ISA Email Seq.</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'pitch-partner-emails'} onClick={() => navigate('pitch-partner-emails')}><Mail />Partner Email Seq.</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'pitch-investor'} onClick={() => navigate('pitch-investor')}><FileText />Investor Pitch</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'pitch-partner-emails'} onClick={() => navigate('pitch-partner-emails')}><Mail />Partner Emails</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'pitch-investor-deck'} onClick={() => navigate('pitch-investor-deck')}><FileText />Investor Pitch</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'pitch-investor-offer'} onClick={() => navigate('pitch-investor-offer')}><DollarSign />Investor Offer</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'pitch-investor-emails'} onClick={() => navigate('pitch-investor-emails')}><Mail />Investor Email Seq.</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'pitch-developer'} onClick={() => navigate('pitch-developer')}><FileText />Developer Pitch</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'pitch-developer-deck'} onClick={() => navigate('pitch-developer-deck')}><FileText />Developer Pitch</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'pitch-developer-offer'} onClick={() => navigate('pitch-developer-offer')}><Code2 />Developer Offer</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'pitch-developer-emails'} onClick={() => navigate('pitch-developer-emails')}><Mail />Developer Email Seq.</SidebarMenuSubButton></SidebarMenuSubItem>
                     </SidebarMenuSub>
                 </SidebarMenuItem>
                  <SidebarMenuItem>
@@ -354,3 +358,5 @@ export default function AdminAccountPage() {
     </Suspense>
   );
 }
+
+    

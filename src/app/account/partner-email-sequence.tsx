@@ -189,7 +189,7 @@ export default function NetworkEmails() {
                 <div className="flex items-center gap-4">
                     <Mail className="h-8 w-8 text-primary"/>
                     <div>
-                        <CardTitle>Network Outreach Email Sequence</CardTitle>
+                        <CardTitle>Partner Email Sequence</CardTitle>
                         <CardDescription>
                             Use these templates to introduce, propose, and explain the Logistics Flow partnership opportunity.
                         </CardDescription>
@@ -208,11 +208,11 @@ export default function NetworkEmails() {
                 <TabsContent value="proposal">
                      <EmailTemplate subject={templates.proposal.subject} content={templates.proposal.content} />
                 </TabsContent>
-                <TabsContent value="revenue">
-                     <EmailTemplate subject={templates.revenue.subject} content={templates.revenue.content} />
+                 <TabsContent value="revenue">
+                    <EmailTemplate subject={templates.revenue.subject} content={templates.revenue.content} />
                 </TabsContent>
                 <TabsContent value="explanation">
-                     <EmailTemplate subject={templates.explanation.subject} content={templates.explanation.content} />
+                    <EmailTemplate subject={templates.explanation.subject} content={templates.explanation.content} />
                 </TabsContent>
                  <TabsContent value="howTo">
                      <EmailTemplate subject={templates.howTo.subject} content={templates.howTo.content} />
@@ -221,3 +221,5 @@ export default function NetworkEmails() {
         </div>
     );
 }
+
+    
