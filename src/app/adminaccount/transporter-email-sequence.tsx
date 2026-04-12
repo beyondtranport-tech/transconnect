@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -42,22 +43,22 @@ const EmailTemplate = ({ subject, content }: { subject: string, content: string 
 
 const getTemplates = (transporterType: string) => ({
     intro: {
-        subject: `The Digital Edge for Your ${transporterType} Business`,
+        subject: `A New Way to Reduce Costs for Your ${transporterType} Business`,
         content: `
 Hi [Transporter Name],
 
-I'm reaching out from Logistics Flow, a platform built specifically for transport operators like you.
+I'm reaching out from Logistics Flow with a simple proposition to help reduce your daily operating costs.
 
-We understand the challenges of our industry—high costs, finding loads, and accessing capital. We built Logistics Flow to solve these problems by providing every transporter with a powerful digital branch for their business, completely free to start.
+We're building a network to leverage the collective buying power of transporters like you. To do this effectively, we need your help. By contributing anonymous data about your fleet, your common routes, and the suppliers you already use, you give us the leverage to negotiate significant group discounts on your behalf.
 
-With a free account, you can:
-- **Create Your Digital Branch:** Establish a professional online presence to showcase your fleet and services.
-- **Access the Mall:** Connect with suppliers and other transporters.
-- **Build a Trusted Profile:** Your activity on the platform creates a real-world track record that can unlock future funding opportunities.
+The process is simple:
+1. Join Logistics Flow for free and create your digital branch.
+2. Use our secure "Contribution Hub" to share details about your fleet and suppliers.
+3. As we onboard these suppliers with new group discounts, the savings are passed directly back to you through our Supplier Mall.
 
-Our goal is simple: to give you the tools to run your business more efficiently and profitably.
+This is a community-driven approach to cost-saving. Your knowledge is the key.
 
-Ready to create your free digital branch? Join here: [Sign-up Link]
+Ready to start saving? Join for free: [Sign-up Link]
 
 Best regards,
 
