@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -106,12 +107,12 @@ export default function CompanyProfile() {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-3">
                         <Handshake className="h-6 w-6 text-primary" />
-                        Partnership & Investment Opportunity
+                        Partnership Opportunity
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
                      <p className="text-lg text-muted-foreground mb-6">
-                        We are seeking strategic partners and investors who share our vision. By joining us, you can participate in a high-growth platform that is fundamentally changing the way the logistics industry operates.
+                        We are seeking strategic partners who share our vision. By joining us, you can participate in a high-growth platform that is fundamentally changing the way the logistics industry operates.
                     </p>
                 </CardContent>
             </Card>
