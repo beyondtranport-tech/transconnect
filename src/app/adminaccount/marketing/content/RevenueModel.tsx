@@ -11,10 +11,10 @@ export default function RevenueModel() {
                     <DollarSign className="h-6 w-6" />
                     Revenue Model
                 </CardTitle>
-                <CardDescription>This section is under construction.</CardDescription>
+                <CardDescription>A detailed breakdown and presentation of the platform's revenue streams will be available here.</CardDescription>
             </CardHeader>
             <CardContent>
-                <p className="text-muted-foreground">A detailed breakdown and presentation of the platform's revenue streams will be available here.</p>
+                <p className="text-muted-foreground">This content is under construction.</p>
             </CardContent>
         </Card>
     );

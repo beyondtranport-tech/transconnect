@@ -11,10 +11,10 @@ export default function TechArchitecture() {
                     <Wrench className="h-6 w-6" />
                     Technology Architecture
                 </CardTitle>
-                <CardDescription>This section is under construction.</CardDescription>
+                <CardDescription>A presentation detailing the platform's technical architecture and capabilities will be available here.</CardDescription>
             </CardHeader>
             <CardContent>
-                <p className="text-muted-foreground">A presentation detailing the platform's technical architecture and capabilities will be available here.</p>
+                <p className="text-muted-foreground">This content is under construction.</p>
             </CardContent>
         </Card>
     );

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -51,7 +50,7 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
             <p className="text-muted-foreground">Tailored content and email sequences for engaging with {config.title.toLowerCase()}s.</p>
         </div>
         <Tabs defaultValue="offer" className="w-full">
-            <TabsList className="grid w-full grid-cols-7">
+            <TabsList className="h-auto flex-wrap justify-start">
                 <TabsTrigger value="company-profile">Company Profile</TabsTrigger>
                 <TabsTrigger value="tech-architecture">Tech Architecture</TabsTrigger>
                 <TabsTrigger value="revenue-model">Revenue Model</TabsTrigger>

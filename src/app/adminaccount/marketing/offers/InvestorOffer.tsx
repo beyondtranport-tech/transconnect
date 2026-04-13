@@ -4,9 +4,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DollarSign, TrendingUp, Handshake, AppWindow, DatabaseZap } from 'lucide-react';
 import React from 'react';
+import { useConfig } from '@/hooks/use-config';
+import { Loader2 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 
+
 export default function InvestorOffer() {
+    // These are illustrative projections for the pitch and can be made dynamic later
     const year1_total_revenue = 2880000, year3_total_revenue = 43200000, year1_net_profit = 1008000, year3_net_profit = 19440000;
 
     return (
