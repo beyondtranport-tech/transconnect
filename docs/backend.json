@@ -863,6 +863,14 @@
           "description": "Log of communications with a partner."
         }
       },
+       {
+        "path": "/partners/{partnerId}/tasks/{taskId}",
+        "definition": {
+            "entityName": "Task",
+            "schema": { "$ref": "#/entities/Task" },
+            "description": "Subcollection for tasks related to a specific partner."
+        }
+      },
       {
         "path": "/companies/{companyId}/staff/{staffId}",
         "definition": {
@@ -1134,3 +1142,4 @@
     
     
     
+
