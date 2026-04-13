@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -18,30 +17,30 @@ import {
 import {
   LogOut,
   Loader2,
-  LayoutDashboard,
+  TrendingUp,
+  Map,
+  Sheet as FinancialSheetIcon,
+  Presentation,
   User,
-  Shield,
-  Truck,
-  Package,
-  Building,
-  BarChart3,
-  Network,
-  ShoppingCart,
-  ShieldAlert,
-  Ship,
-  FileText,
-  BrainCircuit,
-  CalendarCheck,
-  Landmark,
-  ShieldCheck,
-  Repeat,
-  FileSignature,
-  Users,
-  Handshake,
-  Briefcase,
+  LayoutDashboard,
+  Mail,
+  Calculator,
+  Target,
+  Info,
   Bot,
-  Code,
-  Gift,
+  Database,
+  ImageIcon,
+  Briefcase,
+  Scale,
+  Handshake,
+  DollarSign,
+  Sparkles,
+  Settings,
+  Users,
+  Mic,
+  LineChart,
+  Shield,
+  Activity,
   Wrench,
   Wallet,
   ListTodo,
@@ -50,27 +49,39 @@ import {
   Star,
   Award,
   Banknote,
-  Users2,
-  UserCheck2,
-  DollarSign,
-  Code2,
-  BookOpen,
-  Activity,
+  FileText,
+  Landmark,
+  Truck,
+  ShieldCheck,
+  Repeat,
+  FileSignature,
+  Building,
+  FileSearch,
+  UserPlus,
+  Filter,
+  ClipboardList,
   MessageSquare,
-  Scale,
-  Settings,
+  Code,
+  Gift,
+  Code2,
+  UserCheck2,
+  BookOpen,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect, Suspense, useCallback } from 'react';
 import Link from 'next/link';
+
 import { useUser, useAuth } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import dynamic from 'next/dynamic';
 import React from 'react';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
 // --- Dynamic Imports for Business Components ---
+
+// Operations
 const AdminDashboardContent = dynamic(() => import('@/app/backend/dashboard-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const MemberWallet = dynamic(() => import('@/app/backend/wallet/[memberId]/member-wallet'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const WalletTransactionsList = dynamic(() => import('@/app/backend/wallet-transactions-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
@@ -84,10 +95,10 @@ const SupportChatInbox = dynamic(() => import('@/app/backend/support-chat-inbox'
 const UsersList = dynamic(() => import('@/app/backend/users-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const CommercialNegotiations = dynamic(() => import('@/app/backend/commercial-negotiations'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const MarketingPage = dynamic(() => import('./marketing/MarketingPage'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const PartnerManagement = dynamic(() => import('./partner-management'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const ISAManagement = dynamic(() => import('./isa-management'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const DeveloperManagement = dynamic(() => import('./developer-management'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const InvestorManagement = dynamic(() => import('./investor-management'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const PartnerManagement = dynamic(() => import('./marketing/partner-management'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const ISAManagement = dynamic(() => import('./marketing/isa-management'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const DeveloperManagement = dynamic(() => import('./marketing/developer-management'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const InvestorManagement = dynamic(() => import('./marketing/investor-management'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 // Platform Settings
 const PermissionsContent = dynamic(() => import('@/app/backend/permissions-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });

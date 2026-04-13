@@ -165,7 +165,7 @@ const tabs = [
 ];
 
 
-export default function SupplierEmailSequence() {
+export default function SupplierEmails() {
     const searchParams = useSearchParams();
     const supplierType = searchParams.get('type') || 'General';
     const templates = getTemplates(supplierType);

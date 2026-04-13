@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -159,7 +158,7 @@ const tabs = [
 ];
 
 
-export default function TransporterEmailSequence() {
+export default function TransporterEmails() {
     const searchParams = useSearchParams();
     const transporterType = searchParams.get('type') || 'General';
     const templates = getTemplates(transporterType);
