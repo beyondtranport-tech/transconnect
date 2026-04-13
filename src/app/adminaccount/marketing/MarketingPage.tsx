@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -6,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import dynamic from 'next/dynamic';
 import { Loader2 } from 'lucide-react';
 
+// Content components
 const CompanyProfile = dynamic(() => import('@/app/adminaccount/marketing/content/CompanyProfile'), { loading: () => <Loader2 className="animate-spin" /> });
 const TechArchitecture = dynamic(() => import('@/app/adminaccount/marketing/content/TechArchitecture'), { loading: () => <Loader2 className="animate-spin" /> });
 const RevenueModel = dynamic(() => import('@/app/adminaccount/marketing/content/RevenueModel'), { loading: () => <Loader2 className="animate-spin" /> });
@@ -20,7 +20,7 @@ const DeveloperOffer = dynamic(() => import('@/app/adminaccount/marketing/offers
 const SupplierOffer = dynamic(() => import('@/app/adminaccount/marketing/offers/SupplierOffer'), { loading: () => <Loader2 className="animate-spin" /> });
 const TransporterOffer = dynamic(() => import('@/app/adminaccount/marketing/offers/TransporterOffer'), { loading: () => <Loader2 className="animate-spin" /> });
 
-const PartnerEmails = dynamic(() => import('@/app/adminaccount/marketing/emails/PartnerEmails'), { loading: () => <Loader2 className="animate-spin" /> });
+const PartnerEmails = dynamic(() => import('@/app/adminaccount/partner-email-sequence'), { loading: () => <Loader2 className="animate-spin" /> });
 const SupplierEmails = dynamic(() => import('@/app/adminaccount/supplier-email-sequence'), { loading: () => <Loader2 className="animate-spin" /> });
 const TransporterEmails = dynamic(() => import('@/app/adminaccount/transporter-email-sequence'), { loading: () => <Loader2 className="animate-spin" /> });
 const InvestorEmails = dynamic(() => import('@/app/adminaccount/marketing/emails/InvestorEmails'), { loading: () => <Loader2 className="animate-spin" /> });
@@ -58,7 +58,7 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
         </div>
         <Tabs defaultValue="management" className="w-full">
             <TabsList className="h-auto flex-wrap justify-start">
-                <TabsTrigger value="management">Partner Management</TabsTrigger>
+                {Management && <TabsTrigger value="management">Partner Management</TabsTrigger>}
                 <TabsTrigger value="company-profile">Company Profile</TabsTrigger>
                 <TabsTrigger value="tech-architecture">Tech Architecture</TabsTrigger>
                 <TabsTrigger value="revenue-model">Revenue Model</TabsTrigger>
@@ -70,13 +70,11 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
 
             <Card className="mt-4">
                 <CardContent className="p-6">
-                    <TabsContent value="management">
-                        {Management ? <Management /> : (
-                            <div className="text-center py-10">
-                                <p className="text-muted-foreground">Partner management for this audience type is not applicable or handled elsewhere.</p>
-                            </div>
-                        )}
-                    </TabsContent>
+                    {Management && (
+                        <TabsContent value="management">
+                            <Management />
+                        </TabsContent>
+                    )}
                     <TabsContent value="company-profile"><CompanyProfile /></TabsContent>
                     <TabsContent value="tech-architecture"><TechArchitecture /></TabsContent>
                     <TabsContent value="revenue-model"><RevenueModel /></TabsContent>
