@@ -249,7 +249,7 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
 
         await handleCopyContent();
 
-        toast({ title: 'Logged and Copied!', description: 'Communication has been logged and content is on your clipboard.' });
+        toast({ title: 'Logged and Copied!', description: 'Communication has been logged and content is on your clipboard. Images may be blocked by the recipient\'s email client.' });
         setIsLogDialogOpen(false);
     } catch (e: any) {
         toast({ variant: 'destructive', title: 'Action Failed', description: e.message });
