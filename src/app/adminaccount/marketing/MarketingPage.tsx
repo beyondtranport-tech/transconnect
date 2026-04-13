@@ -62,13 +62,24 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
 
     if (contentElement) {
       try {
-        // Use a Blob to copy as HTML, which preserves formatting.
-        const blob = new Blob([contentElement.innerHTML], { type: 'text/html' });
+        // 1. Clone the node to avoid modifying the live DOM
+        const contentClone = contentElement.cloneNode(true) as HTMLElement;
+
+        // 2. Ensure all image sources are absolute URLs
+        const images = contentClone.querySelectorAll('img');
+        images.forEach(img => {
+          // The 'src' property of an HTMLImageElement returns the absolute URL
+          img.setAttribute('src', img.src);
+        });
+        
+        // 3. Create the blob with the modified HTML
+        const blob = new Blob([contentClone.innerHTML], { type: 'text/html' });
         const clipboardItem = new ClipboardItem({ 'text/html': blob });
         await navigator.clipboard.write([clipboardItem]);
+
         toast({
           title: 'Content Copied!',
-          description: `The content for the "${activeTab.replace(/-/g, ' ')}" tab has been copied.`,
+          description: `The content for the "${activeTab.replace(/-/g, ' ')}" tab has been copied. Note: Images may be blocked by the recipient's email client.`,
         });
       } catch (err) {
         console.error('Failed to copy content: ', err);
