@@ -4,7 +4,8 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import dynamic from 'next/dynamic';
-import { Loader2, ClipboardCopy, Textarea } from 'lucide-react';
+import { Loader2, ClipboardCopy } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
 import CompanyProfile from './content/CompanyProfile';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
@@ -218,14 +219,15 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
         const contentClone = contentElement.cloneNode(true) as HTMLElement;
         const images = contentClone.querySelectorAll('img');
         images.forEach(img => {
-          img.setAttribute('src', img.src);
+            if (img.src.startsWith('/')) {
+                img.src = `${window.location.origin}${img.src}`;
+            }
         });
         
         const blob = new Blob([contentClone.innerHTML], { type: 'text/html' });
         const clipboardItem = new ClipboardItem({ 'text/html': blob });
         await navigator.clipboard.write([clipboardItem]);
         
-        // This toast will be displayed AFTER the logging is successful
       } catch (err) {
         console.error('Failed to copy content: ', err);
         throw new Error('Your browser may not support this feature, or there was an error.');
