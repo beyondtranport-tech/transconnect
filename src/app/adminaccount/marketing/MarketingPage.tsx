@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -27,10 +28,10 @@ const InvestorEmails = dynamic(() => import('./emails/InvestorEmails'), { loadin
 const DeveloperEmails = dynamic(() => import('./emails/DeveloperEmails'), { loading: () => <Loader2 className="animate-spin" /> });
 
 // Management components
-const PartnerManagement = dynamic(() => import('../partner-management'), { loading: () => <Loader2 className="animate-spin" /> });
-const ISAManagement = dynamic(() => import('../isa-management'), { loading: () => <Loader2 className="animate-spin" /> });
-const InvestorManagement = dynamic(() => import('../investor-management'), { loading: () => <Loader2 className="animate-spin" /> });
-const DeveloperManagement = dynamic(() => import('../developer-management'), { loading: () => <Loader2 className="animate-spin" /> });
+const PartnerManagement = dynamic(() => import('./partner-management'), { loading: () => <Loader2 className="animate-spin" /> });
+const ISAManagement = dynamic(() => import('./isa-management'), { loading: () => <Loader2 className="animate-spin" /> });
+const InvestorManagement = dynamic(() => import('./investor-management'), { loading: () => <Loader2 className="animate-spin" /> });
+const DeveloperManagement = dynamic(() => import('./developer-management'), { loading: () => <Loader2 className="animate-spin" /> });
 
 
 const audienceConfig = {
