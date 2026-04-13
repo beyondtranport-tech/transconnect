@@ -35,12 +35,13 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
-import { Loader2, PlusCircle, Code, Edit, Trash2, Send, Copy } from 'lucide-react';
+import { Loader2, PlusCircle, Code, Edit, Trash2, Send, Copy, MessageSquare } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import Link from 'next/link';
+import { CommunicationLogDialog } from './CommunicationLogDialog';
 
 async function performAdminAction(token: string, action: string, payload: any) {
     const response = await fetch('/api/admin', {
@@ -144,9 +145,10 @@ function DeveloperDialog({ open, onOpenChange, partner, onSave }: { open: boolea
   );
 }
 
-function DeveloperActionMenu({ onInvite, onEdit, onDelete }: { onInvite: () => void; onEdit: () => void; onDelete: () => void; }) {
+function DeveloperActionMenu({ onInvite, onEdit, onDelete, partner }: { onInvite: () => void; onEdit: () => void; onDelete: () => void; partner: any; }) {
   return (
     <div className="flex justify-end items-center gap-1">
+      <CommunicationLogDialog partnerId={partner.id} partnerName={`${partner.firstName} ${partner.lastName}`} />
       <Button variant="ghost" size="icon" onClick={onInvite} title="Invite Developer">
         <Send className="h-4 w-4" />
       </Button>
@@ -253,7 +255,7 @@ export default function DeveloperManagement() {
     { accessorKey: 'companyName', header: 'Company', cell: ({row}) => <div>{row.original.companyName}</div> },
     { accessorKey: 'status', header: 'Status', cell: ({row}) => <Badge className="capitalize">{row.original.status}</Badge>},
     { accessorKey: 'invitationStatus', header: 'Invite Status', cell: ({row}) => ( <Badge variant={invitationStatusColors[row.original.invitationStatus] || 'secondary'} className="capitalize"> {row.original.invitationStatus?.replace(/_/g, ' ') || 'Pending'} </Badge> ) },
-    { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => ( <DeveloperActionMenu onInvite={() => handleOpenDialog('invite', row.original)} onEdit={() => handleOpenDialog('edit', row.original)} onDelete={() => handleOpenDialog('delete', row.original)} /> ) },
+    { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => ( <DeveloperActionMenu partner={row.original} onInvite={() => handleOpenDialog('invite', row.original)} onEdit={() => handleOpenDialog('edit', row.original)} onDelete={() => handleOpenDialog('delete', row.original)} /> ) },
   ], [handleOpenDialog]);
 
   return (
@@ -326,6 +328,7 @@ export default function DeveloperManagement() {
                       </TableCell>
                       <TableCell className="text-right">
                         <DeveloperActionMenu
+                            partner={partner}
                             onInvite={() => handleOpenDialog('invite', partner)}
                             onEdit={() => handleOpenDialog('edit', partner)}
                             onDelete={() => handleOpenDialog('delete', partner)}
