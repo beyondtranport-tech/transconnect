@@ -19,15 +19,15 @@ const DeveloperOffer = dynamic(() => import('./offers/DeveloperOffer'), { loadin
 const SupplierOffer = dynamic(() => import('./offers/SupplierOffer'), { loading: () => <Loader2 className="animate-spin" /> });
 const TransporterOffer = dynamic(() => import('./offers/TransporterOffer'), { loading: () => <Loader2 className="animate-spin" /> });
 
-const PartnerEmails = dynamic(() => import('./emails/PartnerEmails'), { loading: () => <Loader2 className="animate-spin" /> });
-const SupplierEmails = dynamic(() => import('./emails/SupplierEmails'), { loading: () => <Loader2 className="animate-spin" /> });
-const TransporterEmails = dynamic(() => import('./emails/TransporterEmails'), { loading: () => <Loader2 className="animate-spin" /> });
+const PartnerEmails = dynamic(() => import('../partner-email-sequence'), { loading: () => <Loader2 className="animate-spin" /> });
+const SupplierEmails = dynamic(() => import('../supplier-email-sequence'), { loading: () => <Loader2 className="animate-spin" /> });
+const TransporterEmails = dynamic(() => import('../transporter-email-sequence'), { loading: () => <Loader2 className="animate-spin" /> });
 const InvestorEmails = dynamic(() => import('./emails/InvestorEmails'), { loading: () => <Loader2 className="animate-spin" /> });
 const DeveloperEmails = dynamic(() => import('./emails/DeveloperEmails'), { loading: () => <Loader2 className="animate-spin" /> });
 
 const audienceConfig = {
     partners: { title: 'Strategic Partner', Offer: PartnerOffer, Emails: PartnerEmails },
-    isa: { title: 'ISA Agent', Offer: PartnerOffer, Emails: PartnerEmails },
+    isa: { title: 'ISA Agent', Offer: PartnerOffer, Emails: PartnerEmails }, // Reusing partner offer/emails for ISA
     suppliers: { title: 'Supplier', Offer: SupplierOffer, Emails: SupplierEmails },
     transporters: { title: 'Transporter', Offer: TransporterOffer, Emails: TransporterEmails },
     investors: { title: 'Investor', Offer: InvestorOffer, Emails: InvestorEmails },
