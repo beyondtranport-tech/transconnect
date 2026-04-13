@@ -1,10 +1,14 @@
+
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import dynamic from 'next/dynamic';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ClipboardCopy } from 'lucide-react';
 import CompanyProfile from './content/CompanyProfile';
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 
 // Content components
 const TechArchitecture = dynamic(() => import('./content/TechArchitecture'), { loading: () => <Loader2 className="animate-spin" /> });
@@ -49,6 +53,40 @@ interface MarketingPageProps {
 export default function MarketingPage({ audience }: MarketingPageProps) {
   const config = audienceConfig[audience];
   const { Offer, Emails, Management } = config;
+  const [activeTab, setActiveTab] = useState('company-profile');
+  const { toast } = useToast();
+
+  const handleCopyContent = async () => {
+    const contentId = `tab-content-${activeTab}`;
+    const contentElement = document.getElementById(contentId);
+
+    if (contentElement) {
+      try {
+        // Use a Blob to copy as HTML, which preserves formatting.
+        const blob = new Blob([contentElement.innerHTML], { type: 'text/html' });
+        const clipboardItem = new ClipboardItem({ 'text/html': blob });
+        await navigator.clipboard.write([clipboardItem]);
+        toast({
+          title: 'Content Copied!',
+          description: `The content for the "${activeTab.replace(/-/g, ' ')}" tab has been copied.`,
+        });
+      } catch (err) {
+        console.error('Failed to copy content: ', err);
+        toast({
+          variant: 'destructive',
+          title: 'Copy Failed',
+          description: 'Your browser may not support this feature, or there was an error.',
+        });
+      }
+    } else {
+      toast({
+        variant: 'destructive',
+        title: 'Content not found',
+        description: 'Could not find the content for the active tab.',
+      });
+    }
+  };
+
 
   return (
     <div className="space-y-6">
@@ -56,7 +94,7 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
             <h1 className="text-2xl font-bold">Marketing & Pitch Library: {config.title}</h1>
             <p className="text-muted-foreground">Tailored content and email sequences for engaging with {config.title.toLowerCase()}.</p>
         </div>
-        <Tabs defaultValue="company-profile" className="w-full">
+        <Tabs defaultValue="company-profile" className="w-full" onValueChange={setActiveTab}>
             <TabsList className="h-auto flex-wrap justify-start">
                 <TabsTrigger value="company-profile">Company Profile</TabsTrigger>
                 <TabsTrigger value="tech-architecture">Tech Architecture</TabsTrigger>
@@ -69,18 +107,40 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
             </TabsList>
 
             <Card className="mt-4">
+                <CardHeader className="flex flex-row items-center justify-end border-b">
+                    <Button variant="outline" onClick={handleCopyContent}>
+                        <ClipboardCopy className="mr-2 h-4 w-4" />
+                        Copy Content for Email
+                    </Button>
+                </CardHeader>
                 <CardContent className="p-6">
-                    <TabsContent value="company-profile"><CompanyProfile audience={audience} /></TabsContent>
-                    <TabsContent value="tech-architecture"><TechArchitecture /></TabsContent>
-                    <TabsContent value="revenue-model"><RevenueModel /></TabsContent>
-                    <TabsContent value="offer"><Offer /></TabsContent>
-                    <TabsContent value="pitch"><PitchDeck /></TabsContent>
-                    <TabsContent value="framework"><Framework /></TabsContent>
-                    <TabsContent value="emails"><Emails /></TabsContent>
+                    <div id="tab-content-company-profile">
+                      <TabsContent value="company-profile"><CompanyProfile audience={audience} /></TabsContent>
+                    </div>
+                    <div id="tab-content-tech-architecture">
+                      <TabsContent value="tech-architecture"><TechArchitecture /></TabsContent>
+                    </div>
+                    <div id="tab-content-revenue-model">
+                      <TabsContent value="revenue-model"><RevenueModel /></TabsContent>
+                    </div>
+                    <div id="tab-content-offer">
+                      <TabsContent value="offer"><Offer /></TabsContent>
+                    </div>
+                    <div id="tab-content-pitch">
+                      <TabsContent value="pitch"><PitchDeck /></TabsContent>
+                    </div>
+                    <div id="tab-content-framework">
+                      <TabsContent value="framework"><Framework /></TabsContent>
+                    </div>
+                    <div id="tab-content-emails">
+                      <TabsContent value="emails"><Emails /></TabsContent>
+                    </div>
                     {Management && (
-                        <TabsContent value="management">
-                            <Management />
-                        </TabsContent>
+                        <div id="tab-content-management">
+                          <TabsContent value="management">
+                              <Management />
+                          </TabsContent>
+                        </div>
                     )}
                 </CardContent>
             </Card>
