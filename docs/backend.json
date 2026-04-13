@@ -128,6 +128,20 @@
       },
       "required": ["firstName", "lastName", "email"]
     },
+    "CommunicationLog": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "Communication Log",
+        "type": "object",
+        "description": "Records an instance of communication with a partner.",
+        "properties": {
+            "id": { "type": "string" },
+            "type": { "type": "string", "enum": ["Email", "WhatsApp", "Call", "Meeting"], "description": "The method of communication." },
+            "subject": { "type": "string", "description": "The topic of the communication, e.g., 'Company Profile'." },
+            "notes": { "type": "string", "description": "Optional notes about the interaction." },
+            "timestamp": { "type": "object" }
+        },
+        "required": ["id", "type", "subject", "timestamp"]
+    },
     "Shop": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Shop",
@@ -813,6 +827,14 @@
           "entityName": "Partner",
           "schema": { "$ref": "#/entities/Partner" },
           "description": "Admin-managed collection of strategic partners and ISAs."
+        }
+      },
+       {
+        "path": "/partners/{partnerId}/communications/{logId}",
+        "definition": {
+          "entityName": "CommunicationLog",
+          "schema": { "$ref": "#/entities/CommunicationLog" },
+          "description": "Log of communications with a partner."
         }
       },
       {

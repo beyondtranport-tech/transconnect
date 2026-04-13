@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
         }
          else if (!isAdmin) {
             // Most other actions in this route are admin-only
-             const allowedUserActions = ['saveCompanyLead', 'acceptCommercialAgreement', 'getAuditLogs', 'unpublishShop'];
+             const allowedUserActions = ['saveCompanyLead', 'acceptCommercialAgreement', 'getAuditLogs', 'unpublishShop', 'logCommunication'];
              if (!allowedUserActions.includes(action)) {
                  throw new Error("Forbidden: Admin access required.");
              }
@@ -88,6 +88,22 @@ export async function POST(req: NextRequest) {
         // --- END AUTHORIZATION ---
 
         switch (action) {
+             case 'logCommunication': {
+                const { partnerId, type, subject, notes } = payload;
+                if (!partnerId || !type || !subject) {
+                    throw new Error("Missing partnerId, type, or subject for logging communication.");
+                }
+                const logRef = db.collection(`partners/${partnerId}/communications`).doc();
+                await logRef.set({
+                    id: logRef.id,
+                    type,
+                    subject,
+                    notes: notes || '',
+                    timestamp: FieldValue.serverTimestamp(),
+                    loggedBy: requestorUid,
+                });
+                return NextResponse.json({ success: true, message: 'Communication logged.' });
+            }
             case 'updateFacilityStatus': {
                 if (!isAdmin) throw new Error("Forbidden: Admin access required.");
                 const { clientId, facilityId, status } = payload;

@@ -135,6 +135,11 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
     
+    // Admin-managed collection for partners.
+    match /partners/{partnerId}/{document=**} {
+        allow read, write: if isAdmin();
+    }
+    
     // --- Lending Module Collections (Admin Only) ---
     match /lendingAssets/{assetId} {
         allow read, write: if isAdmin();

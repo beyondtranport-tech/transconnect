@@ -6,9 +6,30 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import dynamic from 'next/dynamic';
 import { Loader2, ClipboardCopy } from 'lucide-react';
 import CompanyProfile from './content/CompanyProfile';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { getClientSideAuthToken } from '@/firebase';
 
 // Content components
 const TechArchitecture = dynamic(() => import('./content/TechArchitecture'), { loading: () => <Loader2 className="animate-spin" /> });
@@ -36,7 +57,6 @@ const ISAManagement = dynamic(() => import('./isa-management'), { loading: () =>
 const InvestorManagement = dynamic(() => import('./investor-management'), { loading: () => <Loader2 className="animate-spin" /> });
 const DeveloperManagement = dynamic(() => import('./developer-management'), { loading: () => <Loader2 className="animate-spin" /> });
 
-
 const audienceConfig = {
     partners: { title: 'Strategic Partners', Offer: PartnerOffer, Emails: PartnerEmails, Management: PartnerManagement },
     isa: { title: 'ISA Agents', Offer: PartnerOffer, Emails: PartnerEmails, Management: ISAManagement },
@@ -50,11 +70,130 @@ interface MarketingPageProps {
   audience: keyof typeof audienceConfig;
 }
 
+async function performAdminAction(token: string, action: string, payload: any) {
+    const response = await fetch('/api/admin', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, payload }),
+    });
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+        throw new Error(result.error || `API Error for action: ${action}`);
+    }
+    return result;
+}
+
+const logSchema = z.object({
+  partnerId: z.string().min(1, "Please select a partner."),
+  communicationType: z.string().min(1, "Please select a type."),
+});
+
+type LogFormValues = z.infer<typeof logSchema>;
+
+function LogAndCopyDialog({ open, onOpenChange, partners, isLoadingPartners, activeTabLabel, onLogAndCopy }: any) {
+    const form = useForm<LogFormValues>({
+        resolver: zodResolver(logSchema),
+    });
+
+    const [isLogging, setIsLogging] = useState(false);
+
+    const handleSubmit = async (values: LogFormValues) => {
+        setIsLogging(true);
+        try {
+            await onLogAndCopy({
+                ...values,
+                subject: activeTabLabel,
+            });
+        } catch (e) {
+            // Error is handled by the parent component's toast
+        } finally {
+            setIsLogging(false);
+        }
+    };
+    
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Log and Copy Content</DialogTitle>
+                    <DialogDescription>
+                        Select a partner to log this communication against before copying the content.
+                    </DialogDescription>
+                </DialogHeader>
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 py-4">
+                        <FormField control={form.control} name="partnerId" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Partner</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl><SelectTrigger disabled={isLoadingPartners}>
+                                        <SelectValue placeholder={isLoadingPartners ? "Loading..." : "Select a partner..."} />
+                                    </SelectTrigger></FormControl>
+                                    <SelectContent>
+                                        {partners.map((p: any) => <SelectItem key={p.id} value={p.id}>{p.firstName} {p.lastName} ({p.companyName || 'N/A'})</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+                        <FormField control={form.control} name="communicationType" render={({ field }) => (
+                             <FormItem>
+                                <FormLabel>Communication Type</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl><SelectTrigger><SelectValue placeholder="Select a type..." /></SelectTrigger></FormControl>
+                                    <SelectContent>
+                                        <SelectItem value="Email">Email</SelectItem>
+                                        <SelectItem value="WhatsApp">WhatsApp</SelectItem>
+                                        <SelectItem value="Call">Call</SelectItem>
+                                        <SelectItem value="Meeting">Meeting</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+                         <DialogFooter>
+                            <Button type="submit" disabled={isLogging}>
+                                {isLogging && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+                                Log & Copy
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </Form>
+            </DialogContent>
+        </Dialog>
+    )
+}
+
 export default function MarketingPage({ audience }: MarketingPageProps) {
   const config = audienceConfig[audience];
   const { Offer, Emails, Management } = config;
   const [activeTab, setActiveTab] = useState('company-profile');
   const { toast } = useToast();
+  
+  const [isLogDialogOpen, setIsLogDialogOpen] = useState(false);
+  const [partners, setPartners] = useState<any[]>([]);
+  const [isLoadingPartners, setIsLoadingPartners] = useState(true);
+
+  useEffect(() => {
+    if (!Management) return; // Don't fetch partners if there's no management tab
+    
+    const fetchPartnersForAudience = async () => {
+        setIsLoadingPartners(true);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Not authenticated");
+            const audienceType = audience === 'isa' ? 'isa' : audience.slice(0, -1);
+            const result = await performAdminAction(token, 'getPartnersByType', { type: audienceType });
+            setPartners(result.data || []);
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: 'Could not load partners', description: e.message });
+        } finally {
+            setIsLoadingPartners(false);
+        }
+    };
+    fetchPartnersForAudience();
+  }, [audience, toast, Management]);
+
 
   const handleCopyContent = async () => {
     const contentId = `tab-content-${activeTab}`;
@@ -62,100 +201,113 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
 
     if (contentElement) {
       try {
-        // 1. Clone the node to avoid modifying the live DOM
         const contentClone = contentElement.cloneNode(true) as HTMLElement;
-
-        // 2. Ensure all image sources are absolute URLs
         const images = contentClone.querySelectorAll('img');
         images.forEach(img => {
-          // The 'src' property of an HTMLImageElement returns the absolute URL
           img.setAttribute('src', img.src);
         });
         
-        // 3. Create the blob with the modified HTML
         const blob = new Blob([contentClone.innerHTML], { type: 'text/html' });
         const clipboardItem = new ClipboardItem({ 'text/html': blob });
         await navigator.clipboard.write([clipboardItem]);
-
-        toast({
-          title: 'Content Copied!',
-          description: `The content for the "${activeTab.replace(/-/g, ' ')}" tab has been copied. Note: Images may be blocked by the recipient's email client.`,
-        });
+        
+        // This toast will be displayed AFTER the logging is successful
       } catch (err) {
         console.error('Failed to copy content: ', err);
-        toast({
-          variant: 'destructive',
-          title: 'Copy Failed',
-          description: 'Your browser may not support this feature, or there was an error.',
-        });
+        throw new Error('Your browser may not support this feature, or there was an error.');
       }
     } else {
-      toast({
-        variant: 'destructive',
-        title: 'Content not found',
-        description: 'Could not find the content for the active tab.',
-      });
+      throw new Error('Could not find the content for the active tab.');
     }
   };
 
+  const handleLogAndCopy = async (logData: {partnerId: string, communicationType: string, subject: string}) => {
+    try {
+        const token = await getClientSideAuthToken();
+        if (!token) throw new Error("Authentication failed.");
+        
+        await performAdminAction(token, 'logCommunication', {
+            partnerId: logData.partnerId,
+            type: logData.communicationType,
+            subject: logData.subject
+        });
+
+        await handleCopyContent();
+
+        toast({ title: 'Logged and Copied!', description: 'Communication has been logged and content is on your clipboard.' });
+        setIsLogDialogOpen(false);
+    } catch (e: any) {
+        toast({ variant: 'destructive', title: 'Action Failed', description: e.message });
+    }
+  };
 
   return (
-    <div className="space-y-6">
-        <div>
-            <h1 className="text-2xl font-bold">Marketing & Pitch Library: {config.title}</h1>
-            <p className="text-muted-foreground">Tailored content and email sequences for engaging with {config.title.toLowerCase()}.</p>
-        </div>
-        <Tabs defaultValue="company-profile" className="w-full" onValueChange={setActiveTab}>
-            <TabsList className="h-auto flex-wrap justify-start">
-                <TabsTrigger value="company-profile">Company Profile</TabsTrigger>
-                <TabsTrigger value="tech-architecture">Tech Architecture</TabsTrigger>
-                <TabsTrigger value="revenue-model">Revenue Model</TabsTrigger>
-                <TabsTrigger value="offer">The Offer</TabsTrigger>
-                <TabsTrigger value="pitch">The Pitch</TabsTrigger>
-                <TabsTrigger value="framework">The Framework</TabsTrigger>
-                <TabsTrigger value="emails">Emails</TabsTrigger>
-                {Management && <TabsTrigger value="management">Partner Management</TabsTrigger>}
-            </TabsList>
+    <>
+        <LogAndCopyDialog 
+            open={isLogDialogOpen}
+            onOpenChange={setIsLogDialogOpen}
+            partners={partners}
+            isLoadingPartners={isLoadingPartners}
+            activeTabLabel={activeTab}
+            onLogAndCopy={handleLogAndCopy}
+        />
+        <div className="space-y-6">
+            <div>
+                <h1 className="text-2xl font-bold">Marketing & Pitch Library: {config.title}</h1>
+                <p className="text-muted-foreground">Tailored content and email sequences for engaging with {config.title.toLowerCase()}.</p>
+            </div>
+            <Tabs defaultValue="company-profile" className="w-full" onValueChange={setActiveTab}>
+                <TabsList className="h-auto flex-wrap justify-start">
+                    <TabsTrigger value="company-profile">Company Profile</TabsTrigger>
+                    <TabsTrigger value="tech-architecture">Tech Architecture</TabsTrigger>
+                    <TabsTrigger value="revenue-model">Revenue Model</TabsTrigger>
+                    <TabsTrigger value="offer">The Offer</TabsTrigger>
+                    <TabsTrigger value="pitch">The Pitch</TabsTrigger>
+                    <TabsTrigger value="framework">The Framework</TabsTrigger>
+                    <TabsTrigger value="emails">Emails</TabsTrigger>
+                    {Management && <TabsTrigger value="management">Partner Management</TabsTrigger>}
+                </TabsList>
 
-            <Card className="mt-4">
-                <CardHeader className="flex flex-row items-center justify-end border-b">
-                    <Button variant="outline" onClick={handleCopyContent}>
-                        <ClipboardCopy className="mr-2 h-4 w-4" />
-                        Copy Content for Email
-                    </Button>
-                </CardHeader>
-                <CardContent className="p-6">
-                    <div id="tab-content-company-profile">
-                      <TabsContent value="company-profile"><CompanyProfile audience={audience} /></TabsContent>
-                    </div>
-                    <div id="tab-content-tech-architecture">
-                      <TabsContent value="tech-architecture"><TechArchitecture /></TabsContent>
-                    </div>
-                    <div id="tab-content-revenue-model">
-                      <TabsContent value="revenue-model"><RevenueModel /></TabsContent>
-                    </div>
-                    <div id="tab-content-offer">
-                      <TabsContent value="offer"><Offer /></TabsContent>
-                    </div>
-                    <div id="tab-content-pitch">
-                      <TabsContent value="pitch"><PitchDeck /></TabsContent>
-                    </div>
-                    <div id="tab-content-framework">
-                      <TabsContent value="framework"><Framework /></TabsContent>
-                    </div>
-                    <div id="tab-content-emails">
-                      <TabsContent value="emails"><Emails /></TabsContent>
-                    </div>
-                    {Management && (
-                        <div id="tab-content-management">
-                          <TabsContent value="management">
-                              <Management />
-                          </TabsContent>
+                <Card className="mt-4">
+                    <CardHeader className="flex flex-row items-center justify-end border-b">
+                        <Button variant="outline" onClick={() => setIsLogDialogOpen(true)}>
+                            <ClipboardCopy className="mr-2 h-4 w-4" />
+                            Log & Copy Content
+                        </Button>
+                    </CardHeader>
+                    <CardContent className="p-6">
+                        <div id="tab-content-company-profile">
+                        <TabsContent value="company-profile"><CompanyProfile audience={audience} /></TabsContent>
                         </div>
-                    )}
-                </CardContent>
-            </Card>
-        </Tabs>
-    </div>
+                        <div id="tab-content-tech-architecture">
+                        <TabsContent value="tech-architecture"><TechArchitecture /></TabsContent>
+                        </div>
+                        <div id="tab-content-revenue-model">
+                        <TabsContent value="revenue-model"><RevenueModel /></TabsContent>
+                        </div>
+                        <div id="tab-content-offer">
+                        <TabsContent value="offer"><Offer /></TabsContent>
+                        </div>
+                        <div id="tab-content-pitch">
+                        <TabsContent value="pitch"><PitchDeck /></TabsContent>
+                        </div>
+                        <div id="tab-content-framework">
+                        <TabsContent value="framework"><Framework /></TabsContent>
+                        </div>
+                        <div id="tab-content-emails">
+                        <TabsContent value="emails"><Emails /></TabsContent>
+                        </div>
+                        {Management && (
+                            <div id="tab-content-management">
+                            <TabsContent value="management">
+                                <Management />
+                            </TabsContent>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+            </Tabs>
+        </div>
+    </>
   );
 }
