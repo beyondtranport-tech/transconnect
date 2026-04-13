@@ -36,7 +36,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
-import { Loader2, PlusCircle, DollarSign, Edit, Trash2, Send, Copy } from 'lucide-react';
+import { Loader2, PlusCircle, Code, Edit, Trash2, Send, Copy } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -71,7 +71,7 @@ const partnerSchema = z.object({
 
 type PartnerFormValues = z.infer<typeof partnerSchema>;
 
-function InvestorDialog({ open, onOpenChange, partner, onSave }: { open: boolean; onOpenChange: (open: boolean) => void; partner?: any; onSave: () => void; }) {
+function DeveloperDialog({ open, onOpenChange, partner, onSave }: { open: boolean; onOpenChange: (open: boolean) => void; partner?: any; onSave: () => void; }) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
@@ -102,9 +102,9 @@ function InvestorDialog({ open, onOpenChange, partner, onSave }: { open: boolean
         const token = await getClientSideAuthToken();
         if (!token) throw new Error("Authentication failed.");
         
-        await performAdminAction(token, 'savePartner', { partner: { id: partner?.id, ...values, type: 'investor' } });
+        await performAdminAction(token, 'savePartner', { partner: { id: partner?.id, ...values, type: 'developer' } });
 
-        toast({ title: partner ? 'Investor Updated' : 'Investor Added' });
+        toast({ title: partner ? 'Developer Updated' : 'Developer Added' });
         onSave();
         onOpenChange(false);
     } catch(e: any) {
@@ -118,9 +118,9 @@ function InvestorDialog({ open, onOpenChange, partner, onSave }: { open: boolean
     <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-lg">
             <DialogHeader>
-                <DialogTitle>{partner ? 'Edit' : 'Add New'} Investor</DialogTitle>
+                <DialogTitle>{partner ? 'Edit' : 'Add New'} Developer</DialogTitle>
                 <DialogDescription>
-                    Enter the details for the investor.
+                    Enter the details for the developer partner.
                 </DialogDescription>
             </DialogHeader>
             <Form {...form}>
@@ -136,7 +136,7 @@ function InvestorDialog({ open, onOpenChange, partner, onSave }: { open: boolean
                     <FormField control={form.control} name="companyName" render={({ field }) => ( <FormItem><FormLabel>Company Name (Optional)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                     <FormField control={form.control} name="status" render={({ field }) => ( <FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="active">Active</SelectItem><SelectItem value="inactive">Inactive</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
                      <DialogFooter className="pt-4">
-                        <Button type="submit" disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null} Save Investor</Button>
+                        <Button type="submit" disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null} Save Developer</Button>
                     </DialogFooter>
                 </form>
             </Form>
@@ -145,23 +145,23 @@ function InvestorDialog({ open, onOpenChange, partner, onSave }: { open: boolean
   );
 }
 
-function InvestorActionMenu({ onInvite, onEdit, onDelete }: { onInvite: () => void; onEdit: () => void; onDelete: () => void; }) {
+function DeveloperActionMenu({ onInvite, onEdit, onDelete }: { onInvite: () => void; onEdit: () => void; onDelete: () => void; }) {
   return (
     <div className="flex justify-end items-center gap-1">
-      <Button variant="ghost" size="icon" onClick={onInvite} title="Invite Investor">
+      <Button variant="ghost" size="icon" onClick={onInvite} title="Invite Developer">
         <Send className="h-4 w-4" />
       </Button>
-      <Button variant="ghost" size="icon" onClick={onEdit} title="Edit Investor">
+      <Button variant="ghost" size="icon" onClick={onEdit} title="Edit Developer">
         <Edit className="h-4 w-4" />
       </Button>
-      <Button variant="ghost" size="icon" onClick={onDelete} title="Delete Investor">
+      <Button variant="ghost" size="icon" onClick={onDelete} title="Delete Developer">
         <Trash2 className="h-4 w-4 text-destructive" />
       </Button>
     </div>
   );
 }
 
-export default function InvestorManagement() {
+export default function DeveloperManagement() {
   const { toast } = useToast();
   const [partners, setPartners] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -174,11 +174,11 @@ export default function InvestorManagement() {
         const token = await getClientSideAuthToken();
         if (!token) throw new Error("Authentication failed.");
         
-        const result = await performAdminAction(token, 'getPartnersByType', { type: 'investor' });
+        const result = await performAdminAction(token, 'getPartnersByType', { type: 'developer' });
         setPartners(result.data || []);
     } catch (e: any) {
         setError(e.message);
-        toast({ variant: 'destructive', title: 'Error loading investors', description: e.message });
+        toast({ variant: 'destructive', title: 'Error loading developers', description: e.message });
     } finally {
         setIsLoading(false);
     }
@@ -199,9 +199,9 @@ export default function InvestorManagement() {
                 partnerId: data.id
             });
             forceRefresh();
-            toast({ title: "Investor Invite Ready", description: "Status updated to 'invited'. You can now send the link." });
+            toast({ title: "Developer Invite Ready", description: "Status updated to 'invited'. You can now send the link." });
         } catch (e: any) {
-            toast({ variant: 'destructive', title: 'Action Failed', description: `Could not update investor status: ${e.message}` });
+            toast({ variant: 'destructive', title: 'Action Failed', description: `Could not update developer status: ${e.message}` });
             return;
         }
     }
@@ -223,7 +223,7 @@ export default function InvestorManagement() {
         const token = await getClientSideAuthToken();
         if (!token) throw new Error("Authentication failed.");
         await performAdminAction(token, 'deletePartner', { partnerId: dialogState.data.id });
-        toast({ title: 'Investor Deleted' });
+        toast({ title: 'Developer Deleted' });
         handleSave();
     } catch (e: any) {
         toast({ variant: 'destructive', title: 'Delete Failed', description: e.message });
@@ -254,12 +254,12 @@ export default function InvestorManagement() {
     { accessorKey: 'companyName', header: 'Company', cell: ({row}) => <div>{row.original.companyName}</div> },
     { accessorKey: 'status', header: 'Status', cell: ({row}) => <Badge className="capitalize">{row.original.status}</Badge>},
     { accessorKey: 'invitationStatus', header: 'Invite Status', cell: ({row}) => ( <Badge variant={invitationStatusColors[row.original.invitationStatus] || 'secondary'} className="capitalize"> {row.original.invitationStatus?.replace(/_/g, ' ') || 'Pending'} </Badge> ) },
-    { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => ( <InvestorActionMenu onInvite={() => handleOpenDialog('invite', row.original)} onEdit={() => handleOpenDialog('edit', row.original)} onDelete={() => handleOpenDialog('delete', row.original)} /> ) },
+    { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => ( <DeveloperActionMenu onInvite={() => handleOpenDialog('invite', row.original)} onEdit={() => handleOpenDialog('edit', row.original)} onDelete={() => handleOpenDialog('delete', row.original)} /> ) },
   ], []);
 
   return (
     <>
-      <InvestorDialog 
+      <DeveloperDialog 
         open={dialogState.type === 'add' || dialogState.type === 'edit'}
         onOpenChange={(isOpen) => !isOpen && handleCloseDialogs()}
         partner={dialogState.type === 'edit' ? dialogState.data : undefined}
@@ -269,7 +269,7 @@ export default function InvestorManagement() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Invite {dialogState.data?.firstName}</DialogTitle>
-            <DialogDescription>Send this unique sign-up link to the investor. They must use this email to register.</DialogDescription>
+            <DialogDescription>Send this unique sign-up link to the developer. They must use this email to register.</DialogDescription>
           </DialogHeader>
           <div className="py-4 space-y-2">
             <Input value={inviteLink} readOnly />
@@ -284,7 +284,7 @@ export default function InvestorManagement() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>This will permanently delete investor "{dialogState.data?.firstName} {dialogState.data?.lastName}".</AlertDialogDescription>
+            <AlertDialogDescription>This will permanently delete developer "{dialogState.data?.firstName} {dialogState.data?.lastName}".</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={handleCloseDialogs}>Cancel</AlertDialogCancel>
@@ -296,10 +296,10 @@ export default function InvestorManagement() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
-            <CardTitle className="flex items-center gap-2"><DollarSign /> Investor Management</CardTitle>
-            <CardDescription>Manage your investor partners.</CardDescription>
+            <CardTitle className="flex items-center gap-2"><Code /> Developer Management</CardTitle>
+            <CardDescription>Manage your developer partners.</CardDescription>
           </div>
-          <Button onClick={() => handleOpenDialog('add')}><PlusCircle className="mr-2 h-4 w-4"/>Add Investor</Button>
+          <Button onClick={() => handleOpenDialog('add')}><PlusCircle className="mr-2 h-4 w-4"/>Add Developer</Button>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -326,7 +326,7 @@ export default function InvestorManagement() {
                           </Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        <InvestorActionMenu
+                        <DeveloperActionMenu
                             onInvite={() => handleOpenDialog('invite', partner)}
                             onEdit={() => handleOpenDialog('edit', partner)}
                             onDelete={() => handleOpenDialog('delete', partner)}
@@ -334,7 +334,7 @@ export default function InvestorManagement() {
                       </TableCell>
                     </TableRow>
                   )) : (
-                    <TableRow><TableCell colSpan={7} className="h-24 text-center">No investors found.</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={7} className="h-24 text-center">No developers found.</TableCell></TableRow>
                   )}
                 </TableBody>
               </Table>

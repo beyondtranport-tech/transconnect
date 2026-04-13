@@ -84,6 +84,10 @@ const SupportChatInbox = dynamic(() => import('@/app/backend/support-chat-inbox'
 const UsersList = dynamic(() => import('@/app/backend/users-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const CommercialNegotiations = dynamic(() => import('@/app/backend/commercial-negotiations'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const MarketingPage = dynamic(() => import('./marketing/MarketingPage'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const PartnerManagement = dynamic(() => import('./partner-management'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const ISAManagement = dynamic(() => import('./isa-management'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const DeveloperManagement = dynamic(() => import('./developer-management'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const InvestorManagement = dynamic(() => import('./investor-management'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 // Platform Settings
 const PermissionsContent = dynamic(() => import('@/app/backend/permissions-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
@@ -168,6 +172,12 @@ function BackendContent() {
       case 'activity': return <ActivityFeed />;
       case 'communications': return <CommunicationsContent />;
       case 'support-inbox': return <SupportChatInbox />;
+
+      // New Partner Management Views
+      case 'partners': return <PartnerManagement />;
+      case 'isa-agents': return <ISAManagement />;
+      case 'investors': return <InvestorManagement />;
+      case 'developers': return <DeveloperManagement />;
       
       // Platform Settings
       case 'permissions': return <PermissionsContent />;
@@ -204,6 +214,7 @@ function BackendContent() {
   const navigate = (view: string) => router.push(`/adminaccount?view=${view}`, { scroll: false });
   
   const isOperationsActive = ['members', 'users', 'wallet', 'wallet-transactions', 'shops', 'reconciliation', 'contributions', 'activity', 'communications', 'support-inbox', 'commercial-negotiations'].includes(activeView);
+  const isPartnersActive = ['partners', 'isa-agents', 'investors', 'developers'].includes(activeView);
   const isRevenueActive = [
     'pricing-memberships', 'pricing-connect', 'pricing-tech', 'pricing-marketplace',
     'commissions-malls', 'commissions-isa', 'incentives-sales'
@@ -247,16 +258,26 @@ function BackendContent() {
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'commercial-negotiations'} onClick={() => navigate('commercial-negotiations')}><Handshake />Commercials</SidebarMenuSubButton></SidebarMenuSubItem>
                   </SidebarMenuSub>
                 </SidebarMenuItem>
+                
+                 <SidebarMenuItem>
+                    <SidebarMenuButton tooltip="Partners" isActive={isPartnersActive}><Handshake /><span>Partners</span></SidebarMenuButton>
+                    <SidebarMenuSub>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'partners'} onClick={() => navigate('partners')}><Handshake/>Strategic Partners</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'isa-agents'} onClick={() => navigate('isa-agents')}><UserCheck2/>ISA Agents</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'investors'} onClick={() => navigate('investors')}><DollarSign/>Investors</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'developers'} onClick={() => navigate('developers')}><Code2/>Developers</SidebarMenuSubButton></SidebarMenuSubItem>
+                    </SidebarMenuSub>
+                </SidebarMenuItem>
 
                 <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Marketing" isActive={isMarketingActive}><BookOpen /><span>Marketing</span></SidebarMenuButton>
+                    <SidebarMenuButton tooltip="Marketing Content" isActive={isMarketingActive}><BookOpen /><span>Marketing Content</span></SidebarMenuButton>
                     <SidebarMenuSub>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-partners'} onClick={() => navigate('marketing-partners')}><Handshake/>Partners</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-isa'} onClick={() => navigate('marketing-isa')}><UserCheck2/>ISA Agents</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-suppliers'} onClick={() => navigate('marketing-suppliers')}><Building/>Suppliers</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-transporters'} onClick={() => navigate('marketing-transporters')}><Truck/>Transporters</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-investors'} onClick={() => navigate('marketing-investors')}><DollarSign/>Investors</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-developers'} onClick={() => navigate('marketing-developers')}><Code2/>Developers</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-partners'} onClick={() => navigate('marketing-partners')}>Partners</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-isa'} onClick={() => navigate('marketing-isa')}>ISA Agents</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-suppliers'} onClick={() => navigate('marketing-suppliers')}>Suppliers</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-transporters'} onClick={() => navigate('marketing-transporters')}>Transporters</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-investors'} onClick={() => navigate('marketing-investors')}>Investors</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-developers'} onClick={() => navigate('marketing-developers')}>Developers</SidebarMenuSubButton></SidebarMenuSubItem>
                     </SidebarMenuSub>
                 </SidebarMenuItem>
 
