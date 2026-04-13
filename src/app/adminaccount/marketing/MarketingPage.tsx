@@ -4,7 +4,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import dynamic from 'next/dynamic';
-import { Loader2, ClipboardCopy } from 'lucide-react';
+import { Loader2, ClipboardCopy, Textarea } from 'lucide-react';
 import CompanyProfile from './content/CompanyProfile';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
@@ -86,6 +86,7 @@ async function performAdminAction(token: string, action: string, payload: any) {
 const logSchema = z.object({
   partnerId: z.string().min(1, "Please select a partner."),
   communicationType: z.string().min(1, "Please select a type."),
+  notes: z.string().optional(),
 });
 
 type LogFormValues = z.infer<typeof logSchema>;
@@ -151,6 +152,19 @@ function LogAndCopyDialog({ open, onOpenChange, partners, isLoadingPartners, act
                                 <FormMessage />
                             </FormItem>
                         )} />
+                        <FormField
+                            control={form.control}
+                            name="notes"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Notes (Optional)</FormLabel>
+                                    <FormControl>
+                                        <Textarea placeholder="Add notes about the call or meeting..." {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
                          <DialogFooter>
                             <Button type="submit" disabled={isLogging}>
                                 {isLogging && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
@@ -221,7 +235,7 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
     }
   };
 
-  const handleLogAndCopy = async (logData: {partnerId: string, communicationType: string, subject: string}) => {
+  const handleLogAndCopy = async (logData: {partnerId: string, communicationType: string, subject: string, notes?: string}) => {
     try {
         const token = await getClientSideAuthToken();
         if (!token) throw new Error("Authentication failed.");
@@ -229,7 +243,8 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
         await performAdminAction(token, 'logCommunication', {
             partnerId: logData.partnerId,
             type: logData.communicationType,
-            subject: logData.subject
+            subject: logData.subject,
+            notes: logData.notes,
         });
 
         await handleCopyContent();
