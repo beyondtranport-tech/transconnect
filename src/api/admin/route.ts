@@ -736,7 +736,7 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, message: `Counter-offer of ${newPercentage}% submitted.` });
             }
             case 'invitePartner': {
-                 const { partnerId } = payload;
+                const { partnerId } = payload;
                 if (!partnerId) throw new Error("partnerId is required.");
 
                 const partnerDocRef = db.collection('partners').doc(partnerId);
@@ -748,14 +748,28 @@ export async function POST(req: NextRequest) {
                 
                 if (!email) throw new Error("Partner does not have an email to invite.");
                 
-                await partnerDocRef.update({
+                const batch = db.batch();
+
+                batch.update(partnerDocRef, {
                     invitationStatus: 'invited',
                     updatedAt: FieldValue.serverTimestamp(),
                 });
 
+                const logRef = db.collection(`partners/${partnerId}/communications`).doc();
+                batch.set(logRef, {
+                    id: logRef.id,
+                    type: 'Invite',
+                    subject: 'Invitation Link Generated',
+                    notes: `Generated a unique sign-up link for ${email}.`,
+                    timestamp: FieldValue.serverTimestamp(),
+                    loggedBy: requestorUid,
+                });
+                
+                await batch.commit();
+
                 return NextResponse.json({
                     success: true,
-                    message: "Partner status updated to 'invited'."
+                    message: "Partner status updated to 'invited' and communication logged."
                 });
             }
              case 'saveCompanyLead': {
