@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -54,6 +55,10 @@ import {
   DollarSign,
   Code2,
   BookOpen,
+  Activity,
+  MessageSquare,
+  Scale,
+  Settings,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -144,7 +149,7 @@ function BackendContent() {
 
   const renderContent = useCallback(() => {
     if (activeView.startsWith('marketing-')) {
-        const audience = activeView.split('-')[1];
+        const audience = activeView.split('-')[1] as any;
         return <MarketingPage audience={audience} />;
     }
     switch (activeView) {
