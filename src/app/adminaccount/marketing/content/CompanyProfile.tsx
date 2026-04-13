@@ -1,7 +1,8 @@
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Building, Target, Lightbulb, CheckCircle, Handshake } from "lucide-react";
+import { Building, Target, Lightbulb, CheckCircle, Handshake, ArrowRight } from "lucide-react";
 import Image from 'next/image';
 import data from '@/lib/placeholder-images.json';
 import { Button } from "@/components/ui/button";
@@ -30,15 +31,58 @@ const corePillars = [
 export default function CompanyProfile({ audience }: { audience: string }) {
 
     const opportunityConfig = useMemo(() => {
+        if (audience === 'transporters') {
+            return {
+                title: "Transporter Opportunity",
+                content: (
+                    <div className="space-y-6">
+                        <p className="text-lg text-muted-foreground">Logistics Flow offers two powerful pathways for transporters: benefit from the ecosystem as a Member, or earn significant revenue by building the network as an ISA Partner.</p>
+                        <div className="grid md:grid-cols-2 gap-6">
+                            <div>
+                                <h4 className="font-semibold text-foreground">1. Membership Benefits</h4>
+                                <ul className="mt-2 list-disc list-inside space-y-2 text-muted-foreground">
+                                    <li>Access group discounts on parts, fuel, and services.</li>
+                                    <li>Use AI tools to find loads and reduce empty miles.</li>
+                                    <li>Build a trusted business profile to unlock funding opportunities.</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h4 className="font-semibold text-foreground">2. Become an ISA Partner</h4>
+                                <ul className="mt-2 list-disc list-inside space-y-2 text-muted-foreground">
+                                    <li>For transporters with a strong network of industry contacts.</li>
+                                    <li>Earn recurring commissions from every member you refer.</li>
+                                    <li>Turn your relationships into a new, consistent revenue stream.</li>
+                                </ul>
+                            </div>
+                        </div>
+                         <div className="pt-6 text-center">
+                            <Button asChild>
+                                <Link href="/account?view=offer">
+                                    Explore The Network Offer <ArrowRight className="ml-2 h-4 w-4" />
+                                </Link>
+                            </Button>
+                        </div>
+                    </div>
+                )
+            };
+        }
         if (audience === 'investors') {
             return {
                 title: "Investment Opportunity",
-                text: "We are seeking investors who share our vision. By joining us, you can participate in a high-growth platform that is fundamentally changing the way the logistics industry operates."
+                content: (
+                    <p className="text-lg text-muted-foreground">
+                        We are seeking investors who share our vision. By joining us, you can participate in a high-growth platform that is fundamentally changing the way the logistics industry operates.
+                    </p>
+                )
             };
         }
         return {
             title: "Partnership Opportunity",
-            text: "We are seeking strategic partners who share our vision. By joining us, you can participate in a high-growth platform that is fundamentally changing the way the logistics industry operates."
+            content: (
+                <p className="text-lg text-muted-foreground">
+                    We are seeking strategic partners who share our vision. By joining us, you can participate in a high-growth platform that is fundamentally changing the way the logistics industry operates.
+                </p>
+            )
         };
     }, [audience]);
 
@@ -125,9 +169,7 @@ export default function CompanyProfile({ audience }: { audience: string }) {
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
-                     <p className="text-lg text-muted-foreground mb-6">
-                        {opportunityConfig.text}
-                    </p>
+                    {opportunityConfig.content}
                 </CardContent>
             </Card>
 
