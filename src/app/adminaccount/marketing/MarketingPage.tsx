@@ -1,13 +1,12 @@
-
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import dynamic from 'next/dynamic';
 import { Loader2 } from 'lucide-react';
+import CompanyProfile from './content/CompanyProfile';
 
 // Content components
-const CompanyProfile = dynamic(() => import('./content/CompanyProfile'), { loading: () => <Loader2 className="animate-spin" /> });
 const TechArchitecture = dynamic(() => import('./content/TechArchitecture'), { loading: () => <Loader2 className="animate-spin" /> });
 const RevenueModel = dynamic(() => import('./content/RevenueModel'), { loading: () => <Loader2 className="animate-spin" /> });
 const PitchDeck = dynamic(() => import('./content/PitchDeck'), { loading: () => <Loader2 className="animate-spin" /> });
@@ -71,7 +70,7 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
 
             <Card className="mt-4">
                 <CardContent className="p-6">
-                    <TabsContent value="company-profile"><CompanyProfile /></TabsContent>
+                    <TabsContent value="company-profile"><CompanyProfile audience={audience} /></TabsContent>
                     <TabsContent value="tech-architecture"><TechArchitecture /></TabsContent>
                     <TabsContent value="revenue-model"><RevenueModel /></TabsContent>
                     <TabsContent value="offer"><Offer /></TabsContent>

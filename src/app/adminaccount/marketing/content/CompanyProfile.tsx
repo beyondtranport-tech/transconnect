@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,6 +6,7 @@ import Image from 'next/image';
 import data from '@/lib/placeholder-images.json';
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { useMemo } from "react";
 
 const { placeholderImages } = data;
 
@@ -27,7 +27,21 @@ const corePillars = [
     },
 ];
 
-export default function CompanyProfile() {
+export default function CompanyProfile({ audience }: { audience: string }) {
+
+    const opportunityConfig = useMemo(() => {
+        if (audience === 'investors') {
+            return {
+                title: "Investment Opportunity",
+                text: "We are seeking investors who share our vision. By joining us, you can participate in a high-growth platform that is fundamentally changing the way the logistics industry operates."
+            };
+        }
+        return {
+            title: "Partnership Opportunity",
+            text: "We are seeking strategic partners who share our vision. By joining us, you can participate in a high-growth platform that is fundamentally changing the way the logistics industry operates."
+        };
+    }, [audience]);
+
     return (
         <div className="space-y-12">
             <section className="relative w-full h-64 rounded-xl overflow-hidden">
@@ -107,12 +121,12 @@ export default function CompanyProfile() {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-3">
                         <Handshake className="h-6 w-6 text-primary" />
-                        Partnership Opportunity
+                        {opportunityConfig.title}
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
                      <p className="text-lg text-muted-foreground mb-6">
-                        We are seeking strategic partners who share our vision. By joining us, you can participate in a high-growth platform that is fundamentally changing the way the logistics industry operates.
+                        {opportunityConfig.text}
                     </p>
                 </CardContent>
             </Card>
