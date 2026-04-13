@@ -95,10 +95,7 @@ const SupportChatInbox = dynamic(() => import('@/app/backend/support-chat-inbox'
 const UsersList = dynamic(() => import('@/app/backend/users-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const CommercialNegotiations = dynamic(() => import('@/app/backend/commercial-negotiations'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const MarketingPage = dynamic(() => import('./marketing/MarketingPage'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const PartnerManagement = dynamic(() => import('./marketing/partner-management'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const ISAManagement = dynamic(() => import('./marketing/isa-management'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const DeveloperManagement = dynamic(() => import('./marketing/developer-management'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const InvestorManagement = dynamic(() => import('./marketing/investor-management'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const MyTasksContent = dynamic(() => import('./my-tasks'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 // Platform Settings
 const PermissionsContent = dynamic(() => import('@/app/backend/permissions-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
@@ -173,6 +170,7 @@ function BackendContent() {
       case 'commercial-negotiations': return <CommercialNegotiations />;
       
       // Operations
+      case 'my-tasks': return <MyTasksContent />;
       case 'members': return <MembersList />;
       case 'users': return <UsersList />;
       case 'wallet': return memberId ? <MemberWallet memberId={memberId} /> : <WalletTransactionsList />;
@@ -183,12 +181,6 @@ function BackendContent() {
       case 'activity': return <ActivityFeed />;
       case 'communications': return <CommunicationsContent />;
       case 'support-inbox': return <SupportChatInbox />;
-
-      // New Partner Management Views
-      case 'partners': return <PartnerManagement />;
-      case 'isa-agents': return <ISAManagement />;
-      case 'investors': return <InvestorManagement />;
-      case 'developers': return <DeveloperManagement />;
       
       // Platform Settings
       case 'permissions': return <PermissionsContent />;
@@ -224,8 +216,7 @@ function BackendContent() {
 
   const navigate = (view: string) => router.push(`/adminaccount?view=${view}`, { scroll: false });
   
-  const isOperationsActive = ['members', 'users', 'wallet', 'wallet-transactions', 'shops', 'reconciliation', 'contributions', 'activity', 'communications', 'support-inbox', 'commercial-negotiations'].includes(activeView);
-  const isPartnersActive = ['partners', 'isa-agents', 'investors', 'developers'].includes(activeView);
+  const isOperationsActive = ['members', 'users', 'wallet', 'wallet-transactions', 'shops', 'reconciliation', 'contributions', 'activity', 'communications', 'support-inbox', 'commercial-negotiations', 'my-tasks'].includes(activeView);
   const isRevenueActive = [
     'pricing-memberships', 'pricing-connect', 'pricing-tech', 'pricing-marketplace',
     'commissions-malls', 'commissions-isa', 'incentives-sales'
@@ -257,6 +248,7 @@ function BackendContent() {
                 <SidebarMenuItem>
                   <SidebarMenuButton tooltip="Operations" isActive={isOperationsActive}><Wrench /><span>Operations</span></SidebarMenuButton>
                   <SidebarMenuSub>
+                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'my-tasks'} onClick={() => navigate('my-tasks')}><ClipboardList />My Tasks</SidebarMenuSubButton></SidebarMenuSubItem>
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'activity'} onClick={() => navigate('activity')}><Activity />Activity Feed</SidebarMenuSubButton></SidebarMenuSubItem>
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'communications'} onClick={() => navigate('communications')}><MessageSquare />Agent Chats</SidebarMenuSubButton></SidebarMenuSubItem>
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'support-inbox'} onClick={() => navigate('support-inbox')}><MessageSquare />Support Inbox</SidebarMenuSubButton></SidebarMenuSubItem>
@@ -268,16 +260,6 @@ function BackendContent() {
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'reconciliation'} onClick={() => navigate('reconciliation')}><Scale />Bank Reconciliation</SidebarMenuSubButton></SidebarMenuSubItem>
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'commercial-negotiations'} onClick={() => navigate('commercial-negotiations')}><Handshake />Commercials</SidebarMenuSubButton></SidebarMenuSubItem>
                   </SidebarMenuSub>
-                </SidebarMenuItem>
-                
-                 <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Partners" isActive={isPartnersActive}><Handshake /><span>Partners</span></SidebarMenuButton>
-                    <SidebarMenuSub>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'partners'} onClick={() => navigate('partners')}><Handshake/>Strategic Partners</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'isa-agents'} onClick={() => navigate('isa-agents')}><UserCheck2/>ISA Agents</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'investors'} onClick={() => navigate('investors')}><DollarSign/>Investors</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'developers'} onClick={() => navigate('developers')}><Code2/>Developers</SidebarMenuSubButton></SidebarMenuSubItem>
-                    </SidebarMenuSub>
                 </SidebarMenuItem>
 
                 <SidebarMenuItem>
