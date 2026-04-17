@@ -107,6 +107,12 @@
       ]
     },
     {
+      "collectionId": "leads",
+      "fields": [
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
       "collectionId": "lendingAssets",
       "fields": [
         { "fieldPath": "clientId", "order": "ASCENDING" }
@@ -139,3 +145,4 @@
 
   
     
+
