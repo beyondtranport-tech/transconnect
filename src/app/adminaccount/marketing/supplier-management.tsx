@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Building, Eye } from 'lucide-react';
+import { Loader2, Building, Eye, PlusCircle } from "lucide-react";
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { getClientSideAuthToken } from '@/firebase';
@@ -70,9 +70,16 @@ export default function SupplierManagement() {
 
     return (
         <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Building /> Supplier Management</CardTitle>
-                <CardDescription>A list of all members who have set up a shop on the platform.</CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                    <CardTitle className="flex items-center gap-2"><Building /> Supplier Management</CardTitle>
+                    <CardDescription>A list of all members who have set up a shop on the platform.</CardDescription>
+                </div>
+                <Button asChild>
+                    <Link href="/adminaccount?view=leads-database&action=add-member">
+                        <PlusCircle className="mr-2 h-4 w-4" /> Add Supplier
+                    </Link>
+                </Button>
             </CardHeader>
             <CardContent>
                  {isLoading ? (
