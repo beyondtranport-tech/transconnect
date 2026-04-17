@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -6,7 +7,7 @@ import dynamic from 'next/dynamic';
 import { Loader2, ClipboardCopy } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import CompanyProfile from './content/CompanyProfile';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -92,12 +93,22 @@ const logSchema = z.object({
 
 type LogFormValues = z.infer<typeof logSchema>;
 
-function LogAndCopyDialog({ open, onOpenChange, partners, isLoadingPartners, activeTabLabel, onLogAndCopy }: any) {
+function LogAndCopyDialog({ open, onOpenChange, partners, isLoadingPartners, activeTabLabel, onLogAndCopy, audienceTitle }: any) {
     const form = useForm<LogFormValues>({
         resolver: zodResolver(logSchema),
     });
 
     const [isLogging, setIsLogging] = useState(false);
+
+    const singularAudience = useMemo(() => {
+        if (!audienceTitle) return 'Partner';
+        if (audienceTitle === 'Suppliers') return 'Supplier';
+        if (audienceTitle === 'Transporters') return 'Transporter';
+        if (audienceTitle.endsWith('s')) {
+            return audienceTitle.slice(0, -1);
+        }
+        return audienceTitle;
+    }, [audienceTitle]);
 
     const handleSubmit = async (values: LogFormValues) => {
         setIsLogging(true);
@@ -126,7 +137,7 @@ function LogAndCopyDialog({ open, onOpenChange, partners, isLoadingPartners, act
                     <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 py-4">
                         <FormField control={form.control} name="partnerId" render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Partner</FormLabel>
+                                <FormLabel>Log against Partner/ISA</FormLabel>
                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                                     <FormControl><SelectTrigger disabled={isLoadingPartners}>
                                         <SelectValue placeholder={isLoadingPartners ? "Loading..." : "Select a partner..."} />
@@ -196,35 +207,28 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
         return;
     }
 
-    const fetchPartnersForAudience = async () => {
+    const fetchPartnersForLogging = async () => {
         setIsLoadingPartners(true);
         try {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Not authenticated");
 
-            if (['partners', 'isa', 'investors', 'developers'].includes(audience)) {
-                const audienceType = audience === 'isa' ? 'isa' : audience.slice(0, -1);
-                const result = await performAdminAction(token, 'getPartnersByType', { type: audienceType });
-                setPartners(result.data || []);
-            } else if (['suppliers', 'transporters'].includes(audience)) {
-                // For supplier/transporter marketing, fetch ISAs and Strategic Partners to log against
-                const [partnerRes, isaRes] = await Promise.all([
-                    performAdminAction(token, 'getPartnersByType', { type: 'partner' }),
-                    performAdminAction(token, 'getPartnersByType', { type: 'isa' })
-                ]);
-                const combinedPartners = [...(partnerRes.data || []), ...(isaRes.data || [])];
-                setPartners(combinedPartners);
-            } else {
-                setPartners([]);
-            }
+            // For any audience, we log against Strategic Partners or ISAs
+            const [partnerRes, isaRes] = await Promise.all([
+                performAdminAction(token, 'getPartnersByType', { type: 'partner' }),
+                performAdminAction(token, 'getPartnersByType', { type: 'isa' })
+            ]);
+            const combinedPartners = [...(partnerRes.data || []), ...(isaRes.data || [])];
+            setPartners(combinedPartners);
+            
         } catch (e: any) {
             toast({ variant: 'destructive', title: `Could not load partners for logging`, description: e.message });
         } finally {
             setIsLoadingPartners(false);
         }
     };
-    fetchPartnersForAudience();
-  }, [audience, toast, Management]);
+    fetchPartnersForLogging();
+  }, [toast, Management]);
 
 
   const handleCopyContent = async () => {
@@ -284,6 +288,7 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
             isLoadingPartners={isLoadingPartners}
             activeTabLabel={activeTab}
             onLogAndCopy={handleLogAndCopy}
+            audienceTitle={config.title}
         />
         <div className="space-y-6">
             <div>
@@ -349,3 +354,5 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
     </>
   );
 }
+
+    
