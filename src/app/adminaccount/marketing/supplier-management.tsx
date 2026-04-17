@@ -6,17 +6,42 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Building, Eye, PlusCircle } from "lucide-react";
+import { Loader2, Building, Eye, PlusCircle, Edit, Trash2, Send, Copy } from "lucide-react";
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { getClientSideAuthToken } from '@/firebase';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import Link from 'next/link';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 // API Helper
 async function performAdminAction(token: string, action: string, payload: any) {
@@ -38,6 +63,7 @@ const leadSchema = z.object({
   email: z.string().email('Invalid email address').optional().or(z.literal('')),
   phone: z.string().optional(),
   notes: z.string().optional(),
+  status: z.enum(['new', 'contacted', 'qualified', 'unqualified', 'invited', 'registered']).default('new'),
 });
 type LeadFormValues = z.infer<typeof leadSchema>;
 
@@ -46,7 +72,7 @@ function AddSupplierDialog({ open, onOpenChange, onSave }: { open: boolean, onOp
   const { toast } = useToast();
   const form = useForm<LeadFormValues>({
     resolver: zodResolver(leadSchema),
-    defaultValues: { companyName: '', contactPerson: '', email: '', phone: '', notes: '' },
+    defaultValues: { companyName: '', contactPerson: '', email: '', phone: '', notes: '', status: 'new' },
   });
 
   const onSubmit = async (values: LeadFormValues) => {
@@ -56,7 +82,7 @@ function AddSupplierDialog({ open, onOpenChange, onSave }: { open: boolean, onOp
       if (!token) throw new Error("Authentication failed.");
       
       await performAdminAction(token, 'saveLead', { 
-          lead: { ...values, role: 'Supplier', status: 'new' } 
+          lead: { ...values, role: 'Supplier' } 
       });
 
       toast({ title: 'Supplier Lead Added', description: `${values.companyName} has been added to the Leads Database.` });
@@ -85,6 +111,7 @@ function AddSupplierDialog({ open, onOpenChange, onSave }: { open: boolean, onOp
             <FormField control={form.control} name="contactPerson" render={({ field }) => ( <FormItem><FormLabel>Contact Person</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
             <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email"/></FormControl><FormMessage /></FormItem> )} />
             <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel>Phone</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+            <FormField control={form.control} name="status" render={({ field }) => ( <FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="new">New</SelectItem><SelectItem value="contacted">Contacted</SelectItem><SelectItem value="qualified">Qualified</SelectItem><SelectItem value="unqualified">Unqualified</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
             <FormField control={form.control} name="notes" render={({ field }) => ( <FormItem><FormLabel>Notes</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem> )} />
             <DialogFooter>
                 <Button type="submit" disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null} Add to Leads</Button>
@@ -96,24 +123,25 @@ function AddSupplierDialog({ open, onOpenChange, onSave }: { open: boolean, onOp
   );
 }
 
-
 export default function SupplierManagement() {
     const [suppliers, setSuppliers] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const { toast } = useToast();
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+    const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
+    const [leadToDelete, setLeadToDelete] = useState<any | null>(null);
 
-    const loadData = useCallback(async () => {
+    const forceRefresh = useCallback(async () => {
         setIsLoading(true);
         setError(null);
         try {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication failed.");
             
-            const result = await performAdminAction(token, 'getMembers');
-            const supplierCompanies = (result.data || []).filter((company: any) => !!company.shopId);
-            setSuppliers(supplierCompanies);
+            const result = await performAdminAction(token, 'getLeads');
+            const supplierLeads = (result.data || []).filter((lead: any) => lead.role === 'Supplier');
+            setSuppliers(supplierLeads);
         } catch (e: any) {
             setError(e.message);
             toast({ variant: 'destructive', title: 'Error loading suppliers', description: e.message });
@@ -123,33 +151,58 @@ export default function SupplierManagement() {
     }, [toast]);
 
     useEffect(() => {
-        loadData();
-    }, [loadData]);
+        forceRefresh();
+    }, [forceRefresh]);
 
-    const handleSave = () => {
-      loadData();
-    }
+    const handleDelete = async () => {
+        if (!leadToDelete) return;
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication failed.");
+            await performAdminAction(token, 'deleteLead', { leadId: leadToDelete.id });
+            toast({ title: 'Lead Deleted' });
+            forceRefresh();
+            setLeadToDelete(null);
+            setIsDeleteAlertOpen(false);
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: 'Delete Failed', description: e.message });
+        }
+    };
 
     const columns: ColumnDef<any>[] = useMemo(() => [
         { accessorKey: 'companyName', header: 'Company Name' },
-        { 
-            accessorKey: 'ownerName', 
-            header: 'Owner', 
-            cell: ({ row }) => `${row.original.firstName} ${row.original.lastName}`
-        },
+        { accessorKey: 'contactPerson', header: 'Contact' },
         { accessorKey: 'email', header: 'Email' },
-        { accessorKey: 'shopId', header: 'Shop ID', cell: ({ row }) => <div className="font-mono text-xs">{row.original.shopId}</div> },
-        { id: 'actions', header: 'Actions', cell: ({ row }) => <div className="text-right"><Button asChild variant="ghost" size="icon"><Link href={`/backend?view=wallet&memberId=${row.original.id}`}><Eye className="h-4 w-4" /></Link></Button></div> },
-    ], []);
+        { accessorKey: 'phone', header: 'Phone' },
+        { accessorKey: 'status', header: 'Status', cell: ({row}) => <Badge className="capitalize">{row.original.status}</Badge>},
+        { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
+            <div className="text-right">
+                {/* Edit and Invite actions can be added here */}
+                <Button variant="ghost" size="icon" onClick={() => { setLeadToDelete(row.original); setIsDeleteAlertOpen(true); }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+            </div>
+        )},
+    ], [forceRefresh]);
 
     return (
       <>
-        <AddSupplierDialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen} onSave={handleSave} />
+        <AddSupplierDialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen} onSave={forceRefresh} />
+         <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                    <AlertDialogDescription>This will permanently delete the lead "{leadToDelete?.companyName}".</AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel onClick={() => setLeadToDelete(null)}>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Yes, delete</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
         <Card>
             <CardHeader className="flex flex-row items-center justify-between">
                 <div>
-                    <CardTitle className="flex items-center gap-2"><Building /> Supplier Management</CardTitle>
-                    <CardDescription>A list of all members who have set up a shop on the platform.</CardDescription>
+                    <CardTitle className="flex items-center gap-2"><Building /> Supplier Leads Management</CardTitle>
+                    <CardDescription>A list of all potential suppliers in the leads database.</CardDescription>
                 </div>
                  <Button onClick={() => setIsAddDialogOpen(true)}>
                     <PlusCircle className="mr-2 h-4 w-4" /> Add Supplier
