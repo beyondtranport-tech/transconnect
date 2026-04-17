@@ -2,9 +2,6 @@
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Building, Eye, PlusCircle, Edit, Trash2, Send, Copy } from "lucide-react";
 import { DataTable } from '@/components/ui/data-table';
@@ -42,6 +39,9 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 
 // API Helper
 async function performAdminAction(token: string, action: string, payload: any) {
@@ -139,9 +139,8 @@ export default function SupplierManagement() {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication failed.");
             
-            const result = await performAdminAction(token, 'getLeads');
-            const supplierLeads = (result.data || []).filter((lead: any) => lead.role === 'Supplier');
-            setSuppliers(supplierLeads);
+            const result = await performAdminAction(token, 'getLeads', { role: 'Supplier' });
+            setSuppliers(result.data || []);
         } catch (e: any) {
             setError(e.message);
             toast({ variant: 'destructive', title: 'Error loading suppliers', description: e.message });

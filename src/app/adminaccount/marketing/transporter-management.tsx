@@ -113,9 +113,8 @@ export default function TransporterManagement() {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication failed.");
             
-            const result = await performAdminAction(token, 'getLeads');
-            const transporterLeads = (result.data || []).filter((lead: any) => lead.role === 'Transporter');
-            setTransporters(transporterLeads);
+            const result = await performAdminAction(token, 'getLeads', { role: 'Transporter' });
+            setTransporters(result.data || []);
         } catch (e: any) {
             setError(e.message);
             toast({ variant: 'destructive', title: 'Error loading transporters', description: e.message });
