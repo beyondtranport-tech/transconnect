@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -57,12 +56,14 @@ const PartnerManagement = dynamic(() => import('./partner-management'), { loadin
 const ISAManagement = dynamic(() => import('./isa-management'), { loading: () => <Loader2 className="animate-spin" /> });
 const InvestorManagement = dynamic(() => import('./investor-management'), { loading: () => <Loader2 className="animate-spin" /> });
 const DeveloperManagement = dynamic(() => import('./developer-management'), { loading: () => <Loader2 className="animate-spin" /> });
+const SupplierManagement = dynamic(() => import('./supplier-management'), { loading: () => <Loader2 className="animate-spin" /> });
+const TransporterManagement = dynamic(() => import('./transporter-management'), { loading: () => <Loader2 className="animate-spin" /> });
 
 const audienceConfig = {
     partners: { title: 'Strategic Partners', Offer: PartnerOffer, Emails: PartnerEmails, Management: PartnerManagement },
     isa: { title: 'ISA Agents', Offer: PartnerOffer, Emails: PartnerEmails, Management: ISAManagement },
-    suppliers: { title: 'Suppliers', Offer: SupplierOffer, Emails: SupplierEmails, Management: null },
-    transporters: { title: 'Transporters', Offer: TransporterOffer, Emails: TransporterEmails, Management: null },
+    suppliers: { title: 'Suppliers', Offer: SupplierOffer, Emails: SupplierEmails, Management: SupplierManagement },
+    transporters: { title: 'Transporters', Offer: TransporterOffer, Emails: TransporterEmails, Management: TransporterManagement },
     investors: { title: 'Investors', Offer: InvestorOffer, Emails: InvestorEmails, Management: InvestorManagement },
     developers: { title: 'Developers', Offer: DeveloperOffer, Emails: DeveloperEmails, Management: DeveloperManagement },
 };
@@ -190,7 +191,12 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
   const [isLoadingPartners, setIsLoadingPartners] = useState(true);
 
   useEffect(() => {
-    if (!Management) return; // Don't fetch partners if there's no management tab
+    // Only fetch partners if there's a management component (they are 'partners' in the database)
+    if (!Management || !['partners', 'isa', 'investors', 'developers'].includes(audience)) {
+        setIsLoadingPartners(false);
+        setPartners([]);
+        return;
+    };
     
     const fetchPartnersForAudience = async () => {
         setIsLoadingPartners(true);
@@ -282,12 +288,12 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
                     <TabsTrigger value="pitch">The Pitch</TabsTrigger>
                     <TabsTrigger value="framework">The Framework</TabsTrigger>
                     <TabsTrigger value="emails">Emails</TabsTrigger>
-                    {Management && <TabsTrigger value="management">Partner Management</TabsTrigger>}
+                    {Management && <TabsTrigger value="management">Management</TabsTrigger>}
                 </TabsList>
 
                 <Card className="mt-4">
                     <CardHeader className="flex flex-row items-center justify-end border-b">
-                        <Button variant="outline" onClick={() => setIsLogDialogOpen(true)}>
+                        <Button variant="outline" onClick={() => setIsLogDialogOpen(true)} disabled={partners.length === 0 && !!Management}>
                             <ClipboardCopy className="mr-2 h-4 w-4" />
                             Log & Copy Content
                         </Button>
