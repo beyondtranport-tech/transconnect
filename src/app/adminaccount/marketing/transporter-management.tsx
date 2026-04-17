@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
@@ -76,7 +77,7 @@ export default function TransporterManagement() {
                     <CardDescription>A list of all members who have set up a load board on the platform.</CardDescription>
                 </div>
                 <Button asChild>
-                    <Link href="/adminaccount?view=leads-database&action=add-member">
+                    <Link href="/adminaccount?view=pitch-transporter">
                         <PlusCircle className="mr-2 h-4 w-4" /> Add Transporter
                     </Link>
                 </Button>

@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -95,6 +96,8 @@ const SupportChatInbox = dynamic(() => import('@/app/backend/support-chat-inbox'
 const UsersList = dynamic(() => import('@/app/backend/users-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const CommercialNegotiations = dynamic(() => import('@/app/backend/commercial-negotiations'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const MarketingPage = dynamic(() => import('./marketing/MarketingPage'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const SupplierPitch = dynamic(() => import('./supplier-pitch'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const TransporterPitch = dynamic(() => import('./transporter-pitch'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 // Platform Settings
 const PermissionsContent = dynamic(() => import('@/app/backend/permissions-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
@@ -180,6 +183,10 @@ function BackendContent() {
       case 'communications': return <CommunicationsContent />;
       case 'support-inbox': return <SupportChatInbox />;
       
+      // Pitch/Funnel Pages
+      case 'pitch-supplier': return <SupplierPitch />;
+      case 'pitch-transporter': return <TransporterPitch />;
+
       // Platform Settings
       case 'permissions': return <PermissionsContent />;
       case 'action-plan': return <ActionPlanSettings />;
