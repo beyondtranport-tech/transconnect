@@ -4,7 +4,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, PlusCircle } from "lucide-react";
 import Link from "next/link";
 import * as React from "react";
 
@@ -20,13 +20,21 @@ const PitchComponent = ({ category }: { category: string }) => {
         <div className="text-center py-10">
             <h2 className="text-2xl font-semibold">Engage with {category} Suppliers</h2>
             <p className="mt-2 text-muted-foreground">
-                Use our pre-written email templates to start a conversation with potential suppliers in this category.
+                First, add a new supplier lead to the database. Then, use our email templates to start the conversation.
             </p>
-            <Button asChild className="mt-6">
-                <Link href={`/adminaccount?view=pitch-supplier-emails&type=${encodeURIComponent(category)}`}>
-                    View Email Sequence <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-            </Button>
+            <div className="mt-6 flex justify-center gap-4">
+                <Button asChild>
+                    <Link href={`/backend?view=leads-database&action=add-member&newRole=Supplier&newNotes=Category: ${encodeURIComponent(category)}`}>
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Add New Supplier
+                    </Link>
+                </Button>
+                <Button asChild variant="outline">
+                    <Link href={`/adminaccount?view=pitch-supplier-emails&type=${encodeURIComponent(category)}`}>
+                        View Email Sequence <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
+                </Button>
+            </div>
         </div>
     );
 };
@@ -37,7 +45,7 @@ export default function SupplierPitch() {
         <Tabs defaultValue="Tyres" className="w-full">
             <CardHeader>
                 <CardTitle>Supplier Pitch Generator</CardTitle>
-                <CardDescription>Select a supplier category to view a tailored engagement pitch.</CardDescription>
+                <CardDescription>Select a supplier category to add a new lead and view a tailored engagement pitch.</CardDescription>
             </CardHeader>
             <CardContent>
                 <TabsList className="h-auto flex-wrap justify-start">
@@ -55,5 +63,3 @@ export default function SupplierPitch() {
         </Tabs>
     );
 }
-
-    
