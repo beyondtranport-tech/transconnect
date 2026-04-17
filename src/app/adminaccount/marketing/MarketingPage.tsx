@@ -39,7 +39,6 @@ const Framework = dynamic(() => import('./content/Framework'), { loading: () => 
 
 // Audience-specific components
 const PartnerOffer = dynamic(() => import('./offers/PartnerOffer'), { loading: () => <Loader2 className="animate-spin" /> });
-const NetworkOffer = dynamic(() => import('@/app/account/network-offer'), { loading: () => <Loader2 className="animate-spin" /> });
 const InvestorOffer = dynamic(() => import('./offers/InvestorOffer'), { loading: () => <Loader2 className="animate-spin" /> });
 const DeveloperOffer = dynamic(() => import('./offers/DeveloperOffer'), { loading: () => <Loader2 className="animate-spin" /> });
 const SupplierOffer = dynamic(() => import('./offers/SupplierOffer'), { loading: () => <Loader2 className="animate-spin" /> });
@@ -191,23 +190,35 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
   const [isLoadingPartners, setIsLoadingPartners] = useState(true);
 
   useEffect(() => {
-    // Only fetch partners if there's a management component (they are 'partners' in the database)
-    if (!Management || !['partners', 'isa', 'investors', 'developers'].includes(audience)) {
+    if (!Management) {
         setIsLoadingPartners(false);
         setPartners([]);
         return;
-    };
-    
+    }
+
     const fetchPartnersForAudience = async () => {
         setIsLoadingPartners(true);
         try {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Not authenticated");
-            const audienceType = audience === 'isa' ? 'isa' : audience.slice(0, -1);
-            const result = await performAdminAction(token, 'getPartnersByType', { type: audienceType });
-            setPartners(result.data || []);
+
+            if (['partners', 'isa', 'investors', 'developers'].includes(audience)) {
+                const audienceType = audience === 'isa' ? 'isa' : audience.slice(0, -1);
+                const result = await performAdminAction(token, 'getPartnersByType', { type: audienceType });
+                setPartners(result.data || []);
+            } else if (['suppliers', 'transporters'].includes(audience)) {
+                // For supplier/transporter marketing, fetch ISAs and Strategic Partners to log against
+                const [partnerRes, isaRes] = await Promise.all([
+                    performAdminAction(token, 'getPartnersByType', { type: 'partner' }),
+                    performAdminAction(token, 'getPartnersByType', { type: 'isa' })
+                ]);
+                const combinedPartners = [...(partnerRes.data || []), ...(isaRes.data || [])];
+                setPartners(combinedPartners);
+            } else {
+                setPartners([]);
+            }
         } catch (e: any) {
-            toast({ variant: 'destructive', title: 'Could not load partners', description: e.message });
+            toast({ variant: 'destructive', title: `Could not load partners for logging`, description: e.message });
         } finally {
             setIsLoadingPartners(false);
         }
@@ -257,7 +268,7 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
 
         await handleCopyContent();
 
-        toast({ title: 'Logged and Copied!', description: 'Communication has been logged and content is on your clipboard. Images may be blocked by the recipient\'s email client.' });
+        toast({ title: 'Logged and Copied!', description: 'Communication has been logged. Images may be blocked by the recipient\'s email client.' });
         setIsLogDialogOpen(false);
     } catch (e: any) {
         toast({ variant: 'destructive', title: 'Action Failed', description: e.message });
@@ -293,8 +304,12 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
 
                 <Card className="mt-4">
                     <CardHeader className="flex flex-row items-center justify-end border-b">
-                        <Button variant="outline" onClick={() => setIsLogDialogOpen(true)} disabled={partners.length === 0 && !!Management}>
-                            <ClipboardCopy className="mr-2 h-4 w-4" />
+                        <Button variant="outline" onClick={() => setIsLogDialogOpen(true)} disabled={isLoadingPartners || (partners.length === 0 && !!Management)}>
+                            {isLoadingPartners ? (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                                <ClipboardCopy className="mr-2 h-4 w-4" />
+                            )}
                             Log & Copy Content
                         </Button>
                     </CardHeader>
