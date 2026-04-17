@@ -23,14 +23,14 @@ const PitchComponent = ({ category }: { category: string }) => {
                 First, add a new supplier lead to the database. Then, use our email templates to start the conversation.
             </p>
             <div className="mt-6 flex justify-center gap-4">
-                <Button asChild>
-                    <Link href={`/backend?view=leads-database&action=add-member&newRole=Supplier&newNotes=Category: ${encodeURIComponent(category)}`}>
+                 <Button asChild>
+                    <Link href={`/adminaccount?view=marketing-suppliers`}>
                         <PlusCircle className="mr-2 h-4 w-4" />
                         Add New Supplier
                     </Link>
                 </Button>
                 <Button asChild variant="outline">
-                    <Link href={`/adminaccount?view=pitch-supplier-emails&type=${encodeURIComponent(category)}`}>
+                    <Link href={`/adminaccount?view=marketing-suppliers&subview=emails&type=${encodeURIComponent(category)}`}>
                         View Email Sequence <ArrowRight className="ml-2 h-4 w-4" />
                     </Link>
                 </Button>
@@ -45,7 +45,7 @@ export default function SupplierPitch() {
         <Tabs defaultValue="Tyres" className="w-full">
             <CardHeader>
                 <CardTitle>Supplier Pitch Generator</CardTitle>
-                <CardDescription>Select a supplier category to add a new lead and view a tailored engagement pitch.</CardDescription>
+                <CardDescription>Select a supplier category to view a tailored engagement pitch and add new leads.</CardDescription>
             </CardHeader>
             <CardContent>
                 <TabsList className="h-auto flex-wrap justify-start">
