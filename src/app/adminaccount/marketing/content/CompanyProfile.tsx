@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -59,6 +58,41 @@ export default function CompanyProfile({ audience }: { audience: string }) {
                             <Button asChild>
                                 <Link href="/account?view=offer">
                                     Explore The Network Offer <ArrowRight className="ml-2 h-4 w-4" />
+                                </Link>
+                            </Button>
+                        </div>
+                    </div>
+                )
+            };
+        }
+        if (audience === 'suppliers') {
+            return {
+                title: "Supplier Opportunity",
+                content: (
+                    <div className="space-y-6">
+                        <p className="text-lg text-muted-foreground">Logistics Flow provides a direct, high-value sales channel for suppliers. List your business, sell your products, and tap into a network of qualified buyers.</p>
+                        <div className="grid md:grid-cols-2 gap-6">
+                            <div>
+                                <h4 className="font-semibold text-foreground">1. Your Digital Branch</h4>
+                                <ul className="mt-2 list-disc list-inside space-y-2 text-muted-foreground">
+                                    <li>Create a professional online shop within our Supplier Mall.</li>
+                                    <li>Reach hundreds of transport operators actively looking for your products.</li>
+                                    <li>Reduce customer acquisition costs with a targeted audience.</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h4 className="font-semibold text-foreground">2. Become a Network Partner</h4>
+                                <ul className="mt-2 list-disc list-inside space-y-2 text-muted-foreground">
+                                    <li>Onboard your existing clients to the platform.</li>
+                                    <li>Earn a recurring commission on their activity and membership fees.</li>
+                                    <li>Turn your customer base into a new revenue stream.</li>
+                                </ul>
+                            </div>
+                        </div>
+                         <div className="pt-6 text-center">
+                            <Button asChild>
+                                <Link href="/account?view=shop">
+                                    Create Your Supplier Shop <ArrowRight className="ml-2 h-4 w-4" />
                                 </Link>
                             </Button>
                         </div>
