@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
@@ -44,6 +45,7 @@ import Link from 'next/link';
 import { CommunicationLogDialog } from './CommunicationLogDialog';
 import { PartnerTasksDialog } from './PartnerTasksDialog';
 import { AddCommunicationLogDialog } from './AddCommunicationLogDialog';
+import { DataTable } from '@/components/ui/data-table';
 
 
 async function performAdminAction(token: string, action: string, payload: any) {
