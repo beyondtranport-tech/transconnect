@@ -34,34 +34,37 @@ async function performAdminAction(token: string, action: string, payload: any) {
     return result;
 }
 
-const leadSchema = z.object({
-  companyName: z.string().min(1, 'Company name is required'),
-  contactPerson: z.string().optional(),
-  email: z.string().email('Invalid email address').optional().or(z.literal('')),
+const partnerSchema = z.object({
+  firstName: z.string().min(1, 'First name is required'),
+  lastName: z.string().min(1, 'Last name is required'),
+  email: z.string().email('Invalid email address'),
   phone: z.string().optional(),
-  notes: z.string().optional(),
+  companyName: z.string().optional(),
+  status: z.enum(['active', 'inactive']),
+  type: z.string(),
 });
-type LeadFormValues = z.infer<typeof leadSchema>;
+
+type PartnerFormValues = z.infer<typeof partnerSchema>;
 
 function AddTransporterDialog({ open, onOpenChange, onSave }: { open: boolean, onOpenChange: (open: boolean) => void, onSave: () => void }) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const form = useForm<LeadFormValues>({
-    resolver: zodResolver(leadSchema),
-    defaultValues: { companyName: '', contactPerson: '', email: '', phone: '', notes: '' },
+  const form = useForm<Omit<PartnerFormValues, 'type'>>({
+    resolver: zodResolver(partnerSchema.omit({ type: true })),
+    defaultValues: { companyName: '', firstName: '', lastName: '', email: '', phone: '', status: 'active' },
   });
 
-  const onSubmit = async (values: LeadFormValues) => {
+  const onSubmit = async (values: Omit<PartnerFormValues, 'type'>) => {
     setIsLoading(true);
     try {
       const token = await getClientSideAuthToken();
       if (!token) throw new Error("Authentication failed.");
       
-      await performAdminAction(token, 'saveLead', { 
-          lead: { ...values, role: 'Transporter', status: 'new' } 
+      await performAdminAction(token, 'savePartner', { 
+          partner: { ...values, type: 'transporter' } 
       });
 
-      toast({ title: 'Transporter Lead Added', description: `${values.companyName} has been added to the Leads Database.` });
+      toast({ title: 'Transporter Lead Added', description: `${values.companyName || `${values.firstName} ${values.lastName}`} has been added.` });
       onSave();
       onOpenChange(false);
       form.reset();
@@ -78,16 +81,20 @@ function AddTransporterDialog({ open, onOpenChange, onSave }: { open: boolean, o
         <DialogHeader>
           <DialogTitle>Add New Transporter Lead</DialogTitle>
           <DialogDescription>
-            Enter the details for the potential transporter. This will add them to the central leads database.
+            Enter the details for the potential transporter. This will add them to the central partner database.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
             <FormField control={form.control} name="companyName" render={({ field }) => ( <FormItem><FormLabel>Company Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
-            <FormField control={form.control} name="contactPerson" render={({ field }) => ( <FormItem><FormLabel>Contact Person</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
-            <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email"/></FormControl><FormMessage /></FormItem> )} />
-            <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel>Phone</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
-            <FormField control={form.control} name="notes" render={({ field }) => ( <FormItem><FormLabel>Notes</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem> )} />
+             <div className="grid grid-cols-2 gap-4">
+                <FormField control={form.control} name="firstName" render={({ field }) => ( <FormItem><FormLabel>Contact First Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+                <FormField control={form.control} name="lastName" render={({ field }) => ( <FormItem><FormLabel>Contact Last Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+                <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email"/></FormControl><FormMessage /></FormItem> )} />
+                <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel>Phone</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+            </div>
             <DialogFooter>
                 <Button type="submit" disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null} Add to Leads</Button>
             </DialogFooter>
@@ -105,7 +112,7 @@ export default function TransporterManagement() {
     const { toast } = useToast();
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
     const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
-    const [leadToDelete, setLeadToDelete] = useState<any | null>(null);
+    const [partnerToDelete, setPartnerToDelete] = useState<any | null>(null);
 
     const forceRefresh = useCallback(async () => {
         setIsLoading(true);
@@ -114,10 +121,8 @@ export default function TransporterManagement() {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication failed.");
             
-            const result = await performAdminAction(token, 'getLeads', { role: 'Transporter' });
-             // Sort data on the client-side
-            const sortedData = (result.data || []).sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-            setTransporters(sortedData);
+            const result = await performAdminAction(token, 'getPartnersByType', { type: 'transporter' });
+            setTransporters(result.data || []);
         } catch (e: any) {
             setError(e.message);
             toast({ variant: 'destructive', title: 'Error loading transporters', description: e.message });
@@ -131,30 +136,30 @@ export default function TransporterManagement() {
     }, [forceRefresh]);
 
     const handleDelete = async () => {
-        if (!leadToDelete) return;
+        if (!partnerToDelete) return;
         try {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication failed.");
-            await performAdminAction(token, 'deleteLead', { leadId: leadToDelete.id });
+            await performAdminAction(token, 'deletePartner', { partnerId: partnerToDelete.id });
             toast({ title: 'Lead Deleted' });
             forceRefresh();
-            setLeadToDelete(null);
-            setIsDeleteAlertOpen(false);
         } catch (e: any) {
             toast({ variant: 'destructive', title: 'Delete Failed', description: e.message });
+        } finally {
+             setPartnerToDelete(null);
+             setIsDeleteAlertOpen(false);
         }
     };
 
     const columns: ColumnDef<any>[] = useMemo(() => [
         { accessorKey: 'companyName', header: 'Company Name' },
-        { accessorKey: 'contactPerson', header: 'Contact' },
+        { header: 'Contact Person', cell: ({row}) => `${row.original.firstName} ${row.original.lastName}` },
         { accessorKey: 'email', header: 'Email' },
         { accessorKey: 'phone', header: 'Phone' },
         { accessorKey: 'status', header: 'Status', cell: ({row}) => <Badge className="capitalize">{row.original.status}</Badge>},
         { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
             <div className="text-right">
-                {/* Edit and Invite actions can be added here */}
-                <Button variant="ghost" size="icon" onClick={() => { setLeadToDelete(row.original); setIsDeleteAlertOpen(true); }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                <Button variant="ghost" size="icon" onClick={() => { setPartnerToDelete(row.original); setIsDeleteAlertOpen(true); }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
             </div>
         )},
     ], [forceRefresh]);
@@ -166,10 +171,10 @@ export default function TransporterManagement() {
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                        <AlertDialogDescription>This will permanently delete the lead "{leadToDelete?.companyName}".</AlertDialogDescription>
+                        <AlertDialogDescription>This will permanently delete the lead "{partnerToDelete?.companyName}".</AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel onClick={() => setLeadToDelete(null)}>Cancel</AlertDialogCancel>
+                        <AlertDialogCancel onClick={() => setPartnerToDelete(null)}>Cancel</AlertDialogCancel>
                         <AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Yes, delete</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
@@ -188,7 +193,7 @@ export default function TransporterManagement() {
                     {isLoading ? (
                         <div className="flex justify-center items-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
                     ) : error ? (
-                        <div className="text-destructive">{error}</div>
+                        <div className="text-destructive p-4 bg-destructive/10 rounded-md">{error}</div>
                     ) : (
                         <DataTable columns={columns} data={transporters} />
                     )}

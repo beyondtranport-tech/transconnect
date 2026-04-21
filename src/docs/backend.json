@@ -21,6 +21,24 @@
       },
       "required": ["id", "firstName", "lastName", "email", "role"]
     },
+    "Task": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "Task",
+        "description": "Represents a single task or reminder for a user.",
+        "type": "object",
+        "properties": {
+            "id": { "type": "string" },
+            "title": { "type": "string" },
+            "relatedToName": { "type": "string", "description": "The name of the entity this task is related to (e.g., a partner's name)." },
+            "description": { "type": "string" },
+            "dueDate": { "type": "string", "format": "date-time" },
+            "status": { "type": "string", "enum": ["pending", "completed"] },
+            "assigneeId": { "type": "string", "description": "The UID of the user this task is assigned to." },
+            "createdAt": { "type": "object" },
+            "updatedAt": { "type": "object" }
+        },
+        "required": ["id", "title", "status", "assigneeId"]
+    },
     "Company": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Company",
@@ -112,21 +130,38 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Partner",
       "type": "object",
-      "description": "Represents a strategic partner, Independent Sales Agent (ISA), Investor, or Developer in the system.",
+      "description": "Represents a strategic partner, ISA, Investor, Developer, Supplier or Transporter in the system.",
       "properties": {
         "id": { "type": "string" },
         "firstName": { "type": "string" },
         "lastName": { "type": "string" },
         "email": { "type": "string", "format": "email" },
         "phone": { "type": "string" },
-        "companyName": { "type": "string", "description": "The name of the partner's own company." },
+        "companyName": { "type": "string" },
         "status": { "type": "string", "enum": ["active", "inactive"], "description": "The operational status of the partnership." },
         "invitationStatus": { "type": "string", "enum": ["pending", "invited", "registered"], "description": "The status of their invitation to join the platform." },
-        "type": { "type": "string", "enum": ["partner", "isa", "investor", "developer"], "description": "The type of partner, e.g., a strategic Partner, ISA, Investor, or Developer." },
+        "type": { "type": "string", "enum": ["partner", "isa", "investor", "developer", "supplier", "transporter"], "description": "The type of partner entity." },
+        "notes": { "type": "string" },
+        "address": { "type": "string" },
+        "website": { "type": "string" },
         "createdAt": { "type": "object" },
         "updatedAt": { "type": "object" }
       },
-      "required": ["firstName", "lastName", "email"]
+      "required": ["firstName", "lastName", "email", "type"]
+    },
+    "CommunicationLog": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "Communication Log",
+        "type": "object",
+        "description": "Records an instance of communication with a partner.",
+        "properties": {
+            "id": { "type": "string" },
+            "type": { "type": "string", "enum": ["Email", "WhatsApp", "Call", "Meeting"], "description": "The method of communication." },
+            "subject": { "type": "string", "description": "The topic of the communication, e.g., 'Company Profile'." },
+            "notes": { "type": "string", "description": "Optional notes about the interaction." },
+            "timestamp": { "type": "object" }
+        },
+        "required": ["id", "type", "subject", "timestamp"]
     },
     "Shop": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -149,6 +184,7 @@
         "metaDescription": { "type": "string" },
         "tags": { "type": "array", "items": { "type": "string" } },
         "heroBannerUrl": { "type": "string" },
+        "websiteUrl": { "type": "string", "format": "uri", "description": "URL to the shop's main website or online catalog." },
         "facebookLink": { "type": "string", "format": "uri", "description": "URL to the shop's Facebook page." },
         "instagramLink": { "type": "string", "format": "uri", "description": "URL to the shop's Instagram profile." },
         "twitterLink": { "type": "string", "format": "uri", "description": "URL to the shop's Twitter (X) profile." },
@@ -188,7 +224,12 @@
             "expiryDate": { "type": "string", "format": "date-time", "description": "Optional: The date this agreement expires." },
             "volumeThreshold": { "type": "number", "description": "Optional: The sales volume threshold for this agreement to apply." },
             "createdAt": { "type": "object" },
-            "updatedAt": { "type": "object" }
+            "updatedAt": { "type": "object" },
+            "aiStatus": { "type": "string", "enum": ["idle", "negotiating", "completed", "failed"], "description": "The status of the AI negotiation agent." },
+            "aiDecision": { "type": "string", "enum": ["accept", "reject", "counter"], "description": "The final decision made by the AI agent." },
+            "aiJustification": { "type": "string", "description": "The justification for the AI's decision." },
+            "aiCounterOffer": { "type": "number", "description": "The counter-offer rate proposed by the AI." },
+            "aiTrace": { "type": "array", "items": { "type": "string" }, "description": "A log of the tools and data used by the AI agent." }
         },
         "required": ["id", "percentage", "status", "effectiveDate", "proposedBy"]
     },
@@ -471,27 +512,6 @@
       },
       "required": ["id", "title", "pointsCost", "type", "isActive"]
     },
-    "Lead": {
-        "$schema": "http://json-schema.org/draft-07/schema#",
-        "title": "Lead",
-        "type": "object",
-        "description": "Represents a potential business lead generated by the system.",
-        "properties": {
-            "id": { "type": "string" },
-            "companyName": { "type": "string" },
-            "contactPerson": { "type": "string" },
-            "email": { "type": "string", "format": "email" },
-            "phone": { "type": "string" },
-            "role": { "type": "string" },
-            "status": { "type": "string", "enum": ["new", "contacted", "qualified", "unqualified"] },
-            "notes": { "type": "string" },
-            "address": { "type": "string" },
-            "website": { "type": "string" },
-            "createdAt": { "type": "object" },
-            "updatedAt": { "type": "object" }
-        },
-        "required": ["companyName", "role", "status"]
-    },
     "AuditLog": {
         "$schema": "http://json-schema.org/draft-07/schema#",
         "title": "Audit Log",
@@ -529,13 +549,8 @@
             "physicalPostalCode": { "type": "string" },
             "postalAddress": { "type": "string" },
             "postalPostalCode": { "type": "string" },
-            "contactPerson": { "type": "string" },
-            "telWork": { "type": "string" },
-            "telHome": { "type": "string" },
-            "fax": { "type": "string" },
-            "cell": { "type": "string" },
-            "email": { "type": "string", "format": "email" },
             "url": { "type": "string", "format": "uri" },
+            "contacts": { "type": "array", "items": { "$ref": "#/entities/ContactDetails" } },
             "owners": { "type": "array", "items": { "$ref": "#/entities/OwnerDetails" } },
             "management": { "type": "array", "items": { "$ref": "#/entities/ManagementDetails" } },
             "bankAccounts": { "type": "array", "items": { "$ref": "#/entities/BankAccount" } },
@@ -613,6 +628,8 @@
             "classification": { "type": "string" },
             "costOfSale": { "type": "number", "description": "The cost price of the asset, excluding VAT." },
             "status": { "type": "string", "enum": ["available", "financed", "sold", "decommissioned"], "description": "The current status of the asset." },
+            "supplierName": { "type": "string", "description": "The name of the supplier or dealership for the asset." },
+            "supplierContact": { "type": "string", "description": "A contact person at the supplier." },
             "documents": {
                 "type": "object",
                 "properties": {
@@ -677,13 +694,8 @@
             "physicalPostalCode": { "type": "string" },
             "postalAddress": { "type": "string" },
             "postalPostalCode": { "type": "string" },
-            "contactPerson": { "type": "string" },
-            "telWork": { "type": "string" },
-            "telHome": { "type": "string" },
-            "fax": { "type": "string" },
-            "cell": { "type": "string" },
-            "email": { "type": "string", "format": "email" },
             "url": { "type": "string", "format": "uri" },
+            "contacts": { "type": "array", "items": { "$ref": "#/entities/ContactDetails" } },
             "owners": { "type": "array", "items": { "$ref": "#/entities/OwnerDetails" } },
             "management": { "type": "array", "items": { "$ref": "#/entities/ManagementDetails" } },
             "bankAccounts": { "type": "array", "items": { "$ref": "#/entities/BankAccount" } },
@@ -691,6 +703,17 @@
             "incomeStatements": { "type": "array", "items": { "$ref": "#/entities/IncomeStatement" } }
         },
         "required": ["id", "name", "type"]
+    },
+    "ContactDetails": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "Contact Details",
+        "type": "object",
+        "properties": {
+            "name": { "type": "string" },
+            "position": { "type": "string" },
+            "cell": { "type": "string" },
+            "email": { "type": "string", "format": "email" }
+        }
     },
     "OwnerDetails": {
         "$schema": "http://json-schema.org/draft-07/schema#",
@@ -721,7 +744,26 @@
         "title": "Balance Sheet",
         "type": "object",
         "properties": {
-            "periodEndDate": { "type": "string" }, "propertyPlantEquipment": { "type": "number" }, "intangibleAssets": { "type": "number" }, "inventory": { "type": "number" }, "tradeReceivables": { "type": "number" }, "cashEquivalents": { "type": "number" }, "shareCapital": { "type": "number" }, "retainedEarnings": { "type": "number" }, "longTermLoans": { "type": "number" }, "tradePayables": { "type": "number" }, "shortTermLoans": { "type": "number" }
+            "periodEndDate": { "type": "string" },
+            "propertyPlantEquipment": { "type": "number" },
+            "intangibleAssets": { "type": "number" },
+            "financialAssetsNonCurrent": { "type": "number" },
+            "deferredTaxAssets": { "type": "number" },
+            "inventories": { "type": "number" },
+            "tradeAndOtherReceivables": { "type": "number" },
+            "cashAndCashEquivalents": { "type": "number" },
+            "financialAssetsCurrent": { "type": "number" },
+            "shareCapital": { "type": "number" },
+            "retainedEarnings": { "type": "number" },
+            "revaluationSurplus": { "type": "number" },
+            "otherReserves": { "type": "number" },
+            "longTermBorrowings": { "type": "number" },
+            "longTermLeaseLiabilities": { "type": "number" },
+            "deferredTaxLiabilities": { "type": "number" },
+            "tradeAndOtherPayables": { "type": "number" },
+            "shortTermBorrowings": { "type": "number" },
+            "currentPortionOfLongTermDebt": { "type": "number" },
+            "currentTaxPayable": { "type": "number" }
         }
     },
     "IncomeStatement": {
@@ -729,7 +771,16 @@
         "title": "Income Statement",
         "type": "object",
         "properties": {
-            "periodEndDate": { "type": "string" }, "revenue": { "type": "number" }, "cogs": { "type": "number" }, "operatingExpenses": { "type": "number" }, "interestExpense": { "type": "number" }, "taxation": { "type": "number" }
+            "periodEndDate": { "type": "string" },
+            "revenue": { "type": "number" },
+            "costOfSales": { "type": "number" },
+            "otherIncome": { "type": "number" },
+            "distributionCosts": { "type": "number" },
+            "administrativeExpenses": { "type": "number" },
+            "otherExpenses": { "type": "number" },
+            "financeIncome": { "type": "number" },
+            "financeCosts": { "type": "number" },
+            "incomeTaxExpense": { "type": "number" }
         }
     }
   },
@@ -744,6 +795,14 @@
           "entityName": "User",
           "schema": { "$ref": "#/entities/User" },
           "description": "Stores individual user profiles. A user can only read/write their own document."
+        }
+      },
+      {
+        "path": "/users/{userId}/tasks/{taskId}",
+        "definition": {
+            "entityName": "Task",
+            "schema": { "$ref": "#/entities/Task" },
+            "description": "Subcollection for user-specific tasks and reminders."
         }
       },
       {
@@ -775,7 +834,23 @@
         "definition": {
           "entityName": "Partner",
           "schema": { "$ref": "#/entities/Partner" },
-          "description": "Admin-managed collection of strategic partners and ISAs."
+          "description": "Admin-managed collection of strategic partners, ISAs, suppliers, etc."
+        }
+      },
+       {
+        "path": "/partners/{partnerId}/communications/{logId}",
+        "definition": {
+          "entityName": "CommunicationLog",
+          "schema": { "$ref": "#/entities/CommunicationLog" },
+          "description": "Log of communications with a partner."
+        }
+      },
+       {
+        "path": "/partners/{partnerId}/tasks/{taskId}",
+        "definition": {
+            "entityName": "Task",
+            "schema": { "$ref": "#/entities/Task" },
+            "description": "Subcollection for tasks related to a specific partner."
         }
       },
       {
@@ -784,14 +859,6 @@
           "entityName": "Staff",
           "schema": { "$ref": "#/entities/Staff" },
           "description": "Subcollection for company staff members."
-        }
-      },
-      {
-        "path": "/companies/{companyId}/leads/{leadId}",
-        "definition": {
-          "entityName": "Lead",
-          "schema": { "$ref": "#/entities/Lead" },
-          "description": "Subcollection for leads generated by a company/member."
         }
       },
       {
@@ -971,14 +1038,6 @@
         }
       },
       {
-        "path": "/leads/{leadId}",
-        "definition": {
-          "entityName": "Lead",
-          "schema": { "$ref": "#/entities/Lead" },
-          "description": "Admin-managed collection of sales leads."
-        }
-      },
-      {
         "path": "/lendingClients/{clientId}",
         "definition": {
             "entityName": "Client",
@@ -1049,4 +1108,5 @@
     
     
     
+
 

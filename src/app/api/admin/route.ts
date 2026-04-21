@@ -24,22 +24,6 @@ function serializeTimestamps(docData: any): any {
     return newDocData;
 }
 
-interface LeadData {
-    id: string;
-    companyName?: string;
-    contactPerson?: string;
-    email?: string;
-    phone?: string;
-    role?: string;
-    status?: 'new' | 'contacted' | 'qualified' | 'unqualified' | 'invited' | 'registered';
-    notes?: string;
-    address?: string;
-    website?: string;
-    createdAt?: any;
-    updatedAt?: any;
-}
-
-
 export async function POST(req: NextRequest) {
     try {
         const { app, error: initError } = getAdminApp();
@@ -65,11 +49,7 @@ export async function POST(req: NextRequest) {
         const userDocForAuth = await db.collection('users').doc(requestorUid).get();
         const userCompanyIdForAuth = userDocForAuth.data()?.companyId;
 
-        if (action === 'saveCompanyLead') {
-            if (payload.companyId !== userCompanyIdForAuth && !isAdmin) {
-                 throw new Error("Forbidden: You can only manage leads for your own company.");
-            }
-        } else if (action === 'acceptCommercialAgreement' || action === 'proposeCounterOffer') {
+        if (action === 'acceptCommercialAgreement' || action === 'proposeCounterOffer') {
             if (payload.companyId !== userCompanyIdForAuth && !isAdmin) {
                 throw new Error("Forbidden: You can only manage agreements for your own company.");
             }
@@ -80,7 +60,7 @@ export async function POST(req: NextRequest) {
         }
          else if (!isAdmin) {
             // Most other actions in this route are admin-only
-             const allowedUserActions = ['saveCompanyLead', 'acceptCommercialAgreement', 'getAuditLogs', 'unpublishShop', 'logCommunication', 'getCommunicationLogs'];
+             const allowedUserActions = ['acceptCommercialAgreement', 'getAuditLogs', 'unpublishShop', 'logCommunication', 'getCommunicationLogs'];
              if (!allowedUserActions.includes(action)) {
                  throw new Error("Forbidden: Admin access required.");
              }
@@ -524,10 +504,10 @@ export async function POST(req: NextRequest) {
             }
             case 'getPartnersByType': {
                 const { type } = payload;
-                if (!type || !['partner', 'isa', 'investor', 'developer'].includes(type)) {
-                    throw new Error("A valid partner type ('partner', 'isa', 'investor', 'developer') is required.");
+                if (!type) {
+                    throw new Error("A partner type is required.");
                 }
-                const partnersSnap = await db.collection('partners').where('type', '==', type).get();
+                const partnersSnap = await db.collection('partners').where('type', '==', type).orderBy('createdAt', 'desc').get();
                 const data = partnersSnap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
                 return NextResponse.json({ success: true, data });
             }
@@ -736,7 +716,7 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, message: `Counter-offer of ${newPercentage}% submitted.` });
             }
             case 'invitePartner': {
-                 const { partnerId } = payload;
+                const { partnerId } = payload;
                 if (!partnerId) throw new Error("partnerId is required.");
 
                 const partnerDocRef = db.collection('partners').doc(partnerId);
@@ -748,35 +728,55 @@ export async function POST(req: NextRequest) {
                 
                 if (!email) throw new Error("Partner does not have an email to invite.");
                 
-                await partnerDocRef.update({
+                const batch = db.batch();
+
+                batch.update(partnerDocRef, {
                     invitationStatus: 'invited',
                     updatedAt: FieldValue.serverTimestamp(),
                 });
 
+                const logRef = db.collection(`partners/${partnerId}/communications`).doc();
+                batch.set(logRef, {
+                    id: logRef.id,
+                    type: 'Invite',
+                    subject: 'Invitation Link Generated',
+                    notes: `Generated a unique sign-up link for ${email}.`,
+                    timestamp: FieldValue.serverTimestamp(),
+                    loggedBy: requestorUid,
+                });
+                
+                await batch.commit();
+
                 return NextResponse.json({
                     success: true,
-                    message: "Partner status updated to 'invited'."
+                    message: "Partner status updated to 'invited' and communication logged."
                 });
             }
-             case 'saveCompanyLead': {
-                const { companyId, lead } = payload;
-                if (!companyId || !lead) throw new Error("companyId and lead data are required.");
-                
-                const leadsCollectionRef = db.collection(`companies/${companyId}/leads`);
+            case 'savePartner': {
+                const { partner } = payload;
+                if (!partner) throw new Error("Partner data is required.");
+
                 let docRef;
                 let data;
-                
-                if (lead.id) {
-                    docRef = leadsCollectionRef.doc(lead.id);
-                    data = { ...lead, updatedAt: FieldValue.serverTimestamp() };
+
+                const partnersCollection = db.collection('partners');
+                if (partner.id) { // Update
+                    docRef = partnersCollection.doc(partner.id);
+                    data = { ...partner, updatedAt: FieldValue.serverTimestamp() };
                     delete data.id;
                     await docRef.set(data, { merge: true });
-                } else {
-                    docRef = leadsCollectionRef.doc();
-                    data = { ...lead, id: docRef.id, createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() };
+                } else { // Create
+                    docRef = partnersCollection.doc();
+                    data = { ...partner, id: docRef.id, invitationStatus: 'pending', createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() };
                     await docRef.set(data);
                 }
                 return NextResponse.json({ success: true, id: docRef.id });
+            }
+            case 'deletePartner': {
+                const { partnerId } = payload;
+                if (!partnerId) throw new Error("partnerId is required.");
+                await db.collection('partners').doc(partnerId).delete();
+                return NextResponse.json({ success: true });
             }
             case 'getUserDoc': {
                 const { uid } = payload;
@@ -848,135 +848,6 @@ export async function POST(req: NextRequest) {
                 });
 
                 return NextResponse.json({ success: true, data: enrichedLogs });
-            }
-            case 'getLeads': {
-                const { role } = payload || {};
-                let leadsQuery: FirebaseFirestore.Query = db.collectionGroup('leads');
-                
-                if (role) {
-                    leadsQuery = leadsQuery.where('role', '==', role);
-                }
-
-                const leadsSnap = await leadsQuery.orderBy('createdAt', 'desc').get();
-                const data = leadsSnap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
-                return NextResponse.json({ success: true, data });
-            }
-            case 'saveLead': {
-                const { lead } = payload;
-                if (!lead) throw new Error("Lead data is required.");
-
-                let docRef;
-                let data;
-
-                if (lead.id) { // Update existing lead
-                    docRef = db.collection('leads').doc(lead.id);
-                    data = { ...lead, updatedAt: FieldValue.serverTimestamp() };
-                    delete data.id; // Don't save the ID inside the document
-                    await docRef.set(data, { merge: true });
-                } else { // Create new lead
-                    docRef = db.collection('leads').doc();
-                    data = { ...lead, id: docRef.id, createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() };
-                    await docRef.set(data);
-                }
-                return NextResponse.json({ success: true, id: docRef.id });
-            }
-            case 'deleteLead': {
-                const { leadId } = payload;
-                if (!leadId) throw new Error("leadId is required.");
-                await db.collection('leads').doc(leadId).delete();
-                return NextResponse.json({ success: true });
-            }
-            case 'inviteLead': {
-                const { leadId } = payload;
-                if (!leadId) throw new Error("leadId is required.");
-                const leadRef = db.collection('leads').doc(leadId);
-                await leadRef.update({
-                    status: 'invited',
-                    updatedAt: FieldValue.serverTimestamp()
-                });
-                return NextResponse.json({ success: true, message: "Lead status updated to 'invited'." });
-            }
-            case 'saveLeads': {
-                const { leads } = payload;
-                if (!Array.isArray(leads)) {
-                    throw new Error("Payload must contain an array of leads.");
-                }
-
-                const batch = db.batch();
-                const leadsCollection = db.collection('leads');
-                
-                leads.forEach((lead: any) => {
-                    const docRef = leadsCollection.doc();
-                    batch.set(docRef, {
-                        ...lead,
-                        id: docRef.id,
-                        status: 'new',
-                        createdAt: FieldValue.serverTimestamp(),
-                        updatedAt: FieldValue.serverTimestamp(),
-                    });
-                });
-                
-                await batch.commit();
-                return NextResponse.json({ success: true, message: `${leads.length} leads saved successfully.` });
-            }
-             case 'findDuplicateLeads': {
-                const leadsSnap = await db.collection('leads').get();
-                const leads = leadsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as LeadData[];
-
-                const groups: { [key: string]: LeadData[] } = {};
-                leads.forEach(lead => {
-                    const key = (lead.companyName || '').trim().toLowerCase();
-                    if (!key) return; // Skip leads without a company name
-                    if (!groups[key]) {
-                        groups[key] = [];
-                    }
-                    groups[key].push(lead);
-                });
-
-                const duplicates = Object.values(groups).filter(group => group.length > 1);
-                
-                const serializedDuplicates = duplicates.map(group => 
-                    group.map(lead => serializeTimestamps(lead))
-                );
-
-                return NextResponse.json({ success: true, data: serializedDuplicates });
-            }
-            case 'deleteLeads': {
-                const { leadIds } = payload;
-                if (!Array.isArray(leadIds) || leadIds.length === 0) {
-                    throw new Error("leadIds array is required.");
-                }
-                const batch = db.batch();
-                leadIds.forEach(id => {
-                    batch.delete(db.collection('leads').doc(id));
-                });
-                await batch.commit();
-                return NextResponse.json({ success: true, message: `${leadIds.length} leads deleted.` });
-            }
-            case 'savePartner': {
-                const { partner } = payload;
-                if (!partner) throw new Error("Partner data is required.");
-
-                let docRef;
-                let data;
-
-                if (partner.id) { // Update
-                    docRef = db.collection('partners').doc(partner.id);
-                    data = { ...partner, updatedAt: FieldValue.serverTimestamp() };
-                    delete data.id;
-                    await docRef.set(data, { merge: true });
-                } else { // Create
-                    docRef = db.collection('partners').doc();
-                    data = { ...partner, id: docRef.id, invitationStatus: 'pending', createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() };
-                    await docRef.set(data);
-                }
-                return NextResponse.json({ success: true, id: docRef.id });
-            }
-            case 'deletePartner': {
-                const { partnerId } = payload;
-                if (!partnerId) throw new Error("partnerId is required.");
-                await db.collection('partners').doc(partnerId).delete();
-                return NextResponse.json({ success: true });
             }
             // Admin-only actions below this point
             case 'getMembers': {
