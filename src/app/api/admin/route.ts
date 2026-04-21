@@ -851,7 +851,7 @@ export async function POST(req: NextRequest) {
             }
             case 'getLeads': {
                 const { role } = payload || {};
-                let leadsQuery: FirebaseFirestore.Query = db.collection('leads');
+                let leadsQuery: FirebaseFirestore.Query = db.collectionGroup('leads');
                 
                 if (role) {
                     leadsQuery = leadsQuery.where('role', '==', role);

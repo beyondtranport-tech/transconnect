@@ -107,13 +107,15 @@
       ]
     },
     {
-      "collectionId": "leads",
+      "collectionGroup": "leads",
+      "queryScope": "COLLECTION_GROUP",
       "fields": [
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
     },
     {
-      "collectionId": "leads",
+      "collectionGroup": "leads",
+      "queryScope": "COLLECTION_GROUP",
       "fields": [
         { "fieldPath": "role", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
@@ -152,5 +154,6 @@
 
   
     
+
 
 
