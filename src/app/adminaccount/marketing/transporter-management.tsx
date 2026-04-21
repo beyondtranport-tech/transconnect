@@ -6,7 +6,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
-import { Loader2, PlusCircle, Truck, Edit, Trash2 } from 'lucide-react';
+import { Loader2, PlusCircle, Truck, Edit, Trash2, Send, Copy, MessageSquare, ClipboardList, MessageSquarePlus } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -18,6 +18,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { CommunicationLogDialog } from './CommunicationLogDialog';
+import { AddCommunicationLogDialog } from './AddCommunicationLogDialog';
+import { PartnerTasksDialog } from './PartnerTasksDialog';
 
 // API Helper
 async function performAdminAction(token: string, action: string, payload: any) {
@@ -108,13 +111,32 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
   );
 }
 
+function TransporterActionMenu({ onInvite, onEdit, onDelete, partner, onUpdate }: { onInvite: () => void; onEdit: () => void; onDelete: () => void; partner: any; onUpdate: () => void; }) {
+  return (
+    <div className="flex justify-end items-center gap-1">
+      <CommunicationLogDialog partnerId={partner.id} partnerName={`${partner.firstName} ${partner.lastName}`} />
+      <AddCommunicationLogDialog partnerId={partner.id} onLogAdded={onUpdate} />
+      <PartnerTasksDialog partner={partner} />
+      <Button variant="ghost" size="icon" onClick={onInvite} title="Invite Transporter">
+        <Send className="h-4 w-4" />
+      </Button>
+      <Button variant="ghost" size="icon" onClick={onEdit} title="Edit Transporter">
+        <Edit className="h-4 w-4" />
+      </Button>
+      <Button variant="ghost" size="icon" onClick={onDelete} title="Delete Transporter">
+        <Trash2 className="h-4 w-4 text-destructive" />
+      </Button>
+    </div>
+  );
+}
+
 
 export default function TransporterManagement() {
     const { toast } = useToast();
     const [partners, setPartners] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [dialogState, setDialogState] = useState<{ type: 'add' | 'edit' | 'delete' | null, data?: any }>({ type: null, data: undefined });
+    const [dialogState, setDialogState] = useState<{ type: 'add' | 'edit' | 'delete' | 'invite' | null, data?: any }>({ type: null, data: undefined });
 
     const forceRefresh = useCallback(async () => {
         setIsLoading(true);
@@ -124,7 +146,8 @@ export default function TransporterManagement() {
             if (!token) throw new Error("Authentication failed.");
             
             const result = await performAdminAction(token, 'getPartnersByType', { type: 'transporter' });
-            setPartners(result.data || []);
+            const sortedData = (result.data || []).sort((a:any, b:any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+            setPartners(sortedData);
         } catch (e: any) {
             setError(e.message);
             toast({ variant: 'destructive', title: 'Error loading transporters', description: e.message });
@@ -137,18 +160,22 @@ export default function TransporterManagement() {
         forceRefresh();
     }, [forceRefresh]);
     
-    const sortedPartners = useMemo(() => {
-        if (!partners) return [];
-        return [...partners].sort((a, b) => {
-            const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-            const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-            return dateB - dateA;
-        });
-    }, [partners]);
-
-    const handleOpenDialog = (type: 'add' | 'edit' | 'delete', data?: any) => {
+    const handleOpenDialog = async (type: 'add' | 'edit' | 'delete' | 'invite', data?: any) => {
+        if (type === 'invite' && data) {
+            try {
+                const token = await getClientSideAuthToken();
+                if (!token) throw new Error("Authentication failed.");
+                await performAdminAction(token, 'invitePartner', { partnerId: data.id });
+                forceRefresh();
+                toast({ title: "Transporter Invite Ready", description: "Status updated to 'invited'. You can now send the link." });
+            } catch (e: any) {
+                toast({ variant: 'destructive', title: 'Action Failed', description: `Could not update transporter status: ${e.message}` });
+                return;
+            }
+        }
         setDialogState({ type, data });
     };
+    
     const handleCloseDialogs = () => {
         setDialogState({ type: null, data: undefined });
     };
@@ -168,6 +195,23 @@ export default function TransporterManagement() {
             toast({ variant: 'destructive', title: 'Delete Failed', description: e.message });
         }
     };
+    
+    const baseUrl = 'https://studio--ecosystem-hub.us-central1.hosted.app';
+    const inviteLink = dialogState.type === 'invite' && dialogState.data
+        ? `${baseUrl}/join?email=${encodeURIComponent(dialogState.data.email)}&firstName=${encodeURIComponent(dialogState.data.firstName)}&lastName=${encodeURIComponent(dialogState.data.lastName)}${dialogState.data.phone ? `&phone=${encodeURIComponent(dialogState.data.phone)}` : ''}`
+        : '';
+    
+    const copyInviteLink = () => {
+        if (!inviteLink) return;
+        navigator.clipboard.writeText(inviteLink);
+        toast({ title: 'Invite Link Copied!' });
+    };
+    
+    const invitationStatusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
+        pending: 'secondary',
+        invited: 'outline',
+        registered: 'default',
+    };
 
     const columns: ColumnDef<any>[] = useMemo(() => [
         { accessorKey: 'firstName', header: 'Name', cell: ({row}) => <div>{row.original.firstName} {row.original.lastName}</div> },
@@ -175,26 +219,45 @@ export default function TransporterManagement() {
         { accessorKey: 'phone', header: 'Phone' },
         { accessorKey: 'companyName', header: 'Company' },
         { accessorKey: 'status', header: 'Status', cell: ({row}) => <Badge className="capitalize">{row.original.status}</Badge>},
+        { accessorKey: 'invitationStatus', header: 'Invite Status', cell: ({row}) => ( <Badge variant={invitationStatusColors[row.original.invitationStatus] || 'secondary'} className="capitalize"> {row.original.invitationStatus?.replace(/_/g, ' ') || 'Pending'} </Badge> ) },
         { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
-            <div className="flex justify-end items-center gap-1">
-                <Button variant="ghost" size="icon" onClick={() => handleOpenDialog('edit', row.original)}><Edit className="h-4 w-4" /></Button>
-                <Button variant="ghost" size="icon" onClick={() => handleOpenDialog('delete', row.original)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-            </div>
+            <TransporterActionMenu 
+                partner={row.original} 
+                onUpdate={forceRefresh}
+                onInvite={() => handleOpenDialog('invite', row.original)} 
+                onEdit={() => handleOpenDialog('edit', row.original)} 
+                onDelete={() => handleOpenDialog('delete', row.original)} 
+            />
         ) },
-    ], []);
+    ], [forceRefresh, handleOpenDialog]);
     
     if (error) {
         return <Card className="bg-destructive/10 border-destructive text-destructive-foreground"><CardHeader><CardTitle>Error</CardTitle></CardHeader><CardContent>{error}</CardContent></Card>
     }
 
     return (
-         <>
+        <>
             <TransporterDialog 
                 open={dialogState.type === 'add' || dialogState.type === 'edit'}
                 onOpenChange={(isOpen) => !isOpen && handleCloseDialogs()}
                 partner={dialogState.type === 'edit' ? dialogState.data : undefined}
                 onSave={handleSave}
             />
+            <Dialog open={dialogState.type === 'invite'} onOpenChange={(isOpen) => !isOpen && handleCloseDialogs()}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Invite {dialogState.data?.firstName}</DialogTitle>
+                        <DialogDescription>Send this unique sign-up link to the transporter. They must use this email to register.</DialogDescription>
+                    </DialogHeader>
+                    <div className="py-4 space-y-2">
+                        <Input value={inviteLink} readOnly />
+                        <Button onClick={copyInviteLink} className="w-full">
+                            <Copy className="mr-2 h-4 w-4" /> Copy Link
+                        </Button>
+                    </div>
+                    <DialogFooter><Button onClick={handleCloseDialogs}>Done</Button></DialogFooter>
+                </DialogContent>
+            </Dialog>
             <AlertDialog open={dialogState.type === 'delete'} onOpenChange={(isOpen) => !isOpen && handleCloseDialogs()}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
@@ -219,7 +282,7 @@ export default function TransporterManagement() {
                     {isLoading ? (
                         <div className="flex justify-center items-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
                     ) : (
-                        <DataTable columns={columns} data={sortedPartners} />
+                        <DataTable columns={columns} data={partners} />
                     )}
                 </CardContent>
             </Card>
