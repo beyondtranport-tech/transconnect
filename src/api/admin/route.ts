@@ -864,7 +864,14 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: enrichedLogs });
             }
             case 'getLeads': {
-                const leadsSnap = await db.collection('leads').orderBy('createdAt', 'desc').get();
+                const { role } = payload || {};
+                let leadsQuery: FirebaseFirestore.Query = db.collectionGroup('leads');
+                
+                if (role) {
+                    leadsQuery = leadsQuery.where('role', '==', role);
+                }
+
+                const leadsSnap = await leadsQuery.get();
                 const data = leadsSnap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
                 return NextResponse.json({ success: true, data });
             }

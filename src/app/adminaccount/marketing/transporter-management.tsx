@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -114,7 +115,9 @@ export default function TransporterManagement() {
             if (!token) throw new Error("Authentication failed.");
             
             const result = await performAdminAction(token, 'getLeads', { role: 'Transporter' });
-            setTransporters(result.data || []);
+             // Sort data on the client-side
+            const sortedData = (result.data || []).sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+            setTransporters(sortedData);
         } catch (e: any) {
             setError(e.message);
             toast({ variant: 'destructive', title: 'Error loading transporters', description: e.message });
@@ -150,6 +153,7 @@ export default function TransporterManagement() {
         { accessorKey: 'status', header: 'Status', cell: ({row}) => <Badge className="capitalize">{row.original.status}</Badge>},
         { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
             <div className="text-right">
+                {/* Edit and Invite actions can be added here */}
                 <Button variant="ghost" size="icon" onClick={() => { setLeadToDelete(row.original); setIsDeleteAlertOpen(true); }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
             </div>
         )},

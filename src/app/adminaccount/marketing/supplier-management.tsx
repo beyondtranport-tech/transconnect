@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -67,13 +68,26 @@ const leadSchema = z.object({
 });
 type LeadFormValues = z.infer<typeof leadSchema>;
 
-function AddSupplierDialog({ open, onOpenChange, onSave }: { open: boolean, onOpenChange: (open: boolean) => void, onSave: () => void }) {
+function AddSupplierDialog({ open, onOpenChange, onSave, defaultValues }: { open: boolean, onOpenChange: (open: boolean) => void, onSave: () => void, defaultValues?: Partial<LeadFormValues> }) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const form = useForm<LeadFormValues>({
     resolver: zodResolver(leadSchema),
-    defaultValues: { companyName: '', contactPerson: '', email: '', phone: '', notes: '', status: 'new' },
   });
+
+  useEffect(() => {
+    if (open) {
+        form.reset({
+            companyName: defaultValues?.companyName || '',
+            contactPerson: defaultValues?.contactPerson || '',
+            email: defaultValues?.email || '',
+            phone: defaultValues?.phone || '',
+            notes: defaultValues?.notes || '',
+            status: 'new',
+        });
+    }
+  }, [open, defaultValues, form]);
+
 
   const onSubmit = async (values: LeadFormValues) => {
     setIsLoading(true);
@@ -140,7 +154,11 @@ export default function SupplierManagement() {
             if (!token) throw new Error("Authentication failed.");
             
             const result = await performAdminAction(token, 'getLeads', { role: 'Supplier' });
-            setSuppliers(result.data || []);
+            
+            // Sort data on the client-side
+            const sortedData = (result.data || []).sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+            setSuppliers(sortedData);
+
         } catch (e: any) {
             setError(e.message);
             toast({ variant: 'destructive', title: 'Error loading suppliers', description: e.message });
