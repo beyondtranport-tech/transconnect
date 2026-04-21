@@ -1,16 +1,22 @@
-
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Truck, PlusCircle, Eye } from "lucide-react";
+import { Button, buttonVariants } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useToast } from '@/hooks/use-toast';
+import { getClientSideAuthToken } from '@/firebase';
+import { Loader2, PlusCircle, Truck, Edit, Trash2 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
-import { getClientSideAuthToken } from '@/firebase';
-import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
-import { Badge } from '@/components/ui/badge';
-import Link from 'next/link';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 
 // API Helper
 async function performAdminAction(token: string, action: string, payload: any) {
@@ -26,11 +32,88 @@ async function performAdminAction(token: string, action: string, payload: any) {
     return result;
 }
 
+const partnerSchema = z.object({
+  firstName: z.string().min(1, 'First name is required'),
+  lastName: z.string().min(1, 'Last name is required'),
+  email: z.string().email('Invalid email address'),
+  phone: z.string().optional(),
+  companyName: z.string().optional(),
+  status: z.enum(['active', 'inactive']),
+});
+type PartnerFormValues = z.infer<typeof partnerSchema>;
+
+function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: boolean; onOpenChange: (open: boolean) => void; partner?: any; onSave: () => void; }) {
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+
+  const form = useForm<PartnerFormValues>({
+    resolver: zodResolver(partnerSchema),
+  });
+
+  useEffect(() => {
+    if (open) {
+      if (partner) {
+        form.reset(partner);
+      } else {
+        form.reset({ firstName: '', lastName: '', email: '', phone: '', companyName: '', status: 'active' });
+      }
+    }
+  }, [open, partner, form]);
+
+  const onSubmit = async (values: PartnerFormValues) => {
+    setIsLoading(true);
+    try {
+        const token = await getClientSideAuthToken();
+        if (!token) throw new Error("Authentication failed.");
+        
+        await performAdminAction(token, 'savePartner', { partner: { id: partner?.id, ...values, type: 'transporter' } });
+
+        toast({ title: partner ? 'Transporter Updated' : 'Transporter Added' });
+        onSave();
+        onOpenChange(false);
+    } catch(e: any) {
+        toast({ variant: 'destructive', title: 'Save Failed', description: e.message });
+    } finally {
+        setIsLoading(false);
+    }
+  };
+  
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+                <DialogTitle>{partner ? 'Edit' : 'Add New'} Transporter</DialogTitle>
+                <DialogDescription>Enter the details for the transporter.</DialogDescription>
+            </DialogHeader>
+            <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+                    <div className="grid grid-cols-2 gap-4">
+                        <FormField control={form.control} name="firstName" render={({ field }) => ( <FormItem><FormLabel>First Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="lastName" render={({ field }) => ( <FormItem><FormLabel>Last Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+                    </div>
+                     <div className="grid grid-cols-2 gap-4">
+                        <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email"/></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel>Mobile Number (Optional)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+                    </div>
+                    <FormField control={form.control} name="companyName" render={({ field }) => ( <FormItem><FormLabel>Company Name (Optional)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+                    <FormField control={form.control} name="status" render={({ field }) => ( <FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="active">Active</SelectItem><SelectItem value="inactive">Inactive</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
+                     <DialogFooter className="pt-4">
+                        <Button type="submit" disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null} Save Transporter</Button>
+                    </DialogFooter>
+                </form>
+            </Form>
+        </DialogContent>
+    </Dialog>
+  );
+}
+
+
 export default function TransporterManagement() {
-    const [leads, setLeads] = useState<any[]>([]);
+    const { toast } = useToast();
+    const [partners, setPartners] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const { toast } = useToast();
+    const [dialogState, setDialogState] = useState<{ type: 'add' | 'edit' | 'delete' | null, data?: any }>({ type: null, data: undefined });
 
     const forceRefresh = useCallback(async () => {
         setIsLoading(true);
@@ -39,60 +122,106 @@ export default function TransporterManagement() {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication failed.");
             
-            const result = await performAdminAction(token, 'getLeads', { role: 'Transporter' });
-            setLeads(result.data || []);
+            const result = await performAdminAction(token, 'getPartnersByType', { type: 'transporter' });
+            setPartners(result.data || []);
         } catch (e: any) {
             setError(e.message);
-            toast({ variant: 'destructive', title: 'Error loading transporter leads', description: e.message });
+            toast({ variant: 'destructive', title: 'Error loading transporters', description: e.message });
         } finally {
             setIsLoading(false);
         }
     }, [toast]);
-
+    
     useEffect(() => {
         forceRefresh();
     }, [forceRefresh]);
+    
+    const sortedPartners = useMemo(() => {
+        if (!partners) return [];
+        return [...partners].sort((a, b) => {
+            const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+            const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+            return dateB - dateA;
+        });
+    }, [partners]);
+
+    const handleOpenDialog = (type: 'add' | 'edit' | 'delete', data?: any) => {
+        setDialogState({ type, data });
+    };
+    const handleCloseDialogs = () => {
+        setDialogState({ type: null, data: undefined });
+    };
+    const handleSave = () => {
+        forceRefresh();
+        handleCloseDialogs();
+    };
+    const handleDelete = async () => {
+        if (dialogState.type !== 'delete' || !dialogState.data) return;
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication failed.");
+            await performAdminAction(token, 'deletePartner', { partnerId: dialogState.data.id });
+            toast({ title: 'Transporter Deleted' });
+            handleSave();
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: 'Delete Failed', description: e.message });
+        }
+    };
 
     const columns: ColumnDef<any>[] = useMemo(() => [
-        { accessorKey: 'companyName', header: 'Company Name' },
-        { accessorKey: 'contactPerson', header: 'Contact Person' },
+        { accessorKey: 'firstName', header: 'Name', cell: ({row}) => <div>{row.original.firstName} {row.original.lastName}</div> },
         { accessorKey: 'email', header: 'Email' },
         { accessorKey: 'phone', header: 'Phone' },
+        { accessorKey: 'companyName', header: 'Company' },
         { accessorKey: 'status', header: 'Status', cell: ({row}) => <Badge className="capitalize">{row.original.status}</Badge>},
         { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
-            <div className="text-right">
-                <Button asChild variant="ghost" size="icon">
-                    <Link href={`/adminaccount?view=leads-database&leadId=${row.original.id}`}><Eye className="h-4 w-4" /></Link>
-                </Button>
+            <div className="flex justify-end items-center gap-1">
+                <Button variant="ghost" size="icon" onClick={() => handleOpenDialog('edit', row.original)}><Edit className="h-4 w-4" /></Button>
+                <Button variant="ghost" size="icon" onClick={() => handleOpenDialog('delete', row.original)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
             </div>
         ) },
     ], []);
-
-
+    
     if (error) {
         return <Card className="bg-destructive/10 border-destructive text-destructive-foreground"><CardHeader><CardTitle>Error</CardTitle></CardHeader><CardContent>{error}</CardContent></Card>
     }
 
     return (
-        <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                    <CardTitle className="flex items-center gap-2"><Truck /> Transporter Leads Management</CardTitle>
-                    <CardDescription>A list of all potential transporters in the leads database.</CardDescription>
-                </div>
-                 <Button asChild>
-                    <Link href="/adminaccount?view=pitch-transporter">
-                        <PlusCircle className="mr-2 h-4 w-4" /> Add Transporter
-                    </Link>
-                </Button>
-            </CardHeader>
-            <CardContent>
-                 {isLoading ? (
-                    <div className="flex justify-center items-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
-                ) : (
-                    <DataTable columns={columns} data={leads} />
-                )}
-            </CardContent>
-        </Card>
+         <>
+            <TransporterDialog 
+                open={dialogState.type === 'add' || dialogState.type === 'edit'}
+                onOpenChange={(isOpen) => !isOpen && handleCloseDialogs()}
+                partner={dialogState.type === 'edit' ? dialogState.data : undefined}
+                onSave={handleSave}
+            />
+            <AlertDialog open={dialogState.type === 'delete'} onOpenChange={(isOpen) => !isOpen && handleCloseDialogs()}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>This will permanently delete transporter "{dialogState.data?.firstName} {dialogState.data?.lastName}".</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={handleCloseDialogs}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Yes, delete</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <div>
+                        <CardTitle className="flex items-center gap-2"><Truck /> Transporter Management</CardTitle>
+                        <CardDescription>Manage your transporter partners.</CardDescription>
+                    </div>
+                    <Button onClick={() => handleOpenDialog('add')}><PlusCircle className="mr-2 h-4 w-4"/>Add Transporter</Button>
+                </CardHeader>
+                <CardContent>
+                    {isLoading ? (
+                        <div className="flex justify-center items-center py-10"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+                    ) : (
+                        <DataTable columns={columns} data={sortedPartners} />
+                    )}
+                </CardContent>
+            </Card>
+        </>
     );
 }

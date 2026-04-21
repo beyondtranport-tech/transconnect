@@ -507,7 +507,7 @@ export async function POST(req: NextRequest) {
                 if (!type) {
                     throw new Error("A partner type is required.");
                 }
-                const partnersSnap = await db.collection('partners').where('type', '==', type).orderBy('createdAt', 'desc').get();
+                const partnersSnap = await db.collection('partners').where('type', '==', type).get();
                 const data = partnersSnap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
                 return NextResponse.json({ success: true, data });
             }
@@ -848,6 +848,88 @@ export async function POST(req: NextRequest) {
                 });
 
                 return NextResponse.json({ success: true, data: enrichedLogs });
+            }
+             case 'getLeads': {
+                const { role } = payload || {};
+                let leadsQuery: FirebaseFirestore.Query = db.collection('leads');
+                
+                if (role) {
+                    leadsQuery = leadsQuery.where('role', '==', role);
+                }
+
+                const leadsSnap = await leadsQuery.get();
+                const data = leadsSnap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
+                return NextResponse.json({ success: true, data });
+            }
+            case 'saveLead': {
+                const { lead } = payload;
+                if (!lead) throw new Error("Lead data is required.");
+
+                const leadsCollection = db.collection('leads');
+                let docRef;
+                let data;
+
+                if (lead.id) { // Update
+                    docRef = leadsCollection.doc(lead.id);
+                    data = { ...lead, updatedAt: FieldValue.serverTimestamp() };
+                    delete data.id; // Don't save the ID inside the document
+                    await docRef.set(data, { merge: true });
+                } else { // Create
+                    docRef = leadsCollection.doc();
+                    data = { ...lead, id: docRef.id, status: 'new', createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() };
+                    await docRef.set(data);
+                }
+                return NextResponse.json({ success: true, id: docRef.id });
+            }
+            case 'deleteLead': {
+                const { leadId } = payload;
+                if (!leadId) throw new Error("leadId is required.");
+                await db.collection('leads').doc(leadId).delete();
+                return NextResponse.json({ success: true });
+            }
+             case 'inviteLead': {
+                const { leadId } = payload;
+                if (!leadId) throw new Error("leadId is required.");
+                const leadRef = db.collection('leads').doc(leadId);
+                await leadRef.update({
+                    status: 'invited',
+                    updatedAt: FieldValue.serverTimestamp()
+                });
+                return NextResponse.json({ success: true, message: "Lead status updated to 'invited'." });
+            }
+             case 'findDuplicateLeads': {
+                const leadsSnap = await db.collection('leads').get();
+                const leads = leadsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+                const groups: { [key: string]: any[] } = {};
+                leads.forEach(lead => {
+                    const key = (lead.companyName || '').trim().toLowerCase();
+                    if (!key) return; 
+                    if (!groups[key]) {
+                        groups[key] = [];
+                    }
+                    groups[key].push(lead);
+                });
+
+                const duplicates = Object.values(groups).filter(group => group.length > 1);
+                
+                const serializedDuplicates = duplicates.map(group => 
+                    group.map(lead => serializeTimestamps(lead))
+                );
+
+                return NextResponse.json({ success: true, data: serializedDuplicates });
+            }
+            case 'deleteLeads': {
+                const { leadIds } = payload;
+                if (!Array.isArray(leadIds) || leadIds.length === 0) {
+                    throw new Error("leadIds array is required.");
+                }
+                const batch = db.batch();
+                leadIds.forEach(id => {
+                    batch.delete(db.collection('leads').doc(id));
+                });
+                await batch.commit();
+                return NextResponse.json({ success: true, message: `${leadIds.length} leads deleted.` });
             }
             // Admin-only actions below this point
             case 'getMembers': {

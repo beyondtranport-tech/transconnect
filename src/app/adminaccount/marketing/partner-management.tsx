@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
@@ -194,6 +193,15 @@ export default function PartnerManagement() {
   useEffect(() => {
     forceRefresh();
   }, [forceRefresh]);
+  
+  const sortedPartners = useMemo(() => {
+    if (!partners) return [];
+    return [...partners].sort((a, b) => {
+      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return dateB - dateA;
+    });
+  }, [partners]);
 
   const [dialogState, setDialogState] = useState<{ type: 'add' | 'edit' | 'delete' | 'invite' | null, data?: any }>({ type: null, data: undefined });
 
@@ -313,46 +321,10 @@ export default function PartnerManagement() {
           {isLoading ? (
             <div className="flex justify-center items-center py-10"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
           ) : (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead><TableHead>Email</TableHead><TableHead>Phone</TableHead><TableHead>Company</TableHead><TableHead>Status</TableHead><TableHead>Invite Status</TableHead><TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {(partners && partners.length > 0) ? partners.map(partner => (
-                    <TableRow key={partner.id}>
-                      <TableCell><div>{partner.firstName} {partner.lastName}</div></TableCell>
-                      <TableCell><div>{partner.email}</div></TableCell>
-                       <TableCell><div>{partner.phone}</div></TableCell>
-                      <TableCell><div>{partner.companyName}</div></TableCell>
-                      <TableCell><Badge className="capitalize">{partner.status}</Badge></TableCell>
-                      <TableCell>
-                          <Badge variant={invitationStatusColors[partner.invitationStatus] || 'secondary'} className="capitalize">
-                            {partner.invitationStatus?.replace(/_/g, ' ') || 'Pending'}
-                          </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <PartnerActionMenu
-                            partner={partner}
-                            onUpdate={forceRefresh}
-                            onInvite={() => handleOpenDialog('invite', partner)}
-                            onEdit={() => handleOpenDialog('edit', partner)}
-                            onDelete={() => handleOpenDialog('delete', partner)}
-                        />
-                      </TableCell>
-                    </TableRow>
-                  )) : (
-                    <TableRow><TableCell colSpan={7} className="h-24 text-center">No strategic partners found.</TableCell></TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
+            <DataTable columns={columns} data={sortedPartners} />
           )}
         </CardContent>
       </Card>
     </>
   );
 }
-
