@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -25,7 +26,6 @@ export default function SupplierOffer() {
         )
     }
 
-    // User request: Change recurring revenue share to 30%
     const membershipCommissionShare = 30;
     
     // Use sales incentives for transactional share, or default
@@ -36,7 +36,6 @@ export default function SupplierOffer() {
     // --- Example Scenario Data ---
     const exampleMembershipFee = 500;
     const exampleDealSize = 400000;
-    // User request: change fee to 2.5%
     const exampleOriginationFeePercent = 2.5; 
     const exampleSupplierSpend = 50000;
 
