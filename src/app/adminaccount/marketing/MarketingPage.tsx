@@ -254,7 +254,7 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
         throw new Error('Your browser may not support this feature, or there was an error.');
       }
     } else {
-      throw new Error('Could not find the content for the active tab.');
+      throw new Error(`Could not find the content for the active tab (ID: ${contentId}).`);
     }
   };
 
@@ -319,33 +319,31 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
                         </Button>
                     </CardHeader>
                     <CardContent className="p-6">
-                        <div id="tab-content-company-profile">
-                        <TabsContent value="company-profile"><CompanyProfile audience={audience} /></TabsContent>
-                        </div>
-                        <div id="tab-content-tech-architecture">
-                        <TabsContent value="tech-architecture"><TechArchitecture /></TabsContent>
-                        </div>
-                        <div id="tab-content-revenue-model">
-                        <TabsContent value="revenue-model"><RevenueModel /></TabsContent>
-                        </div>
-                        <div id="tab-content-offer">
-                        <TabsContent value="offer"><Offer /></TabsContent>
-                        </div>
-                        <div id="tab-content-pitch">
-                        <TabsContent value="pitch"><PitchDeck /></TabsContent>
-                        </div>
-                        <div id="tab-content-framework">
-                        <TabsContent value="framework"><Framework /></TabsContent>
-                        </div>
-                        <div id="tab-content-emails">
-                        <TabsContent value="emails"><Emails /></TabsContent>
-                        </div>
+                        <TabsContent value="company-profile">
+                            <div id="tab-content-company-profile"><CompanyProfile audience={audience} /></div>
+                        </TabsContent>
+                        <TabsContent value="tech-architecture">
+                            <div id="tab-content-tech-architecture"><TechArchitecture /></div>
+                        </TabsContent>
+                        <TabsContent value="revenue-model">
+                            <div id="tab-content-revenue-model"><RevenueModel /></div>
+                        </TabsContent>
+                        <TabsContent value="offer">
+                            <div id="tab-content-offer"><Offer /></div>
+                        </TabsContent>
+                        <TabsContent value="pitch">
+                            <div id="tab-content-pitch"><PitchDeck /></div>
+                        </TabsContent>
+                        <TabsContent value="framework">
+                            <div id="tab-content-framework"><Framework /></div>
+                        </TabsContent>
+                        <TabsContent value="emails">
+                            <div id="tab-content-emails"><Emails /></div>
+                        </TabsContent>
                         {Management && (
-                            <div id="tab-content-management">
                             <TabsContent value="management">
-                                <Management />
+                                <div id="tab-content-management"><Management /></div>
                             </TabsContent>
-                            </div>
                         )}
                     </CardContent>
                 </Card>
@@ -354,5 +352,3 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
     </>
   );
 }
-
-    
