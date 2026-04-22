@@ -25,15 +25,37 @@ export default function SupplierOffer() {
         )
     }
 
-    const networkCommission = salesIncentives?.networkBaseCommission || 10;
+    // User request: Change recurring revenue share to 30%
+    const membershipCommissionShare = 30;
+    
+    // Use sales incentives for transactional share, or default
+    const transactionalCommissionShare = salesIncentives?.networkBaseCommission || 10;
+    
     const supplierMallCommission = mallCommissions?.supplierMall || 2.5;
 
-    // Example Scenario
-    const referredClients = 20;
-    const avgSpendPerClient = 5000;
-    const totalNetworkSpend = referredClients * avgSpendPerClient;
-    const platformEarnings = totalNetworkSpend * (supplierMallCommission / 100);
-    const yourCommission = platformEarnings * (networkCommission / 100);
+    // --- Example Scenario Data ---
+    const exampleMembershipFee = 500;
+    const exampleDealSize = 400000;
+    // User request: change fee to 2.5%
+    const exampleOriginationFeePercent = 2.5; 
+    const exampleSupplierSpend = 50000;
+
+    // --- Calculations ---
+    const annualSubscriptionRevenue = exampleMembershipFee * 12;
+    const yourAnnualSubscriptionShare = annualSubscriptionRevenue * (membershipCommissionShare / 100);
+
+    const exampleDealCommission = exampleDealSize * (exampleOriginationFeePercent / 100);
+    const yourFinanceDealShare = exampleDealCommission * (transactionalCommissionShare / 100);
+
+    const supplierPlatformEarnings = exampleSupplierSpend * (supplierMallCommission / 100);
+    const yourSupplierDealShare = supplierPlatformEarnings * (transactionalCommissionShare / 100);
+    
+    const potentialEarnings = [
+        { members: 10, annualRecurring: 10 * yourAnnualSubscriptionShare },
+        { members: 50, annualRecurring: 50 * yourAnnualSubscriptionShare },
+        { members: 100, annualRecurring: 100 * yourAnnualSubscriptionShare },
+    ];
+
 
     return (
         <div className="space-y-8">
@@ -96,24 +118,42 @@ export default function SupplierOffer() {
                         Your most valuable asset isn't just what you sell—it's who you sell to. Our partnership model allows you to earn recurring revenue from the business relationships you already have.
                     </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                    <p>When you onboard your existing clients to Logistics Flow (so they can manage their own operations, find loads, or buy from other vendors), you earn a <strong className="text-primary">{networkCommission}% share</strong> of the commission we generate from their activity across the *entire* platform.</p>
-                     <div className="p-4 border rounded-lg bg-background">
-                        <h4 className="font-semibold flex items-center gap-2 mb-2"><DollarSign className="h-5 w-5 text-amber-500" />Example Earning Scenario</h4>
-                        <p className="text-sm text-muted-foreground">Imagine you refer <strong className="text-foreground">{referredClients}</strong> of your clients to the platform. Over a month, they collectively spend <strong className="text-foreground">{formatCurrency(totalNetworkSpend)}</strong> on parts and services from other vendors in the mall.</p>
-                        <Table className="mt-2">
-                           <TableBody>
-                               <TableRow>
-                                    <TableCell>Platform commission from their spend ({supplierMallCommission}%)</TableCell>
-                                    <TableCell className="text-right font-semibold">{formatCurrency(platformEarnings)}</TableCell>
-                                </TableRow>
-                                <TableRow className="bg-primary/10">
-                                    <TableCell className="font-bold">Your {networkCommission}% Share (Monthly Commission)</TableCell>
-                                    <TableCell className="text-right font-bold text-lg text-primary">{formatCurrency(yourCommission)}</TableCell>
-                                </TableRow>
-                           </TableBody>
-                        </Table>
-                         <p className="text-xs text-muted-foreground mt-2">This is passive income earned from your network's activity, even when they aren't buying from you.</p>
+                <CardContent className="space-y-6">
+                    <div>
+                        <h4 className="font-semibold text-lg">Benefit #1: Recurring Revenue from Memberships</h4>
+                        <p className="text-muted-foreground mt-2">
+                             You earn a <strong className="text-primary">{membershipCommissionShare}% share</strong> of all membership fees from every member you bring into the network. This is a recurring annuity income that grows with your network.
+                        </p>
+                        <div className="p-4 border rounded-lg bg-background mt-4">
+                            <h5 className="font-semibold mb-2">Example: Annual Recurring Income</h5>
+                             <Table>
+                                <TableHeader><TableRow><TableHead>Network Size</TableHead><TableHead className="text-right">Potential Annual Recurring Income</TableHead></TableRow></TableHeader>
+                                <TableBody>
+                                    {potentialEarnings.map(item => (
+                                        <TableRow key={item.members}>
+                                            <TableCell>{item.members} Members</TableCell>
+                                            <TableCell className="text-right font-bold text-primary">{formatCurrency(item.annualRecurring)}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
+                    </div>
+                     <div>
+                        <h4 className="font-semibold text-lg">Benefit #2: Transactional Revenue from Network Activity</h4>
+                        <p className="text-muted-foreground mt-2">
+                            You get a <strong className="text-primary">{transactionalCommissionShare}% share</strong> of the platform's commission when your network members transact in any mall—even when they aren't buying from you.
+                        </p>
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mt-4">
+                             <div className="p-4 border rounded-lg bg-background">
+                                <strong className="text-foreground flex items-center gap-2 mb-2"><DollarSign className="h-5 w-5"/>Finance Mall Example:</strong>
+                                A member from your network finances a <strong className="font-mono">{formatCurrency(exampleDealSize)}</strong> truck. The platform earns a {exampleOriginationFeePercent}% fee ({formatCurrency(exampleDealCommission)}). Your {transactionalCommissionShare}% share earns you <strong className="text-green-600">{formatCurrency(yourFinanceDealShare)}</strong>.
+                             </div>
+                             <div className="p-4 border rounded-lg bg-background">
+                                <strong className="text-foreground flex items-center gap-2 mb-2"><Handshake className="h-5 w-5"/>Supplier Mall Example:</strong>
+                                Your referred members spend {formatCurrency(exampleSupplierSpend)} on parts from *other* vendors. The platform earns a {supplierMallCommission}% commission ({formatCurrency(supplierPlatformEarnings)}). Your {transactionalCommissionShare}% share could earn you <strong className="text-green-600">{formatCurrency(yourSupplierDealShare)}</strong>.
+                             </div>
+                        </div>
                     </div>
                 </CardContent>
             </Card>
