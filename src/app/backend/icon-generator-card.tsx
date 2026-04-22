@@ -30,7 +30,7 @@ import { Textarea } from '@/components/ui/textarea';
 export default function IconGeneratorCard() {
   const [isOpen, setIsOpen] = useState(false);
   const [prompt, setPrompt] = useState(
-    'A minimalist, flat vector icon of a truck, on a white background. Simple, clean lines, professional logo style.'
+    'A modern, minimalist icon representing logistics and transport. The design should be a clean, vector-style graphic on a white background, suitable for a logo. Use a simple color palette, primarily green and charcoal. The icon could feature a stylized truck, an arrow indicating movement, or an abstract representation of a network or flow.'
   );
   const [isLoading, setIsLoading] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
@@ -99,14 +99,14 @@ export default function IconGeneratorCard() {
           <DialogTrigger asChild>
             <Button className="w-full">Create Icon</Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-xl">
+          <DialogContent className="sm:max-w-xl flex flex-col max-h-[90vh]">
             <DialogHeader>
               <DialogTitle>AI Icon Generator</DialogTitle>
               <DialogDescription>
                 Describe the icon you want to create. Be specific for best results.
               </DialogDescription>
             </DialogHeader>
-            <div className="py-4 space-y-4">
+            <div className="flex-1 overflow-y-auto space-y-4 py-4 pr-4">
                 <div className="space-y-2">
                   <Label htmlFor="generate-prompt">Your Prompt</Label>
                   <Textarea
@@ -114,7 +114,7 @@ export default function IconGeneratorCard() {
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
                     placeholder="e.g., A minimalist, flat vector icon of a truck..."
-                    rows={4}
+                    rows={5}
                   />
                 </div>
                 <div className="relative aspect-square w-full rounded-md border border-dashed flex items-center justify-center bg-muted">
@@ -130,7 +130,7 @@ export default function IconGeneratorCard() {
                     )}
                 </div>
             </div>
-            <DialogFooter className="justify-between">
+            <DialogFooter className="mt-auto pt-4 border-t justify-between">
               {generatedImage && (
                 <Button variant="secondary" onClick={handleDownload} disabled={isLoading}>
                   <Download className="mr-2 h-4 w-4" /> Download Icon
