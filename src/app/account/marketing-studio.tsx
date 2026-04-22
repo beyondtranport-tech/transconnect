@@ -10,24 +10,9 @@ import { Loader2 } from 'lucide-react';
 import ImageGeneratorCard from "@/app/backend/image-generator-card";
 import ImageEditorCard from "@/app/backend/image-editor-card";
 import VideoGeneratorCard from "@/app/backend/video-generator-card";
+import IconGeneratorCard from "@/app/backend/icon-generator-card";
 
 // Placeholder for new components
-const IconGeneratorCard = () => (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <ImageIcon /> AI Icon Generator
-        </CardTitle>
-        <CardDescription>
-          Create custom icons for your app or member shops using a descriptive prompt.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Button className="w-full" disabled>Coming Soon</Button>
-      </CardContent>
-    </Card>
-);
-
 const VideoAnimatorCard = () => (
      <Card>
       <CardHeader>
