@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -30,7 +31,7 @@ import { Textarea } from '@/components/ui/textarea';
 export default function IconGeneratorCard() {
   const [isOpen, setIsOpen] = useState(false);
   const [prompt, setPrompt] = useState(
-    'A modern, minimalist icon representing logistics and transport. The design should be a clean, vector-style graphic on a white background, suitable for a logo. Use a simple color palette, primarily green and charcoal. The icon could feature a stylized truck, an arrow indicating movement, or an abstract representation of a network or flow.'
+    "A modern, minimalist company logo for a logistics business. The design should be clean, professional, and in a vector style on a plain white background. It should evoke themes of transport, networking, and efficiency. Use a color palette of green and charcoal."
   );
   const [isLoading, setIsLoading] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
@@ -41,7 +42,7 @@ export default function IconGeneratorCard() {
       toast({
         variant: 'destructive',
         title: 'Prompt is required',
-        description: 'Please describe the icon you want to create.',
+        description: 'Please describe the logo you want to create.',
       });
       return;
     }
@@ -53,8 +54,8 @@ export default function IconGeneratorCard() {
       const result = await generateImage({ prompt });
       setGeneratedImage(result.imageDataUri);
       toast({
-        title: 'Icon Generated!',
-        description: 'Your new icon is ready to be downloaded.',
+        title: 'Logo Generated!',
+        description: 'Your new logo is ready to be downloaded.',
       });
     } catch (e: any) {
       let description: React.ReactNode = e.message;
@@ -63,7 +64,7 @@ export default function IconGeneratorCard() {
               <>
                   The AI API is not enabled for your project, or billing is not set up.
                   <Button asChild variant="link" className="p-0 h-auto ml-1 text-xs -translate-y-px">
-                      <Link href="/docs/enable-gemini-api.md" target="_blank">View Setup Guide</Link>
+                      <Link href="/docs/enable-gemini-api.md" target="_blank">View AI Setup Guide</Link>
                   </Button>
               </>
           );
@@ -78,7 +79,7 @@ export default function IconGeneratorCard() {
     if (!generatedImage) return;
     const link = document.createElement('a');
     link.href = generatedImage;
-    link.download = `icon-${Date.now()}.png`;
+    link.download = `logo-${Date.now()}.png`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -88,22 +89,22 @@ export default function IconGeneratorCard() {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <ImageIcon /> AI Icon Generator
+          <ImageIcon /> AI Logo Generator
         </CardTitle>
         <CardDescription>
-          Create custom icons for your app or member shops using a descriptive prompt.
+          Create a unique company logo using a descriptive prompt.
         </CardDescription>
       </CardHeader>
       <CardContent>
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogTrigger asChild>
-            <Button className="w-full">Create Icon</Button>
+            <Button className="w-full">Create Logo</Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-xl flex flex-col max-h-[90vh]">
+          <DialogContent className="flex flex-col max-h-[90vh] sm:max-w-2xl">
             <DialogHeader>
-              <DialogTitle>AI Icon Generator</DialogTitle>
+              <DialogTitle>AI Logo Generator</DialogTitle>
               <DialogDescription>
-                Describe the icon you want to create. Be specific for best results.
+                Describe the logo you want to create. Be specific for best results.
               </DialogDescription>
             </DialogHeader>
             <div className="flex-1 overflow-y-auto space-y-4 py-4 pr-4">
@@ -113,7 +114,7 @@ export default function IconGeneratorCard() {
                     id="generate-prompt"
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
-                    placeholder="e.g., A minimalist, flat vector icon of a truck..."
+                    placeholder="e.g., A minimalist logo for 'Swift Haulers' with a stylized S and a speeding truck..."
                     rows={5}
                   />
                 </div>
@@ -124,21 +125,21 @@ export default function IconGeneratorCard() {
                             <p className="mt-2 text-sm text-muted-foreground">Generating...</p>
                         </div>
                     ) : generatedImage ? (
-                         <Image src={generatedImage} alt="Generated Icon" fill className="rounded-md object-contain" />
+                         <Image src={generatedImage} alt="Generated Logo" fill className="rounded-md object-contain" />
                     ) : (
-                        <p className="text-sm text-muted-foreground">Your generated icon will appear here.</p>
+                        <p className="text-sm text-muted-foreground">Your generated logo will appear here.</p>
                     )}
                 </div>
             </div>
             <DialogFooter className="mt-auto pt-4 border-t justify-between">
               {generatedImage && (
                 <Button variant="secondary" onClick={handleDownload} disabled={isLoading}>
-                  <Download className="mr-2 h-4 w-4" /> Download Icon
+                  <Download className="mr-2 h-4 w-4" /> Download Logo
                 </Button>
               )}
               <Button onClick={handleGenerate} disabled={isLoading} className="ml-auto">
                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                Generate Icon
+                Generate Logo
               </Button>
             </DialogFooter>
           </DialogContent>
