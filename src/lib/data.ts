@@ -1,4 +1,3 @@
-
 import type { Division, MarketplaceItem } from '@/lib/types';
 import data from '@/lib/placeholder-images.json';
 
