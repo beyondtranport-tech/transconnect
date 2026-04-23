@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -20,7 +21,7 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Sparkles, Image as ImageIcon } from 'lucide-react';
+import { Loader2, Sparkles, ImageIcon, Download } from 'lucide-react';
 import Image from 'next/image';
 import { generateImage } from '@/ai/flows/image-generation-flow';
 import Link from 'next/link';
@@ -74,6 +75,16 @@ export default function ImageGeneratorCard() {
     }
   };
 
+  const handleDownload = () => {
+    if (!generatedImage) return;
+    const link = document.createElement('a');
+    link.href = generatedImage;
+    link.download = `generated-image-${Date.now()}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -120,10 +131,15 @@ export default function ImageGeneratorCard() {
                     )}
                 </div>
             </div>
-            <DialogFooter className="mt-auto pt-4 border-t">
-              <Button onClick={handleGenerate} disabled={isLoading}>
+            <DialogFooter className="mt-auto pt-4 border-t justify-between">
+              {generatedImage && (
+                <Button variant="secondary" onClick={handleDownload} disabled={isLoading}>
+                  <Download className="mr-2 h-4 w-4" /> Download Image
+                </Button>
+              )}
+              <Button onClick={handleGenerate} disabled={isLoading} className={!generatedImage ? 'w-full' : 'ml-auto'}>
                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                Generate Image
+                {generatedImage ? 'Generate Again' : 'Generate Image'}
               </Button>
             </DialogFooter>
           </DialogContent>
