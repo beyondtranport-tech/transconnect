@@ -17,32 +17,32 @@ const aboutHeroImage = placeholderImages.find(p => p.id === 'about-hero');
 const values = [
     {
         title: "Cash Flow",
-        question: "Are you struggling to fund your business?",
-        answer: "We can help by either providing our innovative in house finance solutions or connecting you with a network of funders who understand your business..",
+        question: "Struggling to fund your business?",
+        answer: "We can help by either providing our in-house finance solutions or connecting you with a network of funders who understand your business.",
         image: placeholderImages.find(p => p.id === 'funding-division'),
         icon: DollarSign,
         link: "/funding",
     },
     {
         title: "Opportunity Flow",
-        question: "Do you need to generate more income?",
-        answer: "We give you the tools to open new sales channels. Create your own online shop to sell products and services to the entire network, and activate Connect plans to earn recurring income from referrals.",
+        question: "Need to generate more income?",
+        answer: "We provide the tools to open new sales channels. Create your own online shop to sell products and services, and activate Connect plans to earn recurring income from referrals.",
         image: placeholderImages.find(p => p.id === 'incentives-hero'),
         icon: Handshake,
         link: "/connect",
     },
     {
         title: "Information Flow",
-        question: "Are you tech savvy?",
-        answer: "We can help by providing tech tools that streamline your operations, giving you data and insights to reduce empty miles and optimize your routes for maximum profitability.",
+        question: "Looking for a tech advantage?",
+        answer: "We provide tech tools that streamline your operations, giving you data and insights to reduce empty miles and optimize your routes for maximum profitability.",
         image: placeholderImages.find(p => p.id === 'tech-division'),
         icon: Cpu,
         link: "/tech",
     },
     {
         title: "Savings Flow",
-        question: "Are you looking to cut costs?",
-        answer: "We can help by uniting our members to create collective buying power, negotiating significant discounts on parts, tires, and services you use every day.",
+        question: "Looking to cut costs?",
+        answer: "We unite our members to create collective buying power, negotiating significant discounts on parts, tires, and services you use every day.",
         image: placeholderImages.find(p => p.id === 'mall-division'),
         icon: Shield,
         link: "/mall",
@@ -89,7 +89,7 @@ export default function AboutPage() {
             <div className="absolute inset-0 bg-black/60" />
             <div className="relative h-full flex flex-col items-center justify-center text-center text-primary-foreground z-10 p-4">
                 <h1 className="text-4xl md:text-5xl font-bold font-headline">About Logistics Flow</h1>
-                <p className="mt-4 text-lg md:text-xl max-w-3xl">We are dedicated to revolutionizing the logistics sector by empowering every business with the digital tools to compete and grow.</p>
+                <p className="mt-4 text-lg md:text-xl max-w-3xl">We are improving the logistics sector by empowering businesses with digital tools to compete and grow.</p>
             </div>
         </section>
 
@@ -146,9 +146,9 @@ export default function AboutPage() {
         <section className="py-16 md:py-24 bg-background">
             <div className="container mx-auto px-4">
                 <div className="text-center max-w-3xl mx-auto mb-16">
-                    <h2 className="text-3xl md:text-4xl font-bold font-headline">Innovative Financial Tools</h2>
+                    <h2 className="text-3xl md:text-4xl font-bold font-headline">Community-Based Financial Tools</h2>
                     <p className="mt-4 text-lg text-muted-foreground">
-                        We are fundamentally redesigning how financing works in the transport sector, creating a more accessible and community-driven financial ecosystem.
+                        We offer new ways to approach financing in the transport sector, creating a more accessible and community-driven financial ecosystem.
                     </p>
                 </div>
                 <div className="grid md:grid-cols-2 gap-12 items-start max-w-5xl mx-auto">
@@ -250,7 +250,7 @@ export default function AboutPage() {
         <section className="py-16 md:py-24 bg-card">
             <div className="container mx-auto px-4">
                 <div className="text-center max-w-3xl mx-auto mb-16">
-                    <h2 className="text-3xl md:text-4xl font-bold font-headline">Your Security &amp; Data Protection: Our Priority</h2>
+                    <h2 className="text-3xl md:text-4xl font-bold font-headline">Your Security & Data Protection: Our Priority</h2>
                     <p className="mt-4 text-lg text-muted-foreground">
                         We understand that your business data is sensitive. We are committed to protecting your privacy and securing your information with robust, industry-standard practices.
                     </p>

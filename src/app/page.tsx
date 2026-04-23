@@ -153,9 +153,9 @@ export default function Home() {
       <section id="how-it-works" className="py-16 md:py-24 bg-background">
         <div className="container mx-auto px-4">
             <div className="text-center max-w-3xl mx-auto mb-16">
-                <h2 className="text-3xl md:text-4xl font-bold font-headline">A Clear Path to Growth</h2>
+                <h2 className="text-3xl md:text-4xl font-bold font-headline">Our Process</h2>
                 <p className="mt-4 text-lg text-muted-foreground">
-                    In three simple steps, you can establish your digital presence, open new sales channels, and access the capital you need to expand.
+                    In three steps, you can establish your digital presence, open new sales channels, and access the capital you need to expand.
                 </p>
             </div>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 text-center max-w-7xl mx-auto">
@@ -199,7 +199,7 @@ export default function Home() {
       <section className="py-16 md:py-24 bg-card">
         <div className="container mx-auto px-4">
             <div className="text-center max-w-3xl mx-auto mb-16">
-                <h2 className="text-3xl md:text-4xl font-bold font-headline">Commerce Meets Capital</h2>
+                <h2 className="text-3xl md:text-4xl font-bold font-headline">Data-Driven Funding</h2>
                 <p className="mt-4 text-lg text-muted-foreground">
                     We address a core industry challenge: the disconnect between business performance and access to funding. Your activity on the platform builds a verifiable track record, strengthening your profile for our network of funders.
                 </p>
@@ -273,7 +273,7 @@ export default function Home() {
       <section className="py-16 md:py-24 bg-muted/50">
         <div className="container mx-auto px-4">
             <div className="text-center max-w-3xl mx-auto mb-16">
-                <h2 className="text-3xl md:text-4xl font-bold font-headline">Your Security &amp; Data Protection: Our Priority</h2>
+                <h2 className="text-3xl md:text-4xl font-bold font-headline">Your Security & Data Protection: Our Priority</h2>
                 <p className="mt-4 text-lg text-muted-foreground">
                     We understand that your business data is sensitive. We are committed to protecting your privacy and securing your information with robust, industry-standard practices.
                 </p>

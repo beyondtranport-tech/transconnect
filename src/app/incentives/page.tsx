@@ -92,17 +92,17 @@ export default function IncentivesPage() {
                 )}
                 <div className="absolute inset-0 bg-black/60" />
                 <div className="relative h-full flex flex-col items-center justify-center text-center text-primary-foreground z-10 p-4">
-                    <h1 className="text-4xl md:text-5xl font-bold font-headline">The Logistics Flow Referral Program</h1>
-                    <p className="mt-4 text-lg md:text-xl max-w-3xl">Turn your industry connections into revenue. Earn points and commission by sharing the value of Logistics Flow with your network.</p>
+                    <h1 className="text-4xl md:text-5xl font-bold font-headline">Referral & Incentive Program</h1>
+                    <p className="mt-4 text-lg md:text-xl max-w-3xl">Earn points and commission by sharing the value of Logistics Flow with your network.</p>
                 </div>
             </section>
 
             <section id="opportunity" className="py-16 md:py-24 bg-background">
                 <div className="container mx-auto px-4 text-center">
                     <div className="max-w-3xl mx-auto">
-                        <h2 className="text-3xl md:text-4xl font-bold font-headline">The Opportunity: Earn By Sharing</h2>
+                        <h2 className="text-3xl md:text-4xl font-bold font-headline">Earning Opportunities</h2>
                         <p className="mt-4 text-lg text-muted-foreground">
-                            You have the network. We have the products. Our referral program allows every Logistics Flow member to earn by recommending our high-demand services and memberships. There are no limits to what you can earn. Top performers can qualify for our elite ISA (Independent Sales Agent) program, unlocking even higher commission tiers and exclusive bonuses.
+                            Our referral program allows every Logistics Flow member to earn by recommending our high-demand services and memberships. Top performers can qualify for our ISA program to unlock higher commission tiers.
                         </p>
                     </div>
                 </div>
@@ -111,9 +111,9 @@ export default function IncentivesPage() {
             <section id="products" className="py-16 md:py-24 bg-card">
                 <div className="container mx-auto px-4">
                     <div className="text-center max-w-3xl mx-auto mb-16">
-                        <h2 className="text-3xl md:text-4xl font-bold font-headline">Your Earning Portfolio</h2>
+                        <h2 className="text-3xl md:text-4xl font-bold font-headline">Available Products</h2>
                         <p className="mt-4 text-lg text-muted-foreground">
-                           We've created a portfolio of valuable products and services that are easy to share and beneficial to your network.
+                           A portfolio of valuable products and services that are easy to share and beneficial to your network.
                         </p>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -147,9 +147,9 @@ export default function IncentivesPage() {
 
             <section className="py-16 md:py-24 bg-background">
                 <div className="container mx-auto px-4 text-center">
-                    <h2 className="text-3xl md:text-4xl font-bold font-headline">Ready to Start Earning?</h2>
+                    <h2 className="text-3xl md:text-4xl font-bold font-headline">Start Earning Today</h2>
                     <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-                        Your referral dashboard is waiting in your account. Join Logistics Flow today to get your unique sharing links and start earning rewards.
+                        Your referral dashboard is waiting in your account. Join Logistics Flow to get your unique sharing links and start earning rewards.
                     </p>
                     <Button asChild size="lg" className="mt-8" onClick={handleJoinClick}>
                         <Link href="/join">

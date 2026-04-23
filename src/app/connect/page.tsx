@@ -160,17 +160,17 @@ export default function ConnectPage() {
                 )}
                 <div className="absolute inset-0 bg-black/70" />
                 <div className="relative h-full flex flex-col items-center justify-center text-center text-primary-foreground z-10 p-4">
-                    <h1 className="text-4xl md:text-5xl font-bold font-headline">Go Beyond Connecting. Start Earning.</h1>
-                    <p className="mt-4 text-lg md:text-xl max-w-3xl">Our optional plans turn your network into your most valuable asset. Activate the tools to save on costs and generate new revenue streams.</p>
+                    <h1 className="text-4xl md:text-5xl font-bold font-headline">Connect Plans</h1>
+                    <p className="mt-4 text-lg md:text-xl max-w-3xl">Optional plans to enhance your membership. Activate tools to save on costs and generate new revenue streams.</p>
                 </div>
             </section>
 
             <section id="plans-section" className="py-16 md:py-24 bg-background">
                 <div className="container mx-auto px-4">
                     <div className="text-center max-w-3xl mx-auto mb-12">
-                        <h2 className="text-3xl md:text-4xl font-bold font-headline">Unlock Your Potential</h2>
+                        <h2 className="text-3xl md:text-4xl font-bold font-headline">Available Plans</h2>
                         <p className="mt-4 text-lg text-muted-foreground">
-                            Choose one or more plans to unlock the full financial power of the TransConnect ecosystem. Each plan is a tool designed to directly impact your bottom line.
+                            Choose one or more plans to utilize the full financial power of the Logistics Flow ecosystem. Each plan is a tool designed to directly impact your bottom line.
                         </p>
                     </div>
 
