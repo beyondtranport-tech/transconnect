@@ -137,9 +137,9 @@ export default function Home() {
 
        <section className="py-16 md:py-24 bg-card">
           <div className="container mx-auto px-4 text-center">
-              <h2 className="text-3xl md:text-4xl font-bold font-headline">The cornerstone of the offering is the ability to create a unified commercial structure in the form of your Own Online Shop for the Logistics Sector.</h2>
+              <h2 className="text-3xl md:text-4xl font-bold font-headline">Your Digital Branch for the Logistics Economy</h2>
               <p className="mt-4 text-lg text-muted-foreground max-w-3xl mx-auto">
-                Launch a professional storefront to market your services, sell your products, and build a trusted profile to unlock funding. Get started for free.
+                Create a professional online storefront in minutes. Sell your products and services, manage sales, and connect with a network of buyers and funders—all on one platform.
               </p>
               <div className="mt-8 flex justify-center items-center gap-4">
                 <Button asChild size="lg" onClick={handleCreateShopClick}>
