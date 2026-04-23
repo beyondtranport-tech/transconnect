@@ -18,30 +18,30 @@ import {
 import {
   LogOut,
   Loader2,
-  LayoutDashboard,
+  TrendingUp,
+  Map,
+  Sheet as FinancialSheetIcon,
+  Presentation,
   User,
-  Shield,
-  Truck,
-  Package,
-  Building,
-  BarChart3,
-  Network,
-  ShoppingCart,
-  ShieldAlert,
-  Ship,
-  FileText,
-  BrainCircuit,
-  CalendarCheck,
-  Landmark,
-  ShieldCheck,
-  Repeat,
-  FileSignature,
-  Users,
-  Handshake,
-  Briefcase,
+  LayoutDashboard,
+  Mail,
+  Calculator,
+  Target,
+  Info,
   Bot,
-  Code,
-  Gift,
+  Database,
+  ImageIcon,
+  Briefcase,
+  Scale,
+  Handshake,
+  DollarSign,
+  Sparkles,
+  Settings,
+  Users,
+  Mic,
+  LineChart,
+  Shield,
+  Activity,
   Wrench,
   Wallet,
   ListTodo,
@@ -50,18 +50,28 @@ import {
   Star,
   Award,
   Banknote,
-  Users2,
-  UserCheck2,
-  DollarSign,
-  Code2,
+  FileText,
+  Landmark,
+  Truck,
+  ShieldCheck,
+  Repeat,
+  FileSignature,
+  Building,
+  FileSearch,
+  UserPlus,
+  Filter,
+  ClipboardList,
+  MessageSquare,
+  Code,
+  Gift,
   BookOpen,
-  Activity,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect, Suspense, useCallback } from 'react';
 import Link from 'next/link';
+
 import { useUser, useAuth } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import dynamic from 'next/dynamic';
@@ -69,19 +79,41 @@ import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
 // --- Dynamic Imports for Business Components ---
+
+// Dashboard
 const AdminDashboardContent = dynamic(() => import('@/app/backend/dashboard-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+
+// Operations
+const MembersList = dynamic(() => import('@/app/backend/members-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const UsersList = dynamic(() => import('@/app/backend/users-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const MemberWallet = dynamic(() => import('@/app/backend/wallet/[memberId]/member-wallet'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const WalletTransactionsList = dynamic(() => import('@/app/backend/wallet-transactions-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const ShopsList = dynamic(() => import('@/app/backend/shops-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const ReconciliationPage = dynamic(() => import('@/app/backend/reconciliation/page'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const ContributionsList = dynamic(() => import('@/app/backend/contributions-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const ActivityFeed = dynamic(() => import('@/app/backend/activity-feed'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const MembersList = dynamic(() => import('@/app/backend/members-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const CommunicationsContent = dynamic(() => import('@/app/backend/communications-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const SupportChatInbox = dynamic(() => import('@/app/backend/support-chat-inbox'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const UsersList = dynamic(() => import('@/app/backend/users-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const CommercialNegotiations = dynamic(() => import('@/app/backend/commercial-negotiations'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const MarketingPage = dynamic(() => import('./marketing/MarketingPage'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+
+// Marketing
+const LeadsAgent = dynamic(() => import('@/app/adminaccount/leads-agent'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const LeadsDatabase = dynamic(() => import('@/app/adminaccount/leads-database'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const MarketingPage = dynamic(() => import('@/app/adminaccount/marketing/MarketingPage'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const BrandingStudio = dynamic(() => import('@/app/adminaccount/branding-studio'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const TTSStudio = dynamic(() => import('@/app/adminaccount/tts-studio'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const AssetGallery = dynamic(() => import('@/app/adminaccount/asset-gallery'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+
+// Sales
+const SalesRoadmap = dynamic(() => import('@/app/account/sales-roadmap'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const TargetsPage = dynamic(() => import('@/app/account/targets'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+
+// Financial
+const FinancialProjections = dynamic(() => import('@/app/backend/financial-projections'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const FinancialsGeneralSettings = dynamic(() => import('@/app/adminaccount/financials-general-settings'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const FinancialSetup = dynamic(() => import('@/app/account/financial-setup'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const BudgetPage = dynamic(() => import('@/app/account/budget/page'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const SalaryForecastPage = dynamic(() => import('@/app/backend/salary-forecast'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 // Platform Settings
 const PermissionsContent = dynamic(() => import('@/app/backend/permissions-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
@@ -108,7 +140,7 @@ function AdminAuthGuard({ children }: { children: React.ReactNode }) {
         }
 
         if (!user) {
-            router.replace('/signin?redirect=/backend');
+            router.replace('/signin?redirect=/adminaccount');
         } else if (user.email !== 'mkoton100@gmail.com' && user.email !== 'beyondtransport@gmail.com') {
             router.replace('/account'); 
         }
@@ -126,7 +158,7 @@ function AdminAuthGuard({ children }: { children: React.ReactNode }) {
     return <>{children}</>;
 }
 
-function BackendContent() {
+function AdminAccountContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialView = searchParams.get('view') || 'dashboard';
@@ -153,20 +185,26 @@ function BackendContent() {
     switch (activeView) {
       // Dashboard
       case 'dashboard': return <AdminDashboardContent />;
-      case 'commercial-negotiations': return <CommercialNegotiations />;
-      
-      // Operations
-      case 'members': return <MembersList />;
-      case 'users': return <UsersList />;
-      case 'wallet': return memberId ? <MemberWallet memberId={memberId} /> : <WalletTransactionsList />;
-      case 'wallet-transactions': return <WalletTransactionsList />;
-      case 'shops': return <ShopsList />;
-      case 'reconciliation': return <ReconciliationPage />;
-      case 'contributions': return <ContributionsList />;
       case 'activity': return <ActivityFeed />;
-      case 'communications': return <CommunicationsContent />;
-      case 'support-inbox': return <SupportChatInbox />;
       
+      // Marketing
+      case 'leads-agent': return <LeadsAgent />;
+      case 'leads-database': return <LeadsDatabase />;
+      case 'branding-studio': return <BrandingStudio />;
+      case 'tts-studio': return <TTSStudio />;
+      case 'asset-gallery': return <AssetGallery />;
+      
+      // Sales
+      case 'sales-roadmap': return <SalesRoadmap />;
+      case 'targets': return <TargetsPage />;
+
+      // Financial
+      case 'financial-projections': return <FinancialProjections />;
+      case 'financial-settings': return <FinancialsGeneralSettings />;
+      case 'financial-setup': return <FinancialSetup />;
+      case 'budget': return <BudgetPage />;
+      case 'salary-forecast': return <SalaryForecastPage />;
+
       // Platform Settings
       case 'permissions': return <PermissionsContent />;
       case 'action-plan': return <ActionPlanSettings />;
@@ -184,7 +222,7 @@ function BackendContent() {
 
       default: return <AdminDashboardContent />;
     }
-  }, [activeView, memberId]);
+  }, [activeView]);
   
   const getInitials = (name: string | null | undefined) => {
     if (!name) return "AD";
@@ -201,7 +239,11 @@ function BackendContent() {
 
   const navigate = (view: string) => router.push(`/adminaccount?view=${view}`, { scroll: false });
   
-  const isOperationsActive = ['members', 'users', 'wallet', 'wallet-transactions', 'shops', 'reconciliation', 'contributions', 'activity', 'communications', 'support-inbox', 'commercial-negotiations'].includes(activeView);
+  const isMarketingActive = activeView.startsWith('marketing-');
+  const isSalesActive = ['sales-roadmap', 'targets'].includes(activeView);
+  const isFinancialActive = ['financial-projections', 'financial-settings', 'financial-setup', 'budget', 'salary-forecast'].includes(activeView);
+   const isContentActive = ['branding-studio', 'tts-studio', 'asset-gallery'].includes(activeView);
+    const isLeadsActive = ['leads-agent', 'leads-database'].includes(activeView);
   const isRevenueActive = [
     'pricing-memberships', 'pricing-connect', 'pricing-tech', 'pricing-marketplace',
     'commissions-malls', 'commissions-isa', 'incentives-sales'
@@ -209,7 +251,6 @@ function BackendContent() {
   const isPlatformSettingsActive = [
     'permissions', 'action-plan', 'loyalty-plan', 'rewards-plan', 'tasks', 'settings-bank'
   ].includes(activeView);
-  const isMarketingActive = activeView.startsWith('marketing-');
 
   return (
     <AdminAuthGuard>
@@ -219,7 +260,7 @@ function BackendContent() {
             <div className="flex items-center gap-2">
               <Shield className="h-6 w-6 text-primary" />
               <h2 className="text-lg font-semibold text-sidebar-foreground">
-                App Backend
+                Admin Account
               </h2>
             </div>
           </SidebarHeader>
@@ -231,33 +272,53 @@ function BackendContent() {
                     </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
-                  <SidebarMenuButton tooltip="Operations" isActive={isOperationsActive}><Wrench /><span>Operations</span></SidebarMenuButton>
-                  <SidebarMenuSub>
-                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'activity'} onClick={() => navigate('activity')}><Activity />Activity Feed</SidebarMenuSubButton></SidebarMenuSubItem>
-                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'communications'} onClick={() => navigate('communications')}><MessageSquare />Agent Chats</SidebarMenuSubButton></SidebarMenuSubItem>
-                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'support-inbox'} onClick={() => navigate('support-inbox')}><MessageSquare />Support Inbox</SidebarMenuSubButton></SidebarMenuSubItem>
-                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'members'} onClick={() => navigate('members')}><Users />Members</SidebarMenuSubButton></SidebarMenuSubItem>
-                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'users'} onClick={() => navigate('users')}><Users />All Users</SidebarMenuSubButton></SidebarMenuSubItem>
-                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'wallet-transactions'} onClick={() => navigate('wallet-transactions')}><Wallet />Wallet Transactions</SidebarMenuSubButton></SidebarMenuSubItem>
-                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'contributions'} onClick={() => navigate('contributions')}><ListTodo />Contributions</SidebarMenuSubButton></SidebarMenuSubItem>
-                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'shops'} onClick={() => navigate('shops')}><Store />Shops</SidebarMenuSubButton></SidebarMenuSubItem>
-                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'reconciliation'} onClick={() => navigate('reconciliation')}><Scale />Bank Reconciliation</SidebarMenuSubButton></SidebarMenuSubItem>
-                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'commercial-negotiations'} onClick={() => navigate('commercial-negotiations')}><Handshake />Commercials</SidebarMenuSubButton></SidebarMenuSubItem>
-                  </SidebarMenuSub>
+                    <SidebarMenuButton tooltip="Activity" isActive={activeView === 'activity'} onClick={() => navigate('activity')}>
+                        <Activity /><span>Activity</span>
+                    </SidebarMenuButton>
                 </SidebarMenuItem>
-
                 <SidebarMenuItem>
                     <SidebarMenuButton tooltip="Marketing" isActive={isMarketingActive}><BookOpen /><span>Marketing</span></SidebarMenuButton>
                     <SidebarMenuSub>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-partners'} onClick={() => navigate('marketing-partners')}><Handshake/>Partners</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-isa'} onClick={() => navigate('marketing-isa')}><UserCheck2/>ISA Agents</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-suppliers'} onClick={() => navigate('marketing-suppliers')}><Building/>Suppliers</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-transporters'} onClick={() => navigate('marketing-transporters')}><Truck/>Transporters</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-investors'} onClick={() => navigate('marketing-investors')}><DollarSign/>Investors</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-developers'} onClick={() => navigate('marketing-developers')}><Code2/>Developers</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-partners'} onClick={() => navigate('marketing-partners')}>Strategic Partners</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-isa'} onClick={() => navigate('marketing-isa')}>ISA Agents</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-suppliers'} onClick={() => navigate('marketing-suppliers')}>Suppliers</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-transporters'} onClick={() => navigate('marketing-transporters')}>Transporters</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-investors'} onClick={() => navigate('marketing-investors')}>Investors</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-developers'} onClick={() => navigate('marketing-developers')}>Developers</SidebarMenuSubButton></SidebarMenuSubItem>
                     </SidebarMenuSub>
                 </SidebarMenuItem>
-
+                <SidebarMenuItem>
+                    <SidebarMenuButton tooltip="Leads" isActive={isLeadsActive}><UserPlus /><span>Leads</span></SidebarMenuButton>
+                    <SidebarMenuSub>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'leads-agent'} onClick={() => navigate('leads-agent')}>Leads Agent</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'leads-database'} onClick={() => navigate('leads-database')}>Leads Database</SidebarMenuSubButton></SidebarMenuSubItem>
+                    </SidebarMenuSub>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                    <SidebarMenuButton tooltip="Content" isActive={isContentActive}><Sparkles /><span>Content Studio</span></SidebarMenuButton>
+                    <SidebarMenuSub>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'branding-studio'} onClick={() => navigate('branding-studio')}>Branding Studio</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'tts-studio'} onClick={() => navigate('tts-studio')}>TTS Studio</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'asset-gallery'} onClick={() => navigate('asset-gallery')}>Asset Gallery</SidebarMenuSubButton></SidebarMenuSubItem>
+                    </SidebarMenuSub>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                    <SidebarMenuButton tooltip="Sales" isActive={isSalesActive}><TrendingUp /><span>Sales</span></SidebarMenuButton>
+                    <SidebarMenuSub>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'sales-roadmap'} onClick={() => navigate('sales-roadmap')}>Roadmap</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'targets'} onClick={() => navigate('targets')}>Targets</SidebarMenuSubButton></SidebarMenuSubItem>
+                    </SidebarMenuSub>
+                </SidebarMenuItem>
+                 <SidebarMenuItem>
+                    <SidebarMenuButton tooltip="Financials" isActive={isFinancialActive}><FinancialSheetIcon /><span>Financials</span></SidebarMenuButton>
+                    <SidebarMenuSub>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'financial-projections'} onClick={() => navigate('financial-projections')}>Projections</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'budget'} onClick={() => navigate('budget')}>Budget</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'salary-forecast'} onClick={() => navigate('salary-forecast')}>Salaries</SidebarMenuSubButton></SidebarMenuSubItem>
+                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'financial-setup'} onClick={() => navigate('financial-setup')}>Setup</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'financial-settings'} onClick={() => navigate('financial-settings')}>General Settings</SidebarMenuSubButton></SidebarMenuSubItem>
+                    </SidebarMenuSub>
+                </SidebarMenuItem>
                 <SidebarMenuItem>
                     <SidebarMenuButton tooltip="Revenue & Pricing" isActive={isRevenueActive}><DollarSign /><span>Revenue & Pricing</span></SidebarMenuButton>
                     <SidebarMenuSub>
@@ -323,10 +384,10 @@ function BackendContent() {
 }
 
 
-export default function BackendPage() {
+export default function AdminAccountPage() {
   return (
     <Suspense fallback={<div className="flex justify-center items-center min-h-[calc(100vh-8rem)]"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>}>
-      <BackendContent />
+      <AdminAccountContent />
     </Suspense>
   );
 }
