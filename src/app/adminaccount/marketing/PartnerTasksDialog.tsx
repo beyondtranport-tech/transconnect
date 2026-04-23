@@ -90,7 +90,7 @@ export function PartnerTasksDialog({ partner }: { partner: any }) {
 
     const { data: tasks, isLoading, forceRefresh } = useCollection(tasksQuery);
 
-    const handleAction = async (task: any, action: 'toggle' | 'delete') => {
+    const handleAction = useCallback(async (task: any, action: 'toggle' | 'delete') => {
         if (!user) return;
         try {
             const token = await getClientSideAuthToken();
@@ -118,11 +118,12 @@ export function PartnerTasksDialog({ partner }: { partner: any }) {
         } catch (e: any) {
             toast({ variant: 'destructive', title: 'Action Failed', description: e.message });
         }
-    };
+    }, [user, partner, toast, forceRefresh]);
     
     const columns: ColumnDef<any>[] = useMemo(() => [
         {
             id: 'status',
+            header: 'Status',
             cell: ({ row }) => (
                 <Button variant="ghost" size="icon" onClick={() => handleAction(row.original, 'toggle')}>
                     {row.original.status === 'completed' ? <CheckCircle className="h-5 w-5 text-green-500" /> : <Circle className="h-5 w-5 text-muted-foreground" />}
@@ -133,6 +134,7 @@ export function PartnerTasksDialog({ partner }: { partner: any }) {
         { accessorKey: 'dueDate', header: 'Due', cell: ({ row }) => formatDateSafe(row.original.dueDate, 'dd MMM') },
         {
             id: 'actions',
+            header: <div className="text-right">Actions</div>,
             cell: ({ row }) => (
                 <div className="text-right">
                     <Button variant="ghost" size="icon" onClick={() => handleAction(row.original, 'delete')}><Trash2 className="h-4 w-4 text-destructive" /></Button>

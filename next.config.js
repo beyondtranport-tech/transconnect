@@ -1,6 +1,8 @@
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  experimental: {
+    serverComponentsExternalPackages: ['@opentelemetry/instrumentation', 'require-in-the-middle'],
+  },
   reactStrictMode: true,
   // Cache-busting comment: 2026-03-14T12:00:00Z
   images: {
