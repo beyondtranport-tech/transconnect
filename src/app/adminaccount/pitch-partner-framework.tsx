@@ -64,6 +64,7 @@ import { useUser, useAuth } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import dynamic from 'next/dynamic';
 import React from 'react';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
 // --- Dynamic Imports for Business Components ---
 const AdminDashboardContent = dynamic(() => import('@/app/backend/dashboard-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
@@ -145,7 +146,7 @@ function BackendContent() {
   const renderContent = useCallback(() => {
     if (activeView.startsWith('marketing-')) {
         const audience = activeView.split('-')[1];
-        return <MarketingPage audience={audience} />;
+        return <MarketingPage audience={audience as any} />;
     }
     switch (activeView) {
       // Dashboard
@@ -256,7 +257,7 @@ function BackendContent() {
                 </SidebarMenuItem>
 
                 <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Revenue & Pricing" isActive={isRevenueActive}><DollarSign /><span>Revenue & Pricing</span></SidebarMenuButton>
+                    <SidebarMenuButton tooltip="Revenue & Pricing" isActive={isRevenueActive}><DollarSign /><span>Revenue & Pricing</span></SidebarMenuSubButton>
                     <SidebarMenuSub>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'pricing-memberships'} onClick={() => navigate('pricing-memberships')}>Membership Pricing</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'pricing-connect'} onClick={() => navigate('pricing-connect')}>Connect Plan Pricing</SidebarMenuSubButton></SidebarMenuSubItem>

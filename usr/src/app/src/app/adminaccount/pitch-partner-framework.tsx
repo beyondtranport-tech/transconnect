@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -146,8 +145,8 @@ function BackendContent() {
 
   const renderContent = useCallback(() => {
     if (activeView.startsWith('marketing-')) {
-        const audience = activeView.split('-')[1] as any;
-        return <MarketingPage audience={audience} />;
+        const audience = activeView.split('-')[1];
+        return <MarketingPage audience={audience as any} />;
     }
     switch (activeView) {
       // Dashboard
@@ -329,4 +328,3 @@ export default function BackendPage() {
     </Suspense>
   );
 }
-
