@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -15,45 +16,49 @@ import {
   SidebarMenuSubButton,
 } from '@/components/ui/sidebar';
 import {
-  LogOut,
-  Loader2,
-  LayoutDashboard,
-  User,
-  Shield,
-  Truck,
-  Package,
-  Building,
-  BarChart3,
-  Network,
-  ShoppingCart,
-  ShieldAlert,
-  Ship,
-  FileText,
-  BrainCircuit,
-  CalendarCheck,
-  Landmark,
-  ShieldCheck,
-  Repeat,
-  FileSignature,
-  Users,
-  Handshake,
-  Briefcase,
-  Bot,
-  Code,
-  Gift,
-  Wrench,
-  Wallet,
-  ListTodo,
-  Store,
-  Lock,
-  Star,
+  Activity,
   Award,
   Banknote,
-  Users2,
-  UserCheck2,
-  DollarSign,
-  Code2,
+  BarChart3,
   BookOpen,
+  Bot,
+  BrainCircuit,
+  Briefcase,
+  Building,
+  CalendarCheck,
+  Code,
+  Code2,
+  DollarSign,
+  FileSignature,
+  FileText,
+  Gift,
+  Handshake,
+  Landmark,
+  LayoutDashboard,
+  ListTodo,
+  Loader2,
+  Lock,
+  LogOut,
+  Mail,
+  MessageSquare,
+  Network,
+  Package,
+  Repeat,
+  Scale,
+  Settings,
+  Shield,
+  ShieldAlert,
+  ShieldCheck,
+  Ship,
+  ShoppingCart,
+  Star,
+  Store,
+  Truck,
+  User,
+  UserCheck2,
+  Users,
+  Wallet,
+  Wrench,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -145,8 +150,8 @@ function BackendContent() {
 
   const renderContent = useCallback(() => {
     if (activeView.startsWith('marketing-')) {
-        const audience = activeView.split('-')[1];
-        return <MarketingPage audience={audience as any} />;
+        const audience = activeView.split('-')[1] as "partners" | "isa" | "transporters" | "suppliers" | "investors" | "developers";
+        return <MarketingPage audience={audience} />;
     }
     switch (activeView) {
       // Dashboard
