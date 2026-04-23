@@ -33,6 +33,7 @@ import { roles as availableRolesList } from '@/lib/roles';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DataTable } from '@/components/ui/data-table';
 import { Checkbox } from '@/components/ui/checkbox';
+import { type ColumnDef } from '@/hooks/use-data-table';
 
 
 const iconMap: { [key: string]: React.ElementType } = {
@@ -514,3 +515,5 @@ export default function ActionPlanSettings() {
         </Card>
     );
 }
+
+    
