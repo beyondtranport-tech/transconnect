@@ -127,10 +127,10 @@ export default function Home() {
         <div className="absolute inset-0 bg-black/60" />
         <div className="relative z-10 px-4 max-w-4xl mx-auto">
           <h1 className="text-4xl md:text-6xl font-bold text-primary-foreground font-headline tracking-tight">
-            Build Your Network, Grow Your Business, Start Earning
+            The Digital Ecosystem for the Transport Industry
           </h1>
            <p className="mt-4 text-lg md:text-xl text-primary-foreground/90 max-w-3xl mx-auto">
-            Join a community of Logistics professionals. Contribute your knowledge, unlock collective savings, and create new revenue streams.
+            A unified platform for commerce, capital, and community. Create your digital branch, access funding, and connect with a network of industry partners.
           </p>
         </div>
       </section>
@@ -153,7 +153,7 @@ export default function Home() {
       <section id="how-it-works" className="py-16 md:py-24 bg-background">
         <div className="container mx-auto px-4">
             <div className="text-center max-w-3xl mx-auto mb-16">
-                <h2 className="text-3xl md:text-4xl font-bold font-headline">A Powerful, Simple Path to Growth</h2>
+                <h2 className="text-3xl md:text-4xl font-bold font-headline">A Clear Path to Growth</h2>
                 <p className="mt-4 text-lg text-muted-foreground">
                     In three simple steps, you can establish your digital presence, open new sales channels, and access the capital you need to expand.
                 </p>
@@ -199,9 +199,9 @@ export default function Home() {
       <section className="py-16 md:py-24 bg-card">
         <div className="container mx-auto px-4">
             <div className="text-center max-w-3xl mx-auto mb-16">
-                <h2 className="text-3xl md:text-4xl font-bold font-headline">What Makes Us Unique: Commerce Meets Capital</h2>
+                <h2 className="text-3xl md:text-4xl font-bold font-headline">Commerce Meets Capital</h2>
                 <p className="mt-4 text-lg text-muted-foreground">
-                    We've broken the biggest constraint in transport: the disconnect between your business performance and your access to funding. Your online shop is more than a sales channel—it's the key to unlocking growth capital.
+                    We address a core industry challenge: the disconnect between business performance and access to funding. Your activity on the platform builds a verifiable track record, strengthening your profile for our network of funders.
                 </p>
             </div>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
@@ -308,7 +308,7 @@ export default function Home() {
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl md:text-4xl font-bold font-headline">Ready to Join?</h2>
           <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-            Become a member today and gain access to a world of opportunities. Benefit from our rewards program, community support, and a full suite of tools to supercharge your business.
+            Become a member to access our rewards program, community support, and a full suite of tools designed to support your business operations.
           </p>
           <Button asChild size="lg" className="mt-8">
             <Link href="/join">Create Your Free Account</Link>
