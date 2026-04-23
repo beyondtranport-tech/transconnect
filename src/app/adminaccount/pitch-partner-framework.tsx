@@ -51,6 +51,7 @@ import {
   ShieldCheck,
   Ship,
   ShoppingCart,
+  Sparkles,
   Star,
   Store,
   Truck,
@@ -59,6 +60,7 @@ import {
   Users,
   Wallet,
   Wrench,
+  Sheet as FinancialSheetIcon,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';

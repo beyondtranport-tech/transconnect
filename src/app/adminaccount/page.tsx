@@ -65,6 +65,15 @@ import {
   Code,
   Gift,
   BookOpen,
+  UserCheck2,
+  Code2,
+  Ship,
+  Network,
+  ShoppingCart,
+  ShieldAlert,
+  Package,
+  BrainCircuit,
+  CalendarCheck,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
