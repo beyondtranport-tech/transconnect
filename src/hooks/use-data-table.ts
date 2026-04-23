@@ -1,10 +1,11 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
 
 export interface ColumnDef<TData> {
   accessorKey?: keyof TData | string;
-  header: React.ReactNode;
+  header?: React.ReactNode;
   cell?: (props: { row: { original: TData } }) => React.ReactNode;
   id?: string;
 }
