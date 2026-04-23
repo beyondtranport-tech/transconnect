@@ -1,3 +1,4 @@
+
 'use client';
 
 import { firebaseConfig } from '@/firebase/config';
@@ -26,11 +27,11 @@ export function initializeFirebase(): FirebaseServices {
 
     let firebaseApp: FirebaseApp;
     
-    const existingApp = getApps().find(app => app.name === CLIENT_APP_NAME);
-
-    if (existingApp) {
-        firebaseApp = existingApp;
-    } else {
+    try {
+        // This will throw if the app is not already initialized
+        firebaseApp = getApp(CLIENT_APP_NAME);
+    } catch (e) {
+        // App not initialized, so initialize it now
         firebaseApp = initializeApp(firebaseConfig, CLIENT_APP_NAME);
     }
 
