@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import {
@@ -65,6 +64,7 @@ import {
   MessageSquare,
   Code,
   Gift,
+  BookOpen,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
