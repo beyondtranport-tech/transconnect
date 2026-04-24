@@ -35,7 +35,7 @@ export default function HomePage() {
   const { user } = useUser();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const handleJoinClick = (event: React.MouseEvent<HTMLAnchorElement>) => {
+  const handleJoinClick = (event: React.MouseEvent) => {
     event.preventDefault();
     if (process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID) {
       gtag.event({
