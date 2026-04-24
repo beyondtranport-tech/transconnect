@@ -524,8 +524,8 @@ export async function POST(req: NextRequest) {
             }
             case 'getPartnersByType': {
                 const { type } = payload;
-                if (!type || !['partner', 'isa', 'investor', 'developer'].includes(type)) {
-                    throw new Error("A valid partner type ('partner', 'isa', 'investor', 'developer') is required.");
+                if (!type || !['partner', 'isa', 'investor', 'developer', 'supplier', 'transporter'].includes(type)) {
+                    throw new Error("A valid partner type ('partner', 'isa', 'investor', 'developer', 'supplier', 'transporter') is required.");
                 }
                 const partnersSnap = await db.collection('partners').where('type', '==', type).get();
                 const data = partnersSnap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
