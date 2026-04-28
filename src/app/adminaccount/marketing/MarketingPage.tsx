@@ -137,10 +137,10 @@ function LogAndCopyDialog({ open, onOpenChange, partners, isLoadingPartners, act
                     <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 py-4">
                         <FormField control={form.control} name="partnerId" render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Log against Partner/ISA</FormLabel>
+                                <FormLabel>Log against {singularAudience}</FormLabel>
                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                                     <FormControl><SelectTrigger disabled={isLoadingPartners}>
-                                        <SelectValue placeholder={isLoadingPartners ? "Loading..." : "Select a partner..."} />
+                                        <SelectValue placeholder={isLoadingPartners ? "Loading..." : `Select a ${singularAudience.toLowerCase()}...`} />
                                     </SelectTrigger></FormControl>
                                     <SelectContent>
                                         {partners.map((p: any) => <SelectItem key={p.id} value={p.id}>{p.firstName} {p.lastName} ({p.companyName || 'N/A'})</SelectItem>)}
@@ -213,13 +213,14 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Not authenticated");
 
-            // For any audience, we log against Strategic Partners or ISAs
-            const [partnerRes, isaRes] = await Promise.all([
-                performAdminAction(token, 'getPartnersByType', { type: 'partner' }),
-                performAdminAction(token, 'getPartnersByType', { type: 'isa' })
-            ]);
-            const combinedPartners = [...(partnerRes.data || []), ...(isaRes.data || [])];
-            setPartners(combinedPartners);
+            // Convert plural audience prop to singular type for API
+            let apiType = audience;
+            if (apiType.endsWith('s')) {
+                apiType = apiType.slice(0, -1);
+            }
+            
+            const result = await performAdminAction(token, 'getPartnersByType', { type: apiType });
+            setPartners(result.data || []);
             
         } catch (e: any) {
             toast({ variant: 'destructive', title: `Could not load partners for logging`, description: e.message });
@@ -228,7 +229,7 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
         }
     };
     fetchPartnersForLogging();
-  }, [toast, Management]);
+  }, [toast, Management, audience]);
 
 
   const handleCopyContent = async () => {
