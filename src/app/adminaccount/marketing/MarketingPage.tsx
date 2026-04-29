@@ -7,7 +7,7 @@ import dynamic from 'next/dynamic';
 import { Loader2, ClipboardCopy } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import CompanyProfile from './content/CompanyProfile';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -71,6 +71,8 @@ const audienceConfig = {
 interface MarketingPageProps {
   audience: keyof typeof audienceConfig;
 }
+
+type ApiPartnerType = 'partner' | 'isa' | 'investor' | 'developer' | 'supplier' | 'transporter';
 
 async function performAdminAction(token: string, action: string, payload: any) {
     const response = await fetch('/api/admin', {
@@ -200,36 +202,41 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
   const [partners, setPartners] = useState<any[]>([]);
   const [isLoadingPartners, setIsLoadingPartners] = useState(true);
 
-  useEffect(() => {
+  const fetchPartnersForLogging = useCallback(async () => {
     if (!Management) {
-        setIsLoadingPartners(false);
-        setPartners([]);
-        return;
+      setIsLoadingPartners(false);
+      setPartners([]);
+      return;
     }
+    
+    setIsLoadingPartners(true);
+    try {
+        const token = await getClientSideAuthToken();
+        if (!token) throw new Error("Not authenticated");
 
-    const fetchPartnersForLogging = async () => {
-        setIsLoadingPartners(true);
-        try {
-            const token = await getClientSideAuthToken();
-            if (!token) throw new Error("Not authenticated");
+        const audienceToApiTypeMap: Record<keyof typeof audienceConfig, ApiPartnerType> = {
+            partners: 'partner',
+            isa: 'isa',
+            suppliers: 'supplier',
+            transporters: 'transporter',
+            investors: 'investor',
+            developers: 'developer',
+        };
+        const apiType = audienceToApiTypeMap[audience];
+        
+        const result = await performAdminAction(token, 'getPartnersByType', { type: apiType });
+        setPartners(result.data || []);
+        
+    } catch (e: any) {
+        toast({ variant: 'destructive', title: `Could not load partners for logging`, description: e.message });
+    } finally {
+        setIsLoadingPartners(false);
+    }
+  }, [audience, Management, toast]);
 
-            // Convert plural audience prop to singular type for API
-            let apiType = audience;
-            if (apiType.endsWith('s')) {
-                apiType = apiType.slice(0, -1);
-            }
-            
-            const result = await performAdminAction(token, 'getPartnersByType', { type: apiType });
-            setPartners(result.data || []);
-            
-        } catch (e: any) {
-            toast({ variant: 'destructive', title: `Could not load partners for logging`, description: e.message });
-        } finally {
-            setIsLoadingPartners(false);
-        }
-    };
+  useEffect(() => {
     fetchPartnersForLogging();
-  }, [toast, Management, audience]);
+  }, [fetchPartnersForLogging]);
 
 
   const handleCopyContent = async () => {
