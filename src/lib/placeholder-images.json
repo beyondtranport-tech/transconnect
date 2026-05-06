@@ -206,7 +206,7 @@
     {
       "id": "equipment-2",
       "description": "Heavy duty chains and binders for securing loads",
-      "imageUrl": "https://images.unsplash.com/photo-1718893180426-c646eed9fa6f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxzZWN1cmluZyUyMGNoYWluc3xlbnwwfHx8fDE3Njg3MzAxOTR8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1718893180426-c646eed9fa6f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxzZWN1cmluZyUyMGNoYWluc3xlbnwwfHx8fDE3Njg3MzAxOTR8MA&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "securing chains",
       "category": "Equipment"
     },
@@ -227,7 +227,7 @@
     {
       "id": "supply-chain-hero",
       "description": "Aerial view of a busy shipping container port",
-      "imageUrl": "https://images.unsplash.com/photo-1578575437130-5278ce68f49a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxzaGlwcGluZyUyMHBvcnR8ZW58MHx8fHwxNzE5MjM0MDI4fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1578575437130-5278ce68f49a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxzaGlwcGluZyUyMHBvcnR8ZW58MHx8fHwxNzE5MjM0MDI4fDA&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "shipping port",
       "category": "General"
     },

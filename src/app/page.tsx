@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { ArrowRight, CheckCircle } from "lucide-react";
+import { ArrowRight, DollarSign, ShoppingBasket, Store, Cpu } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import data from "@/lib/placeholder-images.json";
@@ -24,10 +24,10 @@ const values = [
 ];
 
 const iconComponents: { [key: string]: React.ElementType } = {
-  DollarSign: require('lucide-react').DollarSign,
-  ShoppingBasket: require('lucide-react').ShoppingBasket,
-  Store: require('lucide-react').Store,
-  Cpu: require('lucide-react').Cpu,
+  DollarSign,
+  ShoppingBasket,
+  Store,
+  Cpu,
 };
 
 
@@ -35,7 +35,7 @@ export default function HomePage() {
   const { user } = useUser();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const handleJoinClick = (event: React.MouseEvent) => {
+  const handleJoinClick = (event: React.MouseEvent<HTMLElement>) => {
     event.preventDefault();
     if (process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID) {
       gtag.event({
