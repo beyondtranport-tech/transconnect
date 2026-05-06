@@ -21,6 +21,10 @@ import { CommunicationLogDialog } from './CommunicationLogDialog';
 import { AddCommunicationLogDialog } from './AddCommunicationLogDialog';
 import { PartnerTasksDialog } from './PartnerTasksDialog';
 import { Separator } from '@/components/ui/separator';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import Link from 'next/link';
 
 // API Helper
 async function performAdminAction(token: string, action: string, payload: any) {
@@ -79,6 +83,8 @@ function OnboardWizardDialog({ partner, open, onOpenChange, onComplete }: { part
 
     useEffect(() => {
         if (open) {
+            setStep(1);
+            setInviteLink('');
             getClientSideAuthToken().then(token => {
                 if (token) fetchAdmins(token).then(setAdmins);
             });
@@ -86,6 +92,7 @@ function OnboardWizardDialog({ partner, open, onOpenChange, onComplete }: { part
     }, [open]);
 
     const handleOnboard = async (values: OnboardingFormValues) => {
+        if (!partner) return;
         setIsLoading(true);
         try {
             const token = await getClientSideAuthToken();
@@ -103,7 +110,7 @@ function OnboardWizardDialog({ partner, open, onOpenChange, onComplete }: { part
 
             await performAdminAction(token, 'invitePartner', payload);
 
-            const baseUrl = 'https://studio--ecosystem-hub.us-central1.hosted.app';
+            const baseUrl = window.location.origin;
             setInviteLink(`${baseUrl}/join?email=${encodeURIComponent(partner.email)}&firstName=${encodeURIComponent(partner.firstName)}&lastName=${encodeURIComponent(partner.lastName)}`);
             
             toast({ title: "Invitation Processed", description: "Invite logged and follow-up task created." });
@@ -125,7 +132,7 @@ function OnboardWizardDialog({ partner, open, onOpenChange, onComplete }: { part
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-lg">
                 <DialogHeader>
-                    <DialogTitle>{step === 1 ? `Onboard ${partner.firstName}` : 'Invitation Ready'}</DialogTitle>
+                    <DialogTitle>{step === 1 ? `Onboard ${partner?.firstName || ''}` : 'Invitation Ready'}</DialogTitle>
                     <DialogDescription>
                         {step === 1 
                             ? "Complete the invite process and schedule your next CRM action." 
@@ -281,7 +288,7 @@ function TransporterActionMenu({ onInvite, onEdit, onDelete, partner, onUpdate }
       <CommunicationLogDialog partnerId={partner.id} partnerName={`${partner.firstName} ${partner.lastName}`} />
       <AddCommunicationLogDialog partnerId={partner.id} onLogAdded={onUpdate} />
       <PartnerTasksDialog partner={partner} />
-      <Button variant="ghost" size="icon" onClick={onInvite} title="Invite & Schedule Follow-up">
+      <Button variant="ghost" size="icon" onClick={onInvite} title="Invite & Onboard">
         <Send className="h-4 w-4" />
       </Button>
       <Button variant="ghost" size="icon" onClick={onEdit} title="Edit Transporter">
@@ -370,7 +377,7 @@ export default function TransporterManagement() {
                 onDelete={() => handleOpenDialog('delete', row.original)} 
             />
         ) },
-    ], [forceRefresh]);
+    ], [forceRefresh, handleOpenDialog]);
     
     if (error) {
         return <Card className="bg-destructive/10 border-destructive text-destructive-foreground"><CardHeader><CardTitle>Error</CardTitle></CardHeader><CardContent>{error}</CardContent></Card>
@@ -412,7 +419,7 @@ export default function TransporterManagement() {
                 </CardHeader>
                 <CardContent>
                     {isLoading ? (
-                        <div className="flex justify-center items-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+                        <div className="flex justify-center items-center py-10"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
                     ) : (
                         <DataTable columns={columns} data={partners} />
                     )}
