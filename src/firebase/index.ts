@@ -40,6 +40,16 @@ export function getSdks(firebaseApp: FirebaseApp) {
   };
 }
 
+/**
+ * Utility to get the current user's ID token on the client.
+ */
+export async function getClientSideAuthToken() {
+  const { auth } = initializeFirebase();
+  const user = auth.currentUser;
+  if (!user) return null;
+  return await user.getIdToken();
+}
+
 export * from './provider';
 export * from './client-provider';
 export * from './firestore/use-collection';

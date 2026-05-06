@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useForm } from 'react-hook-form';
@@ -18,9 +17,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
 import { Loader2, User, Save } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useUser } from '@/firebase';
+import { useUser, getClientSideAuthToken } from '@/firebase';
 import { useRouter } from 'next/navigation';
-import { getClientSideAuthToken } from '@/firebase/errors';
 
 
 const profileFormSchema = z.object({
@@ -109,7 +107,7 @@ export default function ProfileContent() {
           </div>
         ) : (
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 max-w-lg">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 max-lg">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -27,7 +26,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Save } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { getClientSideAuthToken } from '@/firebase/errors';
+import { getClientSideAuthToken } from '@/firebase';
 import { usePermissions } from '@/hooks/use-permissions';
 
 const staffFormSchema = z.object({
