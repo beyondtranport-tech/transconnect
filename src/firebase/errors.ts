@@ -1,6 +1,5 @@
 'use client';
-import { getIdToken, type User } from 'firebase/auth';
-import { getInitializedFirebaseServices } from '@/firebase/init';
+import { getAuth, type User } from 'firebase/auth';
 
 type SecurityRuleContext = {
   path: string;
@@ -78,8 +77,9 @@ function buildAuthObject(currentUser: User | null): FirebaseAuthObject | null {
 function buildRequestObject(context: SecurityRuleContext): SecurityRuleRequest {
   let authObject: FirebaseAuthObject | null = null;
   try {
-    const { auth } = getInitializedFirebaseServices();
-    const currentUser = auth.currentUser;
+    // Safely attempt to get the current user.
+    const firebaseAuth = getAuth();
+    const currentUser = firebaseAuth.currentUser;
     if (currentUser) {
       authObject = buildAuthObject(currentUser);
     }
@@ -120,25 +120,4 @@ export class FirestorePermissionError extends Error {
     this.name = 'FirebaseError';
     this.request = requestObject;
   }
-}
-
-
-export async function getClientSideAuthToken(): Promise<string | null> {
-    const { auth } = getInitializedFirebaseServices();
-    if (auth.currentUser) {
-        try {
-            // The `false` means it will return the cached token unless it's expired.
-            // This is safer for avoiding quota issues.
-            return await getIdToken(auth.currentUser, false);
-        } catch (error) {
-            // If getting the token fails, try to force a refresh as a fallback.
-            try {
-                return await getIdToken(auth.currentUser, true);
-            } catch (refreshError) {
-                console.error("Error getting auth token after forced refresh:", refreshError);
-                return null;
-            }
-        }
-    }
-    return null;
 }

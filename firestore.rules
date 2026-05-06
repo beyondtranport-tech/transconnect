@@ -1,155 +1,186 @@
-
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    /**
+     * Transcend Logistics Hub - Security Rules Philosophy
+     * 
+     * Core Philosophy: This ruleset enforces a strict Ownership and Role-Based Access Control (RBAC) model. 
+     * It relies on Authorization Independence, where data required for security checks is either 
+     * present in the document path or denormalized directly onto the document itself.
+     * 
+     * Data Structure:
+     * - Global configuration and public catalogs (Membership Plans, Categories, SaaS Components) are at the root.
+     * - Private user data is nested under /users/{userId}/... for explicit path-based ownership.
+     * - Vendor and Product data are top-level or vendor-nested but rely on denormalized owner IDs.
+     * 
+     * Key Security Decisions:
+     * 1. DBAC (Database-Based Access Control): Administrative privileges are determined by the 
+     *    existence of a document in the '/roles_assigned_admin' collection.
+     * 2. Denormalization: Fields like 'userId' and 'ownerUserId' are strictly enforced during 
+     *    creation to ensure every document is linked to an owner for future authorization.
+     * 3. Structural Segregation: Public catalogs are globally readable, while sensitive financial 
+     *    and membership data are restricted to the specific owner and administrators.
+     * 4. Prototyping Flexibility: Rules do not enforce strict data types or schemas, allowing 
+     *    for rapid field iteration while maintaining ironclad access boundaries.
+     */
+
     // --- Helper Functions ---
-    function isOwner(userId) {
-      return request.auth != null && request.auth.uid == userId;
+
+    /** @description Checks if the request is from an authenticated user. */
+    function isSignedIn() {
+      return request.auth != null;
     }
 
+    /** @description Checks if the user has an entry in the administrative roles collection. */
     function isAdmin() {
-      // It's recommended to use custom claims for security and scalability.
-      // To set a custom claim, use the Firebase Admin SDK to set {'admin': true} on a user's token.
-      let isSuperAdminByEmail = request.auth != null && (request.auth.token.email == 'mkoton100@gmail.com' || request.auth.token.email == 'beyondtransport@gmail.com');
-      let hasAdminClaim = request.auth != null && request.auth.token.admin == true;
-      return isSuperAdminByEmail || hasAdminClaim;
-    }
-    
-    function isCompanyOwner(companyId) {
-      // The ownerId on the company document must match the requesting user's UID.
-      return get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid;
+      return isSignedIn() && exists(/databases/$(database)/documents/roles_assigned_admin/$(request.auth.uid));
     }
 
-    // Public read for products is handled by the /shops/{shopId} rule.
-    // Private write access is handled by the generic company subcollection rule.
+    /** @description Checks if the authenticated user matches a specific UID. */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
 
-    // --- User Profiles ---
-    // A user can read/update their own profile. Admins can read/list all profiles.
+    /** @description Checks if the authenticated user matches a specific UID for an existing document. */
+    function isExistingOwner(userId) {
+      return resource != null && isOwner(userId);
+    }
+
+    // --- Rules for Collections ---
+
+    /**
+     * @description Stores user profile information. Users can manage their own profile.
+     * @path /users/{userId}
+     * @allow (create) if auth.uid matches path ID.
+     * @deny (update) if auth.uid does not match path ID.
+     * @principle Path-based ownership for root user identity.
+     */
     match /users/{userId} {
-      allow read, update: if isOwner(userId) || isAdmin();
-      allow create: if request.auth != null; // Onboarding via API
-      allow list: if isAdmin();
-    }
-    
-    // --- Company Profiles ---
-    match /companies/{companyId} {
-      // Allow creation by any authenticated user via the backend API.
-      allow create: if request.auth != null; 
-      
-      // Allow a user to GET/UPDATE their own company document. Admins have full access.
-      allow get, update: if isAdmin() || isCompanyOwner(companyId);
-      
-      // Allow an admin to LIST all companies. User queries are handled by the secure backend API.
-      allow list: if isAdmin();
+      allow get, list: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId);
+      allow update: if (resource != null && isOwner(userId)) || isAdmin();
+      allow delete: if isAdmin();
 
-      // --- Company Subcollections (Direct Access) ---
-      // The company owner and admins have full access to all subcollections (staff, wallet, etc.).
-      match /{subcollection}/{docId=**} {
-        allow read, write: if isAdmin() || isCompanyOwner(companyId);
+      /**
+       * @description Private subcollections nested under a user for automatic ownership filtering.
+       * @path /users/{userId}/memberships/{id}, /users/{userId}/payments/{id}, etc.
+       */
+      match /memberships/{id} {
+        allow get, list: if isOwner(userId) || isAdmin();
+        allow create: if isOwner(userId) && request.resource.data.userId == userId;
+        allow update: if (isExistingOwner(userId) && request.resource.data.userId == userId) || isAdmin();
+        allow delete: if isAdmin();
+      }
+
+      match /payments/{id} {
+        allow get, list: if isOwner(userId) || isAdmin();
+        allow create: if isOwner(userId) && request.resource.data.userId == userId;
+        allow update: if (isExistingOwner(userId) && request.resource.data.userId == userId) || isAdmin();
+        allow delete: if isAdmin();
+      }
+
+      match /loans/{id} {
+        allow get, list: if isOwner(userId) || isAdmin();
+        allow create: if isOwner(userId) && request.resource.data.userId == userId;
+        allow update: if (isExistingOwner(userId) && request.resource.data.userId == userId) || isAdmin();
+        allow delete: if isAdmin();
+      }
+
+      match /saasSubscriptions/{id} {
+        allow get, list: if isOwner(userId) || isAdmin();
+        allow create: if isOwner(userId) && request.resource.data.userId == userId;
+        allow update: if (isExistingOwner(userId) && request.resource.data.userId == userId) || isAdmin();
+        allow delete: if isAdmin();
+      }
+
+      match /orders/{orderId} {
+        allow get, list: if isOwner(userId) || isAdmin();
+        allow create: if isOwner(userId) && request.resource.data.userId == userId;
+        allow update: if (isExistingOwner(userId) && request.resource.data.userId == userId) || isAdmin();
+        allow delete: if isAdmin();
+
+        match /orderItems/{orderItemId} {
+          allow get, list: if isOwner(userId) || isAdmin();
+          allow create: if isOwner(userId) && request.resource.data.userId == userId;
+          allow update: if (isExistingOwner(userId) && request.resource.data.userId == userId) || isAdmin();
+          allow delete: if isAdmin();
+        }
       }
     }
-    
-    // --- Collection Group Queries for Admin Backend ---
-    match /{path=**}/staff/{staffId} {
-      allow get, list: if isAdmin();
-    }
-    match /{path=**}/walletPayments/{paymentId} {
-      allow get, list: if isAdmin();
-    }
-    match /{path=**}/transactions/{transactionId} {
-      allow get, list: if isAdmin();
-    }
-    match /{path=**}/quotes/{quoteId} {
-      allow get, list: if isAdmin();
-    }
-    match /{path=**}/enquiries/{enquiryId} {
-      allow get, list: if isAdmin();
-    }
-    match /{path=**}/shops/{shopId} {
-      allow get, list: if isAdmin();
-    }
-     match /{path=**}/agreements/{agreementId} {
-      allow get, list: if isAdmin();
-    }
-    match /{path=**}/auditLogs/{logId} {
-      allow get, list: if isAdmin();
+
+    /**
+     * @description Stores administrative role assignments. Existence of UID document grants admin.
+     * @path /roles_assigned_admin/{userId}
+     * @allow (get) if requesting user is an admin.
+     * @deny (create) if requesting user is not an admin.
+     * @principle DBAC (Database-Based Access Control) for global permissions.
+     */
+    match /roles_assigned_admin/{userId} {
+      allow get: if isSignedIn();
+      allow list: if isAdmin();
+      allow create, update, delete: if isAdmin();
     }
 
-    // --- Public & Global Collections ---
-
-    // Publicly readable collection for approved shops and their products.
-    // Writes are handled by admin-only backend functions.
-    match /shops/{shopId}/{path=**} {
+    /**
+     * @description Publicly readable catalog definitions (Plans, Categories, SaaS Components).
+     * @path /membershipPlans/{id}, /mallCategories/{id}, /saasComponents/{id}
+     * @allow (get/list) for any authenticated user.
+     * @deny (write) if not an administrator.
+     * @principle Public consumption with protected administrative management.
+     */
+    match /membershipPlans/{planId} {
       allow get, list: if true;
-      allow write: if isAdmin();
-    }
-    
-    // Anyone can create/update their visitor log. Only admins can read.
-    match /visitors/{visitorId} {
-      allow write: if true;
-      allow read: if isAdmin();
+      allow create, update, delete: if isAdmin();
     }
 
-    // Publicly readable collection for membership plans.
-    // Only the admin can create, update, or delete plans.
-    match /memberships/{membershipId} {
+    match /mallCategories/{categoryId} {
       allow get, list: if true;
-      allow write: if isAdmin();
+      allow create, update, delete: if isAdmin();
     }
-    
-    // Publicly readable collection for platform-wide settings like bank details.
-    match /configuration/{configId} {
+
+    match /saasComponents/{componentId} {
       allow get, list: if true;
-      allow write: if isAdmin();
+      allow create, update, delete: if isAdmin();
     }
 
-    // Any authenticated user can create a contribution. Read access is for admins.
-    match /contributions/{contributionId} {
-      allow create: if request.auth != null;
-      allow read: if isAdmin();
+    /**
+     * @description Vendor profiles. Publicly visible, but only manageable by the owner.
+     * @path /vendors/{vendorId}
+     * @allow (create) if auth.uid matches internal 'userId' field.
+     * @deny (update) if auth.uid does not match existing 'userId'.
+     * @principle Resource-level ownership validation for top-level entities.
+     */
+    match /vendors/{vendorId} {
+      allow get, list: if true;
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update: if (resource != null && resource.data.userId == request.auth.uid) || isAdmin();
+      allow delete: if isAdmin();
+
+      /**
+       * @description Products/Services offered by vendors.
+       * @path /vendors/{vendorId}/productServices/{productId}
+       * @principle Uses denormalized 'ownerUserId' for fast, non-lookup ownership checks.
+       */
+      match /productServices/{productId} {
+        allow get, list: if true;
+        allow create: if isSignedIn() && request.resource.data.ownerUserId == request.auth.uid;
+        allow update: if (resource != null && resource.data.ownerUserId == request.auth.uid) || isAdmin();
+        allow delete: if isAdmin();
+      }
     }
 
-    // Admin-only collections for financial records
-    match /reconciliations/{reconciliationId} {
-        allow read, write: if isAdmin();
-    }
-
-    match /platformTransactions/{transactionId} {
-        allow read, write: if isAdmin();
-    }
-    
-    // Admin-only collection for audit trails.
-    match /auditLogs/{logId} {
-        allow read, write: if isAdmin();
-    }
-
-    // Admin-only collection for managing platform permissions.
-    match /permissions/{path=**} {
-        allow read, write: if isAdmin();
-    }
-
-    // Admin-managed collection for sales leads.
-    match /leads/{leadId=**} {
-      allow read, write: if isAdmin();
-    }
-    
-    // Admin-managed collection for partners.
-    match /partners/{partnerId}/{document=**} {
-        allow read, write: if isAdmin();
-    }
-    
-    // --- Lending Module Collections (Admin Only) ---
-    match /lendingAssets/{assetId} {
-        allow read, write: if isAdmin();
-    }
-    match /lendingClients/{clientId}/{document=**} {
-        allow read, write: if isAdmin();
-    }
-    match /lendingPartners/{partnerId}/{document=**} {
-        allow read, write: if isAdmin();
+    /**
+     * @description System and user activity logs for auditing and analytics.
+     * @path /activityLogs/{activityLogId}
+     * @allow (create) if the user is authenticated.
+     * @deny (get/list) if the user is not an administrator.
+     * @principle Append-only audit trail restricted to admins.
+     */
+    match /activityLogs/{activityLogId} {
+      allow get, list: if isAdmin();
+      allow create: if isSignedIn();
+      allow update, delete: if false;
     }
   }
 }
-    

@@ -1,4 +1,3 @@
-
 export const firebaseConfig = {
   "projectId": "ecosystem-hub",
   "appId": "1:204859518196:web:1e61ab7520aa2386c742a1",
