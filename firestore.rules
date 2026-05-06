@@ -8,41 +8,26 @@ service cloud.firestore {
      * Core Philosophy: This ruleset enforces a strict Ownership and Role-Based Access Control (RBAC) model. 
      * It relies on Authorization Independence, where data required for security checks is either 
      * present in the document path or denormalized directly onto the document itself.
-     * 
-     * Data Structure:
-     * - Global configuration and public catalogs (Membership Plans, Categories, SaaS Components) are at the root.
-     * - Private user data is nested under /users/{userId}/... for explicit path-based ownership.
-     * - Vendor and Product data are top-level or vendor-nested but rely on denormalized owner IDs.
-     * 
-     * Key Security Decisions:
-     * 1. DBAC (Database-Based Access Control): Administrative privileges are determined by the 
-     *    existence of a document in the '/roles_assigned_admin' collection.
-     * 2. Denormalization: Fields like 'userId' and 'ownerUserId' are strictly enforced during 
-     *    creation to ensure every document is linked to an owner for future authorization.
-     * 3. Structural Segregation: Public catalogs are globally readable, while sensitive financial 
-     *    and membership data are restricted to the specific owner and administrators.
-     * 4. Prototyping Flexibility: Rules do not enforce strict data types or schemas, allowing 
-     *    for rapid field iteration while maintaining ironclad access boundaries.
      */
 
     // --- Helper Functions ---
 
-    /** @description Checks if the request is from an authenticated user. */
     function isSignedIn() {
       return request.auth != null;
     }
 
-    /** @description Checks if the user has an entry in the administrative roles collection. */
     function isAdmin() {
-      return isSignedIn() && exists(/databases/$(database)/documents/roles_assigned_admin/$(request.auth.uid));
+      // Check for super admin by email or custom claim
+      let isSuperAdminByEmail = isSignedIn() && (request.auth.token.email == 'mkoton100@gmail.com' || request.auth.token.email == 'beyondtransport@gmail.com');
+      let hasAdminClaim = isSignedIn() && request.auth.token.admin == true;
+      let isAssignedAdmin = isSignedIn() && exists(/databases/$(database)/documents/roles_assigned_admin/$(request.auth.uid));
+      return isSuperAdminByEmail || hasAdminClaim || isAssignedAdmin;
     }
 
-    /** @description Checks if the authenticated user matches a specific UID. */
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    /** @description Checks if the authenticated user matches a specific UID for an existing document. */
     function isExistingOwner(userId) {
       return resource != null && isOwner(userId);
     }
@@ -51,10 +36,6 @@ service cloud.firestore {
 
     /**
      * @description Stores user profile information. Users can manage their own profile.
-     * @path /users/{userId}
-     * @allow (create) if auth.uid matches path ID.
-     * @deny (update) if auth.uid does not match path ID.
-     * @principle Path-based ownership for root user identity.
      */
     match /users/{userId} {
       allow get, list: if isOwner(userId) || isAdmin();
@@ -64,7 +45,6 @@ service cloud.firestore {
 
       /**
        * @description Private subcollections nested under a user for automatic ownership filtering.
-       * @path /users/{userId}/memberships/{id}, /users/{userId}/payments/{id}, etc.
        */
       match /memberships/{id} {
         allow get, list: if isOwner(userId) || isAdmin();
@@ -110,11 +90,7 @@ service cloud.firestore {
     }
 
     /**
-     * @description Stores administrative role assignments. Existence of UID document grants admin.
-     * @path /roles_assigned_admin/{userId}
-     * @allow (get) if requesting user is an admin.
-     * @deny (create) if requesting user is not an admin.
-     * @principle DBAC (Database-Based Access Control) for global permissions.
+     * @description Stores administrative role assignments.
      */
     match /roles_assigned_admin/{userId} {
       allow get: if isSignedIn();
@@ -124,12 +100,8 @@ service cloud.firestore {
 
     /**
      * @description Publicly readable catalog definitions (Plans, Categories, SaaS Components).
-     * @path /membershipPlans/{id}, /mallCategories/{id}, /saasComponents/{id}
-     * @allow (get/list) for any authenticated user.
-     * @deny (write) if not an administrator.
-     * @principle Public consumption with protected administrative management.
      */
-    match /membershipPlans/{planId} {
+    match /memberships/{planId} {
       allow get, list: if true;
       allow create, update, delete: if isAdmin();
     }
@@ -145,11 +117,7 @@ service cloud.firestore {
     }
 
     /**
-     * @description Vendor profiles. Publicly visible, but only manageable by the owner.
-     * @path /vendors/{vendorId}
-     * @allow (create) if auth.uid matches internal 'userId' field.
-     * @deny (update) if auth.uid does not match existing 'userId'.
-     * @principle Resource-level ownership validation for top-level entities.
+     * @description Vendor profiles.
      */
     match /vendors/{vendorId} {
       allow get, list: if true;
@@ -157,25 +125,16 @@ service cloud.firestore {
       allow update: if (resource != null && resource.data.userId == request.auth.uid) || isAdmin();
       allow delete: if isAdmin();
 
-      /**
-       * @description Products/Services offered by vendors.
-       * @path /vendors/{vendorId}/productServices/{productId}
-       * @principle Uses denormalized 'ownerUserId' for fast, non-lookup ownership checks.
-       */
       match /productServices/{productId} {
         allow get, list: if true;
         allow create: if isSignedIn() && request.resource.data.ownerUserId == request.auth.uid;
-        allow update: if (resource != null && resource.data.ownerUserId == request.auth.uid) || isAdmin();
+        allow update: if (resource != null && request.resource.data.ownerUserId == request.auth.uid) || isAdmin();
         allow delete: if isAdmin();
       }
     }
 
     /**
-     * @description System and user activity logs for auditing and analytics.
-     * @path /activityLogs/{activityLogId}
-     * @allow (create) if the user is authenticated.
-     * @deny (get/list) if the user is not an administrator.
-     * @principle Append-only audit trail restricted to admins.
+     * @description System and user activity logs.
      */
     match /activityLogs/{activityLogId} {
       allow get, list: if isAdmin();
