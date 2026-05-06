@@ -1,207 +1,129 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    /**
-     * Transcend Logistics Hub - Security Rules Philosophy
-     * 
-     * Core Philosophy: This ruleset enforces a strict Ownership and Role-Based Access Control (RBAC) model. 
-     * It relies on Authorization Independence, where data required for security checks is either 
-     * present in the document path or denormalized directly onto the document itself.
-     */
-
     // --- Helper Functions ---
-
     function isSignedIn() {
       return request.auth != null;
-    }
-
-    function isAdmin() {
-      // Check for super admin by email or custom claim
-      let isSuperAdminByEmail = isSignedIn() && (request.auth.token.email == 'mkoton100@gmail.com' || request.auth.token.email == 'beyondtransport@gmail.com');
-      let hasAdminClaim = isSignedIn() && request.auth.token.admin == true;
-      let isAssignedAdmin = isSignedIn() && exists(/databases/$(database)/documents/roles_assigned_admin/$(request.auth.uid));
-      return isSuperAdminByEmail || hasAdminClaim || isAssignedAdmin;
     }
 
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    function isExistingOwner(userId) {
-      return resource != null && isOwner(userId);
+    function isAdmin() {
+      let isSuperAdminByEmail = isSignedIn() && (request.auth.token.email == 'mkoton100@gmail.com' || request.auth.token.email == 'beyondtransport@gmail.com');
+      let hasAdminClaim = isSignedIn() && request.auth.token.admin == true;
+      let isAssignedAdmin = isSignedIn() && exists(/databases/$(database)/documents/roles_assigned_admin/$(request.auth.uid));
+      return isSuperAdminByEmail || hasAdminClaim || isAssignedAdmin;
+    }
+    
+    function isCompanyOwner(companyId) {
+        let companyDoc = get(/databases/$(database)/documents/companies/$(companyId)).data;
+        return companyDoc.ownerId == request.auth.uid || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId;
     }
 
-    // --- Rules for Collections ---
-
-    /**
-     * @description Stores user profile information. Users can manage their own profile.
-     */
+    // --- User Profiles ---
     match /users/{userId} {
-      allow get, list: if isOwner(userId) || isAdmin();
-      allow create: if isSignedIn();
-      allow update: if (resource != null && isOwner(userId)) || isAdmin();
-      allow delete: if isAdmin();
-
-      /**
-       * @description Private subcollections nested under a user for automatic ownership filtering.
-       */
-      match /memberships/{id} {
-        allow get, list: if isOwner(userId) || isAdmin();
-        allow create: if isOwner(userId);
-        allow update: if (isExistingOwner(userId)) || isAdmin();
-        allow delete: if isAdmin();
-      }
-
-      match /payments/{id} {
-        allow get, list: if isOwner(userId) || isAdmin();
-        allow create: if isOwner(userId);
-        allow update: if (isExistingOwner(userId)) || isAdmin();
-        allow delete: if isAdmin();
-      }
-
-      match /loans/{id} {
-        allow get, list: if isOwner(userId) || isAdmin();
-        allow create: if isOwner(userId);
-        allow update: if (isExistingOwner(userId)) || isAdmin();
-        allow delete: if isAdmin();
-      }
-
-      match /saasSubscriptions/{id} {
-        allow get, list: if isOwner(userId) || isAdmin();
-        allow create: if isOwner(userId);
-        allow update: if (isExistingOwner(userId)) || isAdmin();
-        allow delete: if isAdmin();
-      }
-
-      match /orders/{orderId} {
-        allow get, list: if isOwner(userId) || isAdmin();
-        allow create: if isOwner(userId);
-        allow update: if (isExistingOwner(userId)) || isAdmin();
-        allow delete: if isAdmin();
-
-        match /orderItems/{orderItemId} {
-          allow get, list: if isOwner(userId) || isAdmin();
-          allow create: if isOwner(userId);
-          allow update: if (isExistingOwner(userId)) || isAdmin();
-          allow delete: if isAdmin();
-        }
-      }
-      
-       match /supportMessages/{msgId} {
-        allow get, list: if isOwner(userId) || isAdmin();
-        allow create: if isOwner(userId) || isAdmin();
-      }
+      allow read, update: if isOwner(userId) || isAdmin();
+      allow create: if isSignedIn(); 
+      allow list: if isAdmin();
       
       match /tasks/{taskId} {
         allow read, write: if isOwner(userId) || isAdmin();
       }
     }
-
-    /**
-     * @description Stores administrative role assignments.
-     */
-    match /roles_assigned_admin/{userId} {
-      allow get: if isSignedIn();
+    
+    // --- Company Profiles ---
+    match /companies/{companyId} {
+      allow create: if isSignedIn(); 
+      allow get, update: if isAdmin() || isCompanyOwner(companyId);
       allow list: if isAdmin();
-      allow create, update, delete: if isAdmin();
-    }
 
-    /**
-     * @description Publicly readable catalog definitions.
-     */
-    match /memberships/{id=**} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-
-    match /mallCategories/{id=**} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-
-    match /saasComponents/{id=**} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-    
-    match /configuration/{id=**} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-    
-    match /rewards/{id=**} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-
-    /**
-     * @description Vendor profiles.
-     */
-    match /vendors/{vendorId} {
-      allow get, list: if true;
-      allow create: if isSignedIn();
-      allow update: if (resource != null && resource.data.userId == request.auth.uid) || isAdmin();
-      allow delete: if isAdmin();
-
-      match /productServices/{productId} {
-        allow get, list: if true;
-        allow create: if isSignedIn();
-        allow update: if (resource != null && request.auth.uid == resource.data.ownerUserId) || isAdmin();
-        allow delete: if isAdmin();
+      match /{subcollection}/{docId=**} {
+        allow read, write: if isAdmin() || isCompanyOwner(companyId);
       }
     }
     
-    /**
-     * @description Member companies and their private subcollections.
-     */
-    match /companies/{companyId} {
-       allow get, update: if isAdmin() || (isSignedIn() && (resource == null || resource.data.ownerId == request.auth.uid));
-       allow create: if isSignedIn();
-       allow list: if isAdmin();
-
-       match /{subcollection}/{docId=**} {
-         allow read, write: if isAdmin() || (isSignedIn() && get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid);
-       }
+    // --- Collection Group Queries for Admin Backend ---
+    match /{path=**}/staff/{staffId} {
+      allow get, list: if isAdmin();
     }
-    
+    match /{path=**}/walletPayments/{paymentId} {
+      allow get, list: if isAdmin();
+    }
+    match /{path=**}/transactions/{transactionId} {
+      allow get, list: if isAdmin();
+    }
+    match /{path=**}/quotes/{quoteId} {
+      allow get, list: if isAdmin();
+    }
+    match /{path=**}/enquiries/{enquiryId} {
+      allow get, list: if isAdmin();
+    }
+    match /{path=**}/shops/{shopId} {
+      allow get, list: if isAdmin();
+    }
+     match /{path=**}/agreements/{agreementId} {
+      allow get, list: if isAdmin();
+    }
+    match /{path=**}/auditLogs/{logId} {
+      allow get, list: if isAdmin();
+    }
+
+    // --- Public & Global Collections ---
+
     match /shops/{shopId}/{path=**} {
       allow get, list: if true;
       allow write: if isAdmin();
     }
+    
+    match /visitors/{visitorId} {
+      allow write: if true;
+      allow read: if isAdmin();
+    }
 
-    /**
-     * @description System and user activity logs.
-     */
-    match /activityLogs/{activityLogId} {
-      allow get, list: if isAdmin();
+    match /memberships/{membershipId} {
+      allow get, list: if true;
+      allow write: if isAdmin();
+    }
+    
+    match /configuration/{configId} {
+      allow get, list: if true;
+      allow write: if isAdmin();
+    }
+
+    match /contributions/{contributionId} {
       allow create: if isSignedIn();
-      allow update, delete: if false;
+      allow read: if isAdmin();
+    }
+
+    match /reconciliations/{reconciliationId} {
+        allow read, write: if isAdmin();
+    }
+
+    match /platformTransactions/{transactionId} {
+        allow read, write: if isAdmin();
     }
     
     match /auditLogs/{logId} {
         allow read, write: if isAdmin();
     }
-    
-    match /contributions/{id=**} {
-      allow create: if isSignedIn();
-      allow read: if isAdmin();
-    }
-    
-    match /reconciliations/{id=**} {
-      allow read, write: if isAdmin();
-    }
-    
-    match /platformTransactions/{id=**} {
-      allow read, write: if isAdmin();
-    }
-    
+
     match /permissions/{path=**} {
         allow read, write: if isAdmin();
     }
 
     match /leads/{leadId=**} {
       allow read, write: if isAdmin();
+    }
+
+    match /partners/{partnerId} {
+      allow read, write: if isAdmin();
+      match /{allPaths=**} {
+        allow read, write: if isAdmin();
+      }
     }
     
     match /lendingAssets/{assetId} {
@@ -212,11 +134,6 @@ service cloud.firestore {
     }
     match /lendingPartners/{partnerId}/{document=**} {
         allow read, write: if isAdmin();
-    }
-    
-    match /visitors/{visitorId} {
-      allow write: if true;
-      allow read: if isAdmin();
     }
   }
 }

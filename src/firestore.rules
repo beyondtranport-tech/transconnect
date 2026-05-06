@@ -118,6 +118,13 @@ service cloud.firestore {
     match /leads/{leadId=**} {
       allow read, write: if isAdmin();
     }
+
+    match /partners/{partnerId} {
+      allow read, write: if isAdmin();
+      match /{allPaths=**} {
+        allow read, write: if isAdmin();
+      }
+    }
     
     match /lendingAssets/{assetId} {
         allow read, write: if isAdmin();
