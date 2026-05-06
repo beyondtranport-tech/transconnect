@@ -153,7 +153,7 @@ function PartnerDialog({ open, onOpenChange, partner, onSave }: { open: boolean;
 function PartnerActionMenu({ onInvite, onEdit, onDelete, partner, onUpdate }: { onInvite: () => void; onEdit: () => void; onDelete: () => void; partner: any; onUpdate: () => void; }) {
   return (
     <div className="flex justify-end items-center gap-1">
-       <CommunicationLogDialog partnerId={partner.id} partnerName={`${partner.firstName} ${partner.lastName}`} />
+       <CommunicationLogDialog partnerId={partner.id} partnerName={partner.name || `${partner.firstName} ${partner.lastName}`} />
        <AddCommunicationLogDialog partnerId={partner.id} onLogAdded={onUpdate} />
        <PartnerTasksDialog partner={partner} />
       <Button variant="ghost" size="icon" onClick={onInvite} title="Invite Partner">

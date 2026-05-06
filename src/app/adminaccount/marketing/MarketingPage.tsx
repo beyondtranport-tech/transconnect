@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -213,12 +214,12 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
         const token = await getClientSideAuthToken();
         if (!token) throw new Error("Not authenticated");
 
-        let apiType: ApiPartnerType = 'partner';
-        if (audience === 'isa') apiType = 'isa';
-        else if (audience === 'investors') apiType = 'investor';
-        else if (audience === 'developers') apiType = 'developer';
-        else if (audience === 'suppliers') apiType = 'supplier';
-        else if (audience === 'transporters') apiType = 'transporter';
+        let apiType: string = audience;
+        if (apiType === 'investors') apiType = 'investor';
+        else if (apiType === 'developers') apiType = 'developer';
+        else if (apiType === 'suppliers') apiType = 'supplier';
+        else if (apiType === 'transporters') apiType = 'transporter';
+        else if (apiType === 'partners') apiType = 'partner';
         
         const result = await performAdminAction(token, 'getPartnersByType', { type: apiType });
         setPartners(result.data || []);
