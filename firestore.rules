@@ -39,7 +39,7 @@ service cloud.firestore {
      */
     match /users/{userId} {
       allow get, list: if isOwner(userId) || isAdmin();
-      allow create: if isOwner(userId);
+      allow create: if isSignedIn();
       allow update: if (resource != null && isOwner(userId)) || isAdmin();
       allow delete: if isAdmin();
 
@@ -48,44 +48,53 @@ service cloud.firestore {
        */
       match /memberships/{id} {
         allow get, list: if isOwner(userId) || isAdmin();
-        allow create: if isOwner(userId) && request.resource.data.userId == userId;
-        allow update: if (isExistingOwner(userId) && request.resource.data.userId == userId) || isAdmin();
+        allow create: if isOwner(userId);
+        allow update: if (isExistingOwner(userId)) || isAdmin();
         allow delete: if isAdmin();
       }
 
       match /payments/{id} {
         allow get, list: if isOwner(userId) || isAdmin();
-        allow create: if isOwner(userId) && request.resource.data.userId == userId;
-        allow update: if (isExistingOwner(userId) && request.resource.data.userId == userId) || isAdmin();
+        allow create: if isOwner(userId);
+        allow update: if (isExistingOwner(userId)) || isAdmin();
         allow delete: if isAdmin();
       }
 
       match /loans/{id} {
         allow get, list: if isOwner(userId) || isAdmin();
-        allow create: if isOwner(userId) && request.resource.data.userId == userId;
-        allow update: if (isExistingOwner(userId) && request.resource.data.userId == userId) || isAdmin();
+        allow create: if isOwner(userId);
+        allow update: if (isExistingOwner(userId)) || isAdmin();
         allow delete: if isAdmin();
       }
 
       match /saasSubscriptions/{id} {
         allow get, list: if isOwner(userId) || isAdmin();
-        allow create: if isOwner(userId) && request.resource.data.userId == userId;
-        allow update: if (isExistingOwner(userId) && request.resource.data.userId == userId) || isAdmin();
+        allow create: if isOwner(userId);
+        allow update: if (isExistingOwner(userId)) || isAdmin();
         allow delete: if isAdmin();
       }
 
       match /orders/{orderId} {
         allow get, list: if isOwner(userId) || isAdmin();
-        allow create: if isOwner(userId) && request.resource.data.userId == userId;
-        allow update: if (isExistingOwner(userId) && request.resource.data.userId == userId) || isAdmin();
+        allow create: if isOwner(userId);
+        allow update: if (isExistingOwner(userId)) || isAdmin();
         allow delete: if isAdmin();
 
         match /orderItems/{orderItemId} {
           allow get, list: if isOwner(userId) || isAdmin();
-          allow create: if isOwner(userId) && request.resource.data.userId == userId;
-          allow update: if (isExistingOwner(userId) && request.resource.data.userId == userId) || isAdmin();
+          allow create: if isOwner(userId);
+          allow update: if (isExistingOwner(userId)) || isAdmin();
           allow delete: if isAdmin();
         }
+      }
+      
+       match /supportMessages/{msgId} {
+        allow get, list: if isOwner(userId) || isAdmin();
+        allow create: if isOwner(userId) || isAdmin();
+      }
+      
+      match /tasks/{taskId} {
+        allow read, write: if isOwner(userId) || isAdmin();
       }
     }
 
@@ -99,21 +108,31 @@ service cloud.firestore {
     }
 
     /**
-     * @description Publicly readable catalog definitions (Plans, Categories, SaaS Components).
+     * @description Publicly readable catalog definitions.
      */
-    match /memberships/{planId} {
-      allow get, list: if true;
-      allow create, update, delete: if isAdmin();
+    match /memberships/{id=**} {
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
-    match /mallCategories/{categoryId} {
-      allow get, list: if true;
-      allow create, update, delete: if isAdmin();
+    match /mallCategories/{id=**} {
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
-    match /saasComponents/{componentId} {
-      allow get, list: if true;
-      allow create, update, delete: if isAdmin();
+    match /saasComponents/{id=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    match /configuration/{id=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    match /rewards/{id=**} {
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
     /**
@@ -121,16 +140,34 @@ service cloud.firestore {
      */
     match /vendors/{vendorId} {
       allow get, list: if true;
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn();
       allow update: if (resource != null && resource.data.userId == request.auth.uid) || isAdmin();
       allow delete: if isAdmin();
 
       match /productServices/{productId} {
         allow get, list: if true;
-        allow create: if isSignedIn() && request.resource.data.ownerUserId == request.auth.uid;
-        allow update: if (resource != null && request.resource.data.ownerUserId == request.auth.uid) || isAdmin();
+        allow create: if isSignedIn();
+        allow update: if (resource != null && request.auth.uid == resource.data.ownerUserId) || isAdmin();
         allow delete: if isAdmin();
       }
+    }
+    
+    /**
+     * @description Member companies and their private subcollections.
+     */
+    match /companies/{companyId} {
+       allow get, update: if isAdmin() || (isSignedIn() && (resource == null || resource.data.ownerId == request.auth.uid));
+       allow create: if isSignedIn();
+       allow list: if isAdmin();
+
+       match /{subcollection}/{docId=**} {
+         allow read, write: if isAdmin() || (isSignedIn() && get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid);
+       }
+    }
+    
+    match /shops/{shopId}/{path=**} {
+      allow get, list: if true;
+      allow write: if isAdmin();
     }
 
     /**
@@ -140,6 +177,46 @@ service cloud.firestore {
       allow get, list: if isAdmin();
       allow create: if isSignedIn();
       allow update, delete: if false;
+    }
+    
+    match /auditLogs/{logId} {
+        allow read, write: if isAdmin();
+    }
+    
+    match /contributions/{id=**} {
+      allow create: if isSignedIn();
+      allow read: if isAdmin();
+    }
+    
+    match /reconciliations/{id=**} {
+      allow read, write: if isAdmin();
+    }
+    
+    match /platformTransactions/{id=**} {
+      allow read, write: if isAdmin();
+    }
+    
+    match /permissions/{path=**} {
+        allow read, write: if isAdmin();
+    }
+
+    match /leads/{leadId=**} {
+      allow read, write: if isAdmin();
+    }
+    
+    match /lendingAssets/{assetId} {
+        allow read, write: if isAdmin();
+    }
+    match /lendingClients/{clientId}/{document=**} {
+        allow read, write: if isAdmin();
+    }
+    match /lendingPartners/{partnerId}/{document=**} {
+        allow read, write: if isAdmin();
+    }
+    
+    match /visitors/{visitorId} {
+      allow write: if true;
+      allow read: if isAdmin();
     }
   }
 }
