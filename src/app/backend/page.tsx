@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -18,28 +17,10 @@ import {
 import {
   LogOut,
   Loader2,
-  TrendingUp,
-  Map,
-  Sheet as FinancialSheetIcon,
-  Presentation,
   User,
   LayoutDashboard,
-  Mail,
-  Calculator,
-  Target,
-  Info,
-  Bot,
-  Database,
-  ImageIcon,
-  Briefcase,
-  Scale,
-  Handshake,
-  DollarSign,
-  Sparkles,
   Settings,
   Users,
-  Mic,
-  LineChart,
   Shield,
   Activity,
   Wrench,
@@ -50,19 +31,14 @@ import {
   Star,
   Award,
   Banknote,
-  FileText,
-  Landmark,
+  Handshake,
+  DollarSign,
+  BookOpen,
+  UserCheck2,
   Truck,
-  ShieldCheck,
-  Repeat,
-  FileSignature,
-  Building,
-  FileSearch,
-  UserPlus,
-  Filter,
-  ClipboardList,
+  ShoppingCart,
+  Scale,
   MessageSquare,
-  Code,
   Gift,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -73,50 +49,42 @@ import Link from 'next/link';
 
 import { useUser, useAuth } from '@/firebase';
 import { signOut } from 'firebase/auth';
-import dynamic from 'next/dynamic';
 import React from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
-// --- Dynamic Imports for Business Components ---
-
-// Operations
-const AdminDashboardContent = dynamic(() => import('@/app/backend/dashboard-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const MemberWallet = dynamic(() => import('@/app/backend/wallet/[memberId]/member-wallet'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const WalletTransactionsList = dynamic(() => import('@/app/backend/wallet-transactions-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const ShopsList = dynamic(() => import('@/app/backend/shops-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const ReconciliationPage = dynamic(() => import('@/app/backend/reconciliation/page'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const ContributionsList = dynamic(() => import('@/app/backend/contributions-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const ActivityFeed = dynamic(() => import('@/app/backend/activity-feed'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const MembersList = dynamic(() => import('@/app/backend/members-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const CommunicationsContent = dynamic(() => import('@/app/backend/communications-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const SupportChatInbox = dynamic(() => import('@/app/backend/support-chat-inbox'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const UsersList = dynamic(() => import('@/app/backend/users-list'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const CommercialNegotiations = dynamic(() => import('@/app/backend/commercial-negotiations'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-
-// Platform Settings
-const PermissionsContent = dynamic(() => import('@/app/backend/permissions-content'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const PricingManagement = dynamic(() => import('@/app/backend/revenue/pricing-management'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const TechPricing = dynamic(() => import('@/app/backend/revenue/tech-pricing'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const PlatformTasks = dynamic(() => import('@/app/backend/platform-tasks'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const PlatformSettingsContent = dynamic(() => import('@/app/backend/platform-settings'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const MallCommissions = dynamic(() => import('@/app/backend/revenue/mall-commissions'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const ConnectPlanPricing = dynamic(() => import('@/app/backend/revenue/connect-plan-pricing'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const MarketplaceFees = dynamic(() => import('@/app/backend/revenue/marketplace-fees'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const SalesIncentives = dynamic(() => import('@/app/backend/revenue/sales-incentives'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const ActionPlanSettings = dynamic(() => import('@/app/backend/loyalty-settings'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const TierBenefits = dynamic(() => import('@/app/backend/tier-benefits'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const ISAPitchSettings = dynamic(() => import('@/app/backend/revenue/isa-pitch-settings'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const RewardsManagement = dynamic(() => import('@/app/backend/rewards-management'), { loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-
+// Static Imports for reliability in prototype environment
+import AdminDashboardContent from '@/app/backend/dashboard-content';
+import MemberWallet from '@/app/backend/wallet/[memberId]/member-wallet';
+import WalletTransactionsList from '@/app/backend/wallet-transactions-list';
+import ShopsList from '@/app/backend/shops-list';
+import ReconciliationPage from '@/app/backend/reconciliation/page';
+import ContributionsList from '@/app/backend/contributions-list';
+import ActivityFeed from '@/app/backend/activity-feed';
+import MembersList from '@/app/backend/members-list';
+import CommunicationsContent from '@/app/backend/communications-content';
+import SupportChatInbox from '@/app/backend/support-chat-inbox';
+import UsersList from '@/app/backend/users-list';
+import CommercialNegotiations from '@/app/backend/commercial-negotiations';
+import MarketingPage from '@/app/adminaccount/marketing/MarketingPage';
+import PermissionsContent from '@/app/backend/permissions-content';
+import PricingManagement from '@/app/backend/revenue/pricing-management';
+import ConnectPlanPricing from '@/app/backend/revenue/connect-plan-pricing';
+import TechPricing from '@/app/backend/revenue/tech-pricing';
+import MarketplaceFees from '@/app/backend/revenue/marketplace-fees';
+import MallCommissions from '@/app/backend/revenue/mall-commissions';
+import ISAPitchSettings from '@/app/backend/revenue/isa-pitch-settings';
+import SalesIncentives from '@/app/backend/revenue/sales-incentives';
+import PlatformTasks from '@/app/backend/platform-tasks';
+import PlatformSettingsContent from '@/app/backend/platform-settings';
+import ActionPlanSettings from '@/app/backend/loyalty-settings';
+import TierBenefits from '@/app/backend/tier-benefits';
+import RewardsManagement from '@/app/backend/rewards-management';
 
 function AdminAuthGuard({ children }: { children: React.ReactNode }) {
     const { user, isUserLoading } = useUser();
     const router = useRouter();
 
     useEffect(() => {
-        if (isUserLoading) {
-            return;
-        }
+        if (isUserLoading) return;
 
         if (!user) {
             router.replace('/signin?redirect=/backend');
@@ -157,12 +125,13 @@ function BackendContent() {
   };
 
   const renderContent = useCallback(() => {
+    if (activeView.startsWith('marketing-')) {
+        const audience = activeView.split('-')[1] as "partners" | "isa" | "transporters" | "suppliers" | "investors" | "developers";
+        return <MarketingPage audience={audience} />;
+    }
     switch (activeView) {
-      // Dashboard
       case 'dashboard': return <AdminDashboardContent />;
       case 'commercial-negotiations': return <CommercialNegotiations />;
-      
-      // Operations
       case 'members': return <MembersList />;
       case 'users': return <UsersList />;
       case 'wallet': return memberId ? <MemberWallet memberId={memberId} /> : <WalletTransactionsList />;
@@ -173,8 +142,6 @@ function BackendContent() {
       case 'activity': return <ActivityFeed />;
       case 'communications': return <CommunicationsContent />;
       case 'support-inbox': return <SupportChatInbox />;
-      
-      // Platform Settings
       case 'permissions': return <PermissionsContent />;
       case 'action-plan': return <ActionPlanSettings />;
       case 'loyalty-plan': return <TierBenefits />;
@@ -188,7 +155,6 @@ function BackendContent() {
       case 'incentives-sales': return <SalesIncentives />;
       case 'tasks': return <PlatformTasks />;
       case 'settings-bank': return <PlatformSettingsContent />;
-
       default: return <AdminDashboardContent />;
     }
   }, [activeView, memberId]);
@@ -216,6 +182,7 @@ function BackendContent() {
   const isPlatformSettingsActive = [
     'permissions', 'action-plan', 'loyalty-plan', 'rewards-plan', 'tasks', 'settings-bank'
   ].includes(activeView);
+  const isMarketingActive = activeView.startsWith('marketing-');
 
   return (
     <AdminAuthGuard>
@@ -250,6 +217,18 @@ function BackendContent() {
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'reconciliation'} onClick={() => navigate('reconciliation')}><Scale />Bank Reconciliation</SidebarMenuSubButton></SidebarMenuSubItem>
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'commercial-negotiations'} onClick={() => navigate('commercial-negotiations')}><Handshake />Commercials</SidebarMenuSubButton></SidebarMenuSubItem>
                   </SidebarMenuSub>
+                </SidebarMenuItem>
+
+                <SidebarMenuItem>
+                    <SidebarMenuButton tooltip="Marketing" isActive={isMarketingActive}><BookOpen /><span>Marketing Library</span></SidebarMenuButton>
+                    <SidebarMenuSub>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-partners'} onClick={() => navigate('marketing-partners')}><Handshake/>Partners</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-isa'} onClick={() => navigate('marketing-isa')}><UserCheck2/>ISA Agents</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-suppliers'} onClick={() => navigate('marketing-suppliers')}><Building/>Suppliers</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-transporters'} onClick={() => navigate('marketing-transporters')}><Truck/>Transporters</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-investors'} onClick={() => navigate('marketing-investors')}><DollarSign/>Investors</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-developers'} onClick={() => navigate('marketing-developers')}><Code2/>Developers</SidebarMenuSubButton></SidebarMenuSubItem>
+                    </SidebarMenuSub>
                 </SidebarMenuItem>
 
                 <SidebarMenuItem>
@@ -306,9 +285,7 @@ function BackendContent() {
         </Sidebar>
         <SidebarInset>
             <div className="p-6">
-                <Suspense fallback={<Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" />}>
                 {renderContent()}
-                </Suspense>
             </div>
         </SidebarInset>
       </SidebarProvider>
