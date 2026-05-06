@@ -1,5 +1,3 @@
-
-
 'use server';
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -98,12 +96,13 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data });
             }
              case 'logCommunication': {
-                const { partnerId, type, subject, notes } = payload;
+                const { partnerId, type, subject, notes, followUpTask } = payload;
                 if (!partnerId || !type || !subject) {
                     throw new Error("Missing partnerId, type, or subject for logging communication.");
                 }
+                const batch = db.batch();
                 const logRef = db.collection(`partners/${partnerId}/communications`).doc();
-                await logRef.set({
+                batch.set(logRef, {
                     id: logRef.id,
                     type,
                     subject,
@@ -111,6 +110,23 @@ export async function POST(req: NextRequest) {
                     timestamp: FieldValue.serverTimestamp(),
                     loggedBy: requestorUid,
                 });
+                
+                if (followUpTask && followUpTask.dueDate) {
+                    const taskRef = db.collection(`partners/${partnerId}/tasks`).doc();
+                    batch.set(taskRef, {
+                        id: taskRef.id,
+                        title: followUpTask.title || `Follow up: ${subject}`,
+                        description: followUpTask.description || '',
+                        dueDate: Timestamp.fromDate(new Date(followUpTask.dueDate)),
+                        status: 'pending',
+                        assigneeId: followUpTask.assigneeId || requestorUid,
+                        relatedToName: followUpTask.relatedToName || '',
+                        createdAt: FieldValue.serverTimestamp(),
+                        updatedAt: FieldValue.serverTimestamp(),
+                    });
+                }
+                
+                await batch.commit();
                 return NextResponse.json({ success: true, message: 'Communication logged.' });
             }
             case 'updateFacilityStatus': {
@@ -736,7 +752,7 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, message: `Counter-offer of ${newPercentage}% submitted.` });
             }
             case 'invitePartner': {
-                const { partnerId } = payload;
+                const { partnerId, followUpTask } = payload;
                 if (!partnerId) throw new Error("partnerId is required.");
 
                 const partnerDocRef = db.collection('partners').doc(partnerId);
@@ -764,6 +780,21 @@ export async function POST(req: NextRequest) {
                     timestamp: FieldValue.serverTimestamp(),
                     loggedBy: requestorUid,
                 });
+                
+                if (followUpTask && followUpTask.dueDate) {
+                    const taskRef = db.collection(`partners/${partnerId}/tasks`).doc();
+                    batch.set(taskRef, {
+                        id: taskRef.id,
+                        title: followUpTask.title || 'Follow up on invitation',
+                        description: followUpTask.description || '',
+                        dueDate: Timestamp.fromDate(new Date(followUpTask.dueDate)),
+                        status: 'pending',
+                        assigneeId: followUpTask.assigneeId || requestorUid,
+                        relatedToName: partnerData.companyName || `${partnerData.firstName} ${partnerData.lastName}`,
+                        createdAt: FieldValue.serverTimestamp(),
+                        updatedAt: FieldValue.serverTimestamp(),
+                    });
+                }
                 
                 await batch.commit();
 

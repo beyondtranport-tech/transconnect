@@ -1,10 +1,9 @@
-
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import dynamic from 'next/dynamic';
-import { Loader2, ClipboardCopy } from 'lucide-react';
+import { Loader2, ClipboardCopy, Calendar as CalendarIcon, UserPlus } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
@@ -29,7 +28,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { getClientSideAuthToken } from '@/firebase';
+import { getClientSideAuthToken, useUser } from '@/firebase';
+import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 
 // Content components using absolute paths
 const CompanyProfile = dynamic(() => import('@/app/adminaccount/marketing/content/CompanyProfile'), { loading: () => <Loader2 className="animate-spin" /> });
@@ -91,16 +92,41 @@ const logSchema = z.object({
   partnerId: z.string().min(1, "Please select a partner."),
   communicationType: z.string().min(1, "Please select a type."),
   notes: z.string().optional(),
+  createFollowUp: z.boolean().default(false),
+  followUpDate: z.string().optional(),
+  assigneeId: z.string().optional(),
 });
 
 type LogFormValues = z.infer<typeof logSchema>;
 
+async function fetchAdmins(token: string) {
+    const response = await fetch('/api/admin', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'listAllUsers' }),
+    });
+    const result = await response.json();
+    return result.success ? result.data : [];
+}
+
 function LogAndCopyDialog({ open, onOpenChange, partners, isLoadingPartners, activeTabLabel, onLogAndCopy, audienceTitle }: any) {
+    const { user } = useUser();
+    const [admins, setAdmins] = useState<any[]>([]);
     const form = useForm<LogFormValues>({
         resolver: zodResolver(logSchema),
+        defaultValues: { createFollowUp: false, assigneeId: user?.uid }
     });
 
     const [isLogging, setIsLogging] = useState(false);
+    const createFollowUp = form.watch('createFollowUp');
+
+    useEffect(() => {
+        if (open) {
+            getClientSideAuthToken().then(token => {
+                if (token) fetchAdmins(token).then(setAdmins);
+            });
+        }
+    }, [open]);
 
     const singularAudience = useMemo(() => {
         if (!audienceTitle) return 'Partner';
@@ -115,9 +141,17 @@ function LogAndCopyDialog({ open, onOpenChange, partners, isLoadingPartners, act
     const handleSubmit = async (values: LogFormValues) => {
         setIsLogging(true);
         try {
+            const followUpTask = values.createFollowUp && values.followUpDate ? {
+                dueDate: values.followUpDate,
+                assigneeId: values.assigneeId || user?.uid,
+                title: `Follow up: ${activeTabLabel}`,
+                description: `Automatically created after sharing ${activeTabLabel} content.`
+            } : undefined;
+
             await onLogAndCopy({
                 ...values,
                 subject: activeTabLabel,
+                followUpTask
             });
         } catch (e) {
             // Error is handled by the parent component's toast
@@ -128,18 +162,18 @@ function LogAndCopyDialog({ open, onOpenChange, partners, isLoadingPartners, act
     
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent>
+            <DialogContent className="sm:max-w-lg">
                 <DialogHeader>
-                    <DialogTitle>Log and Copy Content</DialogTitle>
+                    <DialogTitle>Log & Copy Strategy Content</DialogTitle>
                     <DialogDescription>
-                        Select a partner to log this communication against before copying the content.
+                        Select a {singularAudience.toLowerCase()} to log this outreach and optionally set a follow-up date.
                     </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 py-4">
+                    <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 py-4 max-h-[70vh] overflow-y-auto pr-2">
                         <FormField control={form.control} name="partnerId" render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Log against {singularAudience}</FormLabel>
+                                <FormLabel>Target {singularAudience}</FormLabel>
                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                                     <FormControl><SelectTrigger disabled={isLoadingPartners}>
                                         <SelectValue placeholder={isLoadingPartners ? "Loading..." : `Select a ${singularAudience.toLowerCase()}...`} />
@@ -153,7 +187,7 @@ function LogAndCopyDialog({ open, onOpenChange, partners, isLoadingPartners, act
                         )} />
                         <FormField control={form.control} name="communicationType" render={({ field }) => (
                              <FormItem>
-                                <FormLabel>Communication Type</FormLabel>
+                                <FormLabel>Outreach Method</FormLabel>
                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                                     <FormControl><SelectTrigger><SelectValue placeholder="Select a type..." /></SelectTrigger></FormControl>
                                     <SelectContent>
@@ -171,18 +205,52 @@ function LogAndCopyDialog({ open, onOpenChange, partners, isLoadingPartners, act
                             name="notes"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Notes (Optional)</FormLabel>
+                                    <FormLabel>Outreach Notes (Optional)</FormLabel>
                                     <FormControl>
-                                        <Textarea placeholder="Add notes about the call or meeting..." {...field} />
+                                        <Textarea placeholder="e.g., They asked about tire discounts specifically..." {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
                             )}
                         />
-                         <DialogFooter>
-                            <Button type="submit" disabled={isLogging}>
-                                {isLogging && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
-                                Log & Copy
+                        
+                        <Separator />
+                        
+                        <FormField control={form.control} name="createFollowUp" render={({ field }) => (
+                            <FormItem className="flex items-center space-x-2 space-y-0">
+                                <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                                <FormLabel className="cursor-pointer font-semibold">Schedule Follow-up Task?</FormLabel>
+                            </FormItem>
+                        )} />
+
+                        {createFollowUp && (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2">
+                                <FormField control={form.control} name="followUpDate" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Follow-up Date</FormLabel>
+                                        <FormControl><Input type="date" {...field} /></FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
+                                <FormField control={form.control} name="assigneeId" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Assign Task To</FormLabel>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <FormControl><SelectTrigger><SelectValue placeholder="Select staff..." /></SelectTrigger></FormControl>
+                                            <SelectContent>
+                                                {admins.map(admin => <SelectItem key={admin.uid} value={admin.uid}>{admin.displayName || admin.email}</SelectItem>)}
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
+                            </div>
+                        )}
+
+                         <DialogFooter className="pt-6">
+                            <Button type="submit" disabled={isLogging} className="w-full">
+                                {isLogging ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <ClipboardCopy className="mr-2 h-4 w-4" />}
+                                Log Outreach & Copy Content
                             </Button>
                         </DialogFooter>
                     </form>
@@ -214,12 +282,12 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
         const token = await getClientSideAuthToken();
         if (!token) throw new Error("Not authenticated");
 
-        let apiType: string = audience;
-        if (apiType === 'investors') apiType = 'investor';
-        else if (apiType === 'developers') apiType = 'developer';
-        else if (apiType === 'suppliers') apiType = 'supplier';
-        else if (apiType === 'transporters') apiType = 'transporter';
-        else if (apiType === 'partners') apiType = 'partner';
+        let apiType: ApiPartnerType = 'partner';
+        if (audience === 'isa') apiType = 'isa';
+        else if (audience === 'investors') apiType = 'investor';
+        else if (audience === 'developers') apiType = 'developer';
+        else if (audience === 'suppliers') apiType = 'supplier';
+        else if (audience === 'transporters') apiType = 'transporter';
         
         const result = await performAdminAction(token, 'getPartnersByType', { type: apiType });
         setPartners(result.data || []);
@@ -263,7 +331,7 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
     }
   };
 
-  const handleLogAndCopy = async (logData: {partnerId: string, communicationType: string, subject: string, notes?: string}) => {
+  const handleLogAndCopy = async (logData: {partnerId: string, communicationType: string, subject: string, notes?: string, followUpTask?: any}) => {
     try {
         const token = await getClientSideAuthToken();
         if (!token) throw new Error("Authentication failed.");
@@ -273,11 +341,12 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
             type: logData.communicationType,
             subject: logData.subject,
             notes: logData.notes,
+            followUpTask: logData.followUpTask
         });
 
         await handleCopyContent();
 
-        toast({ title: 'Logged and Copied!', description: 'Communication has been logged. Images may be blocked by the recipient\'s email client.' });
+        toast({ title: 'Logged and Copied!', description: 'Outreach has been recorded and follow-up scheduled.' });
         setIsLogDialogOpen(false);
     } catch (e: any) {
         toast({ variant: 'destructive', title: 'Action Failed', description: e.message });
