@@ -211,7 +211,7 @@ export function PartnerTasksDialog({ partner }: { partner: any }) {
             </DialogTrigger>
             <DialogContent className="max-w-2xl">
                 <DialogHeader>
-                    <DialogTitle>CRM Tasks for {partner.name || `${partner.firstName} ${partner.lastName}`}</DialogTitle>
+                    <DialogTitle>CRM Tasks for {partner.name || `${partner?.firstName || ''} ${partner?.lastName || ''}`}</DialogTitle>
                     <DialogDescription>Track follow-ups and assign responsibilities for this partner.</DialogDescription>
                 </DialogHeader>
                 <div className="max-h-[70vh] overflow-y-auto pr-4">
