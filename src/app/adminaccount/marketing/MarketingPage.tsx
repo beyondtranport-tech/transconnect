@@ -2,7 +2,7 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Loader2, ClipboardCopy, Calendar as CalendarIcon, UserPlus, Checkbox as CheckboxIcon } from 'lucide-react';
+import { Loader2, ClipboardCopy, Calendar as CalendarIcon, UserPlus, CheckCircle } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
@@ -33,7 +33,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { Label } from '@/components/ui/label';
 
-// Static Imports for sections
+// Static Imports for all sections and sub-components
 import CompanyProfile from './content/CompanyProfile';
 import TechArchitecture from './content/TechArchitecture';
 import RevenueModel from './content/RevenueModel';
@@ -153,7 +153,7 @@ function LogAndCopyDialog({ open, onOpenChange, partners, isLoadingPartners, act
                 followUpTask
             });
         } catch (e) {
-            // Error is handled by parent
+            // Error handled in parent
         } finally {
             setIsLogging(false);
         }
@@ -163,9 +163,9 @@ function LogAndCopyDialog({ open, onOpenChange, partners, isLoadingPartners, act
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-lg">
                 <DialogHeader>
-                    <DialogTitle>Log & Copy Strategy Content</DialogTitle>
+                    <DialogTitle>Log & Copy Content</DialogTitle>
                     <DialogDescription>
-                        Select a {singularAudience.toLowerCase()} to log this outreach and optionally set a follow-up date.
+                        Select a {singularAudience.toLowerCase()} to log this outreach and optionally set a follow-up task.
                     </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
@@ -206,7 +206,7 @@ function LogAndCopyDialog({ open, onOpenChange, partners, isLoadingPartners, act
                                 <FormItem>
                                     <FormLabel>Outreach Notes (Optional)</FormLabel>
                                     <FormControl>
-                                        <Textarea placeholder="e.g., They asked about tire discounts specifically..." {...field} />
+                                        <Textarea placeholder="Details about the interaction..." {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -323,10 +323,10 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
         
       } catch (err) {
         console.error('Failed to copy content: ', err);
-        throw new Error('Your browser may not support this feature, or there was an error.');
+        throw new Error('Your browser may not support this feature.');
       }
     } else {
-      throw new Error(`Could not find the content for the active tab (ID: ${contentId}).`);
+      throw new Error(`Could not find the content for the active tab.`);
     }
   };
 
