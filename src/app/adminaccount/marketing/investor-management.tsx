@@ -47,6 +47,8 @@ const partnerSchema = z.object({
   email: z.string().email('Invalid email address'),
   phone: z.string().optional(),
   companyName: z.string().optional(),
+  website: z.string().url("Must be a valid URL.").optional().or(z.literal('')),
+  address: z.string().optional(),
   status: z.enum(['active', 'inactive']),
 });
 
@@ -238,6 +240,8 @@ function InvestorDialog({ open, onOpenChange, partner, onSave }: { open: boolean
           email: '',
           phone: '',
           companyName: '',
+          website: '',
+          address: '',
           status: 'active',
         });
       }
@@ -272,7 +276,7 @@ function InvestorDialog({ open, onOpenChange, partner, onSave }: { open: boolean
                 </DialogDescription>
             </DialogHeader>
             <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[70vh] overflow-y-auto pr-2">
                     <div className="grid grid-cols-2 gap-4">
                         <FormField control={form.control} name="firstName" render={({ field }) => ( <FormItem><FormLabel>First Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                         <FormField control={form.control} name="lastName" render={({ field }) => ( <FormItem><FormLabel>Last Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
@@ -282,6 +286,8 @@ function InvestorDialog({ open, onOpenChange, partner, onSave }: { open: boolean
                         <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel>Mobile Number (Optional)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                     </div>
                     <FormField control={form.control} name="companyName" render={({ field }) => ( <FormItem><FormLabel>Company Name (Optional)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+                    <FormField control={form.control} name="website" render={({ field }) => ( <FormItem><FormLabel>Website (Optional)</FormLabel><FormControl><Input placeholder="https://..." {...field} /></FormControl><FormMessage /></FormItem> )} />
+                    <FormField control={form.control} name="address" render={({ field }) => ( <FormItem><FormLabel>Physical Address (Optional)</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem> )} />
                     <FormField control={form.control} name="status" render={({ field }) => ( <FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="active">Active</SelectItem><SelectItem value="inactive">Inactive</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
                      <DialogFooter className="pt-4">
                         <Button type="submit" disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null} Save Investor</Button>
