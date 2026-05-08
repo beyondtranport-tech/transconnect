@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -40,6 +41,8 @@ import {
   Scale,
   MessageSquare,
   Gift,
+  Building,
+  Code2,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';

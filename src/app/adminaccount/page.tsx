@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -43,6 +44,9 @@ import {
   Star,
   Award,
   Gift,
+  Building,
+  Handshake,
+  Truck,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -219,12 +223,12 @@ function AdminAccountContent() {
                 <SidebarMenuItem>
                     <SidebarMenuButton tooltip="Marketing" isActive={isMarketingActive}><BookOpen /><span>Marketing Library</span></SidebarMenuButton>
                     <SidebarMenuSub>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-partners'} onClick={() => navigate('marketing-partners')}>Strategic Partners</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-isa'} onClick={() => navigate('marketing-isa')}>ISA Agents</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-suppliers'} onClick={() => navigate('marketing-suppliers')}>Suppliers</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-transporters'} onClick={() => navigate('marketing-transporters')}>Transporters</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-investors'} onClick={() => navigate('marketing-investors')}>Investors</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-developers'} onClick={() => navigate('marketing-developers')}>Developers</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-partners'} onClick={() => navigate('marketing-partners')}><Handshake/>Partners</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-isa'} onClick={() => navigate('marketing-isa')}><UserCheck2/>ISA Agents</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-suppliers'} onClick={() => navigate('marketing-suppliers')}><Building/>Suppliers</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-transporters'} onClick={() => navigate('marketing-transporters')}><Truck/>Transporters</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-investors'} onClick={() => navigate('marketing-investors')}><DollarSign/>Investors</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-developers'} onClick={() => navigate('marketing-developers')}><Code2/>Developers</SidebarMenuSubButton></SidebarMenuSubItem>
                     </SidebarMenuSub>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
