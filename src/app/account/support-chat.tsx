@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
@@ -216,7 +215,7 @@ export default function SupportChatContent() {
                         placeholder="Type your message..." 
                         value={inputMessage}
                         onChange={e => setInputMessage(e.target.value)}
-                        onKeyDown={e => e.key === 'Enter' && !isSending && handleSend()}
+                        onKeyDown={e => e.key === 'Enter' && handleSend()}
                         disabled={isSending || isLoading}
                     />
                     <Button onClick={handleSend} disabled={isSending || isLoading || !inputMessage.trim()} size="icon">

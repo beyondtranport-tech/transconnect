@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { DependencyList, createContext, useContext, ReactNode, useMemo, useState, useEffect, useCallback } from 'react';
@@ -167,9 +166,9 @@ export const useFirebase = () => {
   return context;
 };
 
-export const useAuth = (): Auth => useFirebase().auth;
-export const useFirestore = (): Firestore => useFirebase().firestore;
-export const useFirebaseApp = (): FirebaseApp => useFirebase().firebaseApp;
+export const useAuth = (): Auth => useFirebase().auth!;
+export const useFirestore = (): Firestore => useFirebase().firestore!;
+export const useFirebaseApp = (): FirebaseApp => useFirebase().firebaseApp!;
 
 /**
  * useMemoFirebase provides a stable reference for Firestore queries and references.
