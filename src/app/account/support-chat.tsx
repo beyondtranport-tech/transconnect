@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
@@ -193,7 +192,7 @@ export default function SupportChatContent() {
                                             isAI ? "bg-blue-200 text-blue-900" :
                                             "bg-muted"
                                         )}>
-                                            <p className="font-semibold text-xs mb-1">{message.senderName}</p>
+                                            <p className="font-semibold text-xs mb-1">{msg.senderName}</p>
                                             <p>{msg.text}</p>
                                             <p className="text-xs opacity-70 mt-1 text-right">{formatDate(msg.timestamp)}</p>
                                         </div>
