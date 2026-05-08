@@ -24,6 +24,7 @@ import { PartnerTasksDialog } from './PartnerTasksDialog';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Timestamp, FieldValue } from 'firebase/firestore';
 
 
 async function performAdminAction(token: string, action: string, payload: any) {

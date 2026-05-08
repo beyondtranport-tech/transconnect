@@ -2,8 +2,7 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import dynamic from 'next/dynamic';
-import { Loader2, ClipboardCopy, Calendar as CalendarIcon, UserPlus } from 'lucide-react';
+import { Loader2, ClipboardCopy, Calendar as CalendarIcon, UserPlus, Checkbox as CheckboxIcon } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
@@ -32,34 +31,33 @@ import { getClientSideAuthToken, useUser } from '@/firebase';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
+import { Label } from '@/components/ui/label';
 
-// Content components using absolute paths
-const CompanyProfile = dynamic(() => import('@/app/adminaccount/marketing/content/CompanyProfile'), { loading: () => <Loader2 className="animate-spin" /> });
-const TechArchitecture = dynamic(() => import('@/app/adminaccount/marketing/content/TechArchitecture'), { loading: () => <Loader2 className="animate-spin" /> });
-const RevenueModel = dynamic(() => import('@/app/adminaccount/marketing/content/RevenueModel'), { loading: () => <Loader2 className="animate-spin" /> });
-const PitchDeck = dynamic(() => import('@/app/adminaccount/marketing/content/PitchDeck'), { loading: () => <Loader2 className="animate-spin" /> });
-const Framework = dynamic(() => import('@/app/adminaccount/marketing/content/Framework'), { loading: () => <Loader2 className="animate-spin" /> });
+// Static Imports for sections
+import CompanyProfile from './content/CompanyProfile';
+import TechArchitecture from './content/TechArchitecture';
+import RevenueModel from './content/RevenueModel';
+import PitchDeck from './content/PitchDeck';
+import Framework from './content/Framework';
 
-// Audience-specific components using absolute paths
-const PartnerOffer = dynamic(() => import('@/app/adminaccount/marketing/offers/PartnerOffer'), { loading: () => <Loader2 className="animate-spin" /> });
-const InvestorOffer = dynamic(() => import('@/app/adminaccount/marketing/offers/InvestorOffer'), { loading: () => <Loader2 className="animate-spin" /> });
-const DeveloperOffer = dynamic(() => import('@/app/adminaccount/marketing/offers/DeveloperOffer'), { loading: () => <Loader2 className="animate-spin" /> });
-const SupplierOffer = dynamic(() => import('@/app/adminaccount/marketing/offers/SupplierOffer'), { loading: () => <Loader2 className="animate-spin" /> });
-const TransporterOffer = dynamic(() => import('@/app/adminaccount/marketing/offers/TransporterOffer'), { loading: () => <Loader2 className="animate-spin" /> });
+import PartnerOffer from './offers/PartnerOffer';
+import InvestorOffer from './offers/InvestorOffer';
+import DeveloperOffer from './offers/DeveloperOffer';
+import SupplierOffer from './offers/SupplierOffer';
+import TransporterOffer from './offers/TransporterOffer';
 
-const PartnerEmails = dynamic(() => import('@/app/adminaccount/marketing/emails/PartnerEmails'), { loading: () => <Loader2 className="animate-spin" /> });
-const SupplierEmails = dynamic(() => import('@/app/adminaccount/marketing/emails/SupplierEmails'), { loading: () => <Loader2 className="animate-spin" /> });
-const TransporterEmails = dynamic(() => import('@/app/adminaccount/marketing/emails/TransporterEmails'), { loading: () => <Loader2 className="animate-spin" /> });
-const InvestorEmails = dynamic(() => import('@/app/adminaccount/marketing/emails/InvestorEmails'), { loading: () => <Loader2 className="animate-spin" /> });
-const DeveloperEmails = dynamic(() => import('@/app/adminaccount/marketing/emails/DeveloperEmails'), { loading: () => <Loader2 className="animate-spin" /> });
+import PartnerEmails from './emails/PartnerEmails';
+import SupplierEmails from './emails/SupplierEmails';
+import TransporterEmails from './emails/TransporterEmails';
+import InvestorEmails from './emails/InvestorEmails';
+import DeveloperEmails from './emails/DeveloperEmails';
 
-// Management components using absolute paths
-const PartnerManagement = dynamic(() => import('@/app/adminaccount/marketing/partner-management'), { loading: () => <Loader2 className="animate-spin" /> });
-const ISAManagement = dynamic(() => import('@/app/adminaccount/marketing/isa-management'), { loading: () => <Loader2 className="animate-spin" /> });
-const InvestorManagement = dynamic(() => import('@/app/adminaccount/marketing/investor-management'), { loading: () => <Loader2 className="animate-spin" /> });
-const DeveloperManagement = dynamic(() => import('@/app/adminaccount/marketing/developer-management'), { loading: () => <Loader2 className="animate-spin" /> });
-const SupplierManagement = dynamic(() => import('@/app/adminaccount/marketing/supplier-management'), { loading: () => <Loader2 className="animate-spin" /> });
-const TransporterManagement = dynamic(() => import('@/app/adminaccount/marketing/transporter-management'), { loading: () => <Loader2 className="animate-spin" /> });
+import PartnerManagement from './partner-management';
+import ISAManagement from './isa-management';
+import InvestorManagement from './investor-management';
+import DeveloperManagement from './developer-management';
+import SupplierManagement from './supplier-management';
+import TransporterManagement from './transporter-management';
 
 const audienceConfig = {
     partners: { title: 'Strategic Partners', Offer: PartnerOffer, Emails: PartnerEmails, Management: PartnerManagement },
@@ -155,7 +153,7 @@ function LogAndCopyDialog({ open, onOpenChange, partners, isLoadingPartners, act
                 followUpTask
             });
         } catch (e) {
-            // Error is handled by the parent component's toast
+            // Error is handled by parent
         } finally {
             setIsLogging(false);
         }

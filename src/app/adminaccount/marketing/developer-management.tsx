@@ -24,6 +24,7 @@ import { PartnerTasksDialog } from './PartnerTasksDialog';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Timestamp, FieldValue } from 'firebase/firestore';
 
 
 async function performAdminAction(token: string, action: string, payload: any) {
@@ -252,7 +253,7 @@ function DeveloperDialog({ open, onOpenChange, partner, onSave }: { open: boolea
         const token = await getClientSideAuthToken();
         if (!token) throw new Error("Authentication failed.");
         
-        await performAdminAction(token, 'savePartner', { partner: { id: partner?.id, ...values, type: 'developer' } });
+        const result = await performAdminAction(token, 'savePartner', { partner: { id: partner?.id, ...values, type: 'developer' } });
 
         toast({ title: partner ? 'Developer Updated' : 'Developer Added' });
         onSave();

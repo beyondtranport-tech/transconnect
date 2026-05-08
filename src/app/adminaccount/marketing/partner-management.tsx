@@ -24,6 +24,7 @@ import { PartnerTasksDialog } from './PartnerTasksDialog';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Timestamp, FieldValue } from 'firebase/firestore';
 
 // API Helper
 async function performAdminAction(token: string, action: string, payload: any) {
@@ -263,7 +264,7 @@ function PartnerDialog({ open, onOpenChange, partner, onSave }: { open: boolean;
     <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-lg">
             <DialogHeader>
-                <DialogTitle>{partner ? 'Edit' : 'Add New'} Partner</DialogTitle>
+                <DialogTitle>{partner ? 'Edit Partner' : 'Add New Partner'}</DialogTitle>
                 <DialogDescription>
                     Enter the details for the strategic partner.
                 </DialogDescription>
