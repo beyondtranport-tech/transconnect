@@ -254,7 +254,7 @@ function DeveloperDialog({ open, onOpenChange, partner, onSave }: { open: boolea
         const token = await getClientSideAuthToken();
         if (!token) throw new Error("Authentication failed.");
         
-        const result = await performAdminAction(token, 'savePartner', { partner: { id: partner?.id, ...values, type: 'developer' } });
+        await performAdminAction(token, 'savePartner', { partner: { id: partner?.id, ...values, type: 'developer' } });
 
         toast({ title: partner ? 'Developer Updated' : 'Developer Added' });
         onSave();
