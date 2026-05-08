@@ -947,7 +947,7 @@ function StepSEO({ shop, onSave, canEdit }: { shop: any, onSave: (newData: any) 
     try {
         const token = await getClientSideAuthToken();
         if (!token) throw new Error("Auth failed.");
-        const response = await fetch('/api/updateUserDoc', {
+        const response = await fetch('/api/updateConfigDoc', {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({
