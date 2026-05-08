@@ -37,24 +37,33 @@ export function BulkImportDialog({ type, onComplete, children }: BulkImportDialo
             if (!token) throw new Error("Authentication failed.");
 
             const text = await file.text();
-            // Split lines and filter out empty ones
-            const rows = text.split(/\r?\n/).filter(row => row.trim().length > 0);
+            
+            // 1. Remove UTF-8 BOM if present (common in Excel exports)
+            const cleanText = text.startsWith('\ufeff') ? text.slice(1) : text;
+            
+            // 2. Split lines and filter empty ones
+            const rows = cleanText.split(/\r?\n/).filter(row => row.trim().length > 0);
             
             if (rows.length < 2) {
                 throw new Error("CSV file is empty or missing data rows.");
             }
 
-            // Assume first row is header: Name,Email,Phone,Company,Address,Website
-            const headers = rows[0].split(',').map(h => h.trim().toLowerCase());
+            // 3. Detect delimiter (comma or semicolon)
+            const firstRow = rows[0];
+            const delimiter = firstRow.includes(';') && !firstRow.includes(',') ? ';' : ',';
+
+            // 4. Parse headers - clean up quotes and whitespace
+            const headers = firstRow.split(delimiter).map(h => h.trim().toLowerCase().replace(/["']/g, ''));
             const dataRows = rows.slice(1);
 
             const partners = dataRows.map((row) => {
-                const values = row.split(',').map(v => v.trim());
+                // 5. Parse values - handle potential quotes
+                const values = row.split(delimiter).map(v => v.trim().replace(/^["']|["']$/g, ''));
                 const partner: any = {};
                 
                 headers.forEach((header, index) => {
                     const val = values[index];
-                    if (!val) return; // SKIP EMPTY FIELDS - ensures defaults aren't overwritten by ""
+                    if (!val) return; 
 
                     if (header.includes('name')) {
                         const nameParts = val.split(' ');
@@ -83,7 +92,7 @@ export function BulkImportDialog({ type, onComplete, children }: BulkImportDialo
             }).filter(p => p.email && p.email.includes('@')); // Must have a valid-looking email
 
             if (partners.length === 0) {
-                throw new Error("No valid records found. Ensure your CSV has an 'Email' column and valid data.");
+                throw new Error(`No valid records found. We detected '${delimiter}' as the separator. Ensure your CSV has an 'Email' column and valid data.`);
             }
 
             const response = await fetch('/api/admin', {
