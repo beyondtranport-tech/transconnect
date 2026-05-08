@@ -166,7 +166,7 @@ function BackendContent() {
 
   if (isUserLoading || !user) {
     return (
-        <div className="flex justify-center items-center min-h-[calc(100vh-8rem)]">
+        <div className="flex justify-center items-center py-20">
             <Loader2 className="h-16 w-16 animate-spin text-primary" />
         </div>
     );
@@ -285,7 +285,9 @@ function BackendContent() {
         </Sidebar>
         <SidebarInset>
             <div className="p-6">
+                <Suspense fallback={<Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" />}>
                 {renderContent()}
+                </Suspense>
             </div>
         </SidebarInset>
       </SidebarProvider>

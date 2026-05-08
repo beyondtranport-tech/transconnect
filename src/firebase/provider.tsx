@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { DependencyList, createContext, useContext, ReactNode, useMemo, useState, useEffect, useCallback } from 'react';
@@ -12,13 +11,6 @@ interface FirebaseProviderProps {
   firebaseApp: FirebaseApp;
   firestore: Firestore;
   auth: Auth;
-}
-
-// Internal state for user authentication and Firestore profile
-interface UserAuthState {
-  user: (User & { [key: string]: any }) | null;
-  isUserLoading: boolean;
-  userError: Error | null;
 }
 
 // Combined state for the Firebase context
@@ -132,7 +124,6 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       ...authState,
       ...userData,
       companyData,
-      // Add custom claims if needed, but here we merge top-level properties
     };
   }, [authState, userData, companyData]);
 
