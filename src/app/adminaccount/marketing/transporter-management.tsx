@@ -5,7 +5,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, Truck, Edit, Trash2, Send, Copy, MessageSquare, ClipboardList, MessageSquarePlus, Calendar as CalendarIcon, CheckCircle } from 'lucide-react';
+import { Loader2, PlusCircle, Truck, Edit, Trash2, Send, Copy, MessageSquare, ClipboardList, MessageSquarePlus, Calendar as CalendarIcon, CheckCircle, Upload } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -26,6 +26,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import Link from 'next/link';
 import { Timestamp, FieldValue } from 'firebase/firestore';
+import { BulkImportDialog } from './BulkImportDialog';
 
 // API Helper
 async function performAdminAction(token: string, action: string, payload: any) {
@@ -418,7 +419,12 @@ export default function TransporterManagement() {
                         <CardTitle className="flex items-center gap-2"><Truck /> Transporter Management</CardTitle>
                         <CardDescription>Manage your transporter partners and track onboarding outreach.</CardDescription>
                     </div>
-                    <Button onClick={() => handleOpenDialog('add')}><PlusCircle className="mr-2 h-4 w-4"/>Add Transporter</Button>
+                    <div className="flex gap-2">
+                         <BulkImportDialog type="transporter" onComplete={forceRefresh}>
+                            <Button variant="outline"><Upload className="mr-2 h-4 w-4"/>Import CSV</Button>
+                        </BulkImportDialog>
+                        <Button onClick={() => handleOpenDialog('add')}><PlusCircle className="mr-2 h-4 w-4"/>Add Transporter</Button>
+                    </div>
                 </CardHeader>
                 <CardContent>
                     {isLoading ? (

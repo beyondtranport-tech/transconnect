@@ -68,6 +68,35 @@ export async function POST(req: NextRequest) {
         }
 
         switch (action) {
+            case 'bulkSavePartners': {
+                const { partners, type } = payload;
+                if (!partners || !Array.isArray(partners)) throw new Error("Partners array is required.");
+                
+                // Batch limit is 500
+                const chunks = [];
+                for (let i = 0; i < partners.length; i += 500) {
+                    chunks.push(partners.slice(i, i + 500));
+                }
+
+                for (const chunk of chunks) {
+                    const batch = db.batch();
+                    const partnersCollection = db.collection('partners');
+                    chunk.forEach((p: any) => {
+                        const docRef = partnersCollection.doc();
+                        batch.set(docRef, {
+                            ...p,
+                            id: docRef.id,
+                            type: type || p.type,
+                            status: p.status || 'active',
+                            invitationStatus: p.invitationStatus || 'pending',
+                            createdAt: FieldValue.serverTimestamp(),
+                            updatedAt: FieldValue.serverTimestamp()
+                        });
+                    });
+                    await batch.commit();
+                }
+                return NextResponse.json({ success: true, message: `${partners.length} partners imported successfully.` });
+            }
              case 'getCommunicationLogs': {
                 const { partnerId } = payload;
                 if (!partnerId) throw new Error("partnerId is required.");
