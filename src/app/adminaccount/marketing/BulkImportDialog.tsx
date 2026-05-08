@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState } from 'react';
@@ -37,17 +38,25 @@ export function BulkImportDialog({ type, onComplete, children }: BulkImportDialo
             if (!token) throw new Error("Authentication failed.");
 
             const text = await file.text();
-            const rows = text.split('\n').filter(row => row.trim().length > 0);
+            // Split lines and filter out empty ones
+            const rows = text.split(/\r?\n/).filter(row => row.trim().length > 0);
             
+            if (rows.length < 2) {
+                throw new Error("CSV file is empty or missing data rows.");
+            }
+
             // Assume first row is header: Name,Email,Phone,Company,Address,Website
             const headers = rows[0].split(',').map(h => h.trim().toLowerCase());
             const dataRows = rows.slice(1);
 
-            const partners = dataRows.map(row => {
+            const partners = dataRows.map((row) => {
                 const values = row.split(',').map(v => v.trim());
                 const partner: any = {};
+                
                 headers.forEach((header, index) => {
                     const val = values[index];
+                    if (!val) return; // SKIP EMPTY FIELDS - ensures defaults aren't overwritten by ""
+
                     if (header.includes('name')) {
                         const nameParts = val.split(' ');
                         partner.firstName = nameParts[0] || 'Unknown';
@@ -64,11 +73,18 @@ export function BulkImportDialog({ type, onComplete, children }: BulkImportDialo
                         partner.website = val;
                     }
                 });
+
+                // Fallback for missing names if email exists
+                if (partner.email && !partner.firstName) {
+                    partner.firstName = partner.email.split('@')[0];
+                    partner.lastName = 'Member';
+                }
+
                 return partner;
-            }).filter(p => p.email); // Must have email at least
+            }).filter(p => p.email && p.email.includes('@')); // Must have a valid-looking email
 
             if (partners.length === 0) {
-                throw new Error("No valid records found in the CSV. Ensure the first row contains headers like 'Name' and 'Email'.");
+                throw new Error("No valid records found. Ensure your CSV has an 'Email' column and valid data.");
             }
 
             const response = await fetch('/api/admin', {
@@ -83,7 +99,7 @@ export function BulkImportDialog({ type, onComplete, children }: BulkImportDialo
             const result = await response.json();
             if (!response.ok) throw new Error(result.error || "Import failed.");
 
-            toast({ title: "Import Successful", description: `${partners.length} records added.` });
+            toast({ title: "Import Successful", description: `Added ${partners.length} ${type}s to your database.` });
             setIsOpen(false);
             onComplete();
         } catch (e: any) {
@@ -108,32 +124,32 @@ export function BulkImportDialog({ type, onComplete, children }: BulkImportDialo
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>{children}</DialogTrigger>
-            <DialogContent>
+            <DialogContent className="sm:max-w-md">
                 <DialogHeader>
                     <DialogTitle>Bulk Import {type}s</DialogTitle>
-                    <DialogDescription>Upload a CSV file to add multiple records at once.</DialogDescription>
+                    <DialogDescription>Upload a CSV file to add multiple records. Empty fields in your CSV will be ignored to keep data clean.</DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
                     <Alert>
                         <FileText className="h-4 w-4" />
-                        <AlertTitle>CSV Requirements</AlertTitle>
+                        <AlertTitle>Requirements</AlertTitle>
                         <AlertDescription>
-                            Your CSV must include headers in the first row. Recommended headers: <code className="bg-muted px-1 rounded">Name, Email, Phone, Company, Address, Website</code>.
+                            Your file must include a header row with <code className="bg-muted px-1 rounded text-primary">Email</code>. Other supported columns: <code className="bg-muted px-1 rounded">Name, Phone, Company, Address, Website</code>.
                         </AlertDescription>
                     </Alert>
                     <div className="space-y-2">
                         <Label htmlFor="csv-file">Select CSV File</Label>
                         <Input id="csv-file" type="file" accept=".csv" onChange={handleFileChange} disabled={isUploading} />
                     </div>
-                    <Button variant="link" size="sm" onClick={downloadTemplate} className="px-0">
-                        <Download className="mr-2 h-4 w-4" /> Download Template
+                    <Button variant="link" size="sm" onClick={downloadTemplate} className="px-0 h-auto">
+                        <Download className="mr-2 h-4 w-4" /> Download CSV Template
                     </Button>
                 </div>
-                <DialogFooter>
+                <DialogFooter className="sm:justify-between">
                     <Button variant="ghost" onClick={() => setIsOpen(false)} disabled={isUploading}>Cancel</Button>
                     <Button onClick={handleImport} disabled={!file || isUploading}>
                         {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Upload className="mr-2 h-4 w-4" />}
-                        Start Import
+                        Start Bulk Import
                     </Button>
                 </DialogFooter>
             </DialogContent>

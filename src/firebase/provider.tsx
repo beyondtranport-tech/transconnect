@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { DependencyList, createContext, useContext, ReactNode, useMemo, useState, useEffect, useCallback } from 'react';
@@ -25,7 +26,10 @@ export interface FirebaseContextState {
   forceRefresh: () => void;
 }
 
-// Return type for useUser() - specific to user auth state
+/**
+ * Return type for useUser() hook.
+ * CRITICAL: This must explicitly include forceRefresh to satisfy the TypeScript compiler during build.
+ */
 export interface UserHookResult { 
   user: (User & { [key: string]: any }) | null;
   isUserLoading: boolean;

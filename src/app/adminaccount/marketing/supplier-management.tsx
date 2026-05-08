@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -5,7 +6,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, Building, Edit, Trash2, Send, Copy, MessageSquare, ClipboardList, MessageSquarePlus, CheckCircle } from 'lucide-react';
+import { Loader2, PlusCircle, Building, Edit, Trash2, Send, Copy, MessageSquare, ClipboardList, MessageSquarePlus, CheckCircle, Upload } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -25,6 +26,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Timestamp, FieldValue } from 'firebase/firestore';
+import { BulkImportDialog } from './BulkImportDialog';
 
 // API Helper
 async function performAdminAction(token: string, action: string, payload: any) {
@@ -415,7 +417,12 @@ export default function SupplierManagement() {
                         <CardTitle className="flex items-center gap-2"><Building /> Supplier Management</CardTitle>
                         <CardDescription>Manage your supplier partners.</CardDescription>
                     </div>
-                    <Button onClick={() => handleOpenDialog('add')}><PlusCircle className="mr-2 h-4 w-4"/>Add Supplier</Button>
+                    <div className="flex gap-2">
+                        <BulkImportDialog type="supplier" onComplete={forceRefresh}>
+                            <Button variant="outline"><Upload className="mr-2 h-4 w-4"/>Import CSV</Button>
+                        </BulkImportDialog>
+                        <Button onClick={() => handleOpenDialog('add')}><PlusCircle className="mr-2 h-4 w-4"/>Add Supplier</Button>
+                    </div>
                 </CardHeader>
                 <CardContent>
                     {isLoading ? (
