@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState } from 'react';
@@ -111,7 +110,7 @@ export function BulkImportDialog({ type, onComplete, children }: BulkImportDialo
     };
 
     const downloadTemplate = () => {
-        const csvContent = "data:text/csv;charset=utf-8,Name,Email,Phone,Company,Address,Website\nJohn Doe,john@example.com,0111234567,Doe Transport,123 Main St,www.doe.com";
+        const csvContent = "data:text/csv;charset=utf-8,Name,Email,Phone,Company,Address,Website\nJohn Doe,john@example.com,0111234567,Doe Transport,123 Main St,www.doe.com\nJane Smith,jane@logistics.co.za,0123456789,Swift Haulage,45 Industrial Rd,www.swifthaul.com";
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
         link.setAttribute("href", encodedUri);
@@ -126,13 +125,13 @@ export function BulkImportDialog({ type, onComplete, children }: BulkImportDialo
             <DialogTrigger asChild>{children}</DialogTrigger>
             <DialogContent className="sm:max-w-md">
                 <DialogHeader>
-                    <DialogTitle>Bulk Import {type}s</DialogTitle>
+                    <DialogTitle>Bulk Import {type.charAt(0).toUpperCase() + type.slice(1)}s</DialogTitle>
                     <DialogDescription>Upload a CSV file to add multiple records. Empty fields in your CSV will be ignored to keep data clean.</DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
                     <Alert>
                         <FileText className="h-4 w-4" />
-                        <AlertTitle>Requirements</AlertTitle>
+                        <AlertTitle>CSV Format Requirements</AlertTitle>
                         <AlertDescription>
                             Your file must include a header row with <code className="bg-muted px-1 rounded text-primary">Email</code>. Other supported columns: <code className="bg-muted px-1 rounded">Name, Phone, Company, Address, Website</code>.
                         </AlertDescription>
@@ -141,8 +140,8 @@ export function BulkImportDialog({ type, onComplete, children }: BulkImportDialo
                         <Label htmlFor="csv-file">Select CSV File</Label>
                         <Input id="csv-file" type="file" accept=".csv" onChange={handleFileChange} disabled={isUploading} />
                     </div>
-                    <Button variant="link" size="sm" onClick={downloadTemplate} className="px-0 h-auto">
-                        <Download className="mr-2 h-4 w-4" /> Download CSV Template
+                    <Button variant="link" size="sm" onClick={downloadTemplate} className="px-0 h-auto font-semibold">
+                        <Download className="mr-2 h-4 w-4" /> Download Sample CSV Template
                     </Button>
                 </div>
                 <DialogFooter className="sm:justify-between">
