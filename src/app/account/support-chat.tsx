@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
@@ -137,7 +138,12 @@ export default function SupportChatContent() {
             forceRefresh(); // Show AI's message
 
         } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Send Failed', description: error.message });
+            console.error("Support chat error:", error);
+            let description = error.message;
+            if (error.message?.includes('429') || error.message?.toLowerCase().includes('quota') || error.message?.toLowerCase().includes('resource exhausted')) {
+                description = "The AI assistant is temporarily unavailable due to high demand (Resource Exhausted). Please try again in a minute.";
+            }
+            toast({ variant: 'destructive', title: 'Send Failed', description });
             setMessage(userMessageText); // Restore input if failed
         } finally {
             setIsSending(false);
@@ -187,7 +193,7 @@ export default function SupportChatContent() {
                                             isAI ? "bg-blue-200 text-blue-900" :
                                             "bg-muted"
                                         )}>
-                                            <p className="font-semibold text-xs mb-1">{msg.senderName || 'Support'}</p>
+                                            <p className="font-semibold text-xs mb-1">{message.senderName}</p>
                                             <p>{msg.text}</p>
                                             <p className="text-xs opacity-70 mt-1 text-right">{formatDate(msg.timestamp)}</p>
                                         </div>
