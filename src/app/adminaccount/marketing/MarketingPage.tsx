@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -270,12 +271,6 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
   const [isLoadingPartners, setIsLoadingPartners] = useState(true);
 
   const fetchPartnersForLogging = useCallback(async () => {
-    if (!Management) {
-      setIsLoadingPartners(false);
-      setPartners([]);
-      return;
-    }
-    
     setIsLoadingPartners(true);
     try {
         const token = await getClientSideAuthToken();
@@ -296,7 +291,7 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
     } finally {
         setIsLoadingPartners(false);
     }
-  }, [audience, Management, toast]);
+  }, [audience, toast]);
 
   useEffect(() => {
     fetchPartnersForLogging();
@@ -377,12 +372,12 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
                     <TabsTrigger value="pitch">The Pitch</TabsTrigger>
                     <TabsTrigger value="framework">The Framework</TabsTrigger>
                     <TabsTrigger value="emails">Emails</TabsTrigger>
-                    {Management && <TabsTrigger value="management">Management</TabsTrigger>}
+                    <TabsTrigger value="management">Management</TabsTrigger>
                 </TabsList>
 
                 <Card className="mt-4">
                     <CardHeader className="flex flex-row items-center justify-end border-b">
-                        <Button variant="outline" onClick={() => setIsLogDialogOpen(true)} disabled={isLoadingPartners || (partners.length === 0 && !!Management)}>
+                        <Button variant="outline" onClick={() => setIsLogDialogOpen(true)} disabled={isLoadingPartners || partners.length === 0}>
                             {isLoadingPartners ? (
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                             ) : (
@@ -413,11 +408,9 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
                         <TabsContent value="emails">
                             <div id="tab-content-emails"><Emails /></div>
                         </TabsContent>
-                        {Management && (
-                            <TabsContent value="management">
-                                <div id="tab-content-management"><Management /></div>
-                            </TabsContent>
-                        )}
+                        <TabsContent value="management">
+                            <div id="tab-content-management"><Management /></div>
+                        </TabsContent>
                     </CardContent>
                 </Card>
             </Tabs>
