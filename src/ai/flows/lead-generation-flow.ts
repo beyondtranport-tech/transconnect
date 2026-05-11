@@ -45,6 +45,15 @@ const leadGenerationAIFlow = ai.defineFlow(
         const response = await ai.generate({
             model: 'googleai/gemini-1.5-flash',
             tools: [googleSearchTool],
+            system: `You are an expert market research agent. 
+            Your goal is to find real-world business leads based on the user's request.
+            
+            CRITICAL INSTRUCTIONS:
+            1. You MUST use the googleSearch tool to find actual companies, websites, and contact details. 
+            2. Do not invent data. Only return information found in search results.
+            3. Search for businesses in the specific geographic area mentioned (usually South Africa).
+            4. If no results are found for a specific query, try a broader search using the tool.
+            5. Return a list of at least 5 leads if possible.`,
             prompt: input.prompt,
             output: {
                 schema: LeadGenerationOutputSchema
