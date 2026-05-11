@@ -92,7 +92,7 @@ export default function SupportChatContent() {
                 senderName: user.displayName || 'Member',
                 timestamp: serverTimestamp(),
                 readByAdmin: false,
-                companyId: companyId, // Ensure companyId is included
+                companyId: companyId,
             };
             const userMessageResponse = await fetch('/api/addUserDoc', {
                 method: 'POST',
@@ -101,7 +101,7 @@ export default function SupportChatContent() {
             });
             if (!userMessageResponse.ok) throw new Error((await userMessageResponse.json()).error || 'Failed to send message.');
             
-            forceRefresh(); // Immediately show user's message
+            forceRefresh();
 
             // 2. Call the AI for a response
             const historyForApi: { role: 'user' | 'model'; content: { text: string; }[] }[] = (messages || []).map(msg => {
@@ -125,7 +125,7 @@ export default function SupportChatContent() {
                 senderName: 'AI Assistant',
                 timestamp: serverTimestamp(),
                 readByAdmin: false,
-                companyId: companyId, // Ensure companyId is included
+                companyId: companyId,
             };
             const aiMessageResponse = await fetch('/api/addUserDoc', {
                 method: 'POST',
@@ -134,16 +134,16 @@ export default function SupportChatContent() {
             });
              if (!aiMessageResponse.ok) throw new Error((await aiMessageResponse.json()).error || 'Failed to save AI response.');
             
-            forceRefresh(); // Show AI's message
+            forceRefresh();
 
         } catch (error: any) {
             console.error("Support chat error:", error);
             let description = error.message;
             if (error.message?.includes('429') || error.message?.toLowerCase().includes('quota') || error.message?.toLowerCase().includes('resource exhausted')) {
-                description = "The AI assistant is temporarily unavailable due to high demand (Resource Exhausted). Please try again in a minute.";
+                description = "The AI assistant is temporarily unavailable due to high demand. Please try again in a minute.";
             }
             toast({ variant: 'destructive', title: 'Send Failed', description });
-            setInputMessage(userMessageText); // Restore input if failed
+            setInputMessage(userMessageText);
         } finally {
             setIsSending(false);
         }

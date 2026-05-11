@@ -33,25 +33,28 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { Label } from '@/components/ui/label';
 
-// Static Imports for all sections and sub-components
+// Content components
 import CompanyProfile from './content/CompanyProfile';
 import TechArchitecture from './content/TechArchitecture';
 import RevenueModel from './content/RevenueModel';
 import PitchDeck from './content/PitchDeck';
 import Framework from './content/Framework';
 
+// Offers
 import PartnerOffer from './offers/PartnerOffer';
 import InvestorOffer from './offers/InvestorOffer';
 import DeveloperOffer from './offers/DeveloperOffer';
 import SupplierOffer from './offers/SupplierOffer';
 import TransporterOffer from './offers/TransporterOffer';
 
+// Emails
 import PartnerEmails from './emails/PartnerEmails';
 import SupplierEmails from './emails/SupplierEmails';
 import TransporterEmails from './emails/TransporterEmails';
 import InvestorEmails from './emails/InvestorEmails';
 import DeveloperEmails from './emails/DeveloperEmails';
 
+// Management
 import PartnerManagement from './partner-management';
 import ISAManagement from './isa-management';
 import InvestorManagement from './investor-management';

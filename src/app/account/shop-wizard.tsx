@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -526,7 +525,7 @@ function ProductDialog({ shop, product, onComplete, children, canEdit }: { shop:
         <DialogTrigger asChild>{children}</DialogTrigger>
         <DialogContent className="max-w-2xl flex flex-col max-h-[90vh]">
           <DialogHeader>
-            <DialogTitle>{product ? 'Edit Product' : 'Add New Product'}</DialogTitle>
+            <DialogTitle>{product ? 'Edit' : 'Add New'} Product</DialogTitle>
             <DialogDescription>
               {product ? 'Update details for your product.' : 'Enter details for your new product.'}
             </DialogDescription>
@@ -788,7 +787,6 @@ function StepProducts({ shop, canEdit }: { shop: any, canEdit: boolean }) {
   );
 }
 
-// ... Re-add other steps and ShopWizard main component
 const shopStep3Schema = z.object({
   theme: z.string().min(1, "Please select a theme."),
   template: z.string().min(1, "Please select a layout."),
