@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview An AI-powered flow to suggest social media links for a shop.
@@ -37,7 +36,7 @@ const socialLinkGeneratorFlow = ai.defineFlow(
   },
   async (input: SocialLinkGeneratorInput) => {
     const response = await ai.generate({
-        model: 'gemini-pro',
+        model: 'gemini-1.5-flash',
         prompt: `You are an assistant that creates plausible social media URLs for a business.
         Given the shop name "${input.shopName}", create conventional, best-guess URLs for the following platforms: Facebook, Instagram, Twitter (X), LinkedIn (as a company page), and YouTube.
         - Sanitize the shop name to be URL-friendly (remove spaces, special characters).
