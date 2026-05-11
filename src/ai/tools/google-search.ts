@@ -26,9 +26,9 @@ export const googleSearchTool = ai.defineTool(
     const apiKey = process.env.GOOGLE_SEARCH_API_KEY;
     const cx = process.env.CUSTOM_SEARCH_ENGINE_ID;
 
-    // RESILIENCE FIX: If keys are missing, return empty instead of throwing to prevent flow crash.
-    if (!apiKey || !cx || apiKey === "YOUR_GOOGLE_SEARCH_API_KEY") {
-      console.warn('Google Search API key or Custom Search Engine ID is not configured. Returning empty results.');
+    // RESILIENCE FIX: If keys are missing or placeholders, return empty instead of throwing to prevent flow crash.
+    if (!apiKey || !cx || apiKey === "YOUR_API_KEY_HERE" || apiKey === "PASTE_YOUR_API_KEY_HERE") {
+      console.warn('Google Search API key or Custom Search Engine ID is not configured.');
       return [];
     }
     
@@ -55,7 +55,7 @@ export const googleSearchTool = ai.defineTool(
 
     } catch (e: any) {
         console.error("Error calling Google Search API:", e);
-        return []; // Return empty results on error to allow flow to continue
+        return []; 
     }
   }
 );

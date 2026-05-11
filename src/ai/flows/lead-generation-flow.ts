@@ -53,7 +53,7 @@ const leadGenerationAIFlow = ai.defineFlow(
             2. Do not invent data. Only return information found in search results.
             3. Search for businesses in the specific geographic area mentioned (usually South Africa).
             4. If no results are found for a specific query, try a broader search using the tool.
-            5. Return a list of at least 5 leads if possible.`,
+            5. Your final output must contain at least 5 leads extracted from your searches.`,
             prompt: input.prompt,
             output: {
                 schema: LeadGenerationOutputSchema
@@ -90,7 +90,6 @@ const leadGenerationAIFlow = ai.defineFlow(
         return { leads: cleanedLeads };
     } catch (error: any) {
         console.error("AI Flow Error in leadGenerationAIFlow:", error);
-        // Ensure we always return a valid object to prevent production render crashes
         return { leads: [] };
     }
   }
