@@ -8,19 +8,10 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'kit';
+import { z } from 'genkit';
+import { ShopSeoInputSchema, ShopSeoOutputSchema } from '../schemas';
 
-const ShopSeoInputSchema = z.object({
-  shopName: z.string().describe('The name of the online shop.'),
-  shopDescription: z.string().describe('A brief description of the shop and what it sells.'),
-});
 export type ShopSeoInput = z.infer<typeof ShopSeoInputSchema>;
-
-const ShopSeoOutputSchema = z.object({
-    metaTitle: z.string().describe('An SEO-optimized title for the shop page, under 60 characters.'),
-    metaDescription: z.string().describe('An SEO-optimized meta description, under 160 characters.'),
-    tags: z.array(z.string()).describe('A list of 5-7 relevant SEO keywords or tags for the shop.'),
-});
 export type ShopSeoOutput = z.infer<typeof ShopSeoOutputSchema>;
 
 
@@ -35,20 +26,25 @@ const shopSeoFlow = ai.defineFlow(
     outputSchema: ShopSeoOutputSchema,
   },
   async (input: ShopSeoInput) => {
-    const response = await ai.generate({
-        model: 'googleai/gemini-1.5-flash',
-        prompt: `You are an SEO expert for e-commerce websites in the transport and logistics industry. 
-  
-        Based on the following shop details:
-        - Shop Name: ${input.shopName}
-        - Shop Description: ${input.shopDescription}
-
-        Generate the SEO content.`,
-        output: {
-            schema: ShopSeoOutputSchema
-        }
-    });
+    try {
+        const response = await ai.generate({
+            model: 'gemini-1.5-flash',
+            prompt: `You are an SEO expert for e-commerce websites in the transport and logistics industry. 
     
-    return response.output || { metaTitle: '', metaDescription: '', tags: [] };
+            Based on the following shop details:
+            - Shop Name: ${input.shopName}
+            - Shop Description: ${input.shopDescription}
+
+            Generate the SEO content.`,
+            output: {
+                schema: ShopSeoOutputSchema
+            }
+        });
+        
+        return response.output || { metaTitle: '', metaDescription: '', tags: [] };
+    } catch (e: any) {
+        console.error("AI Flow Error in shopSeoFlow:", e);
+        return { metaTitle: input.shopName, metaDescription: input.shopDescription, tags: [] };
+    }
   }
 );

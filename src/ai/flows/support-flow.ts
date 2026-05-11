@@ -66,9 +66,8 @@ const supportFlow = ai.defineFlow(
     try {
         const formattedHistory = history || [];
 
-        // Corrected: Use 'messages' for chat history and pass the query as the last user message.
         const response = await ai.generate({
-            model: 'googleai/gemini-1.5-flash',
+            model: 'gemini-1.5-flash',
             system: systemPrompt,
             messages: [
                 ...formattedHistory,
@@ -85,7 +84,6 @@ const supportFlow = ai.defineFlow(
         return { response: textResponse };
     } catch (e: any) {
         console.error("Error inside supportFlow:", e);
-        // Propagate a user-friendly error to the frontend.
         throw new Error(`The AI service is currently unavailable. Details: ${e.message}`);
     }
   }

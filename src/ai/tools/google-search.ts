@@ -1,4 +1,3 @@
-
 'use server';
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
@@ -27,8 +26,10 @@ export const googleSearchTool = ai.defineTool(
     const apiKey = process.env.GOOGLE_SEARCH_API_KEY;
     const cx = process.env.CUSTOM_SEARCH_ENGINE_ID;
 
+    // RESILIENCE FIX: If keys are missing, return empty instead of throwing to prevent flow crash.
     if (!apiKey || !cx || apiKey === "YOUR_GOOGLE_SEARCH_API_KEY") {
-      throw new Error('Google Search API key or Custom Search Engine ID is not configured.');
+      console.warn('Google Search API key or Custom Search Engine ID is not configured. Returning empty results.');
+      return [];
     }
     
     const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${cx}&q=${encodeURIComponent(input.query)}`;
@@ -37,7 +38,8 @@ export const googleSearchTool = ai.defineTool(
         const response = await fetch(url);
         if (!response.ok) {
             const errorData = await response.json();
-            throw new Error(`Google Search API error: ${errorData.error.message}`);
+            console.error(`Google Search API error: ${errorData.error?.message}`);
+            return [];
         }
         const data = await response.json();
         
@@ -53,8 +55,7 @@ export const googleSearchTool = ai.defineTool(
 
     } catch (e: any) {
         console.error("Error calling Google Search API:", e);
-        // Re-throw the error so the flow catches it and reports it to the user.
-        throw e;
+        return []; // Return empty results on error to allow flow to continue
     }
   }
 );

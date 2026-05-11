@@ -11,7 +11,6 @@ import { ai } from '@/ai/genkit';
 import { googleSearchTool } from '../tools/google-search';
 import { z } from 'genkit'; 
 
-// Define schemas locally using z from genkit to ensure type compatibility for the flow.
 const LeadGenerationInputSchema = z.object({
   prompt: z.string().min(20, 'Please provide a detailed prompt.').describe('A detailed prompt for the AI agent, instructing it what to research.'),
 });
@@ -42,45 +41,48 @@ const leadGenerationAIFlow = ai.defineFlow(
     outputSchema: LeadGenerationOutputSchema,
   },
   async (input: LeadGenerationInput): Promise<LeadGenerationOutput> => {
-    const response = await ai.generate({
-        model: 'googleai/gemini-1.5-flash',
-        tools: [googleSearchTool],
-        prompt: input.prompt,
-        output: {
-            schema: LeadGenerationOutputSchema
-        }
-    });
-    
-    const output = response.output;
-    if (!output || !output.leads) {
-        return { leads: [] };
-    }
-    
-    // Post-process the output to clean up "null" strings and invalid formats.
-    const cleanedLeads = output.leads.map((lead: { companyName: string, role: string, address?: string | null, website?: string | null, phone?: string | null, email?: string | null, contactPerson?: string | null }) => {
-        const cleanedLead = { ...lead };
-        
-        // Convert string "null" or "N/A" to actual null
-        (Object.keys(cleanedLead) as Array<keyof typeof cleanedLead>).forEach(key => {
-            const value = cleanedLead[key];
-            if (typeof value === 'string' && (value.toLowerCase() === 'null' || value.toLowerCase() === 'n/a')) {
-                (cleanedLead as any)[key] = null;
+    try {
+        const response = await ai.generate({
+            model: 'gemini-1.5-flash',
+            tools: [googleSearchTool],
+            prompt: input.prompt,
+            output: {
+                schema: LeadGenerationOutputSchema
             }
         });
-
-        // Specifically validate and nullify email if invalid
-        if (cleanedLead.email && !z.string().email().safeParse(cleanedLead.email).success) {
-            cleanedLead.email = null;
+        
+        const output = response.output;
+        if (!output || !output.leads) {
+            return { leads: [] };
         }
+        
+        // Post-process the output to clean up "null" strings and invalid formats.
+        const cleanedLeads = output.leads.map((lead: any) => {
+            const cleanedLead = { ...lead };
+            
+            (Object.keys(cleanedLead) as Array<keyof typeof cleanedLead>).forEach(key => {
+                const value = cleanedLead[key];
+                if (typeof value === 'string' && (value.toLowerCase() === 'null' || value.toLowerCase() === 'n/a')) {
+                    (cleanedLead as any)[key] = null;
+                }
+            });
 
-        // Specifically validate and nullify website if invalid
-        if (cleanedLead.website && !z.string().url().safeParse(cleanedLead.website).success) {
-            cleanedLead.website = null;
-        }
+            if (cleanedLead.email && !z.string().email().safeParse(cleanedLead.email).success) {
+                cleanedLead.email = null;
+            }
 
-        return cleanedLead;
-    });
+            if (cleanedLead.website && !z.string().url().safeParse(cleanedLead.website).success) {
+                cleanedLead.website = null;
+            }
 
-    return { leads: cleanedLeads };
+            return cleanedLead;
+        });
+
+        return { leads: cleanedLeads };
+    } catch (error: any) {
+        console.error("AI Flow Error in leadGenerationAIFlow:", error);
+        // Ensure we always return a valid object to prevent production render crashes
+        return { leads: [] };
+    }
   }
 );

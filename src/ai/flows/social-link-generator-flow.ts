@@ -9,19 +9,9 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
+import { SocialLinkGeneratorInputSchema, SocialLinkGeneratorOutputSchema } from '../schemas';
 
-const SocialLinkGeneratorInputSchema = z.object({
-  shopName: z.string().describe('The name of the shop.'),
-});
 export type SocialLinkGeneratorInput = z.infer<typeof SocialLinkGeneratorInputSchema>;
-
-const SocialLinkGeneratorOutputSchema = z.object({
-  facebookLink: z.string().url().optional(),
-  instagramLink: z.string().url().optional(),
-  twitterLink: z.string().url().optional(),
-  linkedinLink: z.string().url().optional(),
-  youtubeLink: z.string().url().optional(),
-});
 export type SocialLinkGeneratorOutput = z.infer<typeof SocialLinkGeneratorOutputSchema>;
 
 export async function generateSocialLinks(input: SocialLinkGeneratorInput): Promise<SocialLinkGeneratorOutput> {
@@ -35,19 +25,24 @@ const socialLinkGeneratorFlow = ai.defineFlow(
     outputSchema: SocialLinkGeneratorOutputSchema,
   },
   async (input: SocialLinkGeneratorInput) => {
-    const response = await ai.generate({
-        model: 'gemini-1.5-flash',
-        prompt: `You are an assistant that creates plausible social media URLs for a business.
-        Given the shop name "${input.shopName}", create conventional, best-guess URLs for the following platforms: Facebook, Instagram, Twitter (X), LinkedIn (as a company page), and YouTube.
-        - Sanitize the shop name to be URL-friendly (remove spaces, special characters).
-        - For Twitter/X, keep the name short if possible.
-        - For LinkedIn, use the /company/ path.
-        `,
-        output: {
-            schema: SocialLinkGeneratorOutputSchema
-        }
-    });
+    try {
+        const response = await ai.generate({
+            model: 'gemini-1.5-flash',
+            prompt: `You are an assistant that creates plausible social media URLs for a business.
+            Given the shop name "${input.shopName}", create conventional, best-guess URLs for the following platforms: Facebook, Instagram, Twitter (X), LinkedIn (as a company page), and YouTube.
+            - Sanitize the shop name to be URL-friendly (remove spaces, special characters).
+            - For Twitter/X, keep the name short if possible.
+            - For LinkedIn, use the /company/ path.
+            `,
+            output: {
+                schema: SocialLinkGeneratorOutputSchema
+            }
+        });
 
-    return response.output || {};
+        return response.output || {};
+    } catch (e: any) {
+        console.error("AI Flow Error in socialLinkGeneratorFlow:", e);
+        return {};
+    }
   }
 );
