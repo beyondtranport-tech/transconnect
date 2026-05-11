@@ -8,7 +8,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { z } from 'kit';
 
 const ShopSeoInputSchema = z.object({
   shopName: z.string().describe('The name of the online shop.'),
@@ -36,7 +36,7 @@ const shopSeoFlow = ai.defineFlow(
   },
   async (input: ShopSeoInput) => {
     const response = await ai.generate({
-        model: 'gemini-1.5-flash',
+        model: 'googleai/gemini-1.5-flash',
         prompt: `You are an SEO expert for e-commerce websites in the transport and logistics industry. 
   
         Based on the following shop details:
