@@ -411,7 +411,7 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
                             <div id="tab-content-emails"><Emails /></div>
                         </TabsContent>
                         <TabsContent value="management">
-                            <div id="tab-content-management"><Management /></div>
+                            <Management />
                         </TabsContent>
                     </CardContent>
                 </Card>
