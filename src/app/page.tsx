@@ -91,7 +91,7 @@ export default function HomePage() {
         <div className="container mx-auto px-4">
           <div className="text-center max-w-3xl mx-auto mb-12">
             <h2 className="text-3xl md:text-4xl font-bold font-headline">Built on a Foundation of Trust</h2>
-            <p className="mt-4 text-lg md:text-xl text-muted-foreground">
+            <p className="mt-4 text-lg text-muted-foreground">
               We are committed to building a transparent and fair ecosystem. Our platform is founded on four core values that guide every decision we make.
             </p>
           </div>
