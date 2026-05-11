@@ -26,10 +26,13 @@ export const googleSearchTool = ai.defineTool(
     const apiKey = process.env.GOOGLE_SEARCH_API_KEY;
     const cx = process.env.CUSTOM_SEARCH_ENGINE_ID;
 
-    // RESILIENCE FIX: If keys are missing or placeholders, return empty instead of throwing to prevent flow crash.
-    if (!apiKey || !cx || apiKey === "YOUR_API_KEY_HERE" || apiKey === "PASTE_YOUR_API_KEY_HERE") {
-      console.warn('Google Search API key or Custom Search Engine ID is not configured.');
-      return [];
+    // DIAGNOSTIC CHECK: Throw explicit error if configuration is invalid
+    if (!apiKey || apiKey === "YOUR_API_KEY_HERE" || apiKey.includes("PASTE")) {
+      throw new Error('CONFIG_ERROR: GOOGLE_SEARCH_API_KEY is not configured correctly in .env.');
+    }
+    
+    if (!cx || cx === "YOUR_NEW_SEARCH_ENGINE_ID_HERE" || cx.includes("PASTE")) {
+      throw new Error('CONFIG_ERROR: CUSTOM_SEARCH_ENGINE_ID is not configured correctly in .env.');
     }
     
     const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${cx}&q=${encodeURIComponent(input.query)}`;
@@ -38,8 +41,9 @@ export const googleSearchTool = ai.defineTool(
         const response = await fetch(url);
         if (!response.ok) {
             const errorData = await response.json();
-            console.error(`Google Search API error: ${errorData.error?.message}`);
-            return [];
+            const message = errorData.error?.message || response.statusText;
+            console.error(`Google Search API error: ${message}`);
+            throw new Error(`API_ERROR: Google Search failed with status ${response.status}: ${message}`);
         }
         const data = await response.json();
         
@@ -55,7 +59,8 @@ export const googleSearchTool = ai.defineTool(
 
     } catch (e: any) {
         console.error("Error calling Google Search API:", e);
-        return []; 
+        // Re-throw specific errors so the flow can distinguish between "no results" and "config error"
+        throw e;
     }
   }
 );

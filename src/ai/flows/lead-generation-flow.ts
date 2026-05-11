@@ -1,10 +1,6 @@
 'use server';
 /**
  * @fileOverview An AI-powered research agent for generating potential sales leads.
- *
- * - leadGenerationFlow - A function that researches potential leads based on a topic.
- * - LeadGenerationInput - The input type for the function.
- * - LeadGenerationOutput - The return type for the function.
  */
 
 import { ai } from '@/ai/genkit';
@@ -25,7 +21,8 @@ const LeadGenerationOutputSchema = z.object({
         phone: z.string().nullable().optional().describe("The company's primary phone number, if found."),
         email: z.string().email().nullable().optional().describe("A general contact email for the company (e.g., info@, sales@), if found."),
         contactPerson: z.string().nullable().optional().describe("A potential contact person's name, if found."),
-    })).describe('A list of potential leads based on the research topic.')
+    })).describe('A list of potential leads based on the research topic.'),
+    error: z.string().optional().describe('An error message if the generation failed due to configuration or API issues.')
 });
 export type LeadGenerationOutput = z.infer<typeof LeadGenerationOutputSchema>;
 
@@ -50,11 +47,12 @@ const leadGenerationAIFlow = ai.defineFlow(
             
             CRITICAL INSTRUCTIONS:
             1. You MUST use the googleSearch tool to find actual companies, websites, and contact details. 
-            2. Do not invent data. Only return information found in search results.
-            3. Search for businesses in the specific geographic area mentioned (usually South Africa).
-            4. If no results are found for a specific query, try a broader search using the tool.
+            2. If googleSearch returns no results for a specific query, try a BROADER search using the tool.
+            3. Do not invent data. Only return information found in search results.
+            4. Search for businesses in the specific geographic area mentioned (usually South Africa).
             5. Your final output must contain at least 5 leads extracted from your searches.
-            6. If you hit a rate limit (429), simplify your approach and return what you have found so far.`,
+            6. If you hit a rate limit (429), simplify your approach and return what you have found so far.
+            7. If the googleSearch tool returns a CONFIG_ERROR, stop and report the error.`,
             prompt: input.prompt,
             output: {
                 schema: LeadGenerationOutputSchema
@@ -62,12 +60,12 @@ const leadGenerationAIFlow = ai.defineFlow(
         });
         
         const output = response.output;
-        if (!output || !output.leads) {
+        if (!output) {
             return { leads: [] };
         }
         
         // Post-process the output to clean up "null" strings and invalid formats.
-        const cleanedLeads = output.leads.map((lead: any) => {
+        const cleanedLeads = (output.leads || []).map((lead: any) => {
             const cleanedLead = { ...lead };
             
             (Object.keys(cleanedLead) as Array<keyof typeof cleanedLead>).forEach(key => {
@@ -88,9 +86,15 @@ const leadGenerationAIFlow = ai.defineFlow(
             return cleanedLead;
         });
 
-        return { leads: cleanedLeads };
+        return { ...output, leads: cleanedLeads };
     } catch (error: any) {
         console.error("AI Flow Error in leadGenerationAIFlow:", error);
+        
+        // Bubble up configuration errors to the UI
+        if (error.message?.includes('CONFIG_ERROR') || error.message?.includes('API_ERROR')) {
+            return { leads: [], error: error.message };
+        }
+        
         return { leads: [] };
     }
   }

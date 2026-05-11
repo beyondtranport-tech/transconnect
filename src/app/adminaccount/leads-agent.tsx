@@ -10,13 +10,12 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Bot, Sparkles, AlertTriangle } from 'lucide-react';
+import { Loader2, Bot, Sparkles, AlertTriangle, Settings, Info } from 'lucide-react';
 import { leadGenerationFlow, type LeadGenerationInput } from '@/ai/flows/lead-generation-flow';
 import Link from 'next/link';
 import React from 'react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
-// Define the schema locally to avoid importing from a shared server/client file.
 const LeadGenerationInputSchema = z.object({
   prompt: z.string().min(20, 'Please provide a detailed prompt.').describe('A detailed prompt for the AI agent, instructing it what to research.'),
 });
@@ -26,7 +25,7 @@ const defaultPrompt = `You are an AI research assistant. Your goal is to find 5 
 
 export default function LeadsAgent() {
     const [isLoading, setIsLoading] = useState(false);
-    const [quotaError, setQuotaError] = useState<string | null>(null);
+    const [configError, setConfigError] = useState<string | null>(null);
     const { toast } = useToast();
     const router = useRouter();
 
@@ -39,10 +38,15 @@ export default function LeadsAgent() {
     
     const onSubmit = useCallback(async (values: LeadGenerationInput) => {
         setIsLoading(true);
-        setQuotaError(null);
+        setConfigError(null);
         try {
             const result = await leadGenerationFlow(values);
             
+            if (result.error) {
+                setConfigError(result.error);
+                return;
+            }
+
             if (result.leads && result.leads.length > 0) {
                  toast({
                     title: "Leads Found!",
@@ -53,8 +57,6 @@ export default function LeadsAgent() {
                     action: 'add-member',
                 });
                 
-                // For simplicity, we'll just pass the first lead's data. 
-                // A real implementation might pass all leads or save them first.
                 const firstLead = result.leads[0];
                 if(firstLead.companyName) queryParams.set('newCompanyName', firstLead.companyName);
                 if(firstLead.role) queryParams.set('newRole', firstLead.role);
@@ -70,14 +72,14 @@ export default function LeadsAgent() {
                  toast({
                     variant: "destructive",
                     title: "No Leads Found",
-                    description: "The agent could not find any leads matching your criteria.",
+                    description: "The agent could not find any leads matching your criteria. Try a broader search prompt.",
                 });
             }
 
         } catch (e: any) {
             console.error("Lead generation failed:", e);
             if (e.message?.includes('429') || e.message?.toLowerCase().includes('quota') || e.message?.toLowerCase().includes('resource exhausted')) {
-                setQuotaError("The AI service rate limit has been exceeded (429 Resource Exhausted). This usually happens when generating many leads at once. Please wait 60 seconds before trying again.");
+                setConfigError("The AI service rate limit has been exceeded (429). Please wait 60 seconds and try again.");
             } else {
                 toast({
                     variant: 'destructive',
@@ -92,20 +94,24 @@ export default function LeadsAgent() {
 
     return (
         <div className="space-y-6">
-            {quotaError && (
+            {configError && (
                 <Alert variant="destructive">
                     <AlertTriangle className="h-4 w-4" />
-                    <AlertTitle>Rate Limit Reached</AlertTitle>
+                    <AlertTitle>Configuration Issue Detected</AlertTitle>
                     <AlertDescription>
-                        {quotaError}
-                        <div className="mt-2">
-                             <Button asChild variant="link" className="p-0 h-auto text-xs text-destructive-foreground underline">
-                                <Link href="/docs/quota-increase-guide.md" target="_blank">View Quota Increase Guide</Link>
+                        <p>{configError}</p>
+                        <div className="mt-4 flex gap-2">
+                             <Button asChild variant="outline" size="sm" className="text-destructive-foreground border-destructive">
+                                <Link href="/docs/google-search-setup.md" target="_blank">View Setup Guide</Link>
+                            </Button>
+                            <Button asChild variant="link" size="sm" className="text-destructive-foreground">
+                                <Link href="/docs/quota-increase-guide.md" target="_blank">About Rate Limits (429)</Link>
                             </Button>
                         </div>
                     </AlertDescription>
                 </Alert>
             )}
+
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
@@ -113,7 +119,7 @@ export default function LeadsAgent() {
                         AI Lead Generation Agent
                     </CardTitle>
                     <CardDescription>
-                        Instruct the AI agent to research and generate potential sales leads. The results will be automatically added to the lead database.
+                        Instruct the AI agent to research and generate potential sales leads. Results are sourced from real-time Google search data.
                     </CardDescription>
                 </CardHeader>
                 <Form {...form}>
@@ -124,10 +130,10 @@ export default function LeadsAgent() {
                                 name="prompt"
                                 render={({ field }) => (
                                     <FormItem>
-                                    <FormLabel>Agent Prompt</FormLabel>
+                                    <FormLabel>Agent Instructions</FormLabel>
                                     <FormControl>
                                         <Textarea
-                                            placeholder="Enter your detailed prompt here..."
+                                            placeholder="Describe the type of companies, locations, and details you need..."
                                             className="min-h-[250px] font-mono text-sm"
                                             {...field}
                                         />
@@ -136,8 +142,16 @@ export default function LeadsAgent() {
                                     </FormItem>
                                 )}
                             />
+                            <div className="mt-4 flex items-start gap-2 p-3 bg-muted rounded-md text-xs text-muted-foreground">
+                                <Info className="h-4 w-4 mt-0.5 shrink-0" />
+                                <p>To ensure accuracy, the agent will perform live web searches. If no results are found, try making your prompt more general or specifying a larger city.</p>
+                            </div>
                         </CardContent>
-                        <CardFooter>
+                        <CardFooter className="justify-between">
+                             <Button type="button" variant="outline" onClick={() => form.reset({ prompt: defaultPrompt })}>
+                                <Settings className="mr-2 h-4 w-4" />
+                                Reset Prompt
+                            </Button>
                             <Button type="submit" disabled={isLoading}>
                                 {isLoading ? (
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
