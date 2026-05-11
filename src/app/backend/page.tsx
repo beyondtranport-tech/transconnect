@@ -287,9 +287,7 @@ function BackendContent() {
         </Sidebar>
         <SidebarInset>
             <div className="p-6">
-                <Suspense fallback={<Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" />}>
                 {renderContent()}
-                </Suspense>
             </div>
         </SidebarInset>
       </SidebarProvider>
