@@ -10,6 +10,5 @@ export const ai = genkit({
   ],
 });
 
-// Standard identifier for Genkit v1.x with the Google AI plugin.
-// Using the short name allows the plugin to handle the routing and versioning (v1 or v1beta) correctly.
-export const geminiModel = 'gemini-1.5-flash';
+// Fully qualified model identifier for Genkit v1.x to ensure correct routing.
+export const geminiModel = 'googleai/gemini-1.5-flash';

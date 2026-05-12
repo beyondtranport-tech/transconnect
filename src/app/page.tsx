@@ -11,8 +11,7 @@ import { useUser } from "@/firebase";
 import * as React from "react";
 import { useState } from "react";
 import * as gtag from '@/lib/gtag';
-// Using relative path for the intent modal to ensure reliability in all build environments
-import { HomeIntentModal } from "./home-intent-modal";
+import { HomeIntentModal } from "@/app/home-intent-modal";
 
 const { placeholderImages } = data;
 
