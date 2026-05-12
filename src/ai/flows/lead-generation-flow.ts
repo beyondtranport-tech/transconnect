@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview An AI-powered research agent for generating potential sales leads.
@@ -25,20 +24,22 @@ const LeadGenerationOutputSchema = z.object({
         email: z.string().email().nullable().optional().describe("A general contact email for the company (e.g., info@, sales@), if found."),
         contactPerson: z.string().nullable().optional().describe("A potential contact person's name, if found."),
     })).describe('A list of potential leads based on the research topic.'),
-    error: z.string().optional().describe('An error message if the generation failed due to configuration or API issues.')
 });
-export type LeadGenerationOutput = z.infer<typeof LeadGenerationOutputSchema>;
-
+export type LeadGenerationOutput = {
+    leads: z.infer<typeof LeadGenerationOutputSchema>['leads'];
+    error?: string;
+};
 
 export async function leadGenerationFlow(input: LeadGenerationInput): Promise<LeadGenerationOutput> {
   try {
-    return await leadGenerationAIFlow(input);
+    const result = await leadGenerationAIFlow(input);
+    return result;
   } catch (error: any) {
     console.error("Critical error in leadGenerationFlow action:", error);
     // Return a safe object instead of throwing to prevent "Failed to fetch" on the client
     return {
       leads: [],
-      error: error.message || "A technical error occurred while contacting the AI service. Please try again."
+      error: error.message || "A technical error occurred while contacting the AI service. Please check your GEMINI_API_KEY and model availability."
     };
   }
 }

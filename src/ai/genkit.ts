@@ -10,5 +10,5 @@ export const ai = genkit({
   ],
 });
 
-// Standardized model identifier for Genkit v1.x
-export const geminiModel = 'gemini-1.5-flash';
+// Using fully qualified identifier for maximum compatibility with Genkit v1.x
+export const geminiModel = 'googleai/gemini-1.5-flash';
