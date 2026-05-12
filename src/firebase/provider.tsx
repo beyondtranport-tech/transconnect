@@ -149,9 +149,21 @@ export const useFirebase = () => {
   return context;
 };
 
-export const useAuth = (): Auth => useFirebase().auth!;
-export const useFirestore = (): Firestore => useFirebase().firestore!;
-export const useFirebaseApp = (): FirebaseApp => useFirebase().firebaseApp!;
+export const useAuth = (): Auth => {
+    const fb = useFirebase();
+    if (!fb.auth) throw new Error('Firebase Auth not available');
+    return fb.auth;
+};
+export const useFirestore = (): Firestore => {
+    const fb = useFirebase();
+    if (!fb.firestore) throw new Error('Firebase Firestore not available');
+    return fb.firestore;
+};
+export const useFirebaseApp = (): FirebaseApp => {
+    const fb = useFirebase();
+    if (!fb.firebaseApp) throw new Error('Firebase App not available');
+    return fb.firebaseApp;
+};
 
 export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T {
   const memoized = useMemo(factory, deps);
