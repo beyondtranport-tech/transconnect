@@ -1,11 +1,11 @@
-
 'use server';
 /**
  * @fileOverview An AI agent to find missing contact info for business partners.
+ * It is optimized for South African companies and handles cases where the input might be a URL.
  */
 
 import { ai, geminiModel } from '@/ai/genkit';
-import { z } from 'zod'; // Standard zod for flow definition
+import { z } from 'zod';
 import { googleSearchTool } from '../tools/google-search';
 
 const EnrichPartnerInputSchema = z.object({
@@ -33,19 +33,35 @@ const enrichPartnerFlow = ai.defineFlow(
   },
   async (input) => {
     try {
+        console.log(`Enrichment flow started for: "${input.companyName}"`);
+        
+        const isUrl = input.companyName.startsWith('http') || input.companyName.includes('.co.za') || input.companyName.includes('.com');
+        
+        const systemPrompt = `You are a South African lead enrichment specialist. Your goal is to find accurate contact details (email, phone, website) for transport and logistics companies.
+        
+        STRATEGY:
+        1. If the input is a URL, search specifically for that domain and look for "Contact Us" or "About" pages.
+        2. If the input is a name, search for the name + "South Africa" and "contact details".
+        3. Prioritize official websites.
+        4. Use local directories like za.maptons.com, brabys.com, or yellowpages.co.za as reliable secondary sources.
+        5. Extract the email and phone number even if they are only in the search snippet.
+        6. Return null for fields you absolutely cannot verify.`;
+
+        const userPrompt = isUrl 
+            ? `Identify the contact details for the website "${input.companyName}". Find the primary email and phone number.`
+            : `Research the South African company "${input.companyName}". Find their official website, primary contact email, and phone number. Use the googleSearch tool to look at their site or directory listings like Maptons.`;
+
         const { output } = await ai.generate({
             model: geminiModel,
             tools: [googleSearchTool],
-            system: "You are a South African lead enrichment specialist. Your goal is to find accurate contact details for transport and logistics companies. Use official websites, Google Business profiles, and local directories like Maptons (za.maptons.com), Brabys, or Yellow Pages (yellowpages.co.za). Prioritize finding a specific person's email if possible, otherwise return the general info@ or sales@ address.",
-            prompt: `Research the South African company "${input.companyName}". 
-            Find their official website, primary contact email, and phone number. 
-            If they don't have a direct website, look for their listing on Maptons, Brabys, or other SA business directories. 
-            Provide the best available info even if it's partial. 
-            Return null ONLY for fields you absolutely cannot find.`,
+            system: systemPrompt,
+            prompt: userPrompt,
             output: {
                 schema: EnrichPartnerOutputSchema
             }
         });
+        
+        console.log(`Enrichment result for "${input.companyName}":`, output);
         
         return output || { email: null, phone: null, website: null };
     } catch (e: any) {

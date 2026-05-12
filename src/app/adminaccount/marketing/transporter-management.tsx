@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -378,7 +377,11 @@ export default function TransporterManagement() {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication failed.");
             const result = await performAdminAction(token, 'getPartnersByType', { type: 'transporter' });
-            const sortedData = (result.data || []).sort((a:any, b:any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+            const sortedData = (result.data || []).sort((a:any, b:any) => {
+                const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+                const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+                return dateB - dateA;
+            });
             setPartners(sortedData);
         } catch (e: any) {
             setError(e.message);
@@ -405,9 +408,13 @@ export default function TransporterManagement() {
                 const partner = partners.find(p => p.id === id);
                 if (!partner) continue; 
 
-                toast({ title: `Enriching ${partner.companyName || partner.firstName}...` });
+                // Use the companyName if it looks like a URL, otherwise name
+                const queryName = partner.companyName || `${partner.firstName} ${partner.lastName}`;
+                
+                toast({ title: `Enriching ${queryName}...` });
+                
                 const enriched = await enrichPartner({ 
-                    companyName: partner.companyName || `${partner.firstName} ${partner.lastName}`,
+                    companyName: queryName,
                 });
 
                 if (enriched.email || enriched.website || enriched.phone) {
@@ -424,7 +431,7 @@ export default function TransporterManagement() {
                     count++;
                 }
             }
-            toast({ title: "Enrichment Complete", description: `Updated ${count} records.` });
+            toast({ title: "Enrichment Complete", description: `Updated ${count} records with new details.` });
             forceRefresh();
         } catch (e: any) {
             toast({ variant: 'destructive', title: "Enrichment Failed", description: e.message });
@@ -496,7 +503,6 @@ export default function TransporterManagement() {
             <AddFromTextDialog open={activeDialog === 'add-list'} onOpenChange={(o) => !o && setActiveDialog(null)} onComplete={forceRefresh} />
             {activePartner && (
                 <>
-                    <CommunicationLogDialog partnerId={activePartner.id} partnerName={activePartner.companyName || activePartner.firstName} />
                     {activeDialog === 'logs' && <CommunicationLogDialog partnerId={activePartner.id} partnerName={activePartner.companyName || activePartner.firstName} />}
                     {activeDialog === 'add-log' && <AddCommunicationLogDialog partnerId={activePartner.id} onLogAdded={() => { setActiveDialog(null); forceRefresh(); }} />}
                     {activeDialog === 'tasks' && <PartnerTasksDialog partner={activePartner} />}
@@ -531,7 +537,7 @@ export default function TransporterManagement() {
                         <div className="flex items-center gap-2">
                             <span className="text-sm font-semibold text-primary">{selectedIds.length} Selected</span>
                             <Button size="sm" variant="secondary" onClick={handleEnrichSelected} disabled={isEnriching}>{isEnriching ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}Enrich (AI)</Button>
-                            <Button size="sm" variant="outline" onClick={handleExportCSV}><Download className="mr-2 h-4 w-4" /> Export CSV</Button>
+                            <Button size="sm" variant="outline" onClick={handleExportCSV}><Download className="mr-2 h-4 w-4" /> Export for Campaign</Button>
                         </div>
                     )}
                 </CardHeader>
