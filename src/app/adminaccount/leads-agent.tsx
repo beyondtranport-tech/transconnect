@@ -103,7 +103,7 @@ export default function LeadsAgent() {
                     <AlertTriangle className="h-4 w-4" />
                     <AlertTitle>Configuration Issue Detected</AlertTitle>
                     <AlertDescription>
-                        <p>{configError}</p>
+                        <p className="font-mono text-xs whitespace-pre-wrap">{configError}</p>
                         <div className="mt-4 flex gap-2">
                              <Button asChild variant="outline" size="sm" className="text-destructive-foreground border-destructive">
                                 <Link href="/docs/google-search-setup.md" target="_blank">View Setup Guide</Link>

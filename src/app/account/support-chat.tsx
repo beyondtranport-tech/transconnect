@@ -36,7 +36,7 @@ export default function SupportChatContent() {
     const { user, isUserLoading } = useUser();
     const firestore = useFirestore();
     const { toast } = useToast();
-    const [inputMessage, setInputMessage] = useState('');
+    const [inputFieldText, setInputFieldText] = useState('');
     const [isSending, setIsSending] = useState(false);
     const [profileError, setProfileError] = useState(false);
     const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -62,7 +62,7 @@ export default function SupportChatContent() {
     }, [messages]);
 
     const handleSend = async () => {
-        if (!inputMessage.trim()) return;
+        if (!inputFieldText.trim()) return;
         setProfileError(false);
 
         if (!user || !companyId) {
@@ -77,8 +77,8 @@ export default function SupportChatContent() {
 
         setIsSending(true);
 
-        const userMessageText = inputMessage;
-        setInputMessage('');
+        const userMessageText = inputFieldText;
+        setInputFieldText('');
 
         try {
             const token = await getClientSideAuthToken();
@@ -143,7 +143,7 @@ export default function SupportChatContent() {
                 description = "The AI assistant is temporarily unavailable due to high demand. Please try again in a minute.";
             }
             toast({ variant: 'destructive', title: 'Send Failed', description });
-            setInputMessage(userMessageText);
+            setInputFieldText(userMessageText);
         } finally {
             setIsSending(false);
         }
@@ -173,6 +173,7 @@ export default function SupportChatContent() {
                             </Alert>
                         ) : (
                             messages?.map((msg: any) => {
+                                if (!msg) return null;
                                 const isMember = msg.senderId === user?.uid;
                                 const isAI = msg.senderId === 'ai-assistant';
                                 const alignment = isMember ? "justify-end" : "justify-start";
@@ -213,12 +214,12 @@ export default function SupportChatContent() {
                 <div className="mt-auto flex items-center gap-2 pt-4 border-t">
                     <Input 
                         placeholder="Type your message..." 
-                        value={inputMessage}
-                        onChange={e => setInputMessage(e.target.value)}
+                        value={inputFieldText}
+                        onChange={e => setInputFieldText(e.target.value)}
                         onKeyDown={e => e.key === 'Enter' && handleSend()}
                         disabled={isSending || isLoading}
                     />
-                    <Button onClick={handleSend} disabled={isSending || isLoading || !inputMessage.trim()} size="icon">
+                    <Button onClick={handleSend} disabled={isSending || isLoading || !inputFieldText.trim()} size="icon">
                         {isSending ? <Loader2 className="h-4 w-4 animate-spin"/> : <Send className="h-4 w-4" />}
                     </Button>
                 </div>
