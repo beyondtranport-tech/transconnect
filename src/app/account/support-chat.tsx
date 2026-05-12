@@ -147,7 +147,7 @@ export default function SupportChatContent() {
                 <CardTitle className="flex items-center gap-2"><MessageSquare /> Support Chat</CardTitle>
                 <CardDescription>Have a question? Chat with our AI assistant or a support team member.</CardDescription>
             </CardHeader>
-            <CardContent className="flex-1 flex flex-col min-h-0">
+            <CardContent className="flex-1 flex flex-col min-h(0)">
                 <ScrollArea className="flex-1 pr-4 -mr-4 mb-4" ref={scrollAreaRef as any}>
                     <div className="space-y-4">
                         {isLoading ? (
@@ -164,8 +164,7 @@ export default function SupportChatContent() {
                                 </AlertDescription>
                             </Alert>
                         ) : (
-                            messages?.map((msg: any) => {
-                                if (!msg || typeof msg !== 'object') return null;
+                            messages?.filter(m => !!m).map((msg: any) => {
                                 const isMember = msg.senderId === user?.uid;
                                 const isAI = msg.senderId === 'ai-assistant';
                                 const alignment = isMember ? "justify-end" : "justify-start";
