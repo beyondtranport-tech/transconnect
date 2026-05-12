@@ -11,4 +11,5 @@ export const ai = genkit({
 });
 
 // Using fully qualified identifier for maximum compatibility with Genkit v1.x
+// This helps resolve 404 errors on specific API endpoints like v1beta.
 export const geminiModel = 'googleai/gemini-1.5-flash';
