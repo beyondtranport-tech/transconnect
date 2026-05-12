@@ -38,7 +38,7 @@ export function BulkImportDialog({ type, onComplete, children }: BulkImportDialo
 
             const text = await file.text();
             
-            // 1. Remove UTF-8 BOM if present (common in Excel exports)
+            // 1. Remove UTF-8 BOM if present
             const cleanText = text.startsWith('\ufeff') ? text.slice(1) : text;
             
             // 2. Split lines and filter empty ones
@@ -48,18 +48,17 @@ export function BulkImportDialog({ type, onComplete, children }: BulkImportDialo
                 throw new Error("CSV file is empty or missing data rows.");
             }
 
-            // 3. Detect delimiter (comma, semicolon, or tab)
+            // 3. Detect delimiter
             const firstRow = rows[0];
             let delimiter = ',';
             if (firstRow.includes(';')) delimiter = ';';
             if (firstRow.includes('\t')) delimiter = '\t';
 
-            // 4. Parse headers - clean up quotes and whitespace
+            // 4. Parse headers
             const headers = firstRow.split(delimiter).map(h => h.trim().toLowerCase().replace(/["']/g, ''));
             const dataRows = rows.slice(1);
 
             const partners = dataRows.map((row) => {
-                // 5. Parse values - handle potential quotes correctly
                 const values = row.split(delimiter).map(v => v.trim().replace(/^["']|["']$/g, ''));
                 const partner: any = {};
                 
@@ -69,8 +68,8 @@ export function BulkImportDialog({ type, onComplete, children }: BulkImportDialo
 
                     if (header === 'name' || header === 'contact' || header === 'contact name') {
                         const nameParts = val.split(' ');
-                        partner.firstName = nameParts[0] || 'Unknown';
-                        partner.lastName = nameParts.slice(1).join(' ') || 'Member';
+                        partner.firstName = nameParts[0] || 'Member';
+                        partner.lastName = nameParts.slice(1).join(' ') || 'Candidate';
                     } else if (header.includes('email')) {
                         partner.email = val;
                     } else if (header.includes('phone') || header.includes('cell') || header.includes('mobile')) {
@@ -84,16 +83,18 @@ export function BulkImportDialog({ type, onComplete, children }: BulkImportDialo
                     }
                 });
 
-                // Standardize fields if missing
+                // Default values for minimal records (e.g. only company name provided)
                 if (!partner.firstName) partner.firstName = 'Member';
                 if (!partner.lastName) partner.lastName = 'Candidate';
-                if (!partner.companyName && partner.firstName !== 'Member') partner.companyName = `${partner.firstName} ${partner.lastName}`;
+                if (!partner.companyName && partner.firstName !== 'Member') {
+                    partner.companyName = `${partner.firstName} ${partner.lastName}`;
+                }
 
                 return partner;
-            }).filter(p => p.companyName || p.email); // Must have at least a name or email
+            }).filter(p => p.companyName || p.email);
 
             if (partners.length === 0) {
-                throw new Error(`No valid records found using '${delimiter}' as the separator. Check your column headers.`);
+                throw new Error(`No valid records found. Ensure your CSV has a 'Company' or 'Name' header.`);
             }
 
             const response = await fetch('/api/admin', {
@@ -108,7 +109,7 @@ export function BulkImportDialog({ type, onComplete, children }: BulkImportDialo
             const result = await response.json();
             if (!response.ok) throw new Error(result.error || "Import failed.");
 
-            toast({ title: "Import Successful", description: `Added ${partners.length} ${type}s to your database.` });
+            toast({ title: "Import Successful", description: `Added ${partners.length} ${type}s. You can now use AI Enrichment to find missing details.` });
             setIsOpen(false);
             onComplete();
         } catch (e: any) {
@@ -120,7 +121,7 @@ export function BulkImportDialog({ type, onComplete, children }: BulkImportDialo
     };
 
     const downloadTemplate = () => {
-        const csvContent = "data:text/csv;charset=utf-8,Name,Email,Phone,Company,Address,Website\nJohn Doe,john@example.com,0111234567,Doe Transport,123 Main St,www.doe.com\nJane Smith,jane@logistics.co.za,0123456789,Swift Haulage,45 Industrial Rd,www.swifthaul.com";
+        const csvContent = "data:text/csv;charset=utf-8,Company,Email,Phone,Name\nABC Transporters,info@abc.com,0111234567,John Doe\nSwift Haulage,,,Jane Smith";
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
         link.setAttribute("href", encodedUri);
@@ -136,14 +137,14 @@ export function BulkImportDialog({ type, onComplete, children }: BulkImportDialo
             <DialogContent className="sm:max-w-md">
                 <DialogHeader>
                     <DialogTitle>Bulk Import {type.charAt(0).toUpperCase() + type.slice(1)}s</DialogTitle>
-                    <DialogDescription>Upload a CSV file to add multiple records. Our system will attempt to match columns for Name, Email, and Company.</DialogDescription>
+                    <DialogDescription>Upload a CSV file. If you only have company names, our AI can help find emails later.</DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
                     <Alert>
                         <FileText className="h-4 w-4" />
-                        <AlertTitle>CSV Tips</AlertTitle>
+                        <AlertTitle>Minimal Requirements</AlertTitle>
                         <AlertDescription>
-                            Include a header row. We look for <code className="bg-muted px-1 rounded">Name</code>, <code className="bg-muted px-1 rounded">Email</code>, and <code className="bg-muted px-1 rounded">Company</code>.
+                            Your CSV must have at least a <code className="bg-muted px-1 rounded">Company</code> header.
                         </AlertDescription>
                     </Alert>
                     <div className="space-y-2">
@@ -151,7 +152,7 @@ export function BulkImportDialog({ type, onComplete, children }: BulkImportDialo
                         <Input id="csv-file" type="file" accept=".csv" onChange={handleFileChange} disabled={isUploading} />
                     </div>
                     <Button variant="link" size="sm" onClick={downloadTemplate} className="px-0 h-auto font-semibold">
-                        <Download className="mr-2 h-4 w-4" /> Download Sample Template
+                        <Download className="mr-2 h-4 w-4" /> Download Sample CSV
                     </Button>
                 </div>
                 <DialogFooter className="sm:justify-between">

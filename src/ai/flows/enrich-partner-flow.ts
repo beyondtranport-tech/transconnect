@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview An AI agent to find missing contact info for business partners.
@@ -36,8 +35,8 @@ const enrichPartnerFlow = ai.defineFlow(
         const { output } = await ai.generate({
             model: geminiModel,
             tools: [googleSearchTool],
-            system: "You are a contact research expert. Find accurate company details.",
-            prompt: `Find the general contact email, phone, and website for the company "${input.companyName}"${input.contactPerson ? ` (Contact person: ${input.contactPerson})` : ''}. Only return information from search results.`,
+            system: "You are a contact research expert. Your goal is to find accurate contact details for the specified company. Prioritize official websites, Google Business profiles, and verified directories.",
+            prompt: `Find the general contact email, phone, and website for the company "${input.companyName}". If you cannot find a direct email, look for a 'Contact Us' page on their website. Return null for fields you cannot find with high confidence.`,
             output: {
                 schema: EnrichPartnerOutputSchema
             }

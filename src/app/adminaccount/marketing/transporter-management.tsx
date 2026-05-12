@@ -96,11 +96,11 @@ function AddFromTextDialog({ open, onOpenChange, onComplete }: { open: boolean, 
             <DialogContent className="sm:max-w-lg">
                 <DialogHeader>
                     <DialogTitle>Add Transporters from List</DialogTitle>
-                    <DialogDescription>Paste a list of company names below, one per line.</DialogDescription>
+                    <DialogDescription>Paste a list of company names below (one per line) to create placeholder records ready for AI enrichment.</DialogDescription>
                 </DialogHeader>
                 <div className="py-4">
                     <Textarea 
-                        placeholder="ABC Transporters&#10;Swift Logistics Ltd&#10;Global Haulage..." 
+                        placeholder="Company Alpha&#10;Bravo Transport&#10;Charlie Logistics..." 
                         rows={10} 
                         value={text}
                         onChange={(e) => setText(e.target.value)}
@@ -289,11 +289,11 @@ export default function TransporterManagement() {
             p.firstName,
             p.lastName,
             p.email || '',
-            p.companyName || '',
+            `"${p.companyName || ''}"`,
             p.phone || '',
             p.consentStatus || 'pending',
-            `${window.location.origin}/opt-in/${p.id}`,
-            `${window.location.origin}/api/trackEmailOpen/${p.id}`
+            `"${window.location.origin}/opt-in/${p.id}"`,
+            `"${window.location.origin}/api/trackEmailOpen/${p.id}"`
         ]);
 
         const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
@@ -441,7 +441,7 @@ export default function TransporterManagement() {
                             <div className="flex items-center gap-2 animate-in fade-in slide-in-from-right-2">
                                 <span className="text-sm font-semibold text-primary">{selectedIds.length} Selected</span>
                                 <Button size="sm" variant="secondary" onClick={handleEnrichSelected} disabled={isEnriching}>
-                                    {isEnriching ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Wand2 className="mr-2 h-4 w-4" />}
+                                    {isEnriching ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
                                     Enrich (AI)
                                 </Button>
                                 <Button size="sm" variant="outline" onClick={handleExportCSV}>
