@@ -80,7 +80,7 @@ function TaskForm({ partner, onTaskAdded }: { partner: any; onTaskAdded: () => v
                 createdAt: { _methodName: 'serverTimestamp' },
                 updatedAt: { _methodName: 'serverTimestamp' }
             };
-            const path = `/partners/${partner.id}/tasks`;
+            const path = `partners/${partner.id}/tasks`;
 
             await fetch('/api/addUserDoc', {
                 method: 'POST',
@@ -141,7 +141,7 @@ export function PartnerTasksDialog({ partner }: { partner: any }) {
 
     const tasksQuery = useMemoFirebase(() => {
         if (!firestore || !partner?.id) return null;
-        return query(collection(firestore, `/partners/${partner.id}/tasks`), orderBy('createdAt', 'desc'));
+        return query(collection(firestore, `partners/${partner.id}/tasks`), orderBy('createdAt', 'desc'));
     }, [firestore, partner]);
 
     const { data: tasks, isLoading, forceRefresh } = useCollection(tasksQuery);
@@ -156,7 +156,7 @@ export function PartnerTasksDialog({ partner }: { partner: any }) {
                 await fetch('/api/deleteUserDoc', {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ path: `/partners/${partner.id}/tasks/${task.id}` }),
+                    body: JSON.stringify({ path: `partners/${partner.id}/tasks/${task.id}` }),
                 });
                 toast({ title: "Task Deleted" });
             } else if (action === 'toggle') {
@@ -164,7 +164,7 @@ export function PartnerTasksDialog({ partner }: { partner: any }) {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
-                        path: `/partners/${partner.id}/tasks/${task.id}`,
+                        path: `partners/${partner.id}/tasks/${task.id}`,
                         data: { status: task.status === 'pending' ? 'completed' : 'pending', updatedAt: { _methodName: 'serverTimestamp' } }
                     }),
                 });

@@ -13,10 +13,12 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      let isSuperAdminByEmail = isSignedIn() && (request.auth.token.email == 'mkoton100@gmail.com' || request.auth.token.email == 'beyondtransport@gmail.com');
-      let hasAdminClaim = isSignedIn() && request.auth.token.admin == true;
-      let isAssignedAdmin = isSignedIn() && exists(/databases/$(database)/documents/roles_assigned_admin/$(request.auth.uid));
-      return isSuperAdminByEmail || hasAdminClaim || isAssignedAdmin;
+      return isSignedIn() && (
+        request.auth.token.email == 'mkoton100@gmail.com' || 
+        request.auth.token.email == 'beyondtransport@gmail.com' ||
+        request.auth.token.admin == true ||
+        exists(/databases/$(database)/documents/roles_assigned_admin/$(request.auth.uid))
+      );
     }
     
     function isCompanyOwner(companyId) {
@@ -115,24 +117,24 @@ service cloud.firestore {
         allow read, write: if isAdmin();
     }
 
-    match /leads/{leadId=**} {
+    // --- Admin Catch-all Tree Matches ---
+    // Using {allPaths=**} ensures that all subcollections and documents at any depth are covered.
+
+    match /leads/{allPaths=**} {
       allow read, write: if isAdmin();
     }
 
-    match /partners/{partnerId} {
+    match /partners/{allPaths=**} {
       allow read, write: if isAdmin();
-      match /{allPaths=**} {
-        allow read, write: if isAdmin();
-      }
     }
     
-    match /lendingAssets/{assetId} {
+    match /lendingAssets/{allPaths=**} {
         allow read, write: if isAdmin();
     }
-    match /lendingClients/{clientId}/{document=**} {
+    match /lendingClients/{allPaths=**} {
         allow read, write: if isAdmin();
     }
-    match /lendingPartners/{partnerId}/{document=**} {
+    match /lendingPartners/{allPaths=**} {
         allow read, write: if isAdmin();
     }
   }
