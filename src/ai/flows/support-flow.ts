@@ -38,7 +38,7 @@ const supportFlow = ai.defineFlow(
         const formattedHistory = history || [];
 
         const response = await ai.generate({
-            model: 'googleai/gemini-1.0-pro',
+            model: 'googleai/gemini-1.5-flash',
             system: `You are a helpful and friendly AI assistant for Logistics Flow.
             Keep your answers concise, helpful, and encouraging.`,
             messages: [

@@ -51,7 +51,7 @@ const leadGenerationAIFlow = ai.defineFlow(
   async (input: LeadGenerationInput): Promise<LeadGenerationOutput> => {
     try {
         const response = await ai.generate({
-            model: 'googleai/gemini-1.0-pro',
+            model: 'googleai/gemini-1.5-flash',
             tools: [googleSearchTool],
             system: `You are an expert market research agent. 
             Your goal is to find real-world business leads based on the user's request.

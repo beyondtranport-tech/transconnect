@@ -39,7 +39,7 @@ const imageEditFlow = ai.defineFlow(
   },
   async (input) => {
     const { media } = await ai.generate({
-      model: 'googleai/gemini-1.0-pro',
+      model: 'googleai/gemini-2.5-flash-image',
       prompt: [
         { media: { url: input.photoDataUri } },
         { text: input.prompt },

@@ -123,7 +123,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       firebaseApp: servicesAvailable ? firebaseApp : null,
       firestore: servicesAvailable ? firestore : null,
       auth: servicesAvailable ? auth : null,
-      user: enrichedUser,
+      user: enrichedUser as any,
       isUserLoading: isAuthLoading || isDataLoading,
       userError,
       forceRefresh,

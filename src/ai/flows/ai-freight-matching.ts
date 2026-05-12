@@ -49,7 +49,7 @@ const matchFreightFlow = ai.defineFlow(
         prompt += `\n\nFind available freight loads that match these criteria.`;
 
         const response = await ai.generate({
-            model: 'googleai/gemini-1.0-pro',
+            model: 'googleai/gemini-1.5-flash',
             prompt: prompt,
             output: {
                 schema: MatchFreightOutputSchema
