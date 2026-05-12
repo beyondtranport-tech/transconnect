@@ -1,6 +1,8 @@
 'use server';
 /**
  * @fileOverview An AI-powered research agent for generating potential sales leads.
+ * 
+ * - leadGenerationFlow - A function that orchestrates the research and discovery of business leads.
  */
 
 import { ai } from '@/ai/genkit';
@@ -32,6 +34,7 @@ export async function leadGenerationFlow(input: LeadGenerationInput): Promise<Le
     return await leadGenerationAIFlow(input);
   } catch (error: any) {
     console.error("Critical error in leadGenerationFlow action:", error);
+    // Return a safe object instead of throwing to prevent "Failed to fetch" on the client
     return {
       leads: [],
       error: error.message || "A technical error occurred while contacting the AI service. Please try again."
