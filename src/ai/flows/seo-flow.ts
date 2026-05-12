@@ -1,14 +1,15 @@
+
 'use server';
 /**
  * @fileOverview An AI-powered SEO content generation flow for shops.
  */
 
-import { ai } from '@/ai/genkit';
+import { ai, geminiModel } from '@/ai/genkit';
 import { z } from 'genkit';
 import { ShopSeoInputSchema, ShopSeoOutputSchema } from '../schemas';
 
-export type ShopSeoInput = z.infer<typeof MatchFreightInputSchema>;
-export type ShopSeoOutput = z.infer<typeof MatchFreightOutputSchema>;
+export type ShopSeoInput = z.infer<typeof ShopSeoInputSchema>;
+export type ShopSeoOutput = z.infer<typeof ShopSeoOutputSchema>;
 
 
 export async function generateShopSeo(input: ShopSeoInput): Promise<ShopSeoOutput> {
@@ -24,7 +25,7 @@ const shopSeoFlow = ai.defineFlow(
   async (input: ShopSeoInput) => {
     try {
         const response = await ai.generate({
-            model: 'googleai/gemini-1.5-flash',
+            model: geminiModel,
             prompt: `You are an SEO expert for e-commerce websites. 
     
             Based on the following shop details:

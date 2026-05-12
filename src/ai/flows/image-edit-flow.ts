@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview An AI-powered image editing flow.
@@ -7,7 +8,7 @@
  * - ImageEditOutput - The return type for the imageEdit function.
  */
 
-import { ai } from '@/ai/genkit';
+import { ai, geminiModel } from '@/ai/genkit';
 import { z } from 'genkit';
 
 const ImageEditInputSchema = z.object({
@@ -39,7 +40,7 @@ const imageEditFlow = ai.defineFlow(
   },
   async (input) => {
     const { media } = await ai.generate({
-      model: 'googleai/gemini-1.5-flash',
+      model: geminiModel,
       prompt: [
         { media: { url: input.photoDataUri } },
         { text: input.prompt },

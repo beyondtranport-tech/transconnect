@@ -1,9 +1,10 @@
+
 'use server';
 /**
  * @fileOverview An AI-powered flow to suggest social media links for a shop.
  */
 
-import { ai } from '@/ai/genkit';
+import { ai, geminiModel } from '@/ai/genkit';
 import { z } from 'genkit';
 import { SocialLinkGeneratorInputSchema, SocialLinkGeneratorOutputSchema } from '../schemas';
 
@@ -23,7 +24,7 @@ const socialLinkGeneratorFlow = ai.defineFlow(
   async (input: SocialLinkGeneratorInput) => {
     try {
         const response = await ai.generate({
-            model: 'googleai/gemini-1.5-flash',
+            model: geminiModel,
             prompt: `You are an assistant that creates plausible social media URLs for a business.
             Given the shop name "${input.shopName}", create conventional, best-guess URLs.`,
             output: {

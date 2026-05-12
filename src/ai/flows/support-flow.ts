@@ -1,9 +1,10 @@
+
 'use server';
 /**
  * @fileOverview An AI-powered customer support agent.
  */
 
-import { ai } from '@/ai/genkit';
+import { ai, geminiModel } from '@/ai/genkit';
 import { z } from 'genkit';
 
 const SupportInputSchema = z.object({
@@ -43,7 +44,7 @@ const supportFlow = ai.defineFlow(
         const formattedHistory = history || [];
 
         const response = await ai.generate({
-            model: 'googleai/gemini-1.5-flash',
+            model: geminiModel,
             system: `You are a helpful and friendly AI assistant for Logistics Flow.
             Keep your answers concise, helpful, and encouraging.`,
             messages: [

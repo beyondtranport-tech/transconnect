@@ -1,6 +1,7 @@
+
 'use server';
 
-import { ai } from '@/ai/genkit';
+import { ai, geminiModel } from '@/ai/genkit';
 import { z } from 'genkit';
 import { MatchFreightInputSchema, MatchFreightOutputSchema } from '../schemas';
 
@@ -49,7 +50,7 @@ const matchFreightFlow = ai.defineFlow(
         prompt += `\n\nFind available freight loads that match these criteria.`;
 
         const response = await ai.generate({
-            model: 'googleai/gemini-1.5-flash',
+            model: geminiModel,
             prompt: prompt,
             output: {
                 schema: MatchFreightOutputSchema

@@ -1,9 +1,10 @@
+
 'use server';
 /**
  * @fileOverview An AI-powered agent for negotiating commercial agreements with members.
  */
 
-import { ai } from '@/ai/genkit';
+import { ai, geminiModel } from '@/ai/genkit';
 import { z } from 'genkit';
 import { getShopPerformanceTool } from '../tools/shop-performance-tool';
 import { getMemberLoyaltyTool } from '../tools/member-loyalty-tool';
@@ -27,7 +28,7 @@ const negotiationAgentFlow = ai.defineFlow(
             const { companyId, shopId, proposedRate } = input;
 
             const response = await ai.generate({
-                model: 'googleai/gemini-1.5-flash',
+                model: geminiModel,
                 tools: [getShopPerformanceTool, getMemberLoyaltyTool],
                 system: `You are a commercial negotiation agent for a logistics platform.
                 

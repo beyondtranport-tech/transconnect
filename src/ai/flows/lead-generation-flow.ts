@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview An AI-powered research agent for generating potential sales leads.
@@ -5,7 +6,7 @@
  * - leadGenerationFlow - A function that orchestrates the research and discovery of business leads.
  */
 
-import { ai } from '@/ai/genkit';
+import { ai, geminiModel } from '@/ai/genkit';
 import { googleSearchTool } from '../tools/google-search';
 import { z } from 'genkit'; 
 
@@ -51,7 +52,7 @@ const leadGenerationAIFlow = ai.defineFlow(
   async (input: LeadGenerationInput): Promise<LeadGenerationOutput> => {
     try {
         const response = await ai.generate({
-            model: 'gemini-1.5-flash',
+            model: geminiModel,
             tools: [googleSearchTool],
             system: `You are an expert market research agent. 
             Your goal is to find real-world business leads based on the user's request.
