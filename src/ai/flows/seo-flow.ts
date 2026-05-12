@@ -1,10 +1,6 @@
 'use server';
 /**
  * @fileOverview An AI-powered SEO content generation flow for shops.
- *
- * - generateShopSeo - A function that creates SEO content based on shop details.
- * - ShopSeoInput - The input type for the generateShopSeo function.
- * - ShopSeoOutput - The return type for the generateShopSeo function.
  */
 
 import { ai } from '@/ai/genkit';
@@ -28,8 +24,8 @@ const shopSeoFlow = ai.defineFlow(
   async (input: ShopSeoInput) => {
     try {
         const response = await ai.generate({
-            model: 'gemini-1.5-flash',
-            prompt: `You are an SEO expert for e-commerce websites in the transport and logistics industry. 
+            model: 'googleai/gemini-1.5-flash',
+            prompt: `You are an SEO expert for e-commerce websites. 
     
             Based on the following shop details:
             - Shop Name: ${input.shopName}
@@ -41,7 +37,7 @@ const shopSeoFlow = ai.defineFlow(
             }
         });
         
-        return response.output || { metaTitle: '', metaDescription: '', tags: [] };
+        return response.output || { metaTitle: input.shopName, metaDescription: input.shopDescription, tags: [] };
     } catch (e: any) {
         console.error("AI Flow Error in shopSeoFlow:", e);
         return { metaTitle: input.shopName, metaDescription: input.shopDescription, tags: [] };

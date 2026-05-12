@@ -27,25 +27,14 @@ const negotiationAgentFlow = ai.defineFlow(
             const { companyId, shopId, proposedRate } = input;
 
             const response = await ai.generate({
-                model: 'gemini-1.5-flash',
+                model: 'googleai/gemini-1.5-flash',
                 tools: [getShopPerformanceTool, getMemberLoyaltyTool],
-                system: `You are a commercial negotiation agent for a logistics platform. Your goal is to evaluate a commission rate proposal from a member for their online shop.
-
+                system: `You are a commercial negotiation agent for a logistics platform.
+                
                 Platform Standard Commission Rate: 2.5%
                 Platform Target Rate (for high-value partners): 1.5%
 
-                Your task is to:
-                1. Use the available tools to gather data about the member's shop performance and their loyalty status on the platform.
-                2. Analyze this data in conjunction with the member's proposed rate (${proposedRate}%).
-                3. Make a decision: 'accept', 'reject', or 'counter'.
-                4. Provide a clear justification for your decision, referencing the data you found.
-                5. If you make a counter-offer, it must be between the target rate (1.5%) and the standard rate (2.5%).
-
-                Decision Logic:
-                - ACCEPT if the proposed rate is at or above the target rate (>= 1.5%) AND the member is a high-value partner (e.g., high sales volume, long-term member, high loyalty tier).
-                - REJECT if the proposed rate is excessively low (e.g., < 1.0%) with no strong justification from the member's performance data.
-                - COUNTER in most other cases. Propose a fair rate based on the data. For example, a good partner with a low proposal might get a counter-offer of 1.75%. A new partner might get 2.25%.
-                `,
+                Evaluate a commission rate proposal from a member.`,
                 prompt: `Evaluate the proposal from company ${companyId} for shop ${shopId}. They have proposed a commission rate of ${proposedRate}%.`,
                 output: {
                     schema: NegotiationOutputSchema

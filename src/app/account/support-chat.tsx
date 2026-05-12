@@ -70,13 +70,12 @@ export default function SupportChatContent() {
             toast({
                 variant: 'destructive',
                 title: 'Could not send message',
-                description: 'Your user profile or company ID could not be found. Please complete your profile.',
+                description: 'Your profile information could not be found.',
             });
             return;
         }
 
         setIsSending(true);
-
         const userMessageText = inputFieldText;
         setInputFieldText('');
 
@@ -84,7 +83,7 @@ export default function SupportChatContent() {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication failed.");
 
-            // 1. Save the user's message
+            // 1. Save user message
             const path = `companies/${companyId}/supportMessages`;
             const userMessageData = {
                 text: userMessageText,
@@ -94,32 +93,29 @@ export default function SupportChatContent() {
                 readByAdmin: false,
                 companyId: companyId,
             };
-            const userMessageResponse = await fetch('/api/addUserDoc', {
+            await fetch('/api/addUserDoc', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ collectionPath: path, data: userMessageData }),
             });
-            if (!userMessageResponse.ok) throw new Error((await userMessageResponse.json()).error || 'Failed to send message.');
             
             forceRefresh();
 
-            // 2. Call the AI for a response
-            const historyForApi: { role: 'user' | 'model'; content: { text: string; }[] }[] = (messages || []).map(msg => {
-                const role: 'user' | 'model' = msg.senderId === user.uid ? 'user' : 'model';
-                return {
-                    role: role,
-                    content: [{ text: msg.text }],
-                };
-            });
-            
+            // 2. Call AI
+            const historyForApi: { role: 'user' | 'model'; content: { text: string; }[] }[] = (messages || [])
+                .filter(m => !!m && typeof m === 'object')
+                .map(msg => {
+                    const role: 'user' | 'model' = msg.senderId === user.uid ? 'user' : 'model';
+                    return { role, content: [{ text: msg.text }] };
+                });
 
             const aiResult = await supportQuery({ 
                 query: userMessageText, 
                 history: historyForApi
             });
 
-            // 3. Save the AI's response
-            const aiMessageDataForDb = {
+            // 3. Save AI response
+            const aiMessageData = {
                 text: aiResult.response,
                 senderId: 'ai-assistant',
                 senderName: 'AI Assistant',
@@ -127,22 +123,17 @@ export default function SupportChatContent() {
                 readByAdmin: false,
                 companyId: companyId,
             };
-            const aiMessageResponse = await fetch('/api/addUserDoc', {
+            await fetch('/api/addUserDoc', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ collectionPath: path, data: aiMessageDataForDb }),
+                body: JSON.stringify({ collectionPath: path, data: aiMessageData }),
             });
-             if (!aiMessageResponse.ok) throw new Error((await aiMessageResponse.json()).error || 'Failed to save AI response.');
             
             forceRefresh();
 
         } catch (error: any) {
             console.error("Support chat error:", error);
-            let description = error.message;
-            if (error.message?.includes('429') || error.message?.toLowerCase().includes('quota') || error.message?.toLowerCase().includes('resource exhausted')) {
-                description = "The AI assistant is temporarily unavailable due to high demand. Please try again in a minute.";
-            }
-            toast({ variant: 'destructive', title: 'Send Failed', description });
+            toast({ variant: 'destructive', title: 'Send Failed', description: error.message });
             setInputFieldText(userMessageText);
         } finally {
             setIsSending(false);
@@ -165,7 +156,7 @@ export default function SupportChatContent() {
                                 <AlertTriangle className="h-4 w-4" />
                                 <AlertTitle>Profile Incomplete</AlertTitle>
                                 <AlertDescription>
-                                    We couldn't find your company profile. Please complete your user profile to enable support chat.
+                                    Please complete your profile to enable support chat.
                                     <Button asChild variant="link" className="p-0 h-auto ml-1">
                                         <Link href="/account?view=profile">Go to My Profile</Link>
                                     </Button>
@@ -173,7 +164,7 @@ export default function SupportChatContent() {
                             </Alert>
                         ) : (
                             messages?.map((msg: any) => {
-                                if (!msg) return null;
+                                if (!msg || typeof msg !== 'object') return null;
                                 const isMember = msg.senderId === user?.uid;
                                 const isAI = msg.senderId === 'ai-assistant';
                                 const alignment = isMember ? "justify-end" : "justify-start";
@@ -193,7 +184,7 @@ export default function SupportChatContent() {
                                             isAI ? "bg-blue-200 text-blue-900" :
                                             "bg-muted"
                                         )}>
-                                            <p className="font-semibold text-xs mb-1">{msg.senderName || (isAI ? 'AI Assistant' : 'Support')}</p>
+                                            <p className="font-semibold text-xs mb-1">{msg.senderName || 'Staff'}</p>
                                             <p>{msg.text}</p>
                                             <p className="text-xs opacity-70 mt-1 text-right">{formatDate(msg.timestamp)}</p>
                                         </div>

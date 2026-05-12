@@ -1,10 +1,6 @@
 'use server';
 /**
  * @fileOverview An AI-powered flow to suggest social media links for a shop.
- *
- * - generateSocialLinks - A function that suggests social media URLs based on a shop name.
- * - SocialLinkGeneratorInput - The input type for the function.
- * - SocialLinkGeneratorOutput - The return type for the function.
  */
 
 import { ai } from '@/ai/genkit';
@@ -27,13 +23,9 @@ const socialLinkGeneratorFlow = ai.defineFlow(
   async (input: SocialLinkGeneratorInput) => {
     try {
         const response = await ai.generate({
-            model: 'gemini-1.5-flash',
+            model: 'googleai/gemini-1.5-flash',
             prompt: `You are an assistant that creates plausible social media URLs for a business.
-            Given the shop name "${input.shopName}", create conventional, best-guess URLs for the following platforms: Facebook, Instagram, Twitter (X), LinkedIn (as a company page), and YouTube.
-            - Sanitize the shop name to be URL-friendly (remove spaces, special characters).
-            - For Twitter/X, keep the name short if possible.
-            - For LinkedIn, use the /company/ path.
-            `,
+            Given the shop name "${input.shopName}", create conventional, best-guess URLs.`,
             output: {
                 schema: SocialLinkGeneratorOutputSchema
             }

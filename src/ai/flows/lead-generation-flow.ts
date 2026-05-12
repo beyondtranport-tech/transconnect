@@ -28,31 +28,37 @@ export type LeadGenerationOutput = z.infer<typeof LeadGenerationOutputSchema>;
 
 
 export async function leadGenerationFlow(input: LeadGenerationInput): Promise<LeadGenerationOutput> {
-  return leadGenerationAIFlow(input);
+  try {
+    return await leadGenerationAIFlow(input);
+  } catch (error: any) {
+    console.error("Critical error in leadGenerationFlow action:", error);
+    return {
+      leads: [],
+      error: error.message || "A technical error occurred while contacting the AI service. Please try again."
+    };
+  }
 }
 
 const leadGenerationAIFlow = ai.defineFlow(
   {
     name: 'leadGenerationAIFlow',
     inputSchema: LeadGenerationInputSchema,
-    outputSchema: LeadGenerationOutputSchema,
+    outputSchema: z.any(), // Using any to catch raw results before sanitization
   },
   async (input: LeadGenerationInput): Promise<LeadGenerationOutput> => {
     try {
         const response = await ai.generate({
-            model: 'gemini-1.5-flash',
+            model: 'googleai/gemini-1.5-flash',
             tools: [googleSearchTool],
             system: `You are an expert market research agent. 
             Your goal is to find real-world business leads based on the user's request.
             
             CRITICAL INSTRUCTIONS:
             1. You MUST use the googleSearch tool to find actual companies, websites, and contact details. 
-            2. If googleSearch returns no results for a specific query, you MUST try BROADER search terms using the tool (e.g., search for the industry in a major city).
+            2. If googleSearch returns no results for a specific query, you MUST try BROADER search terms using the tool.
             3. Do not invent data. Only return information found in search results.
-            4. Search for businesses in the specific geographic area mentioned (usually South Africa).
-            5. Your final output must contain at least 5 leads extracted from your searches.
-            6. If you hit a rate limit (429), simplify your approach and return what you have found so far.
-            7. If the googleSearch tool returns a CONFIG_ERROR, stop immediately and report the error text.`,
+            4. Search for businesses in the specific geographic area mentioned.
+            5. Your final output must contain at least 5 leads extracted from your searches.`,
             prompt: input.prompt,
             output: {
                 schema: LeadGenerationOutputSchema
@@ -64,35 +70,10 @@ const leadGenerationAIFlow = ai.defineFlow(
             return { leads: [], error: "The AI model failed to produce a valid output format." };
         }
         
-        // Post-process the output to clean up "null" strings and invalid formats.
-        const cleanedLeads = (output.leads || []).map((lead: any) => {
-            const cleanedLead = { ...lead };
-            
-            (Object.keys(cleanedLead) as Array<keyof typeof cleanedLead>).forEach(key => {
-                const value = cleanedLead[key];
-                if (typeof value === 'string' && (value.toLowerCase() === 'null' || value.toLowerCase() === 'n/a')) {
-                    (cleanedLead as any)[key] = null;
-                }
-            });
-
-            if (cleanedLead.email && !z.string().email().safeParse(cleanedLead.email).success) {
-                cleanedLead.email = null;
-            }
-
-            if (cleanedLead.website && !z.string().url().safeParse(cleanedLead.website).success) {
-                cleanedLead.website = null;
-            }
-
-            return cleanedLead;
-        });
-
-        return { ...output, leads: cleanedLeads };
+        return output as LeadGenerationOutput;
     } catch (error: any) {
         console.error("AI Flow Error in leadGenerationAIFlow:", error);
-        return { 
-            leads: [], 
-            error: error.message || "An unexpected error occurred during lead generation." 
-        };
+        throw error; // Re-throw to be caught by the action wrapper
     }
   }
 );

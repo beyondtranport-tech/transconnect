@@ -143,26 +143,23 @@ export const useFirebase = () => {
   if (context === undefined) {
     throw new Error('useFirebase must be used within a FirebaseProvider.');
   }
-  if (!context.areServicesAvailable || !context.firebaseApp || !context.firestore || !context.auth) {
-    throw new Error('Firebase core services not available. Check FirebaseProvider props.');
-  }
   return context;
 };
 
 export const useAuth = (): Auth => {
     const fb = useFirebase();
     if (!fb.auth) throw new Error('Firebase Auth not available');
-    return fb.auth!;
+    return fb.auth;
 };
 export const useFirestore = (): Firestore => {
     const fb = useFirebase();
     if (!fb.firestore) throw new Error('Firebase Firestore not available');
-    return fb.firestore!;
+    return fb.firestore;
 };
 export const useFirebaseApp = (): FirebaseApp => {
     const fb = useFirebase();
     if (!fb.firebaseApp) throw new Error('Firebase App not available');
-    return fb.firebaseApp!;
+    return fb.firebaseApp;
 };
 
 export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T {

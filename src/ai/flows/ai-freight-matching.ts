@@ -35,7 +35,7 @@ const matchFreightFlow = ai.defineFlow(
 
         if (input.isPartLoad && input.palletCount) {
             prompt += `
-            - Load Type: This is a PART LOAD. The transporter has space for approximately ${input.palletCount} pallets (roughly ${input.palletCount} tons).`;
+            - Load Type: This is a PART LOAD. The transporter has space for approximately ${input.palletCount} pallets.`;
         } else {
             prompt += `
             - Load Type: Looking for a FULL LOAD.`;
@@ -46,12 +46,10 @@ const matchFreightFlow = ai.defineFlow(
             - Other Preferences: ${input.preferences}`;
         }
 
-        prompt += `
-
- Find available freight loads that match these criteria. Critically, if it is a part load, only return loads that would fit the specified palletCount.`;
+        prompt += `\n\nFind available freight loads that match these criteria.`;
 
         const response = await ai.generate({
-            model: 'gemini-1.5-flash',
+            model: 'googleai/gemini-1.5-flash',
             prompt: prompt,
             output: {
                 schema: MatchFreightOutputSchema
