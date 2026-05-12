@@ -106,7 +106,7 @@ export default function LeadsAgent() {
                         <p className="font-mono text-xs whitespace-pre-wrap">{configError}</p>
                         <div className="mt-4 flex gap-2">
                              <Button asChild variant="outline" size="sm" className="text-destructive-foreground border-destructive">
-                                <Link href="/docs/google-search-setup.md" target="_blank">View Setup Guide</Link>
+                                <Link href="/docs/enable-gemini-api.md" target="_blank">View Setup Guide</Link>
                             </Button>
                             <Button asChild variant="link" size="sm" className="text-destructive-foreground">
                                 <Link href="/docs/quota-increase-guide.md" target="_blank">About Rate Limits (429)</Link>

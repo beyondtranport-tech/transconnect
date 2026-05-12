@@ -7,8 +7,8 @@ import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { ShopSeoInputSchema, ShopSeoOutputSchema } from '../schemas';
 
-export type ShopSeoInput = z.infer<typeof ShopSeoInputSchema>;
-export type ShopSeoOutput = z.infer<typeof ShopSeoOutputSchema>;
+export type ShopSeoInput = z.infer<typeof MatchFreightInputSchema>;
+export type ShopSeoOutput = z.infer<typeof MatchFreightOutputSchema>;
 
 
 export async function generateShopSeo(input: ShopSeoInput): Promise<ShopSeoOutput> {
