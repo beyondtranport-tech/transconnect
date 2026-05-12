@@ -238,7 +238,7 @@ export default function TransporterManagement() {
         const link = document.createElement("a");
         const url = URL.createObjectURL(blob);
         link.setAttribute("href", url);
-        link.setAttribute("download", `transporter_export_${Date.now()}.csv`);
+        link.setAttribute("download", `transporter_campaign_${Date.now()}.csv`);
         link.style.visibility = 'hidden';
         document.body.appendChild(link);
         link.click();
