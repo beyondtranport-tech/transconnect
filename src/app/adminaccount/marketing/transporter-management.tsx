@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -5,7 +6,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, Truck, Edit, Trash2, Send, Copy, MessageSquare, ClipboardList, MessageSquarePlus, CheckCircle, Upload, Search, Wand2, Filter, Mail } from 'lucide-react';
+import { Loader2, PlusCircle, Truck, Edit, Trash2, Send, Copy, MessageSquare, ClipboardList, MessageSquarePlus, CheckCircle, Upload, Search, Wand2, Filter, Mail, Download, ShieldCheck } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -121,7 +122,7 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
   );
 }
 
-function TransporterActionMenu({ onInvite, onEdit, onDelete, partner, onUpdate }: { onInvite: () => void; onEdit: () => void; onDelete: () => void; partner: any; onUpdate: () => void; }) {
+function TransporterActionMenu({ onEdit, onDelete, partner, onUpdate }: { onEdit: () => void; onDelete: () => void; partner: any; onUpdate: () => void; }) {
   return (
     <div className="flex justify-end items-center gap-1">
       <CommunicationLogDialog partnerId={partner.id} partnerName={`${partner.firstName} ${partner.lastName}`} />
@@ -180,7 +181,7 @@ export default function TransporterManagement() {
 
             for (const id of selectedIds) {
                 const partner = partners.find(p => p.id === id);
-                if (!partner || partner.email) continue; // Skip if already has email
+                if (!partner || partner.email) continue; 
 
                 toast({ title: `Enriching ${partner.companyName || partner.firstName}...` });
                 
@@ -212,11 +213,36 @@ export default function TransporterManagement() {
         }
     };
 
-    const handleSendCampaign = () => {
-        toast({
-            title: "Campaign Initiated",
-            description: `Preparing email sequence for ${selectedIds.length} transporters. Check CRM tasks for follow-ups.`,
-        });
+    const handleExportCSV = () => {
+        const selectedPartners = partners.filter(p => selectedIds.includes(p.id));
+        if (selectedPartners.length === 0) {
+            toast({ variant: 'destructive', title: 'Selection Required', description: 'Please select transporters to export.' });
+            return;
+        }
+
+        const headers = ["First Name", "Last Name", "Email", "Company", "Phone", "Consent Status", "Opt-in Link"];
+        const rows = selectedPartners.map(p => [
+            p.firstName,
+            p.lastName,
+            p.email || '',
+            p.companyName || '',
+            p.phone || '',
+            p.consentStatus || 'pending',
+            `${window.location.origin}/opt-in/${p.id}`
+        ]);
+
+        const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", `transporter_export_${Date.now()}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        toast({ title: "Export Complete", description: "CSV file is ready for your mail provider." });
     };
 
     const filteredPartners = useMemo(() => {
@@ -251,25 +277,31 @@ export default function TransporterManagement() {
         }
     };
     
-    const invitationStatusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
-        pending: 'secondary',
-        invited: 'outline',
-        registered: 'default',
+    const consentColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
+        pending: 'outline',
+        accepted: 'default',
+        declined: 'destructive',
     };
 
     const columns: ColumnDef<any>[] = useMemo(() => [
         { accessorKey: 'firstName', header: 'First Name' },
         { accessorKey: 'lastName', header: 'Last Name' },
         { accessorKey: 'email', header: 'Email', cell: ({row}) => row.original.email || <Badge variant="destructive">Missing</Badge> },
-        { accessorKey: 'phone', header: 'Phone' },
         { accessorKey: 'companyName', header: 'Company' },
-        { accessorKey: 'status', header: 'Status', cell: ({row}) => <Badge className="capitalize">{row.original.status}</Badge>},
+        { 
+            accessorKey: 'consentStatus', 
+            header: 'POPI Consent', 
+            cell: ({row}) => (
+                <Badge variant={consentColors[row.original.consentStatus] || 'outline'} className="capitalize">
+                    {row.original.consentStatus || 'pending'}
+                </Badge>
+            ) 
+        },
         { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
             <div className="text-right">
                 <TransporterActionMenu 
                     partner={row.original} 
                     onUpdate={forceRefresh}
-                    onInvite={() => {}} 
                     onEdit={() => handleOpenDialog('edit', row.original)} 
                     onDelete={() => handleOpenDialog('delete', row.original)} 
                 />
@@ -301,13 +333,13 @@ export default function TransporterManagement() {
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
                         <CardTitle className="flex items-center gap-2 text-2xl font-bold font-headline"><Truck /> Transporter Management</CardTitle>
-                        <CardDescription>Manage your transporter partners and track onboarding outreach.</CardDescription>
+                        <CardDescription>Manage leads and prepare compliant email campaigns.</CardDescription>
                     </div>
                     <div className="flex flex-wrap gap-2">
                          <BulkImportDialog type="transporter" onComplete={forceRefresh}>
                             <Button variant="outline"><Upload className="mr-2 h-4 w-4"/>Import CSV</Button>
                         </BulkImportDialog>
-                        <Button onClick={() => handleOpenDialog('add')}><PlusCircle className="mr-2 h-4 w-4"/>Add Transporter</Button>
+                        <Button onClick={() => handleOpenDialog('add')}><PlusCircle className="mr-2 h-4 w-4"/>Add Lead</Button>
                     </div>
                 </div>
 
@@ -324,10 +356,10 @@ export default function TransporterManagement() {
                                 <span className="text-sm font-semibold text-primary">{selectedIds.length} Selected</span>
                                 <Button size="sm" variant="secondary" onClick={handleEnrichSelected} disabled={isEnriching}>
                                     {isEnriching ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Wand2 className="mr-2 h-4 w-4" />}
-                                    Enrich Info
+                                    Enrich (AI)
                                 </Button>
-                                <Button size="sm" onClick={handleSendCampaign}>
-                                    <Mail className="mr-2 h-4 w-4" /> Send Campaign
+                                <Button size="sm" variant="outline" onClick={handleExportCSV}>
+                                    <Download className="mr-2 h-4 w-4" /> Export for Campaign
                                 </Button>
                             </div>
                         )}

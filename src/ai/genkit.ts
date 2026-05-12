@@ -1,3 +1,4 @@
+
 import {genkit} from 'genkit';
 import {googleAI} from '@genkit-ai/google-genai';
 
@@ -10,5 +11,5 @@ export const ai = genkit({
   ],
 });
 
-// Standardized model string for use in all flows to prevent resolution errors.
+// Fully qualified string identifier is the most robust for mapping in the studio environment.
 export const geminiModel = 'googleai/gemini-1.5-flash';
