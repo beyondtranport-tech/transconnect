@@ -1,5 +1,4 @@
 
-
 {
   "entities": {
     "User": {
@@ -140,6 +139,9 @@
         "companyName": { "type": "string" },
         "status": { "type": "string", "enum": ["active", "inactive"], "description": "The operational status of the partnership." },
         "invitationStatus": { "type": "string", "enum": ["pending", "invited", "registered"], "description": "The status of their invitation to join the platform." },
+        "consentStatus": { "type": "string", "enum": ["pending", "accepted", "declined"], "description": "POPI and Marketing consent status." },
+        "consentDate": { "type": "object", "description": "Timestamp when consent was recorded." },
+        "lastOpenedAt": { "type": "object", "description": "Timestamp of the last email open tracked via pixel." },
         "type": { "type": "string", "enum": ["partner", "isa", "investor", "developer", "supplier", "transporter"], "description": "The type of partner entity." },
         "notes": { "type": "string" },
         "address": { "type": "string" },
@@ -1102,11 +1104,6 @@
         }
       }
     ],
-    "reasoning": "The data model is refactored to separate user identity from business entities. A new `/users` collection stores individual user profiles, linked via Firebase Auth UID. A new `/companies` collection stores business-related data, including wallet balance, membership status, and subcollections for transactions, staff, quotes, etc. This creates a cleaner, more scalable architecture where a user owns a company, rather than the user and company being the same entity. This prevents data duplication and clarifies ownership for security rules. Added Special Offer fields to Membership entity and created new entities for Connect Plan pricing to support advanced promotional offers. Added a complete, separate data structure for the Debtor Management System (DMS) under collections prefixed with 'lending' to ensure clear separation for future spin-off potential."
+    "reasoning": "Updated Partner entity to include engagement and compliance fields (consentStatus, consentDate, lastOpenedAt) required for professional email campaign automation and POPI tracking."
   }
 }
-    
-    
-    
-
-

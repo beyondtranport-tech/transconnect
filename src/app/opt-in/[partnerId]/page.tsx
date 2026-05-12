@@ -1,14 +1,14 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ShieldCheck, CheckCircle, Loader2, AlertCircle, Scale, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
-import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { doc } from 'firebase/firestore';
 
 export default function OptInPage() {
     const params = useParams();
@@ -26,19 +26,22 @@ export default function OptInPage() {
 
     const { data: partner, isLoading } = useDoc(partnerRef);
 
-    const handleAccept = async () => {
-        if (!partnerRef) return;
+    const handleAction = async (status: 'accepted' | 'declined') => {
         setIsProcessing(true);
         try {
-            await updateDoc(partnerRef, {
-                consentStatus: 'accepted',
-                consentDate: serverTimestamp(),
-                updatedAt: serverTimestamp(),
+            const response = await fetch('/api/recordConsent', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ partnerId, status }),
             });
-            toast({ title: "Consent Recorded", description: "Thank you for confirming your preferences." });
+            
+            const result = await response.json();
+            if (!response.ok || !result.success) throw new Error(result.error);
+
+            toast({ title: status === 'accepted' ? "Consent Recorded" : "Preferences Saved" });
             setCompleted(true);
         } catch (e: any) {
-            toast({ variant: 'destructive', title: "Error", description: "Could not record consent. Please try again later." });
+            toast({ variant: 'destructive', title: "Error", description: e.message || "Could not record consent." });
         } finally {
             setIsProcessing(false);
         }
@@ -68,14 +71,14 @@ export default function OptInPage() {
     if (completed) {
         return (
             <div className="flex justify-center items-center min-h-screen p-4">
-                <Card className="max-w-md w-full text-center border-green-500 bg-green-50/50">
+                <Card className="max-w-md w-full text-center border-green-500 bg-green-50/50 shadow-2xl">
                     <CardHeader>
                         <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
                         <CardTitle>Thank You, {partner?.firstName}!</CardTitle>
-                        <CardDescription>Your marketing consent and agreement to our terms has been securely recorded.</CardDescription>
+                        <CardDescription>Your preferences have been securely recorded.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <p className="text-sm text-muted-foreground">You can now expect to receive valuable updates and opportunities from Logistics Flow.</p>
+                        <p className="text-sm text-muted-foreground">Your partnership status has been updated in our ecosystem. You can now expect to receive valuable opportunities from Logistics Flow.</p>
                     </CardContent>
                     <CardFooter>
                         <Button className="w-full" asChild><a href="/">Visit Our Website</a></Button>
@@ -87,43 +90,46 @@ export default function OptInPage() {
 
     return (
         <div className="flex justify-center items-center min-h-screen p-4 bg-muted/30">
-            <Card className="max-w-lg w-full">
+            <Card className="max-w-lg w-full shadow-xl">
                 <CardHeader className="text-center border-b pb-6">
                     <div className="bg-primary/10 p-3 rounded-full w-fit mx-auto mb-4">
                         <ShieldCheck className="h-8 w-8 text-primary" />
                     </div>
-                    <CardTitle className="text-2xl">Confirm Your Preferences</CardTitle>
+                    <CardTitle className="text-2xl">Confirm Your Participation</CardTitle>
                     <CardDescription>Hi {partner?.firstName}, please review and accept our communication standards to continue.</CardDescription>
                 </CardHeader>
                 <CardContent className="py-8 space-y-6">
                     <div className="flex items-start gap-4">
                         <div className="bg-muted p-2 rounded-md"><FileText className="h-5 w-5 text-muted-foreground"/></div>
                         <div>
-                            <h4 className="font-semibold text-sm">Marketing Consent</h4>
-                            <p className="text-xs text-muted-foreground mt-1">I agree to receive electronic communications from Logistics Flow regarding new opportunities, network growth, and industry news.</p>
+                            <h4 className="font-semibold text-sm text-foreground">Marketing Consent</h4>
+                            <p className="text-xs text-muted-foreground mt-1">I agree to receive electronic communications regarding load matches, group discounts, and platform updates.</p>
                         </div>
                     </div>
                     <div className="flex items-start gap-4">
                         <div className="bg-muted p-2 rounded-md"><Scale className="h-5 w-5 text-muted-foreground"/></div>
                         <div>
-                            <h4 className="font-semibold text-sm">POPI & Privacy Act Compliance</h4>
-                            <p className="text-xs text-muted-foreground mt-1">I acknowledge that my personal information will be handled securely and in accordance with the Protection of Personal Information Act (POPI) as outlined in the privacy policy.</p>
+                            <h4 className="font-semibold text-sm text-foreground">POPI & Privacy Act Compliance</h4>
+                            <p className="text-xs text-muted-foreground mt-1">I acknowledge that my personal information will be handled securely and in accordance with the Protection of Personal Information Act (POPI).</p>
                         </div>
                     </div>
                     <div className="flex items-start gap-4">
                         <div className="bg-muted p-2 rounded-md"><ShieldCheck className="h-5 w-5 text-muted-foreground"/></div>
                         <div>
-                            <h4 className="font-semibold text-sm">Terms & Conditions</h4>
-                            <p className="text-xs text-muted-foreground mt-1">I have read and agree to the general platform terms and conditions for network participants.</p>
+                            <h4 className="font-semibold text-sm text-foreground">Platform Terms</h4>
+                            <p className="text-xs text-muted-foreground mt-1">I have read and agree to the general platform terms for network participants.</p>
                         </div>
                     </div>
                 </CardContent>
                 <CardFooter className="flex-col gap-4 border-t pt-6">
-                    <Button className="w-full" size="lg" onClick={handleAccept} disabled={isProcessing}>
+                    <Button className="w-full" size="lg" onClick={() => handleAction('accepted')} disabled={isProcessing}>
                         {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
                         I Accept & Opt-In
                     </Button>
-                    <p className="text-[10px] text-center text-muted-foreground">By clicking above, you provide your digital signature of consent for {partner?.companyName || 'your business'}.</p>
+                    <Button variant="ghost" className="w-full text-xs text-muted-foreground" onClick={() => handleAction('declined')} disabled={isProcessing}>
+                        I decline all communications
+                    </Button>
+                    <p className="text-[10px] text-center text-muted-foreground italic">By clicking "I Accept", you provide your digital signature of consent for {partner?.companyName || 'your business'}.</p>
                 </CardFooter>
             </Card>
         </div>

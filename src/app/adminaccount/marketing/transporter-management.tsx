@@ -6,7 +6,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, Truck, Edit, Trash2, Send, Copy, MessageSquare, ClipboardList, MessageSquarePlus, CheckCircle, Upload, Search, Wand2, Filter, Mail, Download, ShieldCheck } from 'lucide-react';
+import { Loader2, PlusCircle, Truck, Edit, Trash2, Send, Copy, MessageSquare, ClipboardList, MessageSquarePlus, CheckCircle, Upload, Search, Wand2, Filter, Mail, Download, ShieldCheck, Clock, Eye } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -28,6 +28,7 @@ import Link from 'next/link';
 import { BulkImportDialog } from './BulkImportDialog';
 import { enrichPartner } from '@/ai/flows/enrich-partner-flow';
 import { Switch } from '@/components/ui/switch';
+import { formatDateSafe } from '@/lib/utils';
 
 // API Helper
 async function performAdminAction(token: string, action: string, payload: any) {
@@ -220,7 +221,7 @@ export default function TransporterManagement() {
             return;
         }
 
-        const headers = ["First Name", "Last Name", "Email", "Company", "Phone", "Consent Status", "Opt-in Link"];
+        const headers = ["First Name", "Last Name", "Email", "Company", "Phone", "Consent Status", "Opt-in Link", "Tracking Pixel"];
         const rows = selectedPartners.map(p => [
             p.firstName,
             p.lastName,
@@ -228,7 +229,8 @@ export default function TransporterManagement() {
             p.companyName || '',
             p.phone || '',
             p.consentStatus || 'pending',
-            `${window.location.origin}/opt-in/${p.id}`
+            `${window.location.origin}/opt-in/${p.id}`,
+            `${window.location.origin}/api/trackEmailOpen/${p.id}`
         ]);
 
         const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
@@ -253,7 +255,7 @@ export default function TransporterManagement() {
         return items;
     }, [partners, filterMissingEmail]);
     
-    const handleOpenDialog = async (type: 'add' | 'edit' | 'delete', data?: any) => {
+    const handleOpenDialog = async (type: 'add' | 'edit' | 'delete' | null, data?: any) => {
         setDialogState({ type, data });
     };
     
@@ -284,18 +286,31 @@ export default function TransporterManagement() {
     };
 
     const columns: ColumnDef<any>[] = useMemo(() => [
-        { accessorKey: 'firstName', header: 'First Name' },
-        { accessorKey: 'lastName', header: 'Last Name' },
+        { accessorKey: 'firstName', header: 'Name', cell: ({row}) => <div>{row.original.firstName} {row.original.lastName}</div> },
         { accessorKey: 'email', header: 'Email', cell: ({row}) => row.original.email || <Badge variant="destructive">Missing</Badge> },
         { accessorKey: 'companyName', header: 'Company' },
         { 
             accessorKey: 'consentStatus', 
-            header: 'POPI Consent', 
+            header: 'Consent', 
             cell: ({row}) => (
                 <Badge variant={consentColors[row.original.consentStatus] || 'outline'} className="capitalize">
                     {row.original.consentStatus || 'pending'}
                 </Badge>
             ) 
+        },
+        {
+            accessorKey: 'lastOpenedAt',
+            header: 'Engagement',
+            cell: ({row}) => row.original.lastOpenedAt ? (
+                <div className="flex items-center gap-1.5 text-xs text-green-600 font-medium">
+                    <Eye className="h-3 w-3" />
+                    Read {formatDateSafe(row.original.lastOpenedAt, "dd MMM")}
+                </div>
+            ) : (
+                <div className="text-xs text-muted-foreground italic flex items-center gap-1.5">
+                    <Clock className="h-3 w-3" /> Not read yet
+                </div>
+            )
         },
         { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
             <div className="text-right">
@@ -333,7 +348,7 @@ export default function TransporterManagement() {
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
                         <CardTitle className="flex items-center gap-2 text-2xl font-bold font-headline"><Truck /> Transporter Management</CardTitle>
-                        <CardDescription>Manage leads and prepare compliant email campaigns.</CardDescription>
+                        <CardDescription>Manage leads, enrich data with AI, and prepare compliant email campaigns.</CardDescription>
                     </div>
                     <div className="flex flex-wrap gap-2">
                          <BulkImportDialog type="transporter" onComplete={forceRefresh}>
