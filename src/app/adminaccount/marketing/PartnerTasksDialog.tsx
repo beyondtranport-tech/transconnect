@@ -1,13 +1,14 @@
+
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Loader2, PlusCircle, ClipboardList, Edit, Trash2, CheckCircle, Circle, User, Save } from "lucide-react";
+import { Loader2, PlusCircle, ClipboardList, Trash2, CheckCircle, Circle, Save } from "lucide-react";
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { getClientSideAuthToken, useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { formatDateSafe } from '@/lib/utils';
@@ -122,7 +123,7 @@ function TaskForm({ partner, onTaskAdded }: { partner: any; onTaskAdded: () => v
                     )} />
                 </div>
 
-                <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Notes / Comments</FormLabel><FormControl><Textarea placeholder="Add details relating to the discussion or specific requirements..." {...field} /></FormControl><FormMessage /></FormItem> )} />
+                <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Notes / Comments</FormLabel><FormControl><Textarea placeholder="Add details relating to the discussion..." {...field} /></FormControl><FormMessage /></FormItem> )} />
                 
                 <Button type="submit" disabled={isLoading} className="w-full">
                     {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />} 
@@ -133,16 +134,20 @@ function TaskForm({ partner, onTaskAdded }: { partner: any; onTaskAdded: () => v
     );
 }
 
-export function PartnerTasksDialog({ partner }: { partner: any }) {
-    const [isOpen, setIsOpen] = useState(false);
-    const { toast } = useToast();
+/**
+ * Inner component to handle data fetching. 
+ * This prevents the "thundering herd" problem by only opening a connection 
+ * when the parent dialog is actually opened.
+ */
+function TasksListContent({ partner }: { partner: any }) {
     const firestore = useFirestore();
     const { user } = useUser();
+    const { toast } = useToast();
 
     const tasksQuery = useMemoFirebase(() => {
         if (!firestore || !partner?.id) return null;
         return query(collection(firestore, `partners/${partner.id}/tasks`), orderBy('createdAt', 'desc'));
-    }, [firestore, partner]);
+    }, [firestore, partner.id]);
 
     const { data: tasks, isLoading, forceRefresh } = useCollection(tasksQuery);
 
@@ -174,7 +179,7 @@ export function PartnerTasksDialog({ partner }: { partner: any }) {
         } catch (e: any) {
             toast({ variant: 'destructive', title: 'Action Failed', description: e.message });
         }
-    }, [user, partner, toast, forceRefresh]);
+    }, [user, partner.id, toast, forceRefresh]);
     
     const columns: ColumnDef<any>[] = useMemo(() => [
         {
@@ -202,6 +207,32 @@ export function PartnerTasksDialog({ partner }: { partner: any }) {
     const pendingTasks = useMemo(() => tasks?.filter(t => t.status === 'pending') || [], [tasks]);
     const completedTasks = useMemo(() => tasks?.filter(t => t.status === 'completed') || [], [tasks]);
 
+    if (isLoading) {
+        return <div className="flex justify-center p-8"><Loader2 className="animate-spin text-primary" /></div>;
+    }
+
+    return (
+        <div className="space-y-6">
+            {pendingTasks.length > 0 ? (
+                <DataTable columns={columns} data={pendingTasks} />
+            ) : (
+                <p className="text-center text-sm text-muted-foreground py-4">No pending tasks.</p>
+            )}
+            
+            {completedTasks.length > 0 && (
+                <div>
+                    <h4 className="font-semibold my-4">Completed Tasks</h4>
+                    <DataTable columns={columns} data={completedTasks} />
+                </div>
+            )}
+            <TaskForm partner={partner} onTaskAdded={forceRefresh} />
+        </div>
+    );
+}
+
+export function PartnerTasksDialog({ partner }: { partner: any }) {
+    const [isOpen, setIsOpen] = useState(false);
+
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
@@ -211,29 +242,11 @@ export function PartnerTasksDialog({ partner }: { partner: any }) {
             </DialogTrigger>
             <DialogContent className="max-w-2xl">
                 <DialogHeader>
-                    <DialogTitle>CRM Tasks for {partner?.name || `${partner?.firstName || ''} ${partner?.lastName || ''}`.trim() || 'Partner'}</DialogTitle>
+                    <DialogTitle>CRM Tasks for {partner?.companyName || `${partner?.firstName || ''} ${partner?.lastName || ''}`.trim() || 'Partner'}</DialogTitle>
                     <DialogDescription>Track follow-ups and assign responsibilities for this partner.</DialogDescription>
                 </DialogHeader>
                 <div className="max-h-[70vh] overflow-y-auto pr-4">
-                    {isLoading ? (
-                        <div className="flex justify-center p-8"><Loader2 className="animate-spin" /></div>
-                    ) : (
-                        <div className="space-y-6">
-                            {pendingTasks.length > 0 ? (
-                                <DataTable columns={columns} data={pendingTasks} />
-                            ) : (
-                                <p className="text-center text-sm text-muted-foreground py-4">No pending tasks.</p>
-                            )}
-                            
-                            {completedTasks.length > 0 && (
-                                <div>
-                                    <h4 className="font-semibold my-4">Completed Tasks</h4>
-                                    <DataTable columns={columns} data={completedTasks} />
-                                </div>
-                            )}
-                        </div>
-                    )}
-                    <TaskForm partner={partner} onTaskAdded={forceRefresh} />
+                    {isOpen && <TasksListContent partner={partner} />}
                 </div>
             </DialogContent>
         </Dialog>
