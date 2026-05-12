@@ -155,7 +155,7 @@ const tabs = [
 
 export default function TransporterEmails() {
     const searchParams = useSearchParams();
-    const transporterType = searchParams.get('type') || 'General';
+    const transporterType = searchParams.get('type') || 'Logistics';
     const templates = getTemplates(transporterType);
 
     return (
