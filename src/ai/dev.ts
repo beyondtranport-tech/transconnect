@@ -14,3 +14,4 @@ import '@/ai/flows/tts-flow';
 import '@/ai/flows/social-link-generator-flow';
 import '@/ai/flows/support-flow';
 import '@/ai/flows/negotiation-flow';
+import '@/ai/flows/enrich-partner-flow';

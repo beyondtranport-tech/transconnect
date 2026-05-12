@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -14,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ArrowUpDown } from 'lucide-react';
 import React from 'react';
+import { Checkbox } from './checkbox';
 
 // Helper to safely access nested properties
 function getNestedValue<T>(obj: T, path: string): any {
@@ -24,21 +24,31 @@ function getNestedValue<T>(obj: T, path: string): any {
 interface DataTableProps<TData> {
   columns: ColumnDef<TData>[];
   data: TData[];
+  onSelectionChange?: (selectedIds: string[]) => void;
 }
 
-export function DataTable<TData>({ columns, data }: DataTableProps<TData>) {
+export function DataTable<TData>({ columns, data, onSelectionChange }: DataTableProps<TData>) {
   const {
     rows,
     setSorting,
     sorting,
     setGlobalFilter,
     globalFilter,
+    rowSelection,
+    toggleAll,
+    toggleRow
   } = useDataTable(data, columns);
 
   const handleSort = (columnId: string) => {
     const isAsc = sorting.length > 0 && sorting[0].id === columnId && !sorting[0].desc;
     setSorting([{ id: columnId, desc: isAsc }]);
   };
+
+  React.useEffect(() => {
+      if (onSelectionChange) {
+          onSelectionChange(Object.keys(rowSelection));
+      }
+  }, [rowSelection, onSelectionChange]);
 
   return (
     <div className="space-y-4">
@@ -52,6 +62,12 @@ export function DataTable<TData>({ columns, data }: DataTableProps<TData>) {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-[50px]">
+                <Checkbox 
+                  checked={rows.length > 0 && Object.keys(rowSelection).length === rows.length}
+                  onCheckedChange={(checked) => toggleAll(!!checked)}
+                />
+              </TableHead>
               {columns.map(column => (
                 <TableHead key={(column.id || column.accessorKey) as string}>
                   {column.header ? (
@@ -76,7 +92,13 @@ export function DataTable<TData>({ columns, data }: DataTableProps<TData>) {
           <TableBody>
             {rows.length > 0 ? (
               rows.map((row, index) => (
-                <TableRow key={(row.original as any).id || index}>
+                <TableRow key={(row.original as any).id || index} data-state={rowSelection[(row.original as any).id] ? 'selected' : ''}>
+                  <TableCell>
+                      <Checkbox 
+                        checked={!!rowSelection[(row.original as any).id]}
+                        onCheckedChange={(checked) => toggleRow((row.original as any).id, !!checked)}
+                      />
+                  </TableCell>
                   {columns.map(column => (
                     <TableCell key={(column.id || column.accessorKey) as string}>
                       {column.cell ? column.cell({ row }) : getNestedValue(row.original, column.accessorKey as string)}
@@ -86,7 +108,7 @@ export function DataTable<TData>({ columns, data }: DataTableProps<TData>) {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
+                <TableCell colSpan={columns.length + 1} className="h-24 text-center">
                   No results.
                 </TableCell>
               </TableRow>

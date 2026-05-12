@@ -1,8 +1,6 @@
 'use server';
 /**
  * @fileOverview An AI-powered research agent for generating potential sales leads.
- * 
- * - leadGenerationFlow - A function that orchestrates the research and discovery of business leads.
  */
 
 import { ai, geminiModel } from '@/ai/genkit';
@@ -35,11 +33,10 @@ export async function leadGenerationFlow(input: LeadGenerationInput): Promise<Le
     const result = await leadGenerationAIFlow(input);
     return result;
   } catch (error: any) {
-    console.error("Critical error in leadGenerationFlow action:", error);
-    // Return a safe object instead of throwing to prevent "Failed to fetch" on the client
+    console.error("Lead Gen Flow Error:", error);
     return {
       leads: [],
-      error: error.message || "A technical error occurred while contacting the AI service. Please check your GEMINI_API_KEY and model availability."
+      error: error.message || "Could not connect to AI service."
     };
   }
 }
@@ -50,35 +47,17 @@ const leadGenerationAIFlow = ai.defineFlow(
     inputSchema: LeadGenerationInputSchema,
     outputSchema: z.any(),
   },
-  async (input: LeadGenerationInput): Promise<LeadGenerationOutput> => {
-    try {
-        const response = await ai.generate({
-            model: geminiModel,
-            tools: [googleSearchTool],
-            system: `You are an expert market research agent. 
-            Your goal is to find real-world business leads based on the user's request.
-            
-            CRITICAL INSTRUCTIONS:
-            1. You MUST use the googleSearch tool to find actual companies, websites, and contact details. 
-            2. If googleSearch returns no results for a specific query, you MUST try BROADER search terms using the tool.
-            3. Do not invent data. Only return information found in search results.
-            4. Search for businesses in the specific geographic area mentioned.
-            5. Your final output must contain at least 5 leads extracted from your searches.`,
-            prompt: input.prompt,
-            output: {
-                schema: LeadGenerationOutputSchema
-            }
-        });
-        
-        const output = response.output;
-        if (!output) {
-            return { leads: [], error: "The AI model failed to produce a valid output format." };
+  async (input) => {
+    const response = await ai.generate({
+        model: geminiModel,
+        tools: [googleSearchTool],
+        system: "Expert market research agent. Sourcing leads from real-world web data.",
+        prompt: input.prompt,
+        output: {
+            schema: LeadGenerationOutputSchema
         }
-        
-        return output as LeadGenerationOutput;
-    } catch (error: any) {
-        console.error("AI Flow Error in leadGenerationAIFlow:", error);
-        throw error;
-    }
+    });
+    
+    return response.output || { leads: [] };
   }
 );

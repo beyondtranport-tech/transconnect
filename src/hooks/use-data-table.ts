@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -18,6 +17,7 @@ export type SortingState = {
 export function useDataTable<TData>(data: TData[], columns: ColumnDef<TData>[]) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState('');
+  const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
 
   const getNestedValue = (obj: any, path?: string): any => {
     if (!path || obj === null || obj === undefined) return undefined;
@@ -60,6 +60,26 @@ export function useDataTable<TData>(data: TData[], columns: ColumnDef<TData>[]) 
 
   }, [data, columns, globalFilter, sorting]);
 
+  const toggleAll = (checked: boolean) => {
+      const newSelection: Record<string, boolean> = {};
+      if (checked) {
+          rows.forEach((row) => {
+              const id = (row.original as any).id;
+              if (id) newSelection[id] = true;
+          });
+      }
+      setRowSelection(newSelection);
+  };
+
+  const toggleRow = (id: string, checked: boolean) => {
+      setRowSelection(prev => {
+          const next = { ...prev };
+          if (checked) next[id] = true;
+          else delete next[id];
+          return next;
+      });
+  };
+
 
   return {
     rows,
@@ -67,5 +87,9 @@ export function useDataTable<TData>(data: TData[], columns: ColumnDef<TData>[]) 
     setGlobalFilter,
     sorting,
     globalFilter,
+    rowSelection,
+    setRowSelection,
+    toggleAll,
+    toggleRow
   };
 }

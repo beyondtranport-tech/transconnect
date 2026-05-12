@@ -163,7 +163,7 @@ export default function SupportChatContent() {
                                 </AlertDescription>
                             </Alert>
                         ) : (
-                            messages?.filter(m => !!m && typeof m === 'object' && m.id).map((msg: any) => {
+                            messages?.filter(msg => !!msg && typeof msg === 'object' && msg.id).map((msg: any) => {
                                 const isMember = msg.senderId === user?.uid;
                                 const isAI = msg.senderId === 'ai-assistant';
                                 const alignment = isMember ? "justify-end" : "justify-start";
