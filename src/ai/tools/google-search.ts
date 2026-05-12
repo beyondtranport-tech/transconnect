@@ -26,7 +26,9 @@ export const googleSearchTool = ai.defineTool(
     const apiKey = process.env.GOOGLE_SEARCH_API_KEY;
     const cx = process.env.CUSTOM_SEARCH_ENGINE_ID;
 
-    // DIAGNOSTIC CHECK: Throw explicit error if configuration is invalid
+    // DIAGNOSTIC CHECK: Log configuration status (hidden in production)
+    console.log(`Google Search Tool: Executing for query "${input.query}"`);
+
     if (!apiKey || apiKey === "YOUR_API_KEY_HERE" || apiKey.includes("PASTE")) {
       throw new Error('CONFIG_ERROR: GOOGLE_SEARCH_API_KEY is not configured correctly in .env.');
     }
@@ -48,6 +50,7 @@ export const googleSearchTool = ai.defineTool(
         const data = await response.json();
         
         if (!data.items) {
+            console.log(`Google Search Tool: No results for "${input.query}"`);
             return [];
         }
 
@@ -59,7 +62,6 @@ export const googleSearchTool = ai.defineTool(
 
     } catch (e: any) {
         console.error("Error calling Google Search API:", e);
-        // Re-throw specific errors so the flow can distinguish between "no results" and "config error"
         throw e;
     }
   }

@@ -47,12 +47,12 @@ const leadGenerationAIFlow = ai.defineFlow(
             
             CRITICAL INSTRUCTIONS:
             1. You MUST use the googleSearch tool to find actual companies, websites, and contact details. 
-            2. If googleSearch returns no results for a specific query, try a BROADER search using the tool.
+            2. If googleSearch returns no results for a specific query, you MUST try BROADER search terms using the tool (e.g., search for the industry in a major city).
             3. Do not invent data. Only return information found in search results.
             4. Search for businesses in the specific geographic area mentioned (usually South Africa).
             5. Your final output must contain at least 5 leads extracted from your searches.
             6. If you hit a rate limit (429), simplify your approach and return what you have found so far.
-            7. If the googleSearch tool returns a CONFIG_ERROR, stop and report the error.`,
+            7. If the googleSearch tool returns a CONFIG_ERROR, stop immediately and report the error text.`,
             prompt: input.prompt,
             output: {
                 schema: LeadGenerationOutputSchema
@@ -61,7 +61,7 @@ const leadGenerationAIFlow = ai.defineFlow(
         
         const output = response.output;
         if (!output) {
-            return { leads: [] };
+            return { leads: [], error: "The AI model failed to produce a valid output format." };
         }
         
         // Post-process the output to clean up "null" strings and invalid formats.
@@ -89,13 +89,10 @@ const leadGenerationAIFlow = ai.defineFlow(
         return { ...output, leads: cleanedLeads };
     } catch (error: any) {
         console.error("AI Flow Error in leadGenerationAIFlow:", error);
-        
-        // Bubble up configuration errors to the UI
-        if (error.message?.includes('CONFIG_ERROR') || error.message?.includes('API_ERROR')) {
-            return { leads: [], error: error.message };
-        }
-        
-        return { leads: [] };
+        return { 
+            leads: [], 
+            error: error.message || "An unexpected error occurred during lead generation." 
+        };
     }
   }
 );
