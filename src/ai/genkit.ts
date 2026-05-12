@@ -1,4 +1,3 @@
-
 import {genkit} from 'genkit';
 import {googleAI} from '@genkit-ai/google-genai';
 
@@ -11,6 +10,5 @@ export const ai = genkit({
   ],
 });
 
-// Using 'googleai/gemini-1.5-flash' is the most robust way to ensure Genkit
-// correctly maps the request to the Google AI plugin and avoids v1beta mapping errors.
-export const geminiModel = 'googleai/gemini-1.5-flash';
+// Standardized model identifier for Genkit v1.x
+export const geminiModel = 'gemini-1.5-flash';

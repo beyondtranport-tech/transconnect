@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useCallback } from 'react';
@@ -54,7 +53,6 @@ export default function LeadsAgent() {
                     description: `${result.leads.length} potential leads have been discovered.`,
                 });
                 
-                // Construct query parameters for the first lead to pre-fill the database form
                 const queryParams = new URLSearchParams({
                     view: 'leads-database',
                     action: 'add-member',
@@ -69,7 +67,6 @@ export default function LeadsAgent() {
                 if(firstLead.email) queryParams.set('newEmail', firstLead.email);
                 if(firstLead.contactPerson) queryParams.set('newContactPerson', firstLead.contactPerson);
 
-                // Redirect to the database view within the admin account
                 router.push(`/adminaccount?${queryParams.toString()}`);
 
             } else {
@@ -86,6 +83,7 @@ export default function LeadsAgent() {
             if (errorMessage.includes('429') || errorMessage.toLowerCase().includes('quota') || errorMessage.toLowerCase().includes('resource exhausted')) {
                 setConfigError("The AI service rate limit has been exceeded (429). Please wait 60 seconds and try again.");
             } else {
+                setConfigError(errorMessage);
                 toast({
                     variant: 'destructive',
                     title: 'Lead Generation Failed',
