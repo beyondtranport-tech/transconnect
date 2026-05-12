@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview An AI-powered image editing flow.
@@ -40,7 +39,7 @@ const imageEditFlow = ai.defineFlow(
   },
   async (input) => {
     const { media } = await ai.generate({
-      model: 'googleai/gemini-2.5-flash-image',
+      model: 'googleai/gemini-1.5-flash',
       prompt: [
         { media: { url: input.photoDataUri } },
         { text: input.prompt },
