@@ -52,6 +52,8 @@ export default function LeadsAgent() {
                     title: "Leads Found!",
                     description: `${result.leads.length} potential leads have been discovered.`,
                 });
+                
+                // Construct query parameters for the first lead to pre-fill the database form
                 const queryParams = new URLSearchParams({
                     view: 'leads-database',
                     action: 'add-member',
@@ -66,7 +68,8 @@ export default function LeadsAgent() {
                 if(firstLead.email) queryParams.set('newEmail', firstLead.email);
                 if(firstLead.contactPerson) queryParams.set('newContactPerson', firstLead.contactPerson);
 
-                router.push(`/backend?${queryParams.toString()}`);
+                // Redirect to the database view within the admin account
+                router.push(`/adminaccount?${queryParams.toString()}`);
 
             } else {
                  toast({
@@ -78,13 +81,14 @@ export default function LeadsAgent() {
 
         } catch (e: any) {
             console.error("Lead generation failed:", e);
-            if (e.message?.includes('429') || e.message?.toLowerCase().includes('quota') || e.message?.toLowerCase().includes('resource exhausted')) {
+            const errorMessage = e.message || "An unexpected error occurred.";
+            if (errorMessage.includes('429') || errorMessage.toLowerCase().includes('quota') || errorMessage.toLowerCase().includes('resource exhausted')) {
                 setConfigError("The AI service rate limit has been exceeded (429). Please wait 60 seconds and try again.");
             } else {
                 toast({
                     variant: 'destructive',
                     title: 'Lead Generation Failed',
-                    description: e.message,
+                    description: errorMessage,
                 });
             }
         } finally {

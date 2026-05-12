@@ -119,7 +119,7 @@ export default function SupportChatContent() {
             });
 
             // 3. Save the AI's response
-            const aiMessageData = {
+            const aiMessageDataForDb = {
                 text: aiResult.response,
                 senderId: 'ai-assistant',
                 senderName: 'AI Assistant',
@@ -130,7 +130,7 @@ export default function SupportChatContent() {
             const aiMessageResponse = await fetch('/api/addUserDoc', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ collectionPath: path, data: aiMessageData }),
+                body: JSON.stringify({ collectionPath: path, data: aiMessageDataForDb }),
             });
              if (!aiMessageResponse.ok) throw new Error((await aiMessageResponse.json()).error || 'Failed to save AI response.');
             
