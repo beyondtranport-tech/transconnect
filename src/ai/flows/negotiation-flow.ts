@@ -53,7 +53,7 @@ const negotiationAgentFlow = ai.defineFlow(
             });
             
             const toolRequests = response.toolRequests;
-            const agentTrace = toolRequests.map(req => `Used tool: ${req.toolRequest.name}`);
+            const agentTrace = toolRequests ? toolRequests.map(req => `Used tool: ${req.toolRequest.name}`) : [];
 
             const output = response.output;
             if (!output) {

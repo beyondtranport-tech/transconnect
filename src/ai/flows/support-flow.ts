@@ -67,7 +67,7 @@ const supportFlow = ai.defineFlow(
         const formattedHistory = history || [];
 
         const response = await ai.generate({
-            model: 'gemini-1.5-flash',
+            model: 'googleai/gemini-1.5-flash',
             system: systemPrompt,
             messages: [
                 ...formattedHistory,
