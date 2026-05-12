@@ -22,7 +22,12 @@ export type SupportOutput = z.infer<typeof SupportOutputSchema>;
 
 
 export async function supportQuery(input: SupportInput): Promise<SupportOutput> {
-  return supportFlow(input);
+  try {
+    return await supportFlow(input);
+  } catch (error: any) {
+    console.error("Critical error in supportQuery action:", error);
+    return { response: "I'm sorry, I'm having trouble connecting to my brain right now. Please try again in a moment." };
+  }
 }
 
 const supportFlow = ai.defineFlow(
@@ -56,7 +61,7 @@ const supportFlow = ai.defineFlow(
         return { response: textResponse };
     } catch (e: any) {
         console.error("Error inside supportFlow:", e);
-        throw new Error(`The AI service is currently unavailable. Details: ${e.message}`);
+        throw e;
     }
   }
 );
