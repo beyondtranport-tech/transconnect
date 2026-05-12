@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -6,7 +5,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, Truck, Edit, Trash2, Send, Copy, MessageSquare, ClipboardList, MessageSquarePlus, CheckCircle, Upload, Search, Wand2, Filter, Mail, Download, ShieldCheck, Clock, Eye } from 'lucide-react';
+import { Loader2, PlusCircle, Truck, Edit, Trash2, Send, Copy, MessageSquare, ClipboardList, MessageSquarePlus, CheckCircle, Upload, Search, Wand2, Filter, Mail, Download, ShieldCheck, Clock, Eye, ListPlus } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -55,6 +54,70 @@ const partnerSchema = z.object({
   status: z.enum(['active', 'inactive']),
 });
 type PartnerFormValues = z.infer<typeof partnerSchema>;
+
+function AddFromTextDialog({ open, onOpenChange, onComplete }: { open: boolean, onOpenChange: (open: boolean) => void, onComplete: () => void }) {
+    const [text, setText] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    const { toast } = useToast();
+
+    const handleAdd = async () => {
+        const names = text.split('\n').map(n => n.trim()).filter(n => n.length > 0);
+        if (names.length === 0) return;
+
+        setIsLoading(true);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Auth failed.");
+
+            const partners = names.map(name => ({
+                companyName: name,
+                firstName: 'Member',
+                lastName: 'Candidate',
+                email: '', // Will be enriched later
+                status: 'active',
+                invitationStatus: 'pending'
+            }));
+
+            await performAdminAction(token, 'bulkSavePartners', { partners, type: 'transporter' });
+            
+            toast({ title: "Companies Added", description: `${partners.length} transporters have been added to your list. Use the 'Enrich' button to find their contact details.` });
+            onComplete();
+            onOpenChange(false);
+            setText('');
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: "Add Failed", description: e.message });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-lg">
+                <DialogHeader>
+                    <DialogTitle>Add Transporters from List</DialogTitle>
+                    <DialogDescription>Paste a list of company names below, one per line.</DialogDescription>
+                </DialogHeader>
+                <div className="py-4">
+                    <Textarea 
+                        placeholder="ABC Transporters&#10;Swift Logistics Ltd&#10;Global Haulage..." 
+                        rows={10} 
+                        value={text}
+                        onChange={(e) => setText(e.target.value)}
+                        disabled={isLoading}
+                    />
+                </div>
+                <DialogFooter>
+                    <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
+                    <Button onClick={handleAdd} disabled={isLoading || !text.trim()}>
+                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <ListPlus className="mr-2 h-4 w-4" />}
+                        Add to Database
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
 
 function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: boolean; onOpenChange: (open: boolean) => void; partner?: any; onSave: () => void; }) {
   const [isLoading, setIsLoading] = useState(false);
@@ -147,7 +210,7 @@ export default function TransporterManagement() {
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [filterMissingEmail, setFilterMissingEmail] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [dialogState, setDialogState] = useState<{ type: 'add' | 'edit' | 'delete' | null, data?: any }>({ type: null, data: undefined });
+    const [dialogState, setDialogState] = useState<{ type: 'add' | 'edit' | 'delete' | 'add-list' | null, data?: any }>({ type: null, data: undefined });
 
     const forceRefresh = useCallback(async () => {
         setIsLoading(true);
@@ -182,7 +245,7 @@ export default function TransporterManagement() {
 
             for (const id of selectedIds) {
                 const partner = partners.find(p => p.id === id);
-                if (!partner || partner.email) continue; 
+                if (!partner) continue; 
 
                 toast({ title: `Enriching ${partner.companyName || partner.firstName}...` });
                 
@@ -255,7 +318,7 @@ export default function TransporterManagement() {
         return items;
     }, [partners, filterMissingEmail]);
     
-    const handleOpenDialog = async (type: 'add' | 'edit' | 'delete' | null, data?: any) => {
+    const handleOpenDialog = async (type: 'add' | 'edit' | 'delete' | 'add-list' | null, data?: any) => {
         setDialogState({ type, data });
     };
     
@@ -332,6 +395,11 @@ export default function TransporterManagement() {
                 partner={dialogState.type === 'edit' ? dialogState.data : undefined}
                 onSave={handleSave}
             />
+            <AddFromTextDialog
+                open={dialogState.type === 'add-list'}
+                onOpenChange={(isOpen) => !isOpen && handleCloseDialogs()}
+                onComplete={forceRefresh}
+            />
             <AlertDialog open={dialogState.type === 'delete'} onOpenChange={(isOpen) => !isOpen && handleCloseDialogs()}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
@@ -351,10 +419,13 @@ export default function TransporterManagement() {
                         <CardDescription>Manage leads, enrich data with AI, and prepare compliant email campaigns.</CardDescription>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                         <BulkImportDialog type="transporter" onComplete={forceRefresh}>
+                        <BulkImportDialog type="transporter" onComplete={forceRefresh}>
                             <Button variant="outline"><Upload className="mr-2 h-4 w-4"/>Import CSV</Button>
                         </BulkImportDialog>
-                        <Button onClick={() => handleOpenDialog('add')}><PlusCircle className="mr-2 h-4 w-4"/>Add Lead</Button>
+                        <Button variant="outline" onClick={() => handleOpenDialog('add-list')}>
+                            <ListPlus className="mr-2 h-4 w-4"/>Add from List
+                        </Button>
+                        <Button onClick={() => handleOpenDialog('add')}><PlusCircle className="mr-2 h-4 w-4"/>Add Single Lead</Button>
                     </div>
                 </div>
 

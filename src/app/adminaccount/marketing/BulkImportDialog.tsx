@@ -48,16 +48,18 @@ export function BulkImportDialog({ type, onComplete, children }: BulkImportDialo
                 throw new Error("CSV file is empty or missing data rows.");
             }
 
-            // 3. Detect delimiter (comma or semicolon)
+            // 3. Detect delimiter (comma, semicolon, or tab)
             const firstRow = rows[0];
-            const delimiter = firstRow.includes(';') && !firstRow.includes(',') ? ';' : ',';
+            let delimiter = ',';
+            if (firstRow.includes(';')) delimiter = ';';
+            if (firstRow.includes('\t')) delimiter = '\t';
 
             // 4. Parse headers - clean up quotes and whitespace
             const headers = firstRow.split(delimiter).map(h => h.trim().toLowerCase().replace(/["']/g, ''));
             const dataRows = rows.slice(1);
 
             const partners = dataRows.map((row) => {
-                // 5. Parse values - handle potential quotes
+                // 5. Parse values - handle potential quotes correctly
                 const values = row.split(delimiter).map(v => v.trim().replace(/^["']|["']$/g, ''));
                 const partner: any = {};
                 
@@ -65,34 +67,33 @@ export function BulkImportDialog({ type, onComplete, children }: BulkImportDialo
                     const val = values[index];
                     if (!val) return; 
 
-                    if (header.includes('name')) {
+                    if (header === 'name' || header === 'contact' || header === 'contact name') {
                         const nameParts = val.split(' ');
                         partner.firstName = nameParts[0] || 'Unknown';
-                        partner.lastName = nameParts.slice(1).join(' ') || '';
+                        partner.lastName = nameParts.slice(1).join(' ') || 'Member';
                     } else if (header.includes('email')) {
                         partner.email = val;
-                    } else if (header.includes('phone') || header.includes('cell')) {
+                    } else if (header.includes('phone') || header.includes('cell') || header.includes('mobile')) {
                         partner.phone = val;
-                    } else if (header.includes('company')) {
+                    } else if (header.includes('company') || header.includes('business')) {
                         partner.companyName = val;
                     } else if (header.includes('address')) {
                         partner.address = val;
-                    } else if (header.includes('website')) {
+                    } else if (header.includes('website') || header.includes('url')) {
                         partner.website = val;
                     }
                 });
 
-                // Fallback for missing names if email exists
-                if (partner.email && !partner.firstName) {
-                    partner.firstName = partner.email.split('@')[0];
-                    partner.lastName = 'Member';
-                }
+                // Standardize fields if missing
+                if (!partner.firstName) partner.firstName = 'Member';
+                if (!partner.lastName) partner.lastName = 'Candidate';
+                if (!partner.companyName && partner.firstName !== 'Member') partner.companyName = `${partner.firstName} ${partner.lastName}`;
 
                 return partner;
-            }).filter(p => p.email && p.email.includes('@')); // Must have a valid-looking email
+            }).filter(p => p.companyName || p.email); // Must have at least a name or email
 
             if (partners.length === 0) {
-                throw new Error(`No valid records found. We detected '${delimiter}' as the separator. Ensure your CSV has an 'Email' column and valid data.`);
+                throw new Error(`No valid records found using '${delimiter}' as the separator. Check your column headers.`);
             }
 
             const response = await fetch('/api/admin', {
@@ -135,14 +136,14 @@ export function BulkImportDialog({ type, onComplete, children }: BulkImportDialo
             <DialogContent className="sm:max-w-md">
                 <DialogHeader>
                     <DialogTitle>Bulk Import {type.charAt(0).toUpperCase() + type.slice(1)}s</DialogTitle>
-                    <DialogDescription>Upload a CSV file to add multiple records. Empty fields in your CSV will be ignored to keep data clean.</DialogDescription>
+                    <DialogDescription>Upload a CSV file to add multiple records. Our system will attempt to match columns for Name, Email, and Company.</DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
                     <Alert>
                         <FileText className="h-4 w-4" />
-                        <AlertTitle>CSV Format Requirements</AlertTitle>
+                        <AlertTitle>CSV Tips</AlertTitle>
                         <AlertDescription>
-                            Your file must include a header row with <code className="bg-muted px-1 rounded text-primary">Email</code>. Other supported columns: <code className="bg-muted px-1 rounded">Name, Phone, Company, Address, Website</code>.
+                            Include a header row. We look for <code className="bg-muted px-1 rounded">Name</code>, <code className="bg-muted px-1 rounded">Email</code>, and <code className="bg-muted px-1 rounded">Company</code>.
                         </AlertDescription>
                     </Alert>
                     <div className="space-y-2">
@@ -150,14 +151,14 @@ export function BulkImportDialog({ type, onComplete, children }: BulkImportDialo
                         <Input id="csv-file" type="file" accept=".csv" onChange={handleFileChange} disabled={isUploading} />
                     </div>
                     <Button variant="link" size="sm" onClick={downloadTemplate} className="px-0 h-auto font-semibold">
-                        <Download className="mr-2 h-4 w-4" /> Download Sample CSV Template
+                        <Download className="mr-2 h-4 w-4" /> Download Sample Template
                     </Button>
                 </div>
                 <DialogFooter className="sm:justify-between">
                     <Button variant="ghost" onClick={() => setIsOpen(false)} disabled={isUploading}>Cancel</Button>
                     <Button onClick={handleImport} disabled={!file || isUploading}>
                         {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Upload className="mr-2 h-4 w-4" />}
-                        Start Bulk Import
+                        Start Import
                     </Button>
                 </DialogFooter>
             </DialogContent>
