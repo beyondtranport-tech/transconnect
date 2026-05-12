@@ -11,4 +11,5 @@ export const ai = genkit({
 });
 
 // Use the verified model reference from the plugin for stability.
+// gemini15Flash is a ModelReference object that handles endpoint versioning internally.
 export const geminiModel = gemini15Flash;
