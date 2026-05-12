@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview An AI-powered agent for negotiating commercial agreements with members.
@@ -52,8 +53,9 @@ const negotiationAgentFlow = ai.defineFlow(
             return { ...output, agentTrace };
         } catch (e: any) {
             console.error("AI Flow Error in negotiationAgentFlow:", e);
+            // Explicitly cast the decision to satisfy the Zod enum and TypeScript literal types
             return {
-                decision: 'counter',
+                decision: 'counter' as const,
                 counterOfferRate: 2.25,
                 justification: "System currently experiencing issues. Reverting to standard counter-offer.",
                 agentTrace: ["Agent execution failed."]
