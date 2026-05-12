@@ -103,7 +103,7 @@ export default function SupportChatContent() {
 
             // 2. Call AI
             const historyForApi: { role: 'user' | 'model'; content: { text: string; }[] }[] = (messages || [])
-                .filter(m => !!m && typeof m === 'object')
+                .filter(m => !!m && typeof m === 'object' && m.senderId && m.text)
                 .map(msg => {
                     const role: 'user' | 'model' = msg.senderId === user.uid ? 'user' : 'model';
                     return { role, content: [{ text: msg.text }] };

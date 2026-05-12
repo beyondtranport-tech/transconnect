@@ -11,7 +11,7 @@ import { useUser } from "@/firebase";
 import * as React from "react";
 import { useState } from "react";
 import * as gtag from '@/lib/gtag';
-import { HomeIntentModal } from "@/app/home-intent-modal";
+import { HomeIntentModal } from "./home-intent-modal";
 
 const { placeholderImages } = data;
 
