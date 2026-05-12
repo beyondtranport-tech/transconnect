@@ -26,14 +26,16 @@ export const googleSearchTool = ai.defineTool(
     const apiKey = process.env.GOOGLE_SEARCH_API_KEY;
     const cx = process.env.CUSTOM_SEARCH_ENGINE_ID;
 
-    // DIAGNOSTIC CHECK: Log configuration status
-    console.log(`Google Search Tool Executing: Query="${input.query}"`);
+    // DIAGNOSTIC LOGGING
+    console.log(`Executing Google Search: "${input.query}"`);
 
     if (!apiKey || apiKey === "YOUR_API_KEY_HERE" || apiKey.includes("PASTE")) {
+      console.error("Config Error: GOOGLE_SEARCH_API_KEY is missing or invalid.");
       throw new Error('CONFIG_ERROR: GOOGLE_SEARCH_API_KEY is not configured correctly in .env.');
     }
     
     if (!cx || cx === "YOUR_NEW_SEARCH_ENGINE_ID_HERE" || cx.includes("PASTE")) {
+       console.error("Config Error: CUSTOM_SEARCH_ENGINE_ID is missing or invalid.");
       throw new Error('CONFIG_ERROR: CUSTOM_SEARCH_ENGINE_ID is not configured correctly in .env.');
     }
     
@@ -50,7 +52,7 @@ export const googleSearchTool = ai.defineTool(
         const data = await response.json();
         
         if (!data.items) {
-            console.log(`Google Search Tool: No results returned for query.`);
+            console.warn(`No results found for query: "${input.query}"`);
             return [];
         }
 
@@ -61,7 +63,7 @@ export const googleSearchTool = ai.defineTool(
         }));
 
     } catch (e: any) {
-        console.error("Error calling Google Search API:", e);
+        console.error("Critical error calling Google Search API:", e);
         throw e;
     }
   }

@@ -10,6 +10,6 @@ export const ai = genkit({
   ],
 });
 
-// Using fully qualified identifier for maximum compatibility with Genkit v1.x
-// This helps resolve 404 errors on specific API endpoints like v1beta.
-export const geminiModel = 'googleai/gemini-1.5-flash';
+// Standard identifier for Genkit v1.x with the Google AI plugin.
+// Using the short name allows the plugin to handle the routing and versioning (v1 or v1beta) correctly.
+export const geminiModel = 'gemini-1.5-flash';

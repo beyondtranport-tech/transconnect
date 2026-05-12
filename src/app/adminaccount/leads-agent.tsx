@@ -73,23 +73,19 @@ export default function LeadsAgent() {
                  toast({
                     variant: "destructive",
                     title: "No Leads Found",
-                    description: "The agent could not find any leads matching your criteria. Try a broader search prompt.",
+                    description: "The agent could not find any leads matching your criteria. Try making your search prompt more general.",
                 });
             }
 
         } catch (e: any) {
             console.error("Lead generation failed:", e);
             const errorMessage = e.message || "An unexpected error occurred.";
-            if (errorMessage.includes('429') || errorMessage.toLowerCase().includes('quota') || errorMessage.toLowerCase().includes('resource exhausted')) {
-                setConfigError("The AI service rate limit has been exceeded (429). Please wait 60 seconds and try again.");
-            } else {
-                setConfigError(errorMessage);
-                toast({
-                    variant: 'destructive',
-                    title: 'Lead Generation Failed',
-                    description: errorMessage,
-                });
-            }
+            setConfigError(errorMessage);
+            toast({
+                variant: 'destructive',
+                title: 'Lead Generation Failed',
+                description: errorMessage,
+            });
         } finally {
             setIsLoading(false);
         }
