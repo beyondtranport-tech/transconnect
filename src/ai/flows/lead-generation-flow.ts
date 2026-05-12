@@ -43,12 +43,12 @@ const leadGenerationAIFlow = ai.defineFlow(
   {
     name: 'leadGenerationAIFlow',
     inputSchema: LeadGenerationInputSchema,
-    outputSchema: z.any(), // Using any to catch raw results before sanitization
+    outputSchema: z.any(),
   },
   async (input: LeadGenerationInput): Promise<LeadGenerationOutput> => {
     try {
         const response = await ai.generate({
-            model: 'googleai/gemini-1.5-flash',
+            model: 'googleai/gemini-1.0-pro',
             tools: [googleSearchTool],
             system: `You are an expert market research agent. 
             Your goal is to find real-world business leads based on the user's request.
@@ -73,7 +73,7 @@ const leadGenerationAIFlow = ai.defineFlow(
         return output as LeadGenerationOutput;
     } catch (error: any) {
         console.error("AI Flow Error in leadGenerationAIFlow:", error);
-        throw error; // Re-throw to be caught by the action wrapper
+        throw error;
     }
   }
 );

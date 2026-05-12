@@ -23,7 +23,7 @@ const socialLinkGeneratorFlow = ai.defineFlow(
   async (input: SocialLinkGeneratorInput) => {
     try {
         const response = await ai.generate({
-            model: 'googleai/gemini-1.5-flash',
+            model: 'googleai/gemini-1.0-pro',
             prompt: `You are an assistant that creates plausible social media URLs for a business.
             Given the shop name "${input.shopName}", create conventional, best-guess URLs.`,
             output: {
