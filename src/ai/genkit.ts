@@ -1,6 +1,6 @@
 
 import {genkit} from 'genkit';
-import {googleAI, gemini15Flash} from '@genkit-ai/google-genai';
+import {googleAI} from '@genkit-ai/google-genai';
 
 // This config uses the GEMINI_API_KEY from your .env file.
 export const ai = genkit({
@@ -11,5 +11,7 @@ export const ai = genkit({
   ],
 });
 
-// Export the model constant for standardized usage across all flows
-export const geminiModel = gemini15Flash;
+// Export a stable string identifier for standardized usage across all flows.
+// Using 'googleai/gemini-1.5-flash' is the most robust way to ensure Genkit
+// correctly maps the request to the Google AI plugin.
+export const geminiModel = 'googleai/gemini-1.5-flash';
