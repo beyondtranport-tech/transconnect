@@ -1,10 +1,11 @@
+
 'use server';
 /**
  * @fileOverview An AI agent to find missing contact info for business partners.
  */
 
 import { ai, geminiModel } from '@/ai/genkit';
-import { z } from 'genkit';
+import { z } from 'zod'; // Standard zod for flow definition
 import { googleSearchTool } from '../tools/google-search';
 
 const EnrichPartnerInputSchema = z.object({
@@ -35,12 +36,12 @@ const enrichPartnerFlow = ai.defineFlow(
         const { output } = await ai.generate({
             model: geminiModel,
             tools: [googleSearchTool],
-            system: "You are a lead enrichment specialist. Your goal is to find accurate contact details for companies in South Africa. Use official websites, Google Business profiles, and local directories like Maptons, Brabys, or Yellow Pages.",
-            prompt: `Research the company "${input.companyName}" in South Africa. 
+            system: "You are a South African lead enrichment specialist. Your goal is to find accurate contact details for transport and logistics companies. Use official websites, Google Business profiles, and local directories like Maptons (za.maptons.com), Brabys, or Yellow Pages (yellowpages.co.za). Prioritize finding a specific person's email if possible, otherwise return the general info@ or sales@ address.",
+            prompt: `Research the South African company "${input.companyName}". 
             Find their official website, primary contact email, and phone number. 
-            If they don't have a direct website, look for their listing on directory sites. 
-            Provide the best available info even if it's partial (e.g., just a phone number). 
-            Return null for fields you cannot find.`,
+            If they don't have a direct website, look for their listing on Maptons, Brabys, or other SA business directories. 
+            Provide the best available info even if it's partial. 
+            Return null ONLY for fields you absolutely cannot find.`,
             output: {
                 schema: EnrichPartnerOutputSchema
             }
