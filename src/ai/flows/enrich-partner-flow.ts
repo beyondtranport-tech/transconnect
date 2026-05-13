@@ -5,7 +5,7 @@
  */
 
 import { ai, geminiModel } from '@/ai/genkit';
-import { z } from 'zod';
+import { z } from 'genkit';
 import { googleSearchTool } from '../tools/google-search';
 
 const EnrichPartnerInputSchema = z.object({
