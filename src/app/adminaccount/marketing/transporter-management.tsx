@@ -378,8 +378,8 @@ export default function TransporterManagement() {
             if (!token) throw new Error("Authentication failed.");
             const result = await performAdminAction(token, 'getPartnersByType', { type: 'transporter' });
             const sortedData = (result.data || []).sort((a:any, b:any) => {
-                const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-                const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+                const dateA = a.updatedAt ? new Date(a.updatedAt).getTime() : (a.createdAt ? new Date(a.createdAt).getTime() : 0);
+                const dateB = b.updatedAt ? new Date(b.updatedAt).getTime() : (b.createdAt ? new Date(b.createdAt).getTime() : 0);
                 return dateB - dateA;
             });
             setPartners(sortedData);
@@ -483,6 +483,7 @@ export default function TransporterManagement() {
         { accessorKey: 'companyName', header: 'Company' },
         { accessorKey: 'consentStatus', header: 'Consent', cell: ({row}) => <Badge variant={row.original.consentStatus === 'accepted' ? 'default' : 'outline'} className="capitalize">{row.original.consentStatus || 'pending'}</Badge> },
         { accessorKey: 'lastOpenedAt', header: 'Engagement', cell: ({row}) => row.original.lastOpenedAt ? <div className="text-xs text-green-600 font-medium flex items-center gap-1"><Eye className="h-3 w-3" />Read {formatDateSafe(row.original.lastOpenedAt, "dd MMM")}</div> : <div className="text-xs text-muted-foreground italic">Not read</div> },
+        { accessorKey: 'updatedAt', header: 'Updated', cell: ({row}) => <span className="text-xs text-muted-foreground">{formatDateSafe(row.original.updatedAt, "dd MMM")}</span> },
         { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
             <div className="text-right flex items-center justify-end gap-1">
                 <Button variant="ghost" size="icon" onClick={() => { setActivePartner(row.original); setActiveDialog('logs'); }} title="View Logs"><MessageSquare className="h-4 w-4" /></Button>

@@ -35,20 +35,22 @@ const enrichPartnerFlow = ai.defineFlow(
     try {
         console.log(`Enrichment flow started for: "${input.companyName}"`);
         
-        const isUrl = input.companyName.startsWith('http') || input.companyName.includes('.co.za') || input.companyName.includes('.com');
+        // Clean the input to detect if it's a URL
+        const cleanInput = input.companyName.trim().toLowerCase();
+        const isUrl = cleanInput.startsWith('http') || cleanInput.includes('.co.za') || cleanInput.includes('.com');
         
         const systemPrompt = `You are a South African lead enrichment specialist. Your goal is to find accurate contact details (email, phone, website) for transport and logistics companies.
         
         STRATEGY:
-        1. If the input is a URL, search specifically for that domain and look for "Contact Us" or "About" pages.
+        1. If the input is a URL or domain, search specifically for that domain and look for "Contact Us", "About", or "Our Team" pages.
         2. If the input is a name, search for the name + "South Africa" and "contact details".
-        3. Prioritize official websites.
+        3. Prioritize person-specific emails (e.g., name@company.co.za) over generic ones (info@) if available.
         4. Use local directories like za.maptons.com, brabys.com, or yellowpages.co.za as reliable secondary sources.
-        5. Extract the email and phone number even if they are only in the search snippet.
+        5. Extract the email and phone number even if they are only present in the search snippet.
         6. Return null for fields you absolutely cannot verify.`;
 
         const userPrompt = isUrl 
-            ? `Identify the contact details for the website "${input.companyName}". Find the primary email and phone number.`
+            ? `Identify the contact details for the website "${cleanInput}". Perform a deep search on this domain to find the primary email and phone number. Use the googleSearch tool.`
             : `Research the South African company "${input.companyName}". Find their official website, primary contact email, and phone number. Use the googleSearch tool to look at their site or directory listings like Maptons.`;
 
         const { output } = await ai.generate({
