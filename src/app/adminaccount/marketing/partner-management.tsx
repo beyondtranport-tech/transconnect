@@ -12,7 +12,7 @@ import { type ColumnDef } from '@/hooks/use-data-table';
 import Link from 'next/link';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useForm } from 'react-hook-form';
@@ -240,19 +240,7 @@ function PartnerDialog({ open, onOpenChange, partner, onSave }: { open: boolean;
       if (partner) {
         form.reset(partner);
       } else {
-        form.reset({
-          firstName: '',
-          lastName: '',
-          email: '',
-          phone: '',
-          companyName: '',
-          website: '',
-          streetAddress: '',
-          city: '',
-          province: '',
-          postalCode: '',
-          status: 'active',
-        });
+        form.reset({ firstName: '', lastName: '', email: '', phone: '', companyName: '', website: '', streetAddress: '', city: '', province: '', postalCode: '', status: 'active' });
       }
     }
   }, [open, partner, form]);
@@ -319,7 +307,7 @@ function PartnerDialog({ open, onOpenChange, partner, onSave }: { open: boolean;
                             <FormMessage />
                         </FormItem>
                     )} />
-                    <FormField control={form.control} name="status" render={({ field }) => ( <FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="active">Active</SelectItem><SelectItem value="inactive">Inactive</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
+                    <FormField control={form.control} name="status" render={({ field }) => ( <FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="active">Active</SelectItem><SelectItem value="inactive">Inactive</SelectItem></Select><FormMessage /></FormItem> )} />
                      <DialogFooter className="pt-4">
                         <Button type="submit" disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null} Save Partner</Button>
                     </DialogFooter>

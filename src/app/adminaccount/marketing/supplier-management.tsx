@@ -24,7 +24,6 @@ import { PartnerTasksDialog } from './PartnerTasksDialog';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Timestamp, FieldValue } from 'firebase/firestore';
 import { BulkImportDialog } from './BulkImportDialog';
 import { Separator } from '@/components/ui/separator';
 
@@ -242,9 +241,7 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
       if (partner) {
         form.reset(partner);
       } else {
-        form.reset({
-          firstName: '', lastName: '', email: '', phone: '', companyName: '', website: '', streetAddress: '', city: '', province: '', postalCode: '', status: 'active',
-        });
+        form.reset({ firstName: '', lastName: '', email: '', phone: '', companyName: '', website: '', streetAddress: '', city: '', province: '', postalCode: '', status: 'active' });
       }
     }
   }, [open, partner, form]);
@@ -309,7 +306,7 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
                             <FormMessage />
                         </FormItem>
                     )} />
-                    <FormField control={form.control} name="status" render={({ field }) => ( <FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="active">Active</SelectItem><SelectItem value="inactive">Inactive</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
+                    <FormField control={form.control} name="status" render={({ field }) => ( <FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="active">Active</SelectItem><SelectItem value="inactive">Inactive</SelectItem></Select><FormMessage /></FormItem> )} />
                      <DialogFooter className="pt-4">
                         <Button type="submit" disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null} Save Supplier</Button>
                     </DialogFooter>
@@ -338,7 +335,6 @@ function SupplierActionMenu({ onInvite, onEdit, onDelete, partner, onUpdate }: {
     </div>
   );
 }
-
 
 export default function SupplierManagement() {
     const { toast } = useToast();

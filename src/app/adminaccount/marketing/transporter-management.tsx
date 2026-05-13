@@ -37,6 +37,7 @@ async function performAdminAction(token: string, action: string, payload: any) {
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ action, payload }),
     });
+
     const result = await response.json();
     if (!response.ok || !result.success) {
         throw new Error(result.error || `API Error for action: ${action}`);
@@ -78,7 +79,6 @@ async function fetchPlatformStaff(token: string) {
     return result.success ? result.data : [];
 }
 
-// Internal reusable dialog for adding/editing single partners
 function TransporterFormDialog({ open, onOpenChange, partner, onSave }: { open: boolean; onOpenChange: (open: boolean) => void; partner?: any; onSave: () => void; }) {
   const [isLoading, setIsLoading] = useState(false);
   const [staff, setStaff] = useState<any[]>([]);
@@ -172,7 +172,6 @@ function TransporterFormDialog({ open, onOpenChange, partner, onSave }: { open: 
   );
 }
 
-// Onboarding Wizard for inviting partners
 function OnboardWizardDialog({ partner, open, onOpenChange, onComplete }: { partner: any, open: boolean, onOpenChange: (open: boolean) => void, onComplete: () => void }) {
     const { user } = useUser();
     const { toast } = useToast();
@@ -322,7 +321,6 @@ function OnboardWizardDialog({ partner, open, onOpenChange, onComplete }: { part
     );
 }
 
-// Bulk add from text list
 function AddFromTextDialog({ open, onOpenChange, onComplete }: { open: boolean, onOpenChange: (open: boolean) => void, onComplete: () => void }) {
     const [text, setText] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -387,7 +385,6 @@ function AddFromTextDialog({ open, onOpenChange, onComplete }: { open: boolean, 
     );
 }
 
-// MAIN COMPONENT
 export default function TransporterManagement() {
     const { toast } = useToast();
     const [partners, setPartners] = useState<any[]>([]);
@@ -398,7 +395,6 @@ export default function TransporterManagement() {
     const [filterMissingEmail, setFilterMissingEmail] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // CENTRALIZED DIALOG STATE
     const [activePartner, setActivePartner] = useState<any | null>(null);
     const [activeDialog, setActiveDialog] = useState<'add' | 'edit' | 'delete' | 'add-list' | 'invite' | 'tasks' | 'logs' | 'add-log' | null>(null);
 
