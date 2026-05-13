@@ -46,6 +46,7 @@ import {
   Building,
   Handshake,
   Truck,
+  Users,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -85,6 +86,7 @@ import TierBenefits from '@/app/backend/tier-benefits';
 import RewardsManagement from '@/app/backend/rewards-management';
 import PlatformTasks from '@/app/backend/platform-tasks';
 import PlatformSettingsContent from '@/app/backend/platform-settings';
+import PlatformStaffManagement from '@/app/adminaccount/platform-staff';
 
 function AdminAuthGuard({ children }: { children: React.ReactNode }) {
     const { user, isUserLoading } = useUser();
@@ -163,6 +165,7 @@ function AdminAccountContent() {
       case 'incentives-sales': return <SalesIncentives />;
       case 'tasks': return <PlatformTasks />;
       case 'settings-bank': return <PlatformSettingsContent />;
+      case 'platform-staff': return <PlatformStaffManagement />;
       default: return <AdminDashboardContent />;
     }
   }, [activeView]);
@@ -186,7 +189,7 @@ function AdminAccountContent() {
   const isSalesActive = ['sales-roadmap', 'targets'].includes(activeView);
   const isFinancialActive = ['financial-projections', 'financial-settings', 'financial-setup', 'budget', 'salary-forecast'].includes(activeView);
   const isContentActive = ['branding-studio', 'tts-studio', 'asset-gallery'].includes(activeView);
-  const isLeadsActive = ['leads-agent', 'leads-database'].includes(activeView);
+  const isLeadsActive = ['leads-agent', 'leads-database', 'platform-staff'].includes(activeView);
   const isRevenueActive = [
     'pricing-memberships', 'pricing-connect', 'pricing-tech', 'pricing-marketplace',
     'commissions-malls', 'commissions-isa', 'incentives-sales'
@@ -231,10 +234,11 @@ function AdminAccountContent() {
                     </SidebarMenuSub>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Leads" isActive={isLeadsActive}><UserPlus /><span>Leads</span></SidebarMenuButton>
+                    <SidebarMenuButton tooltip="Leads" isActive={isLeadsActive}><UserPlus /><span>Leads & CRM</span></SidebarMenuButton>
                     <SidebarMenuSub>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'leads-agent'} onClick={() => navigate('leads-agent')}>Leads Agent</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'leads-database'} onClick={() => navigate('leads-database')}>Leads Database</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'platform-staff'} onClick={() => navigate('platform-staff')}><Users/>Platform Staff</SidebarMenuSubButton></SidebarMenuSubItem>
                     </SidebarMenuSub>
                 </SidebarMenuItem>
                 <SidebarMenuItem>

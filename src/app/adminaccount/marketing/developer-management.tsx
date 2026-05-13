@@ -50,6 +50,7 @@ const partnerSchema = z.object({
   website: z.string().url("Must be a valid URL.").optional().or(z.literal('')),
   address: z.string().optional(),
   status: z.enum(['active', 'inactive']),
+  assigneeId: z.string().optional(),
 });
 
 type PartnerFormValues = z.infer<typeof partnerSchema>;
@@ -62,11 +63,11 @@ const onboardingSchema = z.object({
 });
 type OnboardingFormValues = z.infer<typeof onboardingSchema>;
 
-async function fetchAdmins(token: string) {
+async function fetchPlatformStaff(token: string) {
     const response = await fetch('/api/admin', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'listAllUsers' }),
+        body: JSON.stringify({ action: 'getPlatformStaff' }),
     });
     const result = await response.json();
     return result.success ? result.data : [];
@@ -78,11 +79,11 @@ function OnboardWizardDialog({ partner, open, onOpenChange, onComplete }: { part
     const [step, setStep] = useState(1);
     const [isLoading, setIsLoading] = useState(false);
     const [inviteLink, setInviteLink] = useState('');
-    const [admins, setAdmins] = useState<any[]>([]);
+    const [staff, setStaff] = useState<any[]>([]);
 
     const form = useForm<OnboardingFormValues>({
         resolver: zodResolver(onboardingSchema),
-        defaultValues: { assigneeId: user?.uid, followUpType: 'Call' }
+        defaultValues: { assigneeId: partner?.assigneeId || user?.uid, followUpType: 'Call' }
     });
 
     useEffect(() => {
@@ -90,10 +91,10 @@ function OnboardWizardDialog({ partner, open, onOpenChange, onComplete }: { part
             setStep(1);
             setInviteLink('');
             getClientSideAuthToken().then(token => {
-                if (token) fetchAdmins(token).then(setAdmins);
+                if (token) fetchPlatformStaff(token).then(setStaff);
             });
         }
-    }, [open]);
+    }, [open, partner]);
 
     const handleOnboard = async (values: OnboardingFormValues) => {
         if (!partner) return;
@@ -172,9 +173,9 @@ function OnboardWizardDialog({ partner, open, onOpenChange, onComplete }: { part
                                 <FormItem>
                                     <FormLabel>Assign Task To</FormLabel>
                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                        <FormControl><SelectTrigger><SelectValue placeholder="Assign to staff..." /></SelectTrigger></FormControl>
+                                        <FormControl><SelectTrigger><SelectValue placeholder="Assign to team..." /></SelectTrigger></FormControl>
                                         <SelectContent>
-                                            {admins.map(admin => <SelectItem key={admin.uid} value={admin.uid}>{admin.displayName || admin.email}</SelectItem>)}
+                                            {staff.map(member => <SelectItem key={member.id} value={member.id}>{member.firstName} {member.lastName} ({member.department})</SelectItem>)}
                                         </SelectContent>
                                     </Select>
                                 </FormItem>
@@ -223,6 +224,7 @@ function OnboardWizardDialog({ partner, open, onOpenChange, onComplete }: { part
 
 function DeveloperDialog({ open, onOpenChange, partner, onSave }: { open: boolean; onOpenChange: (open: boolean) => void; partner?: any; onSave: () => void; }) {
   const [isLoading, setIsLoading] = useState(false);
+  const [staff, setStaff] = useState<any[]>([]);
   const { toast } = useToast();
 
   const form = useForm<PartnerFormValues>({
@@ -231,6 +233,9 @@ function DeveloperDialog({ open, onOpenChange, partner, onSave }: { open: boolea
 
   useEffect(() => {
     if (open) {
+      getClientSideAuthToken().then(token => {
+          if (token) fetchPlatformStaff(token).then(setStaff);
+      });
       if (partner) {
         form.reset(partner);
       } else {
@@ -288,6 +293,18 @@ function DeveloperDialog({ open, onOpenChange, partner, onSave }: { open: boolea
                     <FormField control={form.control} name="companyName" render={({ field }) => ( <FormItem><FormLabel>Company Name (Optional)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                     <FormField control={form.control} name="website" render={({ field }) => ( <FormItem><FormLabel>Website (Optional)</FormLabel><FormControl><Input placeholder="https://..." {...field} /></FormControl><FormMessage /></FormItem> )} />
                     <FormField control={form.control} name="address" render={({ field }) => ( <FormItem><FormLabel>Physical Address (Optional)</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem> )} />
+                    <FormField control={form.control} name="assigneeId" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Assign To (Platform Team)</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl><SelectTrigger><SelectValue placeholder="Select team member..." /></SelectTrigger></FormControl>
+                                <SelectContent>
+                                    {staff.map(member => <SelectItem key={member.id} value={member.id}>{member.firstName} {member.lastName} ({member.department})</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                            <FormMessage />
+                        </FormItem>
+                    )} />
                     <FormField control={form.control} name="status" render={({ field }) => ( <FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="active">Active</SelectItem><SelectItem value="inactive">Inactive</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
                      <DialogFooter className="pt-4">
                         <Button type="submit" disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null} Save Developer</Button>
@@ -321,6 +338,7 @@ function DeveloperActionMenu({ onInvite, onEdit, onDelete, partner, onUpdate }: 
 export default function DeveloperManagement() {
   const { toast } = useToast();
   const [partners, setPartners] = useState<any[]>([]);
+  const [staff, setStaff] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -331,8 +349,13 @@ export default function DeveloperManagement() {
         const token = await getClientSideAuthToken();
         if (!token) throw new Error("Authentication failed.");
         
-        const result = await performAdminAction(token, 'getPartnersByType', { type: 'developer' });
-        setPartners(result.data || []);
+        const [partnersRes, staffRes] = await Promise.all([
+            performAdminAction(token, 'getPartnersByType', { type: 'developer' }),
+            performAdminAction(token, 'getPlatformStaff', {})
+        ]);
+
+        setPartners(partnersRes.data || []);
+        setStaff(staffRes.data || []);
     } catch (e: any) {
         setError(e.message);
         toast({ variant: 'destructive', title: 'Error loading developers', description: e.message });
@@ -388,15 +411,21 @@ export default function DeveloperManagement() {
     registered: 'default',
   };
 
+  const staffMap = useMemo(() => new Map(staff.map(s => [s.id, `${s.firstName} ${s.lastName}`])), [staff]);
+
   const columns: ColumnDef<any>[] = useMemo(() => [
     { accessorKey: 'firstName', header: 'Name', cell: ({row}) => <div>{row.original.firstName} {row.original.lastName}</div> },
     { accessorKey: 'email', header: 'Email', cell: ({row}) => <div>{row.original.email}</div> },
-    { accessorKey: 'phone', header: 'Phone', cell: ({row}) => <div>{row.original.phone}</div> },
     { accessorKey: 'companyName', header: 'Company', cell: ({row}) => <div>{row.original.companyName}</div> },
+    { 
+        accessorKey: 'assigneeId', 
+        header: 'Owner', 
+        cell: ({row}) => <span>{staffMap.get(row.original.assigneeId) || 'Unassigned'}</span> 
+    },
     { accessorKey: 'status', header: 'Status', cell: ({row}) => <Badge className="capitalize">{row.original.status}</Badge>},
     { accessorKey: 'invitationStatus', header: 'Invite Status', cell: ({row}) => ( <Badge variant={invitationStatusColors[row.original.invitationStatus] || 'secondary'} className="capitalize"> {row.original.invitationStatus?.replace(/_/g, ' ') || 'Pending'} </Badge> ) },
     { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => ( <DeveloperActionMenu partner={row.original} onUpdate={forceRefresh} onInvite={() => handleOpenDialog('invite', row.original)} onEdit={() => handleOpenDialog('edit', row.original)} onDelete={() => handleOpenDialog('delete', row.original)} /> ) },
-  ], [forceRefresh, handleOpenDialog]);
+  ], [staffMap, forceRefresh, handleOpenDialog]);
 
   return (
     <>
@@ -429,7 +458,7 @@ export default function DeveloperManagement() {
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
             <CardTitle className="flex items-center gap-2"><Code /> Developer Management</CardTitle>
-            <CardDescription>Manage your developer partners.</CardDescription>
+            <CardDescription>Manage your developer partners and assign platform owners.</CardDescription>
           </div>
           <Button onClick={() => handleOpenDialog('add')}><PlusCircle className="mr-2 h-4 w-4"/>Add Developer</Button>
         </CardHeader>

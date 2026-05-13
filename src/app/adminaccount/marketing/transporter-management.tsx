@@ -64,11 +64,11 @@ const onboardingSchema = z.object({
 });
 type OnboardingFormValues = z.infer<typeof onboardingSchema>;
 
-async function fetchAdmins(token: string) {
+async function fetchPlatformStaff(token: string) {
     const response = await fetch('/api/admin', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'listAllUsers' }),
+        body: JSON.stringify({ action: 'getPlatformStaff' }),
     });
     const result = await response.json();
     return result.success ? result.data : [];
@@ -77,7 +77,7 @@ async function fetchAdmins(token: string) {
 // Internal reusable dialog for adding/editing single partners
 function TransporterFormDialog({ open, onOpenChange, partner, onSave }: { open: boolean; onOpenChange: (open: boolean) => void; partner?: any; onSave: () => void; }) {
   const [isLoading, setIsLoading] = useState(false);
-  const [admins, setAdmins] = useState<any[]>([]);
+  const [staff, setStaff] = useState<any[]>([]);
   const { toast } = useToast();
 
   const form = useForm<PartnerFormValues>({
@@ -87,7 +87,7 @@ function TransporterFormDialog({ open, onOpenChange, partner, onSave }: { open: 
   useEffect(() => {
     if (open) {
       getClientSideAuthToken().then(token => {
-          if (token) fetchAdmins(token).then(setAdmins);
+          if (token) fetchPlatformStaff(token).then(setStaff);
       });
       if (partner) {
         form.reset(partner);
@@ -135,11 +135,11 @@ function TransporterFormDialog({ open, onOpenChange, partner, onSave }: { open: 
                     <FormField control={form.control} name="companyName" render={({ field }) => ( <FormItem><FormLabel>Company Name (Optional)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                     <FormField control={form.control} name="assigneeId" render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Assign To (Staff Owner)</FormLabel>
+                            <FormLabel>Assign To (Platform Team)</FormLabel>
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl><SelectTrigger><SelectValue placeholder="Select staff member..." /></SelectTrigger></FormControl>
+                                <FormControl><SelectTrigger><SelectValue placeholder="Select team member..." /></SelectTrigger></FormControl>
                                 <SelectContent>
-                                    {admins.map(admin => <SelectItem key={admin.uid} value={admin.uid}>{admin.displayName || admin.email}</SelectItem>)}
+                                    {staff.map(member => <SelectItem key={member.id} value={member.id}>{member.firstName} {member.lastName} ({member.department})</SelectItem>)}
                                 </SelectContent>
                             </Select>
                             <FormMessage />
@@ -163,7 +163,7 @@ function OnboardWizardDialog({ partner, open, onOpenChange, onComplete }: { part
     const [step, setStep] = useState(1);
     const [isLoading, setIsLoading] = useState(false);
     const [inviteLink, setInviteLink] = useState('');
-    const [admins, setAdmins] = useState<any[]>([]);
+    const [staff, setStaff] = useState<any[]>([]);
 
     const form = useForm<OnboardingFormValues>({
         resolver: zodResolver(onboardingSchema),
@@ -175,7 +175,7 @@ function OnboardWizardDialog({ partner, open, onOpenChange, onComplete }: { part
             setStep(1);
             setInviteLink('');
             getClientSideAuthToken().then(token => {
-                if (token) fetchAdmins(token).then(setAdmins);
+                if (token) fetchPlatformStaff(token).then(setStaff);
             });
         }
     }, [open, partner]);
@@ -257,9 +257,9 @@ function OnboardWizardDialog({ partner, open, onOpenChange, onComplete }: { part
                                 <FormItem>
                                     <FormLabel>Assign Task To</FormLabel>
                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                        <FormControl><SelectTrigger><SelectValue placeholder="Assign to staff..." /></SelectTrigger></FormControl>
+                                        <FormControl><SelectTrigger><SelectValue placeholder="Assign to team..." /></SelectTrigger></FormControl>
                                         <SelectContent>
-                                            {admins.map(admin => <SelectItem key={admin.uid} value={admin.uid}>{admin.displayName || admin.email}</SelectItem>)}
+                                            {staff.map(member => <SelectItem key={member.id} value={member.id}>{member.firstName} {member.lastName} ({member.department})</SelectItem>)}
                                         </SelectContent>
                                     </Select>
                                 </FormItem>
@@ -375,6 +375,7 @@ function AddFromTextDialog({ open, onOpenChange, onComplete }: { open: boolean, 
 export default function TransporterManagement() {
     const { toast } = useToast();
     const [partners, setPartners] = useState<any[]>([]);
+    const [staff, setStaff] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isEnriching, setIsEnriching] = useState(false);
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -391,8 +392,14 @@ export default function TransporterManagement() {
         try {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication failed.");
-            const result = await performAdminAction(token, 'getPartnersByType', { type: 'transporter' });
-            const sortedData = (result.data || []).sort((a:any, b:any) => {
+            
+            const [partnersResult, staffResult] = await Promise.all([
+                performAdminAction(token, 'getPartnersByType', { type: 'transporter' }),
+                performAdminAction(token, 'getPlatformStaff', {})
+            ]);
+
+            setStaff(staffResult.data || []);
+            const sortedData = (partnersResult.data || []).sort((a:any, b:any) => {
                 const dateA = a.updatedAt ? new Date(a.updatedAt).getTime() : (a.createdAt ? new Date(a.createdAt).getTime() : 0);
                 const dateB = b.updatedAt ? new Date(b.updatedAt).getTime() : (b.createdAt ? new Date(b.createdAt).getTime() : 0);
                 return dateB - dateA;
@@ -489,14 +496,24 @@ export default function TransporterManagement() {
     const filteredPartners = useMemo(() => {
         return filterMissingEmail ? partners.filter(p => !p.email) : partners;
     }, [partners, filterMissingEmail]);
+
+    const staffMap = useMemo(() => new Map(staff.map(s => [s.id, `${s.firstName} ${s.lastName}`])), [staff]);
     
     const columns: ColumnDef<any>[] = useMemo(() => [
         { accessorKey: 'firstName', header: 'Name', cell: ({row}) => <div>{row.original.firstName} {row.original.lastName}</div> },
         { accessorKey: 'email', header: 'Email', cell: ({row}) => row.original.email || <Badge variant="destructive">Missing</Badge> },
         { accessorKey: 'companyName', header: 'Company' },
+        { 
+            accessorKey: 'assigneeId', 
+            header: 'Owner', 
+            cell: ({row}) => (
+                <div className="flex flex-col">
+                    <span className="text-xs font-medium">{staffMap.get(row.original.assigneeId) || 'Unassigned'}</span>
+                </div>
+            ) 
+        },
         { accessorKey: 'consentStatus', header: 'Consent', cell: ({row}) => <Badge variant={row.original.consentStatus === 'accepted' ? 'default' : 'outline'} className="capitalize">{row.original.consentStatus || 'pending'}</Badge> },
         { accessorKey: 'lastOpenedAt', header: 'Engagement', cell: ({row}) => row.original.lastOpenedAt ? <div className="text-xs text-green-600 font-medium flex items-center gap-1"><Eye className="h-3 w-3" />Read {formatDateSafe(row.original.lastOpenedAt, "dd MMM")}</div> : <div className="text-xs text-muted-foreground italic">Not read</div> },
-        { accessorKey: 'updatedAt', header: 'Updated', cell: ({row}) => <span className="text-xs text-muted-foreground">{formatDateSafe(row.original.updatedAt, "dd MMM")}</span> },
         { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
             <div className="text-right flex items-center justify-end gap-1">
                 <Button variant="ghost" size="icon" onClick={() => { setActivePartner(row.original); setActiveDialog('logs'); }} title="View Logs"><MessageSquare className="h-4 w-4" /></Button>
@@ -507,7 +524,7 @@ export default function TransporterManagement() {
                 <Button variant="ghost" size="icon" onClick={() => { setActivePartner(row.original); setActiveDialog('delete'); }} title="Delete"><Trash2 className="h-4 w-4 text-destructive" /></Button>
             </div>
         ) },
-    ], []);
+    ], [staffMap]);
     
     return (
         <div className="space-y-6">
@@ -531,7 +548,7 @@ export default function TransporterManagement() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <CardTitle className="flex items-center gap-2 text-2xl font-bold font-headline"><Truck /> Transporter Management</CardTitle>
-                    <CardDescription>Manage leads, allocate to staff, and prepare tracked campaigns.</CardDescription>
+                    <CardDescription>Manage leads, allocate to platform engagement staff, and prepare tracked campaigns.</CardDescription>
                 </div>
                 <div className="flex flex-wrap gap-2">
                     <BulkImportDialog type="transporter" onComplete={forceRefresh}><Button variant="outline"><Upload className="mr-2 h-4 w-4"/>Import CSV</Button></BulkImportDialog>

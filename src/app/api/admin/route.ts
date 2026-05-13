@@ -44,9 +44,6 @@ export async function POST(req: NextRequest) {
         const isAdmin = decodedToken.email === 'beyondtransport@gmail.com' || decodedToken.email === 'mkoton100@gmail.com';
 
         // --- AUTHORIZATION ---
-        const userDocForAuth = await db.collection('users').doc(requestorUid).get();
-        const userCompanyIdForAuth = userDocForAuth.data()?.companyId;
-
         if (!isAdmin) {
              const allowedUserActions = ['saveCompanyLead', 'acceptCommercialAgreement', 'getAuditLogs', 'unpublishShop', 'logCommunication', 'getCommunicationLogs'];
              if (!allowedUserActions.includes(action)) {
@@ -55,6 +52,21 @@ export async function POST(req: NextRequest) {
         }
 
         switch (action) {
+            case 'getPlatformStaff': {
+                const snap = await db.collection('platformStaff').get();
+                const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
+                return NextResponse.json({ success: true, data });
+            }
+            case 'savePlatformStaff': {
+                const { staff } = payload;
+                const ref = staff.id ? db.collection('platformStaff').doc(staff.id) : db.collection('platformStaff').doc();
+                await ref.set({ ...staff, id: ref.id, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+                return NextResponse.json({ success: true, id: ref.id });
+            }
+            case 'deletePlatformStaff': {
+                await db.collection('platformStaff').doc(payload.staffId).delete();
+                return NextResponse.json({ success: true });
+            }
             case 'invitePartner': {
                 const { partnerId, followUpTask } = payload;
                 const batch = db.batch();

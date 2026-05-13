@@ -26,11 +26,11 @@ const taskSchema = z.object({
 });
 type TaskFormValues = z.infer<typeof taskSchema>;
 
-async function fetchAdmins(token: string) {
+async function fetchPlatformStaff(token: string) {
     const response = await fetch('/api/admin', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'listAllUsers' }),
+        body: JSON.stringify({ action: 'getPlatformStaff' }),
     });
     const result = await response.json();
     return result.success ? result.data : [];
@@ -40,7 +40,7 @@ function TaskForm({ partner, onTaskAdded }: { partner: any; onTaskAdded: () => v
     const { toast } = useToast();
     const { user } = useUser();
     const [isLoading, setIsLoading] = useState(false);
-    const [admins, setAdmins] = useState<any[]>([]);
+    const [staff, setStaff] = useState<any[]>([]);
     
     const form = useForm<TaskFormValues>({ 
         resolver: zodResolver(taskSchema), 
@@ -48,18 +48,18 @@ function TaskForm({ partner, onTaskAdded }: { partner: any; onTaskAdded: () => v
     });
 
     useEffect(() => {
-        const loadAdmins = async () => {
+        const loadStaff = async () => {
             try {
                 const token = await getClientSideAuthToken();
                 if (token) {
-                    const data = await fetchAdmins(token);
-                    setAdmins(data);
+                    const data = await fetchPlatformStaff(token);
+                    setStaff(data);
                 }
             } catch (e) {
-                console.error("Failed to load admins", e);
+                console.error("Failed to load staff", e);
             }
         };
-        loadAdmins();
+        loadStaff();
     }, []);
 
     const onSubmit = async (values: TaskFormValues) => {
@@ -90,7 +90,7 @@ function TaskForm({ partner, onTaskAdded }: { partner: any; onTaskAdded: () => v
             
             toast({ title: 'Task Created' });
             onTaskAdded();
-            form.reset({ title: '', description: '', dueDate: '', assigneeId: user.uid });
+            form.reset({ title: '', description: '', dueDate: '', assigneeId: values.assigneeId });
         } catch(e: any) {
             toast({ variant: 'destructive', title: 'Save Failed', description: e.message });
         } finally {
@@ -110,10 +110,10 @@ function TaskForm({ partner, onTaskAdded }: { partner: any; onTaskAdded: () => v
                         <FormItem>
                             <FormLabel>Assign To</FormLabel>
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl><SelectTrigger><SelectValue placeholder="Select staff member..." /></SelectTrigger></FormControl>
+                                <FormControl><SelectTrigger><SelectValue placeholder="Select platform staff..." /></SelectTrigger></FormControl>
                                 <SelectContent>
-                                    {admins.map(admin => (
-                                        <SelectItem key={admin.uid} value={admin.uid}>{admin.displayName || admin.email}</SelectItem>
+                                    {staff.map(member => (
+                                        <SelectItem key={member.id} value={member.id}>{member.firstName} {member.lastName} ({member.department})</SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
