@@ -52,6 +52,7 @@ const partnerSchema = z.object({
   website: z.string().url("Must be a valid URL.").optional().or(z.literal('')),
   address: z.string().optional(),
   status: z.enum(['active', 'inactive']),
+  assigneeId: z.string().optional(),
 });
 type PartnerFormValues = z.infer<typeof partnerSchema>;
 
@@ -76,6 +77,7 @@ async function fetchAdmins(token: string) {
 // Internal reusable dialog for adding/editing single partners
 function TransporterFormDialog({ open, onOpenChange, partner, onSave }: { open: boolean; onOpenChange: (open: boolean) => void; partner?: any; onSave: () => void; }) {
   const [isLoading, setIsLoading] = useState(false);
+  const [admins, setAdmins] = useState<any[]>([]);
   const { toast } = useToast();
 
   const form = useForm<PartnerFormValues>({
@@ -84,6 +86,9 @@ function TransporterFormDialog({ open, onOpenChange, partner, onSave }: { open: 
 
   useEffect(() => {
     if (open) {
+      getClientSideAuthToken().then(token => {
+          if (token) fetchAdmins(token).then(setAdmins);
+      });
       if (partner) {
         form.reset(partner);
       } else {
@@ -128,8 +133,18 @@ function TransporterFormDialog({ open, onOpenChange, partner, onSave }: { open: 
                         <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel>Mobile Number (Optional)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                     </div>
                     <FormField control={form.control} name="companyName" render={({ field }) => ( <FormItem><FormLabel>Company Name (Optional)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
-                    <FormField control={form.control} name="website" render={({ field }) => ( <FormItem><FormLabel>Website (Optional)</FormLabel><FormControl><Input placeholder="https://..." {...field} /></FormControl><FormMessage /></FormItem> )} />
-                    <FormField control={form.control} name="address" render={({ field }) => ( <FormItem><FormLabel>Physical Address (Optional)</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem> )} />
+                    <FormField control={form.control} name="assigneeId" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Assign To (Staff Owner)</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl><SelectTrigger><SelectValue placeholder="Select staff member..." /></SelectTrigger></FormControl>
+                                <SelectContent>
+                                    {admins.map(admin => <SelectItem key={admin.uid} value={admin.uid}>{admin.displayName || admin.email}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                            <FormMessage />
+                        </FormItem>
+                    )} />
                     <FormField control={form.control} name="status" render={({ field }) => ( <FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="active">Active</SelectItem><SelectItem value="inactive">Inactive</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
                      <DialogFooter className="pt-4">
                         <Button type="submit" disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null} Save Transporter</Button>
@@ -152,7 +167,7 @@ function OnboardWizardDialog({ partner, open, onOpenChange, onComplete }: { part
 
     const form = useForm<OnboardingFormValues>({
         resolver: zodResolver(onboardingSchema),
-        defaultValues: { assigneeId: user?.uid, followUpType: 'Call' }
+        defaultValues: { assigneeId: partner?.assigneeId || user?.uid, followUpType: 'Call' }
     });
 
     useEffect(() => {
@@ -163,7 +178,7 @@ function OnboardWizardDialog({ partner, open, onOpenChange, onComplete }: { part
                 if (token) fetchAdmins(token).then(setAdmins);
             });
         }
-    }, [open]);
+    }, [open, partner]);
 
     const handleOnboard = async (values: OnboardingFormValues) => {
         if (!partner) return;
@@ -408,9 +423,7 @@ export default function TransporterManagement() {
                 const partner = partners.find(p => p.id === id);
                 if (!partner) continue; 
 
-                // Use the companyName if it looks like a URL, otherwise name
                 const queryName = partner.companyName || `${partner.firstName} ${partner.lastName}`;
-                
                 toast({ title: `Enriching ${queryName}...` });
                 
                 const enriched = await enrichPartner({ 
@@ -489,7 +502,7 @@ export default function TransporterManagement() {
                 <Button variant="ghost" size="icon" onClick={() => { setActivePartner(row.original); setActiveDialog('logs'); }} title="View Logs"><MessageSquare className="h-4 w-4" /></Button>
                 <Button variant="ghost" size="icon" onClick={() => { setActivePartner(row.original); setActiveDialog('add-log'); }} title="Add Log"><MessageSquarePlus className="h-4 w-4" /></Button>
                 <Button variant="ghost" size="icon" onClick={() => { setActivePartner(row.original); setActiveDialog('tasks'); }} title="Tasks"><ClipboardList className="h-4 w-4" /></Button>
-                <Button variant="ghost" size="icon" onClick={() => { setActivePartner(row.original); setActiveDialog('invite'); }} title="Invite"><Send className="h-4 w-4" /></Button>
+                <Button variant="ghost" size="icon" onClick={() => { setActivePartner(row.original); setActiveDialog('invite'); }} title="Invite & Onboard"><Send className="h-4 w-4" /></Button>
                 <Button variant="ghost" size="icon" onClick={() => { setActivePartner(row.original); setActiveDialog('edit'); }} title="Edit"><Edit className="h-4 w-4" /></Button>
                 <Button variant="ghost" size="icon" onClick={() => { setActivePartner(row.original); setActiveDialog('delete'); }} title="Delete"><Trash2 className="h-4 w-4 text-destructive" /></Button>
             </div>
@@ -498,7 +511,6 @@ export default function TransporterManagement() {
     
     return (
         <div className="space-y-6">
-            {/* CENTRALIZED DIALOGS */}
             <TransporterFormDialog open={activeDialog === 'add' || activeDialog === 'edit'} onOpenChange={(o) => !o && setActiveDialog(null)} partner={activeDialog === 'edit' ? activePartner : undefined} onSave={forceRefresh} />
             <OnboardWizardDialog open={activeDialog === 'invite'} onOpenChange={(o) => !o && setActiveDialog(null)} partner={activePartner} onComplete={forceRefresh} />
             <AddFromTextDialog open={activeDialog === 'add-list'} onOpenChange={(o) => !o && setActiveDialog(null)} onComplete={forceRefresh} />
@@ -519,7 +531,7 @@ export default function TransporterManagement() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <CardTitle className="flex items-center gap-2 text-2xl font-bold font-headline"><Truck /> Transporter Management</CardTitle>
-                    <CardDescription>Manage leads, enrich data, and prepare compliant campaigns.</CardDescription>
+                    <CardDescription>Manage leads, allocate to staff, and prepare tracked campaigns.</CardDescription>
                 </div>
                 <div className="flex flex-wrap gap-2">
                     <BulkImportDialog type="transporter" onComplete={forceRefresh}><Button variant="outline"><Upload className="mr-2 h-4 w-4"/>Import CSV</Button></BulkImportDialog>

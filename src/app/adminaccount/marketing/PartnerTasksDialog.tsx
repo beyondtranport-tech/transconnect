@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -45,7 +44,7 @@ function TaskForm({ partner, onTaskAdded }: { partner: any; onTaskAdded: () => v
     
     const form = useForm<TaskFormValues>({ 
         resolver: zodResolver(taskSchema), 
-        defaultValues: { title: '', description: '', dueDate: '', assigneeId: user?.uid || '' } 
+        defaultValues: { title: '', description: '', dueDate: '', assigneeId: partner?.assigneeId || user?.uid || '' } 
     });
 
     useEffect(() => {
@@ -76,7 +75,7 @@ function TaskForm({ partner, onTaskAdded }: { partner: any; onTaskAdded: () => v
             
             const taskData = { 
                 ...values, 
-                relatedToName: partner?.name || `${partner?.firstName || ''} ${partner?.lastName || ''}`.trim() || 'Partner', 
+                relatedToName: partner?.companyName || `${partner?.firstName || ''} ${partner?.lastName || ''}`.trim() || 'Partner', 
                 status: 'pending', 
                 createdAt: { _methodName: 'serverTimestamp' },
                 updatedAt: { _methodName: 'serverTimestamp' }
@@ -134,11 +133,6 @@ function TaskForm({ partner, onTaskAdded }: { partner: any; onTaskAdded: () => v
     );
 }
 
-/**
- * Inner component to handle data fetching. 
- * This prevents the "thundering herd" problem by only opening a connection 
- * when the parent dialog is actually opened.
- */
 function TasksListContent({ partner }: { partner: any }) {
     const firestore = useFirestore();
     const { user } = useUser();

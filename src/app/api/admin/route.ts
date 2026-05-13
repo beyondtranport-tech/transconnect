@@ -47,7 +47,6 @@ export async function POST(req: NextRequest) {
         const userDocForAuth = await db.collection('users').doc(requestorUid).get();
         const userCompanyIdForAuth = userDocForAuth.data()?.companyId;
 
-        // Custom logic for non-admin actions allowed for members (like lead management)
         if (!isAdmin) {
              const allowedUserActions = ['saveCompanyLead', 'acceptCommercialAgreement', 'getAuditLogs', 'unpublishShop', 'logCommunication', 'getCommunicationLogs'];
              if (!allowedUserActions.includes(action)) {
@@ -56,6 +55,51 @@ export async function POST(req: NextRequest) {
         }
 
         switch (action) {
+            case 'invitePartner': {
+                const { partnerId, followUpTask } = payload;
+                const batch = db.batch();
+                const partnerRef = db.collection('partners').doc(partnerId);
+                
+                batch.update(partnerRef, {
+                    invitationStatus: 'invited',
+                    updatedAt: FieldValue.serverTimestamp()
+                });
+
+                if (followUpTask && followUpTask.dueDate) {
+                    const taskRef = partnerRef.collection('tasks').doc();
+                    batch.set(taskRef, {
+                        id: taskRef.id,
+                        title: followUpTask.title,
+                        description: followUpTask.description || '',
+                        dueDate: Timestamp.fromDate(new Date(followUpTask.dueDate)),
+                        status: 'pending',
+                        assigneeId: followUpTask.assigneeId || requestorUid,
+                        createdAt: FieldValue.serverTimestamp(),
+                        updatedAt: FieldValue.serverTimestamp(),
+                    });
+                }
+                
+                const logRef = partnerRef.collection('communications').doc();
+                batch.set(logRef, {
+                    id: logRef.id,
+                    type: 'Email',
+                    subject: 'System Invitation Sent',
+                    timestamp: FieldValue.serverTimestamp(),
+                    loggedBy: requestorUid,
+                });
+
+                await batch.commit();
+                return NextResponse.json({ success: true });
+            }
+            case 'listAllUsers': {
+                const listUsersResult = await adminAuth.listUsers();
+                const users = listUsersResult.users.map(u => ({
+                    uid: u.uid,
+                    email: u.email,
+                    displayName: u.displayName,
+                }));
+                return NextResponse.json({ success: true, data: users });
+            }
             case 'bulkSavePartners': {
                 const { partners, type } = payload;
                 if (!partners || !Array.isArray(partners)) throw new Error("Partners array is required.");
