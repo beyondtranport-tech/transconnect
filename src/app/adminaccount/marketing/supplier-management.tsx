@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -27,6 +26,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Timestamp, FieldValue } from 'firebase/firestore';
 import { BulkImportDialog } from './BulkImportDialog';
+import { Separator } from '@/components/ui/separator';
 
 // API Helper
 async function performAdminAction(token: string, action: string, payload: any) {
@@ -49,7 +49,10 @@ const partnerSchema = z.object({
   phone: z.string().optional(),
   companyName: z.string().optional(),
   website: z.string().url("Must be a valid URL.").optional().or(z.literal('')),
-  address: z.string().optional(),
+  streetAddress: z.string().optional(),
+  city: z.string().optional(),
+  province: z.string().optional(),
+  postalCode: z.string().optional(),
   status: z.enum(['active', 'inactive']),
   assigneeId: z.string().optional(),
 });
@@ -240,7 +243,7 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
         form.reset(partner);
       } else {
         form.reset({
-          firstName: '', lastName: '', email: '', phone: '', companyName: '', website: '', address: '', status: 'active',
+          firstName: '', lastName: '', email: '', phone: '', companyName: '', website: '', streetAddress: '', city: '', province: '', postalCode: '', status: 'active',
         });
       }
     }
@@ -266,7 +269,7 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-2xl">
             <DialogHeader>
                 <DialogTitle>{partner ? 'Edit' : 'Add New'} Supplier</DialogTitle>
                 <DialogDescription>Enter the details for the supplier.</DialogDescription>
@@ -283,7 +286,17 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
                     </div>
                     <FormField control={form.control} name="companyName" render={({ field }) => ( <FormItem><FormLabel>Company Name (Optional)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                     <FormField control={form.control} name="website" render={({ field }) => ( <FormItem><FormLabel>Website (Optional)</FormLabel><FormControl><Input placeholder="https://..." {...field} /></FormControl><FormMessage /></FormItem> )} />
-                    <FormField control={form.control} name="address" render={({ field }) => ( <FormItem><FormLabel>Physical Address (Optional)</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem> )} />
+                    
+                    <Separator />
+                    <h3 className="font-semibold text-sm">Business Address</h3>
+                    <FormField control={form.control} name="streetAddress" render={({ field }) => ( <FormItem><FormLabel>Street Address</FormLabel><FormControl><Input placeholder="123 Road Lane" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                    <div className="grid grid-cols-3 gap-4">
+                        <FormField control={form.control} name="city" render={({ field }) => ( <FormItem><FormLabel>City</FormLabel><FormControl><Input placeholder="Johannesburg" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="province" render={({ field }) => ( <FormItem><FormLabel>Province</FormLabel><FormControl><Input placeholder="Gauteng" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="postalCode" render={({ field }) => ( <FormItem><FormLabel>Postal Code</FormLabel><FormControl><Input placeholder="2000" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                    </div>
+
+                    <Separator />
                     <FormField control={form.control} name="assigneeId" render={({ field }) => (
                         <FormItem>
                             <FormLabel>Assign To (Platform Team)</FormLabel>

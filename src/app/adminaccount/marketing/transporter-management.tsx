@@ -28,6 +28,7 @@ import { BulkImportDialog } from './BulkImportDialog';
 import { enrichPartner } from '@/ai/flows/enrich-partner-flow';
 import { Switch } from '@/components/ui/switch';
 import { formatDateSafe } from '@/lib/utils';
+import { Separator } from '@/components/ui/separator';
 
 // API Helper
 async function performAdminAction(token: string, action: string, payload: any) {
@@ -50,7 +51,10 @@ const partnerSchema = z.object({
   phone: z.string().optional(),
   companyName: z.string().optional(),
   website: z.string().url("Must be a valid URL.").optional().or(z.literal('')),
-  address: z.string().optional(),
+  streetAddress: z.string().optional(),
+  city: z.string().optional(),
+  province: z.string().optional(),
+  postalCode: z.string().optional(),
   status: z.enum(['active', 'inactive']),
   assigneeId: z.string().optional(),
 });
@@ -92,7 +96,7 @@ function TransporterFormDialog({ open, onOpenChange, partner, onSave }: { open: 
       if (partner) {
         form.reset(partner);
       } else {
-        form.reset({ firstName: '', lastName: '', email: '', phone: '', companyName: '', website: '', address: '', status: 'active' });
+        form.reset({ firstName: '', lastName: '', email: '', phone: '', companyName: '', website: '', streetAddress: '', city: '', province: '', postalCode: '', status: 'active' });
       }
     }
   }, [open, partner, form]);
@@ -117,13 +121,13 @@ function TransporterFormDialog({ open, onOpenChange, partner, onSave }: { open: 
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-2xl">
             <DialogHeader>
                 <DialogTitle>{partner ? 'Edit' : 'Add New'} Transporter</DialogTitle>
-                <DialogDescription>Enter the details for the transporter.</DialogDescription>
+                <DialogDescription>Enter the full details for the transporter.</DialogDescription>
             </DialogHeader>
             <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[70vh] overflow-y-auto pr-2">
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2">
                     <div className="grid grid-cols-2 gap-4">
                         <FormField control={form.control} name="firstName" render={({ field }) => ( <FormItem><FormLabel>First Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                         <FormField control={form.control} name="lastName" render={({ field }) => ( <FormItem><FormLabel>Last Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
@@ -133,6 +137,18 @@ function TransporterFormDialog({ open, onOpenChange, partner, onSave }: { open: 
                         <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel>Mobile Number (Optional)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                     </div>
                     <FormField control={form.control} name="companyName" render={({ field }) => ( <FormItem><FormLabel>Company Name (Optional)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+                    <FormField control={form.control} name="website" render={({ field }) => ( <FormItem><FormLabel>Website (Optional)</FormLabel><FormControl><Input placeholder="https://..." {...field} /></FormControl><FormMessage /></FormItem> )} />
+                    
+                    <Separator />
+                    <h3 className="font-semibold text-sm">Business Address</h3>
+                    <FormField control={form.control} name="streetAddress" render={({ field }) => ( <FormItem><FormLabel>Street Address</FormLabel><FormControl><Input placeholder="123 Road Lane" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                    <div className="grid grid-cols-3 gap-4">
+                        <FormField control={form.control} name="city" render={({ field }) => ( <FormItem><FormLabel>City</FormLabel><FormControl><Input placeholder="Johannesburg" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="province" render={({ field }) => ( <FormItem><FormLabel>Province</FormLabel><FormControl><Input placeholder="Gauteng" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="postalCode" render={({ field }) => ( <FormItem><FormLabel>Postal Code</FormLabel><FormControl><Input placeholder="2000" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                    </div>
+
+                    <Separator />
                     <FormField control={form.control} name="assigneeId" render={({ field }) => (
                         <FormItem>
                             <FormLabel>Assign To (Platform Team)</FormLabel>
@@ -454,7 +470,7 @@ export default function TransporterManagement() {
             toast({ title: "Enrichment Complete", description: `Updated ${count} records with new details.` });
             forceRefresh();
         } catch (e: any) {
-            toast({ variant: 'destructive', title: "Enrichment Failed", description: e.message });
+            toast({ variant: "destructive", title: "Enrichment Failed", description: e.message });
         } finally {
             setIsEnriching(false);
         }

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, Suspense, useCallback } from 'react';
@@ -38,6 +37,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { roles } from '@/lib/roles';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription } from '@/components/ui/alert-dialog';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Separator } from '@/components/ui/separator';
 
 
 const leadSchema = z.object({
@@ -49,7 +49,10 @@ const leadSchema = z.object({
   status: z.enum(['new', 'contacted', 'qualified', 'unqualified', 'invited', 'registered']).default('new'),
   notes: z.string().optional(),
   website: z.string().url().optional().or(z.literal('')),
-  address: z.string().optional(),
+  streetAddress: z.string().optional(),
+  city: z.string().optional(),
+  province: z.string().optional(),
+  postalCode: z.string().optional(),
 });
 
 type LeadFormValues = z.infer<typeof leadSchema>;
@@ -77,9 +80,12 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
                 phone: defaultValues?.phone || '',
                 role: defaultValues?.role || '',
                 status: 'new',
-                notes: defaultValues?.notes || '',
+                notes: '',
                 website: defaultValues?.website || '',
-                address: defaultValues?.address || '',
+                streetAddress: defaultValues?.streetAddress || '',
+                city: defaultValues?.city || '',
+                province: defaultValues?.province || '',
+                postalCode: defaultValues?.postalCode || '',
             });
         }
     }
@@ -115,7 +121,7 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-xl">
+        <DialogContent className="sm:max-w-2xl">
             <DialogHeader>
                 <DialogTitle>{lead ? 'Edit Lead' : 'Add New Lead'}</DialogTitle>
                 <DialogDescription>
@@ -131,11 +137,20 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
                     </div>
                     <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email"/></FormControl><FormMessage /></FormItem> )} />
                     <FormField control={form.control} name="website" render={({ field }) => ( <FormItem><FormLabel>Website</FormLabel><FormControl><Input {...field} type="url" placeholder="https://example.com" /></FormControl><FormMessage /></FormItem> )} />
-                    <FormField control={form.control} name="address" render={({ field }) => ( <FormItem><FormLabel>Address</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem> )} />
+                    
+                    <Separator />
+                    <h3 className="font-semibold text-sm">Address</h3>
+                    <FormField control={form.control} name="streetAddress" render={({ field }) => ( <FormItem><FormLabel>Street Address</FormLabel><FormControl><Input placeholder="123 Road Lane" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                    <div className="grid grid-cols-3 gap-4">
+                        <FormField control={form.control} name="city" render={({ field }) => ( <FormItem><FormLabel>City</FormLabel><FormControl><Input placeholder="Johannesburg" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="province" render={({ field }) => ( <FormItem><FormLabel>Province</FormLabel><FormControl><Input placeholder="Gauteng" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="postalCode" render={({ field }) => ( <FormItem><FormLabel>Postal Code</FormLabel><FormControl><Input placeholder="2000" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                    </div>
 
+                    <Separator />
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <FormField control={form.control} name="role" render={({ field }) => ( <FormItem><FormLabel>Potential Role</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a role" /></SelectTrigger></FormControl><SelectContent>{roles.map(r => <SelectItem key={r.id} value={r.title}>{r.title}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
-                        <FormField control={form.control} name="status" render={({ field }) => ( <FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="new">New</SelectItem><SelectItem value="contacted">Contacted</SelectItem><SelectItem value="qualified">Qualified</SelectItem><SelectItem value="unqualified">Unqualified</SelectItem><SelectItem value="invited">Invited</SelectItem><SelectItem value="registered">Registered</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="status" render={({ field }) => ( <FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="new">New</SelectItem><SelectItem value="contacted">Contacted</SelectItem><SelectItem value="qualified">Qualified</SelectItem><SelectItem value="unqualified">Unqualified</SelectItem><SelectItem value="invited">Invited</SelectItem><SelectItem value="registered">Registered</SelectItem></Select><FormMessage /></FormItem> )} />
                     </div>
                     <FormField control={form.control} name="notes" render={({ field }) => ( <FormItem><FormLabel>Notes</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem> )} />
                      <DialogFooter className="pt-4">
@@ -343,7 +358,7 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
                                         <label htmlFor={`lead-${groupIndex}-${lead.id}`} className="text-sm space-y-1">
                                             <p className="font-semibold">{lead.contactPerson || 'No Contact'} - <span className="font-mono text-xs">{lead.id}</span></p>
                                             <p className="text-muted-foreground">{lead.email || 'No Email'} | {lead.phone || 'No Phone'}</p>
-                                            <p className="text-xs text-muted-foreground">{lead.address}</p>
+                                            <p className="text-xs text-muted-foreground">{lead.streetAddress} {lead.city}</p>
                                         </label>
                                     </div>
                                 ))}
@@ -383,12 +398,11 @@ function LeadsDatabaseComponent() {
       return { 
         companyName, 
         role: searchParams.get('newRole') || '', 
-        address: searchParams.get('newAddress') || '', 
+        streetAddress: searchParams.get('newAddress') || '', 
         website: searchParams.get('newWebsite') || '',
         phone: searchParams.get('newPhone') || '',
         email: searchParams.get('newEmail') || '',
         contactPerson: searchParams.get('newContactPerson') || '',
-        notes: searchParams.get('newNotes') || '',
       };
     }
     return undefined;
@@ -433,7 +447,7 @@ function LeadsDatabaseComponent() {
     { accessorKey: 'companyName', header: 'Company', cell: ({row}) => <div>{row.original.companyName}</div> },
     { accessorKey: 'contactPerson', header: 'Contact', cell: ({row}) => <div>{row.original.contactPerson}</div> },
     { accessorKey: 'website', header: 'Website', cell: ({row}) => row.original.website ? <a href={row.original.website} target="_blank" rel="noopener noreferrer" className="text-primary underline">{row.original.website}</a> : null},
-    { accessorKey: 'address', header: 'Address', cell: ({row}) => <div className="text-xs">{row.original.address}</div>},
+    { accessorKey: 'city', header: 'Location', cell: ({row}) => <div className="text-xs">{row.original.city}{row.original.province ? `, ${row.original.province}` : ''}</div>},
     { accessorKey: 'role', header: 'Role', cell: ({row}) => <Badge variant="outline">{row.original.role}</Badge>},
     { accessorKey: 'status', header: 'Status', cell: ({row}) => <Badge className="capitalize">{row.original.status}</Badge>},
     {
@@ -495,4 +509,3 @@ export default function LeadsDatabase() {
         </Suspense>
     );
 }
-
