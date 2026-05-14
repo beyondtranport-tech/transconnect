@@ -113,37 +113,65 @@ export function EngageDialog({ open, onOpenChange, partner, audience }: EngageDi
             partnerId: partner.id,
             type: 'Email',
             subject: activeTab,
-            notes: `Personalized engagement content generated and copied for ${partner.firstName}. Email client launched.`,
+            notes: `Personalized rich-HTML engagement content generated and copied for ${partner.firstName}. Email client launched.`,
         });
 
-        // 2. Prepare HTML for clipboard
+        // 2. Prepare HTML for clipboard with INLINE STYLES for email compatibility
         const contentClone = contentElement.cloneNode(true) as HTMLElement;
         
+        // Convert tailwind utility classes to inline styles for Outlook/Gmail compatibility
+        const applyInlineStyles = (el: HTMLElement) => {
+            const classes = el.className;
+            let style = el.getAttribute('style') || '';
+
+            // Mapping common tailwind utilities used in templates to inline CSS
+            if (classes.includes('border')) style += 'border: 1px solid #e2e8f0;';
+            if (classes.includes('rounded-xl')) style += 'border-radius: 0.75rem;';
+            if (classes.includes('rounded-lg')) style += 'border-radius: 0.5rem;';
+            if (classes.includes('rounded-md')) style += 'border-radius: 0.375rem;';
+            if (classes.includes('bg-white')) style += 'background-color: #ffffff;';
+            if (classes.includes('bg-slate-50')) style += 'background-color: #f8fafc;';
+            if (classes.includes('bg-muted/50')) style += 'background-color: #f1f5f9;';
+            if (classes.includes('p-4')) style += 'padding: 1rem;';
+            if (classes.includes('p-6')) style += 'padding: 1.5rem;';
+            if (classes.includes('p-8')) style += 'padding: 2rem;';
+            if (classes.includes('mb-4')) style += 'margin-bottom: 1rem;';
+            if (classes.includes('mt-4')) style += 'margin-top: 1rem;';
+            if (classes.includes('text-primary')) style += 'color: #228B22;';
+            if (classes.includes('font-bold')) style += 'font-weight: 700;';
+            if (classes.includes('text-lg')) style += 'font-size: 1.125rem;';
+            if (classes.includes('text-xl')) style += 'font-size: 1.25rem;';
+            if (classes.includes('shadow-sm')) style += 'box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);';
+
+            if (style) el.setAttribute('style', style);
+
+            // Recurse children
+            Array.from(el.children).forEach(child => applyInlineStyles(child as HTMLElement));
+        };
+
+        applyInlineStyles(contentClone);
+
         // Ensure all images have absolute URLs
         const images = contentClone.querySelectorAll('img');
+        const origin = window.location.origin.includes('localhost') ? 'https://studio--ecosystem-hub.us-central1.hosted.app' : window.location.origin;
         images.forEach(img => {
-            if (img.src.startsWith('http://localhost') || img.src.startsWith('/')) {
-                // In production window.location.origin is correct. 
-                // For development, we might need a fallback if it's hitting relative paths.
-                const origin = window.location.origin.includes('localhost') ? 'https://studio--ecosystem-hub.us-central1.hosted.app' : window.location.origin;
-                const path = img.getAttribute('src');
-                if (path?.startsWith('/')) {
-                    img.src = `${origin}${path}`;
-                }
+            const src = img.getAttribute('src');
+            if (src?.startsWith('/')) {
+                img.src = `${origin}${src}`;
+            } else if (src?.startsWith('http://localhost')) {
+                img.src = src.replace('http://localhost:3000', origin);
             }
         });
 
         // 3. Append Tracking Pixel
         const trackingPixel = document.createElement('img');
-        const origin = window.location.origin.includes('localhost') ? 'https://studio--ecosystem-hub.us-central1.hosted.app' : window.location.origin;
         trackingPixel.src = `${origin}/api/trackEmailOpen/${partner.id}`;
         trackingPixel.width = 1;
         trackingPixel.height = 1;
         trackingPixel.style.display = 'none';
         contentClone.appendChild(trackingPixel);
 
-        // 4. Copy to Clipboard
-        // Using 'text/html' blob is the standard way to preserve formatting (boxes, images, styles) when pasting into Outlook/Gmail
+        // 4. Copy to Clipboard using 'text/html' for formatted paste
         const blob = new Blob([contentClone.innerHTML], { type: 'text/html' });
         const clipboardItem = new ClipboardItem({ 'text/html': blob });
         await navigator.clipboard.write([clipboardItem]);
@@ -152,7 +180,7 @@ export function EngageDialog({ open, onOpenChange, partner, audience }: EngageDi
         const mailtoUrl = `mailto:${partner.email}?subject=${encodeURIComponent(getSubject())}`;
         window.location.href = mailtoUrl;
 
-        toast({ title: 'Ready to Send!', description: `Personalized HTML copied. Outlook opened for ${partner.email}. Just press Paste (Ctrl+V).` });
+        toast({ title: 'Ready to Send!', description: `Rich HTML copied to clipboard. Simply press Paste (Ctrl+V) in your email.` });
         onOpenChange(false);
     } catch (e: any) {
         toast({ variant: 'destructive', title: 'Action Failed', description: e.message });
@@ -191,22 +219,22 @@ export function EngageDialog({ open, onOpenChange, partner, audience }: EngageDi
   }
 
   const EmailWrapper = ({ children }: { children: React.ReactNode }) => (
-    <div className="font-sans text-base leading-relaxed text-slate-800 max-w-[800px] mx-auto">
-        <p className="mb-4">Good day {partner.firstName},</p>
-        <p className="mb-4">We write to introduce our company to you.</p>
-        <p className="mb-6">
+    <div style={{ fontFamily: 'sans-serif', color: '#1e293b', lineHeight: '1.6', maxWidth: '800px', margin: '0 auto' }}>
+        <p style={{ marginBottom: '16px' }}>Good day {partner.firstName},</p>
+        <p style={{ marginBottom: '16px' }}>We write to introduce our company to you.</p>
+        <p style={{ marginBottom: '24px' }}>
             Simplyfi Flow is a finance company specializing in funding for the transport sector. 
             I'm reaching out on behalf of our sister company Logistics Flow. 
             Logistics Flow, a digital ecosystem for the transport industry connecting funding, suppliers and transporters into one ecosystem. 
             Accordingly, we have digitised a logistics ecosystem to create a continuous flow of commerce, capital, and opportunity.
         </p>
-        <div className="border-t-2 border-slate-100 pt-8 mt-8">
+        <div style={{ borderTop: '2px solid #f1f5f9', paddingTop: '32px', marginTop: '32px' }}>
             {children}
         </div>
-        <div className="mt-12 pt-8 border-t border-slate-100 text-sm text-slate-500">
-            <p className="font-bold">Regards,</p>
-            <p>{user?.displayName || 'The TransConnect Team'}</p>
-            <p>Logistics Flow & Simplyfi Flow</p>
+        <div style={{ marginTop: '48px', paddingTop: '32px', borderTop: '1px solid #f1f5f9', fontSize: '14px', color: '#64748b' }}>
+            <p style={{ fontWeight: 'bold', margin: '0' }}>Regards,</p>
+            <p style={{ margin: '0' }}>{user?.displayName || 'The TransConnect Team'}</p>
+            <p style={{ margin: '0' }}>Logistics Flow & Simplyfi Flow</p>
         </div>
     </div>
   );
@@ -277,19 +305,19 @@ export function EngageDialog({ open, onOpenChange, partner, audience }: EngageDi
                     
                     <div className="mt-10 p-4 bg-primary/5 rounded-lg border border-primary/10">
                         <div className="flex items-center gap-2 text-xs font-bold text-primary mb-2">
-                            <UserCheck className="h-3 w-3" /> RICH HTML
+                            <UserCheck className="h-3 w-3" /> RICH HTML READY
                         </div>
                         <p className="text-[10px] text-muted-foreground leading-relaxed">
-                            Recipient details, referral tracking, and your Simplyfi intro are automatically merged.
+                            Formatting and graphics are now inlined to ensure they display correctly in Outlook and Gmail.
                         </p>
                     </div>
                 </div>
 
                 {/* Content Preview */}
-                <Card className="flex-1 rounded-none border-0 shadow-none overflow-y-auto">
+                <Card className="flex-1 rounded-none border-0 shadow-none overflow-y-auto bg-slate-50">
                     <CardContent className="p-8">
                         {/* We use a specific ID for the wrapper to copy everything including the intro */}
-                        <div id={`engage-content-wrapper-${activeTab}`}>
+                        <div id={`engage-content-wrapper-${activeTab}`} className="bg-white p-8 rounded-lg shadow-sm border mx-auto max-w-[800px]">
                             <EmailWrapper>
                                 {activeTab === 'company-profile' && <CompanyProfile audience={audience} partner={partner} />}
                                 {activeTab === 'tech-architecture' && <TechArchitecture partner={partner} />}
