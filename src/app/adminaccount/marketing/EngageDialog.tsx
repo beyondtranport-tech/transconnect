@@ -95,7 +95,7 @@ export function EngageDialog({ open, onOpenChange, partner, audience }: EngageDi
   const handleLogCopyAndLaunch = async () => {
     if (!partner) return;
 
-    const contentId = `engage-content-${activeTab}`;
+    const contentId = `engage-content-wrapper-${activeTab}`;
     const contentElement = document.getElementById(contentId);
 
     if (!contentElement) {
@@ -118,22 +118,32 @@ export function EngageDialog({ open, onOpenChange, partner, audience }: EngageDi
 
         // 2. Prepare HTML for clipboard
         const contentClone = contentElement.cloneNode(true) as HTMLElement;
+        
+        // Ensure all images have absolute URLs
         const images = contentClone.querySelectorAll('img');
         images.forEach(img => {
-            if (img.src.startsWith('/')) {
-                img.src = `${window.location.origin}${img.src}`;
+            if (img.src.startsWith('http://localhost') || img.src.startsWith('/')) {
+                // In production window.location.origin is correct. 
+                // For development, we might need a fallback if it's hitting relative paths.
+                const origin = window.location.origin.includes('localhost') ? 'https://studio--ecosystem-hub.us-central1.hosted.app' : window.location.origin;
+                const path = img.getAttribute('src');
+                if (path?.startsWith('/')) {
+                    img.src = `${origin}${path}`;
+                }
             }
         });
 
         // 3. Append Tracking Pixel
         const trackingPixel = document.createElement('img');
-        trackingPixel.src = `${window.location.origin}/api/trackEmailOpen/${partner.id}`;
+        const origin = window.location.origin.includes('localhost') ? 'https://studio--ecosystem-hub.us-central1.hosted.app' : window.location.origin;
+        trackingPixel.src = `${origin}/api/trackEmailOpen/${partner.id}`;
         trackingPixel.width = 1;
         trackingPixel.height = 1;
         trackingPixel.style.display = 'none';
         contentClone.appendChild(trackingPixel);
 
         // 4. Copy to Clipboard
+        // Using 'text/html' blob is the standard way to preserve formatting (boxes, images, styles) when pasting into Outlook/Gmail
         const blob = new Blob([contentClone.innerHTML], { type: 'text/html' });
         const clipboardItem = new ClipboardItem({ 'text/html': blob });
         await navigator.clipboard.write([clipboardItem]);
@@ -142,7 +152,7 @@ export function EngageDialog({ open, onOpenChange, partner, audience }: EngageDi
         const mailtoUrl = `mailto:${partner.email}?subject=${encodeURIComponent(getSubject())}`;
         window.location.href = mailtoUrl;
 
-        toast({ title: 'Ready to Send!', description: `HTML copied. Email client opened for ${partner.email}. Just press Paste (Ctrl+V).` });
+        toast({ title: 'Ready to Send!', description: `Personalized HTML copied. Outlook opened for ${partner.email}. Just press Paste (Ctrl+V).` });
         onOpenChange(false);
     } catch (e: any) {
         toast({ variant: 'destructive', title: 'Action Failed', description: e.message });
@@ -158,10 +168,10 @@ export function EngageDialog({ open, onOpenChange, partner, audience }: EngageDi
           const token = await getClientSideAuthToken();
           if (!token) throw new Error("Auth failed.");
 
-          const baseUrl = window.location.origin;
+          const baseUrl = window.location.origin.includes('localhost') ? 'https://studio--ecosystem-hub.us-central1.hosted.app' : window.location.origin;
           const signupUrl = `${baseUrl}/join?ref=${partner.id}&firstName=${encodeURIComponent(partner.firstName)}&lastName=${encodeURIComponent(partner.lastName)}&email=${encodeURIComponent(partner.email || '')}`;
           
-          const text = `Hi ${partner.firstName}, I wanted to share this opportunity with you from Logistics Flow. You can review the details and join our network here: ${signupUrl}`;
+          const text = `Good day ${partner.firstName},\n\nI wanted to share this opportunity with you from Logistics Flow. You can review the details and join our network here: ${signupUrl}`;
           
           await performAdminAction(token, 'logCommunication', {
               partnerId: partner.id,
@@ -179,6 +189,27 @@ export function EngageDialog({ open, onOpenChange, partner, audience }: EngageDi
           setIsProcessing(false);
       }
   }
+
+  const EmailWrapper = ({ children }: { children: React.ReactNode }) => (
+    <div className="font-sans text-base leading-relaxed text-slate-800 max-w-[800px] mx-auto">
+        <p className="mb-4">Good day {partner.firstName},</p>
+        <p className="mb-4">We write to introduce our company to you.</p>
+        <p className="mb-6">
+            Simplyfi Flow is a finance company specializing in funding for the transport sector. 
+            I'm reaching out on behalf of our sister company Logistics Flow. 
+            Logistics Flow, a digital ecosystem for the transport industry connecting funding, suppliers and transporters into one ecosystem. 
+            Accordingly, we have digitised a logistics ecosystem to create a continuous flow of commerce, capital, and opportunity.
+        </p>
+        <div className="border-t-2 border-slate-100 pt-8 mt-8">
+            {children}
+        </div>
+        <div className="mt-12 pt-8 border-t border-slate-100 text-sm text-slate-500">
+            <p className="font-bold">Regards,</p>
+            <p>{user?.displayName || 'The TransConnect Team'}</p>
+            <p>Logistics Flow & Simplyfi Flow</p>
+        </div>
+    </div>
+  );
 
   if (!partner) return null;
 
@@ -246,10 +277,10 @@ export function EngageDialog({ open, onOpenChange, partner, audience }: EngageDi
                     
                     <div className="mt-10 p-4 bg-primary/5 rounded-lg border border-primary/10">
                         <div className="flex items-center gap-2 text-xs font-bold text-primary mb-2">
-                            <UserCheck className="h-3 w-3" /> AUTO-MERGE
+                            <UserCheck className="h-3 w-3" /> RICH HTML
                         </div>
                         <p className="text-[10px] text-muted-foreground leading-relaxed">
-                            Recipient details and referral tracking are automatically merged into the preview.
+                            Recipient details, referral tracking, and your Simplyfi intro are automatically merged.
                         </p>
                     </div>
                 </div>
@@ -257,21 +288,26 @@ export function EngageDialog({ open, onOpenChange, partner, audience }: EngageDi
                 {/* Content Preview */}
                 <Card className="flex-1 rounded-none border-0 shadow-none overflow-y-auto">
                     <CardContent className="p-8">
-                         {activeTab === 'company-profile' && <div id="engage-content-company-profile"><CompanyProfile audience={audience} partner={partner} /></div>}
-                         {activeTab === 'tech-architecture' && <div id="engage-content-tech-architecture"><TechArchitecture partner={partner} /></div>}
-                         {activeTab === 'revenue-model' && <div id="engage-content-revenue-model"><RevenueModel partner={partner} /></div>}
-                         {activeTab === 'offer' && <div id="engage-content-offer"><Offer partner={partner} /></div>}
-                         {activeTab === 'pitch' && <div id="engage-content-pitch"><PitchDeck partner={partner} /></div>}
-                         {activeTab === 'framework' && <div id="engage-content-framework"><Framework partner={partner} /></div>}
-                         {activeTab === 'emails' && <div id="engage-content-emails"><Emails partner={partner} /></div>}
+                        {/* We use a specific ID for the wrapper to copy everything including the intro */}
+                        <div id={`engage-content-wrapper-${activeTab}`}>
+                            <EmailWrapper>
+                                {activeTab === 'company-profile' && <CompanyProfile audience={audience} partner={partner} />}
+                                {activeTab === 'tech-architecture' && <TechArchitecture partner={partner} />}
+                                {activeTab === 'revenue-model' && <RevenueModel partner={partner} />}
+                                {activeTab === 'offer' && <Offer partner={partner} />}
+                                {activeTab === 'pitch' && <PitchDeck partner={partner} />}
+                                {activeTab === 'framework' && <Framework partner={partner} />}
+                                {activeTab === 'emails' && <Emails partner={partner} />}
+                            </EmailWrapper>
+                        </div>
                     </CardContent>
                 </Card>
             </div>
             
             <div className="p-4 border-t bg-muted/30 flex justify-between items-center text-xs text-muted-foreground px-6">
                 <div className="flex items-center gap-6">
-                    <span className="flex items-center gap-1.5"><CheckCircle className="h-3.5 w-3.5 text-green-500"/> Tracking pixel ready</span>
-                    <span className="flex items-center gap-1.5"><CheckCircle className="h-3.5 w-3.5 text-green-500"/> Personalized Referral link ready</span>
+                    <span className="flex items-center gap-1.5"><CheckCircle className="h-3.5 w-3.5 text-green-500"/> Tracking pixel included</span>
+                    <span className="flex items-center gap-1.5"><CheckCircle className="h-3.5 w-3.5 text-green-500"/> Dynamic referral link</span>
                 </div>
                 <div className="italic">
                     Drafting Subject: {getSubject()}

@@ -39,20 +39,20 @@ export default function CompanyProfile({ audience, partner }: { audience: string
                     <div className="space-y-6">
                         <p className="text-lg text-muted-foreground">Logistics Flow offers two powerful pathways for {companyName}: benefit from the ecosystem as a Member, or earn significant revenue by building the network as an ISA Partner.</p>
                         <div className="grid md:grid-cols-2 gap-6">
-                            <div>
+                            <div className="p-4 border rounded-lg bg-slate-50">
                                 <h4 className="font-semibold text-foreground">1. Membership Benefits</h4>
-                                <ul className="mt-2 list-disc list-inside space-y-2 text-muted-foreground">
+                                <ul className="mt-2 list-disc list-inside space-y-2 text-muted-foreground text-sm">
                                     <li>Access group discounts on parts, fuel, and services.</li>
                                     <li>Use AI tools to find loads and reduce empty miles.</li>
-                                    <li>Build a trusted business profile to unlock funding opportunities.</li>
+                                    <li>Build a trusted business profile to unlock funding.</li>
                                 </ul>
                             </div>
-                            <div>
+                            <div className="p-4 border rounded-lg bg-slate-50">
                                 <h4 className="font-semibold text-foreground">2. Become an ISA Partner</h4>
-                                <ul className="mt-2 list-disc list-inside space-y-2 text-muted-foreground">
-                                    <li>For transporters with a strong network of industry contacts.</li>
-                                    <li>Earn recurring commissions from every member you refer.</li>
-                                    <li>Turn your relationships into a new, consistent revenue stream.</li>
+                                <ul className="mt-2 list-disc list-inside space-y-2 text-muted-foreground text-sm">
+                                    <li>For transporters with a strong industry network.</li>
+                                    <li>Earn recurring commissions from every referral.</li>
+                                    <li>Turn relationships into a consistent revenue stream.</li>
                                 </ul>
                             </div>
                         </div>
@@ -67,20 +67,20 @@ export default function CompanyProfile({ audience, partner }: { audience: string
                     <div className="space-y-6">
                         <p className="text-lg text-muted-foreground">Logistics Flow provides a direct, high-value sales channel for {companyName}. List your products, reach qualified buyers, and grow your market share.</p>
                         <div className="grid md:grid-cols-2 gap-6">
-                            <div>
+                            <div className="p-4 border rounded-lg bg-slate-50">
                                 <h4 className="font-semibold text-foreground">1. Your Digital Branch</h4>
-                                <ul className="mt-2 list-disc list-inside space-y-2 text-muted-foreground">
-                                    <li>Create a professional online shop within our Supplier Mall.</li>
-                                    <li>Reach transport operators actively looking for your products.</li>
-                                    <li>Reduce customer acquisition costs with a targeted audience.</li>
+                                <ul className="mt-2 list-disc list-inside space-y-2 text-muted-foreground text-sm">
+                                    <li>Create a professional online shop in our Mall.</li>
+                                    <li>Reach operators actively looking for products.</li>
+                                    <li>Reduce customer acquisition costs.</li>
                                 </ul>
                             </div>
-                            <div>
+                            <div className="p-4 border rounded-lg bg-slate-50">
                                 <h4 className="font-semibold text-foreground">2. Become a Network Partner</h4>
-                                <ul className="mt-2 list-disc list-inside space-y-2 text-muted-foreground">
+                                <ul className="mt-2 list-disc list-inside space-y-2 text-muted-foreground text-sm">
                                     <li>Onboard your existing clients to the platform.</li>
-                                    <li>Earn a recurring commission on their activity and fees.</li>
-                                    <li>Monetize your customer base without operational overhead.</li>
+                                    <li>Earn a recurring commission on their activity.</li>
+                                    <li>Monetize your customer base.</li>
                                 </ul>
                             </div>
                         </div>
@@ -100,7 +100,7 @@ export default function CompanyProfile({ audience, partner }: { audience: string
 
     return (
         <div className="space-y-12">
-            <section className="relative w-full h-64 rounded-xl overflow-hidden">
+            <div className="relative w-full h-64 rounded-xl overflow-hidden border">
                  {heroImage && (
                     <Image
                         src={heroImage.imageUrl}
@@ -112,76 +112,59 @@ export default function CompanyProfile({ audience, partner }: { audience: string
                     />
                 )}
                 <div className="absolute inset-0 bg-black/60" />
-                <div className="relative h-full flex flex-col items-center justify-center text-center text-primary-foreground z-10 p-4">
-                    <Building className="h-16 w-16 mb-4" />
-                    <h1 className="text-4xl md:text-5xl font-bold font-headline">Logistics Flow: Company Profile</h1>
-                    <p className="mt-4 text-lg md:text-xl max-w-3xl">Digitizing the logistics ecosystem to create a continuous flow of commerce, capital, and opportunity.</p>
+                <div className="relative h-full flex flex-col items-center justify-center text-center p-4">
+                    <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">Our Vision</h1>
+                    <p className="text-white/90 text-lg max-w-2xl">Digitizing the logistics ecosystem to create a continuous flow of commerce, capital, and opportunity.</p>
                 </div>
-            </section>
+            </div>
 
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-3">
-                        <Target className="h-6 w-6 text-primary" />
-                        Our Mission
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <p className="text-lg text-muted-foreground">
-                        Our mission is to break the constraints that hold back transport businesses. By creating a unified digital platform, we empower every member of the logistics community—from independent transporters to large suppliers—with the tools to increase efficiency, reduce costs, access capital, and grow their business.
-                    </p>
-                </CardContent>
-            </Card>
+            <div className="p-6 border rounded-xl bg-white shadow-sm">
+                <h2 className="text-xl font-bold flex items-center gap-3 mb-4">
+                    <Target className="h-6 w-6 text-primary" />
+                    Our Mission
+                </h2>
+                <p className="text-muted-foreground leading-relaxed">
+                    Our mission is to break the constraints that hold back transport businesses. By creating a unified digital platform, we empower every member of the logistics community—from independent transporters to large suppliers—with the tools to increase efficiency, reduce costs, access capital, and grow their business.
+                </p>
+            </div>
 
             <div className="grid md:grid-cols-2 gap-8 items-start">
-                <Card className="h-full">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-3">
-                            <Lightbulb className="h-6 w-6 text-destructive" />
-                            The Industry Problem
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <p className="text-muted-foreground">The transport sector is the backbone of the economy, yet it operates in a fragmented, inefficient, and capital-constrained environment. Businesses like {companyName} often face:</p>
-                        <ul className="list-disc list-inside space-y-2 text-muted-foreground">
-                            <li><span className="font-semibold text-foreground">High Operating Costs:</span> Lack of collective buying power means paying premium prices.</li>
-                            <li><span className="font-semibold text-foreground">Limited Access to Capital:</span> Banks often don't understand the real-time health of transport businesses.</li>
-                            <li><span className="font-semibold text-foreground">Inefficient Operations:</span> Empty miles and manual paperwork eating into margins.</li>
-                        </ul>
-                    </CardContent>
-                </Card>
-                 <Card className="h-full">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-3">
-                           <CheckCircle className="h-6 w-6 text-green-600" />
-                            The Unified Solution
-                        </CardTitle>
-                    </CardHeader>
-                     <CardContent className="space-y-4">
-                        <p className="text-muted-foreground">Logistics Flow tackles these challenges by integrating three core pillars into a single platform:</p>
-                        <div className="space-y-3 pt-2">
-                            {corePillars.map(pillar => (
-                                <div key={pillar.title}>
-                                    <h4 className="font-semibold text-foreground">{pillar.title}</h4>
-                                    <p className="text-sm text-muted-foreground">{pillar.description}</p>
-                                </div>
-                            ))}
-                        </div>
-                    </CardContent>
-                </Card>
+                <div className="h-full p-6 border rounded-xl bg-white shadow-sm">
+                    <h2 className="text-xl font-bold flex items-center gap-3 mb-4">
+                        <Lightbulb className="h-6 w-6 text-destructive" />
+                        The Industry Problem
+                    </h2>
+                    <p className="text-muted-foreground text-sm mb-4">The transport sector is fragmented and capital-constrained. Businesses like {companyName} often face:</p>
+                    <ul className="list-disc list-inside space-y-2 text-muted-foreground text-sm">
+                        <li><span className="font-semibold text-foreground">High Operating Costs:</span> Lack of collective buying power.</li>
+                        <li><span className="font-semibold text-foreground">Limited Access to Capital:</span> Banks don't understand industry risk.</li>
+                        <li><span className="font-semibold text-foreground">Inefficient Operations:</span> Empty miles and manual processes.</li>
+                    </ul>
+                </div>
+                 <div className="h-full p-6 border rounded-xl bg-white shadow-sm">
+                    <h2 className="text-xl font-bold flex items-center gap-3 mb-4">
+                       <CheckCircle className="h-6 w-6 text-green-600" />
+                        The Unified Solution
+                    </h2>
+                    <p className="text-muted-foreground text-sm mb-4">Logistics Flow integrates three core pillars into a single platform:</p>
+                    <div className="space-y-3">
+                        {corePillars.map(pillar => (
+                            <div key={pillar.title}>
+                                <h4 className="font-semibold text-foreground text-sm">{pillar.title}</h4>
+                                <p className="text-xs text-muted-foreground">{pillar.description}</p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
             </div>
             
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-3">
-                        <Handshake className="h-6 w-6 text-primary" />
-                        {opportunityConfig.title}
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    {opportunityConfig.content}
-                </CardContent>
-            </Card>
+            <div className="p-6 border rounded-xl bg-white shadow-sm border-primary/20">
+                <h2 className="text-xl font-bold flex items-center gap-3 mb-4">
+                    <Handshake className="h-6 w-6 text-primary" />
+                    {opportunityConfig.title}
+                </h2>
+                {opportunityConfig.content}
+            </div>
 
         </div>
     );
