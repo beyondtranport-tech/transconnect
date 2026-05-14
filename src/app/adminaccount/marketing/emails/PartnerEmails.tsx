@@ -2,39 +2,61 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ClipboardCopy, Mail } from 'lucide-react';
+import { ClipboardCopy, Mail, UserCheck, Link as LinkIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import React from 'react';
+import { useUser } from '@/firebase';
 
-const EmailTemplate = ({ subject, content }: { subject: string, content: string }) => {
+const EmailTemplate = ({ subject, content, partner, referralLink }: { subject: string, content: string, partner: any, referralLink: string }) => {
     const { toast } = useToast();
+    
+    const personalizedContent = React.useMemo(() => {
+        let text = content;
+        const name = partner?.firstName || '[Partner Name]';
+        const company = partner?.companyName || '[Your Company]';
+        
+        text = text.replace(/\[Partner Name\]/g, name);
+        text = text.replace(/\[Name\]/g, name);
+        text = text.replace(/\[Lead Name\]/g, name);
+        text = text.replace(/\[Your Company\]/g, company);
+        text = text.replace(/\[Referral Link\]/g, referralLink);
+        text = text.replace(/\[Sign-up Link\]/g, referralLink);
+        text = text.replace(/\[Opt-in Link\]/g, `${window.location.origin}/opt-in/${partner?.id || 'TEST'}`);
 
-    const handleCopyToClipboard = (text: string) => {
-        navigator.clipboard.writeText(text.trim());
-        toast({
-            title: "Copied to Clipboard!",
-            description: "You can now paste the content into your email client.",
-        });
-    };
+        return text;
+    }, [content, partner, referralLink]);
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Email Template</CardTitle>
-                <CardDescription>Subject: {subject}</CardDescription>
+        <Card className="border-none shadow-none bg-transparent">
+            <CardHeader className="px-0">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <CardTitle className="text-lg">Email Subject</CardTitle>
+                        <CardDescription className="font-medium text-foreground select-all">{subject}</CardDescription>
+                    </div>
+                    {partner && (
+                         <div className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5 border border-green-200">
+                            <UserCheck className="h-3.5 w-3.5" /> Personalized for {partner.firstName}
+                        </div>
+                    )}
+                </div>
             </CardHeader>
-            <CardContent>
-                <div className="p-4 bg-muted/50 border rounded-md whitespace-pre-wrap font-mono text-sm max-h-96 overflow-y-auto">
-                    {content.trim()}
+            <CardContent className="px-0">
+                <div className="p-6 bg-white border rounded-md whitespace-pre-wrap font-sans text-sm shadow-inner min-h-[300px]">
+                    {personalizedContent.trim()}
                 </div>
             </CardContent>
-            <CardFooter>
-                 <Button onClick={() => handleCopyToClipboard(content)}>
-                    <ClipboardCopy className="mr-2 h-4 w-4" />
-                    Copy Email Content
-                </Button>
-            </CardFooter>
+            {partner && (
+                <CardFooter className="px-0 pt-4 border-t mt-4">
+                    <div className="w-full flex items-center justify-between text-xs text-muted-foreground">
+                        <div className="flex items-center gap-4">
+                            <span className="flex items-center gap-1"><LinkIcon className="h-3 w-3"/> Referral ID: <span className="font-mono text-primary font-bold">{partner.id}</span></span>
+                        </div>
+                        <span className="italic">Copy HTML via the main toolbar to include hidden tracking.</span>
+                    </div>
+                </CardFooter>
+            )}
         </Card>
     );
 };
@@ -49,7 +71,7 @@ I hope this email finds you well.
 
 My name is [Your Name], and I'm reaching out from Logistics Flow. We've developed a comprehensive digital ecosystem specifically for the transport industry, designed to solve the key challenges transporters face every day: accessing capital, finding work, and reducing operational costs.
 
-Would you be open to a brief chat next week to explore how a partnership could be mutually beneficial?
+Would you be open to a brief chat next week to explore how a partnership could be mutually beneficial for [Your Company]?
 
 Best regards,
 
@@ -97,13 +119,13 @@ Dear [Partner Name],
 Thanks for your interest. Here’s a simple explanation of how our partnership model creates value for you:
 
 1. Recurring Subscription Revenue:
-You earn a [X%] share of all membership fees from every member you refer. It's a recurring annuity for as long as they remain a member.
+You earn a percentage share of all membership fees from every member you refer. It's a recurring annuity for as long as they remain a member.
 
 2. Transactional Commission:
 Your earnings grow as your network uses the platform.
-- Finance Mall: When a member from your network finances a truck, you get a [Y%] share of our origination fee.
-- Supplier Mall: When your network buys parts, you get a [Z%] share of our commission.
-- Marketplace Products: You get a [W%] share of our commission on every value-added product (like RAF Assist or Mahala Hub subscriptions) sold to your network.
+- Finance Mall: When a member from your network finances a truck, you get a share of our origination fee.
+- Supplier Mall: When your network buys parts, you get a share of our commission.
+- Marketplace Products: You get a share of our commission on every value-added product (like RAF Assist or Mahala Hub subscriptions) sold to your network.
 
 This multi-stream approach ensures your income grows exponentially as your network's activity on our platform increases.
 
@@ -114,12 +136,10 @@ Best regards,
 [Your Name]
         `
     },
-    explanation: {
-        subject: "Your Network is Your Asset - Here's Why",
+    invitation: {
+        subject: "Invite Your Network to Join You on Logistics Flow",
         content: `
 Hi [Partner Name],
-
-Let's talk about the core of this partnership: your network.
 
 The transport industry thrives on relationships. You already have a network of transporters, suppliers, and contacts that you've built over years. Logistics Flow provides the tools to turn those relationships into a powerful, automated revenue engine.
 
@@ -130,6 +150,8 @@ Think about it:
 
 Every one of these interactions is an opportunity. By introducing them to Logistics Flow—where they can get better pricing, find more work, or access capital—you are not only helping them, but you are also building your own business within our ecosystem.
 
+Your unique referral link is ready: [Referral Link]
+
 Our platform handles the tracking, the transactions, and the payouts. Your job is to do what you already do best: connect people and solve problems. We just provide the framework for you to get paid for it.
 
 Ready to leverage your most valuable asset?
@@ -138,37 +160,6 @@ Best regards,
 
 [Your Name]
         `
-    },
-    howTo: {
-        subject: "User Manual: Managing Your Network",
-        content: `
-**Your Guide to Building and Managing Your Referral Network in Logistics Flow**
-
-This guide explains how to use the "My Network" section of your account to invite new members and track your referral success.
-
-**Step 1: Access Your Network Dashboard**
-1.  Log in to your Logistics Flow account.
-2.  From the main account dashboard, navigate to the "Sales" section in the sidebar and click on "Network".
-3.  This is your central hub for viewing all the members who have joined using your personal referral link.
-
-**Step 2: Invite New Leads**
-1.  Click the "Invite Lead" button. This will open WhatsApp on your device.
-2.  A pre-written message containing your unique referral link will be ready to send. Your link will look something like this: \`https://[app-url]/join?ref=[your_company_id]\`.
-3.  Send this message to any transporters, suppliers, or other businesses in your network who you think would benefit from Logistics Flow.
-4.  **Important:** They MUST use this specific link for you to be credited as the referrer and earn commissions.
-
-**Step 3: Track Your Referrals**
--   The "My Network" table displays all the companies that have signed up using your link.
--   **Member Name & Email:** Shows the details of the primary contact who registered.
--   **Company Name:** The name of the business they registered.
--   **Membership:** Shows their current membership plan (e.g., Free, Standard, Premium).
--   **Status:** This is a key column.
-    -   \`Pending\`: The user has signed up but has not yet purchased a paid membership.
-    -   \`Active\`: The user has upgraded to a paid membership. You will now earn commission on their fees.
-    -   \`Suspended\`: The account has been temporarily suspended.
-
-By actively inviting new members and tracking their status, you can effectively build a recurring revenue stream. The more your network grows and engages with the platform, the more you earn.
-        `
     }
 };
 
@@ -176,46 +167,42 @@ const tabs = [
     { value: "intro", label: "1. Intro" },
     { value: "proposal", label: "2. Proposal" },
     { value: "revenue", label: "3. Revenue" },
-    { value: "explanation", label: "4. Explanation" },
-    { value: "howTo", label: "5. How To" },
+    { value: "invitation", label: "4. Invite Link" },
 ];
 
 
-export default function PartnerEmails() {
+export default function PartnerEmails({ partner }: { partner?: any }) {
+    const { user } = useUser();
+    const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://studio--ecosystem-hub.us-central1.hosted.app';
+    
+    const referralLink = React.useMemo(() => {
+        if (!partner) return `${baseUrl}/join`;
+        return `${baseUrl}/join?ref=${partner.id}&firstName=${encodeURIComponent(partner.firstName)}&lastName=${encodeURIComponent(partner.lastName)}&email=${encodeURIComponent(partner.email)}`;
+    }, [partner, baseUrl]);
+
     return (
-        <div className="space-y-8">
-            <CardHeader className="px-0">
-                <div className="flex items-center gap-4">
-                    <Mail className="h-8 w-8 text-primary"/>
-                    <div>
-                        <CardTitle>Partner Email Sequence</CardTitle>
-                        <CardDescription>
-                            Use these templates to introduce, propose, and explain the Logistics Flow partnership opportunity.
-                        </CardDescription>
-                    </div>
-                </div>
-            </CardHeader>
+        <div className="space-y-6">
+            <div className="bg-muted/50 p-4 rounded-lg flex items-center gap-3">
+                <Mail className="h-5 w-5 text-primary" />
+                <p className="text-sm">These templates are configured to dynamically merge recipient data when you copy them using the <strong>Log & Copy</strong> button.</p>
+            </div>
+            
             <Tabs defaultValue="intro" className="w-full">
-                <TabsList className="grid w-full grid-cols-5">
+                <TabsList className="grid w-full grid-cols-4 bg-muted/30">
                    {tabs.map(tab => (
-                       <TabsTrigger key={tab.value} value={tab.value}>{tab.label}</TabsTrigger>
+                       <TabsTrigger key={tab.value} value={tab.value} className="text-xs">{tab.label}</TabsTrigger>
                    ))}
                 </TabsList>
-                <TabsContent value="intro">
-                    <EmailTemplate subject={templates.intro.subject} content={templates.intro.content} />
-                </TabsContent>
-                <TabsContent value="proposal">
-                     <EmailTemplate subject={templates.proposal.subject} content={templates.proposal.content} />
-                </TabsContent>
-                 <TabsContent value="revenue">
-                    <EmailTemplate subject={templates.revenue.subject} content={templates.revenue.content} />
-                </TabsContent>
-                <TabsContent value="explanation">
-                    <EmailTemplate subject={templates.explanation.subject} content={templates.explanation.content} />
-                </TabsContent>
-                 <TabsContent value="howTo">
-                     <EmailTemplate subject={templates.howTo.subject} content={templates.howTo.content} />
-                </TabsContent>
+                {Object.entries(templates).map(([key, t]) => (
+                    <TabsContent key={key} value={key} className="mt-6">
+                        <EmailTemplate 
+                            subject={t.subject} 
+                            content={t.content.replace(/\[Your Name\]/g, user?.displayName || 'TransConnect Team')} 
+                            partner={partner} 
+                            referralLink={referralLink}
+                        />
+                    </TabsContent>
+                ))}
             </Tabs>
         </div>
     );

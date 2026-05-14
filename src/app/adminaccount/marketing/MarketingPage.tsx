@@ -1,37 +1,19 @@
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Loader2, ClipboardCopy } from 'lucide-react';
-import { Textarea } from '@/components/ui/textarea';
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Loader2, ClipboardCopy, UserCheck, AlertCircle } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Separator } from '@/components/ui/separator';
-import { Label } from '@/components/ui/label';
 
 // Content components
 import CompanyProfile from './content/CompanyProfile';
@@ -90,189 +72,20 @@ async function performAdminAction(token: string, action: string, payload: any) {
     return result;
 }
 
-const logSchema = z.object({
-  partnerId: z.string().min(1, "Please select a partner."),
-  communicationType: z.string().min(1, "Please select a type."),
-  notes: z.string().optional(),
-  createFollowUp: z.boolean().default(false),
-  followUpDate: z.string().optional(),
-  assigneeId: z.string().optional(),
-});
-
-type LogFormValues = z.infer<typeof logSchema>;
-
-async function fetchAdmins(token: string) {
-    const response = await fetch('/api/admin', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'listAllUsers' }),
-    });
-    const result = await response.json();
-    return result.success ? result.data : [];
-}
-
-function LogAndCopyDialog({ open, onOpenChange, partners, isLoadingPartners, activeTabLabel, onLogAndCopy, audienceTitle }: any) {
-    const { user } = useUser();
-    const [admins, setAdmins] = useState<any[]>([]);
-    const form = useForm<LogFormValues>({
-        resolver: zodResolver(logSchema),
-        defaultValues: { createFollowUp: false, assigneeId: user?.uid }
-    });
-
-    const [isLogging, setIsLogging] = useState(false);
-    const createFollowUp = form.watch('createFollowUp');
-
-    useEffect(() => {
-        if (open) {
-            getClientSideAuthToken().then(token => {
-                if (token) fetchAdmins(token).then(setAdmins);
-            });
-        }
-    }, [open]);
-
-    const singularAudience = useMemo(() => {
-        if (!audienceTitle) return 'Partner';
-        if (audienceTitle === 'Suppliers') return 'Supplier';
-        if (audienceTitle === 'Transporters') return 'Transporter';
-        if (audienceTitle.endsWith('s')) {
-            return audienceTitle.slice(0, -1);
-        }
-        return audienceTitle;
-    }, [audienceTitle]);
-
-    const handleSubmit = async (values: LogFormValues) => {
-        setIsLogging(true);
-        try {
-            const followUpTask = values.createFollowUp && values.followUpDate ? {
-                dueDate: values.followUpDate,
-                assigneeId: values.assigneeId || user?.uid,
-                title: `Follow up: ${activeTabLabel}`,
-                description: `Automatically created after sharing ${activeTabLabel} content.`
-            } : undefined;
-
-            await onLogAndCopy({
-                ...values,
-                subject: activeTabLabel,
-                followUpTask
-            });
-        } catch (e) {
-            // Error handled in parent
-        } finally {
-            setIsLogging(false);
-        }
-    };
-    
-    return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-lg">
-                <DialogHeader>
-                    <DialogTitle>Log & Copy Content</DialogTitle>
-                    <DialogDescription>
-                        Select a {singularAudience.toLowerCase()} to log this outreach and optionally set a follow-up task.
-                    </DialogDescription>
-                </DialogHeader>
-                <Form {...form}>
-                    <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 py-4 max-h-[70vh] overflow-y-auto pr-2">
-                        <FormField control={form.control} name="partnerId" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Target {singularAudience}</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <FormControl><SelectTrigger disabled={isLoadingPartners}>
-                                        <SelectValue placeholder={isLoadingPartners ? "Loading..." : `Select a ${singularAudience.toLowerCase()}...`} />
-                                    </SelectTrigger></FormControl>
-                                    <SelectContent>
-                                        {partners.map((p: any) => <SelectItem key={p.id} value={p.id}>{p.firstName} {p.lastName} ({p.companyName || 'N/A'})</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
-                                <FormMessage />
-                            </FormItem>
-                        )} />
-                        <FormField control={form.control} name="communicationType" render={({ field }) => (
-                             <FormItem>
-                                <FormLabel>Outreach Method</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <FormControl><SelectTrigger><SelectValue placeholder="Select a type..." /></SelectTrigger></FormControl>
-                                    <SelectContent>
-                                        <SelectItem value="Email">Email</SelectItem>
-                                        <SelectItem value="WhatsApp">WhatsApp</SelectItem>
-                                        <SelectItem value="Call">Call</SelectItem>
-                                        <SelectItem value="Meeting">Meeting</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                <FormMessage />
-                            </FormItem>
-                        )} />
-                        <FormField
-                            control={form.control}
-                            name="notes"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Outreach Notes (Optional)</FormLabel>
-                                    <FormControl>
-                                        <Textarea placeholder="Details about the interaction..." {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        
-                        <Separator />
-                        
-                        <FormField control={form.control} name="createFollowUp" render={({ field }) => (
-                            <FormItem className="flex items-center space-x-2 space-y-0">
-                                <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                                <FormLabel className="cursor-pointer font-semibold">Schedule Follow-up Task?</FormLabel>
-                            </FormItem>
-                        )} />
-
-                        {createFollowUp && (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2">
-                                <FormField control={form.control} name="followUpDate" render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Follow-up Date</FormLabel>
-                                        <FormControl><Input type="date" {...field} /></FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )} />
-                                <FormField control={form.control} name="assigneeId" render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Assign Task To</FormLabel>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                            <FormControl><SelectTrigger><SelectValue placeholder="Select staff..." /></SelectTrigger></FormControl>
-                                            <SelectContent>
-                                                {admins.map(admin => <SelectItem key={admin.uid} value={admin.uid}>{admin.displayName || admin.email}</SelectItem>)}
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                )} />
-                            </div>
-                        )}
-
-                         <DialogFooter className="pt-6">
-                            <Button type="submit" disabled={isLogging} className="w-full">
-                                {isLogging ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <ClipboardCopy className="mr-2 h-4 w-4" />}
-                                Log Outreach & Copy Content
-                            </Button>
-                        </DialogFooter>
-                    </form>
-                </Form>
-            </DialogContent>
-        </Dialog>
-    )
-}
-
 export default function MarketingPage({ audience }: MarketingPageProps) {
   const config = audienceConfig[audience];
   const { Offer, Emails, Management } = config;
   const [activeTab, setActiveTab] = useState('company-profile');
   const { toast } = useToast();
+  const { user } = useUser();
   
-  const [isLogDialogOpen, setIsLogDialogOpen] = useState(false);
   const [partners, setPartners] = useState<any[]>([]);
+  const [selectedPartnerId, setSelectedPartnerId] = useState<string>('none');
   const [isLoadingPartners, setIsLoadingPartners] = useState(true);
 
-  const fetchPartnersForLogging = useCallback(async () => {
+  const selectedPartner = partners.find(p => p.id === selectedPartnerId);
+
+  const fetchPartners = useCallback(async () => {
     setIsLoadingPartners(true);
     try {
         const token = await getClientSideAuthToken();
@@ -287,136 +100,175 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
         
         const result = await performAdminAction(token, 'getPartnersByType', { type: apiType });
         setPartners(result.data || []);
-        
     } catch (e: any) {
-        toast({ variant: 'destructive', title: `Could not load partners for logging`, description: e.message });
+        toast({ variant: 'destructive', title: `Could not load partners`, description: e.message });
     } finally {
         setIsLoadingPartners(false);
     }
   }, [audience, toast]);
 
   useEffect(() => {
-    fetchPartnersForLogging();
-  }, [fetchPartnersForLogging]);
+    fetchPartners();
+  }, [fetchPartners]);
 
+  const handleLogAndCopy = async () => {
+    if (!selectedPartner) {
+        toast({ variant: 'destructive', title: "Select a Recipient", description: "You must select a partner to enable personalization and tracking." });
+        return;
+    }
 
-  const handleCopyContent = async () => {
     const contentId = `tab-content-${activeTab}`;
     const contentElement = document.getElementById(contentId);
 
-    if (contentElement) {
-      try {
+    if (!contentElement) {
+        toast({ variant: 'destructive', title: "Content Error", description: "Could not find the content to copy." });
+        return;
+    }
+
+    try {
+        const token = await getClientSideAuthToken();
+        if (!token) throw new Error("Authentication failed.");
+        
+        // 1. Log the outreach in CRM
+        await performAdminAction(token, 'logCommunication', {
+            partnerId: selectedPartner.id,
+            type: 'Email',
+            subject: activeTab,
+            notes: `Auto-generated and copied for ${selectedPartner.firstName}.`,
+        });
+
+        // 2. Prepare HTML for clipboard
         const contentClone = contentElement.cloneNode(true) as HTMLElement;
+        
+        // Ensure all relative image URLs are absolute
         const images = contentClone.querySelectorAll('img');
         images.forEach(img => {
             if (img.src.startsWith('/')) {
                 img.src = `${window.location.origin}${img.src}`;
             }
         });
-        
+
+        // 3. Append Tracking Pixel
+        const trackingPixel = document.createElement('img');
+        trackingPixel.src = `${window.location.origin}/api/trackEmailOpen/${selectedPartner.id}`;
+        trackingPixel.width = 1;
+        trackingPixel.height = 1;
+        trackingPixel.style.display = 'none';
+        contentClone.appendChild(trackingPixel);
+
+        // 4. Copy to Clipboard
         const blob = new Blob([contentClone.innerHTML], { type: 'text/html' });
         const clipboardItem = new ClipboardItem({ 'text/html': blob });
         await navigator.clipboard.write([clipboardItem]);
-        
-      } catch (err) {
-        console.error('Failed to copy content: ', err);
-        throw new Error('Your browser may not support this feature.');
-      }
-    } else {
-      throw new Error(`Could not find the content for the active tab.`);
-    }
-  };
 
-  const handleLogAndCopy = async (logData: {partnerId: string, communicationType: string, subject: string, notes?: string, followUpTask?: any}) => {
-    try {
-        const token = await getClientSideAuthToken();
-        if (!token) throw new Error("Authentication failed.");
-        
-        await performAdminAction(token, 'logCommunication', {
-            partnerId: logData.partnerId,
-            type: logData.communicationType,
-            subject: logData.subject,
-            notes: logData.notes,
-            followUpTask: logData.followUpTask
-        });
-
-        await handleCopyContent();
-
-        toast({ title: 'Logged and Copied!', description: 'Outreach has been recorded and follow-up scheduled.' });
-        setIsLogDialogOpen(false);
+        toast({ title: 'Logged & Copied!', description: `Content for ${selectedPartner.firstName} is ready to paste into your email client.` });
     } catch (e: any) {
         toast({ variant: 'destructive', title: 'Action Failed', description: e.message });
     }
   };
 
   return (
-    <>
-        <LogAndCopyDialog 
-            open={isLogDialogOpen}
-            onOpenChange={setIsLogDialogOpen}
-            partners={partners}
-            isLoadingPartners={isLoadingPartners}
-            activeTabLabel={activeTab}
-            onLogAndCopy={handleLogAndCopy}
-            audienceTitle={config.title}
-        />
-        <div className="space-y-6">
+    <div className="space-y-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
                 <h1 className="text-2xl font-bold">Marketing & Pitch Library: {config.title}</h1>
-                <p className="text-muted-foreground">Tailored content and email sequences for engaging with {config.title.toLowerCase()}.</p>
+                <p className="text-muted-foreground">Automated outreach with tracking for {config.title.toLowerCase()}.</p>
             </div>
-            <Tabs defaultValue="company-profile" className="w-full" onValueChange={setActiveTab}>
-                <TabsList className="h-auto flex-wrap justify-start">
-                    <TabsTrigger value="company-profile">Company Profile</TabsTrigger>
-                    <TabsTrigger value="tech-architecture">Tech Architecture</TabsTrigger>
-                    <TabsTrigger value="revenue-model">Revenue Model</TabsTrigger>
-                    <TabsTrigger value="offer">The Offer</TabsTrigger>
-                    <TabsTrigger value="pitch">The Pitch</TabsTrigger>
-                    <TabsTrigger value="framework">The Framework</TabsTrigger>
-                    <TabsTrigger value="emails">Emails</TabsTrigger>
-                    <TabsTrigger value="management">Management</TabsTrigger>
-                </TabsList>
+            
+            <Card className="w-full md:w-80 border-primary bg-primary/5">
+                <CardHeader className="p-4 pb-2">
+                    <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                        <UserCheck className="h-4 w-4" />
+                        Target Recipient
+                    </CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 pt-0">
+                    <Select value={selectedPartnerId} onValueChange={setSelectedPartnerId}>
+                        <SelectTrigger disabled={isLoadingPartners}>
+                            <SelectValue placeholder={isLoadingPartners ? "Loading..." : "Select partner to automate..."} />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="none">Generic (No Tracking)</SelectItem>
+                            {partners.map(p => (
+                                <SelectItem key={p.id} value={p.id}>
+                                    {p.firstName} {p.lastName} {p.companyName ? `(${p.companyName})` : ''}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </CardContent>
+            </Card>
+        </div>
 
-                <Card className="mt-4">
-                    <CardHeader className="flex flex-row items-center justify-end border-b">
-                        <Button variant="outline" onClick={() => setIsLogDialogOpen(true)} disabled={isLoadingPartners || partners.length === 0}>
-                            {isLoadingPartners ? (
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            ) : (
-                                <ClipboardCopy className="mr-2 h-4 w-4" />
-                            )}
-                            Log & Copy Content
+        <Tabs defaultValue="company-profile" className="w-full" onValueChange={setActiveTab}>
+            <TabsList className="h-auto flex-wrap justify-start bg-muted p-1">
+                <TabsTrigger value="company-profile">Profile</TabsTrigger>
+                <TabsTrigger value="tech-architecture">Tech</TabsTrigger>
+                <TabsTrigger value="revenue-model">Revenue</TabsTrigger>
+                <TabsTrigger value="offer">The Offer</TabsTrigger>
+                <TabsTrigger value="pitch">The Pitch</TabsTrigger>
+                <TabsTrigger value="framework">Framework</TabsTrigger>
+                <TabsTrigger value="emails">Emails</TabsTrigger>
+                <TabsTrigger value="management">Management</TabsTrigger>
+            </TabsList>
+
+            <Card className="mt-4">
+                <CardHeader className="flex flex-row items-center justify-between border-b px-6 py-4">
+                    <div>
+                        <CardTitle className="text-lg">Content Preview</CardTitle>
+                        <CardDescription>
+                            {selectedPartner 
+                                ? `Automating content for ${selectedPartner.firstName}...` 
+                                : "Select a recipient above to enable personalization and tracking."}
+                        </CardDescription>
+                    </div>
+                    <div className="flex gap-2">
+                        {!selectedPartner && activeTab !== 'management' && (
+                             <div className="flex items-center gap-2 text-xs text-destructive font-medium px-3 py-1 bg-destructive/10 rounded-md border border-destructive/20 animate-pulse">
+                                <AlertCircle className="h-3 w-3" />
+                                Selection Required
+                            </div>
+                        )}
+                        <Button 
+                            variant={selectedPartner ? "default" : "outline"}
+                            onClick={handleLogAndCopy} 
+                            disabled={!selectedPartner || activeTab === 'management'}
+                        >
+                            <ClipboardCopy className="mr-2 h-4 w-4" />
+                            Log & Copy HTML
                         </Button>
-                    </CardHeader>
-                    <CardContent className="p-6">
-                        <TabsContent value="company-profile">
-                            <div id="tab-content-company-profile"><CompanyProfile audience={audience} /></div>
+                    </div>
+                </CardHeader>
+                <CardContent className="p-0">
+                    <div className="p-6">
+                        <TabsContent value="company-profile" className="m-0">
+                            <div id="tab-content-company-profile"><CompanyProfile audience={audience} partner={selectedPartner} /></div>
                         </TabsContent>
-                        <TabsContent value="tech-architecture">
-                            <div id="tab-content-tech-architecture"><TechArchitecture /></div>
+                        <TabsContent value="tech-architecture" className="m-0">
+                            <div id="tab-content-tech-architecture"><TechArchitecture partner={selectedPartner} /></div>
                         </TabsContent>
-                        <TabsContent value="revenue-model">
-                            <div id="tab-content-revenue-model"><RevenueModel /></div>
+                        <TabsContent value="revenue-model" className="m-0">
+                            <div id="tab-content-revenue-model"><RevenueModel partner={selectedPartner} /></div>
                         </TabsContent>
-                        <TabsContent value="offer">
-                            <div id="tab-content-offer"><Offer /></div>
+                        <TabsContent value="offer" className="m-0">
+                            <div id="tab-content-offer"><Offer partner={selectedPartner} /></div>
                         </TabsContent>
-                        <TabsContent value="pitch">
-                            <div id="tab-content-pitch"><PitchDeck /></div>
+                        <TabsContent value="pitch" className="m-0">
+                            <div id="tab-content-pitch"><PitchDeck partner={selectedPartner} /></div>
                         </TabsContent>
-                        <TabsContent value="framework">
-                            <div id="tab-content-framework"><Framework /></div>
+                        <TabsContent value="framework" className="m-0">
+                            <div id="tab-content-framework"><Framework partner={selectedPartner} /></div>
                         </TabsContent>
-                        <TabsContent value="emails">
-                            <div id="tab-content-emails"><Emails /></div>
+                        <TabsContent value="emails" className="m-0">
+                            <div id="tab-content-emails"><Emails partner={selectedPartner} /></div>
                         </TabsContent>
-                        <TabsContent value="management">
+                        <TabsContent value="management" className="m-0">
                             <Management />
                         </TabsContent>
-                    </CardContent>
-                </Card>
-            </Tabs>
-        </div>
-    </>
+                    </div>
+                </CardContent>
+            </Card>
+        </Tabs>
+    </div>
   );
 }

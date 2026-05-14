@@ -2,47 +2,62 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ClipboardCopy, Mail } from 'lucide-react';
+import { ClipboardCopy, Mail, UserCheck, Link as LinkIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import React from 'react';
 import { useSearchParams } from 'next/navigation';
+import { useUser } from '@/firebase';
 
-const EmailTemplate = ({ subject, content }: { subject: string, content: string }) => {
-    const { toast } = useToast();
+const EmailTemplate = ({ subject, content, partner, referralLink }: { subject: string, content: string, partner: any, referralLink: string }) => {
+    const personalizedContent = React.useMemo(() => {
+        let text = content;
+        const name = partner?.firstName || '[Supplier Name]';
+        const company = partner?.companyName || '[Your Company]';
+        
+        text = text.replace(/\[Supplier Name\]/g, name);
+        text = text.replace(/\[Name\]/g, name);
+        text = text.replace(/\[Lead Name\]/g, name);
+        text = text.replace(/\[Your Company\]/g, company);
+        text = text.replace(/\[Referral Link\]/g, referralLink);
+        text = text.replace(/\[Sign-up Link\]/g, referralLink);
+        text = text.replace(/\[Opt-in Link\]/g, `${window.location.origin}/opt-in/${partner?.id || 'TEST'}`);
 
-    const handleCopyToClipboard = (text: string) => {
-        navigator.clipboard.writeText(text.trim());
-        toast({
-            title: "Copied to Clipboard!",
-            description: "You can now paste the content into your email client.",
-        });
-    };
+        return text;
+    }, [content, partner, referralLink]);
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Email Template</CardTitle>
-                <CardDescription>Subject: {subject}</CardDescription>
+        <Card className="border-none shadow-none bg-transparent">
+            <CardHeader className="px-0">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <CardTitle className="text-lg">Email Subject</CardTitle>
+                        <CardDescription className="font-medium text-foreground select-all">{subject}</CardDescription>
+                    </div>
+                    {partner && (
+                         <div className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5 border border-green-200">
+                            <UserCheck className="h-3.5 w-3.5" /> Personalized for {partner.firstName}
+                        </div>
+                    )}
+                </div>
             </CardHeader>
-            <CardContent>
-                <div className="p-4 bg-muted/50 border rounded-md whitespace-pre-wrap font-mono text-sm max-h-96 overflow-y-auto">
-                    {content.trim()}
+            <CardContent className="px-0">
+                <div className="p-6 bg-white border rounded-md whitespace-pre-wrap font-sans text-sm shadow-inner min-h-[300px]">
+                    {personalizedContent.trim()}
                 </div>
             </CardContent>
-            <CardFooter>
-                 <Button onClick={() => handleCopyToClipboard(content)}>
-                    <ClipboardCopy className="mr-2 h-4 w-4" />
-                    Copy Email Content
-                </Button>
-            </CardFooter>
+            {partner && (
+                <CardFooter className="px-0 pt-4 border-t mt-4 text-xs text-muted-foreground italic text-center">
+                    Copy HTML via the main toolbar to embed tracking and log this interaction.
+                </CardFooter>
+            )}
         </Card>
     );
 };
 
 const getTemplates = (supplierType: string) => ({
     intro: {
-        subject: `Partnership Opportunity: A New Sales Channel for Your ${supplierType} Business`,
+        subject: `A New Sales Channel for Your ${supplierType} Business`,
         content: `
 Hi [Supplier Name],
 
@@ -54,31 +69,7 @@ We make it easier for them to buy from you. Our platform includes a Funding divi
 
 Furthermore, we offer a unique partnership model where you can earn recurring revenue by introducing your own network to the platform.
 
-Our ecosystem is built on four core divisions: a Supplier Mall (where your digital branch will live), a Funding division to facilitate sales, a Reseller Marketplace, and advanced Tech tools for transporters.
-
-Would you be open to a brief chat next week to explore how we can drive new, funded business your way at no upfront cost?
-
-Best regards,
-
-[Your Name]
-        `
-    },
-    proposal: {
-        subject: `Proposal: Become a Valued Supplier on Logistics Flow`,
-        content: `
-Dear [Supplier Name],
-
-Following up on our conversation, here’s how Logistics Flow can become a powerful new sales channel for your ${supplierType} business.
-
-What We Offer:
-- A Digital Storefront: A professional, easy-to-manage online shop within our Supplier Mall.
-- Targeted Customer Base: Direct access to hundreds of transporters and fleet owners who need your products.
-- Increased Visibility: Feature your brand and products prominently within our ecosystem.
-- Data Insights: Understand purchasing trends within the transport sector.
-
-Becoming a supplier is simple. You'll gain a direct line to your target market, reduce customer acquisition costs, and grow your sales.
-
-I would be happy to schedule a demo to walk you through the platform.
+Our unique sign-up link for [Your Company] is ready: [Sign-up Link]
 
 Best regards,
 
@@ -86,11 +77,11 @@ Best regards,
         `
     },
     revenue: {
-        subject: "A New Revenue Stream for Your Business with Logistics Flow",
+        subject: "Turn Your Client Base into a Recurring Revenue Engine",
         content: `
 Dear [Supplier Name],
 
-Beyond direct sales through our platform, Logistics Flow offers a unique partnership opportunity to generate a new, recurring revenue stream from your existing client base.
+Beyond direct sales through our platform, Logistics Flow offers a unique partnership opportunity to generate a new, recurring revenue stream from your existing client base at [Your Company].
 
 How it works:
 - We provide you with a unique referral link.
@@ -99,111 +90,51 @@ How it works:
 
 This is a powerful way to monetize the relationships you've already built. You help your clients access a platform that saves them money, and in return, you build a passive income stream.
 
-Let's schedule a call to discuss the commission structure in more detail.
+Review your partner benefits here: [Sign-up Link]
 
 Best regards,
 
 [Your Name]
-        `
-    },
-    explanation: {
-        subject: "Leverage Your Client Network with Logistics Flow",
-        content: `
-Dear [Supplier Name],
-
-In the transport industry, relationships are everything. You have a network of clients you've served for years. Logistics Flow provides the framework to turn that network into a significant business asset.
-
-Think about the services your clients use beyond what you offer:
-- Do they need financing for new trucks?
-- Do they subcontract loads?
-- Do they buy parts or services from other vendors?
-
-By introducing them to Logistics Flow, you're not just making a referral. You are connecting them to an ecosystem where they can operate more efficiently and save money.
-
-Our platform tracks all this activity. When a client you referred finances a truck or buys parts from another vendor in the mall, you earn a share of that transaction. It's a true partnership where you get paid for the value your network brings to the ecosystem.
-
-Ready to leverage your most valuable asset?
-
-Best regards,
-
-[Your Name]
-        `
-    },
-    howTo: {
-        subject: `How to Onboard Your Clients and Start Earning`,
-        content: `
-**Your Guide to Building Your Referral Network in Logistics Flow**
-
-This guide explains how to use your account to invite your clients and start earning referral commissions.
-
-**Step 1: Access Your Partner Dashboard**
-1.  Log in to your Logistics Flow account.
-2.  Navigate to the "Sales" section and click on "My Network".
-3.  This is your central hub for your unique referral link and tracking your network's growth.
-
-**Step 2: Invite Your Clients**
-1.  Copy your unique referral link from the dashboard.
-2.  Share this link with your clients. You can email it to them, add it to your invoices, or share it on social media.
-3.  **Important:** They MUST use your specific link to sign up for you to be credited as the referrer.
-
-**Step 3: Track Your Earnings**
--   The "My Network" dashboard shows all the businesses that have joined through your link.
--   The "Performance" tab provides an overview of your network's activity and your resulting commission earnings.
--   Your earnings are automatically credited to your wallet for easy withdrawal.
-
-By actively inviting your clients, you build a recurring revenue stream that grows with the ecosystem. The more your network transacts, the more you earn.
         `
     }
 });
 
 const tabs = [
-    { value: "intro", label: "1. Intro" },
-    { value: "proposal", label: "2. Proposal" },
-    { value: "revenue", label: "3. Revenue" },
-    { value: "explanation", label: "4. Explanation" },
-    { value: "howTo", label: "5. How To" },
+    { value: "intro", label: "1. Digital Branch" },
+    { value: "revenue", label: "2. Revenue Model" },
 ];
 
 
-export default function SupplierEmails() {
+export default function SupplierEmails({ partner }: { partner?: any }) {
+    const { user } = useUser();
     const searchParams = useSearchParams();
     const supplierType = searchParams.get('type') || 'General';
     const templates = getTemplates(supplierType);
+    const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://studio--ecosystem-hub.us-central1.hosted.app';
+
+    const referralLink = React.useMemo(() => {
+        if (!partner) return `${baseUrl}/join`;
+        return `${baseUrl}/join?ref=${partner.id}&role=vendor&type=${encodeURIComponent(supplierType)}`;
+    }, [partner, baseUrl, supplierType]);
 
     return (
-        <div className="space-y-8">
-            <CardHeader className="px-0">
-                <div className="flex items-center gap-4">
-                    <Mail className="h-8 w-8 text-primary"/>
-                    <div>
-                        <CardTitle>Supplier Engagement Sequence: {supplierType}</CardTitle>
-                        <CardDescription>
-                            Use these templates to engage with potential {supplierType} suppliers.
-                        </CardDescription>
-                    </div>
-                </div>
-            </CardHeader>
+        <div className="space-y-6">
             <Tabs defaultValue="intro" className="w-full">
-                <TabsList className="grid w-full grid-cols-5">
+                <TabsList className="grid w-full grid-cols-2 bg-muted/30">
                    {tabs.map(tab => (
                        <TabsTrigger key={tab.value} value={tab.value}>{tab.label}</TabsTrigger>
                    ))}
                 </TabsList>
-                <TabsContent value="intro">
-                    <EmailTemplate subject={templates.intro.subject} content={templates.intro.content} />
-                </TabsContent>
-                <TabsContent value="proposal">
-                     <EmailTemplate subject={templates.proposal.subject} content={templates.proposal.content} />
-                </TabsContent>
-                 <TabsContent value="revenue">
-                    <EmailTemplate subject={templates.revenue.subject} content={templates.revenue.content} />
-                </TabsContent>
-                <TabsContent value="explanation">
-                    <EmailTemplate subject={templates.explanation.subject} content={templates.explanation.content} />
-                </TabsContent>
-                 <TabsContent value="howTo">
-                    <EmailTemplate subject={templates.howTo.subject} content={templates.howTo.content} />
-                </TabsContent>
+                {Object.entries(templates).map(([key, t]) => (
+                    <TabsContent key={key} value={key} className="mt-6">
+                        <EmailTemplate 
+                            subject={t.subject} 
+                            content={t.content.replace(/\[Your Name\]/g, user?.displayName || 'TransConnect Team')} 
+                            partner={partner} 
+                            referralLink={referralLink}
+                        />
+                    </TabsContent>
+                ))}
             </Tabs>
         </div>
     );

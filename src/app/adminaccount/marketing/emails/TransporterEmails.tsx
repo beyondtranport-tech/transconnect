@@ -1,53 +1,67 @@
-
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ClipboardCopy, Mail, ShieldCheck } from 'lucide-react';
+import { ClipboardCopy, Mail, UserCheck, ShieldCheck } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import React from 'react';
 import { useSearchParams } from 'next/navigation';
+import { useUser } from '@/firebase';
 
-const EmailTemplate = ({ subject, content }: { subject: string, content: string }) => {
-    const { toast } = useToast();
+const EmailTemplate = ({ subject, content, partner, referralLink }: { subject: string, content: string, partner: any, referralLink: string }) => {
+    const personalizedContent = React.useMemo(() => {
+        let text = content;
+        const name = partner?.firstName || '[Name]';
+        const company = partner?.companyName || '[Your Company]';
+        
+        text = text.replace(/\[Partner Name\]/g, name);
+        text = text.replace(/\[Name\]/g, name);
+        text = text.replace(/\[Lead Name\]/g, name);
+        text = text.replace(/\[Your Company\]/g, company);
+        text = text.replace(/\[Referral Link\]/g, referralLink);
+        text = text.replace(/\[Sign-up Link\]/g, referralLink);
+        text = text.replace(/\[Opt-in Link\]/g, `${window.location.origin}/opt-in/${partner?.id || 'TEST'}`);
 
-    const handleCopyToClipboard = (text: string) => {
-        navigator.clipboard.writeText(text.trim());
-        toast({
-            title: "Copied to Clipboard!",
-            description: "You can now paste the content into your email client.",
-        });
-    };
+        return text;
+    }, [content, partner, referralLink]);
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Email Template</CardTitle>
-                <CardDescription>Subject: {subject}</CardDescription>
+        <Card className="border-none shadow-none bg-transparent">
+            <CardHeader className="px-0">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <CardTitle className="text-lg">Email Subject</CardTitle>
+                        <CardDescription className="font-medium text-foreground select-all">{subject}</CardDescription>
+                    </div>
+                    {partner && (
+                         <div className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5 border border-green-200">
+                            <UserCheck className="h-3.5 w-3.5" /> Personalized for {partner.firstName}
+                        </div>
+                    )}
+                </div>
             </CardHeader>
-            <CardContent>
-                <div className="p-4 bg-muted/50 border rounded-md whitespace-pre-wrap font-mono text-sm max-h-96 overflow-y-auto">
-                    {content.trim()}
+            <CardContent className="px-0">
+                <div className="p-6 bg-white border rounded-md whitespace-pre-wrap font-sans text-sm shadow-inner min-h-[300px]">
+                    {personalizedContent.trim()}
                 </div>
             </CardContent>
-            <CardFooter>
-                 <Button onClick={() => handleCopyToClipboard(content)}>
-                    <ClipboardCopy className="mr-2 h-4 w-4" />
-                    Copy Email Content
-                </Button>
-            </CardFooter>
+             {partner && (
+                <CardFooter className="px-0 pt-4 border-t mt-4 text-xs text-muted-foreground italic text-center">
+                    Copy HTML via the main toolbar to embed tracking and log this interaction.
+                </CardFooter>
+            )}
         </Card>
     );
 };
 
 const getTemplates = (transporterType: string) => ({
     consent: {
-        subject: `[ACTION REQUIRED] - Confirming Your Logistics Flow Network Participation`,
+        subject: `Confirming Your Logistics Flow Network Participation`,
         content: `
 Hi [Name],
 
-I'm reaching out from Logistics Flow. We're currently expanding our network of transport professionals in the ${transporterType} sector, and we'd love to have you involved.
+I'm reaching out from Logistics Flow. We're currently expanding our network of transport professionals in the ${transporterType} sector, and we'd love to have [Your Company] involved.
 
 Before we can send you specific opportunities, group discount offers, or load matching data, we need to ensure we are fully compliant with your privacy preferences.
 
@@ -67,18 +81,11 @@ The Logistics Flow Team
         `
     },
     intro: {
-        subject: `A New Way to Reduce Costs for Your ${transporterType} Business`,
+        subject: `Reduce Daily Operating Costs for [Your Company]`,
         content: `
 Hi [Name],
 
 I'm reaching out from Logistics Flow with a simple proposition to help reduce your daily operating costs by leveraging the power of our community network.
-
-To do this effectively, we need your help. By contributing data about your fleet, suppliers, and common routes, you directly empower us to negotiate significant group discounts on your behalf.
-
-Here’s how you stay in control:
-1.  **Your Secure Portal:** All information you share is housed securely in your private member portal.
-2.  **Targeted Engagement:** Your data is used for one purpose only: to initiate engagement with your suppliers to show demand and negotiate deals.
-3.  **Transparency:** Monitor the engagement process and see value being created in real-time.
 
 Take control and join for free: [Sign-up Link]
 
@@ -87,55 +94,18 @@ Best regards,
 [Your Name]
         `
     },
-    proposal: {
-        subject: `How Logistics Flow Helps You Find More Work`,
+    loads: {
+        subject: `Find More Work and Reduce Empty Miles`,
         content: `
 Hi [Name],
 
-Following up on my last email, I wanted to focus on how Logistics Flow directly helps you find more work and reduce empty miles.
+Following up on my last email, I wanted to focus on how Logistics Flow directly helps [Your Company] find more work and reduce empty miles.
 
 Our platform includes:
 - **AI Freight Matcher:** Our intelligent system connects your available trucks with suitable loads.
 - **Subcontracting Mall:** Find and collaborate with other members who need reliable transporters.
-- **A Trusted Network:** All members are part of the same ecosystem, making it easier to build relationships.
 
 Join for free and see the opportunities: [Sign-up Link]
-
-Best regards,
-
-[Your Name]
-        `
-    },
-    revenue: {
-        subject: `Save Money, Access Capital`,
-        content: `
-Hi [Name],
-
-Beyond finding work, Logistics Flow is designed to improve your bottom line.
-
-Here's how:
-- **Save on Costs:** Access group-negotiated discounts on parts, tires, and services.
-- **Access to Capital:** Your platform activity builds a credible operational history, making you a more attractive candidate for our network of funders.
-
-Get started for free today: [Sign-up Link]
-
-Best regards,
-
-[Your Name]
-        `
-    },
-    howTo: {
-        subject: `Getting Started with Logistics Flow is Easy`,
-        content: `
-Hi [Name],
-
-Ready to join? Getting started takes less than 5 minutes.
-
-1.  **Click this link:** [Sign-up Link]
-2.  **Fill out your details:** Create your free account.
-3.  **Explore your dashboard:** Once you're in, start building your company profile and explore the malls.
-
-If you have any questions, just reply to this email.
 
 Best regards,
 
@@ -145,56 +115,45 @@ Best regards,
 });
 
 const tabs = [
-    { value: "consent", label: "0. CONSENT (POPI)", icon: ShieldCheck },
-    { value: "intro", label: "1. Intro" },
-    { value: "proposal", label: "2. Find Work" },
-    { value: "revenue", label: "3. Save Money" },
-    { value: "howTo", label: "4. How To" },
+    { value: "consent", label: "0. POPI Consent", icon: ShieldCheck },
+    { value: "intro", label: "1. Cost Savings" },
+    { value: "loads", label: "2. Load Matching" },
 ];
 
 
-export default function TransporterEmails() {
+export default function TransporterEmails({ partner }: { partner?: any }) {
+    const { user } = useUser();
     const searchParams = useSearchParams();
     const transporterType = searchParams.get('type') || 'Logistics';
     const templates = getTemplates(transporterType);
+    const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://studio--ecosystem-hub.us-central1.hosted.app';
+
+    const referralLink = React.useMemo(() => {
+        if (!partner) return `${baseUrl}/join`;
+        return `${baseUrl}/join?ref=${partner.id}&role=transporter`;
+    }, [partner, baseUrl]);
 
     return (
         <div className="space-y-8">
-            <CardHeader className="px-0">
-                <div className="flex items-center gap-4">
-                    <Mail className="h-8 w-8 text-primary"/>
-                    <div>
-                        <CardTitle>Transporter Engagement Sequence: {transporterType}</CardTitle>
-                        <CardDescription>
-                            Use the Consent template for your first outreach to satisfy POPI requirements.
-                        </CardDescription>
-                    </div>
-                </div>
-            </CardHeader>
             <Tabs defaultValue="consent" className="w-full">
-                <TabsList className="h-auto flex-wrap justify-start">
+                <TabsList className="h-auto flex-wrap justify-start bg-muted/30">
                    {tabs.map(tab => (
-                       <TabsTrigger key={tab.value} value={tab.value} className="gap-2">
-                           {tab.icon && <tab.icon className="h-3.5 w-3.5" />}
+                       <TabsTrigger key={tab.value} value={tab.value} className="gap-2 text-xs">
+                           {tab.icon && <tab.icon className="h-3 w-3" />}
                            {tab.label}
                        </TabsTrigger>
                    ))}
                 </TabsList>
-                <TabsContent value="consent">
-                    <EmailTemplate subject={templates.consent.subject} content={templates.consent.content} />
-                </TabsContent>
-                <TabsContent value="intro">
-                    <EmailTemplate subject={templates.intro.subject} content={templates.intro.content} />
-                </TabsContent>
-                <TabsContent value="proposal">
-                     <EmailTemplate subject={templates.proposal.subject} content={templates.proposal.content} />
-                </TabsContent>
-                 <TabsContent value="revenue">
-                    <EmailTemplate subject={templates.revenue.subject} content={templates.revenue.content} />
-                </TabsContent>
-                 <TabsContent value="howTo">
-                    <EmailTemplate subject={templates.howTo.subject} content={templates.howTo.content} />
-                </TabsContent>
+                {Object.entries(templates).map(([key, t]) => (
+                    <TabsContent key={key} value={key} className="mt-6">
+                        <EmailTemplate 
+                            subject={t.subject.replace(/\[Your Company\]/g, partner?.companyName || 'your business')} 
+                            content={t.content.replace(/\[Your Name\]/g, user?.displayName || 'TransConnect Team')} 
+                            partner={partner} 
+                            referralLink={referralLink}
+                        />
+                    </TabsContent>
+                ))}
             </Tabs>
         </div>
     );
