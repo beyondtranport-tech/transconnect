@@ -147,7 +147,7 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
 
                     <Separator />
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <FormField control={form.control} name="role" render={({ field }) => ( <FormItem><FormLabel>Potential Role</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a role" /></SelectTrigger></FormControl><SelectContent>{roles.map(r => <SelectItem key={r.id} value={r.title}>{r.title}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="role" render={({ field }) => ( <FormItem><FormLabel>Potential Role</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a role" /></SelectTrigger></FormControl><SelectContent>{roles.map(r => <SelectItem key={r.id} value={r.title}>{r.title}</SelectItem>)}</Select><FormMessage /></FormItem> )} />
                         <FormField control={form.control} name="status" render={({ field }) => ( <FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="new">New</SelectItem><SelectItem value="contacted">Contacted</SelectItem><SelectItem value="qualified">Qualified</SelectItem><SelectItem value="unqualified">Unqualified</SelectItem><SelectItem value="invited">Invited</SelectItem><SelectItem value="registered">Registered</SelectItem></Select><FormMessage /></FormItem> )} />
                     </div>
                     <FormField control={form.control} name="notes" render={({ field }) => ( <FormItem><FormLabel>Notes</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem> )} />
@@ -294,7 +294,7 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
         setIsLoading(true);
         const idsToDelete = duplicates.flatMap((group, index) => {
             const idToKeep = selections[index];
-            if (!idToKeep) return []; 
+            if (!idToKeep) return []; // If no selection for a group, don't delete anything
             return group.filter(lead => lead.id !== idToKeep).map(lead => lead.id);
         });
 
@@ -356,7 +356,7 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
                                         <label htmlFor={`lead-${groupIndex}-${lead.id}`} className="text-sm space-y-1">
                                             <p className="font-semibold">{lead.contactPerson || 'No Contact'} - <span className="font-mono text-xs">{lead.id}</span></p>
                                             <p className="text-muted-foreground">{lead.email || 'No Email'} | {lead.phone || 'No Phone'}</p>
-                                            <p className="text-xs text-muted-foreground">{lead.streetAddress} {lead.city}</p>
+                                            <p className="text-xs text-muted-foreground">{lead.address}</p>
                                         </label>
                                     </div>
                                 ))}
@@ -410,11 +410,12 @@ function LeadsDatabaseComponent() {
     const action = searchParams.get('action');
     if (action === 'add-member' || newLeadDefaults) {
       setIsAddLeadOpen(true);
-      const newParams = new URLSearchParams(searchParams.toString());
-      newParams.delete('action');
-      router.replace(`${window.location.pathname}?${newParams.toString()}`, { scroll: false });
+      // Clean the URL to prevent re-triggering
+      const newPath = `${window.location.pathname}?view=leads-database`;
+      router.replace(newPath, { scroll: false });
     }
-  }, [searchParams, newLeadDefaults, router]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, newLeadDefaults]);
 
   const handleDelete = async () => {
     if (!deleteLead) return;
@@ -469,7 +470,7 @@ function LeadsDatabaseComponent() {
         {editLead && <LeadDialog open={isEditLeadOpen} onOpenChange={setIsEditLeadOpen} lead={editLead} onSave={forceRefresh} />}
         <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
             <AlertDialogContent>
-                <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This action will permanently delete the lead for {selectedLead?.companyName}.</AlertDialogDescription></AlertDialogHeader>
+                <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This action will permanently delete the lead for {deleteLead?.companyName}.</AlertDialogDescription></AlertDialogHeader>
                 <AlertDialogFooter>
                     <AlertDialogCancel onClick={() => setDeleteLead(null)}>Cancel</AlertDialogCancel>
                     <AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction>
