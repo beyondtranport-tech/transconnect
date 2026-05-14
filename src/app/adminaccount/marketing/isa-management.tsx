@@ -117,7 +117,7 @@ function OnboardWizardDialog({ partner, open, onOpenChange, onComplete }: { part
 
             await performAdminAction(token, 'invitePartner', payload);
 
-            const baseUrl = window.location.origin;
+            const baseUrl = 'https://studio--ecosystem-hub.us-central1.hosted.app';
             setInviteLink(`${baseUrl}/join?email=${encodeURIComponent(partner.email)}&firstName=${encodeURIComponent(partner.firstName)}&lastName=${encodeURIComponent(partner.lastName)}`);
             
             toast({ title: "Invitation Processed", description: "Invite logged and follow-up task created." });
@@ -419,6 +419,7 @@ export default function ISAManagement() {
   const columns: ColumnDef<any>[] = useMemo(() => [
     { accessorKey: 'firstName', header: 'Name', cell: ({row}) => <div>{row.original.firstName} {row.original.lastName}</div> },
     { accessorKey: 'email', header: 'Email', cell: ({row}) => <div>{row.original.email}</div> },
+    { accessorKey: 'phone', header: 'Phone', cell: ({row}) => <div>{row.original.phone}</div> },
     { accessorKey: 'companyName', header: 'Company', cell: ({row}) => <div>{row.original.companyName}</div> },
     { 
         accessorKey: 'assigneeId', 
