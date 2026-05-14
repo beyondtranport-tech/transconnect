@@ -295,7 +295,7 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
         const idsToDelete = duplicates.flatMap((group, index) => {
             const idToKeep = selections[index];
             if (!idToKeep) return []; // If no selection for a group, don't delete anything
-            return group.filter(lead => lead.id !== idToKeep).map(lead => idToKeep ? lead.id : null).filter(id => id !== null) as string[];
+            return group.filter(lead => lead.id !== idToKeep).map(lead => lead.id);
         });
 
         if (idsToDelete.length === 0) {
@@ -414,7 +414,8 @@ function LeadsDatabaseComponent() {
       const newPath = `${window.location.pathname}?view=leads-database`;
       router.replace(newPath, { scroll: false });
     }
-  }, [searchParams, newLeadDefaults, router]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, newLeadDefaults]);
 
   const handleDelete = async () => {
     if (!deleteLead) return;

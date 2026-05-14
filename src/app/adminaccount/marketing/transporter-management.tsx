@@ -5,7 +5,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, Truck, Edit, Trash2, Send, Copy, MessageSquare, ClipboardList, MessageSquarePlus, CheckCircle, Upload, Search, Wand2, Filter, Mail, Download, ShieldCheck, Clock, Eye, ListPlus } from 'lucide-react';
+import { Loader2, PlusCircle, Truck, Edit, Trash2, Send, Copy, MessageSquare, ClipboardList, MessageSquarePlus, CheckCircle, Upload, Search, Wand2, ListPlus } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -376,7 +376,7 @@ function AddFromTextDialog({ open, onOpenChange, onComplete }: { open: boolean, 
                 <DialogFooter>
                     <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
                     <Button onClick={handleAdd} disabled={isLoading || !text.trim()}>
-                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <ListPlus className="mr-2 h-4 w-4" />}
+                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <PlusCircle className="mr-2 h-4 w-4" />}
                         Add to Database
                     </Button>
                 </DialogFooter>
@@ -564,7 +564,7 @@ export default function TransporterManagement() {
                 </div>
                 <div className="flex flex-wrap gap-2">
                     <BulkImportDialog type="transporter" onComplete={forceRefresh}><Button variant="outline"><Upload className="mr-2 h-4 w-4"/>Import CSV</Button></BulkImportDialog>
-                    <Button variant="outline" onClick={() => setActiveDialog('add-list')}><ListPlus className="mr-2 h-4 w-4"/>Add from List</Button>
+                    <Button variant="outline" onClick={() => setActiveDialog('add-list')}><PlusCircle className="mr-2 h-4 w-4"/>Add from List</Button>
                     <Button onClick={() => setActiveDialog('add')}><PlusCircle className="mr-2 h-4 w-4"/>Add Lead</Button>
                 </div>
             </div>

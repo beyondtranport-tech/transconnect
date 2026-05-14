@@ -262,7 +262,7 @@ function PartnerDialog({ open, onOpenChange, partner, onSave }: { open: boolean;
         setIsLoading(false);
     }
   };
-  
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-2xl">
