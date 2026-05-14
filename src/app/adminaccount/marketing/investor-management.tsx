@@ -287,7 +287,7 @@ function InvestorDialog({ open, onOpenChange, partner, onSave }: { open: boolean
                     <FormField control={form.control} name="website" render={({ field }) => ( <FormItem><FormLabel>Website (Optional)</FormLabel><FormControl><Input placeholder="https://..." {...field} /></FormControl><FormMessage /></FormItem> )} />
                     
                     <Separator />
-                    <h3 className="font-semibold text-sm">Business Address</h3>
+                    <h3 className="font-semibold text-sm text-primary flex items-center gap-2">Business Address</h3>
                     <FormField control={form.control} name="streetAddress" render={({ field }) => ( <FormItem><FormLabel>Street Address</FormLabel><FormControl><Input placeholder="123 Road Lane" {...field} /></FormControl><FormMessage /></FormItem> )} />
                     <div className="grid grid-cols-3 gap-4">
                         <FormField control={form.control} name="city" render={({ field }) => ( <FormItem><FormLabel>City</FormLabel><FormControl><Input placeholder="Johannesburg" {...field} /></FormControl><FormMessage /></FormItem> )} />

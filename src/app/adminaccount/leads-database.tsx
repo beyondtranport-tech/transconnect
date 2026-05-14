@@ -137,7 +137,7 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
                     <FormField control={form.control} name="website" render={({ field }) => ( <FormItem><FormLabel>Website</FormLabel><FormControl><Input {...field} type="url" placeholder="https://example.com" /></FormControl><FormMessage /></FormItem> )} />
                     
                     <Separator />
-                    <h3 className="font-semibold text-sm">Business Address</h3>
+                    <h3 className="font-semibold text-sm text-primary flex items-center gap-2">Business Address</h3>
                     <FormField control={form.control} name="streetAddress" render={({ field }) => ( <FormItem><FormLabel>Street Address</FormLabel><FormControl><Input placeholder="123 Road Lane" {...field} /></FormControl><FormMessage /></FormItem> )} />
                     <div className="grid grid-cols-3 gap-4">
                         <FormField control={form.control} name="city" render={({ field }) => ( <FormItem><FormLabel>City</FormLabel><FormControl><Input placeholder="Johannesburg" {...field} /></FormControl><FormMessage /></FormItem> )} />
@@ -186,7 +186,7 @@ function InviteDialog({ lead, onInviteSent }: { lead: any; onInviteSent: () => v
             const firstName = nameParts[0] || '';
             const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
             
-            const baseUrl = window.location.origin;
+            const baseUrl = 'https://studio--ecosystem-hub.us-central1.hosted.app';
             const constructedLink = `${baseUrl}/join?email=${encodeURIComponent(lead.email || '')}&firstName=${encodeURIComponent(firstName)}&lastName=${encodeURIComponent(lastName)}`;
             
             setInviteLink(constructedLink);
