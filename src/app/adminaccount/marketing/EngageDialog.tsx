@@ -121,27 +121,33 @@ export function EngageDialog({ open, onOpenChange, partner, audience }: EngageDi
         
         // Convert tailwind utility classes to inline styles for Outlook/Gmail compatibility
         const applyInlineStyles = (el: HTMLElement) => {
-            const classes = el.className;
+            if (!el.classList) return;
+            const hasClass = (cls: string) => el.classList.contains(cls);
             let style = el.getAttribute('style') || '';
 
             // Mapping common tailwind utilities used in templates to inline CSS
-            if (classes.includes('border')) style += 'border: 1px solid #e2e8f0;';
-            if (classes.includes('rounded-xl')) style += 'border-radius: 0.75rem;';
-            if (classes.includes('rounded-lg')) style += 'border-radius: 0.5rem;';
-            if (classes.includes('rounded-md')) style += 'border-radius: 0.375rem;';
-            if (classes.includes('bg-white')) style += 'background-color: #ffffff;';
-            if (classes.includes('bg-slate-50')) style += 'background-color: #f8fafc;';
-            if (classes.includes('bg-muted/50')) style += 'background-color: #f1f5f9;';
-            if (classes.includes('p-4')) style += 'padding: 1rem;';
-            if (classes.includes('p-6')) style += 'padding: 1.5rem;';
-            if (classes.includes('p-8')) style += 'padding: 2rem;';
-            if (classes.includes('mb-4')) style += 'margin-bottom: 1rem;';
-            if (classes.includes('mt-4')) style += 'margin-top: 1rem;';
-            if (classes.includes('text-primary')) style += 'color: #228B22;';
-            if (classes.includes('font-bold')) style += 'font-weight: 700;';
-            if (classes.includes('text-lg')) style += 'font-size: 1.125rem;';
-            if (classes.includes('text-xl')) style += 'font-size: 1.25rem;';
-            if (classes.includes('shadow-sm')) style += 'box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);';
+            if (hasClass('border')) style += 'border: 1px solid #e2e8f0;';
+            if (hasClass('rounded-xl')) style += 'border-radius: 0.75rem;';
+            if (hasClass('rounded-lg')) style += 'border-radius: 0.5rem;';
+            if (hasClass('rounded-md')) style += 'border-radius: 0.375rem;';
+            if (hasClass('bg-white')) style += 'background-color: #ffffff;';
+            if (hasClass('bg-slate-50')) style += 'background-color: #f8fafc;';
+            if (hasClass('bg-muted/50')) style += 'background-color: #f1f5f9;';
+            if (hasClass('bg-primary/5')) style += 'background-color: #f0fdf4;';
+            if (hasClass('bg-primary/10')) style += 'background-color: #dcfce7;';
+            if (hasClass('p-4')) style += 'padding: 1rem;';
+            if (hasClass('p-6')) style += 'padding: 1.5rem;';
+            if (hasClass('p-8')) style += 'padding: 2rem;';
+            if (hasClass('mb-4')) style += 'margin-bottom: 1rem;';
+            if (hasClass('mt-4')) style += 'margin-top: 1rem;';
+            if (hasClass('text-primary')) style += 'color: #228B22;';
+            if (hasClass('text-muted-foreground')) style += 'color: #64748b;';
+            if (hasClass('font-bold')) style += 'font-weight: 700;';
+            if (hasClass('font-semibold')) style += 'font-weight: 600;';
+            if (hasClass('text-lg')) style += 'font-size: 1.125rem;';
+            if (hasClass('text-xl')) style += 'font-size: 1.25rem;';
+            if (hasClass('text-2xl')) style += 'font-size: 1.5rem;';
+            if (hasClass('shadow-sm')) style += 'box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);';
 
             if (style) el.setAttribute('style', style);
 
@@ -305,7 +311,7 @@ export function EngageDialog({ open, onOpenChange, partner, audience }: EngageDi
                     
                     <div className="mt-10 p-4 bg-primary/5 rounded-lg border border-primary/10">
                         <div className="flex items-center gap-2 text-xs font-bold text-primary mb-2">
-                            <UserCheck className="h-3 w-3" /> RICH HTML READY
+                            <UserCheck className="h-3.5 w-3.5" /> RICH HTML READY
                         </div>
                         <p className="text-[10px] text-muted-foreground leading-relaxed">
                             Formatting and graphics are now inlined to ensure they display correctly in Outlook and Gmail.
