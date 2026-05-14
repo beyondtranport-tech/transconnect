@@ -151,11 +151,11 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
                         <FormField control={form.control} name="status" render={({ field }) => ( <FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="new">New</SelectItem><SelectItem value="contacted">Contacted</SelectItem><SelectItem value="qualified">Qualified</SelectItem><SelectItem value="unqualified">Unqualified</SelectItem><SelectItem value="invited">Invited</SelectItem><SelectItem value="registered">Registered</SelectItem></Select><FormMessage /></FormItem> )} />
                     </div>
                     <FormField control={form.control} name="notes" render={({ field }) => ( <FormItem><FormLabel>Notes</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem> )} />
-                     <DialogFooter className="pt-4">
-                        <Button type="submit" disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null} Save Lead</Button>
-                    </DialogFooter>
                 </form>
             </Form>
+            <DialogFooter className="pt-4 border-t">
+                <Button onClick={form.handleSubmit(onSubmit)} disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null} Save Lead</Button>
+            </DialogFooter>
         </DialogContent>
     </Dialog>
   );
@@ -186,7 +186,7 @@ function InviteDialog({ lead, onInviteSent }: { lead: any; onInviteSent: () => v
             const firstName = nameParts[0] || '';
             const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
             
-            const baseUrl = window.location.origin;
+            const baseUrl = 'https://studio--ecosystem-hub.us-central1.hosted.app';
             const constructedLink = `${baseUrl}/join?email=${encodeURIComponent(lead.email || '')}&firstName=${encodeURIComponent(firstName)}&lastName=${encodeURIComponent(lastName)}`;
             
             setInviteLink(constructedLink);
@@ -203,14 +203,14 @@ function InviteDialog({ lead, onInviteSent }: { lead: any; onInviteSent: () => v
     const copyToClipboard = () => {
         navigator.clipboard.writeText(inviteLink);
         toast({ title: 'Link Copied!' });
-    }
+    };
 
     const onOpenChange = (open: boolean) => {
         if (!open) {
             setInviteLink('');
         }
         setIsOpen(open);
-    }
+    };
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -251,7 +251,7 @@ function InviteDialog({ lead, onInviteSent }: { lead: any; onInviteSent: () => v
                 </DialogFooter>
             </DialogContent>
         </Dialog>
-    )
+    );
 }
 
 function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
@@ -288,13 +288,13 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
     
     const handleSelection = (groupIndex: number, leadId: string) => {
         setSelections(prev => ({...prev, [groupIndex]: leadId}));
-    }
+    };
 
     const handleClean = async () => {
         setIsLoading(true);
         const idsToDelete = duplicates.flatMap((group, index) => {
             const idToKeep = selections[index];
-            if (!idToKeep) return []; 
+            if (!idToKeep) return []; // If no selection for a group, don't delete anything
             return group.filter(lead => lead.id !== idToKeep).map(lead => lead.id);
         });
 
@@ -373,7 +373,7 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
                 </DialogFooter>
             </DialogContent>
         </Dialog>
-    )
+    );
 }
 
 function LeadsDatabaseComponent() {
@@ -410,6 +410,7 @@ function LeadsDatabaseComponent() {
     const action = searchParams.get('action');
     if (action === 'add-member' || newLeadDefaults) {
       setIsAddLeadOpen(true);
+      // Clean the URL to prevent re-triggering
       const newPath = `${window.location.pathname}?view=leads-database`;
       router.replace(newPath, { scroll: false });
     }
@@ -444,7 +445,6 @@ function LeadsDatabaseComponent() {
     { accessorKey: 'contactPerson', header: 'Contact', cell: ({row}) => <div>{row.original.contactPerson}</div> },
     { accessorKey: 'website', header: 'Website', cell: ({row}) => row.original.website ? <a href={row.original.website} target="_blank" rel="noopener noreferrer" className="text-primary underline">{row.original.website}</a> : null},
     { accessorKey: 'city', header: 'City', cell: ({row}) => <div className="text-xs">{row.original.city}</div>},
-    { accessorKey: 'province', header: 'Province', cell: ({row}) => <div className="text-xs">{row.original.province}</div>},
     { accessorKey: 'role', header: 'Role', cell: ({row}) => <Badge variant="outline">{row.original.role}</Badge>},
     { accessorKey: 'status', header: 'Status', cell: ({row}) => <Badge className="capitalize">{row.original.status}</Badge>},
     {
@@ -469,7 +469,7 @@ function LeadsDatabaseComponent() {
         {editLead && <LeadDialog open={isEditLeadOpen} onOpenChange={setIsEditLeadOpen} lead={editLead} onSave={forceRefresh} />}
         <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
             <AlertDialogContent>
-                <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This action will permanently delete the lead for {selectedLead?.companyName}.</AlertDialogDescription></AlertDialogHeader>
+                <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This action will permanently delete the lead for {deleteLead?.companyName}.</AlertDialogDescription></AlertDialogHeader>
                 <AlertDialogFooter>
                     <AlertDialogCancel onClick={() => setDeleteLead(null)}>Cancel</AlertDialogCancel>
                     <AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction>

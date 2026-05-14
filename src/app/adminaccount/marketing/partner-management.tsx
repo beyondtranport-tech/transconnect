@@ -308,11 +308,11 @@ function PartnerDialog({ open, onOpenChange, partner, onSave }: { open: boolean;
                         </FormItem>
                     )} />
                     <FormField control={form.control} name="status" render={({ field }) => ( <FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="active">Active</SelectItem><SelectItem value="inactive">Inactive</SelectItem></Select><FormMessage /></FormItem> )} />
-                     <DialogFooter className="pt-4">
-                        <Button type="submit" disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null} Save Partner</Button>
-                    </DialogFooter>
                 </form>
             </Form>
+            <DialogFooter className="pt-4 border-t">
+                <Button onClick={form.handleSubmit(onSubmit)} disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null} Save Partner</Button>
+            </DialogFooter>
         </DialogContent>
     </Dialog>
   );
@@ -373,8 +373,8 @@ export default function PartnerManagement() {
   const sortedPartners = useMemo(() => {
     if (!partners) return [];
     return [...partners].sort((a, b) => {
-      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-      const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      const dateA = a.updatedAt ? new Date(a.updatedAt).getTime() : (a.createdAt ? new Date(a.createdAt).getTime() : 0);
+      const dateB = b.updatedAt ? new Date(b.updatedAt).getTime() : (b.createdAt ? new Date(b.createdAt).getTime() : 0);
       return dateB - dateA;
     });
   }, [partners]);

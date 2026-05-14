@@ -162,11 +162,11 @@ function TransporterFormDialog({ open, onOpenChange, partner, onSave }: { open: 
                         </FormItem>
                     )} />
                     <FormField control={form.control} name="status" render={({ field }) => ( <FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="active">Active</SelectItem><SelectItem value="inactive">Inactive</SelectItem></Select><FormMessage /></FormItem> )} />
-                     <DialogFooter className="pt-4">
-                        <Button type="submit" disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null} Save Transporter</Button>
-                    </DialogFooter>
                 </form>
             </Form>
+            <DialogFooter className="pt-4 border-t">
+                <Button onClick={form.handleSubmit(onSubmit)} disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null} Save Transporter</Button>
+            </DialogFooter>
         </DialogContent>
     </Dialog>
   );
