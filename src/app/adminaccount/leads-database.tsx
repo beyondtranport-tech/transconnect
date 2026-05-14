@@ -36,6 +36,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { roles } from '@/lib/roles';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Checkbox } from '@/components/ui/checkbox';
+import { EngageDialog } from './marketing/EngageDialog';
 
 const leadSchema = z.object({
   companyName: z.string().min(1, 'Company name is required'),
@@ -428,6 +429,7 @@ function LeadsDatabaseComponent() {
   const [isEditLeadOpen, setIsEditLeadOpen] = useState(false);
   const [deleteLead, setDeleteLead] = useState<any | null>(null);
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
+  const [engageLead, setEngageLead] = useState<any | null>(null);
 
   const newLeadDefaults = useMemo(() => {
     const companyName = searchParams.get('newCompanyName');
@@ -485,7 +487,10 @@ function LeadsDatabaseComponent() {
       id: 'actions',
       header: <div className="text-right">Actions</div>,
       cell: ({ row }) => (
-        <div className="text-right flex items-center justify-end">
+        <div className="text-right flex items-center justify-end gap-1">
+          <Button variant="ghost" size="icon" onClick={() => setEngageLead(row.original)} title="Initiate Engagement">
+            <Send className="h-4 w-4 text-primary" />
+          </Button>
           <InviteDialog lead={row.original} onInviteSent={forceRefresh} />
           <Button variant="ghost" size="icon" onClick={() => { setEditLead(row.original); setIsEditLeadOpen(true); }}><Edit className="h-4 w-4" /></Button>
           <Button variant="ghost" size="icon" onClick={() => { setDeleteLead(row.original); setIsDeleteAlertOpen(true); }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
@@ -496,6 +501,14 @@ function LeadsDatabaseComponent() {
 
   return (
     <>
+      {engageLead && (
+        <EngageDialog 
+          open={!!engageLead} 
+          onOpenChange={(o) => !o && setEngageLead(null)} 
+          partner={engageLead} 
+          audience={engageLead.role?.toLowerCase().includes('supplier') ? 'suppliers' : engageLead.role?.toLowerCase().includes('transporter') ? 'transporters' : 'partners'} 
+        />
+      )}
       <LeadDialog open={isAddLeadOpen} onOpenChange={setIsAddLeadOpen} onSave={forceRefresh} defaultValues={newLeadDefaults} />
       {editLead && <LeadDialog open={isEditLeadOpen} onOpenChange={setIsEditLeadOpen} lead={editLead} onSave={forceRefresh} />}
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
