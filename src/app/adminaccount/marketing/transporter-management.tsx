@@ -366,7 +366,7 @@ function AddFromTextDialog({ open, onOpenChange, onComplete }: { open: boolean, 
                 </DialogHeader>
                 <div className="py-4">
                     <Textarea 
-                        placeholder="Company Alpha&#10;Bravo Transport&#10;Charlie Logistics..." 
+                        placeholder="Company Alpha\nBravo Transport\nCharlie Logistics..." 
                         rows={10} 
                         value={text}
                         onChange={(e) => setText(e.target.value)}

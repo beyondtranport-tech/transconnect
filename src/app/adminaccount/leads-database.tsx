@@ -34,7 +34,7 @@ import { type ColumnDef } from '@/hooks/use-data-table';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { roles } from '@/lib/roles';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription } from '@/components/ui/alert-dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 
@@ -116,7 +116,7 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
         setIsLoading(false);
     }
   };
-  
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-2xl">
@@ -147,7 +147,7 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
 
                     <Separator />
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <FormField control={form.control} name="role" render={({ field }) => ( <FormItem><FormLabel>Potential Role</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a role" /></SelectTrigger></FormControl><SelectContent>{roles.map(r => <SelectItem key={r.id} value={r.title}>{r.title}</SelectItem>)}</Select><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="role" render={({ field }) => ( <FormItem><FormLabel>Potential Role</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a role" /></SelectTrigger></FormControl><SelectContent>{roles.map(r => <SelectItem key={r.id} value={r.title}>{r.title}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
                         <FormField control={form.control} name="status" render={({ field }) => ( <FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="new">New</SelectItem><SelectItem value="contacted">Contacted</SelectItem><SelectItem value="qualified">Qualified</SelectItem><SelectItem value="unqualified">Unqualified</SelectItem><SelectItem value="invited">Invited</SelectItem><SelectItem value="registered">Registered</SelectItem></Select><FormMessage /></FormItem> )} />
                     </div>
                     <FormField control={form.control} name="notes" render={({ field }) => ( <FormItem><FormLabel>Notes</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem> )} />
@@ -295,7 +295,7 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
         const idsToDelete = duplicates.flatMap((group, index) => {
             const idToKeep = selections[index];
             if (!idToKeep) return []; // If no selection for a group, don't delete anything
-            return group.filter(lead => lead.id !== idToKeep).map(lead => lead.id);
+            return group.filter(lead => lead.id !== idToKeep).map(lead => idToKeep ? lead.id : null).filter(id => id !== null) as string[];
         });
 
         if (idsToDelete.length === 0) {
@@ -356,7 +356,7 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
                                         <label htmlFor={`lead-${groupIndex}-${lead.id}`} className="text-sm space-y-1">
                                             <p className="font-semibold">{lead.contactPerson || 'No Contact'} - <span className="font-mono text-xs">{lead.id}</span></p>
                                             <p className="text-muted-foreground">{lead.email || 'No Email'} | {lead.phone || 'No Phone'}</p>
-                                            <p className="text-xs text-muted-foreground">{lead.address}</p>
+                                            <p className="text-xs text-muted-foreground">{lead.streetAddress} {lead.city}</p>
                                         </label>
                                     </div>
                                 ))}
@@ -414,8 +414,7 @@ function LeadsDatabaseComponent() {
       const newPath = `${window.location.pathname}?view=leads-database`;
       router.replace(newPath, { scroll: false });
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams, newLeadDefaults]);
+  }, [searchParams, newLeadDefaults, router]);
 
   const handleDelete = async () => {
     if (!deleteLead) return;
@@ -445,7 +444,8 @@ function LeadsDatabaseComponent() {
     { accessorKey: 'companyName', header: 'Company', cell: ({row}) => <div>{row.original.companyName}</div> },
     { accessorKey: 'contactPerson', header: 'Contact', cell: ({row}) => <div>{row.original.contactPerson}</div> },
     { accessorKey: 'website', header: 'Website', cell: ({row}) => row.original.website ? <a href={row.original.website} target="_blank" rel="noopener noreferrer" className="text-primary underline">{row.original.website}</a> : null},
-    { accessorKey: 'city', header: 'Location', cell: ({row}) => <div className="text-xs">{row.original.city}{row.original.province ? `, ${row.original.province}` : ''}</div>},
+    { accessorKey: 'city', header: 'City', cell: ({row}) => <div className="text-xs">{row.original.city}</div>},
+    { accessorKey: 'province', header: 'Province', cell: ({row}) => <div className="text-xs">{row.original.province}</div>},
     { accessorKey: 'role', header: 'Role', cell: ({row}) => <Badge variant="outline">{row.original.role}</Badge>},
     { accessorKey: 'status', header: 'Status', cell: ({row}) => <Badge className="capitalize">{row.original.status}</Badge>},
     {
