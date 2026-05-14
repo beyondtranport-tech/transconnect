@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useEffect, Suspense, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -27,7 +27,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { useCollection, useFirestore, getClientSideAuthToken, useMemoFirebase } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
-import { Loader2, PlusCircle, Users, Edit, Trash2, Search, Check, AlertTriangle, Send, Copy } from 'lucide-react';
+import { Loader2, PlusCircle, Users, Edit, Trash2, Search, Send, Copy } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -186,7 +186,7 @@ function InviteDialog({ lead, onInviteSent }: { lead: any; onInviteSent: () => v
             const firstName = nameParts[0] || '';
             const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
             
-            const baseUrl = 'https://studio--ecosystem-hub.us-central1.hosted.app';
+            const baseUrl = window.location.origin;
             const constructedLink = `${baseUrl}/join?email=${encodeURIComponent(lead.email || '')}&firstName=${encodeURIComponent(firstName)}&lastName=${encodeURIComponent(lastName)}`;
             
             setInviteLink(constructedLink);
@@ -294,7 +294,7 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
         setIsLoading(true);
         const idsToDelete = duplicates.flatMap((group, index) => {
             const idToKeep = selections[index];
-            if (!idToKeep) return []; // If no selection for a group, don't delete anything
+            if (!idToKeep) return []; 
             return group.filter(lead => lead.id !== idToKeep).map(lead => lead.id);
         });
 
@@ -410,12 +410,10 @@ function LeadsDatabaseComponent() {
     const action = searchParams.get('action');
     if (action === 'add-member' || newLeadDefaults) {
       setIsAddLeadOpen(true);
-      // Clean the URL to prevent re-triggering
       const newPath = `${window.location.pathname}?view=leads-database`;
       router.replace(newPath, { scroll: false });
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams, newLeadDefaults]);
+  }, [searchParams, newLeadDefaults, router]);
 
   const handleDelete = async () => {
     if (!deleteLead) return;
@@ -471,7 +469,7 @@ function LeadsDatabaseComponent() {
         {editLead && <LeadDialog open={isEditLeadOpen} onOpenChange={setIsEditLeadOpen} lead={editLead} onSave={forceRefresh} />}
         <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
             <AlertDialogContent>
-                <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This action will permanently delete the lead for {deleteLead?.companyName}.</AlertDialogDescription></AlertDialogHeader>
+                <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This action will permanently delete the lead for {selectedLead?.companyName}.</AlertDialogDescription></AlertDialogHeader>
                 <AlertDialogFooter>
                     <AlertDialogCancel onClick={() => setDeleteLead(null)}>Cancel</AlertDialogCancel>
                     <AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction>

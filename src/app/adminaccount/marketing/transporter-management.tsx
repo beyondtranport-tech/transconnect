@@ -161,7 +161,7 @@ function TransporterFormDialog({ open, onOpenChange, partner, onSave }: { open: 
                             <FormMessage />
                         </FormItem>
                     )} />
-                    <FormField control={form.control} name="status" render={({ field }) => ( <FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="active">Active</SelectItem><SelectItem value="inactive">Inactive</SelectItem></Select></FormControl><FormMessage /></FormItem> )} />
+                    <FormField control={form.control} name="status" render={({ field }) => ( <FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="active">Active</SelectItem><SelectItem value="inactive">Inactive</SelectItem></Select><FormMessage /></FormItem> )} />
                      <DialogFooter className="pt-4">
                         <Button type="submit" disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null} Save Transporter</Button>
                     </DialogFooter>
@@ -383,6 +383,25 @@ function AddFromTextDialog({ open, onOpenChange, onComplete }: { open: boolean, 
             </DialogContent>
         </Dialog>
     );
+}
+
+function TransporterActionMenu({ onInvite, onEdit, onDelete, partner, onUpdate }: { onInvite: () => void; onEdit: () => void; onDelete: () => void; partner: any; onUpdate: () => void; }) {
+  return (
+    <div className="flex justify-end items-center gap-1">
+      <CommunicationLogDialog partnerId={partner.id} partnerName={partner.companyName || `${partner.firstName} ${partner.lastName}`} />
+      <AddCommunicationLogDialog partnerId={partner.id} onLogAdded={onUpdate} />
+      <PartnerTasksDialog partner={partner} />
+      <Button variant="ghost" size="icon" onClick={onInvite} title="Invite & Onboard">
+        <Send className="h-4 w-4" />
+      </Button>
+      <Button variant="ghost" size="icon" onClick={onEdit} title="Edit Transporter">
+        <Edit className="h-4 w-4" />
+      </Button>
+      <Button variant="ghost" size="icon" onClick={onDelete} title="Delete Transporter">
+        <Trash2 className="h-4 w-4 text-destructive" />
+      </Button>
+    </div>
+  );
 }
 
 export default function TransporterManagement() {

@@ -425,7 +425,7 @@ export default function SupplierManagement() {
                 />
             </div>
         ) },
-    ], [staffMap, forceRefresh, handleOpenDialog]);
+    ], [staffMap, forceRefresh]);
 
     return (
         <>

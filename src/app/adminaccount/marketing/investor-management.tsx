@@ -428,7 +428,7 @@ export default function InvestorManagement() {
     { accessorKey: 'status', header: 'Status', cell: ({row}) => <Badge className="capitalize">{row.original.status}</Badge>},
     { accessorKey: 'invitationStatus', header: 'Invite Status', cell: ({row}) => ( <Badge variant={invitationStatusColors[row.original.invitationStatus] || 'secondary'} className="capitalize"> {row.original.invitationStatus?.replace(/_/g, ' ') || 'Pending'} </Badge> ) },
     { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => ( <InvestorActionMenu partner={row.original} onUpdate={forceRefresh} onInvite={() => handleOpenDialog('invite', row.original)} onEdit={() => handleOpenDialog('edit', row.original)} onDelete={() => handleOpenDialog('delete', row.original)} /> ) },
-  ], [staffMap, forceRefresh, handleOpenDialog]);
+  ], [staffMap, forceRefresh]);
 
   return (
     <>
