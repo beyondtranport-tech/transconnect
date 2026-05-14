@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
-import { Loader2, ClipboardCopy, Mail, MessageSquare, UserCheck, AlertCircle, Info, Link as LinkIcon, Send } from 'lucide-react';
+import { Loader2, ClipboardCopy, Mail, MessageSquare, UserCheck, AlertCircle, Info, Link as LinkIcon, Send, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 
