@@ -1,6 +1,6 @@
 'use client';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Building, Target, Lightbulb, CheckCircle, Handshake, ArrowRight } from "lucide-react";
 import Image from 'next/image';
 import data from '@/lib/placeholder-images.json';
@@ -27,15 +27,17 @@ const corePillars = [
     },
 ];
 
-export default function CompanyProfile({ audience }: { audience: string }) {
+export default function CompanyProfile({ audience, partner }: { audience: string, partner?: any }) {
+    const recipientName = partner?.firstName || 'Partner';
+    const companyName = partner?.companyName || 'your business';
 
     const opportunityConfig = useMemo(() => {
         if (audience === 'transporters') {
             return {
-                title: "Transporter Opportunity",
+                title: `${recipientName}'s Transporter Opportunity`,
                 content: (
                     <div className="space-y-6">
-                        <p className="text-lg text-muted-foreground">Logistics Flow offers two powerful pathways for transporters: benefit from the ecosystem as a Member, or earn significant revenue by building the network as an ISA Partner.</p>
+                        <p className="text-lg text-muted-foreground">Logistics Flow offers two powerful pathways for {companyName}: benefit from the ecosystem as a Member, or earn significant revenue by building the network as an ISA Partner.</p>
                         <div className="grid md:grid-cols-2 gap-6">
                             <div>
                                 <h4 className="font-semibold text-foreground">1. Membership Benefits</h4>
@@ -54,29 +56,22 @@ export default function CompanyProfile({ audience }: { audience: string }) {
                                 </ul>
                             </div>
                         </div>
-                         <div className="pt-6 text-center">
-                            <Button asChild>
-                                <Link href="/account?view=offer">
-                                    Explore The Network Offer <ArrowRight className="ml-2 h-4 w-4" />
-                                </Link>
-                            </Button>
-                        </div>
                     </div>
                 )
             };
         }
         if (audience === 'suppliers') {
             return {
-                title: "Supplier Opportunity",
+                title: `${recipientName}'s Supplier Opportunity`,
                 content: (
                     <div className="space-y-6">
-                        <p className="text-lg text-muted-foreground">Logistics Flow provides a direct, high-value sales channel for suppliers. List your business, sell your products, and tap into a network of qualified buyers.</p>
+                        <p className="text-lg text-muted-foreground">Logistics Flow provides a direct, high-value sales channel for {companyName}. List your products, reach qualified buyers, and grow your market share.</p>
                         <div className="grid md:grid-cols-2 gap-6">
                             <div>
                                 <h4 className="font-semibold text-foreground">1. Your Digital Branch</h4>
                                 <ul className="mt-2 list-disc list-inside space-y-2 text-muted-foreground">
                                     <li>Create a professional online shop within our Supplier Mall.</li>
-                                    <li>Reach hundreds of transport operators actively looking for your products.</li>
+                                    <li>Reach transport operators actively looking for your products.</li>
                                     <li>Reduce customer acquisition costs with a targeted audience.</li>
                                 </ul>
                             </div>
@@ -84,41 +79,24 @@ export default function CompanyProfile({ audience }: { audience: string }) {
                                 <h4 className="font-semibold text-foreground">2. Become a Network Partner</h4>
                                 <ul className="mt-2 list-disc list-inside space-y-2 text-muted-foreground">
                                     <li>Onboard your existing clients to the platform.</li>
-                                    <li>Earn a recurring commission on their activity and membership fees.</li>
-                                    <li>Turn your customer base into a new revenue stream.</li>
+                                    <li>Earn a recurring commission on their activity and fees.</li>
+                                    <li>Monetize your customer base without operational overhead.</li>
                                 </ul>
                             </div>
-                        </div>
-                         <div className="pt-6 text-center">
-                            <Button asChild>
-                                <Link href="/account?view=shop">
-                                    Create Your Supplier Shop <ArrowRight className="ml-2 h-4 w-4" />
-                                </Link>
-                            </Button>
                         </div>
                     </div>
                 )
             };
         }
-        if (audience === 'investors') {
-            return {
-                title: "Investment Opportunity",
-                content: (
-                    <p className="text-lg text-muted-foreground">
-                        We are seeking investors who share our vision. By joining us, you can participate in a high-growth platform that is fundamentally changing the way the logistics industry operates.
-                    </p>
-                )
-            };
-        }
         return {
-            title: "Partnership Opportunity",
+            title: `Partnership Opportunity for ${recipientName}`,
             content: (
                 <p className="text-lg text-muted-foreground">
-                    We are seeking strategic partners who share our vision. By joining us, you can participate in a high-growth platform that is fundamentally changing the way the logistics industry operates.
+                    We are seeking strategic partners like {companyName} who share our vision. By joining us, you can participate in a high-growth platform that is fundamentally changing the way the logistics industry operates.
                 </p>
             )
         };
-    }, [audience]);
+    }, [audience, recipientName, companyName]);
 
     return (
         <div className="space-y-12">
@@ -136,7 +114,7 @@ export default function CompanyProfile({ audience }: { audience: string }) {
                 <div className="absolute inset-0 bg-black/60" />
                 <div className="relative h-full flex flex-col items-center justify-center text-center text-primary-foreground z-10 p-4">
                     <Building className="h-16 w-16 mb-4" />
-                    <h1 className="text-4xl md:text-5xl font-bold font-headline">Company Profile: Logistics Flow</h1>
+                    <h1 className="text-4xl md:text-5xl font-bold font-headline">Logistics Flow: Company Profile</h1>
                     <p className="mt-4 text-lg md:text-xl max-w-3xl">Digitizing the logistics ecosystem to create a continuous flow of commerce, capital, and opportunity.</p>
                 </div>
             </section>
@@ -160,16 +138,15 @@ export default function CompanyProfile({ audience }: { audience: string }) {
                     <CardHeader>
                         <CardTitle className="flex items-center gap-3">
                             <Lightbulb className="h-6 w-6 text-destructive" />
-                            The Problem: A Fragmented Industry
+                            The Industry Problem
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <p className="text-muted-foreground">The transport sector is the backbone of the economy, yet it operates in a fragmented, inefficient, and capital-constrained environment. Businesses face:</p>
+                        <p className="text-muted-foreground">The transport sector is the backbone of the economy, yet it operates in a fragmented, inefficient, and capital-constrained environment. Businesses like {companyName} often face:</p>
                         <ul className="list-disc list-inside space-y-2 text-muted-foreground">
-                            <li><span className="font-semibold text-foreground">High Operating Costs:</span> Lack of collective buying power means paying premium prices for parts, fuel, and services.</li>
-                            <li><span className="font-semibold text-foreground">Limited Access to Capital:</span> Traditional lenders don't understand the industry, making it difficult to secure funding for growth or asset acquisition.</li>
-                            <li><span className="font-semibold text-foreground">Inefficient Operations:</span> Empty miles, manual processes, and a lack of real-time data eat into profit margins.</li>
-                             <li><span className="font-semibold text-foreground">Digital Divide:</span> Many businesses lack the resources to build a professional online presence, limiting their market reach.</li>
+                            <li><span className="font-semibold text-foreground">High Operating Costs:</span> Lack of collective buying power means paying premium prices.</li>
+                            <li><span className="font-semibold text-foreground">Limited Access to Capital:</span> Banks often don't understand the real-time health of transport businesses.</li>
+                            <li><span className="font-semibold text-foreground">Inefficient Operations:</span> Empty miles and manual paperwork eating into margins.</li>
                         </ul>
                     </CardContent>
                 </Card>
@@ -177,11 +154,11 @@ export default function CompanyProfile({ audience }: { audience: string }) {
                     <CardHeader>
                         <CardTitle className="flex items-center gap-3">
                            <CheckCircle className="h-6 w-6 text-green-600" />
-                            The Solution: A Unified Ecosystem
+                            The Unified Solution
                         </CardTitle>
                     </CardHeader>
                      <CardContent className="space-y-4">
-                        <p className="text-muted-foreground">Logistics Flow tackles these challenges head-on by integrating three core pillars into a single platform:</p>
+                        <p className="text-muted-foreground">Logistics Flow tackles these challenges by integrating three core pillars into a single platform:</p>
                         <div className="space-y-3 pt-2">
                             {corePillars.map(pillar => (
                                 <div key={pillar.title}>
@@ -190,7 +167,6 @@ export default function CompanyProfile({ audience }: { audience: string }) {
                                 </div>
                             ))}
                         </div>
-                         <p className="text-muted-foreground pt-4 border-t">This creates a powerful feedback loop: commercial activity generates data, which validates creditworthiness and unlocks capital for further growth.</p>
                     </CardContent>
                 </Card>
             </div>

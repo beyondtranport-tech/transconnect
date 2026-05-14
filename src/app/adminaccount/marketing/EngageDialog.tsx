@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
-import { Loader2, ClipboardCopy, Mail, MessageSquare, UserCheck, AlertCircle, Info, Link as LinkIcon, Send, CheckCircle } from 'lucide-react';
+import { Loader2, Mail, MessageSquare, UserCheck, CheckCircle, Link as LinkIcon, Send, ExternalLink } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 
@@ -79,7 +79,20 @@ export function EngageDialog({ open, onOpenChange, partner, audience }: EngageDi
     return PartnerEmails;
   }, [audience]);
 
-  const handleLogAndCopy = async () => {
+  const getSubject = () => {
+      const company = partner?.companyName || 'your business';
+      switch(activeTab) {
+          case 'company-profile': return `Logistics Flow: Company Profile for ${company}`;
+          case 'tech-architecture': return `Digital Ecosystem: Tech Architecture for ${company}`;
+          case 'revenue-model': return `Growth Opportunity: Revenue Model for ${company}`;
+          case 'offer': return `Strategic Offer for ${company}`;
+          case 'pitch': return `The Logistics Flow Pitch for ${company}`;
+          case 'framework': return `Partnership Framework for ${company}`;
+          default: return `Engagement from Logistics Flow`;
+      }
+  }
+
+  const handleLogCopyAndLaunch = async () => {
     if (!partner) return;
 
     const contentId = `engage-content-${activeTab}`;
@@ -100,7 +113,7 @@ export function EngageDialog({ open, onOpenChange, partner, audience }: EngageDi
             partnerId: partner.id,
             type: 'Email',
             subject: activeTab,
-            notes: `Personalized engagement content generated and copied for ${partner.firstName}.`,
+            notes: `Personalized engagement content generated and copied for ${partner.firstName}. Email client launched.`,
         });
 
         // 2. Prepare HTML for clipboard
@@ -125,7 +138,11 @@ export function EngageDialog({ open, onOpenChange, partner, audience }: EngageDi
         const clipboardItem = new ClipboardItem({ 'text/html': blob });
         await navigator.clipboard.write([clipboardItem]);
 
-        toast({ title: 'Logged & Copied!', description: `HTML content for ${partner.firstName} is ready to paste into your email client.` });
+        // 5. Launch Email Client (mailto)
+        const mailtoUrl = `mailto:${partner.email}?subject=${encodeURIComponent(getSubject())}`;
+        window.location.href = mailtoUrl;
+
+        toast({ title: 'Ready to Send!', description: `HTML copied. Email client opened for ${partner.email}. Just press Paste (Ctrl+V).` });
         onOpenChange(false);
     } catch (e: any) {
         toast({ variant: 'destructive', title: 'Action Failed', description: e.message });
@@ -170,23 +187,35 @@ export function EngageDialog({ open, onOpenChange, partner, audience }: EngageDi
         <DialogContent className="max-w-5xl h-[90vh] flex flex-col p-0">
             <DialogHeader className="p-6 border-b bg-muted/50">
                 <div className="flex justify-between items-start">
-                    <div>
-                        <DialogTitle className="text-2xl font-bold flex items-center gap-2">
-                            <Send className="h-6 w-6 text-primary" />
-                            Initiate Engagement: {partner.firstName} {partner.lastName}
-                        </DialogTitle>
-                        <DialogDescription className="mt-1">
-                            {audienceLabel} from {partner.companyName || 'N/A'} • {partner.email || 'No Email'}
-                        </DialogDescription>
+                    <div className="space-y-3">
+                        <div>
+                            <DialogTitle className="text-2xl font-bold flex items-center gap-2">
+                                <Send className="h-6 w-6 text-primary" />
+                                Initiate Engagement: {partner.firstName} {partner.lastName}
+                            </DialogTitle>
+                            <DialogDescription className="mt-1">
+                                {audienceLabel} from {partner.companyName || 'N/A'}
+                            </DialogDescription>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2 px-3 py-1.5 bg-background rounded-md border border-primary/20">
+                                <Mail className="h-4 w-4 text-primary" />
+                                <span className="text-sm font-medium">{partner.email || 'No Email Registered'}</span>
+                            </div>
+                            <div className="flex items-center gap-2 px-3 py-1.5 bg-background rounded-md border border-primary/20">
+                                <LinkIcon className="h-4 w-4 text-primary" />
+                                <span className="text-sm font-mono">{partner.id}</span>
+                            </div>
+                        </div>
                     </div>
                     <div className="flex gap-2">
-                         <Button variant="outline" size="sm" onClick={handleWhatsAppCopy} disabled={isProcessing}>
-                            <MessageSquare className="mr-2 h-4 w-4 text-green-600" />
-                            WhatsApp Text
+                         <Button variant="outline" size="lg" onClick={handleWhatsAppCopy} disabled={isProcessing}>
+                            <MessageSquare className="mr-2 h-5 w-5 text-green-600" />
+                            Copy WhatsApp
                         </Button>
-                        <Button size="sm" onClick={handleLogAndCopy} disabled={isProcessing || !partner.email}>
-                            {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Mail className="mr-2 h-4 w-4" />}
-                            Log & Copy Email HTML
+                        <Button size="lg" onClick={handleLogCopyAndLaunch} disabled={isProcessing || !partner.email}>
+                            {isProcessing ? <Loader2 className="mr-2 h-5 w-5 animate-spin"/> : <ExternalLink className="mr-2 h-5 w-5" />}
+                            Log, Copy & Open Email
                         </Button>
                     </div>
                 </div>
@@ -217,10 +246,10 @@ export function EngageDialog({ open, onOpenChange, partner, audience }: EngageDi
                     
                     <div className="mt-10 p-4 bg-primary/5 rounded-lg border border-primary/10">
                         <div className="flex items-center gap-2 text-xs font-bold text-primary mb-2">
-                            <UserCheck className="h-3 w-3" /> PERSONALIZED
+                            <UserCheck className="h-3 w-3" /> AUTO-MERGE
                         </div>
                         <p className="text-[10px] text-muted-foreground leading-relaxed">
-                            Content is automatically personalized with {partner.firstName}'s details and unique referral tracking.
+                            Recipient details and referral tracking are automatically merged into the preview.
                         </p>
                     </div>
                 </div>
@@ -241,11 +270,11 @@ export function EngageDialog({ open, onOpenChange, partner, audience }: EngageDi
             
             <div className="p-4 border-t bg-muted/30 flex justify-between items-center text-xs text-muted-foreground px-6">
                 <div className="flex items-center gap-6">
-                    <span className="flex items-center gap-1.5"><CheckCircle className="h-3.5 w-3.5 text-green-500"/> Tracking pixel included</span>
-                    <span className="flex items-center gap-1.5"><CheckCircle className="h-3.5 w-3.5 text-green-500"/> Dynamic referral link</span>
+                    <span className="flex items-center gap-1.5"><CheckCircle className="h-3.5 w-3.5 text-green-500"/> Tracking pixel ready</span>
+                    <span className="flex items-center gap-1.5"><CheckCircle className="h-3.5 w-3.5 text-green-500"/> Personalized Referral link ready</span>
                 </div>
-                <div className="flex items-center gap-2 font-mono">
-                    <LinkIcon className="h-3 w-3" /> REF_ID: {partner.id}
+                <div className="italic">
+                    Drafting Subject: {getSubject()}
                 </div>
             </div>
         </DialogContent>

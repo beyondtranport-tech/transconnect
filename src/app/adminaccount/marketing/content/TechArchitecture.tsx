@@ -4,12 +4,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Wrench, Server, Database, BrainCircuit, ShieldCheck } from "lucide-react";
 import Image from 'next/image';
 
-export default function TechArchitecture() {
+export default function TechArchitecture({ partner }: { partner?: any }) {
+    const recipientName = partner?.firstName || 'Partner';
+    const companyName = partner?.companyName || 'your business';
+
     const techStack = [
-        { name: 'Next.js & React', description: 'For a high-performance, server-rendered frontend.', logo: 'https://placehold.co/40x40?text=Next' },
+        { name: 'Next.js & React', description: 'For a high-performance, server-rendered frontend experience.', logo: 'https://placehold.co/40x40?text=Next' },
         { name: 'Firebase', description: 'Powers our secure backend, database, and authentication.', logo: 'https://placehold.co/40x40?text=FB' },
-        { name: 'Google Cloud & Genkit', description: 'Drives all AI features, from content generation to data analysis.', logo: 'https://placehold.co/40x40?text=GCP' },
-        { name: 'Tailwind CSS & ShadCN', description: 'For a modern, responsive, and customizable user interface.', logo: 'https://placehold.co/40x40?text=UI' },
+        { name: 'Google Cloud & Genkit', description: 'Drives all AI features, from load matching to business intelligence.', logo: 'https://placehold.co/40x40?text=GCP' },
+        { name: 'Tailwind CSS', description: 'Ensures a modern, responsive interface on any device.', logo: 'https://placehold.co/40x40?text=UI' },
     ];
 
     return (
@@ -17,49 +20,51 @@ export default function TechArchitecture() {
             <CardHeader className="px-0">
                 <CardTitle className="flex items-center gap-2">
                     <Wrench className="h-6 w-6" />
-                    Technology Architecture
+                    Technology Architecture for {recipientName}
                 </CardTitle>
-                <CardDescription>An overview of the robust, scalable, and secure technologies that power the Logistics Flow platform.</CardDescription>
+                <CardDescription>
+                    How Logistics Flow provides {companyName} with a robust, scalable, and secure digital infrastructure.
+                </CardDescription>
             </CardHeader>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <Card>
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-3"><Server className="h-5 w-5 text-primary"/>Frontend & Backend</CardTitle>
+                        <CardTitle className="flex items-center gap-3"><Server className="h-5 w-5 text-primary"/>Performance & Scale</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <p className="text-muted-foreground">
-                            Our platform is built on a modern, serverless architecture using Next.js for the frontend, providing a fast and responsive user experience. The backend is powered by Firebase, including serverless functions for scalable, on-demand processing.
+                            Built on a modern, serverless architecture, our platform ensures that {companyName} experiences zero downtime and lightning-fast load times, even when managing large inventories or fleet data.
                         </p>
                     </CardContent>
                 </Card>
                  <Card>
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-3"><Database className="h-5 w-5 text-primary"/>Database & Data</CardTitle>
+                        <CardTitle className="flex items-center gap-3"><Database className="h-5 w-5 text-primary"/>Real-Time Ledger</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <p className="text-muted-foreground">
-                            We use Firestore, a NoSQL document database from Google, to securely store all platform data. It's designed for massive scale, real-time data synchronization, and robust security rules to ensure data privacy and integrity.
+                            Utilizing Google's Firestore, we maintain a real-time digital ledger of all activity. This creates an immutable track record of performance that {recipientName} can leverage for funding and partnership validations.
                         </p>
                     </CardContent>
                 </Card>
                  <Card>
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-3"><BrainCircuit className="h-5 w-5 text-primary"/>Artificial Intelligence</CardTitle>
+                        <CardTitle className="flex items-center gap-3"><BrainCircuit className="h-5 w-5 text-primary"/>Integrated Intelligence</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <p className="text-muted-foreground">
-                            All AI capabilities are built using Google's Genkit framework, leveraging powerful models like Gemini for tasks such as freight matching, content generation, and business intelligence.
+                            AI is not an add-on; it's core to our system. Using Gemini 1.5, we provide tools that help {companyName} automate SEO, generate marketing assets, and match freight loads with unprecedented accuracy.
                         </p>
                     </CardContent>
                 </Card>
                  <Card>
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-3"><ShieldCheck className="h-5 w-5 text-primary"/>Security</CardTitle>
+                        <CardTitle className="flex items-center gap-3"><ShieldCheck className="h-5 w-5 text-primary"/>Enterprise-Grade Security</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <p className="text-muted-foreground">
-                            Security is foundational. We use Firebase Authentication for secure user management and enforce strict access control with Firestore Security Rules. All data is encrypted in transit and at rest.
+                            Security is our priority. We employ full encryption and strict Firestore Security Rules, ensuring that {companyName}'s sensitive business data remains private and protected at all times.
                         </p>
                     </CardContent>
                 </Card>
@@ -67,7 +72,7 @@ export default function TechArchitecture() {
             
             <Card>
                  <CardHeader>
-                    <CardTitle>Core Technologies</CardTitle>
+                    <CardTitle>Core Technology Stack</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <div className="space-y-4">
