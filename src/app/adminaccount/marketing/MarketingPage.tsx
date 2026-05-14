@@ -2,8 +2,8 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Loader2, ClipboardCopy, UserCheck, AlertCircle } from 'lucide-react';
-import { useState, useEffect, useCallback } from 'react';
+import { Loader2, ClipboardCopy, UserCheck, AlertCircle, Filter } from 'lucide-react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -13,6 +13,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 
 // Content components
@@ -82,8 +84,16 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
   const [partners, setPartners] = useState<any[]>([]);
   const [selectedPartnerId, setSelectedPartnerId] = useState<string>('none');
   const [isLoadingPartners, setIsLoadingPartners] = useState(true);
+  const [emailOnly, setEmailOnly] = useState(true);
 
-  const selectedPartner = partners.find(p => p.id === selectedPartnerId);
+  const filteredPartners = useMemo(() => {
+    if (!emailOnly) return partners;
+    return partners.filter(p => p.email && p.email.trim() !== '');
+  }, [partners, emailOnly]);
+
+  const selectedPartner = useMemo(() => 
+    partners.find(p => p.id === selectedPartnerId), 
+  [partners, selectedPartnerId]);
 
   const fetchPartners = useCallback(async () => {
     setIsLoadingPartners(true);
@@ -175,12 +185,22 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
                 <p className="text-muted-foreground">Automated outreach with tracking for {config.title.toLowerCase()}.</p>
             </div>
             
-            <Card className="w-full md:w-80 border-primary bg-primary/5">
+            <Card className="w-full md:w-[450px] border-primary bg-primary/5">
                 <CardHeader className="p-4 pb-2">
-                    <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                        <UserCheck className="h-4 w-4" />
-                        Target Recipient
-                    </CardTitle>
+                    <div className="flex items-center justify-between">
+                        <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                            <UserCheck className="h-4 w-4" />
+                            Target Recipient
+                        </CardTitle>
+                        <div className="flex items-center space-x-2">
+                            <Switch 
+                                id="email-only" 
+                                checked={emailOnly} 
+                                onCheckedChange={setEmailOnly}
+                            />
+                            <Label htmlFor="email-only" className="text-xs cursor-pointer">Email Only</Label>
+                        </div>
+                    </div>
                 </CardHeader>
                 <CardContent className="p-4 pt-0">
                     <Select value={selectedPartnerId} onValueChange={setSelectedPartnerId}>
@@ -189,7 +209,7 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="none">Generic (No Tracking)</SelectItem>
-                            {partners.map(p => (
+                            {filteredPartners.map(p => (
                                 <SelectItem key={p.id} value={p.id}>
                                     {p.firstName} {p.lastName} {p.companyName ? `(${p.companyName})` : ''}
                                 </SelectItem>
