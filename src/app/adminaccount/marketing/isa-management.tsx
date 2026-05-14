@@ -117,7 +117,7 @@ function OnboardWizardDialog({ partner, open, onOpenChange, onComplete }: { part
 
             await performAdminAction(token, 'invitePartner', payload);
 
-            const baseUrl = 'https://studio--ecosystem-hub.us-central1.hosted.app';
+            const baseUrl = window.location.origin;
             setInviteLink(`${baseUrl}/join?email=${encodeURIComponent(partner.email)}&firstName=${encodeURIComponent(partner.firstName)}&lastName=${encodeURIComponent(partner.lastName)}`);
             
             toast({ title: "Invitation Processed", description: "Invite logged and follow-up task created." });

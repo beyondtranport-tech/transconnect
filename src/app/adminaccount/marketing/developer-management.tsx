@@ -117,7 +117,7 @@ function OnboardWizardDialog({ partner, open, onOpenChange, onComplete }: { part
 
             await performAdminAction(token, 'invitePartner', payload);
 
-            const baseUrl = 'https://studio--ecosystem-hub.us-central1.hosted.app';
+            const baseUrl = window.location.origin;
             setInviteLink(`${baseUrl}/join?email=${encodeURIComponent(partner.email)}&firstName=${encodeURIComponent(partner.firstName)}&lastName=${encodeURIComponent(partner.lastName)}`);
             
             toast({ title: "Invitation Processed", description: "Invite logged and follow-up task created." });
@@ -274,7 +274,7 @@ function DeveloperDialog({ open, onOpenChange, partner, onSave }: { open: boolea
                 </DialogDescription>
             </DialogHeader>
             <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[70vh] overflow-y-auto pr-2">
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2">
                     <div className="grid grid-cols-2 gap-4">
                         <FormField control={form.control} name="firstName" render={({ field }) => ( <FormItem><FormLabel>First Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                         <FormField control={form.control} name="lastName" render={({ field }) => ( <FormItem><FormLabel>Last Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
@@ -358,7 +358,7 @@ export default function DeveloperManagement() {
         ]);
 
         setPartners(partnersRes.data || []);
-        setStaff(staffRes.data || []);
+        staffRes && setStaff(staffRes.data || []);
     } catch (e: any) {
         setError(e.message);
         toast({ variant: 'destructive', title: 'Error loading developers', description: e.message });
