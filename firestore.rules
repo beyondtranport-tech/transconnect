@@ -12,7 +12,7 @@ service cloud.firestore {
       return isSignedIn() && (
         request.auth.token.email == 'mkoton100@gmail.com' || 
         request.auth.token.email == 'beyondtransport@gmail.com' ||
-        (request.auth.token.admin == true) ||
+        (request.auth.token.keys().contains('admin') && request.auth.token.admin == true) ||
         exists(/databases/$(database)/documents/roles_assigned_admin/$(request.auth.uid))
       );
     }
@@ -27,7 +27,7 @@ service cloud.firestore {
     }
 
     // --- Admin-Only Management Collections ---
-    // Explicitly define recursive access for admin management trees
+    // Explicitly grant full recursive access to the management trees.
     
     match /partners/{document=**} {
       allow read, write: if isAdmin();
@@ -56,6 +56,10 @@ service cloud.firestore {
     }
     
     match /auditLogs/{document=**} {
+        allow read, write: if isAdmin();
+    }
+    
+    match /platformStaff/{document=**} {
         allow read, write: if isAdmin();
     }
 
