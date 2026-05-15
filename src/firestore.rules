@@ -12,7 +12,7 @@ service cloud.firestore {
       return isSignedIn() && (
         request.auth.token.email == 'mkoton100@gmail.com' || 
         request.auth.token.email == 'beyondtransport@gmail.com' ||
-        request.auth.token.admin == true ||
+        (request.auth.token.admin == true) ||
         exists(/databases/$(database)/documents/roles_assigned_admin/$(request.auth.uid))
       );
     }
@@ -24,6 +24,40 @@ service cloud.firestore {
     function isCompanyOwner(companyId) {
         let companyDoc = get(/databases/$(database)/documents/companies/$(companyId)).data;
         return companyDoc.ownerId == request.auth.uid || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId;
+    }
+
+    // --- Admin-Only Management Collections ---
+    // Using {document=**} allows full recursive read/write for admins 
+    // on these root-level management trees, including all subcollections.
+
+    match /partners/{document=**} {
+      allow read, write: if isAdmin();
+    }
+
+    match /leads/{document=**} {
+      allow read, write: if isAdmin();
+    }
+
+    match /lendingAssets/{document=**} {
+        allow read, write: if isAdmin();
+    }
+    match /lendingClients/{document=**} {
+        allow read, write: if isAdmin();
+    }
+    match /lendingPartners/{document=**} {
+        allow read, write: if isAdmin();
+    }
+
+    match /reconciliations/{document=**} {
+        allow read, write: if isAdmin();
+    }
+
+    match /platformTransactions/{document=**} {
+        allow read, write: if isAdmin();
+    }
+    
+    match /auditLogs/{document=**} {
+        allow read, write: if isAdmin();
     }
 
     // --- User Profiles ---
@@ -70,9 +104,6 @@ service cloud.firestore {
      match /{path=**}/agreements/{agreementId} {
       allow get, list: if isAdmin();
     }
-    match /{path=**}/auditLogs/{logId} {
-      allow get, list: if isAdmin();
-    }
 
     // --- Public & Global Collections ---
 
@@ -101,41 +132,7 @@ service cloud.firestore {
       allow read: if isAdmin();
     }
 
-    match /reconciliations/{reconciliationId} {
-        allow read, write: if isAdmin();
-    }
-
-    match /platformTransactions/{transactionId} {
-        allow read, write: if isAdmin();
-    }
-    
-    match /auditLogs/{logId} {
-        allow read, write: if isAdmin();
-    }
-
     match /permissions/{path=**} {
-        allow read, write: if isAdmin();
-    }
-
-    // --- Admin-Only Management Collections ---
-    // Using {document=**} allows full recursive read/write for admins 
-    // on these root-level management trees.
-
-    match /leads/{document=**} {
-      allow read, write: if isAdmin();
-    }
-
-    match /partners/{document=**} {
-      allow read, write: if isAdmin();
-    }
-    
-    match /lendingAssets/{document=**} {
-        allow read, write: if isAdmin();
-    }
-    match /lendingClients/{document=**} {
-        allow read, write: if isAdmin();
-    }
-    match /lendingPartners/{document=**} {
         allow read, write: if isAdmin();
     }
   }
