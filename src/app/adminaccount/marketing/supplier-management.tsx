@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -5,7 +6,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, Building, Edit, Trash2, Send, Copy, CheckCircle } from 'lucide-react';
+import { Loader2, PlusCircle, Building, Edit, Trash2, Send, Copy, CheckCircle, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -17,9 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { PartnerTasksDialog } from './PartnerTasksDialog';
-import { CommunicationLogDialog } from './CommunicationLogDialog';
-import { Textarea } from '@/components/ui/textarea';
+import { PartnerOversightDialog } from './PartnerOversightDialog';
 import { EngageDialog } from './EngageDialog';
 import { formatDateSafe } from '@/lib/utils';
 
@@ -30,7 +29,7 @@ async function performAdminAction(token: string, action: string, payload: any) {
     body: JSON.stringify({ action, payload }),
   });
   const result = await response.json();
-  if (!response.ok || !result.success) throw new Error(result.error || `API Error: ${action}`);
+  if (!response.ok || !result.success) throw new Error(result.error || `API Error for action: ${action}`);
   return result;
 }
 
@@ -106,6 +105,7 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
 export default function SupplierManagement() {
   const { toast } = useToast();
   const [partners, setPartners] = useState<any[]>([]);
+  const [staff, setStaff] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | null, data?: any }>({ type: null });
 
@@ -114,16 +114,22 @@ export default function SupplierManagement() {
     try {
       const token = await getClientSideAuthToken();
       if (!token) return;
-      const res = await performAdminAction(token, 'getPartnersByType', { type: 'supplier' });
+      const [res, staffRes] = await Promise.all([
+        performAdminAction(token, 'getPartnersByType', { type: 'supplier' }),
+        performAdminAction(token, 'getPlatformStaff', {})
+      ]);
       setPartners(res.data || []);
+      setStaff(staffRes.data || []);
     } catch (e: any) {
-      toast({ variant: 'destructive', title: 'Error', description: e.message });
+      toast({ variant: 'destructive', title: 'Error loading partners', description: e.message });
     } finally {
       setIsLoading(false);
     }
   }, [toast]);
 
   useEffect(() => { forceRefresh(); }, [forceRefresh]);
+
+  const staffMap = useMemo(() => new Map(staff.map(s => [s.id, `${s.firstName} ${s.lastName}`])), [staff]);
 
   async function handleDelete() {
     try {
@@ -142,6 +148,15 @@ export default function SupplierManagement() {
     { accessorKey: 'firstName', header: 'Name', cell: ({ row }) => <div>{row.original.firstName} {row.original.lastName}</div> },
     { accessorKey: 'email', header: 'Email' },
     { accessorKey: 'companyName', header: 'Company' },
+    { 
+        header: 'Assignee', 
+        cell: ({row}) => (
+            <div className="flex items-center gap-2">
+                <Users className="h-3 w-3 text-muted-foreground" />
+                <span className="text-xs font-medium">{staffMap.get(row.original.assigneeId) || <span className="text-muted-foreground italic">Unallocated</span>}</span>
+            </div>
+        )
+    },
     { 
       accessorKey: 'lastOpenedAt', 
       header: 'Last Opened', 
@@ -163,8 +178,7 @@ export default function SupplierManagement() {
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'engage', data: row.original })} title="Initiate Engagement">
           <Send className="h-4 w-4 text-primary" />
         </Button>
-        <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.firstName} />
-        <PartnerTasksDialog partner={row.original} />
+        <PartnerOversightDialog partner={row.original} onUpdate={forceRefresh} />
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'edit', data: row.original })}><Edit className="h-4 w-4" /></Button>
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'delete', data: row.original })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
       </div>
