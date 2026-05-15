@@ -8,10 +8,6 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
-    }
-
     function isAdmin() {
       return isSignedIn() && (
         request.auth.token.email == 'mkoton100@gmail.com' || 
@@ -21,6 +17,10 @@ service cloud.firestore {
       );
     }
     
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
     function isCompanyOwner(companyId) {
         let companyDoc = get(/databases/$(database)/documents/companies/$(companyId)).data;
         return companyDoc.ownerId == request.auth.uid || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId;
@@ -117,24 +117,25 @@ service cloud.firestore {
         allow read, write: if isAdmin();
     }
 
-    // --- Admin Catch-all Tree Matches ---
-    // Using {allPaths=**} ensures that all subcollections and documents at any depth are covered.
+    // --- Admin-Only Management Collections ---
+    // Using {document=**} allows full recursive read/write for admins 
+    // on these root-level management trees.
 
-    match /leads/{allPaths=**} {
+    match /leads/{document=**} {
       allow read, write: if isAdmin();
     }
 
-    match /partners/{allPaths=**} {
+    match /partners/{document=**} {
       allow read, write: if isAdmin();
     }
     
-    match /lendingAssets/{allPaths=**} {
+    match /lendingAssets/{document=**} {
         allow read, write: if isAdmin();
     }
-    match /lendingClients/{allPaths=**} {
+    match /lendingClients/{document=**} {
         allow read, write: if isAdmin();
     }
-    match /lendingPartners/{allPaths=**} {
+    match /lendingPartners/{document=**} {
         allow read, write: if isAdmin();
     }
   }
