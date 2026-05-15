@@ -12,7 +12,7 @@ service cloud.firestore {
       return isSignedIn() && (
         request.auth.token.email == 'mkoton100@gmail.com' || 
         request.auth.token.email == 'beyondtransport@gmail.com' ||
-        (request.auth.token.keys().contains('admin') && request.auth.token.admin == true) ||
+        (request.auth.token.admin == true) ||
         exists(/databases/$(database)/documents/roles_assigned_admin/$(request.auth.uid))
       );
     }
@@ -27,15 +27,23 @@ service cloud.firestore {
     }
 
     // --- 1. GLOBAL ADMIN BYPASS (CRITICAL) ---
-    // This ensures super admins have full recursive access to everything, 
-    // resolving any permission loops in management subcollections.
+    // High-priority recursive match for administrators.
     match /{allPaths=**} {
       allow read, write: if isAdmin();
     }
 
-    // --- 2. USER-SPECIFIC RULES (For non-admin users) ---
+    // --- 2. MANAGEMENT COLLECTIONS ---
+    // Explicitly defining recursive access for partners and leads data hierarchies.
+    match /partners/{document=**} {
+      allow read, write: if isAdmin();
+    }
+    
+    match /leads/{document=**} {
+      allow read, write: if isAdmin();
+    }
 
-    // User Profiles
+    // --- 3. USER-SPECIFIC RULES (For non-admin users) ---
+
     match /users/{userId} {
       allow read, update: if isOwner(userId);
       allow create: if isSignedIn(); 
@@ -45,7 +53,6 @@ service cloud.firestore {
       }
     }
     
-    // Company Profiles
     match /companies/{companyId} {
       allow create: if isSignedIn(); 
       allow get, update: if isCompanyOwner(companyId);
@@ -55,7 +62,7 @@ service cloud.firestore {
       }
     }
     
-    // --- 3. PUBLIC & GLOBAL COLLECTIONS ---
+    // --- 4. PUBLIC & GLOBAL COLLECTIONS ---
 
     match /shops/{shopId}/{path=**} {
       allow get, list: if true;
