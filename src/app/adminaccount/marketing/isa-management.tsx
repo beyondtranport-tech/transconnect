@@ -5,7 +5,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, Bot, Edit, Trash2, Send, Copy } from 'lucide-react';
+import { Loader2, PlusCircle, Bot, Edit, Trash2, Send, Copy, CheckCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -20,6 +20,7 @@ import * as z from 'zod';
 import { PartnerTasksDialog } from './PartnerTasksDialog';
 import { CommunicationLogDialog } from './CommunicationLogDialog';
 import { EngageDialog } from './EngageDialog';
+import { formatDateSafe } from '@/lib/utils';
 
 async function performAdminAction(token: string, action: string, payload: any) {
   const response = await fetch('/api/admin', {
@@ -140,6 +141,22 @@ export default function ISAManagement() {
     { accessorKey: 'firstName', header: 'Name', cell: ({ row }) => <div>{row.original.firstName} {row.original.lastName}</div> },
     { accessorKey: 'email', header: 'Email' },
     { accessorKey: 'companyName', header: 'Company' },
+    { 
+      accessorKey: 'lastOpenedAt', 
+      header: 'Last Opened', 
+      cell: ({row}) => (
+        <div className="flex items-center gap-1.5">
+          {row.original.lastOpenedAt ? (
+            <>
+              <CheckCircle className="h-3.5 w-3.5 text-green-500" />
+              <span className="text-xs">{formatDateSafe(row.original.lastOpenedAt, "dd MMM, HH:mm")}</span>
+            </>
+          ) : (
+            <span className="text-xs text-muted-foreground italic">Not opened yet</span>
+          )}
+        </div>
+      ) 
+    },
     { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
       <div className="flex justify-end gap-1">
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'engage', data: row.original })} title="Initiate Engagement">
