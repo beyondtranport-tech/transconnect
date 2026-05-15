@@ -26,93 +26,52 @@ service cloud.firestore {
         return companyDoc != null && (companyDoc.data.ownerId == request.auth.uid || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId);
     }
 
-    // --- Admin-Only Management Collections (Prioritized) ---
-    
-    match /partners/{document=**} {
+    // --- 1. GLOBAL ADMIN BYPASS (CRITICAL) ---
+    // This ensures super admins have full recursive access to everything.
+    match /{allPaths=**} {
       allow read, write: if isAdmin();
     }
 
-    match /leads/{document=**} {
-      allow read, write: if isAdmin();
-    }
-    
-    match /platformStaff/{document=**} {
-        allow read, write: if isAdmin();
-    }
+    // --- 2. USER-SPECIFIC RULES (For non-admin users) ---
 
-    match /lendingAssets/{document=**} {
-        allow read, write: if isAdmin();
-    }
-    match /lendingClients/{document=**} {
-        allow read, write: if isAdmin();
-    }
-    match /lendingPartners/{document=**} {
-        allow read, write: if isAdmin();
-    }
-
-    match /reconciliations/{document=**} {
-        allow read, write: if isAdmin();
-    }
-
-    match /platformTransactions/{document=**} {
-        allow read, write: if isAdmin();
-    }
-    
-    match /auditLogs/{document=**} {
-        allow read, write: if isAdmin();
-    }
-    
-    match /permissions/{document=**} {
-        allow read, write: if isAdmin();
-    }
-
-    // --- User Profiles ---
     match /users/{userId} {
-      allow read, update: if isOwner(userId) || isAdmin();
+      allow read, update: if isOwner(userId);
       allow create: if isSignedIn(); 
-      allow list: if isAdmin();
       
       match /tasks/{taskId} {
-        allow read, write: if isOwner(userId) || isAdmin();
+        allow read, write: if isOwner(userId);
       }
     }
     
-    // --- Company Profiles ---
     match /companies/{companyId} {
       allow create: if isSignedIn(); 
-      allow get, update: if isAdmin() || isCompanyOwner(companyId);
-      allow list: if isAdmin();
+      allow get, update: if isCompanyOwner(companyId);
 
       match /{subcollection}/{docId=**} {
-        allow read, write: if isAdmin() || isCompanyOwner(companyId);
+        allow read, write: if isCompanyOwner(companyId);
       }
     }
     
-    // --- Public & Global Collections ---
+    // --- 3. PUBLIC & GLOBAL COLLECTIONS ---
 
     match /shops/{shopId}/{path=**} {
       allow get, list: if true;
-      allow write: if isAdmin();
     }
     
     match /visitors/{visitorId} {
       allow write: if true;
-      allow read: if isAdmin();
     }
 
     match /memberships/{membershipId} {
       allow get, list: if true;
-      allow write: if isAdmin();
     }
     
     match /configuration/{configId} {
       allow get, list: if true;
-      allow write: if isAdmin();
     }
 
     match /contributions/{contributionId} {
       allow create: if isSignedIn();
-      allow read: if isAdmin();
     }
   }
 }
