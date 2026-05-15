@@ -4,13 +4,12 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // --- 1. GLOBAL ADMIN BYPASS (CRITICAL) ---
-    // This allows your email (mkoton100@gmail.com) full recursive access to EVERYTHING.
-    // This is the most direct way to bypass permission issues for your admin account.
+    // This allows specific email addresses full recursive access to EVERYTHING.
+    // This must be the first match block to prevent shadowing by other rules.
     match /{allPaths=**} {
       allow read, write: if request.auth != null && (
         request.auth.token.email == 'mkoton100@gmail.com' || 
-        request.auth.token.email == 'beyondtransport@gmail.com' ||
-        request.auth.token.admin == true
+        request.auth.token.email == 'beyondtransport@gmail.com'
       );
     }
 
@@ -56,14 +55,6 @@ service cloud.firestore {
 
     match /contributions/{contributionId} {
       allow create: if request.auth != null;
-    }
-    
-    // Secondary explicit match for partners to be safe
-    match /partners/{document=**} {
-      allow read, write: if request.auth != null && (
-        request.auth.token.email == 'mkoton100@gmail.com' || 
-        request.auth.token.email == 'beyondtransport@gmail.com'
-      );
     }
   }
 }
