@@ -4,19 +4,33 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // --- 1. ABSOLUTE ADMIN BYPASS (CRITICAL) ---
-    // This allows specific UIDs and Emails full recursive access to EVERYTHING.
-    // We use multiple checks (Email, UID, and Password Identity) for maximum robustness.
     match /{allPaths=**} {
       allow read, write: if request.auth != null && (
         request.auth.uid == '0Y3IhZffEPNlMAIhURPnzRgNokL2' || 
         request.auth.token.email == 'mkoton100@gmail.com' || 
         request.auth.token.email == 'beyondtransport@gmail.com' ||
-        (request.auth.token.firebase.identities.keys().contains('password') && 'mkoton100@gmail.com' in request.auth.token.firebase.identities.password) ||
         request.auth.token.admin == true
       );
     }
 
-    // --- 2. USER-SPECIFIC RULES (FOR NON-ADMINS) ---
+    // --- 2. EXPLICIT CRM PERMISSIONS (FOR QUERIES) ---
+    match /platformCommunications/{logId} {
+      allow read, write: if request.auth != null && (
+        request.auth.uid == '0Y3IhZffEPNlMAIhURPnzRgNokL2' || 
+        request.auth.token.email == 'mkoton100@gmail.com' || 
+        request.auth.token.email == 'beyondtransport@gmail.com'
+      );
+    }
+    
+    match /platformTasks/{taskId} {
+      allow read, write: if request.auth != null && (
+        request.auth.uid == '0Y3IhZffEPNlMAIhURPnzRgNokL2' || 
+        request.auth.token.email == 'mkoton100@gmail.com' || 
+        request.auth.token.email == 'beyondtransport@gmail.com'
+      );
+    }
+
+    // --- 3. USER-SPECIFIC RULES (FOR NON-ADMINS) ---
     match /users/{userId} {
       allow read, update: if request.auth != null && request.auth.uid == userId;
       allow create: if request.auth != null; 
@@ -39,7 +53,7 @@ service cloud.firestore {
       }
     }
     
-    // --- 3. PUBLIC & GLOBAL COLLECTIONS ---
+    // --- 4. PUBLIC & GLOBAL COLLECTIONS ---
     match /shops/{shopId}/{path=**} {
       allow get, list: if true;
     }
