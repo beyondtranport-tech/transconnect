@@ -28,41 +28,41 @@ service cloud.firestore {
 
     // --- Admin-Only Management Collections (Prioritized) ---
     
-    match /partners/{allPaths=**} {
+    match /partners/{document=**} {
       allow read, write: if isAdmin();
     }
 
-    match /leads/{allPaths=**} {
+    match /leads/{document=**} {
       allow read, write: if isAdmin();
     }
     
-    match /platformStaff/{allPaths=**} {
+    match /platformStaff/{document=**} {
         allow read, write: if isAdmin();
     }
 
-    match /lendingAssets/{allPaths=**} {
+    match /lendingAssets/{document=**} {
         allow read, write: if isAdmin();
     }
-    match /lendingClients/{allPaths=**} {
+    match /lendingClients/{document=**} {
         allow read, write: if isAdmin();
     }
-    match /lendingPartners/{allPaths=**} {
-        allow read, write: if isAdmin();
-    }
-
-    match /reconciliations/{allPaths=**} {
+    match /lendingPartners/{document=**} {
         allow read, write: if isAdmin();
     }
 
-    match /platformTransactions/{allPaths=**} {
+    match /reconciliations/{document=**} {
+        allow read, write: if isAdmin();
+    }
+
+    match /platformTransactions/{document=**} {
         allow read, write: if isAdmin();
     }
     
-    match /auditLogs/{allPaths=**} {
+    match /auditLogs/{document=**} {
         allow read, write: if isAdmin();
     }
     
-    match /permissions/{allPaths=**} {
+    match /permissions/{document=**} {
         allow read, write: if isAdmin();
     }
 
