@@ -9,11 +9,11 @@ service cloud.firestore {
     }
 
     function isAdmin() {
+      // Simplified for robustness to resolve persistent permission issues
       return isSignedIn() && (
         request.auth.token.email == 'mkoton100@gmail.com' || 
         request.auth.token.email == 'beyondtransport@gmail.com' ||
-        (request.auth.token.admin == true) ||
-        exists(/databases/$(database)/documents/roles_assigned_admin/$(request.auth.uid))
+        request.auth.token.admin == true
       );
     }
     
@@ -22,18 +22,19 @@ service cloud.firestore {
     }
 
     function isCompanyOwner(companyId) {
-        let companyDoc = get(/databases/$(database)/documents/companies/$(companyId));
-        return companyDoc != null && (companyDoc.data.ownerId == request.auth.uid || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId);
+        // Fallback check for non-admin users
+        return isSignedIn() && (
+           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId
+        );
     }
 
     // --- 1. GLOBAL ADMIN BYPASS (CRITICAL) ---
-    // High-priority recursive match for administrators.
+    // This must be the first match to ensure admins are never blocked.
     match /{allPaths=**} {
       allow read, write: if isAdmin();
     }
 
-    // --- 2. MANAGEMENT COLLECTIONS ---
-    // Explicitly defining recursive access for partners and leads data hierarchies.
+    // --- 2. MANAGEMENT COLLECTIONS (EXPLICIT) ---
     match /partners/{document=**} {
       allow read, write: if isAdmin();
     }
@@ -42,8 +43,7 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
 
-    // --- 3. USER-SPECIFIC RULES (For non-admin users) ---
-
+    // --- 3. USER-SPECIFIC RULES ---
     match /users/{userId} {
       allow read, update: if isOwner(userId);
       allow create: if isSignedIn(); 
@@ -63,7 +63,6 @@ service cloud.firestore {
     }
     
     // --- 4. PUBLIC & GLOBAL COLLECTIONS ---
-
     match /shops/{shopId}/{path=**} {
       allow get, list: if true;
     }
