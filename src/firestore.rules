@@ -5,7 +5,7 @@ service cloud.firestore {
 
     // --- 1. ABSOLUTE ADMIN BYPASS (CRITICAL) ---
     // This allows specific email addresses full recursive access to EVERYTHING.
-    // We place this at the absolute top to ensure no other rules interfere.
+    // This rule is placed at the absolute top to ensure it is evaluated first.
     match /{allPaths=**} {
       allow read, write: if request.auth != null && (
         request.auth.token.email == 'mkoton100@gmail.com' || 
