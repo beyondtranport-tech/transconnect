@@ -5,7 +5,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Calendar, MessageSquare, ClipboardList, CheckCircle, Circle, UserPlus, Clock, ArrowRight } from 'lucide-react';
+import { Loader2, Calendar, MessageSquare, ClipboardList, CheckCircle, Circle, UserPlus, Clock, ArrowRight, Activity } from 'lucide-react';
 import { getClientSideAuthToken, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { collection, query, orderBy, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
@@ -13,6 +13,8 @@ import { formatDateSafe, formatCurrency } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
+import Link from 'next/link';
 
 async function performAdminAction(token: string, action: string, payload: any) {
     const response = await fetch('/api/admin', {
@@ -88,7 +90,7 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     path: `partners/${partner.id}`,
-                    data: { assigneeId: staffId, updatedAt: serverTimestamp() }
+                    data: { assigneeId: staffId === 'none' ? null : staffId, updatedAt: serverTimestamp() }
                 })
             });
             
