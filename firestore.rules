@@ -26,44 +26,45 @@ service cloud.firestore {
         return companyDoc != null && (companyDoc.data.ownerId == request.auth.uid || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId);
     }
 
-    // --- Admin-Only Management Collections ---
-    // Using a top-level recursive wildcard for these core management trees.
+    // --- Admin-Only Management Collections (Prioritized) ---
     
-    match /partners/{document=**} {
+    // Comprehensive recursive match for partners and all subcollections (tasks, communications, etc.)
+    match /partners/{allPaths=**} {
       allow read, write: if isAdmin();
     }
 
-    match /leads/{document=**} {
+    // Comprehensive recursive match for leads and all subcollections
+    match /leads/{allPaths=**} {
       allow read, write: if isAdmin();
     }
     
-    match /platformStaff/{document=**} {
+    match /platformStaff/{allPaths=**} {
         allow read, write: if isAdmin();
     }
 
-    match /lendingAssets/{document=**} {
+    match /lendingAssets/{allPaths=**} {
         allow read, write: if isAdmin();
     }
-    match /lendingClients/{document=**} {
+    match /lendingClients/{allPaths=**} {
         allow read, write: if isAdmin();
     }
-    match /lendingPartners/{document=**} {
-        allow read, write: if isAdmin();
-    }
-
-    match /reconciliations/{document=**} {
+    match /lendingPartners/{allPaths=**} {
         allow read, write: if isAdmin();
     }
 
-    match /platformTransactions/{document=**} {
+    match /reconciliations/{allPaths=**} {
+        allow read, write: if isAdmin();
+    }
+
+    match /platformTransactions/{allPaths=**} {
         allow read, write: if isAdmin();
     }
     
-    match /auditLogs/{document=**} {
+    match /auditLogs/{allPaths=**} {
         allow read, write: if isAdmin();
     }
     
-    match /platformStaff/{document=**} {
+    match /permissions/{allPaths=**} {
         allow read, write: if isAdmin();
     }
 
@@ -137,10 +138,6 @@ service cloud.firestore {
     match /contributions/{contributionId} {
       allow create: if isSignedIn();
       allow read: if isAdmin();
-    }
-
-    match /permissions/{path=**} {
-        allow read, write: if isAdmin();
     }
   }
 }

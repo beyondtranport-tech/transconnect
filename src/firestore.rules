@@ -26,40 +26,43 @@ service cloud.firestore {
         return companyDoc != null && (companyDoc.data.ownerId == request.auth.uid || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId);
     }
 
-    // --- Admin-Only Management Collections ---
-    // Explicitly grant recursive access to management trees for admins.
+    // --- Admin-Only Management Collections (Prioritized) ---
     
-    match /partners/{document=**} {
+    match /partners/{allPaths=**} {
       allow read, write: if isAdmin();
     }
 
-    match /leads/{document=**} {
+    match /leads/{allPaths=**} {
       allow read, write: if isAdmin();
     }
-
-    match /lendingAssets/{document=**} {
-        allow read, write: if isAdmin();
-    }
-    match /lendingClients/{document=**} {
-        allow read, write: if isAdmin();
-    }
-    match /lendingPartners/{document=**} {
+    
+    match /platformStaff/{allPaths=**} {
         allow read, write: if isAdmin();
     }
 
-    match /reconciliations/{document=**} {
+    match /lendingAssets/{allPaths=**} {
+        allow read, write: if isAdmin();
+    }
+    match /lendingClients/{allPaths=**} {
+        allow read, write: if isAdmin();
+    }
+    match /lendingPartners/{allPaths=**} {
         allow read, write: if isAdmin();
     }
 
-    match /platformTransactions/{document=**} {
+    match /reconciliations/{allPaths=**} {
+        allow read, write: if isAdmin();
+    }
+
+    match /platformTransactions/{allPaths=**} {
         allow read, write: if isAdmin();
     }
     
-    match /auditLogs/{document=**} {
+    match /auditLogs/{allPaths=**} {
         allow read, write: if isAdmin();
     }
     
-    match /platformStaff/{document=**} {
+    match /permissions/{allPaths=**} {
         allow read, write: if isAdmin();
     }
 
@@ -133,10 +136,6 @@ service cloud.firestore {
     match /contributions/{contributionId} {
       allow create: if isSignedIn();
       allow read: if isAdmin();
-    }
-
-    match /permissions/{path=**} {
-        allow read, write: if isAdmin();
     }
   }
 }
