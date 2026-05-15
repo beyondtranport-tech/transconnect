@@ -13,7 +13,7 @@ service cloud.firestore {
       );
     }
 
-    // --- 2. EXPLICIT CRM PERMISSIONS (FOR QUERIES) ---
+    // --- 2. EXPLICIT CRM PERMISSIONS ---
     match /platformCommunications/{logId} {
       allow read, write: if request.auth != null && (
         request.auth.uid == '0Y3IhZffEPNlMAIhURPnzRgNokL2' || 
