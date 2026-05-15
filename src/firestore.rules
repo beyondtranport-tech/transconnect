@@ -3,66 +3,39 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // --- Helper Functions ---
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    function isAdmin() {
-      // Simplified for robustness to resolve persistent permission issues
-      return isSignedIn() && (
+    // --- 1. ABSOLUTE ADMIN BYPASS (CRITICAL) ---
+    // This rule must be at the very top. It grants full recursive access to specific emails.
+    match /{allPaths=**} {
+      allow read, write: if request.auth != null && (
         request.auth.token.email == 'mkoton100@gmail.com' || 
-        request.auth.token.email == 'beyondtransport@gmail.com' ||
-        request.auth.token.admin == true
+        request.auth.token.email == 'beyondtransport@gmail.com'
       );
     }
-    
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
-    }
 
-    function isCompanyOwner(companyId) {
-        // Fallback check for non-admin users
-        return isSignedIn() && (
-           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId
-        );
-    }
-
-    // --- 1. GLOBAL ADMIN BYPASS (CRITICAL) ---
-    // This must be the first match to ensure admins are never blocked.
-    match /{allPaths=**} {
-      allow read, write: if isAdmin();
-    }
-
-    // --- 2. MANAGEMENT COLLECTIONS (EXPLICIT) ---
-    match /partners/{document=**} {
-      allow read, write: if isAdmin();
-    }
-    
-    match /leads/{document=**} {
-      allow read, write: if isAdmin();
-    }
-
-    // --- 3. USER-SPECIFIC RULES ---
+    // --- 2. USER-SPECIFIC RULES (FOR NON-ADMINS) ---
     match /users/{userId} {
-      allow read, update: if isOwner(userId);
-      allow create: if isSignedIn(); 
+      allow read, update: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null; 
       
       match /tasks/{taskId} {
-        allow read, write: if isOwner(userId);
+        allow read, write: if request.auth != null && request.auth.uid == userId;
       }
     }
     
     match /companies/{companyId} {
-      allow create: if isSignedIn(); 
-      allow get, update: if isCompanyOwner(companyId);
+      allow create: if request.auth != null; 
+      allow get, update: if request.auth != null && (
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId
+      );
 
       match /{subcollection}/{docId=**} {
-        allow read, write: if isCompanyOwner(companyId);
+        allow read, write: if request.auth != null && (
+           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId
+        );
       }
     }
     
-    // --- 4. PUBLIC & GLOBAL COLLECTIONS ---
+    // --- 3. PUBLIC & GLOBAL COLLECTIONS ---
     match /shops/{shopId}/{path=**} {
       allow get, list: if true;
     }
@@ -80,7 +53,7 @@ service cloud.firestore {
     }
 
     match /contributions/{contributionId} {
-      allow create: if isSignedIn();
+      allow create: if request.auth != null;
     }
   }
 }

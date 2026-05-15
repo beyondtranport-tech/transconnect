@@ -3,9 +3,8 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // --- 1. GLOBAL ADMIN BYPASS (CRITICAL) ---
-    // This allows specific email addresses full recursive access to EVERYTHING.
-    // This must be the first match block to prevent shadowing by other rules.
+    // --- 1. ABSOLUTE ADMIN BYPASS (CRITICAL) ---
+    // This rule must be at the very top. It grants full recursive access to specific emails.
     match /{allPaths=**} {
       allow read, write: if request.auth != null && (
         request.auth.token.email == 'mkoton100@gmail.com' || 
