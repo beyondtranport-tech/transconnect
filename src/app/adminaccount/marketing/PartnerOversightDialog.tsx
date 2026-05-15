@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -8,8 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Loader2, Calendar, MessageSquare, ClipboardList, CheckCircle, Circle, UserPlus, Clock, ArrowRight, Activity } from 'lucide-react';
 import { getClientSideAuthToken, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { collection, query, orderBy, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { formatDateSafe, formatCurrency } from '@/lib/utils';
+import { collection, query, orderBy, where, serverTimestamp } from 'firebase/firestore';
+import { formatDateSafe } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
@@ -36,20 +35,27 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
     const { toast } = useToast();
     const firestore = useFirestore();
 
-    // Fetch Timeline Data
+    // Fetch Timeline Data from Root-Level Collections
     const logsQuery = useMemoFirebase(() => {
-        if (!firestore || !partner?.id) return null;
-        return query(collection(firestore, `partners/${partner.id}/communications`), orderBy('timestamp', 'desc'));
-    }, [firestore, partner?.id]);
+        if (!firestore || !partner?.id || !isOpen) return null;
+        return query(
+            collection(firestore, `platformCommunications`), 
+            where('relatedId', '==', partner.id),
+            orderBy('timestamp', 'desc')
+        );
+    }, [firestore, partner?.id, isOpen]);
     const { data: logs, isLoading: isLoadingLogs } = useCollection(logsQuery);
 
     const tasksQuery = useMemoFirebase(() => {
-        if (!firestore || !partner?.id) return null;
-        return query(collection(firestore, `partners/${partner.id}/tasks`), orderBy('createdAt', 'desc'));
-    }, [firestore, partner?.id]);
+        if (!firestore || !partner?.id || !isOpen) return null;
+        return query(
+            collection(firestore, `platformTasks`), 
+            where('relatedId', '==', partner.id),
+            orderBy('createdAt', 'desc')
+        );
+    }, [firestore, partner?.id, isOpen]);
     const { data: tasks, isLoading: isLoadingTasks, forceRefresh: refreshTasks } = useCollection(tasksQuery);
 
-    // Merge logs and tasks into a chronological timeline
     const timeline = useMemo(() => {
         const events: any[] = [];
         (logs || []).forEach(log => events.push({ ...log, type: 'log', date: log.timestamp }));
@@ -109,7 +115,7 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    path: `partners/${partner.id}/tasks/${task.id}`,
+                    path: `platformTasks/${task.id}`,
                     data: { status: task.status === 'pending' ? 'completed' : 'pending', updatedAt: serverTimestamp() }
                 })
             });
@@ -137,7 +143,7 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
                             <DialogDescription className="mt-1">Full engagement history and task management.</DialogDescription>
                         </div>
                         <div className="space-y-2 text-right">
-                             <Label className="text-xs font-bold uppercase text-muted-foreground">Allocated Staff Member</Label>
+                             <Label className="text-xs font-bold uppercase text-muted-foreground">Allocated Staff</Label>
                              <Select value={partner.assigneeId || 'none'} onValueChange={handleAssign}>
                                 <SelectTrigger className="w-[200px] h-9">
                                     <SelectValue placeholder="Unallocated" />
@@ -152,7 +158,6 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
                 </DialogHeader>
 
                 <div className="flex-1 overflow-y-auto p-6 space-y-8 bg-slate-50/50">
-                    {/* Activity Feed */}
                     <div className="space-y-4">
                         <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
                             <Activity className="h-4 w-4"/>
@@ -169,10 +174,7 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
                                             "absolute left-2 top-1.5 h-4 w-4 rounded-full border-2 border-background z-10",
                                             event.type === 'task' ? (event.status === 'completed' ? "bg-green-500" : "bg-amber-500") : "bg-primary"
                                         )} />
-                                        <Card className={cn(
-                                            "shadow-none",
-                                            event.type === 'task' ? "border-amber-200 bg-amber-50/30" : "bg-white"
-                                        )}>
+                                        <Card className="shadow-none">
                                             <CardContent className="p-4">
                                                 <div className="flex justify-between items-start">
                                                     <div className="space-y-1">
@@ -181,7 +183,7 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
                                                             <span className="font-bold text-sm">{event.subject || event.title}</span>
                                                             <Badge variant="outline" className="text-[10px] h-4 uppercase">{event.type}</Badge>
                                                         </div>
-                                                        <p className="text-sm text-muted-foreground">{event.notes || event.description || 'No additional details provided.'}</p>
+                                                        <p className="text-sm text-muted-foreground">{event.notes || event.description || 'No details.'}</p>
                                                     </div>
                                                     <div className="text-right space-y-1">
                                                         <p className="text-[10px] font-bold text-muted-foreground uppercase">{formatDateSafe(event.date, "dd MMM yyyy, HH:mm")}</p>
@@ -206,23 +208,13 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
                         ) : (
                             <div className="text-center py-12 border-2 border-dashed rounded-lg">
                                 <Clock className="h-10 w-10 text-muted-foreground mx-auto mb-2 opacity-20" />
-                                <p className="text-sm text-muted-foreground">No activity recorded for this partner yet.</p>
+                                <p className="text-sm text-muted-foreground">No activity recorded.</p>
                             </div>
                         )}
                     </div>
                 </div>
-
-                <div className="p-4 border-t bg-muted/10 flex justify-between items-center px-6">
-                    <p className="text-[10px] text-muted-foreground italic">Lead ID: {partner.id}</p>
-                    <div className="flex gap-2">
-                         <Button variant="outline" size="sm" asChild>
-                            <Link href={`/adminaccount?view=marketing-${partner.type}s&recipientId=${partner.id}`}>
-                                <ArrowRight className="mr-2 h-3.5 w-3.5"/>
-                                Send New Engagement
-                            </Link>
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={() => setIsOpen(false)}>Close</Button>
-                    </div>
+                <div className="p-4 border-t bg-muted/10 flex justify-end px-6">
+                    <Button variant="outline" size="sm" onClick={() => setIsOpen(false)}>Close Oversight</Button>
                 </div>
             </DialogContent>
         </Dialog>

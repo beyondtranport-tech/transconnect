@@ -16,7 +16,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { collection, query, orderBy } from 'firebase/firestore';
+import { collection, query, where, orderBy } from 'firebase/firestore';
 
 const taskSchema = z.object({
   title: z.string().min(3, 'Title must be at least 3 characters.'),
@@ -75,12 +75,13 @@ function TaskForm({ partner, onTaskAdded }: { partner: any; onTaskAdded: () => v
             
             const taskData = { 
                 ...values, 
+                relatedId: partner.id,
                 relatedToName: partner?.companyName || `${partner?.firstName || ''} ${partner?.lastName || ''}`.trim() || 'Partner', 
                 status: 'pending', 
                 createdAt: { _methodName: 'serverTimestamp' },
                 updatedAt: { _methodName: 'serverTimestamp' }
             };
-            const path = `partners/${partner.id}/tasks`;
+            const path = `platformTasks`; // Writing to root-level collection
 
             await fetch('/api/addUserDoc', {
                 method: 'POST',
@@ -105,7 +106,7 @@ function TaskForm({ partner, onTaskAdded }: { partner: any; onTaskAdded: () => v
                 <FormField control={form.control} name="title" render={({ field }) => ( <FormItem><FormLabel>Task Title</FormLabel><FormControl><Input placeholder="e.g., Follow up on signed proposal" {...field} /></FormControl><FormMessage /></FormItem> )} />
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <FormField control={form.control} name="dueDate" render={({ field }) => ( <FormItem><FormLabel>Due Date (Action Date)</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                    <FormField control={form.control} name="dueDate" render={({ field }) => ( <FormItem><FormLabel>Due Date</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem> )} />
                     <FormField control={form.control} name="assigneeId" render={({ field }) => (
                         <FormItem>
                             <FormLabel>Assign To</FormLabel>
@@ -113,7 +114,7 @@ function TaskForm({ partner, onTaskAdded }: { partner: any; onTaskAdded: () => v
                                 <FormControl><SelectTrigger><SelectValue placeholder="Select platform staff..." /></SelectTrigger></FormControl>
                                 <SelectContent>
                                     {staff.map(member => (
-                                        <SelectItem key={member.id} value={member.id}>{member.firstName} {member.lastName} ({member.department})</SelectItem>
+                                        <SelectItem key={member.id} value={member.id}>{member.firstName} {member.lastName}</SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
@@ -122,7 +123,7 @@ function TaskForm({ partner, onTaskAdded }: { partner: any; onTaskAdded: () => v
                     )} />
                 </div>
 
-                <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Notes / Comments</FormLabel><FormControl><Textarea placeholder="Add details relating to the discussion..." {...field} /></FormControl><FormMessage /></FormItem> )} />
+                <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Notes</FormLabel><FormControl><Textarea placeholder="Add details..." {...field} /></FormControl><FormMessage /></FormItem> )} />
                 
                 <Button type="submit" disabled={isLoading} className="w-full">
                     {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />} 
@@ -138,9 +139,14 @@ function TasksListContent({ partner }: { partner: any }) {
     const { user } = useUser();
     const { toast } = useToast();
 
+    // Query root-level collection filtering by partner ID
     const tasksQuery = useMemoFirebase(() => {
         if (!firestore || !partner?.id) return null;
-        return query(collection(firestore, `partners/${partner.id}/tasks`), orderBy('createdAt', 'desc'));
+        return query(
+            collection(firestore, `platformTasks`), 
+            where('relatedId', '==', partner.id),
+            orderBy('createdAt', 'desc')
+        );
     }, [firestore, partner.id]);
 
     const { data: tasks, isLoading, forceRefresh } = useCollection(tasksQuery);
@@ -155,7 +161,7 @@ function TasksListContent({ partner }: { partner: any }) {
                 await fetch('/api/deleteUserDoc', {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ path: `partners/${partner.id}/tasks/${task.id}` }),
+                    body: JSON.stringify({ path: `platformTasks/${task.id}` }),
                 });
                 toast({ title: "Task Deleted" });
             } else if (action === 'toggle') {
@@ -163,7 +169,7 @@ function TasksListContent({ partner }: { partner: any }) {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
-                        path: `partners/${partner.id}/tasks/${task.id}`,
+                        path: `platformTasks/${task.id}`,
                         data: { status: task.status === 'pending' ? 'completed' : 'pending', updatedAt: { _methodName: 'serverTimestamp' } }
                     }),
                 });

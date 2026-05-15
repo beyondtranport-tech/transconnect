@@ -1,4 +1,3 @@
-
 'use server';
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -75,9 +74,11 @@ export async function POST(req: NextRequest) {
             }
             case 'logCommunication': {
                 const { partnerId, type, subject, notes } = payload;
-                const logRef = db.collection(`partners/${partnerId}/communications`).doc();
+                // Writing to root-level collection to resolve permission issues
+                const logRef = db.collection(`platformCommunications`).doc();
                 await logRef.set({
                     id: logRef.id,
+                    relatedId: partnerId,
                     type,
                     subject,
                     notes: notes || '',

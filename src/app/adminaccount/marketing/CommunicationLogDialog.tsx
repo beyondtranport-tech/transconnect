@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -6,9 +5,10 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Button } from '@/components/ui/button';
 import { MessageSquare, Loader2, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { getClientSideAuthToken } from '@/firebase';
+import { getClientSideAuthToken, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { formatDateSafe } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
+import { collection, query, where, orderBy } from 'firebase/firestore';
 
 async function fetchFromAdminAPI(token: string, action: string, payload?: any) {
     const response = await fetch('/api/admin', {
@@ -25,37 +25,20 @@ async function fetchFromAdminAPI(token: string, action: string, payload?: any) {
 
 export function CommunicationLogDialog({ partnerId, partnerName }: { partnerId: string, partnerName: string }) {
     const [isOpen, setIsOpen] = useState(false);
-    const [logs, setLogs] = useState<any[]>([]);
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const firestore = useFirestore();
     const { toast } = useToast();
 
-    const fetchLogs = useCallback(async () => {
-        if (!isOpen || !partnerId) return;
-        setIsLoading(true);
-        setError(null);
-        try {
-            const token = await getClientSideAuthToken();
-            if (!token) throw new Error("Authentication failed.");
-            
-            const result = await fetchFromAdminAPI(token, 'getCommunicationLogs', { partnerId });
-            
-            const sortedLogs = (result.data || []).sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-            setLogs(sortedLogs);
-            
-        } catch (e: any) {
-            setError(e.message);
-            toast({ variant: 'destructive', title: 'Error fetching logs', description: e.message });
-        } finally {
-            setIsLoading(false);
-        }
-    }, [isOpen, partnerId, toast]);
+    // Query root-level collection filtering by partner ID
+    const logsQuery = useMemoFirebase(() => {
+        if (!firestore || !partnerId || !isOpen) return null;
+        return query(
+            collection(firestore, `platformCommunications`), 
+            where('relatedId', '==', partnerId),
+            orderBy('timestamp', 'desc')
+        );
+    }, [firestore, partnerId, isOpen]);
 
-    useEffect(() => {
-        if (isOpen) {
-            fetchLogs();
-        }
-    }, [isOpen, fetchLogs]);
+    const { data: logs, isLoading, error } = useCollection(logsQuery);
     
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -73,8 +56,8 @@ export function CommunicationLogDialog({ partnerId, partnerName }: { partnerId: 
                     {isLoading ? (
                         <div className="flex justify-center p-8"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div>
                     ) : error ? (
-                         <div className="text-destructive flex items-center gap-2 p-4"><AlertTriangle/>{error}</div>
-                    ) : logs.length > 0 ? (
+                         <div className="text-destructive flex items-center gap-2 p-4"><AlertTriangle/>{error.message}</div>
+                    ) : logs && logs.length > 0 ? (
                         logs.map(log => (
                             <Card key={log.id} className="bg-muted/50">
                                 <CardContent className="p-3">
@@ -90,7 +73,7 @@ export function CommunicationLogDialog({ partnerId, partnerName }: { partnerId: 
                             </Card>
                         ))
                     ) : (
-                        <p className="text-center text-sm text-muted-foreground py-8">No communication logs found for this partner.</p>
+                        <p className="text-center text-sm text-muted-foreground py-8">No communication logs found.</p>
                     )}
                 </div>
             </DialogContent>

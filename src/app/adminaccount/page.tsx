@@ -47,6 +47,7 @@ import {
   Handshake,
   Truck,
   Users,
+  Contact,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -87,6 +88,7 @@ import RewardsManagement from '@/app/backend/rewards-management';
 import PlatformTasks from '@/app/backend/platform-tasks';
 import PlatformSettingsContent from '@/app/backend/platform-settings';
 import PlatformStaffManagement from '@/app/adminaccount/platform-staff';
+import UnifiedDirectory from '@/app/adminaccount/unified-directory';
 
 function AdminAuthGuard({ children }: { children: React.ReactNode }) {
     const { user, isUserLoading } = useUser();
@@ -139,6 +141,7 @@ function AdminAccountContent() {
     }
     switch (activeView) {
       case 'dashboard': return <AdminDashboardContent />;
+      case 'unified-directory': return <UnifiedDirectory />;
       case 'activity': return <ActivityFeed />;
       case 'leads-agent': return <LeadsAgent />;
       case 'leads-database': return <LeadsDatabase />;
@@ -189,7 +192,7 @@ function AdminAccountContent() {
   const isSalesActive = ['sales-roadmap', 'targets'].includes(activeView);
   const isFinancialActive = ['financial-projections', 'financial-settings', 'financial-setup', 'budget', 'salary-forecast'].includes(activeView);
   const isContentActive = ['branding-studio', 'tts-studio', 'asset-gallery'].includes(activeView);
-  const isLeadsActive = ['leads-agent', 'leads-database', 'platform-staff'].includes(activeView);
+  const isLeadsActive = ['leads-agent', 'leads-database', 'platform-staff', 'unified-directory'].includes(activeView);
   const isRevenueActive = [
     'pricing-memberships', 'pricing-connect', 'pricing-tech', 'pricing-marketplace',
     'commissions-malls', 'commissions-isa', 'incentives-sales'
@@ -236,6 +239,7 @@ function AdminAccountContent() {
                 <SidebarMenuItem>
                     <SidebarMenuButton tooltip="Leads" isActive={isLeadsActive}><UserPlus /><span>Leads & CRM</span></SidebarMenuButton>
                     <SidebarMenuSub>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'unified-directory'} onClick={() => navigate('unified-directory')}><Contact/>Unified Directory</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'leads-agent'} onClick={() => navigate('leads-agent')}>Leads Agent</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'leads-database'} onClick={() => navigate('leads-database')}>Leads Database</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'platform-staff'} onClick={() => navigate('platform-staff')}><Users/>Platform Staff</SidebarMenuSubButton></SidebarMenuSubItem>
