@@ -28,13 +28,11 @@ service cloud.firestore {
 
     // --- Admin-Only Management Collections (Prioritized) ---
     
-    // Comprehensive recursive match for partners and all subcollections
-    match /partners/{document=**} {
+    match /partners/{allPaths=**} {
       allow read, write: if isAdmin();
     }
 
-    // Comprehensive recursive match for leads and all subcollections
-    match /leads/{document=**} {
+    match /leads/{allPaths=**} {
       allow read, write: if isAdmin();
     }
     
@@ -90,29 +88,6 @@ service cloud.firestore {
       }
     }
     
-    // --- Collection Group Queries for Admin Backend ---
-    match /{path=**}/staff/{staffId} {
-      allow get, list: if isAdmin();
-    }
-    match /{path=**}/walletPayments/{paymentId} {
-      allow get, list: if isAdmin();
-    }
-    match /{path=**}/transactions/{transactionId} {
-      allow get, list: if isAdmin();
-    }
-    match /{path=**}/quotes/{quoteId} {
-      allow get, list: if isAdmin();
-    }
-    match /{path=**}/enquiries/{enquiryId} {
-      allow get, list: if isAdmin();
-    }
-    match /{path=**}/shops/{shopId} {
-      allow get, list: if isAdmin();
-    }
-     match /{path=**}/agreements/{agreementId} {
-      allow get, list: if isAdmin();
-    }
-
     // --- Public & Global Collections ---
 
     match /shops/{shopId}/{path=**} {
