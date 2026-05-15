@@ -27,7 +27,7 @@ service cloud.firestore {
     }
 
     // --- Admin-Only Management Collections ---
-    // Explicitly grant full recursive access to the management trees.
+    // Explicitly grant recursive access to management trees for admins.
     
     match /partners/{document=**} {
       allow read, write: if isAdmin();
