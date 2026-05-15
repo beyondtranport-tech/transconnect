@@ -28,11 +28,11 @@ service cloud.firestore {
 
     // --- Admin-Only Management Collections (Prioritized) ---
     
-    match /partners/{allPaths=**} {
+    match /partners/{document=**} {
       allow read, write: if isAdmin();
     }
 
-    match /leads/{allPaths=**} {
+    match /leads/{document=**} {
       allow read, write: if isAdmin();
     }
     

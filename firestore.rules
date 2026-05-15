@@ -28,13 +28,13 @@ service cloud.firestore {
 
     // --- Admin-Only Management Collections (Prioritized) ---
     
-    // Comprehensive recursive match for partners and all subcollections (tasks, communications, etc.)
-    match /partners/{allPaths=**} {
+    // Comprehensive recursive match for partners and all subcollections
+    match /partners/{document=**} {
       allow read, write: if isAdmin();
     }
 
     // Comprehensive recursive match for leads and all subcollections
-    match /leads/{allPaths=**} {
+    match /leads/{document=**} {
       allow read, write: if isAdmin();
     }
     
