@@ -22,12 +22,12 @@ service cloud.firestore {
     }
 
     function isCompanyOwner(companyId) {
-        let companyDoc = get(/databases/$(database)/documents/companies/$(companyId)).data;
-        return companyDoc.ownerId == request.auth.uid || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId;
+        let companyDoc = get(/databases/$(database)/documents/companies/$(companyId));
+        return companyDoc != null && (companyDoc.data.ownerId == request.auth.uid || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId);
     }
 
     // --- Admin-Only Management Collections ---
-    // Explicitly grant recursive access to management trees for admins.
+    // Using a top-level recursive wildcard for these core management trees.
     
     match /partners/{document=**} {
       allow read, write: if isAdmin();
@@ -35,6 +35,10 @@ service cloud.firestore {
 
     match /leads/{document=**} {
       allow read, write: if isAdmin();
+    }
+    
+    match /platformStaff/{document=**} {
+        allow read, write: if isAdmin();
     }
 
     match /lendingAssets/{document=**} {

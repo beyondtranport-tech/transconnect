@@ -22,8 +22,8 @@ service cloud.firestore {
     }
 
     function isCompanyOwner(companyId) {
-        let companyDoc = get(/databases/$(database)/documents/companies/$(companyId)).data;
-        return companyDoc.ownerId == request.auth.uid || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId;
+        let companyDoc = get(/databases/$(database)/documents/companies/$(companyId));
+        return companyDoc != null && (companyDoc.data.ownerId == request.auth.uid || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId);
     }
 
     // --- Admin-Only Management Collections ---
