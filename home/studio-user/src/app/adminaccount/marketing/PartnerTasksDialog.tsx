@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -45,7 +44,7 @@ function TaskForm({ partner, onTaskAdded }: { partner: any; onTaskAdded: () => v
             if (!token) throw new Error("Authentication failed.");
             
             const taskData = { ...values, relatedToName: partner.name, status: 'pending', assigneeId: user.uid, createdAt: { _methodName: 'serverTimestamp' } };
-            const path = `/partners/${partner.id}/tasks`;
+            const path = `partners/${partner.id}/tasks`;
 
             await fetch('/api/addUserDoc', {
                 method: 'POST',
@@ -86,7 +85,8 @@ export function PartnerTasksDialog({ partner }: { partner: any }) {
 
     const tasksQuery = useMemoFirebase(() => {
         if (!firestore || !partner?.id) return null;
-        return query(collection(firestore, `/partners/${partner.id}/tasks`), orderBy('createdAt', 'desc'));
+        // Removed leading slash from collection path to prevent rule matching issues
+        return query(collection(firestore, `partners/${partner.id}/tasks`), orderBy('createdAt', 'desc'));
     }, [firestore, partner]);
 
     const { data: tasks, isLoading, forceRefresh } = useCollection(tasksQuery);
@@ -101,7 +101,7 @@ export function PartnerTasksDialog({ partner }: { partner: any }) {
                 await fetch('/api/deleteUserDoc', {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ path: `/partners/${partner.id}/tasks/${task.id}` }),
+                    body: JSON.stringify({ path: `partners/${partner.id}/tasks/${task.id}` }),
                 });
                 toast({ title: "Task Deleted" });
             } else if (action === 'toggle') {
@@ -109,7 +109,7 @@ export function PartnerTasksDialog({ partner }: { partner: any }) {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
-                        path: `/partners/${partner.id}/tasks/${task.id}`,
+                        path: `partners/${partner.id}/tasks/${task.id}`,
                         data: { status: task.status === 'pending' ? 'completed' : 'pending' }
                     }),
                 });
