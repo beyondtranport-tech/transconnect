@@ -14,22 +14,22 @@ service cloud.firestore {
     }
 
     // --- 1. ABSOLUTE ADMIN BYPASS (HIGHEST PRIORITY) ---
-    // This grants absolute, recursive access to EVERYTHING in the database.
+    // Explicitly allow list/query operations on root-level CRM collections.
+    // These must be matched explicitly for the query engine to verify permissions correctly.
+    match /platformCommunications/{docId=**} {
+      allow read, write: if isAdmin();
+    }
+    
+    match /platformTasks/{docId=**} {
+      allow read, write: if isAdmin();
+    }
+
+    // Global recursive bypass for everything else
     match /{allPaths=**} {
       allow read, write: if isAdmin();
     }
 
-    // --- 2. EXPLICIT CRM PERMISSIONS ---
-    // Explicitly defining these ensures the query engine permits list operations on these root collections.
-    match /platformCommunications/{document=**} {
-      allow read, write: if isAdmin();
-    }
-    
-    match /platformTasks/{document=**} {
-      allow read, write: if isAdmin();
-    }
-
-    // --- 3. USER-SPECIFIC RULES (FOR NON-ADMINS) ---
+    // --- 2. USER-SPECIFIC RULES (FOR NON-ADMINS) ---
     match /users/{userId} {
       allow read, update: if request.auth != null && request.auth.uid == userId;
       allow create: if request.auth != null; 
@@ -52,7 +52,7 @@ service cloud.firestore {
       }
     }
     
-    // --- 4. PUBLIC & GLOBAL COLLECTIONS ---
+    // --- 3. PUBLIC & GLOBAL COLLECTIONS ---
     match /shops/{shopId}/{path=**} {
       allow get, list: if true;
     }

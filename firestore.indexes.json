@@ -1,7 +1,19 @@
-
-
 {
   "indexes": [
+    {
+      "collectionId": "platformCommunications",
+      "fields": [
+        { "fieldPath": "relatedId", "order": "ASCENDING" },
+        { "fieldPath": "timestamp", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionId": "platformTasks",
+      "fields": [
+        { "fieldPath": "relatedId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
     {
       "collectionGroup": "walletPayments",
       "queryScope": "COLLECTION_GROUP",
@@ -147,14 +159,3 @@
     }
   ]
 }
-
-  
-    
-
-
-
-
-
-
-
-
