@@ -10,19 +10,6 @@ import { formatDateSafe } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
 import { collection, query, where, orderBy } from 'firebase/firestore';
 
-async function fetchFromAdminAPI(token: string, action: string, payload?: any) {
-    const response = await fetch('/api/admin', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, payload }),
-    });
-    const result = await response.json();
-    if (!response.ok || !result.success) {
-        throw new Error(result.error || `API Error for action: ${action}`);
-    }
-    return result;
-}
-
 export function CommunicationLogDialog({ partnerId, partnerName }: { partnerId: string, partnerName: string }) {
     const [isOpen, setIsOpen] = useState(false);
     const firestore = useFirestore();

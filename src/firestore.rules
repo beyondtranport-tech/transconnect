@@ -3,7 +3,7 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper function for admin check
+    // Helper function for admin check - prioritized for UID and Email
     function isAdmin() {
       return request.auth != null && (
         request.auth.uid == '0Y3IhZffEPNlMAIhURPnzRgNokL2' || 
@@ -14,16 +14,24 @@ service cloud.firestore {
     }
 
     // --- 1. ABSOLUTE ADMIN BYPASS (HIGHEST PRIORITY) ---
-    match /platformCommunications/{docId=**} {
+    // Explicitly allow EVERYTHING for the admin account
+    match /{allPaths=**} {
       allow read, write: if isAdmin();
     }
     
-    match /platformTasks/{docId=**} {
+    // Explicitly allow list/get on root CRM collections just in case recursive matching is ambiguous
+    match /platformCommunications {
       allow read, write: if isAdmin();
+      match /{docId=**} {
+        allow read, write: if isAdmin();
+      }
     }
-
-    match /{allPaths=**} {
+    
+    match /platformTasks {
       allow read, write: if isAdmin();
+      match /{docId=**} {
+        allow read, write: if isAdmin();
+      }
     }
 
     // --- 2. USER-SPECIFIC RULES (FOR NON-ADMINS) ---

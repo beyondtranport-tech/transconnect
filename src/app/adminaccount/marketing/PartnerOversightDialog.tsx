@@ -58,17 +58,20 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
 
     const timeline = useMemo(() => {
         const events: any[] = [];
-        (logs || []).forEach(log => events.push({ ...log, type: 'log', date: log.timestamp }));
-        (tasks || []).forEach(task => events.push({ ...task, type: 'task', date: task.createdAt }));
+        if (isOpen) {
+            (logs || []).forEach(log => events.push({ ...log, type: 'log', date: log.timestamp }));
+            (tasks || []).forEach(task => events.push({ ...task, type: 'task', date: task.createdAt }));
+        }
         
         return events.sort((a, b) => {
             const dateA = a.date?.toDate ? a.date.toDate() : new Date(a.date || 0);
             const dateB = b.date?.toDate ? b.date.toDate() : new Date(b.date || 0);
             return dateB.getTime() - dateA.getTime();
         });
-    }, [logs, tasks]);
+    }, [logs, tasks, isOpen]);
 
     const fetchStaff = useCallback(async () => {
+        if (!isOpen) return;
         setIsLoadingStaff(true);
         try {
             const token = await getClientSideAuthToken();
@@ -80,7 +83,7 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
         } finally {
             setIsLoadingStaff(false);
         }
-    }, []);
+    }, [isOpen]);
 
     useEffect(() => {
         if (isOpen) fetchStaff();
