@@ -3,9 +3,9 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // --- 1. ABSOLUTE ADMIN BYPASS (CRITICAL) ---
-    match /{allPaths=**} {
-      allow read, write: if request.auth != null && (
+    // Helper function for admin check
+    function isAdmin() {
+      return request.auth != null && (
         request.auth.uid == '0Y3IhZffEPNlMAIhURPnzRgNokL2' || 
         request.auth.token.email == 'mkoton100@gmail.com' || 
         request.auth.token.email == 'beyondtransport@gmail.com' ||
@@ -13,7 +13,21 @@ service cloud.firestore {
       );
     }
 
-    // --- 2. USER-SPECIFIC RULES (FOR NON-ADMINS) ---
+    // --- 1. ABSOLUTE ADMIN BYPASS (HIGHEST PRIORITY) ---
+    match /{allPaths=**} {
+      allow read, write: if isAdmin();
+    }
+
+    // --- 2. EXPLICIT CRM PERMISSIONS ---
+    match /platformCommunications/{document=**} {
+      allow read, write: if isAdmin();
+    }
+    
+    match /platformTasks/{document=**} {
+      allow read, write: if isAdmin();
+    }
+
+    // --- 3. USER-SPECIFIC RULES (FOR NON-ADMINS) ---
     match /users/{userId} {
       allow read, update: if request.auth != null && request.auth.uid == userId;
       allow create: if request.auth != null; 
@@ -36,7 +50,7 @@ service cloud.firestore {
       }
     }
     
-    // --- 3. PUBLIC & GLOBAL COLLECTIONS ---
+    // --- 4. PUBLIC & GLOBAL COLLECTIONS ---
     match /shops/{shopId}/{path=**} {
       allow get, list: if true;
     }

@@ -28,7 +28,7 @@ export function CommunicationLogDialog({ partnerId, partnerName }: { partnerId: 
     const firestore = useFirestore();
     const { toast } = useToast();
 
-    // Query root-level collection filtering by partner ID
+    // Query root-level collection filtering by partner ID ONLY when dialog is open
     const logsQuery = useMemoFirebase(() => {
         if (!firestore || !partnerId || !isOpen) return null;
         return query(
@@ -53,7 +53,7 @@ export function CommunicationLogDialog({ partnerId, partnerName }: { partnerId: 
                     <DialogDescription>A record of all outreach sent to this partner.</DialogDescription>
                 </DialogHeader>
                 <div className="max-h-[60vh] overflow-y-auto space-y-4 py-4 pr-2">
-                    {isLoading ? (
+                    {!isOpen ? null : isLoading ? (
                         <div className="flex justify-center p-8"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div>
                     ) : error ? (
                          <div className="text-destructive flex items-center gap-2 p-4"><AlertTriangle/>{error.message}</div>

@@ -3,11 +3,9 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // --- 1. ABSOLUTE ADMIN BYPASS (CRITICAL) ---
-    // This allows specific UIDs and Emails full recursive access to EVERYTHING.
-    // We put this first to ensure it takes precedence over any specific rules below.
-    match /{allPaths=**} {
-      allow read, write: if request.auth != null && (
+    // Helper function for admin check
+    function isAdmin() {
+      return request.auth != null && (
         request.auth.uid == '0Y3IhZffEPNlMAIhURPnzRgNokL2' || 
         request.auth.token.email == 'mkoton100@gmail.com' || 
         request.auth.token.email == 'beyondtransport@gmail.com' ||
@@ -15,22 +13,18 @@ service cloud.firestore {
       );
     }
 
-    // --- 2. EXPLICIT CRM PERMISSIONS (ROOT LEVEL) ---
-    // Explicitly defining these ensures the query engine permits list operations on these root collections for the admin.
-    match /platformCommunications/{logId} {
-      allow read, write: if request.auth != null && (
-        request.auth.uid == '0Y3IhZffEPNlMAIhURPnzRgNokL2' || 
-        request.auth.token.email == 'mkoton100@gmail.com' || 
-        request.auth.token.email == 'beyondtransport@gmail.com'
-      );
+    // --- 1. ABSOLUTE ADMIN BYPASS (HIGHEST PRIORITY) ---
+    match /{allPaths=**} {
+      allow read, write: if isAdmin();
+    }
+
+    // --- 2. EXPLICIT CRM PERMISSIONS ---
+    match /platformCommunications/{document=**} {
+      allow read, write: if isAdmin();
     }
     
-    match /platformTasks/{taskId} {
-      allow read, write: if request.auth != null && (
-        request.auth.uid == '0Y3IhZffEPNlMAIhURPnzRgNokL2' || 
-        request.auth.token.email == 'mkoton100@gmail.com' || 
-        request.auth.token.email == 'beyondtransport@gmail.com'
-      );
+    match /platformTasks/{document=**} {
+      allow read, write: if isAdmin();
     }
 
     // --- 3. USER-SPECIFIC RULES (FOR NON-ADMINS) ---

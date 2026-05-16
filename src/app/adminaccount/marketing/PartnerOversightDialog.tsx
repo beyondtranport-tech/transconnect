@@ -35,7 +35,7 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
     const { toast } = useToast();
     const firestore = useFirestore();
 
-    // Fetch Timeline Data from Root-Level Collections
+    // Fetch Timeline Data from Root-Level Collections ONLY when dialog is open
     const logsQuery = useMemoFirebase(() => {
         if (!firestore || !partner?.id || !isOpen) return null;
         return query(
