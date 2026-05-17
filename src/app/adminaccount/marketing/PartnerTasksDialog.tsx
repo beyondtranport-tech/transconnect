@@ -16,7 +16,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { collection, query, where, orderBy } from 'firebase/firestore';
+import { collection, query, where, orderBy, serverTimestamp } from 'firebase/firestore';
 
 const taskSchema = z.object({
   title: z.string().min(3, 'Title must be at least 3 characters.'),
@@ -81,7 +81,7 @@ function TaskForm({ partner, onTaskAdded }: { partner: any; onTaskAdded: () => v
                 createdAt: { _methodName: 'serverTimestamp' },
                 updatedAt: { _methodName: 'serverTimestamp' }
             };
-            const path = `platformTasks`; // Writing to root-level collection
+            const path = `platformTasks`; // Explicit root collection
 
             await fetch('/api/addUserDoc', {
                 method: 'POST',

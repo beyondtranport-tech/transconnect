@@ -15,18 +15,18 @@ service cloud.firestore {
 
     // --- 1. EXPLICIT CRM OVERRIDES (TOP PRIORITY) ---
     // These root collections are used for the Oversight/Timeline feature
+    match /platformCommunications {
+      allow read, write: if isAdmin();
+    }
     match /platformCommunications/{docId} {
       allow read, write: if isAdmin();
     }
-    match /platformCommunications {
-      allow list, get: if isAdmin();
-    }
     
-    match /platformTasks/{docId} {
+    match /platformTasks {
       allow read, write: if isAdmin();
     }
-    match /platformTasks {
-      allow list, get: if isAdmin();
+    match /platformTasks/{docId} {
+      allow read, write: if isAdmin();
     }
 
     // --- 2. ABSOLUTE ADMIN BYPASS ---
