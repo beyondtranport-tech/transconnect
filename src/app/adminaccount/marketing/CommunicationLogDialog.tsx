@@ -15,12 +15,11 @@ export function CommunicationLogDialog({ partnerId, partnerName }: { partnerId: 
     const firestore = useFirestore();
     const { toast } = useToast();
 
-    // Query root-level collection filtering by partner ID ONLY when dialog is open
+    // Query sub-collection for a specific partner
     const logsQuery = useMemoFirebase(() => {
         if (!firestore || !partnerId || !isOpen) return null;
         return query(
-            collection(firestore, `platformCommunications`), 
-            where('relatedId', '==', partnerId),
+            collection(firestore, 'partners', partnerId, 'communications'), 
             orderBy('timestamp', 'desc')
         );
     }, [firestore, partnerId, isOpen]);
@@ -47,8 +46,8 @@ export function CommunicationLogDialog({ partnerId, partnerName }: { partnerId: 
                             <CardContent className="p-6 flex items-center gap-3 text-destructive">
                                 <AlertTriangle className="h-6 w-6" />
                                 <div>
-                                    <p className="font-bold">Permission Denied</p>
-                                    <p className="text-sm">Ensure latest rules are published in Firebase Console.</p>
+                                    <p className="font-bold">Access Denied</p>
+                                    <p className="text-sm">Could not load logs for this partner.</p>
                                 </div>
                             </CardContent>
                         </Card>

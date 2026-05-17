@@ -75,13 +75,11 @@ function TaskForm({ partner, onTaskAdded }: { partner: any; onTaskAdded: () => v
             
             const taskData = { 
                 ...values, 
-                relatedId: partner.id,
-                relatedToName: partner?.companyName || `${partner?.firstName || ''} ${partner?.lastName || ''}`.trim() || 'Partner', 
                 status: 'pending', 
                 createdAt: { _methodName: 'serverTimestamp' },
                 updatedAt: { _methodName: 'serverTimestamp' }
             };
-            const path = `platformTasks`; // Explicit root collection
+            const path = `partners/${partner.id}/tasks`;
 
             await fetch('/api/addUserDoc', {
                 method: 'POST',
@@ -139,12 +137,11 @@ function TasksListContent({ partner }: { partner: any }) {
     const { user } = useUser();
     const { toast } = useToast();
 
-    // Query root-level collection filtering by partner ID
+    // Query sub-collection for a specific partner
     const tasksQuery = useMemoFirebase(() => {
         if (!firestore || !partner?.id) return null;
         return query(
-            collection(firestore, `platformTasks`), 
-            where('relatedId', '==', partner.id),
+            collection(firestore, 'partners', partner.id, 'tasks'), 
             orderBy('createdAt', 'desc')
         );
     }, [firestore, partner.id]);
@@ -161,7 +158,7 @@ function TasksListContent({ partner }: { partner: any }) {
                 await fetch('/api/deleteUserDoc', {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ path: `platformTasks/${task.id}` }),
+                    body: JSON.stringify({ path: `partners/${partner.id}/tasks/${task.id}` }),
                 });
                 toast({ title: "Task Deleted" });
             } else if (action === 'toggle') {
@@ -169,7 +166,7 @@ function TasksListContent({ partner }: { partner: any }) {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
-                        path: `platformTasks/${task.id}`,
+                        path: `partners/${partner.id}/tasks/${task.id}`,
                         data: { status: task.status === 'pending' ? 'completed' : 'pending', updatedAt: { _methodName: 'serverTimestamp' } }
                     }),
                 });

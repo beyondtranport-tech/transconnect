@@ -35,12 +35,11 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
     const { toast } = useToast();
     const firestore = useFirestore();
 
-    // Fetch Timeline Data from Root-Level Collections ONLY when dialog is open and ID is present
+    // Fetch Timeline Data from Partner Sub-collections
     const logsQuery = useMemoFirebase(() => {
         if (!firestore || !partner?.id || !isOpen) return null;
         return query(
-            collection(firestore, 'platformCommunications'), 
-            where('relatedId', '==', partner.id),
+            collection(firestore, 'partners', partner.id, 'communications'), 
             orderBy('timestamp', 'desc'),
             limit(50)
         );
@@ -50,8 +49,7 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
     const tasksQuery = useMemoFirebase(() => {
         if (!firestore || !partner?.id || !isOpen) return null;
         return query(
-            collection(firestore, 'platformTasks'), 
-            where('relatedId', '==', partner.id),
+            collection(firestore, 'partners', partner.id, 'tasks'), 
             orderBy('createdAt', 'desc'),
             limit(50)
         );
@@ -128,7 +126,7 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    path: `platformTasks/${task.id}`,
+                    path: `partners/${partner.id}/tasks/${task.id}`,
                     data: { status: task.status === 'pending' ? 'completed' : 'pending', updatedAt: serverTimestamp() }
                 })
             });
@@ -184,8 +182,8 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
                                 <CardContent className="p-6 flex items-center gap-3 text-destructive">
                                     <AlertTriangle className="h-6 w-6" />
                                     <div>
-                                        <p className="font-bold">Permission Denied</p>
-                                        <p className="text-sm">Please ensure you have published the latest security rules in the Firebase Console. Root-level collection access is required for admins.</p>
+                                        <p className="font-bold">Access Issue</p>
+                                        <p className="text-sm">Ensure your admin rules permit sub-collection listing for partners.</p>
                                     </div>
                                 </CardContent>
                             </Card>
@@ -231,7 +229,7 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
                         ) : (
                             <div className="text-center py-12 border-2 border-dashed rounded-lg">
                                 <Clock className="h-10 w-10 text-muted-foreground mx-auto mb-2 opacity-20" />
-                                <p className="text-sm text-muted-foreground">No activity recorded.</p>
+                                <p className="text-sm text-muted-foreground">No activity recorded for this partner.</p>
                             </div>
                         )}
                     </div>

@@ -3,7 +3,7 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper function for admin check
+    // Helper function for admin check - prioritized for UID and Email
     function isAdmin() {
       return request.auth != null && (
         request.auth.uid == '0Y3IhZffEPNlMAIhURPnzRgNokL2' || 
@@ -13,24 +13,18 @@ service cloud.firestore {
       );
     }
 
-    // --- 1. EXPLICIT CRM BYPASS (HIGH PRIORITY) ---
-    // This allows the list and read operations directly based on your UID
-    match /platformCommunications {
-      allow read, write: if request.auth.uid == '0Y3IhZffEPNlMAIhURPnzRgNokL2' || isAdmin();
-    }
-    match /platformCommunications/{docId} {
-      allow read, write: if request.auth.uid == '0Y3IhZffEPNlMAIhURPnzRgNokL2' || isAdmin();
-    }
-    
-    match /platformTasks {
-      allow read, write: if request.auth.uid == '0Y3IhZffEPNlMAIhURPnzRgNokL2' || isAdmin();
-    }
-    match /platformTasks/{docId} {
-      allow read, write: if request.auth.uid == '0Y3IhZffEPNlMAIhURPnzRgNokL2' || isAdmin();
+    // --- 1. GLOBAL ADMIN BYPASS ---
+    // Absolute priority for administrative accounts
+    match /{allPaths=**} {
+      allow read, write: if isAdmin();
     }
 
-    // --- 2. GLOBAL ADMIN BYPASS ---
-    match /{allPaths=**} {
+    // --- 2. PARTNER CRM SUB-COLLECTIONS ---
+    // These allow admins to manage communications and tasks for specific partners
+    match /partners/{partnerId}/communications/{docId} {
+      allow read, write: if isAdmin();
+    }
+    match /partners/{partnerId}/tasks/{docId} {
       allow read, write: if isAdmin();
     }
 

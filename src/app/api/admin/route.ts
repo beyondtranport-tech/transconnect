@@ -1,7 +1,7 @@
 'use server';
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getFirestore, Timestamp, FieldValue, FieldPath } from 'firebase-admin/firestore';
+import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase-admin';
 
@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
 
         // --- AUTHORIZATION ---
         if (!isAdmin) {
-             const allowedUserActions = ['saveCompanyLead', 'acceptCommercialAgreement', 'getAuditLogs', 'unpublishShop', 'logCommunication', 'getCommunicationLogs'];
+             const allowedUserActions = ['saveCompanyLead', 'acceptCommercialAgreement', 'getAuditLogs', 'unpublishShop', 'logCommunication'];
              if (!allowedUserActions.includes(action)) {
                  throw new Error("Forbidden: Admin access required.");
              }
@@ -74,11 +74,10 @@ export async function POST(req: NextRequest) {
             }
             case 'logCommunication': {
                 const { partnerId, type, subject, notes } = payload;
-                // Writing to root-level collection to resolve permission issues
-                const logRef = db.collection(`platformCommunications`).doc();
+                // Log communication in the partner's sub-collection
+                const logRef = db.collection('partners').doc(partnerId).collection('communications').doc();
                 await logRef.set({
                     id: logRef.id,
-                    relatedId: partnerId,
                     type,
                     subject,
                     notes: notes || '',
