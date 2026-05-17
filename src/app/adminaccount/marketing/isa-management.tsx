@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -14,6 +13,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -39,6 +39,7 @@ const partnerSchema = z.object({
   email: z.string().email('Invalid email address').optional().or(z.literal('')),
   phone: z.string().optional(),
   companyName: z.string().optional(),
+  address: z.string().optional(),
   status: z.enum(['active', 'inactive']),
   type: z.enum(['partner', 'isa', 'investor', 'developer', 'supplier', 'transporter']),
 });
@@ -52,7 +53,7 @@ function ISADialog({ open, onOpenChange, partner, onSave }: { open: boolean; onO
   useEffect(() => {
     if (open) {
       if (partner) form.reset(partner);
-      else form.reset({ firstName: '', lastName: '', email: '', phone: '', companyName: '', status: 'active', type: 'isa' });
+      else form.reset({ firstName: '', lastName: '', email: '', phone: '', companyName: '', address: '', status: 'active', type: 'isa' });
     }
   }, [open, partner, form]);
 
@@ -90,6 +91,7 @@ function ISADialog({ open, onOpenChange, partner, onSave }: { open: boolean; onO
               <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Phone</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
             <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Company Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+            <FormField control={form.control} name="address" render={({ field }) => (<FormItem><FormLabel>Address</FormLabel><FormControl><Textarea placeholder="Enter physical address..." {...field} /></FormControl><FormMessage /></FormItem>)} />
             <div className="grid grid-cols-2 gap-4">
               <FormField control={form.control} name="type" render={({ field }) => (
                 <FormItem><FormLabel>Partner Category</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="partner">Strategic Partner</SelectItem><SelectItem value="isa">ISA Agent</SelectItem><SelectItem value="investor">Investor</SelectItem><SelectItem value="developer">Developer</SelectItem><SelectItem value="supplier">Supplier</SelectItem><SelectItem value="transporter">Transporter</SelectItem></SelectContent></Select></FormItem>
