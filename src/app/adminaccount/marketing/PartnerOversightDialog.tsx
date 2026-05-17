@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Loader2, Calendar, MessageSquare, ClipboardList, CheckCircle, Circle, UserPlus, Clock, ArrowRight, Activity, AlertTriangle } from 'lucide-react';
 import { getClientSideAuthToken, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { collection, query, orderBy, where, serverTimestamp } from 'firebase/firestore';
+import { collection, query, orderBy, where, serverTimestamp, limit } from 'firebase/firestore';
 import { formatDateSafe } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -39,9 +39,10 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
     const logsQuery = useMemoFirebase(() => {
         if (!firestore || !partner?.id || !isOpen) return null;
         return query(
-            collection(firestore, `platformCommunications`), 
+            collection(firestore, 'platformCommunications'), 
             where('relatedId', '==', partner.id),
-            orderBy('timestamp', 'desc')
+            orderBy('timestamp', 'desc'),
+            limit(50)
         );
     }, [firestore, partner?.id, isOpen]);
     const { data: logs, isLoading: isLoadingLogs, error: logsError } = useCollection(logsQuery);
@@ -49,9 +50,10 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
     const tasksQuery = useMemoFirebase(() => {
         if (!firestore || !partner?.id || !isOpen) return null;
         return query(
-            collection(firestore, `platformTasks`), 
+            collection(firestore, 'platformTasks'), 
             where('relatedId', '==', partner.id),
-            orderBy('createdAt', 'desc')
+            orderBy('createdAt', 'desc'),
+            limit(50)
         );
     }, [firestore, partner?.id, isOpen]);
     const { data: tasks, isLoading: isLoadingTasks, error: tasksError, forceRefresh: refreshTasks } = useCollection(tasksQuery);
@@ -183,7 +185,7 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
                                     <AlertTriangle className="h-6 w-6" />
                                     <div>
                                         <p className="font-bold">Permission Denied</p>
-                                        <p className="text-sm">Please ensure you have published the latest security rules in the Firebase Console.</p>
+                                        <p className="text-sm">Please ensure you have published the latest security rules in the Firebase Console. Root-level collection access is required for admins.</p>
                                     </div>
                                 </CardContent>
                             </Card>
