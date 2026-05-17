@@ -3,7 +3,7 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper function for admin check
+    // Helper function for admin check - prioritized for UID and Email
     function isAdmin() {
       return request.auth != null && (
         request.auth.uid == '0Y3IhZffEPNlMAIhURPnzRgNokL2' || 
@@ -13,20 +13,28 @@ service cloud.firestore {
       );
     }
 
-    // --- 1. ABSOLUTE ADMIN BYPASS (HIGHEST PRIORITY) ---
-    match /platformCommunications/{docId=**} {
+    // --- 1. EXPLICIT CRM OVERRIDES (TOP PRIORITY) ---
+    // These root collections are used for the Oversight/Timeline feature
+    match /platformCommunications/{docId} {
       allow read, write: if isAdmin();
+    }
+    match /platformCommunications {
+      allow list, get: if isAdmin();
     }
     
-    match /platformTasks/{docId=**} {
+    match /platformTasks/{docId} {
       allow read, write: if isAdmin();
     }
+    match /platformTasks {
+      allow list, get: if isAdmin();
+    }
 
+    // --- 2. ABSOLUTE ADMIN BYPASS ---
     match /{allPaths=**} {
       allow read, write: if isAdmin();
     }
 
-    // --- 2. USER-SPECIFIC RULES (FOR NON-ADMINS) ---
+    // --- 3. USER-SPECIFIC RULES (FOR NON-ADMINS) ---
     match /users/{userId} {
       allow read, update: if request.auth != null && request.auth.uid == userId;
       allow create: if request.auth != null; 

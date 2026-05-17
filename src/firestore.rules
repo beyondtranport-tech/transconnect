@@ -14,6 +14,7 @@ service cloud.firestore {
     }
 
     // --- 1. EXPLICIT CRM OVERRIDES (TOP PRIORITY) ---
+    // These root collections are used for the Oversight/Timeline feature
     match /platformCommunications/{docId} {
       allow read, write: if isAdmin();
     }
