@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -40,6 +41,7 @@ const partnerSchema = z.object({
   phone: z.string().optional(),
   companyName: z.string().optional(),
   status: z.enum(['active', 'inactive']),
+  type: z.enum(['partner', 'isa', 'investor', 'developer', 'supplier', 'transporter']),
 });
 type PartnerFormValues = z.infer<typeof partnerSchema>;
 
@@ -51,7 +53,7 @@ function DeveloperDialog({ open, onOpenChange, partner, onSave }: { open: boolea
   useEffect(() => {
     if (open) {
       if (partner) form.reset(partner);
-      else form.reset({ firstName: '', lastName: '', email: '', phone: '', companyName: '', status: 'active' });
+      else form.reset({ firstName: '', lastName: '', email: '', phone: '', companyName: '', status: 'active', type: 'developer' });
     }
   }, [open, partner, form]);
 
@@ -60,7 +62,7 @@ function DeveloperDialog({ open, onOpenChange, partner, onSave }: { open: boolea
     try {
       const token = await getClientSideAuthToken();
       if (!token) throw new Error("Authentication failed.");
-      await performAdminAction(token, 'savePartner', { partner: { id: partner?.id, ...values, type: 'developer' } });
+      await performAdminAction(token, 'savePartner', { partner: { id: partner?.id, ...values } });
       toast({ title: 'Developer Saved' });
       onSave();
       onOpenChange(false);
@@ -89,9 +91,14 @@ function DeveloperDialog({ open, onOpenChange, partner, onSave }: { open: boolea
               <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Phone</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
             <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Company Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-            <FormField control={form.control} name="status" render={({ field }) => (
-              <FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="active">Active</SelectItem><SelectItem value="inactive">Inactive</SelectItem></SelectContent></Select></FormItem>
-            )} />
+            <div className="grid grid-cols-2 gap-4">
+              <FormField control={form.control} name="type" render={({ field }) => (
+                <FormItem><FormLabel>Partner Category</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="partner">Strategic Partner</SelectItem><SelectItem value="isa">ISA Agent</SelectItem><SelectItem value="investor">Investor</SelectItem><SelectItem value="developer">Developer</SelectItem><SelectItem value="supplier">Supplier</SelectItem><SelectItem value="transporter">Transporter</SelectItem></SelectContent></Select></FormItem>
+              )} />
+              <FormField control={form.control} name="status" render={({ field }) => (
+                <FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="active">Active</SelectItem><SelectItem value="inactive">Inactive</SelectItem></SelectContent></Select></FormItem>
+              )} />
+            </div>
             <DialogFooter className="pt-4 border-t">
               <Button type="submit" disabled={isLoading}>{isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : null} Save Developer</Button>
             </DialogFooter>
@@ -188,7 +195,7 @@ export default function DeveloperManagement() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div><CardTitle><Code /> Developers</CardTitle></div>
-          <Button onClick={() => handleOpenDialog('add')}><PlusCircle className="mr-2 h-4 w-4" /> Add Developer</Button>
+          <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Developer</Button>
         </CardHeader>
         <CardContent>{isLoading ? <Loader2 className="animate-spin mx-auto" /> : <DataTable columns={columns} data={partners} />}</CardContent>
       </Card>
