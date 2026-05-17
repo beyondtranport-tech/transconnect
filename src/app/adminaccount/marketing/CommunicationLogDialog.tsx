@@ -43,7 +43,15 @@ export function CommunicationLogDialog({ partnerId, partnerName }: { partnerId: 
                     {!isOpen ? null : isLoading ? (
                         <div className="flex justify-center p-8"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div>
                     ) : error ? (
-                         <div className="text-destructive flex items-center gap-2 p-4"><AlertTriangle/>{error.message}</div>
+                         <Card className="border-destructive bg-destructive/10">
+                            <CardContent className="p-6 flex items-center gap-3 text-destructive">
+                                <AlertTriangle className="h-6 w-6" />
+                                <div>
+                                    <p className="font-bold">Permission Denied</p>
+                                    <p className="text-sm">Ensure latest rules are published in Firebase Console.</p>
+                                </div>
+                            </CardContent>
+                        </Card>
                     ) : logs && logs.length > 0 ? (
                         logs.map(log => (
                             <Card key={log.id} className="bg-muted/50">

@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Calendar, MessageSquare, ClipboardList, CheckCircle, Circle, UserPlus, Clock, ArrowRight, Activity } from 'lucide-react';
+import { Loader2, Calendar, MessageSquare, ClipboardList, CheckCircle, Circle, UserPlus, Clock, ArrowRight, Activity, AlertTriangle } from 'lucide-react';
 import { getClientSideAuthToken, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { collection, query, orderBy, where, serverTimestamp } from 'firebase/firestore';
@@ -35,7 +35,7 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
     const { toast } = useToast();
     const firestore = useFirestore();
 
-    // Fetch Timeline Data from Root-Level Collections ONLY when dialog is open
+    // Fetch Timeline Data from Root-Level Collections ONLY when dialog is open and ID is present
     const logsQuery = useMemoFirebase(() => {
         if (!firestore || !partner?.id || !isOpen) return null;
         return query(
@@ -44,7 +44,7 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
             orderBy('timestamp', 'desc')
         );
     }, [firestore, partner?.id, isOpen]);
-    const { data: logs, isLoading: isLoadingLogs } = useCollection(logsQuery);
+    const { data: logs, isLoading: isLoadingLogs, error: logsError } = useCollection(logsQuery);
 
     const tasksQuery = useMemoFirebase(() => {
         if (!firestore || !partner?.id || !isOpen) return null;
@@ -54,13 +54,21 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
             orderBy('createdAt', 'desc')
         );
     }, [firestore, partner?.id, isOpen]);
-    const { data: tasks, isLoading: isLoadingTasks, forceRefresh: refreshTasks } = useCollection(tasksQuery);
+    const { data: tasks, isLoading: isLoadingTasks, error: tasksError, forceRefresh: refreshTasks } = useCollection(tasksQuery);
 
     const timeline = useMemo(() => {
         const events: any[] = [];
-        if (isOpen) {
-            (logs || []).forEach(log => events.push({ ...log, type: 'log', date: log.timestamp }));
-            (tasks || []).forEach(task => events.push({ ...task, type: 'task', date: task.createdAt }));
+        if (isOpen && !isLoadingLogs && !isLoadingTasks) {
+            (logs || []).forEach(log => {
+                if (log && (log.timestamp || log.date)) {
+                    events.push({ ...log, type: 'log', date: log.timestamp || log.date });
+                }
+            });
+            (tasks || []).forEach(task => {
+                if (task && (task.createdAt || task.date)) {
+                    events.push({ ...task, type: 'task', date: task.createdAt || task.date });
+                }
+            });
         }
         
         return events.sort((a, b) => {
@@ -68,7 +76,7 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
             const dateB = b.date?.toDate ? b.date.toDate() : new Date(b.date || 0);
             return dateB.getTime() - dateA.getTime();
         });
-    }, [logs, tasks, isOpen]);
+    }, [logs, tasks, isOpen, isLoadingLogs, isLoadingTasks]);
 
     const fetchStaff = useCallback(async () => {
         if (!isOpen) return;
@@ -169,6 +177,16 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
                         
                         {(isLoadingLogs || isLoadingTasks) ? (
                             <div className="flex justify-center p-12"><Loader2 className="animate-spin text-primary" /></div>
+                        ) : (logsError || tasksError) ? (
+                            <Card className="border-destructive bg-destructive/10">
+                                <CardContent className="p-6 flex items-center gap-3 text-destructive">
+                                    <AlertTriangle className="h-6 w-6" />
+                                    <div>
+                                        <p className="font-bold">Permission Denied</p>
+                                        <p className="text-sm">Please ensure you have published the latest security rules in the Firebase Console.</p>
+                                    </div>
+                                </CardContent>
+                            </Card>
                         ) : timeline.length > 0 ? (
                             <div className="relative space-y-4 before:absolute before:left-4 before:top-2 before:bottom-2 before:w-0.5 before:bg-muted">
                                 {timeline.map((event, idx) => (
