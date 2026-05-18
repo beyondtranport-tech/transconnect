@@ -27,13 +27,12 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
     const handleEnrich = async () => {
         setIsEnriching(true);
         try {
-            // Call the optimized multi-query research flow
+            // Call the optimized single-pass research flow
             const result = await enrichPartner({
                 companyName: partner.companyName || `${partner.firstName} ${partner.lastName}`,
                 contactPerson: `${partner.firstName} ${partner.lastName}`.trim() === 'Member Candidate' ? undefined : `${partner.firstName} ${partner.lastName}`,
             });
 
-            // Check if results were found
             if (!result || (!result.email && !result.phone && !result.website && !result.address && !result.contactPerson)) {
                 toast({
                     variant: 'destructive',
@@ -60,8 +59,8 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
 
             if (Object.keys(dataToUpdate).length === 0) {
                  toast({
-                    title: "Data Verified",
-                    description: "The agent found info that matches your existing records exactly. No new fields were added.",
+                    title: "No New Data",
+                    description: "The research found existing information but no new fields to update.",
                 });
                 return;
             }
@@ -79,9 +78,9 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
             
             let displayMessage = errorMessage;
             if (errorMessage.includes('SEARCH_TIMEOUT')) {
-                displayMessage = "Search API timed out. The request was aborted to prevent a complete hang. Please try again.";
+                displayMessage = "The search provider took too long to respond. Please try once more.";
             } else if (errorMessage.includes('fetch')) {
-                displayMessage = "The request timed out or was blocked by the server. Try again in a moment.";
+                displayMessage = "Network timeout. The request exceeded the server's maximum response time.";
             }
 
             toast({ 
@@ -115,7 +114,7 @@ export function BulkEnrichButton({ partners, onComplete }: { partners: any[], on
     const handleBulkEnrich = async () => {
         const targets = partners.filter(p => !p.email || !p.website || !p.phone || !p.address);
         if (targets.length === 0) {
-            toast({ title: "No enrichment needed", description: "All records in this view are already complete." });
+            toast({ title: "Check Complete", description: "All records are already enriched." });
             return;
         }
 
@@ -143,8 +142,7 @@ export function BulkEnrichButton({ partners, onComplete }: { partners: any[], on
                     }
                 }
                 
-                // Rate limiting to prevent overwhelming the APIs
-                await new Promise(resolve => setTimeout(resolve, 800));
+                await new Promise(resolve => setTimeout(resolve, 500));
             } catch (e) {
                 console.error(`Failed to enrich ${partner.id}`, e);
             }

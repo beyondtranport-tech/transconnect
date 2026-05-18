@@ -18,7 +18,7 @@ const GoogleSearchOutputSchema = z.array(GoogleSearchResultSchema);
 export const googleSearchTool = ai.defineTool(
   {
     name: 'googleSearch',
-    description: 'Performs a Google search to find real-world information, such as companies, addresses, and websites. Use this to find real companies based on a topic.',
+    description: 'Performs a Google search to find real-world information. Optimized for fast response times.',
     inputSchema: GoogleSearchInputSchema,
     outputSchema: GoogleSearchOutputSchema,
   },
@@ -26,21 +26,19 @@ export const googleSearchTool = ai.defineTool(
     const apiKey = process.env.GOOGLE_SEARCH_API_KEY;
     const cx = process.env.CUSTOM_SEARCH_ENGINE_ID;
 
-    if (!apiKey || apiKey === "YOUR_API_KEY_HERE" || apiKey.includes("PASTE") || apiKey.length < 10) {
-      console.error("Config Error: GOOGLE_SEARCH_API_KEY is missing or invalid.");
-      throw new Error('CONFIG_ERROR: GOOGLE_SEARCH_API_KEY is not configured correctly in .env.');
+    if (!apiKey || apiKey.length < 10) {
+      throw new Error('CONFIG_ERROR: GOOGLE_SEARCH_API_KEY is not configured in .env.');
     }
     
-    if (!cx || cx === "YOUR_NEW_SEARCH_ENGINE_ID_HERE" || cx.includes("PASTE") || cx.length < 10) {
-       console.error("Config Error: CUSTOM_SEARCH_ENGINE_ID is missing or invalid.");
-      throw new Error('CONFIG_ERROR: CUSTOM_SEARCH_ENGINE_ID is not configured correctly in .env.');
+    if (!cx || cx.length < 10) {
+      throw new Error('CONFIG_ERROR: CUSTOM_SEARCH_ENGINE_ID is not configured in .env.');
     }
     
     const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${cx}&q=${encodeURIComponent(input.query)}`;
 
-    // Implement a fast timeout for the search API itself to prevent server action hanging
+    // Tighter timeout for the search API to leave more headroom for the AI processing step
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second limit per search
+    const timeoutId = setTimeout(() => controller.abort(), 6000); 
 
     try {
         const response = await fetch(url, { signal: controller.signal });
@@ -48,10 +46,9 @@ export const googleSearchTool = ai.defineTool(
 
         if (!response.ok) {
             const errorData = await response.json();
-            const message = errorData.error?.message || response.statusText;
-            console.error(`[GOOGLE SEARCH API] Error status ${response.status}: ${message}`);
-            throw new Error(`API_ERROR: Google Search failed with status ${response.status}: ${message}`);
+            throw new Error(`API_ERROR: Google Search failed with status ${response.status}: ${errorData.error?.message || response.statusText}`);
         }
+        
         const data = await response.json();
         
         if (!data.items) {
@@ -67,10 +64,9 @@ export const googleSearchTool = ai.defineTool(
     } catch (e: any) {
         clearTimeout(timeoutId);
         if (e.name === 'AbortError') {
-            console.error("[AI TOOL] Google Search request timed out.");
-            throw new Error("SEARCH_TIMEOUT: The search provider took too long to respond.");
+            console.warn("[SEARCH TOOL] Google API timed out (6s).");
+            throw new Error("SEARCH_TIMEOUT");
         }
-        console.error("[AI TOOL] Critical error calling Google Search API:", e);
         throw e;
     }
   }
