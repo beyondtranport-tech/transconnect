@@ -27,8 +27,8 @@ export const googleSearchTool = ai.defineTool(
     const sanitize = (val: string | undefined) => 
         val?.replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/["']/g, '').trim() || '';
 
-    const apiKey = sanitize(process.env.GOOGLE_SEARCH_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_SEARCH_API_KEY);
-    const cx = sanitize(process.env.CUSTOM_SEARCH_ENGINE_ID || process.env.NEXT_PUBLIC_CUSTOM_SEARCH_ENGINE_ID);
+    const apiKey = sanitize(process.env.GOOGLE_SEARCH_API_KEY);
+    const cx = sanitize(process.env.CUSTOM_SEARCH_ENGINE_ID);
 
     // Terminal Diagnostics - This is visible in your Studio terminal
     if (process.env.NODE_ENV !== 'production') {
