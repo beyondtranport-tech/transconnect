@@ -30,18 +30,27 @@ export const googleSearchTool = ai.defineTool(
     const apiKey = sanitize(process.env.GOOGLE_SEARCH_API_KEY);
     const cx = sanitize(process.env.CUSTOM_SEARCH_ENGINE_ID);
 
-    // Logging for diagnostics (Safe masking)
+    // Diagnostic logging (Safe masking)
     const mask = (s: string) => s.length > 6 ? s.substring(0, 3) + '...' + s.substring(s.length - 3) : '****';
-    console.log(`[SEARCH TOOL] Researching: "${input.query.trim()}"`);
-    console.log(`[SEARCH TOOL] Config: CX=${mask(cx)} (len: ${cx.length}), Key=${mask(apiKey)} (len: ${apiKey.length})`);
-
-    if (!apiKey || apiKey.length < 10) {
-      throw new Error('CONFIG_ERROR: GOOGLE_SEARCH_API_KEY is missing or too short in .env.');
+    
+    console.log(`[SEARCH TOOL] researching: "${input.query.trim()}"`);
+    
+    if (!apiKey) {
+      console.error("[SEARCH TOOL] ERROR: GOOGLE_SEARCH_API_KEY is undefined in process.env");
+      throw new Error('CONFIG_ERROR: GOOGLE_SEARCH_API_KEY is missing in .env.');
     }
     
-    if (!cx || !cx.includes(':')) {
-      throw new Error(`CONFIG_ERROR: CUSTOM_SEARCH_ENGINE_ID (CX) is invalid or missing. It must be the ID (e.g. "abc:123"), not the name, and must contain a colon.`);
+    if (!cx) {
+      console.error("[SEARCH TOOL] ERROR: CUSTOM_SEARCH_ENGINE_ID is undefined in process.env");
+      throw new Error('CONFIG_ERROR: CUSTOM_SEARCH_ENGINE_ID is missing in .env.');
     }
+
+    if (!cx.includes(':')) {
+      console.error(`[SEARCH TOOL] ERROR: CX value "${cx}" is invalid. Must contain a colon.`);
+      throw new Error(`CONFIG_ERROR: CUSTOM_SEARCH_ENGINE_ID (CX) is invalid. It must be the alphanumeric ID (e.g. "abc:123"), not the name, and must contain a colon.`);
+    }
+
+    console.log(`[SEARCH TOOL] Config verified: CX=${mask(cx)}, Key=${mask(apiKey)}`);
 
     if (!input.query || input.query.trim().length === 0) {
         return [];
@@ -68,10 +77,10 @@ export const googleSearchTool = ai.defineTool(
             console.error(`[SEARCH TOOL] Google API ${response.status}: ${apiMessage}`);
             
             if (response.status === 400) {
-                throw new Error(`API_ERROR: Google returned "Invalid Argument". Please verify your Search Engine ID (CX) format in .env. Ensure it includes a colon.`);
+                throw new Error(`API_ERROR: Google returned "Invalid Argument". This often means your CX or API Key has hidden spaces. Please re-type them manually in .env and RESTART the server.`);
             }
             if (response.status === 403) {
-                throw new Error(`API_ERROR: Access Denied. Ensure "Custom Search API" is enabled in your Google Cloud Console.`);
+                throw new Error(`API_ERROR: Access Denied. Ensure "Custom Search API" is enabled in your Google Cloud Console for project "${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}".`);
             }
             
             throw new Error(`API_ERROR: Google Search failed (${response.status}): ${apiMessage}`);

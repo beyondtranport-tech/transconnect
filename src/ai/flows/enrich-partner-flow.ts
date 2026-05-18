@@ -39,8 +39,9 @@ const enrichPartnerFlow = ai.defineFlow(
             return { email: null, phone: null, website: null, address: null, contactPerson: null };
         }
 
-        // Broader, more organic query to ensure we catch common directory snippets
-        const query = `"${company}" contact email phone address Namibia South Africa`;
+        // REMOVED quotes for "fuzzy" matching. 
+        // Added specific keywords to trigger directory and AI overview-style results.
+        const query = `${company} contact email phone address Swakopmund Namibia South Africa`;
         
         const searchResults = await googleSearchTool({ query });
         
@@ -59,12 +60,12 @@ const enrichPartnerFlow = ai.defineFlow(
             Analyze the provided search results for "${company}" and extract verified contact details.
             
             CRITICAL RULES:
-            1. SNIPPETS ARE PRIMARY: Many small African transporters only appear in directory snippets. Information found in a snippet is considered verifiable.
+            1. SNIPPETS ARE PRIMARY: Information found in a search snippet is considered verifiable. Look for strings like "namibsroostrp@outlook.com" or "+264 83...".
             2. PATTERNS TO WATCH FOR: 
                - Emails: @outlook.com, @gmail.com, or custom business domains.
                - Phone: Country codes +264 (Namibia) or +27 (South Africa).
-               - Location: Look for clues like "Swakop River Plots", "Swakopmund", or "Johannesburg".
-            3. CONTACT PERSON: Extract the names of owners, managers, or directors if mentioned in snippets.
+               - Location: Look for clues like "Plot 48, Swakop River Plots", "Swakopmund", or "Johannesburg".
+            3. CONTACT PERSON: Extract the names of owners, managers, or directors if mentioned.
             4. ACCURACY: If a field is absolutely not present, return 'null'. DO NOT hallucinate.`,
             prompt: `EXTRACT DATA FROM THESE RESULTS:\n\n${allContent}`,
             output: {
