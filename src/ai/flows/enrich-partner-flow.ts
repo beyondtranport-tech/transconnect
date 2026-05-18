@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview An AI agent to find missing contact info for business partners.
@@ -35,25 +36,29 @@ const enrichPartnerFlow = ai.defineFlow(
     try {
         console.log(`Enrichment flow started for: "${input.companyName}"`);
         
-        // Clean the input to detect if it's already a URL
-        const cleanInput = input.companyName.trim().toLowerCase();
-        const isUrl = cleanInput.startsWith('http') || cleanInput.includes('.co.za') || (cleanInput.includes('.com') && !cleanInput.includes(' '));
+        // Clean the input
+        const companyName = input.companyName.trim();
         
-        const systemPrompt = `You are a Southern African lead enrichment specialist. Your goal is to find accurate contact details (email, phone, website) for transport and logistics companies, particularly in South Africa and Namibia.
+        const systemPrompt = `You are an elite business research agent specializing in the Southern African transport and logistics sector. 
+        Your goal is to find accurate contact details (email, phone, website) for the company provided.
         
-        STRATEGY:
-        1. FIRST, use the googleSearch tool to find the official website of "${input.companyName}".
-        2. SECOND, if a website is found, perform a follow-up search specifically on that domain for "contact us", "about", or "terms" to find verified info.
-        3. EXTRACT the primary general email (e.g., info@, sales@, office@) or a person-specific one if found. 
-        4. EXTRACT the phone number, including country codes (e.g., +264 for Namibia, +27 for SA).
-        5. EXTRACT the official website URL.
+        SEARCH STRATEGY:
+        1. Use the googleSearch tool to search for: "[Company Name] contact email phone website South Africa Namibia".
+        2. Inspect the snippets and titles CAREFULLY. Often, small to medium transporters use Outlook or Gmail addresses (e.g., companyname@outlook.com) and these appear directly in the search result snippets.
+        3. If no clear email/phone is found in broad results, perform a SECOND search using: "[Company Name] Swakopmund Namibia contact" or similar city-specific variations if a location is hinted at.
+        4. If a Facebook page result appears, check its snippet for a phone number or email, as these are often the most current.
         
-        Note: If you find an Outlook/Gmail address associated with the company in search snippets, use it. Some transporters use these instead of custom domains.
-        Return null for fields you absolutely cannot verify.`;
+        EXTRACTION RULES:
+        - Extract the email only if it clearly belongs to the company.
+        - Normalize phone numbers to include country codes (e.g., +264 for Namibia, +27 for SA).
+        - If multiple websites are found, prioritize the one that matches the company name exactly.
+        
+        Return null for fields you absolutely cannot verify with high confidence.`;
 
-        const userPrompt = isUrl 
-            ? `Perform a deep search on the domain "${cleanInput}" to find the primary email and phone number. Use the googleSearch tool.`
-            : `Research the Southern African transport company "${input.companyName}". Find their website first, then find their contact email and phone number. Use the googleSearch tool multiple times if needed.`;
+        const userPrompt = `Research and find the primary email, phone number, and official website for the company: "${companyName}". 
+        ${input.contactPerson ? `The contact person associated with this company might be ${input.contactPerson}.` : ''}
+        
+        Use the googleSearch tool to find this information from real-time web data.`;
 
         const { output } = await ai.generate({
             model: geminiModel,
@@ -65,7 +70,7 @@ const enrichPartnerFlow = ai.defineFlow(
             }
         });
         
-        console.log(`Enrichment result for "${input.companyName}":`, output);
+        console.log(`Enrichment result for "${companyName}":`, output);
         
         return output || { email: null, phone: null, website: null };
     } catch (e: any) {
