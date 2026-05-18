@@ -39,8 +39,8 @@ const enrichPartnerFlow = ai.defineFlow(
             return { email: null, phone: null, website: null, address: null, contactPerson: null };
         }
 
-        // Use a highly specific "Contact Details" query to trigger rich snippets
-        const query = `${company} contact details phone email address owner Namibia South Africa`;
+        // Broader, more organic query to ensure we catch common directory snippets
+        const query = `"${company}" contact email phone address Namibia South Africa`;
         
         const searchResults = await googleSearchTool({ query });
         
@@ -55,14 +55,17 @@ const enrichPartnerFlow = ai.defineFlow(
         // Extract using LLM pass
         const extraction = await ai.generate({
             model: geminiModel,
-            system: `You are a precision data extraction agent.
-            Analyze the search results for "${company}" and extract contact details.
+            system: `You are a precision data extraction agent specializing in the Southern African logistics sector.
+            Analyze the provided search results for "${company}" and extract verified contact details.
             
-            RULES:
-            1. EXTRACT: Email, Phone, Physical Address, and primary Contact Person (Owner/Manager).
-            2. SNIPPETS ARE VALID: Information found in snippets is considered verifiable.
-            3. PATTERNS: Look for @outlook.com, @gmail.com, or custom domains. Phone codes +264 (NAM) or +27 (SA).
-            4. ACCURACY: Return 'null' if a field is not present. DO NOT hallucinate.`,
+            CRITICAL RULES:
+            1. SNIPPETS ARE PRIMARY: Many small African transporters only appear in directory snippets. Information found in a snippet is considered verifiable.
+            2. PATTERNS TO WATCH FOR: 
+               - Emails: @outlook.com, @gmail.com, or custom business domains.
+               - Phone: Country codes +264 (Namibia) or +27 (South Africa).
+               - Location: Look for clues like "Swakop River Plots", "Swakopmund", or "Johannesburg".
+            3. CONTACT PERSON: Extract the names of owners, managers, or directors if mentioned in snippets.
+            4. ACCURACY: If a field is absolutely not present, return 'null'. DO NOT hallucinate.`,
             prompt: `EXTRACT DATA FROM THESE RESULTS:\n\n${allContent}`,
             output: {
                 schema: EnrichPartnerOutputSchema

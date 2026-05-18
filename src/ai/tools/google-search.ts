@@ -23,20 +23,24 @@ export const googleSearchTool = ai.defineTool(
     outputSchema: GoogleSearchOutputSchema,
   },
   async (input: GoogleSearchInput) => {
-    // Aggressively sanitize inputs by removing any non-alphanumeric/non-punctuation characters
-    // This removes invisible characters, BOM, and surrounding whitespace often copied from consoles
+    // Aggressively sanitize inputs by removing quotes and invisible characters
     const sanitize = (val: string | undefined) => 
-        val?.replace(/[\u200B-\u200D\uFEFF]/g, '').trim() || '';
+        val?.replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/["']/g, '').trim() || '';
 
     const apiKey = sanitize(process.env.GOOGLE_SEARCH_API_KEY);
     const cx = sanitize(process.env.CUSTOM_SEARCH_ENGINE_ID);
+
+    // Logging for diagnostics (Safe masking)
+    const mask = (s: string) => s.length > 6 ? s.substring(0, 3) + '...' + s.substring(s.length - 3) : '****';
+    console.log(`[SEARCH TOOL] Researching: "${input.query.trim()}"`);
+    console.log(`[SEARCH TOOL] Config: CX=${mask(cx)} (len: ${cx.length}), Key=${mask(apiKey)} (len: ${apiKey.length})`);
 
     if (!apiKey || apiKey.length < 10) {
       throw new Error('CONFIG_ERROR: GOOGLE_SEARCH_API_KEY is missing or too short in .env.');
     }
     
     if (!cx || !cx.includes(':')) {
-      throw new Error(`CONFIG_ERROR: CUSTOM_SEARCH_ENGINE_ID (CX) is invalid. It must include a colon (e.g., "abc:123"). You may have copied the name instead of the ID.`);
+      throw new Error(`CONFIG_ERROR: CUSTOM_SEARCH_ENGINE_ID (CX) is invalid or missing. It must be the ID (e.g. "abc:123"), not the name, and must contain a colon.`);
     }
 
     if (!input.query || input.query.trim().length === 0) {
@@ -47,8 +51,6 @@ export const googleSearchTool = ai.defineTool(
     url.searchParams.set('key', apiKey);
     url.searchParams.set('cx', cx);
     url.searchParams.set('q', input.query.trim());
-
-    console.log(`[SEARCH TOOL] Researching: "${input.query.trim()}" (CX: ${cx.substring(0, 5)}...)`);
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
@@ -66,10 +68,10 @@ export const googleSearchTool = ai.defineTool(
             console.error(`[SEARCH TOOL] Google API ${response.status}: ${apiMessage}`);
             
             if (response.status === 400) {
-                throw new Error(`API_ERROR: Google returned "Invalid Argument". Please verify your Search Engine ID (CX) format in .env.`);
+                throw new Error(`API_ERROR: Google returned "Invalid Argument". Please verify your Search Engine ID (CX) format in .env. Ensure it includes a colon.`);
             }
             if (response.status === 403) {
-                throw new Error(`API_ERROR: Access Denied. Ensure "Custom Search API" is enabled in your Google Cloud Console for project "${process.env.GOOGLE_CLOUD_PROJECT}".`);
+                throw new Error(`API_ERROR: Access Denied. Ensure "Custom Search API" is enabled in your Google Cloud Console.`);
             }
             
             throw new Error(`API_ERROR: Google Search failed (${response.status}): ${apiMessage}`);

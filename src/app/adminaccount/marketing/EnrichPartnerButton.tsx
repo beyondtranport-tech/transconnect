@@ -36,7 +36,7 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
                 toast({
                     variant: 'destructive',
                     title: "Research Unsuccessful",
-                    description: "The AI agent searched but couldn't find verifiable details. Ensure your Search Engine ID in .env is configured to 'Search the entire web'.",
+                    description: "The AI agent searched but couldn't find verifiable details. Please check that your Search Engine ID in .env is correct and includes a colon.",
                 });
                 return;
             }
@@ -59,7 +59,7 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
             if (Object.keys(dataToUpdate).length === 0) {
                  toast({
                     title: "No New Data",
-                    description: "The research found existing information but no new fields were updated.",
+                    description: "The research found existing info but no new fields were missing.",
                 });
                 return;
             }
@@ -68,7 +68,7 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
 
             toast({
                 title: "Enrichment Successful",
-                description: `Updated ${Object.keys(dataToUpdate).length} field(s) for ${partner.companyName || 'this partner'}.`,
+                description: `Updated missing details for ${partner.companyName || 'this partner'}.`,
             });
             onUpdate();
         } catch (e: any) {
@@ -80,9 +80,9 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
 
             if (errorMessage.includes('CONFIG_ERROR') || errorMessage.includes('Invalid Argument')) {
                 displayTitle = "Configuration Issue";
-                displayMessage = "Please check your .env file. CUSTOM_SEARCH_ENGINE_ID must be the ID (e.g. 'abc:123'), not the name. Also ensure there are no trailing spaces.";
+                displayMessage = "Check your .env file. CUSTOM_SEARCH_ENGINE_ID must be the ID (e.g. 'abc:123'), not the name. Ensure there are no spaces and that you have restarted the server.";
             } else if (errorMessage.includes('SEARCH_TIMEOUT')) {
-                displayMessage = "The search provider took too long. Please try one more time.";
+                displayMessage = "The search provider took too long. Please try again.";
             }
 
             toast({ 
@@ -143,7 +143,7 @@ export function BulkEnrichButton({ partners, onComplete }: { partners: any[], on
                         successCount++;
                     }
                 }
-                await new Promise(resolve => setTimeout(resolve, 300));
+                await new Promise(resolve => setTimeout(resolve, 500)); // Rate limit safety
             } catch (e) {
                 console.warn(`Bulk Enrichment skipped record: ${partner.id}`);
             }
