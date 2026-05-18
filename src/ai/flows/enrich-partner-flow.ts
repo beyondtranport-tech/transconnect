@@ -1,7 +1,7 @@
 'use server';
 /**
- * @fileOverview High-speed AI research agent for partner contact info.
- * Uses a parallel search strategy to mimic manual research (Web + Social).
+ * @fileOverview High-performance AI research agent for partner contact info.
+ * Uses a parallel search strategy to mimic high-quality manual research.
  */
 
 import { ai, geminiModel } from '@/ai/genkit';
@@ -42,9 +42,9 @@ const enrichPartnerFlow = ai.defineFlow(
 
         // Parallel Search Strategy to mimic manual success:
         // 1. General search for contact details
-        // 2. Targeted search for owners/managers on social media
+        // 2. Targeted search for owners/managers on social media (Facebook/LinkedIn)
         const [generalResults, socialResults] = await Promise.all([
-            googleSearchTool({ query: `${company} contact details` }),
+            googleSearchTool({ query: `${company} contact details phone email` }),
             googleSearchTool({ query: `${company} owner manager facebook linkedin` })
         ]);
         
@@ -64,10 +64,11 @@ const enrichPartnerFlow = ai.defineFlow(
             system: `You are a precision research agent specializing in the logistics sector.
             Analyze search results and extract verified contact and management details.
             
-            RULES:
+            PRIORITY RULES:
             1. Snippets are highly reliable. Look for emails like "namibsroostrp@outlook.com" and numbers like "+264 83...".
             2. If a field is not present, return 'null'. DO NOT hallucinate.
-            3. Prioritize personal names (Owners/Directors) found on Facebook or LinkedIn pages.`,
+            3. Prioritize personal names (Owners/Directors) found on Facebook or LinkedIn snippet previews.
+            4. If multiple emails exist, prioritize company domain or professional outlook/gmail addresses.`,
             prompt: `ANALYZE RESULTS FOR "${company}":\n\n${allContent}`,
             output: {
                 schema: EnrichPartnerOutputSchema
