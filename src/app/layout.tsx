@@ -1,4 +1,3 @@
-
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
@@ -10,7 +9,7 @@ const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'Logistics Flow',
-  description: 'An ecosystem for the transport industry.',
+  description: 'The Digital Ecosystem for the Transport Industry.',
 };
 
 export default function RootLayout({

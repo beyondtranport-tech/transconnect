@@ -31,6 +31,7 @@ export const googleSearchTool = ai.defineTool(
     const cx = sanitize(process.env.CUSTOM_SEARCH_ENGINE_ID || process.env.NEXT_PUBLIC_CUSTOM_SEARCH_ENGINE_ID);
 
     // CRITICAL DIAGNOSTIC: Log the found parameters (masked) to the terminal
+    // This helps the user verify if the .env file is being read correctly.
     console.log(`[GOOGLE SEARCH] Using API Key: ${apiKey ? apiKey.substring(0, 5) + '...' : 'MISSING'}`);
     console.log(`[GOOGLE SEARCH] Using CX ID: ${cx ? cx.substring(0, 4) + '...' + cx.substring(cx.length - 4) : 'MISSING'}`);
 
@@ -66,7 +67,6 @@ export const googleSearchTool = ai.defineTool(
             const apiMessage = errorData.error?.message || response.statusText;
             
             if (response.status === 400) {
-                // Return a specific error that the UI can catch to help the user debug their .env
                 throw new Error(`API_ERROR: Google returned "Invalid Argument" (400). This means the CX ID "${cx.substring(0, 4)}..." is incorrect. Ensure you have copied the alphanumeric ID from the "Basics" section of the Control Panel and RESTARTED the server.`);
             }
             
@@ -80,7 +80,6 @@ export const googleSearchTool = ai.defineTool(
         const data = await response.json();
         
         if (!data.items) {
-            console.log(`[GOOGLE SEARCH] No results found for query: ${input.query}`);
             return [];
         }
 

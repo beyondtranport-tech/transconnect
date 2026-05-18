@@ -41,6 +41,8 @@ const enrichPartnerFlow = ai.defineFlow(
         }
 
         // Parallel Search Strategy to mimic manual success:
+        // 1. General search for contact details
+        // 2. Targeted search for owners/managers on social media
         const [generalResults, socialResults] = await Promise.all([
             googleSearchTool({ query: `${company} contact details` }),
             googleSearchTool({ query: `${company} owner manager facebook linkedin` })
@@ -64,7 +66,8 @@ const enrichPartnerFlow = ai.defineFlow(
             
             RULES:
             1. Snippets are highly reliable. Look for emails like "namibsroostrp@outlook.com" and numbers like "+264 83...".
-            2. If a field is not present, return 'null'. DO NOT hallucinate.`,
+            2. If a field is not present, return 'null'. DO NOT hallucinate.
+            3. Prioritize personal names (Owners/Directors) found on Facebook or LinkedIn pages.`,
             prompt: `ANALYZE RESULTS FOR "${company}":\n\n${allContent}`,
             output: {
                 schema: EnrichPartnerOutputSchema

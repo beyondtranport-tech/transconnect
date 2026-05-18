@@ -2,11 +2,10 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Sparkles, Loader2, AlertTriangle, ExternalLink } from 'lucide-react';
+import { Sparkles, Loader2, ExternalLink } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { enrichPartner } from '@/ai/flows/enrich-partner-flow';
 import { getClientSideAuthToken } from '@/firebase';
-import Link from 'next/link';
 
 async function performAdminAction(token: string, action: string, payload: any) {
     const response = await fetch('/api/admin', {
@@ -79,10 +78,9 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
 
             if (errorMessage.includes('CONFIG_ERROR')) {
                 displayTitle = "Configuration Issue";
-                displayMessage = "Your .env file might be missing keys or hasn't been reloaded.";
+                displayMessage = "Check your .env file. CUSTOM_SEARCH_ENGINE_ID must be the ID (e.g. 'abc:123'), not the name. Ensure there are no spaces and that you have restarted the server.";
             } else if (errorMessage.includes('API_ERROR')) {
                 displayTitle = "Google API Error";
-                // Strip the internal API_ERROR prefix for the user
                 displayMessage = errorMessage.replace('API_ERROR:', '').trim();
             }
 
