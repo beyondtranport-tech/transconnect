@@ -1,6 +1,7 @@
 'use server';
 /**
  * @fileOverview High-speed AI research agent for partner contact info.
+ * Uses a parallel search strategy to find hidden details.
  */
 
 import { ai, geminiModel } from '@/ai/genkit';
@@ -39,11 +40,11 @@ const enrichPartnerFlow = ai.defineFlow(
             return { email: null, phone: null, website: null, address: null, contactPerson: null };
         }
 
-        // We perform two searches: 
-        // 1. General contact info (Likely to hit AI overviews and directories)
-        // 2. Social media/Management (Likely to hit Facebook/LinkedIn for names)
+        // We perform two targeted parallel searches to mimic manual research:
+        // 1. General contact info (Targets AI overviews, business directories, and maps)
+        // 2. Social media/Management (Targets Facebook/LinkedIn to find the "John Doe" style names)
         const [generalResults, socialResults] = await Promise.all([
-            googleSearchTool({ query: `${company} contact details email phone address Swakopmund Namibia` }),
+            googleSearchTool({ query: `${company} contact details email phone address` }),
             googleSearchTool({ query: `${company} owner manager director facebook linkedin` })
         ]);
         
@@ -57,18 +58,18 @@ const enrichPartnerFlow = ai.defineFlow(
             .map(res => `SOURCE: ${res.link}\nTITLE: ${res.title}\nSNIPPET: ${res.snippet}`)
             .join('\n---\n');
 
-        // Extract using LLM pass
+        // Extract using high-intelligence LLM pass
         const extraction = await ai.generate({
             model: geminiModel,
             system: `You are a precision research agent specializing in the Southern African logistics sector.
             Analyze all search results for "${company}" and extract verified contact and management details.
             
-            CRITICAL RULES:
-            1. EXTRACT FROM SNIPPETS: Information in snippets is highly reliable. Look for emails like "namibsroostrp@outlook.com" and numbers like "+264 83...".
+            CRITICAL EXTRACTION RULES:
+            1. EXTRACT FROM SNIPPETS: Information in snippets (the short text below search results) is highly reliable. Look for emails like "namibsroostrp@outlook.com" and numbers like "+264 83...".
             2. MANAGEMENT NAMES: Look for patterns like "Managed by [Name]", "Owner: [Name]", or titles in LinkedIn snippets to find the contact person.
             3. REGIONAL FORMATS: Pay attention to Namibia (+264) and South Africa (+27) formats.
             4. ACCURACY: If a field is absolutely not present, return 'null'. DO NOT hallucinate.`,
-            prompt: `EXTRACT DATA FROM THESE RESULTS:\n\n${allContent}`,
+            prompt: `ANALYZE THESE SEARCH RESULTS AND EXTRACT DATA:\n\n${allContent}`,
             output: {
                 schema: EnrichPartnerOutputSchema
             }

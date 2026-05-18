@@ -91,14 +91,7 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
             toast({ 
                 variant: 'destructive', 
                 title: displayTitle, 
-                description: (
-                    <div className="space-y-2">
-                        <p>{displayMessage}</p>
-                        {errorMessage.includes('CONFIG_ERROR') && (
-                            <p className="text-xs font-bold underline">Format required: abcdef12345:ghijk</p>
-                        )}
-                    </div>
-                )
+                description: displayMessage
             });
         } finally {
             setIsEnriching(false);
