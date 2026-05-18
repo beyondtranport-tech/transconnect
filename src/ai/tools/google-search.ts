@@ -30,7 +30,7 @@ export const googleSearchTool = ai.defineTool(
     const apiKey = sanitize(process.env.GOOGLE_SEARCH_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_SEARCH_API_KEY);
     const cx = sanitize(process.env.CUSTOM_SEARCH_ENGINE_ID || process.env.NEXT_PUBLIC_CUSTOM_SEARCH_ENGINE_ID);
 
-    // Terminal Diagnostics: This will appear in your VS Code / Firebase Studio terminal
+    // Terminal Diagnostics
     if (process.env.NODE_ENV !== 'production') {
         console.log(`[GOOGLE SEARCH] Requesting query: "${input.query}"`);
         console.log(`[GOOGLE SEARCH] Using API Key: ${apiKey ? apiKey.substring(0, 5) + '...' : 'MISSING'}`);
@@ -55,7 +55,7 @@ export const googleSearchTool = ai.defineTool(
     url.searchParams.set('q', input.query.trim());
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 12000); // 12 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 12000); 
 
     try {
         const response = await fetch(url.toString(), { 
@@ -68,13 +68,12 @@ export const googleSearchTool = ai.defineTool(
             const errorData = await response.json().catch(() => ({}));
             const apiMessage = errorData.error?.message || response.statusText;
             
-            if (response.status === 400) {
-                // If Google returns 400, it usually means the CX ID itself is invalid or not found.
-                throw new Error(`API_ERROR: Google returned "Invalid Argument" (400). This means the Search Engine ID "${cx.substring(0, 6)}..." was not found or is misconfigured. Please verify it in the "Basics" section of the Control Panel.`);
+            if (response.status === 403) {
+                throw new Error(`API_ERROR: Access Denied (403). Ensure "Custom Search API" is enabled in your Google Cloud Project. Link: https://console.cloud.google.com/apis/library/customsearch.googleapis.com?project=ecosystem-hub`);
             }
             
-            if (response.status === 403) {
-                throw new Error(`API_ERROR: Access Denied (403). Ensure "Custom Search API" is enabled in your Google Cloud Project.`);
+            if (response.status === 400) {
+                throw new Error(`API_ERROR: Google returned "Invalid Argument" (400). Found CX ID: "${cx.substring(0, 4)}...". Verify this ID in the "Basics" section of the Control Panel.`);
             }
             
             throw new Error(`API_ERROR: Google Search failed (${response.status}): ${apiMessage}`);

@@ -76,12 +76,12 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
             let displayTitle = "Enrichment Failed";
             let displayMessage = errorMessage;
 
-            if (errorMessage.includes('CONFIG_ERROR')) {
+            if (errorMessage.includes('403') || errorMessage.includes('Access Denied')) {
+                displayTitle = "Google API Activation Required";
+                displayMessage = "The Custom Search API is not enabled in your Google Cloud Project. Please click the link below to enable it.";
+            } else if (errorMessage.includes('CONFIG_ERROR')) {
                 displayTitle = "Configuration Issue";
-                displayMessage = "Check your .env file. CUSTOM_SEARCH_ENGINE_ID must be the alphanumeric ID from the Control Panel Basics section (e.g. '345...'). Ensure no quotes or spaces.";
-            } else if (errorMessage.includes('API_ERROR')) {
-                displayTitle = "Google API Error";
-                displayMessage = errorMessage.replace('API_ERROR:', '').trim();
+                displayMessage = "Check your .env file. CUSTOM_SEARCH_ENGINE_ID must be the alphanumeric ID from the Control Panel Basics section (e.g. '345...').";
             }
 
             toast({ 
@@ -92,8 +92,8 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
                         <p className="text-sm">{displayMessage}</p>
                         <div className="flex gap-2">
                              <Button asChild variant="outline" size="sm" className="h-8 text-xs bg-white text-destructive">
-                                <a href="https://programmablesearchengine.google.com/controlpanel/all" target="_blank" rel="noopener noreferrer">
-                                    <ExternalLink className="mr-1 h-3 w-3" /> Open Search Engine Panel
+                                <a href="https://console.cloud.google.com/apis/library/customsearch.googleapis.com?project=ecosystem-hub" target="_blank" rel="noopener noreferrer">
+                                    <ExternalLink className="mr-1 h-3 w-3" /> Enable Search API
                                 </a>
                             </Button>
                         </div>
@@ -155,7 +155,7 @@ export function BulkEnrichButton({ partners, onComplete }: { partners: any[], on
                     }
                 }
             } catch (e: any) {
-                if (e.message.includes('CONFIG_ERROR') || e.message.includes('API_ERROR')) {
+                if (e.message.includes('403') || e.message.includes('CONFIG_ERROR')) {
                     toast({ variant: 'destructive', title: "Stopping Bulk Research", description: e.message });
                     break;
                 }
