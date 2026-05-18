@@ -5,6 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertTriangle, RefreshCcw } from 'lucide-react';
 
+/**
+ * Standard Next.js Error Boundary for the app directory.
+ * This catches runtime errors in segments and prevents the "missing components" loop.
+ */
 export default function Error({
   error,
   reset,
@@ -13,7 +17,8 @@ export default function Error({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error('Application Error:', error);
+    // Log the error centrally
+    console.error('Next.js Segment Error:', error);
   }, [error]);
 
   return (
@@ -23,9 +28,9 @@ export default function Error({
           <div className="mx-auto bg-destructive/10 p-3 rounded-full w-fit mb-4">
             <AlertTriangle className="h-10 w-10 text-destructive" />
           </div>
-          <CardTitle className="text-2xl">Something went wrong</CardTitle>
+          <CardTitle className="text-2xl font-headline">Something went wrong</CardTitle>
           <CardDescription>
-            The application encountered an unexpected error.
+            The application encountered an unexpected error in this section.
           </CardDescription>
         </CardHeader>
         <CardContent>

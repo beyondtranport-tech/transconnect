@@ -42,6 +42,7 @@ import {
   Gift,
   Building,
   Code2,
+  FileText,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -53,7 +54,7 @@ import { useUser, useAuth } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import React from 'react';
 
-// Static Imports for reliability in prototype environment
+// Static Imports
 import AdminDashboardContent from '@/app/backend/dashboard-content';
 import MemberWallet from '@/app/backend/wallet/[memberId]/member-wallet';
 import WalletTransactionsList from '@/app/backend/wallet-transactions-list';
@@ -75,11 +76,11 @@ import MarketplaceFees from '@/app/backend/revenue/marketplace-fees';
 import MallCommissions from '@/app/backend/revenue/mall-commissions';
 import ISAPitchSettings from '@/app/backend/revenue/isa-pitch-settings';
 import SalesIncentives from '@/app/backend/revenue/sales-incentives';
-import PlatformTasks from '@/app/backend/platform-tasks';
-import PlatformSettingsContent from '@/app/backend/platform-settings';
 import ActionPlanSettings from '@/app/backend/loyalty-settings';
 import TierBenefits from '@/app/backend/tier-benefits';
 import RewardsManagement from '@/app/backend/rewards-management';
+import PlatformTasks from '@/app/backend/platform-tasks';
+import PlatformSettingsContent from '@/app/backend/platform-settings';
 
 function AdminAuthGuard({ children }: { children: React.ReactNode }) {
     const { user, isUserLoading } = useUser();
@@ -87,7 +88,6 @@ function AdminAuthGuard({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
         if (isUserLoading) return;
-
         if (!user) {
             router.replace('/signin?redirect=/backend');
         } else if (user.email !== 'mkoton100@gmail.com' && user.email !== 'beyondtransport@gmail.com') {
@@ -103,7 +103,6 @@ function AdminAuthGuard({ children }: { children: React.ReactNode }) {
             </div>
         );
     }
-    
     return <>{children}</>;
 }
 
@@ -191,7 +190,7 @@ function BackendContent() {
       <SidebarProvider>
         <Sidebar>
           <SidebarHeader>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 p-2">
               <Shield className="h-6 w-6 text-primary" />
               <h2 className="text-lg font-semibold text-sidebar-foreground">
                 App Backend
@@ -224,12 +223,12 @@ function BackendContent() {
                 <SidebarMenuItem>
                     <SidebarMenuButton tooltip="Marketing" isActive={isMarketingActive}><BookOpen /><span>Marketing</span></SidebarMenuButton>
                     <SidebarMenuSub>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-partners'} onClick={() => navigate('marketing-partners')}><Handshake/>Partners</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-isa'} onClick={() => navigate('marketing-isa')}><UserCheck2/>ISA Agents</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-suppliers'} onClick={() => navigate('marketing-suppliers')}><Building/>Suppliers</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-transporters'} onClick={() => navigate('marketing-transporters')}><Truck/>Transporters</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-investors'} onClick={() => navigate('marketing-investors')}><DollarSign/>Investors</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-developers'} onClick={() => navigate('marketing-developers')}><Code2/>Developers</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-partners'} onClick={() => navigate('marketing-partners')}><Handshake className="h-4 w-4 mr-2"/>Partners</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-isa'} onClick={() => navigate('marketing-isa')}><UserCheck2 className="h-4 w-4 mr-2"/>ISA Agents</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-suppliers'} onClick={() => navigate('marketing-suppliers')}><Building className="h-4 w-4 mr-2"/>Suppliers</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-transporters'} onClick={() => navigate('marketing-transporters')}><Truck className="h-4 w-4 mr-2"/>Transporters</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-investors'} onClick={() => navigate('marketing-investors')}><DollarSign className="h-4 w-4 mr-2"/>Investors</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-developers'} onClick={() => navigate('marketing-developers')}><Code2 className="h-4 w-4 mr-2"/>Developers</SidebarMenuSubButton></SidebarMenuSubItem>
                     </SidebarMenuSub>
                 </SidebarMenuItem>
 
@@ -248,12 +247,12 @@ function BackendContent() {
                 <SidebarMenuItem>
                   <SidebarMenuButton tooltip="Platform Settings" isActive={isPlatformSettingsActive}><Settings /><span>Platform Settings</span></SidebarMenuButton>
                   <SidebarMenuSub>
-                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'permissions'} onClick={() => navigate('permissions')}><Lock />Permissions</SidebarMenuSubButton></SidebarMenuSubItem>
-                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'action-plan'} onClick={() => navigate('action-plan')}><Star />Action Plan</SidebarMenuSubButton></SidebarMenuSubItem>
-                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'loyalty-plan'} onClick={() => navigate('loyalty-plan')}><Award />Loyalty Plan</SidebarMenuSubButton></SidebarMenuSubItem>
-                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'rewards-plan'} onClick={() => navigate('rewards-plan')}><Gift />Rewards Plan</SidebarMenuSubButton></SidebarMenuSubItem>
-                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'settings-bank'} onClick={() => navigate('settings-bank')}><Banknote />Bank Details</SidebarMenuSubButton></SidebarMenuSubItem>
-                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'tasks'} onClick={() => navigate('tasks')}><Wrench />Platform Tasks</SidebarMenuSubButton></SidebarMenuSubItem>
+                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'permissions'} onClick={() => navigate('permissions')}><Lock className="h-4 w-4 mr-2"/>Permissions</SidebarMenuSubButton></SidebarMenuSubItem>
+                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'action-plan'} onClick={() => navigate('action-plan')}><Star className="h-4 w-4 mr-2"/>Action Plan</SidebarMenuSubButton></SidebarMenuSubItem>
+                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'loyalty-plan'} onClick={() => navigate('loyalty-plan')}><Award className="h-4 w-4 mr-2"/>Loyalty Plan</SidebarMenuSubButton></SidebarMenuSubItem>
+                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'rewards-plan'} onClick={() => navigate('rewards-plan')}><Gift className="h-4 w-4 mr-2"/>Rewards Plan</SidebarMenuSubButton></SidebarMenuSubItem>
+                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'settings-bank'} onClick={() => navigate('settings-bank')}><Banknote className="h-4 w-4 mr-2"/>Bank Details</SidebarMenuSubButton></SidebarMenuSubItem>
+                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'tasks'} onClick={() => navigate('tasks')}><Wrench className="h-4 w-4 mr-2"/>Platform Tasks</SidebarMenuSubButton></SidebarMenuSubItem>
                   </SidebarMenuSub>
                 </SidebarMenuItem>
             </SidebarGroup>
@@ -287,7 +286,9 @@ function BackendContent() {
         </Sidebar>
         <SidebarInset>
             <div className="p-6">
-                {renderContent()}
+                <Suspense fallback={<Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" />}>
+                    {renderContent()}
+                </Suspense>
             </div>
         </SidebarInset>
       </SidebarProvider>

@@ -131,7 +131,7 @@ function AdminAccountContent() {
 
   const renderContent = useCallback(() => {
     if (activeView.startsWith('marketing-')) {
-        const audience = activeView.split('-')[1] as any;
+        const audience = activeView.split('-')[1] as "partners" | "isa" | "transporters" | "suppliers" | "investors" | "developers";
         return <MarketingPage audience={audience} />;
     }
     switch (activeView) {
@@ -174,7 +174,11 @@ function AdminAccountContent() {
   };
 
   if (isUserLoading || !user) {
-    return <div className="flex justify-center items-center py-20"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>;
+    return (
+        <div className="flex justify-center items-center py-20">
+            <Loader2 className="h-16 w-16 animate-spin text-primary" />
+        </div>
+    );
   }
 
   const navigate = (view: string) => router.push(`/adminaccount?view=${view}`, { scroll: false });

@@ -23,14 +23,12 @@ export const googleSearchTool = ai.defineTool(
     outputSchema: GoogleSearchOutputSchema,
   },
   async (input: GoogleSearchInput) => {
-    // Aggressive sanitization of IDs to handle whitespace, hidden chars, or quotes
     const sanitize = (val: string | undefined) => 
         val?.replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/["']/g, '').trim() || '';
 
     const apiKey = sanitize(process.env.GOOGLE_SEARCH_API_KEY);
     const cx = sanitize(process.env.CUSTOM_SEARCH_ENGINE_ID);
 
-    // Terminal Diagnostics - Visible in your Dev Terminal
     if (process.env.NODE_ENV !== 'production') {
         console.log(`[GOOGLE SEARCH] Requesting query: "${input.query}"`);
         console.log(`[GOOGLE SEARCH] Using API Key: ${apiKey ? apiKey.substring(0, 5) + '...' : 'MISSING'}`);
