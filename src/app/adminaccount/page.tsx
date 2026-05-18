@@ -42,6 +42,7 @@ import {
   Building,
   Contact,
   Users,
+  FileText,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -225,7 +226,7 @@ function AdminAccountContent() {
                     </SidebarMenuSub>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Financials" isActive={activeView.includes('financial') || activeView === 'budget'}><FinancialSheetIcon /><span>Financials</span></SidebarMenuButton>
+                    <SidebarMenuButton tooltip="Financials" isActive={activeView.includes('financial') || activeView === 'budget'}><FileText /><span>Financials</span></SidebarMenuButton>
                     <SidebarMenuSub>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'financial-projections'} onClick={() => navigate('financial-projections')}>Projections</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'budget'} onClick={() => navigate('budget')}>Budget</SidebarMenuSubButton></SidebarMenuSubItem>
