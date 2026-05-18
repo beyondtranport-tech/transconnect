@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -18,8 +19,10 @@ import {
   LogOut,
   Loader2,
   TrendingUp,
+  Map,
   User,
   LayoutDashboard,
+  Mail,
   Target,
   Bot,
   Sparkles,
@@ -43,7 +46,6 @@ import {
   Contact,
   Users,
   FileText,
-  Map,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';

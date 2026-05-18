@@ -1,3 +1,4 @@
+
 'use server';
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
@@ -30,7 +31,7 @@ export const googleSearchTool = ai.defineTool(
     const apiKey = sanitize(process.env.GOOGLE_SEARCH_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_SEARCH_API_KEY);
     const cx = sanitize(process.env.CUSTOM_SEARCH_ENGINE_ID || process.env.NEXT_PUBLIC_CUSTOM_SEARCH_ENGINE_ID);
 
-    // Terminal Diagnostics: Masked log to verify ID loading directly in the server console
+    // Terminal Diagnostics: This will appear in your VS Code / Firebase Studio terminal
     if (process.env.NODE_ENV !== 'production') {
         console.log(`[GOOGLE SEARCH] Requesting query: "${input.query}"`);
         console.log(`[GOOGLE SEARCH] Using API Key: ${apiKey ? apiKey.substring(0, 5) + '...' : 'MISSING'}`);
@@ -70,7 +71,7 @@ export const googleSearchTool = ai.defineTool(
             
             if (response.status === 400) {
                 // If Google returns 400, it usually means the CX ID itself is invalid or not found.
-                throw new Error(`API_ERROR: Google returned "Invalid Argument" (400). This means the Search Engine ID "${cx.substring(0, 4)}..." was not found. Please verify it in the "Basics" section of the Control Panel.`);
+                throw new Error(`API_ERROR: Google returned "Invalid Argument" (400). This means the Search Engine ID "${cx.substring(0, 6)}..." was not found or is misconfigured. Please verify it in the "Basics" section of the Control Panel.`);
             }
             
             if (response.status === 403) {

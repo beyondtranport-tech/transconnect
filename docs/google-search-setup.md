@@ -1,3 +1,4 @@
+
 # Setting up Google Custom Search API for Lead Generation
 
 To enable the AI Lead Agent and Enrichment tools to find real-world company data, you need to configure Google's Custom Search API correctly. This requires two values in your `.env` file: an **API Key** and a **Search Engine ID**.
@@ -6,11 +7,9 @@ To enable the AI Lead Agent and Enrichment tools to find real-world company data
 
 ## CRITICAL: Why you might see "Search Engine Not Found"
 
-If you click a link and see "Search Engine Not Found", it is almost always because of one of two reasons:
-1.  **Wrong Google Account**: You are logged into a different Google account in your browser than the one used to create the search engine.
-2.  **Wrong Project Selected**: You created the search engine under one Google Cloud project, but are looking in another.
+If you see "Search Engine Not Found" in the Google Control Panel, it means you are logged into a different Google account in your browser than the one used to create that specific ID. 
 
-**FIX:** Ensure you are logged into `mkoton100@gmail.com` and visit the [Search Control Panel](https://programmablesearchengine.google.com/controlpanel/all) to verify your ID (`3457246c678064558`).
+**FIX:** Ensure you are logged into the account that owns the Search Engine. You can view all your available IDs at the [Search Engine Control Panel](https://programmablesearchengine.google.com/controlpanel/all).
 
 ---
 
@@ -52,11 +51,11 @@ GOOGLE_SEARCH_API_KEY=YOUR_API_KEY_HERE
 CUSTOM_SEARCH_ENGINE_ID=3457246c678064558
 ```
 
-## Step 5: Restart Your Server
+## Step 5: Restart Your Server & Check Logs
 
 After saving the `.env` file, you **MUST** stop your terminal (`Ctrl+C`) and run:
 ```bash
 npm run dev
 ```
 
-The application will now log `[GOOGLE SEARCH] Using CX ID: 3457...` to your terminal, confirming the setup is successful.
+The application will now log `[GOOGLE SEARCH] Using CX ID: 3457...` to your terminal window whenever you use the sparkle tool, confirming the setup is successful.
