@@ -23,15 +23,16 @@ export const googleSearchTool = ai.defineTool(
     outputSchema: GoogleSearchOutputSchema,
   },
   async (input: GoogleSearchInput) => {
-    // Robust sanitization to remove any hidden characters, quotes, or whitespace
+    // Aggressive sanitization to remove any hidden characters, quotes, or whitespace
     const sanitize = (val: string | undefined) => 
         val?.replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/["']/g, '').trim() || '';
 
     const apiKey = sanitize(process.env.GOOGLE_SEARCH_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_SEARCH_API_KEY);
     const cx = sanitize(process.env.CUSTOM_SEARCH_ENGINE_ID || process.env.NEXT_PUBLIC_CUSTOM_SEARCH_ENGINE_ID);
 
-    // Terminal Diagnostics: Masked log to verify ID loading
+    // Terminal Diagnostics: Masked log to verify ID loading directly in the server console
     if (process.env.NODE_ENV !== 'production') {
+        console.log(`[GOOGLE SEARCH] Requesting query: "${input.query}"`);
         console.log(`[GOOGLE SEARCH] Using API Key: ${apiKey ? apiKey.substring(0, 5) + '...' : 'MISSING'}`);
         console.log(`[GOOGLE SEARCH] Using CX ID: ${cx ? cx.substring(0, 6) + '...' : 'MISSING'}`);
     }
@@ -68,7 +69,8 @@ export const googleSearchTool = ai.defineTool(
             const apiMessage = errorData.error?.message || response.statusText;
             
             if (response.status === 400) {
-                throw new Error(`API_ERROR: Google returned "Invalid Argument" (400). Found CX ID: "${cx.substring(0, 4)}...". Ensure this is the alphanumeric ID from the "Basics" section of the Control Panel.`);
+                // If Google returns 400, it usually means the CX ID itself is invalid or not found.
+                throw new Error(`API_ERROR: Google returned "Invalid Argument" (400). This means the Search Engine ID "${cx.substring(0, 4)}..." was not found. Please verify it in the "Basics" section of the Control Panel.`);
             }
             
             if (response.status === 403) {
