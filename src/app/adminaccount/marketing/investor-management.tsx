@@ -5,7 +5,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, DollarSign, Edit, Trash2, Send, Copy, CheckCircle } from 'lucide-react';
+import { Loader2, PlusCircle, DollarSign, Edit, Trash2, Send, Copy, CheckCircle, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -22,6 +22,7 @@ import { PartnerTasksDialog } from './PartnerTasksDialog';
 import { CommunicationLogDialog } from './CommunicationLogDialog';
 import { EngageDialog } from './EngageDialog';
 import { formatDateSafe } from '@/lib/utils';
+import { EnrichPartnerButton, BulkEnrichButton } from './EnrichPartnerButton';
 
 async function performAdminAction(token: string, action: string, payload: any) {
   const response = await fetch('/api/admin', {
@@ -150,24 +151,9 @@ export default function InvestorManagement() {
     { accessorKey: 'firstName', header: 'Name', cell: ({ row }) => <div>{row.original.firstName} {row.original.lastName}</div> },
     { accessorKey: 'email', header: 'Email' },
     { accessorKey: 'companyName', header: 'Company' },
-    { 
-      accessorKey: 'lastOpenedAt', 
-      header: 'Last Opened', 
-      cell: ({row}) => (
-        <div className="flex items-center gap-1.5">
-          {row.original.lastOpenedAt ? (
-            <>
-              <CheckCircle className="h-3.5 w-3.5 text-green-500" />
-              <span className="text-xs">{formatDateSafe(row.original.lastOpenedAt, "dd MMM, HH:mm")}</span>
-            </>
-          ) : (
-            <span className="text-xs text-muted-foreground italic">Not opened yet</span>
-          )}
-        </div>
-      ) 
-    },
     { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
       <div className="flex justify-end gap-1">
+        <EnrichPartnerButton partner={row.original} onUpdate={forceRefresh} />
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'engage', data: row.original })} title="Initiate Engagement">
           <Send className="h-4 w-4 text-primary" />
         </Button>
@@ -190,14 +176,17 @@ export default function InvestorManagement() {
       <InvestorDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={forceRefresh} />
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
         <AlertDialogContent>
-          <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Delete "{dialog.data?.firstName}"?</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogHeader><AlertDialogTitle>Delete Investor?</AlertDialogTitle><AlertDialogDescription>Delete "{dialog.data?.firstName}"?</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter><AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div><CardTitle><DollarSign /> Investors</CardTitle></div>
-          <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Investor</Button>
+          <div className="flex gap-2">
+            <BulkEnrichButton partners={partners} onComplete={forceRefresh} />
+            <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Investor</Button>
+          </div>
         </CardHeader>
         <CardContent>{isLoading ? <Loader2 className="animate-spin mx-auto" /> : <DataTable columns={columns} data={partners} />}</CardContent>
       </Card>

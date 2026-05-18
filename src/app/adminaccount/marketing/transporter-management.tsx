@@ -21,6 +21,7 @@ import * as z from 'zod';
 import { PartnerOversightDialog } from './PartnerOversightDialog';
 import { EngageDialog } from './EngageDialog';
 import { formatDateSafe } from '@/lib/utils';
+import { EnrichPartnerButton, BulkEnrichButton } from './EnrichPartnerButton';
 
 async function performAdminAction(token: string, action: string, payload: any) {
   const response = await fetch('/api/admin', {
@@ -165,24 +166,9 @@ export default function TransporterManagement() {
             </div>
         )
     },
-    { 
-      accessorKey: 'lastOpenedAt', 
-      header: 'Last Opened', 
-      cell: ({row}) => (
-        <div className="flex items-center gap-1.5">
-          {row.original.lastOpenedAt ? (
-            <>
-              <CheckCircle className="h-3.5 w-3.5 text-green-500" />
-              <span className="text-xs">{formatDateSafe(row.original.lastOpenedAt, "dd MMM, HH:mm")}</span>
-            </>
-          ) : (
-            <span className="text-xs text-muted-foreground italic">Not opened yet</span>
-          )}
-        </div>
-      ) 
-    },
     { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
       <div className="flex justify-end gap-1">
+        <EnrichPartnerButton partner={row.original} onUpdate={forceRefresh} />
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'engage', data: row.original })} title="Initiate Engagement">
           <Send className="h-4 w-4 text-primary" />
         </Button>
@@ -211,7 +197,10 @@ export default function TransporterManagement() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div><CardTitle><Truck /> Transporters</CardTitle></div>
-          <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Transporter</Button>
+          <div className="flex gap-2">
+            <BulkEnrichButton partners={partners} onComplete={forceRefresh} />
+            <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Transporter</Button>
+          </div>
         </CardHeader>
         <CardContent>{isLoading ? <Loader2 className="animate-spin mx-auto" /> : <DataTable columns={columns} data={partners} />}</CardContent>
       </Card>
