@@ -37,7 +37,7 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
                 toast({
                     variant: 'destructive',
                     title: "Research Unsuccessful",
-                    description: "The AI agent searched but couldn't find verifiable details. Please check your Google Search API configuration if this persists.",
+                    description: "The AI agent searched but couldn't find verifiable details in the search results. This may happen if the search engine (Custom Search) is restricted to specific sites. Please ensure your Search Engine ID in .env is set to 'Search the entire web'.",
                 });
                 return;
             }
@@ -61,7 +61,7 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
             if (Object.keys(dataToUpdate).length === 0) {
                  toast({
                     title: "Data Verified",
-                    description: "The agent found information that matches your existing records exactly.",
+                    description: "The agent found information that matches your existing records exactly. No new fields were added.",
                 });
                 return;
             }
@@ -74,12 +74,13 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
             });
             onUpdate();
         } catch (e: any) {
+            console.error("Enrichment UI Error:", e);
             toast({ 
                 variant: 'destructive', 
                 title: "Enrichment Failed", 
                 description: e.message?.includes('CONFIG_ERROR') 
                     ? "Google Search API is not configured in your .env file." 
-                    : "An unexpected error occurred during research." 
+                    : "An unexpected error occurred during research. Check server logs for details." 
             });
         } finally {
             setIsEnriching(false);
@@ -135,7 +136,7 @@ export function BulkEnrichButton({ partners, onComplete }: { partners: any[], on
                     }
                 }
                 
-                // Rate limiting to avoid API quota issues
+                // Rate limiting to avoid API quota issues (1.5 seconds)
                 await new Promise(resolve => setTimeout(resolve, 1500));
             } catch (e) {
                 console.error(`Failed to enrich ${partner.id}`, e);

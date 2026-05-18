@@ -26,14 +26,14 @@ export const googleSearchTool = ai.defineTool(
     const apiKey = process.env.GOOGLE_SEARCH_API_KEY;
     const cx = process.env.CUSTOM_SEARCH_ENGINE_ID;
 
-    console.log(`AI Tool Executing Google Search: "${input.query}"`);
+    console.log(`[AI TOOL] Executing Google Search: "${input.query}"`);
 
-    if (!apiKey || apiKey === "YOUR_API_KEY_HERE" || apiKey.includes("PASTE")) {
+    if (!apiKey || apiKey === "YOUR_API_KEY_HERE" || apiKey.includes("PASTE") || apiKey.length < 10) {
       console.error("Config Error: GOOGLE_SEARCH_API_KEY is missing or invalid.");
       throw new Error('CONFIG_ERROR: GOOGLE_SEARCH_API_KEY is not configured correctly in .env.');
     }
     
-    if (!cx || cx === "YOUR_NEW_SEARCH_ENGINE_ID_HERE" || cx.includes("PASTE")) {
+    if (!cx || cx === "YOUR_NEW_SEARCH_ENGINE_ID_HERE" || cx.includes("PASTE") || cx.length < 10) {
        console.error("Config Error: CUSTOM_SEARCH_ENGINE_ID is missing or invalid.");
       throw new Error('CONFIG_ERROR: CUSTOM_SEARCH_ENGINE_ID is not configured correctly in .env.');
     }
@@ -45,17 +45,17 @@ export const googleSearchTool = ai.defineTool(
         if (!response.ok) {
             const errorData = await response.json();
             const message = errorData.error?.message || response.statusText;
-            console.error(`Google Search API error: ${message}`);
+            console.error(`[GOOGLE SEARCH API] Error status ${response.status}: ${message}`);
             throw new Error(`API_ERROR: Google Search failed with status ${response.status}: ${message}`);
         }
         const data = await response.json();
         
         if (!data.items) {
-            console.warn(`No results found for query: "${input.query}"`);
+            console.warn(`[AI TOOL] No results found for query: "${input.query}"`);
             return [];
         }
 
-        console.log(`Google Search Tool returned ${data.items.length} results.`);
+        console.log(`[AI TOOL] Google Search returned ${data.items.length} results.`);
 
         return data.items.map((item: any) => ({
             title: item.title,
@@ -64,7 +64,7 @@ export const googleSearchTool = ai.defineTool(
         }));
 
     } catch (e: any) {
-        console.error("Critical error calling Google Search API:", e);
+        console.error("[AI TOOL] Critical error calling Google Search API:", e);
         throw e;
     }
   }
