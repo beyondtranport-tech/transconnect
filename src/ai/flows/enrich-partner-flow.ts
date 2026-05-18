@@ -2,7 +2,6 @@
 /**
  * @fileOverview Ultra-fast AI research agent for partner contact info.
  * Consolidated into a single LLM pass to prevent server-side timeouts.
- * Optimized for Southern African business discovery.
  */
 
 import { ai, geminiModel } from '@/ai/genkit';
@@ -36,16 +35,20 @@ const enrichPartnerFlow = ai.defineFlow(
   },
   async (input) => {
     try {
-        console.log(`[ENRICHMENT] Researching: "${input.companyName}"`);
+        const cleanName = input.companyName.trim();
+        if (!cleanName) {
+            return { email: null, phone: null, website: null, address: null, contactPerson: null };
+        }
+
+        console.log(`[ENRICHMENT] Researching: "${cleanName}"`);
         
-        // Construct a query that targets the exact info we need
-        const query = `${input.companyName} contact email phone address Namibia South Africa`;
+        // Use a broad search query to maximize chances of finding snippets with contact details
+        const query = `${cleanName} contact details email phone address Namibia South Africa`;
         
-        // Execute search
         const searchResults = await googleSearchTool({ query });
         
         if (!searchResults || searchResults.length === 0) {
-            console.warn(`[ENRICHMENT] Zero results found on the web for "${input.companyName}"`);
+            console.warn(`[ENRICHMENT] Zero results found on the web for "${cleanName}"`);
             return { email: null, phone: null, website: null, address: null, contactPerson: null };
         }
 
@@ -57,12 +60,12 @@ const enrichPartnerFlow = ai.defineFlow(
         const extraction = await ai.generate({
             model: geminiModel,
             system: `You are an expert data extraction agent.
-            Analyze the provided search results and extract verifiable contact details for "${input.companyName}".
+            Analyze the provided search results and extract verifiable contact details for "${cleanName}".
             
             EXTRACTION RULES:
             - EMAILS: Look for email patterns like @outlook.com, @gmail.com, or custom domains.
             - PHONES: Extract numbers with +264 (Namibia) or +27 (South Africa) codes.
-            - ADDRESS: Capture the full physical location if present.
+            - ADDRESS: Capture the full physical location if present (e.g., Swakopmund, JHB).
             - CONTACT: Look for names mentioned as owner, manager, or primary contact.
             - ACCURACY: Only return data found in the text. DO NOT hallucinate.
             - If details are missing, return null for those fields.`,

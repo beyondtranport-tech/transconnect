@@ -27,7 +27,6 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
     const handleEnrich = async () => {
         setIsEnriching(true);
         try {
-            // Call the optimized single-pass research flow
             const result = await enrichPartner({
                 companyName: partner.companyName || `${partner.firstName} ${partner.lastName}`,
                 contactPerson: `${partner.firstName} ${partner.lastName}`.trim() === 'Member Candidate' ? undefined : `${partner.firstName} ${partner.lastName}`,
@@ -37,7 +36,7 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
                 toast({
                     variant: 'destructive',
                     title: "Research Unsuccessful",
-                    description: "The AI agent searched but couldn't find verifiable details. Ensure your Google Custom Search ID is set to 'Search the entire web'.",
+                    description: "The AI agent searched but couldn't find verifiable details. Ensure your Google Search Engine ID is configured to 'Search the entire web'.",
                 });
                 return;
             }
@@ -77,10 +76,10 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
             const errorMessage = e.message || "An unexpected error occurred.";
             
             let displayMessage = errorMessage;
-            if (errorMessage.includes('SEARCH_TIMEOUT')) {
-                displayMessage = "The search provider took too long to respond. Please try once more.";
-            } else if (errorMessage.includes('fetch')) {
-                displayMessage = "Network timeout. The request exceeded the server's maximum response time.";
+            if (errorMessage.includes('Invalid Argument')) {
+                displayMessage = "Configuration Error: Please re-check your CUSTOM_SEARCH_ENGINE_ID in .env. Ensure it's the ID, not the name, and has no extra spaces. You may need to restart the server.";
+            } else if (errorMessage.includes('SEARCH_TIMEOUT')) {
+                displayMessage = "The search provider took too long. Please try once more.";
             }
 
             toast({ 
