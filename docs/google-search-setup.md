@@ -1,4 +1,3 @@
-
 # Setting up Google Custom Search API for Lead Generation
 
 To enable the AI Lead Agent and Enrichment tools to find real-world company data, you need to configure Google's Custom Search API correctly. This requires two values in your `.env` file: an **API Key** and a **Search Engine ID**.

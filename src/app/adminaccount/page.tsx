@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -56,7 +55,7 @@ import { useUser, useAuth } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import React from 'react';
 
-// Static Imports for reliability
+// Static Imports for reliability in prototype environment
 import AdminDashboardContent from '@/app/backend/dashboard-content';
 import ActivityFeed from '@/app/backend/activity-feed';
 import LeadsAgent from '@/app/adminaccount/leads-agent';
