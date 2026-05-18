@@ -30,7 +30,7 @@ export const googleSearchTool = ai.defineTool(
     const apiKey = sanitize(process.env.GOOGLE_SEARCH_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_SEARCH_API_KEY);
     const cx = sanitize(process.env.CUSTOM_SEARCH_ENGINE_ID || process.env.NEXT_PUBLIC_CUSTOM_SEARCH_ENGINE_ID);
 
-    // Terminal Diagnostics
+    // Terminal Diagnostics - This is visible in your Studio terminal
     if (process.env.NODE_ENV !== 'production') {
         console.log(`[GOOGLE SEARCH] Requesting query: "${input.query}"`);
         console.log(`[GOOGLE SEARCH] Using API Key: ${apiKey ? apiKey.substring(0, 5) + '...' : 'MISSING'}`);
