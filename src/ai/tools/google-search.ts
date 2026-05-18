@@ -23,22 +23,23 @@ export const googleSearchTool = ai.defineTool(
     outputSchema: GoogleSearchOutputSchema,
   },
   async (input: GoogleSearchInput) => {
-    // Sanitize inputs and handle invisible characters
+    // Aggressive sanitization to remove any hidden characters, quotes, or whitespace
     const sanitize = (val: string | undefined) => 
         val?.replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/["']/g, '').trim() || '';
 
     const apiKey = sanitize(process.env.GOOGLE_SEARCH_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_SEARCH_API_KEY);
     const cx = sanitize(process.env.CUSTOM_SEARCH_ENGINE_ID || process.env.NEXT_PUBLIC_CUSTOM_SEARCH_ENGINE_ID);
 
-    // Diagnostics logging (masked)
-    console.log(`[SEARCH TOOL] Using CX: ${cx ? cx.substring(0, 4) + '...' + cx.substring(cx.length - 2) : 'NONE'}`);
+    // CRITICAL DIAGNOSTIC: Log the found parameters (masked) to the terminal
+    console.log(`[GOOGLE SEARCH] Using API Key: ${apiKey ? apiKey.substring(0, 5) + '...' : 'MISSING'}`);
+    console.log(`[GOOGLE SEARCH] Using CX ID: ${cx ? cx.substring(0, 4) + '...' + cx.substring(cx.length - 4) : 'MISSING'}`);
 
     if (!apiKey) {
-      throw new Error(`CONFIG_ERROR: GOOGLE_SEARCH_API_KEY is missing in your .env file.`);
+      throw new Error(`CONFIG_ERROR: GOOGLE_SEARCH_API_KEY is missing.`);
     }
     
     if (!cx) {
-      throw new Error(`CONFIG_ERROR: CUSTOM_SEARCH_ENGINE_ID is missing in your .env file.`);
+      throw new Error(`CONFIG_ERROR: CUSTOM_SEARCH_ENGINE_ID is missing.`);
     }
 
     if (!input.query || input.query.trim().length === 0) {
@@ -64,12 +65,13 @@ export const googleSearchTool = ai.defineTool(
             const errorData = await response.json().catch(() => ({}));
             const apiMessage = errorData.error?.message || response.statusText;
             
-            if (response.status === 403) {
-                throw new Error(`API_ERROR: Access Denied. Check API key permissions for "Custom Search API" in Google Cloud Console.`);
+            if (response.status === 400) {
+                // Return a specific error that the UI can catch to help the user debug their .env
+                throw new Error(`API_ERROR: Google returned "Invalid Argument" (400). This means the CX ID "${cx.substring(0, 4)}..." is incorrect. Ensure you have copied the alphanumeric ID from the "Basics" section of the Control Panel and RESTARTED the server.`);
             }
             
-            if (response.status === 400) {
-                throw new Error(`API_ERROR: Google returned "Invalid Argument". Found CX ID: "${cx.substring(0, 3)}...". Ensure this is the alphanumeric ID from the "Basics" section of the Control Panel.`);
+            if (response.status === 403) {
+                throw new Error(`API_ERROR: Access Denied. Ensure the "Custom Search API" is enabled in your Google Cloud Console for the project linked to your API Key.`);
             }
             
             throw new Error(`API_ERROR: Google Search failed (${response.status}): ${apiMessage}`);
@@ -78,6 +80,7 @@ export const googleSearchTool = ai.defineTool(
         const data = await response.json();
         
         if (!data.items) {
+            console.log(`[GOOGLE SEARCH] No results found for query: ${input.query}`);
             return [];
         }
 
@@ -90,7 +93,7 @@ export const googleSearchTool = ai.defineTool(
     } catch (e: any) {
         clearTimeout(timeoutId);
         if (e.name === 'AbortError') {
-            throw new Error("SEARCH_TIMEOUT: The search took too long. Please try again.");
+            throw new Error("SEARCH_TIMEOUT: Google Search is taking too long. Please try again.");
         }
         throw e;
     }

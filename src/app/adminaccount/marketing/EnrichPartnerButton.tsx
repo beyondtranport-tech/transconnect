@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Sparkles, Loader2, AlertTriangle, Link as LinkIcon } from 'lucide-react';
+import { Sparkles, Loader2, AlertTriangle, ExternalLink } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { enrichPartner } from '@/ai/flows/enrich-partner-flow';
 import { getClientSideAuthToken } from '@/firebase';
@@ -60,7 +60,7 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
             if (Object.keys(dataToUpdate).length === 0) {
                  toast({
                     title: "No New Data",
-                    description: "Found info matched existing record. No updates needed.",
+                    description: "The research found info that matched your existing records.",
                 });
                 return;
             }
@@ -73,35 +73,35 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
             });
             onUpdate();
         } catch (e: any) {
-            console.error("Enrichment UI Error:", e);
             const errorMessage = e.message || "";
-            
             let displayTitle = "Enrichment Failed";
             let displayMessage = errorMessage;
 
             if (errorMessage.includes('CONFIG_ERROR')) {
                 displayTitle = "Configuration Issue";
-                displayMessage = "Please check your .env file. Ensure CUSTOM_SEARCH_ENGINE_ID and GOOGLE_SEARCH_API_KEY are present.";
+                displayMessage = "Your .env file might be missing keys or hasn't been reloaded.";
             } else if (errorMessage.includes('API_ERROR')) {
                 displayTitle = "Google API Error";
-                displayMessage = errorMessage.split('API_ERROR:')[1].trim();
-            } else if (errorMessage.includes('SEARCH_TIMEOUT')) {
-                displayMessage = "Search timed out. This can happen if the API is slow. Please try one more time.";
+                // Strip the internal API_ERROR prefix for the user
+                displayMessage = errorMessage.replace('API_ERROR:', '').trim();
             }
 
             toast({ 
                 variant: 'destructive', 
                 title: displayTitle, 
                 description: (
-                    <div className="space-y-2">
-                        <p>{displayMessage}</p>
-                        {displayTitle === "Google API Error" && (
-                            <Button asChild variant="link" className="p-0 h-auto text-xs text-destructive-foreground underline">
-                                <Link href="/docs/google-search-setup.md" target="_blank">Re-check Search Engine Setup</Link>
+                    <div className="space-y-3">
+                        <p className="text-sm">{displayMessage}</p>
+                        <div className="flex gap-2">
+                             <Button asChild variant="outline" size="sm" className="h-8 text-xs bg-white text-destructive">
+                                <a href="https://programmablesearchengine.google.com/controlpanel/all" target="_blank" rel="noopener noreferrer">
+                                    <ExternalLink className="mr-1 h-3 w-3" /> Open Search Engine Panel
+                                </a>
                             </Button>
-                        )}
+                        </div>
                     </div>
-                )
+                ),
+                duration: 10000,
             });
         } finally {
             setIsEnriching(false);
