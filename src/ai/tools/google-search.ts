@@ -34,15 +34,16 @@ export const googleSearchTool = ai.defineTool(
     const mask = (s: string) => s.length > 4 ? s.substring(0, 3) + '...' : 'NONE';
     
     if (!apiKey) {
-      throw new Error(`CONFIG_ERROR: GOOGLE_SEARCH_API_KEY is missing. (Found: ${mask(apiKey)})`);
+      throw new Error(`CONFIG_ERROR: GOOGLE_SEARCH_API_KEY is missing in your .env file.`);
     }
     
     if (!cx) {
-      throw new Error(`CONFIG_ERROR: CUSTOM_SEARCH_ENGINE_ID is missing. (Found: ${mask(cx)})`);
+      throw new Error(`CONFIG_ERROR: CUSTOM_SEARCH_ENGINE_ID is missing in your .env file.`);
     }
 
+    // Critical check for the colon format required by Google
     if (!cx.includes(':')) {
-      throw new Error(`CONFIG_ERROR: CX value "${mask(cx)}" is invalid. It must contain a colon (e.g. "abc:123"). You might have copied the Search Engine Name instead of the ID.`);
+      throw new Error(`CONFIG_ERROR: Your Search Engine ID "${mask(cx)}" is invalid. It MUST contain a colon (e.g. "abcdef12345:ghijk"). You likely copied the Name instead of the ID from the Programmable Search Engine control panel.`);
     }
 
     if (!input.query || input.query.trim().length === 0) {
@@ -69,10 +70,10 @@ export const googleSearchTool = ai.defineTool(
             const apiMessage = errorData.error?.message || response.statusText;
             
             if (response.status === 400) {
-                throw new Error(`API_ERROR: Google returned "Invalid Argument". Ensure your CX (${mask(cx)}) has no spaces.`);
+                throw new Error(`API_ERROR: Google returned "Invalid Argument". Please ensure your CX ID has no spaces and contains the required colon.`);
             }
             if (response.status === 403) {
-                throw new Error(`API_ERROR: Access Denied. Check API key permissions for "Custom Search API".`);
+                throw new Error(`API_ERROR: Access Denied. Check API key permissions for "Custom Search API" in Google Cloud Console.`);
             }
             
             throw new Error(`API_ERROR: Google Search failed (${response.status}): ${apiMessage}`);

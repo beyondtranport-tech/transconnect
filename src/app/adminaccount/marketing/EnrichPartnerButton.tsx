@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Sparkles, Loader2, Info } from 'lucide-react';
+import { Sparkles, Loader2, Info, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { enrichPartner } from '@/ai/flows/enrich-partner-flow';
 import { getClientSideAuthToken } from '@/firebase';
@@ -91,7 +91,14 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
             toast({ 
                 variant: 'destructive', 
                 title: displayTitle, 
-                description: displayMessage
+                description: (
+                    <div className="space-y-2">
+                        <p>{displayMessage}</p>
+                        {errorMessage.includes('CONFIG_ERROR') && (
+                            <p className="text-xs font-bold underline">Format required: abcdef12345:ghijk</p>
+                        )}
+                    </div>
+                )
             });
         } finally {
             setIsEnriching(false);

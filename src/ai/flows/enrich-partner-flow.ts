@@ -14,11 +14,11 @@ const EnrichPartnerInputSchema = z.object({
 export type EnrichPartnerInput = z.infer<typeof EnrichPartnerInputSchema>;
 
 const EnrichPartnerOutputSchema = z.object({
-  email: z.string().nullable().describe('Verifiable contact email.'),
-  phone: z.string().nullable().describe('Verifiable phone number (+264 or +27).'),
-  website: z.string().nullable().describe('Found company website URL.'),
-  address: z.string().nullable().describe('Found physical address.'),
-  contactPerson: z.string().nullable().describe('Owner, Manager, or Director name.'),
+  email: z.string().nullable().describe('Verifiable contact email (e.g. outlook.com, gmail.com, or company domain).'),
+  phone: z.string().nullable().describe('Verifiable phone number (look for +264, +27, or local Namibian formats).'),
+  website: z.string().nullable().describe('The primary company website URL.'),
+  address: z.string().nullable().describe('Full physical address found in snippets or contact pages.'),
+  contactPerson: z.string().nullable().describe('Extracted name of the Owner, Manager, or Director (often found in LinkedIn/Facebook snippets).'),
 });
 export type EnrichPartnerOutput = z.infer<typeof EnrichPartnerOutputSchema>;
 
@@ -39,33 +39,34 @@ const enrichPartnerFlow = ai.defineFlow(
             return { email: null, phone: null, website: null, address: null, contactPerson: null };
         }
 
-        // REMOVED quotes for "fuzzy" matching. 
-        // Added specific keywords to trigger directory and AI overview-style results.
-        const query = `${company} contact email phone address Swakopmund Namibia South Africa`;
+        // We perform two searches: 
+        // 1. General contact info (Likely to hit AI overviews and directories)
+        // 2. Social media/Management (Likely to hit Facebook/LinkedIn for names)
+        const [generalResults, socialResults] = await Promise.all([
+            googleSearchTool({ query: `${company} contact details email phone address Swakopmund Namibia` }),
+            googleSearchTool({ query: `${company} owner manager director facebook linkedin` })
+        ]);
         
-        const searchResults = await googleSearchTool({ query });
+        const allResults = [...(generalResults || []), ...(socialResults || [])];
         
-        if (!searchResults || searchResults.length === 0) {
+        if (allResults.length === 0) {
             return { email: null, phone: null, website: null, address: null, contactPerson: null };
         }
 
-        const allContent = searchResults
+        const allContent = allResults
             .map(res => `SOURCE: ${res.link}\nTITLE: ${res.title}\nSNIPPET: ${res.snippet}`)
             .join('\n---\n');
 
         // Extract using LLM pass
         const extraction = await ai.generate({
             model: geminiModel,
-            system: `You are a precision data extraction agent specializing in the Southern African logistics sector.
-            Analyze the provided search results for "${company}" and extract verified contact details.
+            system: `You are a precision research agent specializing in the Southern African logistics sector.
+            Analyze all search results for "${company}" and extract verified contact and management details.
             
             CRITICAL RULES:
-            1. SNIPPETS ARE PRIMARY: Information found in a search snippet is considered verifiable. Look for strings like "namibsroostrp@outlook.com" or "+264 83...".
-            2. PATTERNS TO WATCH FOR: 
-               - Emails: @outlook.com, @gmail.com, or custom business domains.
-               - Phone: Country codes +264 (Namibia) or +27 (South Africa).
-               - Location: Look for clues like "Plot 48, Swakop River Plots", "Swakopmund", or "Johannesburg".
-            3. CONTACT PERSON: Extract the names of owners, managers, or directors if mentioned.
+            1. EXTRACT FROM SNIPPETS: Information in snippets is highly reliable. Look for emails like "namibsroostrp@outlook.com" and numbers like "+264 83...".
+            2. MANAGEMENT NAMES: Look for patterns like "Managed by [Name]", "Owner: [Name]", or titles in LinkedIn snippets to find the contact person.
+            3. REGIONAL FORMATS: Pay attention to Namibia (+264) and South Africa (+27) formats.
             4. ACCURACY: If a field is absolutely not present, return 'null'. DO NOT hallucinate.`,
             prompt: `EXTRACT DATA FROM THESE RESULTS:\n\n${allContent}`,
             output: {
