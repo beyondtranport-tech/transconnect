@@ -41,10 +41,10 @@ const enrichPartnerFlow = ai.defineFlow(
         }
 
         // Parallel Search Strategy to mimic manual success:
-        // 1. General search for contact details
+        // 1. General search for contact details (targeting outlook/gmail/local numbers)
         // 2. Targeted search for owners/managers on social media (Facebook/LinkedIn)
         const [generalResults, socialResults] = await Promise.all([
-            googleSearchTool({ query: `${company} contact details phone email` }),
+            googleSearchTool({ query: `${company} contact details phone email outlook.com` }),
             googleSearchTool({ query: `${company} owner manager facebook linkedin` })
         ]);
         

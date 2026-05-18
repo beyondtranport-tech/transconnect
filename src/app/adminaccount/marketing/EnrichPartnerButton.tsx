@@ -78,7 +78,7 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
 
             if (errorMessage.includes('CONFIG_ERROR')) {
                 displayTitle = "Configuration Issue";
-                displayMessage = "Check your .env file. CUSTOM_SEARCH_ENGINE_ID must be the ID (e.g. 'abc:123'), not the name. Ensure there are no spaces and that you have restarted the server.";
+                displayMessage = "Check your .env file. CUSTOM_SEARCH_ENGINE_ID must be the alphanumeric ID from the Control Panel Basics section (e.g. '345...'). Ensure no quotes or spaces.";
             } else if (errorMessage.includes('API_ERROR')) {
                 displayTitle = "Google API Error";
                 displayMessage = errorMessage.replace('API_ERROR:', '').trim();
