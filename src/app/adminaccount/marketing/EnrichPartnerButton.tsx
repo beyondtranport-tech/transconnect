@@ -76,12 +76,18 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
         } catch (e: any) {
             console.error("Enrichment UI Error:", e);
             const errorMessage = e.message || "An unexpected error occurred.";
+            
+            let displayMessage = errorMessage;
+            if (errorMessage.includes('SEARCH_TIMEOUT')) {
+                displayMessage = "Search API timed out. The request was aborted to prevent a complete hang. Please try again.";
+            } else if (errorMessage.includes('fetch')) {
+                displayMessage = "The request timed out or was blocked by the server. Try again in a moment.";
+            }
+
             toast({ 
                 variant: 'destructive', 
                 title: "Enrichment Failed", 
-                description: errorMessage.includes('fetch') 
-                    ? "The request timed out or was blocked. Try again in a moment." 
-                    : errorMessage 
+                description: displayMessage
             });
         } finally {
             setIsEnriching(false);
@@ -137,8 +143,8 @@ export function BulkEnrichButton({ partners, onComplete }: { partners: any[], on
                     }
                 }
                 
-                // Rate limiting
-                await new Promise(resolve => setTimeout(resolve, 1000));
+                // Rate limiting to prevent overwhelming the APIs
+                await new Promise(resolve => setTimeout(resolve, 800));
             } catch (e) {
                 console.error(`Failed to enrich ${partner.id}`, e);
             }

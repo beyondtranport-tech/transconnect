@@ -38,8 +38,14 @@ export const googleSearchTool = ai.defineTool(
     
     const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${cx}&q=${encodeURIComponent(input.query)}`;
 
+    // Implement a fast timeout for the search API itself to prevent server action hanging
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second limit per search
+
     try {
-        const response = await fetch(url);
+        const response = await fetch(url, { signal: controller.signal });
+        clearTimeout(timeoutId);
+
         if (!response.ok) {
             const errorData = await response.json();
             const message = errorData.error?.message || response.statusText;
@@ -59,6 +65,11 @@ export const googleSearchTool = ai.defineTool(
         }));
 
     } catch (e: any) {
+        clearTimeout(timeoutId);
+        if (e.name === 'AbortError') {
+            console.error("[AI TOOL] Google Search request timed out.");
+            throw new Error("SEARCH_TIMEOUT: The search provider took too long to respond.");
+        }
         console.error("[AI TOOL] Critical error calling Google Search API:", e);
         throw e;
     }

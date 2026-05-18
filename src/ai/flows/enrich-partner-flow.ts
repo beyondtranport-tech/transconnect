@@ -1,7 +1,7 @@
 'use server';
 /**
  * @fileOverview High-performance AI research agent to find missing contact info for business partners.
- * Uses a "Gather & Extract" pattern to avoid agent-loop timeouts while maximizing snippet scanning.
+ * Optimized for speed to prevent server-side timeouts.
  */
 
 import { ai, geminiModel } from '@/ai/genkit';
@@ -35,31 +35,30 @@ const enrichPartnerFlow = ai.defineFlow(
   },
   async (input) => {
     try {
-        console.log(`[ENRICHMENT] Starting high-speed research for: "${input.companyName}"`);
+        console.log(`[ENRICHMENT] Starting optimized research for: "${input.companyName}"`);
         
-        // STEP 1: Generate targeted search queries
+        // STEP 1: Generate fewer but more targeted search queries (Reduced from 3 to 2 for speed)
         const queryResponse = await ai.generate({
             model: geminiModel,
-            system: "You are a research strategist. Generate 3 specific search queries to find contact details (email, phone, address, owner name) for a transport company.",
+            system: "You are a research strategist. Generate 2 targeted search queries to find contact details (email, phone, address, owner name) for a transport company in Southern Africa.",
             prompt: `Company: "${input.companyName}" ${input.contactPerson ? `Contact Reference: ${input.contactPerson}` : ''}`,
             output: {
                 schema: z.object({
-                    queries: z.array(z.string()).length(3)
+                    queries: z.array(z.string()).length(2)
                 })
             }
         });
 
         const queries = queryResponse.output?.queries || [
-            `${input.companyName} contact details South Africa Namibia`,
-            `${input.companyName} site:facebook.com OR site:linkedin.com`,
-            `${input.companyName} phone number email address`
+            `${input.companyName} official contact details South Africa Namibia`,
+            `${input.companyName} "email" "phone" address`
         ];
 
-        // STEP 2: Execute searches and gather all snippets
+        // STEP 2: Execute searches in parallel
         console.log(`[ENRICHMENT] Executing queries:`, queries);
         const searchPromises = queries.map(q => googleSearchTool({ query: q }));
         const searchResults = await Promise.all(searchPromises);
-        const allSnippets = searchResults.flat().map(res => `TITLE: ${res.title}\nLINK: ${res.link}\nSNIPPET: ${res.snippet}`).join('\n---\n');
+        const allSnippets = searchResults.flat().map(res => `TITLE: ${res.title}\nSNIPPET: ${res.snippet}`).join('\n---\n');
 
         if (!allSnippets.trim()) {
             console.warn(`[ENRICHMENT] No search results returned for "${input.companyName}"`);
@@ -70,15 +69,14 @@ const enrichPartnerFlow = ai.defineFlow(
         console.log(`[ENRICHMENT] Extracting data from gathered results...`);
         const extraction = await ai.generate({
             model: geminiModel,
-            system: `You are an expert data extraction agent. 
-            Analyze the provided search results and extract verifiable contact details.
+            system: `You are an expert data extraction agent for Southern African business listings. 
+            Analyze results and extract verifiable contact details.
             
-            CRITICAL INSTRUCTIONS:
-            1. SNIPPETS ARE PRIMARY SOURCES: Small companies often don't have websites. Extract emails and phones found in Facebook, LinkedIn, or directory snippets.
-            2. EMAIL PATTERNS: Look specifically for @outlook.com, @gmail.com, or @[company].com.
-            3. PHONE PATTERNS: Look for +264 (Namibia) or +27 (South Africa) formats.
-            4. ADDRESSES: Look for plot numbers, street names, or city markers like "Swakopmund" or "JHB".
-            5. NAMES: Look for "Owner", "Director", "Manager", or "Operations" mentions.
+            CRITICAL EXTRACTION HINTS:
+            - EMAILS: Look for patterns like @outlook.com, @gmail.com, or @[company].com
+            - PHONES: Look for +264 (Namibia) or +27 (South Africa) formats.
+            - ADDRESSES: Look for plot numbers, street names, or city markers like "Swakopmund".
+            - SOURCES: If you see contact info in snippets for Facebook or LinkedIn, use it.
             
             Return null for fields where NO verifiable data is found. DO NOT GUESS.`,
             prompt: `GATHERED SEARCH DATA FOR "${input.companyName}":\n\n${allSnippets}`,
