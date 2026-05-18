@@ -36,7 +36,7 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
                 toast({
                     variant: 'destructive',
                     title: "Research Unsuccessful",
-                    description: "The AI agent searched but couldn't find verifiable details. Please check that your Search Engine ID in .env is correct and includes a colon.",
+                    description: "The AI agent searched but couldn't find verifiable details. Ensure your Search Engine is set to 'Search the entire web'.",
                 });
                 return;
             }
@@ -59,7 +59,7 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
             if (Object.keys(dataToUpdate).length === 0) {
                  toast({
                     title: "No New Data",
-                    description: "The research found existing info but no new fields were missing.",
+                    description: "Found info matched existing record. No updates needed.",
                 });
                 return;
             }
@@ -68,7 +68,7 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
 
             toast({
                 title: "Enrichment Successful",
-                description: `Updated missing details for ${partner.companyName || 'this partner'}.`,
+                description: `Updated details for ${partner.companyName || 'this partner'}.`,
             });
             onUpdate();
         } catch (e: any) {
@@ -78,11 +78,14 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
             let displayTitle = "Enrichment Failed";
             let displayMessage = errorMessage;
 
-            if (errorMessage.includes('CONFIG_ERROR') || errorMessage.includes('Invalid Argument')) {
+            if (errorMessage.includes('CONFIG_ERROR')) {
                 displayTitle = "Configuration Issue";
-                displayMessage = "Check your .env file. CUSTOM_SEARCH_ENGINE_ID must be the ID (e.g. 'abc:123'), not the name. Ensure there are no spaces and that you have restarted the server.";
+                displayMessage = errorMessage.split('CONFIG_ERROR:')[1].trim();
+            } else if (errorMessage.includes('API_ERROR')) {
+                displayTitle = "Google API Error";
+                displayMessage = errorMessage.split('API_ERROR:')[1].trim();
             } else if (errorMessage.includes('SEARCH_TIMEOUT')) {
-                displayMessage = "The search provider took too long. Please try again.";
+                displayMessage = "Search timed out. Please try again.";
             }
 
             toast({ 
@@ -143,14 +146,16 @@ export function BulkEnrichButton({ partners, onComplete }: { partners: any[], on
                         successCount++;
                     }
                 }
-                await new Promise(resolve => setTimeout(resolve, 500)); // Rate limit safety
-            } catch (e) {
-                console.warn(`Bulk Enrichment skipped record: ${partner.id}`);
+            } catch (e: any) {
+                if (e.message.includes('CONFIG_ERROR')) {
+                    toast({ variant: 'destructive', title: "Config Error", description: e.message });
+                    break;
+                }
             }
             setProgress(Math.round(((i + 1) / targets.length) * 100));
         }
 
-        toast({ title: "Bulk Enrichment Finished", description: `Research complete. Updated ${successCount} records.` });
+        toast({ title: "Bulk Research Finished", description: `Updated ${successCount} records.` });
         setIsProcessing(false);
         setProgress(0);
         onComplete();

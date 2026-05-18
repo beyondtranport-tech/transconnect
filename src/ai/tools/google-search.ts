@@ -23,34 +23,27 @@ export const googleSearchTool = ai.defineTool(
     outputSchema: GoogleSearchOutputSchema,
   },
   async (input: GoogleSearchInput) => {
-    // Aggressively sanitize inputs by removing quotes and invisible characters
+    // Aggressively sanitize inputs
     const sanitize = (val: string | undefined) => 
         val?.replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/["']/g, '').trim() || '';
 
-    const apiKey = sanitize(process.env.GOOGLE_SEARCH_API_KEY);
-    const cx = sanitize(process.env.CUSTOM_SEARCH_ENGINE_ID);
+    // Check multiple possible env var locations
+    const apiKey = sanitize(process.env.GOOGLE_SEARCH_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_SEARCH_API_KEY);
+    const cx = sanitize(process.env.CUSTOM_SEARCH_ENGINE_ID || process.env.NEXT_PUBLIC_CUSTOM_SEARCH_ENGINE_ID);
 
-    // Diagnostic logging (Safe masking)
-    const mask = (s: string) => s.length > 6 ? s.substring(0, 3) + '...' + s.substring(s.length - 3) : '****';
-    
-    console.log(`[SEARCH TOOL] researching: "${input.query.trim()}"`);
+    const mask = (s: string) => s.length > 4 ? s.substring(0, 3) + '...' : 'NONE';
     
     if (!apiKey) {
-      console.error("[SEARCH TOOL] ERROR: GOOGLE_SEARCH_API_KEY is undefined in process.env");
-      throw new Error('CONFIG_ERROR: GOOGLE_SEARCH_API_KEY is missing in .env.');
+      throw new Error(`CONFIG_ERROR: GOOGLE_SEARCH_API_KEY is missing. (Found: ${mask(apiKey)})`);
     }
     
     if (!cx) {
-      console.error("[SEARCH TOOL] ERROR: CUSTOM_SEARCH_ENGINE_ID is undefined in process.env");
-      throw new Error('CONFIG_ERROR: CUSTOM_SEARCH_ENGINE_ID is missing in .env.');
+      throw new Error(`CONFIG_ERROR: CUSTOM_SEARCH_ENGINE_ID is missing. (Found: ${mask(cx)})`);
     }
 
     if (!cx.includes(':')) {
-      console.error(`[SEARCH TOOL] ERROR: CX value "${cx}" is invalid. Must contain a colon.`);
-      throw new Error(`CONFIG_ERROR: CUSTOM_SEARCH_ENGINE_ID (CX) is invalid. It must be the alphanumeric ID (e.g. "abc:123"), not the name, and must contain a colon.`);
+      throw new Error(`CONFIG_ERROR: CX value "${mask(cx)}" is invalid. It must contain a colon (e.g. "abc:123"). You might have copied the Search Engine Name instead of the ID.`);
     }
-
-    console.log(`[SEARCH TOOL] Config verified: CX=${mask(cx)}, Key=${mask(apiKey)}`);
 
     if (!input.query || input.query.trim().length === 0) {
         return [];
@@ -62,7 +55,7 @@ export const googleSearchTool = ai.defineTool(
     url.searchParams.set('q', input.query.trim());
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+    const timeoutId = setTimeout(() => controller.abort(), 10000); 
 
     try {
         const response = await fetch(url.toString(), { 
@@ -74,13 +67,12 @@ export const googleSearchTool = ai.defineTool(
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({}));
             const apiMessage = errorData.error?.message || response.statusText;
-            console.error(`[SEARCH TOOL] Google API ${response.status}: ${apiMessage}`);
             
             if (response.status === 400) {
-                throw new Error(`API_ERROR: Google returned "Invalid Argument". This often means your CX or API Key has hidden spaces. Please re-type them manually in .env and RESTART the server.`);
+                throw new Error(`API_ERROR: Google returned "Invalid Argument". Ensure your CX (${mask(cx)}) has no spaces.`);
             }
             if (response.status === 403) {
-                throw new Error(`API_ERROR: Access Denied. Ensure "Custom Search API" is enabled in your Google Cloud Console for project "${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}".`);
+                throw new Error(`API_ERROR: Access Denied. Check API key permissions for "Custom Search API".`);
             }
             
             throw new Error(`API_ERROR: Google Search failed (${response.status}): ${apiMessage}`);
@@ -89,7 +81,6 @@ export const googleSearchTool = ai.defineTool(
         const data = await response.json();
         
         if (!data.items) {
-            console.warn(`[SEARCH TOOL] Zero results for: ${input.query}`);
             return [];
         }
 
@@ -102,7 +93,6 @@ export const googleSearchTool = ai.defineTool(
     } catch (e: any) {
         clearTimeout(timeoutId);
         if (e.name === 'AbortError') {
-            console.warn("[SEARCH TOOL] Google API timed out (10s).");
             throw new Error("SEARCH_TIMEOUT");
         }
         throw e;
