@@ -73,12 +73,12 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
             onUpdate();
         } catch (e: any) {
             const errorMessage = e.message || "";
-            let displayTitle = "Enrichment Failed";
+            let displayTitle = "Google API Error";
             let displayMessage = errorMessage;
 
             if (errorMessage.includes('403') || errorMessage.includes('Access Denied')) {
-                displayTitle = "Google API Activation Required";
-                displayMessage = "The Custom Search API is not enabled in your Google Cloud Project. Please click the link below to enable it.";
+                displayTitle = "API Activation Required";
+                displayMessage = "The Custom Search API is not enabled in your Google Cloud Project. Click the link below to enable it now.";
             } else if (errorMessage.includes('CONFIG_ERROR')) {
                 displayTitle = "Configuration Issue";
                 displayMessage = "Check your .env file. CUSTOM_SEARCH_ENGINE_ID must be the alphanumeric ID from the Control Panel Basics section (e.g. '345...').";
@@ -88,12 +88,12 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
                 variant: 'destructive', 
                 title: displayTitle, 
                 description: (
-                    <div className="space-y-3">
-                        <p className="text-sm">{displayMessage}</p>
+                    <div className="space-y-3 pt-1">
+                        <p className="text-sm leading-relaxed">{displayMessage}</p>
                         <div className="flex gap-2">
-                             <Button asChild variant="outline" size="sm" className="h-8 text-xs bg-white text-destructive">
+                             <Button asChild variant="outline" size="sm" className="h-8 text-xs bg-white text-destructive border-destructive hover:bg-destructive hover:text-white transition-colors">
                                 <a href="https://console.cloud.google.com/apis/library/customsearch.googleapis.com?project=ecosystem-hub" target="_blank" rel="noopener noreferrer">
-                                    <ExternalLink className="mr-1 h-3 w-3" /> Enable Search API
+                                    <ExternalLink className="mr-1.5 h-3 w-3" /> Enable API Now
                                 </a>
                             </Button>
                         </div>
