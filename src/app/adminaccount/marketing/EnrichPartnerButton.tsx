@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Sparkles, Loader2, AlertCircle } from 'lucide-react';
+import { Sparkles, Loader2, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { enrichPartner } from '@/ai/flows/enrich-partner-flow';
 import { getClientSideAuthToken } from '@/firebase';
@@ -15,7 +15,7 @@ async function performAdminAction(token: string, action: string, payload: any) {
     });
     const result = await response.json();
     if (!response.ok || !result.success) {
-        throw new Error(result.error || `API Error for action: ${action}`);
+        throw new Error(result.error || `API Error: ${action}`);
     }
     return result;
 }
@@ -29,14 +29,14 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
         try {
             const result = await enrichPartner({
                 companyName: partner.companyName || `${partner.firstName} ${partner.lastName}`,
-                contactPerson: `${partner.firstName} ${partner.lastName}`.trim() === 'Member Candidate' ? undefined : `${partner.firstName} ${partner.lastName}`,
+                contactPerson: partner.firstName === 'Member' ? undefined : `${partner.firstName} ${partner.lastName}`,
             });
 
             if (!result || (!result.email && !result.phone && !result.website && !result.address && !result.contactPerson)) {
                 toast({
                     variant: 'destructive',
                     title: "Research Unsuccessful",
-                    description: "The AI agent searched but couldn't find verifiable details. Ensure your Google Search Engine ID is configured to 'Search the entire web'.",
+                    description: "The AI agent searched but couldn't find verifiable details. Ensure your Search Engine ID in .env is configured to 'Search the entire web'.",
                 });
                 return;
             }
@@ -59,7 +59,7 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
             if (Object.keys(dataToUpdate).length === 0) {
                  toast({
                     title: "No New Data",
-                    description: "The research found existing information but no new fields to update.",
+                    description: "The research found existing information but no new fields were updated.",
                 });
                 return;
             }
@@ -73,18 +73,21 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
             onUpdate();
         } catch (e: any) {
             console.error("Enrichment UI Error:", e);
-            const errorMessage = e.message || "An unexpected error occurred.";
+            const errorMessage = e.message || "";
             
+            let displayTitle = "Enrichment Failed";
             let displayMessage = errorMessage;
-            if (errorMessage.includes('Invalid Argument')) {
-                displayMessage = "Configuration Error: Please re-check your CUSTOM_SEARCH_ENGINE_ID in .env. Ensure it's the ID, not the name, and has no extra spaces. You may need to restart the server.";
+
+            if (errorMessage.includes('CONFIG_ERROR') || errorMessage.includes('Invalid Argument')) {
+                displayTitle = "Configuration Issue";
+                displayMessage = "Please check your .env file. CUSTOM_SEARCH_ENGINE_ID must be the ID (e.g. 'abc:123'), not the name. Also ensure there are no trailing spaces.";
             } else if (errorMessage.includes('SEARCH_TIMEOUT')) {
-                displayMessage = "The search provider took too long. Please try once more.";
+                displayMessage = "The search provider took too long. Please try one more time.";
             }
 
             toast({ 
                 variant: 'destructive', 
-                title: "Enrichment Failed", 
+                title: displayTitle, 
                 description: displayMessage
             });
         } finally {
@@ -98,7 +101,7 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
             size="icon" 
             onClick={handleEnrich} 
             disabled={isEnriching}
-            title="Enrich with AI Research"
+            title="AI Research & Enrich"
         >
             {isEnriching ? <Loader2 className="h-4 w-4 animate-spin text-primary" /> : <Sparkles className="h-4 w-4 text-primary" />}
         </Button>
@@ -113,7 +116,7 @@ export function BulkEnrichButton({ partners, onComplete }: { partners: any[], on
     const handleBulkEnrich = async () => {
         const targets = partners.filter(p => !p.email || !p.website || !p.phone || !p.address);
         if (targets.length === 0) {
-            toast({ title: "Check Complete", description: "All records are already enriched." });
+            toast({ title: "All records are already enriched." });
             return;
         }
 
@@ -140,15 +143,14 @@ export function BulkEnrichButton({ partners, onComplete }: { partners: any[], on
                         successCount++;
                     }
                 }
-                
-                await new Promise(resolve => setTimeout(resolve, 500));
+                await new Promise(resolve => setTimeout(resolve, 300));
             } catch (e) {
-                console.error(`Failed to enrich ${partner.id}`, e);
+                console.warn(`Bulk Enrichment skipped record: ${partner.id}`);
             }
             setProgress(Math.round(((i + 1) / targets.length) * 100));
         }
 
-        toast({ title: "Bulk Enrichment Finished", description: `Updated ${successCount} records.` });
+        toast({ title: "Bulk Enrichment Finished", description: `Research complete. Updated ${successCount} records.` });
         setIsProcessing(false);
         setProgress(0);
         onComplete();
