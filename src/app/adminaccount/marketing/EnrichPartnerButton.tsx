@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Sparkles, Loader2 } from 'lucide-react';
+import { Sparkles, Loader2, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { enrichPartner } from '@/ai/flows/enrich-partner-flow';
 import { getClientSideAuthToken } from '@/firebase';
@@ -32,10 +32,12 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
                 contactPerson: `${partner.firstName} ${partner.lastName}`.trim() === 'Member Candidate' ? undefined : `${partner.firstName} ${partner.lastName}`,
             });
 
+            // Check if the agent actually found something new
             if (!result.email && !result.phone && !result.website && !result.address && !result.contactPerson) {
                 toast({
-                    title: "No new data found",
-                    description: "The AI agent couldn't find any additional details on the web.",
+                    variant: 'destructive',
+                    title: "Research Unsuccessful",
+                    description: "The AI agent searched but couldn't find verifiable details. Please check your Google Search API configuration if this persists.",
                 });
                 return;
             }
@@ -49,8 +51,8 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
             if (!partner.website && result.website) dataToUpdate.website = result.website;
             if (!partner.address && result.address) dataToUpdate.address = result.address;
             
-            // Handle contact person name splitting
-            if (result.contactPerson && (!partner.firstName || partner.firstName === 'Member')) {
+            // Handle contact person name splitting if we found a name but don't have one
+            if (result.contactPerson && (!partner.firstName || partner.firstName === 'Member' || partner.firstName === '')) {
                 const parts = result.contactPerson.split(' ');
                 dataToUpdate.firstName = parts[0];
                 dataToUpdate.lastName = parts.slice(1).join(' ') || 'Candidate';
@@ -58,8 +60,8 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
 
             if (Object.keys(dataToUpdate).length === 0) {
                  toast({
-                    title: "Data up to date",
-                    description: "The agent found information that already matches your record.",
+                    title: "Data Verified",
+                    description: "The agent found information that matches your existing records exactly.",
                 });
                 return;
             }
@@ -72,7 +74,13 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
             });
             onUpdate();
         } catch (e: any) {
-            toast({ variant: 'destructive', title: "Enrichment Failed", description: e.message });
+            toast({ 
+                variant: 'destructive', 
+                title: "Enrichment Failed", 
+                description: e.message?.includes('CONFIG_ERROR') 
+                    ? "Google Search API is not configured in your .env file." 
+                    : "An unexpected error occurred during research." 
+            });
         } finally {
             setIsEnriching(false);
         }
@@ -84,7 +92,7 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
             size="icon" 
             onClick={handleEnrich} 
             disabled={isEnriching}
-            title="Enrich with Deep Search AI"
+            title="Enrich with Multi-Step AI Research"
         >
             {isEnriching ? <Loader2 className="h-4 w-4 animate-spin text-primary" /> : <Sparkles className="h-4 w-4 text-primary" />}
         </Button>
@@ -99,7 +107,7 @@ export function BulkEnrichButton({ partners, onComplete }: { partners: any[], on
     const handleBulkEnrich = async () => {
         const targets = partners.filter(p => !p.email || !p.website || !p.phone || !p.address);
         if (targets.length === 0) {
-            toast({ title: "No enrichment needed", description: "All records already have complete contact details." });
+            toast({ title: "No enrichment needed", description: "All records in this view are already complete." });
             return;
         }
 
@@ -127,15 +135,15 @@ export function BulkEnrichButton({ partners, onComplete }: { partners: any[], on
                     }
                 }
                 
-                // Adaptive rate limiting
-                await new Promise(resolve => setTimeout(resolve, 2000));
+                // Rate limiting to avoid API quota issues
+                await new Promise(resolve => setTimeout(resolve, 1500));
             } catch (e) {
                 console.error(`Failed to enrich ${partner.id}`, e);
             }
             setProgress(Math.round(((i + 1) / targets.length) * 100));
         }
 
-        toast({ title: "Bulk Enrichment Complete", description: `Updated ${successCount} records.` });
+        toast({ title: "Bulk Enrichment Complete", description: `Research finished. Updated ${successCount} records.` });
         setIsProcessing(false);
         setProgress(0);
         onComplete();

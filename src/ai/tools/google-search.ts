@@ -26,8 +26,7 @@ export const googleSearchTool = ai.defineTool(
     const apiKey = process.env.GOOGLE_SEARCH_API_KEY;
     const cx = process.env.CUSTOM_SEARCH_ENGINE_ID;
 
-    // DIAGNOSTIC LOGGING
-    console.log(`Executing Google Search: "${input.query}"`);
+    console.log(`AI Tool Executing Google Search: "${input.query}"`);
 
     if (!apiKey || apiKey === "YOUR_API_KEY_HERE" || apiKey.includes("PASTE")) {
       console.error("Config Error: GOOGLE_SEARCH_API_KEY is missing or invalid.");
@@ -55,6 +54,8 @@ export const googleSearchTool = ai.defineTool(
             console.warn(`No results found for query: "${input.query}"`);
             return [];
         }
+
+        console.log(`Google Search Tool returned ${data.items.length} results.`);
 
         return data.items.map((item: any) => ({
             title: item.title,

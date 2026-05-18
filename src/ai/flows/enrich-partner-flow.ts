@@ -35,38 +35,38 @@ const enrichPartnerFlow = ai.defineFlow(
   },
   async (input) => {
     try {
-        console.log(`Deep Enrichment started for: "${input.companyName}"`);
+        console.log(`Deep Enrichment Agent started for: "${input.companyName}"`);
         
-        const systemPrompt = `You are an elite corporate intelligence agent specializing in the African logistics sector. 
+        const systemPrompt = `You are an elite corporate intelligence agent specializing in the Southern African logistics sector. 
         Your objective is to find missing contact details for: "${input.companyName}".
         
         STEP 1: USE THE GOOGLE SEARCH TOOL
-        Run multiple specific queries to gather data:
+        Perform multiple, targeted queries to find the most accurate data:
         1. "[Company Name] contact email phone South Africa Namibia"
-        2. "[Company Name] Facebook LinkedIn"
-        3. "[Company Name] business directory"
+        2. "[Company Name] site:facebook.com OR site:linkedin.com"
+        3. "[Company Name] site:yellowpages.co.za OR site:yellowpages.co.na"
         
-        STEP 2: SCAN SNIPPETS CAREFULLY
-        Many small transporters do not have websites but their info is in search snippets from Facebook or directories. 
-        Look for:
-        - Email patterns: Any strings containing "@" and ending in .com, .co.za, .com.na, .outlook.com, .gmail.com.
-        - Phone patterns: Look for +264 (Namibia) or +27 (SA) followed by digits.
-        - Address: Look for phrases like "Plot...", "Street...", "Industrial Area".
-        - People: Look for names mentioned as "Owner", "Manager", or "CEO".
+        STEP 2: DEEP SCAN SNIPPETS
+        Small transporters rarely have dedicated websites. Their info is often in directory or social media snippets.
+        YOU MUST extract:
+        - Emails: Look for any string with "@" (e.g. namibsroostrp@outlook.com).
+        - Phones: Look for +264, +27, or local patterns like 081, 083, 011.
+        - People: Names associated with "Owner", "Director", "Manager".
         
-        STEP 3: EXTRACT & VERIFY
-        - Return the most credible data found. 
-        - If multiple emails exist, prioritize the one that looks professional or matches the company name.
-        - Normalize phone numbers to international format (e.g., +264 ...).
+        STEP 3: MULTI-STEP REASONING
+        If you find a website but no email in the snippet, perform a follow-up search for "[Company Name] website contact email".
         
-        If no data is found for a field, return null. Do not hallucinate.`;
+        Return ONLY real data found. If a field is missing, return null. DO NOT guess or hallucinate.`;
 
         const { output } = await ai.generate({
             model: geminiModel,
             tools: [googleSearchTool],
             system: systemPrompt,
-            prompt: `Find the email, phone, website, physical address, and a key contact person for the company: "${input.companyName}". 
-            ${input.contactPerson ? `Existing (possibly incomplete) contact: ${input.contactPerson}` : ''}`,
+            prompt: `Find contact info for: "${input.companyName}". 
+            ${input.contactPerson ? `Existing contact reference: ${input.contactPerson}` : ''}`,
+            config: {
+                maxSteps: 5, // CRITICAL: Allows the model to perform multiple searches in sequence
+            },
             output: {
                 schema: EnrichPartnerOutputSchema
             }
