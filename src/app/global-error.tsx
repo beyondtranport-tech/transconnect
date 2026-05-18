@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 
 /**
  * The ultimate error boundary for the entire application.
- * Required by Next.js 15 to handle crashes in the root layout.
+ * Required by Next.js to handle crashes in the root layout.
  * MUST include <html> and <body> tags.
  */
 export default function GlobalError({
