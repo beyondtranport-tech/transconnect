@@ -1,7 +1,7 @@
 'use server';
 /**
  * @fileOverview High-speed AI research agent for partner contact info.
- * Uses a parallel search strategy to find hidden details.
+ * Uses a parallel search strategy to mimic manual research (Web + Social).
  */
 
 import { ai, geminiModel } from '@/ai/genkit';
@@ -16,7 +16,7 @@ export type EnrichPartnerInput = z.infer<typeof EnrichPartnerInputSchema>;
 
 const EnrichPartnerOutputSchema = z.object({
   email: z.string().nullable().describe('Verifiable contact email (e.g. outlook.com, gmail.com, or company domain).'),
-  phone: z.string().nullable().describe('Verifiable phone number (look for +264, +27, or local Namibian formats).'),
+  phone: z.string().nullable().describe('Verifiable phone number (look for +264, +27, or local formats).'),
   website: z.string().nullable().describe('The primary company website URL.'),
   address: z.string().nullable().describe('Full physical address found in snippets or contact pages.'),
   contactPerson: z.string().nullable().describe('Extracted name of the Owner, Manager, or Director (often found in LinkedIn/Facebook snippets).'),
@@ -40,9 +40,9 @@ const enrichPartnerFlow = ai.defineFlow(
             return { email: null, phone: null, website: null, address: null, contactPerson: null };
         }
 
-        // We perform two targeted parallel searches to mimic manual research:
-        // 1. General contact info (Targets AI overviews, business directories, and maps)
-        // 2. Social media/Management (Targets Facebook/LinkedIn to find the "John Doe" style names)
+        // Parallel Search Strategy: 
+        // 1. Target contact details directly
+        // 2. Target social media to find names/management
         const [generalResults, socialResults] = await Promise.all([
             googleSearchTool({ query: `${company} contact details email phone address` }),
             googleSearchTool({ query: `${company} owner manager director facebook linkedin` })

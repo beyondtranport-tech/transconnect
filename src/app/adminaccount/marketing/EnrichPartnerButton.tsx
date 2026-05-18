@@ -2,10 +2,11 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Sparkles, Loader2, Info, AlertTriangle } from 'lucide-react';
+import { Sparkles, Loader2, AlertTriangle, Link as LinkIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { enrichPartner } from '@/ai/flows/enrich-partner-flow';
 import { getClientSideAuthToken } from '@/firebase';
+import Link from 'next/link';
 
 async function performAdminAction(token: string, action: string, payload: any) {
     const response = await fetch('/api/admin', {
@@ -80,18 +81,27 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
 
             if (errorMessage.includes('CONFIG_ERROR')) {
                 displayTitle = "Configuration Issue";
-                displayMessage = errorMessage.split('CONFIG_ERROR:')[1].trim();
+                displayMessage = "Please check your .env file. Ensure CUSTOM_SEARCH_ENGINE_ID and GOOGLE_SEARCH_API_KEY are present.";
             } else if (errorMessage.includes('API_ERROR')) {
                 displayTitle = "Google API Error";
                 displayMessage = errorMessage.split('API_ERROR:')[1].trim();
             } else if (errorMessage.includes('SEARCH_TIMEOUT')) {
-                displayMessage = "Search timed out. Please try again.";
+                displayMessage = "Search timed out. This can happen if the API is slow. Please try one more time.";
             }
 
             toast({ 
                 variant: 'destructive', 
                 title: displayTitle, 
-                description: displayMessage
+                description: (
+                    <div className="space-y-2">
+                        <p>{displayMessage}</p>
+                        {displayTitle === "Google API Error" && (
+                            <Button asChild variant="link" className="p-0 h-auto text-xs text-destructive-foreground underline">
+                                <Link href="/docs/google-search-setup.md" target="_blank">Re-check Search Engine Setup</Link>
+                            </Button>
+                        )}
+                    </div>
+                )
             });
         } finally {
             setIsEnriching(false);
@@ -147,8 +157,8 @@ export function BulkEnrichButton({ partners, onComplete }: { partners: any[], on
                     }
                 }
             } catch (e: any) {
-                if (e.message.includes('CONFIG_ERROR')) {
-                    toast({ variant: 'destructive', title: "Config Error", description: e.message });
+                if (e.message.includes('CONFIG_ERROR') || e.message.includes('API_ERROR')) {
+                    toast({ variant: 'destructive', title: "Stopping Bulk Research", description: e.message });
                     break;
                 }
             }

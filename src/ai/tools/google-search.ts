@@ -23,12 +23,15 @@ export const googleSearchTool = ai.defineTool(
     outputSchema: GoogleSearchOutputSchema,
   },
   async (input: GoogleSearchInput) => {
-    // Sanitize inputs
+    // Sanitize inputs and handle invisible characters
     const sanitize = (val: string | undefined) => 
         val?.replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/["']/g, '').trim() || '';
 
     const apiKey = sanitize(process.env.GOOGLE_SEARCH_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_SEARCH_API_KEY);
     const cx = sanitize(process.env.CUSTOM_SEARCH_ENGINE_ID || process.env.NEXT_PUBLIC_CUSTOM_SEARCH_ENGINE_ID);
+
+    // Diagnostics logging (masked)
+    console.log(`[SEARCH TOOL] Using CX: ${cx ? cx.substring(0, 4) + '...' + cx.substring(cx.length - 2) : 'NONE'}`);
 
     if (!apiKey) {
       throw new Error(`CONFIG_ERROR: GOOGLE_SEARCH_API_KEY is missing in your .env file.`);
@@ -65,6 +68,10 @@ export const googleSearchTool = ai.defineTool(
                 throw new Error(`API_ERROR: Access Denied. Check API key permissions for "Custom Search API" in Google Cloud Console.`);
             }
             
+            if (response.status === 400) {
+                throw new Error(`API_ERROR: Google returned "Invalid Argument". Found CX ID: "${cx.substring(0, 3)}...". Ensure this is the alphanumeric ID from the "Basics" section of the Control Panel.`);
+            }
+            
             throw new Error(`API_ERROR: Google Search failed (${response.status}): ${apiMessage}`);
         }
         
@@ -83,7 +90,7 @@ export const googleSearchTool = ai.defineTool(
     } catch (e: any) {
         clearTimeout(timeoutId);
         if (e.name === 'AbortError') {
-            throw new Error("SEARCH_TIMEOUT");
+            throw new Error("SEARCH_TIMEOUT: The search took too long. Please try again.");
         }
         throw e;
     }
