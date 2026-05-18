@@ -23,14 +23,14 @@ export const googleSearchTool = ai.defineTool(
     outputSchema: GoogleSearchOutputSchema,
   },
   async (input: GoogleSearchInput) => {
-    // Aggressive sanitization to remove any hidden characters, quotes, or whitespace
+    // Aggressive sanitization of IDs to handle whitespace, hidden chars, or quotes
     const sanitize = (val: string | undefined) => 
         val?.replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/["']/g, '').trim() || '';
 
     const apiKey = sanitize(process.env.GOOGLE_SEARCH_API_KEY);
     const cx = sanitize(process.env.CUSTOM_SEARCH_ENGINE_ID);
 
-    // Terminal Diagnostics - This is visible in your Studio terminal
+    // Terminal Diagnostics - Visible in your Dev Terminal
     if (process.env.NODE_ENV !== 'production') {
         console.log(`[GOOGLE SEARCH] Requesting query: "${input.query}"`);
         console.log(`[GOOGLE SEARCH] Using API Key: ${apiKey ? apiKey.substring(0, 5) + '...' : 'MISSING'}`);
@@ -49,13 +49,13 @@ export const googleSearchTool = ai.defineTool(
         return [];
     }
     
-    const url = new URL('https://www.googleapis.com/customsearch/v1');
+    const url = new URL('https://www.googleapis.com/googleapis/customsearch/v1');
     url.searchParams.set('key', apiKey);
     url.searchParams.set('cx', cx);
     url.searchParams.set('q', input.query.trim());
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 12000); 
+    const timeoutId = setTimeout(() => controller.abort(), 15000); 
 
     try {
         const response = await fetch(url.toString(), { 
@@ -73,7 +73,7 @@ export const googleSearchTool = ai.defineTool(
             }
             
             if (response.status === 400) {
-                throw new Error(`API_ERROR: Google returned "Invalid Argument" (400). Found CX ID: "${cx.substring(0, 4)}...". Verify this ID in the "Basics" section of the Control Panel.`);
+                throw new Error(`API_ERROR: Google returned "Invalid Argument" (400). Found CX ID: "${cx.substring(0, 4)}...". Verify this ID in the "Basics" section of the Programmable Search Control Panel.`);
             }
             
             throw new Error(`API_ERROR: Google Search failed (${response.status}): ${apiMessage}`);

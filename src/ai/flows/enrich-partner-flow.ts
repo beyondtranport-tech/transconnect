@@ -1,7 +1,7 @@
 'use server';
 /**
- * @fileOverview High-performance AI research agent for partner contact info.
- * Uses a parallel search strategy to mimic high-quality manual research.
+ * @fileOverview High-intelligence AI research agent for partner contact info.
+ * Uses a parallel search strategy to find emails and management names.
  */
 
 import { ai, geminiModel } from '@/ai/genkit';
@@ -40,12 +40,12 @@ const enrichPartnerFlow = ai.defineFlow(
             return { email: null, phone: null, website: null, address: null, contactPerson: null };
         }
 
-        // Parallel Search Strategy to mimic manual success:
-        // 1. General search for contact details (targeting outlook/gmail/local numbers)
-        // 2. Targeted search for owners/managers on social media (Facebook/LinkedIn)
+        // Parallel Search Strategy:
+        // 1. General search for contact details
+        // 2. Social search for owner/management
         const [generalResults, socialResults] = await Promise.all([
-            googleSearchTool({ query: `${company} contact details phone email outlook.com` }),
-            googleSearchTool({ query: `${company} owner manager facebook linkedin` })
+            googleSearchTool({ query: `${company} contact details phone email outlook.com gmail.com` }),
+            googleSearchTool({ query: `${company} owner manager director facebook linkedin` })
         ]);
         
         const allResults = [...(generalResults || []), ...(socialResults || [])];
@@ -69,7 +69,7 @@ const enrichPartnerFlow = ai.defineFlow(
             2. If a field is not present, return 'null'. DO NOT hallucinate.
             3. Prioritize personal names (Owners/Directors) found on Facebook or LinkedIn snippet previews.
             4. If multiple emails exist, prioritize company domain or professional outlook/gmail addresses.`,
-            prompt: `ANALYZE RESULTS FOR "${company}":\n\n${allContent}`,
+            prompt: `ANALYZE SEARCH RESULTS FOR "${company}":\n\n${allContent}`,
             output: {
                 schema: EnrichPartnerOutputSchema
             }

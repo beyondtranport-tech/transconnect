@@ -10,17 +10,17 @@ export default function GlobalError({
   reset: () => void;
 }) {
   return (
-    <html>
-      <body>
-        <div className="flex flex-col items-center justify-center min-h-screen p-4 text-center bg-background">
-          <h2 className="text-2xl font-bold mb-4">A critical error occurred</h2>
+    <html lang="en">
+      <body className="antialiased">
+        <div className="flex flex-col items-center justify-center min-h-screen p-4 text-center bg-background text-foreground">
+          <h2 className="text-3xl font-bold mb-4">A critical error occurred</h2>
           <p className="text-muted-foreground mb-6 max-w-md">
-            The application failed to load a core component. This may be due to a temporary configuration issue.
+            The application failed to load a core layout component. This may be due to a temporary configuration or routing issue.
           </p>
-          <div className="bg-muted p-4 rounded-md mb-6 font-mono text-xs text-destructive">
-             {error.message}
+          <div className="bg-muted p-4 rounded-md mb-6 font-mono text-xs text-destructive max-w-2xl overflow-x-auto text-left">
+             {error.stack || error.message}
           </div>
-          <Button onClick={() => reset()}>Try Again</Button>
+          <Button size="lg" onClick={() => reset()}>Restart Application</Button>
         </div>
       </body>
     </html>
