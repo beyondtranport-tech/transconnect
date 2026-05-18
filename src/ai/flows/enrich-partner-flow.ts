@@ -1,8 +1,7 @@
-
 'use server';
 /**
- * @fileOverview An AI agent to find missing contact info for business partners.
- * It is optimized for Southern African companies (ZA, NA, etc.) and uses multi-step searching.
+ * @fileOverview An advanced AI research agent to find missing contact info for business partners.
+ * Optimized for Southern African companies (ZA, NA, etc.) using iterative searching and snippet scanning.
  */
 
 import { ai, geminiModel } from '@/ai/genkit';
@@ -16,9 +15,11 @@ const EnrichPartnerInputSchema = z.object({
 export type EnrichPartnerInput = z.infer<typeof EnrichPartnerInputSchema>;
 
 const EnrichPartnerOutputSchema = z.object({
-  email: z.string().nullable().describe('Found general contact email. Return null if not found.'),
-  phone: z.string().nullable().describe('Found primary phone number. Return null if not found.'),
-  website: z.string().nullable().describe('Found official company website. Return null if not found.'),
+  email: z.string().nullable().describe('Found general contact email. Often appears as @outlook.com or @gmail.com in snippets.'),
+  phone: z.string().nullable().describe('Found primary phone number. Look for international formats (+264, +27).'),
+  website: z.string().nullable().describe('Found official company website.'),
+  address: z.string().nullable().describe('Found physical or postal address.'),
+  contactPerson: z.string().nullable().describe('Found name of owner, manager, or contact person.'),
 });
 export type EnrichPartnerOutput = z.infer<typeof EnrichPartnerOutputSchema>;
 
@@ -34,48 +35,49 @@ const enrichPartnerFlow = ai.defineFlow(
   },
   async (input) => {
     try {
-        console.log(`Enrichment flow started for: "${input.companyName}"`);
+        console.log(`Deep Enrichment started for: "${input.companyName}"`);
         
-        // Clean the input
-        const companyName = input.companyName.trim();
+        const systemPrompt = `You are an elite corporate intelligence agent specializing in the African logistics sector. 
+        Your objective is to find missing contact details for: "${input.companyName}".
         
-        const systemPrompt = `You are an elite business research agent specializing in the Southern African transport and logistics sector. 
-        Your goal is to find accurate contact details (email, phone, website) for the company provided.
+        STEP 1: USE THE GOOGLE SEARCH TOOL
+        Run multiple specific queries to gather data:
+        1. "[Company Name] contact email phone South Africa Namibia"
+        2. "[Company Name] Facebook LinkedIn"
+        3. "[Company Name] business directory"
         
-        SEARCH STRATEGY:
-        1. Use the googleSearch tool to search for: "[Company Name] contact email phone website South Africa Namibia".
-        2. Inspect the snippets and titles CAREFULLY. Often, small to medium transporters use Outlook or Gmail addresses (e.g., companyname@outlook.com) and these appear directly in the search result snippets.
-        3. If no clear email/phone is found in broad results, perform a SECOND search using: "[Company Name] Swakopmund Namibia contact" or similar city-specific variations if a location is hinted at.
-        4. If a Facebook page result appears, check its snippet for a phone number or email, as these are often the most current.
+        STEP 2: SCAN SNIPPETS CAREFULLY
+        Many small transporters do not have websites but their info is in search snippets from Facebook or directories. 
+        Look for:
+        - Email patterns: Any strings containing "@" and ending in .com, .co.za, .com.na, .outlook.com, .gmail.com.
+        - Phone patterns: Look for +264 (Namibia) or +27 (SA) followed by digits.
+        - Address: Look for phrases like "Plot...", "Street...", "Industrial Area".
+        - People: Look for names mentioned as "Owner", "Manager", or "CEO".
         
-        EXTRACTION RULES:
-        - Extract the email only if it clearly belongs to the company.
-        - Normalize phone numbers to include country codes (e.g., +264 for Namibia, +27 for SA).
-        - If multiple websites are found, prioritize the one that matches the company name exactly.
+        STEP 3: EXTRACT & VERIFY
+        - Return the most credible data found. 
+        - If multiple emails exist, prioritize the one that looks professional or matches the company name.
+        - Normalize phone numbers to international format (e.g., +264 ...).
         
-        Return null for fields you absolutely cannot verify with high confidence.`;
-
-        const userPrompt = `Research and find the primary email, phone number, and official website for the company: "${companyName}". 
-        ${input.contactPerson ? `The contact person associated with this company might be ${input.contactPerson}.` : ''}
-        
-        Use the googleSearch tool to find this information from real-time web data.`;
+        If no data is found for a field, return null. Do not hallucinate.`;
 
         const { output } = await ai.generate({
             model: geminiModel,
             tools: [googleSearchTool],
             system: systemPrompt,
-            prompt: userPrompt,
+            prompt: `Find the email, phone, website, physical address, and a key contact person for the company: "${input.companyName}". 
+            ${input.contactPerson ? `Existing (possibly incomplete) contact: ${input.contactPerson}` : ''}`,
             output: {
                 schema: EnrichPartnerOutputSchema
             }
         });
         
-        console.log(`Enrichment result for "${companyName}":`, output);
+        console.log(`Enrichment result for "${input.companyName}":`, output);
         
-        return output || { email: null, phone: null, website: null };
+        return output || { email: null, phone: null, website: null, address: null, contactPerson: null };
     } catch (e: any) {
         console.error("Enrichment Flow Error:", e);
-        return { email: null, phone: null, website: null };
+        return { email: null, phone: null, website: null, address: null, contactPerson: null };
     }
   }
 );

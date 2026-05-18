@@ -29,13 +29,13 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
         try {
             const result = await enrichPartner({
                 companyName: partner.companyName || `${partner.firstName} ${partner.lastName}`,
-                contactPerson: `${partner.firstName} ${partner.lastName}`,
+                contactPerson: `${partner.firstName} ${partner.lastName}`.trim() === 'Member Candidate' ? undefined : `${partner.firstName} ${partner.lastName}`,
             });
 
-            if (!result.email && !result.phone && !result.website) {
+            if (!result.email && !result.phone && !result.website && !result.address && !result.contactPerson) {
                 toast({
                     title: "No new data found",
-                    description: "The AI agent couldn't find any additional contact details for this record.",
+                    description: "The AI agent couldn't find any additional details on the web.",
                 });
                 return;
             }
@@ -47,11 +47,19 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
             if (!partner.email && result.email) dataToUpdate.email = result.email;
             if (!partner.phone && result.phone) dataToUpdate.phone = result.phone;
             if (!partner.website && result.website) dataToUpdate.website = result.website;
+            if (!partner.address && result.address) dataToUpdate.address = result.address;
+            
+            // Handle contact person name splitting
+            if (result.contactPerson && (!partner.firstName || partner.firstName === 'Member')) {
+                const parts = result.contactPerson.split(' ');
+                dataToUpdate.firstName = parts[0];
+                dataToUpdate.lastName = parts.slice(1).join(' ') || 'Candidate';
+            }
 
             if (Object.keys(dataToUpdate).length === 0) {
                  toast({
-                    title: "Data already exists",
-                    description: "Found details already match your record.",
+                    title: "Data up to date",
+                    description: "The agent found information that already matches your record.",
                 });
                 return;
             }
@@ -60,7 +68,7 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
 
             toast({
                 title: "Enrichment Successful",
-                description: `Found and updated missing details.`,
+                description: `Updated ${Object.keys(dataToUpdate).length} field(s) for ${partner.companyName || 'this partner'}.`,
             });
             onUpdate();
         } catch (e: any) {
@@ -76,7 +84,7 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
             size="icon" 
             onClick={handleEnrich} 
             disabled={isEnriching}
-            title="Enrich with AI Agent"
+            title="Enrich with Deep Search AI"
         >
             {isEnriching ? <Loader2 className="h-4 w-4 animate-spin text-primary" /> : <Sparkles className="h-4 w-4 text-primary" />}
         </Button>
@@ -89,9 +97,9 @@ export function BulkEnrichButton({ partners, onComplete }: { partners: any[], on
     const { toast } = useToast();
 
     const handleBulkEnrich = async () => {
-        const targets = partners.filter(p => !p.email || !p.website || !p.phone);
+        const targets = partners.filter(p => !p.email || !p.website || !p.phone || !p.address);
         if (targets.length === 0) {
-            toast({ title: "No enrichment needed", description: "All records in this list already have contact details." });
+            toast({ title: "No enrichment needed", description: "All records already have complete contact details." });
             return;
         }
 
@@ -109,6 +117,7 @@ export function BulkEnrichButton({ partners, onComplete }: { partners: any[], on
                 if (!partner.email && result.email) dataToUpdate.email = result.email;
                 if (!partner.website && result.website) dataToUpdate.website = result.website;
                 if (!partner.phone && result.phone) dataToUpdate.phone = result.phone;
+                if (!partner.address && result.address) dataToUpdate.address = result.address;
 
                 if (Object.keys(dataToUpdate).length > 0) {
                     const token = await getClientSideAuthToken();
@@ -118,15 +127,15 @@ export function BulkEnrichButton({ partners, onComplete }: { partners: any[], on
                     }
                 }
                 
-                // Rate limit protection
-                await new Promise(resolve => setTimeout(resolve, 1500));
+                // Adaptive rate limiting
+                await new Promise(resolve => setTimeout(resolve, 2000));
             } catch (e) {
                 console.error(`Failed to enrich ${partner.id}`, e);
             }
             setProgress(Math.round(((i + 1) / targets.length) * 100));
         }
 
-        toast({ title: "Bulk Enrichment Complete", description: `Successfully enriched ${successCount} records.` });
+        toast({ title: "Bulk Enrichment Complete", description: `Updated ${successCount} records.` });
         setIsProcessing(false);
         setProgress(0);
         onComplete();
@@ -135,7 +144,7 @@ export function BulkEnrichButton({ partners, onComplete }: { partners: any[], on
     return (
         <Button variant="outline" size="sm" onClick={handleBulkEnrich} disabled={isProcessing}>
             {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4" />}
-            {isProcessing ? `Enriching ${progress}%` : 'Bulk Enrich Missing Info'}
+            {isProcessing ? `Researching ${progress}%` : 'Bulk AI Research'}
         </Button>
     );
 }
