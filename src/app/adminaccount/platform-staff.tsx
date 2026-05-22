@@ -131,11 +131,40 @@ function PlatformStaffDialog({ open, onOpenChange, staff, onSave }: { open: bool
                         <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel>Mobile Number (Optional)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
-                        <FormField control={form.control} name="department" render={({ field }) => ( <FormItem><FormLabel>Primary Role</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a role..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="Engagement">Engagement (Sales)</SelectItem><SelectItem value="Technical">Technical (Support)</SelectItem><SelectItem value="Finance">Finance</SelectItem><SelectItem value="Operations">Operations</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
-                        <FormField control={form.control} name="status" render={({ field }) => ( <FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="active">Active</SelectItem><SelectItem value="inactive">Inactive</SelectItem></SelectContent></Select><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="department" render={({ field }) => ( 
+                            <FormItem>
+                                <FormLabel>Primary Role</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl><SelectTrigger><SelectValue placeholder="Select a role..." /></SelectTrigger></FormControl>
+                                    <SelectContent>
+                                        <SelectItem value="Engagement">Engagement (Sales)</SelectItem>
+                                        <SelectItem value="Technical">Technical (Support)</SelectItem>
+                                        <SelectItem value="Finance">Finance</SelectItem>
+                                        <SelectItem value="Operations">Operations</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem> 
+                        )} />
+                        <FormField control={form.control} name="status" render={({ field }) => ( 
+                            <FormItem>
+                                <FormLabel>Status</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                                    <SelectContent>
+                                        <SelectItem value="active">Active</SelectItem>
+                                        <SelectItem value="inactive">Inactive</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem> 
+                        )} />
                     </div>
                      <DialogFooter className="pt-4">
-                        <Button type="submit" disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />} Save Team Member</Button>
+                        <Button type="submit" disabled={isLoading}>
+                            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />} 
+                            Save Team Member
+                        </Button>
                     </DialogFooter>
                 </form>
             </Form>

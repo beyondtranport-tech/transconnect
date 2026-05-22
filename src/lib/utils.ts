@@ -36,7 +36,7 @@ export function formatNumber(value: number | null | undefined): string {
 }
 
 /**
- * Safely copies HTML content to the clipboard with feature detection for the ClipboardItem API.
+ * Safely copies HTML content to the clipboard with feature detection.
  * Prevents "Illegal constructor" errors in restricted browser environments.
  */
 export async function copyHtmlToClipboard(html: string, plainText?: string) {
@@ -45,7 +45,7 @@ export async function copyHtmlToClipboard(html: string, plainText?: string) {
     const textToCopy = plainText || html.replace(/<[^>]*>/g, '');
 
     try {
-        // Try the modern ClipboardItem API first (requires secure context and constructor support)
+        // Feature detection for rich-text copying
         if (typeof window.ClipboardItem !== 'undefined' && navigator.clipboard && navigator.clipboard.write) {
             const htmlBlob = new Blob([html], { type: 'text/html' });
             const textBlob = new Blob([textToCopy], { type: 'text/plain' });
@@ -60,7 +60,7 @@ export async function copyHtmlToClipboard(html: string, plainText?: string) {
         console.warn("Rich clipboard copy failed, falling back to plain text:", e);
     }
 
-    // Fallback to standard plain-text copying
+    // Standard plain-text fallback
     try {
         await navigator.clipboard.writeText(textToCopy);
         return true;

@@ -85,13 +85,15 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     setIsUserDataLoading(true);
     const userRef = doc(firestore, 'users', authState.uid);
     
-    return onSnapshot(userRef, (snap) => {
+    const unsub = onSnapshot(userRef, (snap) => {
       setUserData(snap.data() || null);
       setIsUserDataLoading(false);
     }, (err) => {
       console.error("Error fetching user data:", err);
       setIsUserDataLoading(false);
     });
+    
+    return unsub;
   }, [firestore, authState?.uid, refreshKey]);
 
   // 3. Company Data Listener
@@ -106,13 +108,15 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     setIsCompanyDataLoading(true);
     const companyRef = doc(firestore, 'companies', companyId);
     
-    return onSnapshot(companyRef, (cSnap) => {
+    const unsub = onSnapshot(companyRef, (cSnap) => {
         setCompanyData(cSnap.data() || null);
         setIsCompanyDataLoading(false);
     }, (err) => {
         console.error("Error fetching company data:", err);
         setIsCompanyDataLoading(false);
     });
+
+    return unsub;
   }, [firestore, userData?.companyId]);
 
   const enrichedUser = useMemo(() => {
