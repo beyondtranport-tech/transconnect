@@ -136,11 +136,11 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     };
   }, [authState, userData, companyData]);
 
-  // Methodist Resolve: Ensure isUserLoading properly settles even if documents are missing
   const isUserLoading = useMemo(() => {
       if (!auth) return false;
       if (isAuthLoading) return true;
       if (!authState) return false;
+      // Resolve loading once we know if documents exist or not
       return isUserDataLoading || isCompanyDataLoading;
   }, [isAuthLoading, isUserDataLoading, isCompanyDataLoading, authState, auth]);
 

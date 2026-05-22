@@ -166,6 +166,8 @@ export default function TransporterManagement() {
 
   useEffect(() => { forceRefresh(); }, [forceRefresh]);
 
+  const staffMap = useMemo(() => new Map(staff.map(s => [s.id, `${s.firstName} ${s.lastName}`])), [staff]);
+
   const filteredTransporters = useMemo(() => {
     return partners.filter(p => {
         const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
@@ -221,6 +223,15 @@ export default function TransporterManagement() {
                         <MailQuestion className="mr-1 h-3 w-3" /> Sent
                     </Badge>
                 )}
+            </div>
+        )
+    },
+    { 
+        header: 'Assignee', 
+        cell: ({row}) => (
+            <div className="flex items-center gap-2">
+                <Users className="h-3 w-3 text-muted-foreground" />
+                <span className="text-xs font-medium">{staffMap.get(row.original.assigneeId) || <span className="text-muted-foreground italic">Unallocated</span>}</span>
             </div>
         )
     },

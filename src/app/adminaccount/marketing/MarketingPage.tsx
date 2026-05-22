@@ -194,14 +194,16 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
         const token = await getClientSideAuthToken();
         if (!token) throw new Error("Not authenticated.");
 
+        const subjectLabel = activeTab.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+
         await performAdminAction(token, 'logCommunication', {
             partnerId: logData.partnerId,
             type: logData.communicationType,
-            subject: logData.subject,
+            subject: subjectLabel,
             notes: logData.notes,
         });
 
-        // Use safe utility instead of manual ClipboardItem
+        // Use safe utility instead of restricted ClipboardItem constructor
         const success = await copyHtmlToClipboard(contentElement.innerHTML);
         if (!success) throw new Error("Copy failed.");
 

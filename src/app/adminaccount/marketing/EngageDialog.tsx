@@ -133,7 +133,7 @@ export function EngageDialog({ open, onOpenChange, partner, audience, onEngageSu
         trackingPixel.style.display = 'none';
         contentClone.appendChild(trackingPixel);
 
-        // 3. Copy using the safe feature-detecting utility
+        // 3. Copy using the safe feature-detecting utility to avoid "Illegal constructor"
         const success = await copyHtmlToClipboard(contentClone.innerHTML);
 
         if (!success) throw new Error("Could not copy content to clipboard.");
