@@ -256,6 +256,7 @@ export default function TransporterManagement() {
         onOpenChange={(o) => !o && setDialog({ type: null })} 
         partner={dialog.data} 
         audience="transporters" 
+        onEngageSuccess={forceRefresh}
       />
       <TransporterDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={forceRefresh} />
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
