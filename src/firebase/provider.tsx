@@ -142,12 +142,14 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     };
   }, [authState, userData, companyData]);
 
+  // FIX: Ensure isUserLoading resolves even if company data is missing
   const isUserLoading = useMemo(() => {
       if (!auth) return false;
       if (isAuthLoading) return true;
       if (!authState) return false;
-      return isUserDataLoading || isCompanyDataLoading;
-  }, [isAuthLoading, isUserDataLoading, isCompanyDataLoading, authState, auth]);
+      // If we have auth, wait for user data. Company data is secondary.
+      return isUserDataLoading;
+  }, [isAuthLoading, isUserDataLoading, authState, auth]);
 
   const contextValue = useMemo((): FirebaseContextState => {
     const servicesAvailable = !!(firebaseApp && firestore && auth);

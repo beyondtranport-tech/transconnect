@@ -90,6 +90,7 @@ export async function POST(req: NextRequest) {
                 };
                 const leadRole = roleMapping[type] || type;
 
+                // FIX: Unified query for both Leads and Partners
                 const [partnersSnap, leadsSnap] = await Promise.all([
                     db.collection('partners').where('type', '==', type).get(),
                     db.collection('leads').where('role', '==', leadRole).get()
