@@ -37,33 +37,14 @@ export function formatNumber(value: number | null | undefined): string {
 
 /**
  * Safely copies HTML content to the clipboard with robust feature detection.
- * Avoids "Illegal constructor" errors in restricted browser environments.
+ * Avoids "Illegal constructor" errors by using a resilient hidden-element strategy.
  */
 export async function copyHtmlToClipboard(html: string, plainText?: string) {
     if (typeof window === 'undefined') return false;
 
     const textToCopy = plainText || html.replace(/<[^>]*>/g, '');
 
-    // Attempt 1: Modern Async Clipboard API with ClipboardItem check
-    if (typeof window.ClipboardItem !== 'undefined' && navigator.clipboard && navigator.clipboard.write) {
-        try {
-            // Using a plain object instead of a constructor-based items array first
-            const blobHtml = new Blob([html], { type: 'text/html' });
-            const blobText = new Blob([textToCopy], { type: 'text/plain' });
-            
-            const item = new ClipboardItem({
-                'text/html': blobHtml,
-                'text/plain': blobText,
-            });
-            await navigator.clipboard.write([item]);
-            return true;
-        } catch (e) {
-            console.warn("Modern clipboard copy failed, falling back:", e);
-        }
-    }
-
-    // Attempt 2: Older synchronous way using a hidden element
-    // Highly compatible and avoids "Illegal constructor" issue
+    // Attempt 1: Safe hidden-element approach to avoid ClipboardItem constructor crash
     try {
         const container = document.createElement('div');
         container.innerHTML = html;
@@ -85,7 +66,7 @@ export async function copyHtmlToClipboard(html: string, plainText?: string) {
         console.warn("Fallback HTML copy failed:", e);
     }
 
-    // Attempt 3: Absolute fallback - plain text only
+    // Attempt 2: Plain text fallback
     try {
         await navigator.clipboard.writeText(textToCopy);
         return true;

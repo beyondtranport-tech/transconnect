@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetFooter } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import * as React from "react";
-import { useUser, useAuth, useFirestore, useDoc, useMemoFirebase } from "@/firebase";
+import { useUser, useAuth } from "@/firebase";
 import { signOut } from "firebase/auth";
 import {
   DropdownMenu,
@@ -20,7 +20,6 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useCart } from "@/context/CartContext";
 import { Badge } from "@/components/ui/badge";
-import { doc } from 'firebase/firestore';
 import { Skeleton } from "@/components/ui/skeleton";
 
 const mainNavLinks = [
@@ -48,13 +47,6 @@ export function Header() {
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
   const { cartItems, isCartLoading } = useCart();
-  const firestore = useFirestore();
-
-  const companyDocRef = useMemoFirebase(() => {
-    if (!firestore || !user?.companyId) return null;
-    return doc(firestore, 'companies', user.companyId);
-  }, [firestore, user?.companyId]);
-  const { data: companyData, isLoading: isCompanyLoading } = useDoc(companyDocRef);
 
   const handleSignOut = async () => {
     if (!auth) return;
@@ -72,9 +64,8 @@ export function Header() {
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
   };
 
-  const isDataLoading = isUserLoading || isCompanyLoading;
   const isAdmin = user && (user.email === 'beyondtransport@gmail.com' || user.email === 'mkoton100@gmail.com');
-  const isWctaMember = user?.claims?.wcta === true || companyData?.referrerId === 'WCTA';
+  const isWctaMember = user?.claims?.wcta === true || user?.companyData?.referrerId === 'WCTA';
 
   const navItems = [
     { href: "/", label: "Home" },
@@ -175,9 +166,7 @@ export function Header() {
                         <Link href="/account">My Account</Link>
                     </DropdownMenuItem>
 
-                    {isDataLoading ? (
-                        <DropdownMenuItem disabled><Skeleton className="h-4 w-32" /></DropdownMenuItem>
-                    ) : (isAdmin || isWctaMember) && (
+                    {(isAdmin || isWctaMember) && (
                         <>
                             <DropdownMenuItem asChild>
                                 <Link href="/supply-chain">Supply Chain Portal</Link>
@@ -280,7 +269,7 @@ export function Header() {
                     </nav>
                 </div>
                 <SheetFooter className="p-4 border-t">
-                    {isDataLoading ? (
+                    {isUserLoading ? (
                         <div className="h-10 w-full rounded-md bg-muted/50 animate-pulse" />
                     ) : user ? (
                         <div className='flex flex-col gap-2'>

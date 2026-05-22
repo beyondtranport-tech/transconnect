@@ -18,14 +18,14 @@ export interface FirebaseContextState {
   firebaseApp: FirebaseApp | null;
   firestore: Firestore | null;
   auth: Auth | null;
-  user: (User & { [key: string]: any }) | null;
+  user: any | null;
   isUserLoading: boolean;
   userError: Error | null;
   forceRefresh: () => void;
 }
 
 export interface UserHookResult { 
-  user: (User & { [key: string]: any }) | null;
+  user: any | null;
   isUserLoading: boolean;
   userError: Error | null;
   forceRefresh: () => void;
@@ -123,14 +123,22 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
 
   const enrichedUser = useMemo(() => {
     if (!authState) return null;
+    
+    // Explicitly define properties to avoid spreading the complex User class instance
     return {
-      ...authState,
+      uid: authState.uid,
+      email: authState.email,
+      displayName: authState.displayName,
+      photoURL: authState.photoURL,
+      emailVerified: authState.emailVerified,
+      phoneNumber: authState.phoneNumber,
+      // Merge with Firestore profile and company data
       ...userData,
       companyData,
     };
   }, [authState, userData, companyData]);
 
-  // Ensure isUserLoading only returns true while active auth/doc checks are in progress
+  // Ensure isUserLoading properly settles
   const isUserLoading = isAuthLoading || isUserDataLoading || isCompanyDataLoading;
 
   const contextValue = useMemo((): FirebaseContextState => {
@@ -140,7 +148,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       firebaseApp: servicesAvailable ? firebaseApp : null,
       firestore: servicesAvailable ? firestore : null,
       auth: servicesAvailable ? auth : null,
-      user: enrichedUser as any,
+      user: enrichedUser,
       isUserLoading,
       userError,
       forceRefresh,
