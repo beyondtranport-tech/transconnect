@@ -5,7 +5,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, Truck, Edit, Trash2, Send, CheckCircle, Users, MailCheck, MailQuestion, Filter, Save } from 'lucide-react';
+import { Loader2, PlusCircle, Truck, Edit, Trash2, Send, CheckCircle, Users, MailCheck, MailQuestion, Filter, Save, Search } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -143,6 +143,7 @@ export default function TransporterManagement() {
 
   const [statusFilter, setStatusFilter] = useState('all');
   const [assigneeFilter, setAssigneeFilter] = useState('all');
+  const [dataFilter, setDataFilter] = useState('all');
 
   const forceRefresh = useCallback(async () => {
     setIsLoading(true);
@@ -170,9 +171,18 @@ export default function TransporterManagement() {
     return partners.filter(p => {
         const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
         const matchesAssignee = assigneeFilter === 'all' || p.assigneeId === assigneeFilter;
-        return matchesStatus && matchesAssignee;
+        
+        let matchesData = true;
+        if (dataFilter === 'no-email') matchesData = !p.email;
+        else if (dataFilter === 'no-phone') matchesData = !p.phone;
+        else if (dataFilter === 'no-website') matchesData = !p.website;
+        else if (dataFilter === 'has-email') matchesData = !!p.email;
+        else if (dataFilter === 'has-phone') matchesData = !!p.phone;
+        else if (dataFilter === 'has-website') matchesData = !!p.website;
+
+        return matchesStatus && matchesAssignee && matchesData;
     });
-  }, [partners, statusFilter, assigneeFilter]);
+  }, [partners, statusFilter, assigneeFilter, dataFilter]);
 
   async function handleDelete() {
     try {
@@ -264,7 +274,7 @@ export default function TransporterManagement() {
         <CardContent>
             <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg">
                 <div className="flex-1 space-y-2">
-                    <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status Filter</Label>
+                    <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status</Label>
                     <Select value={statusFilter} onValueChange={setStatusFilter}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
@@ -275,13 +285,28 @@ export default function TransporterManagement() {
                     </Select>
                 </div>
                 <div className="flex-1 space-y-2">
-                    <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Users className="h-3 w-3"/> Assignee Filter</Label>
+                    <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Users className="h-3 w-3"/> Assignee</Label>
                     <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">All Staff</SelectItem>
                             <SelectItem value="none">Unallocated</SelectItem>
                             {staff.map(s => <SelectItem key={s.id} value={s.id}>{s.firstName} {s.lastName}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div className="flex-1 space-y-2">
+                    <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Search className="h-3 w-3"/> Data Integrity</Label>
+                    <Select value={dataFilter} onValueChange={setDataFilter}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Records</SelectItem>
+                            <SelectItem value="has-email">Has Email</SelectItem>
+                            <SelectItem value="no-email">Missing Email</SelectItem>
+                            <SelectItem value="has-phone">Has Phone</SelectItem>
+                            <SelectItem value="no-phone">Missing Phone</SelectItem>
+                            <SelectItem value="has-website">Has WWW</SelectItem>
+                            <SelectItem value="no-website">Missing WWW</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>

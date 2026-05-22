@@ -105,7 +105,7 @@ export function EngageDialog({ open, onOpenChange, partner, audience, onEngageSu
         
         const subjectLabel = activeTab.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 
-        // 1. Log the outreach and update the partner's status
+        // 1. Log the outreach
         await performAdminAction(token, 'logCommunication', {
             partnerId: partner.id,
             type: 'Email',
