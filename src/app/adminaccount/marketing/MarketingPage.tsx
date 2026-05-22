@@ -230,7 +230,7 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
             </Button>
         </div>
 
-        <Tabs defaultValue="management" className="w-full" onValueChange={setActiveTab}>
+        <Tabs defaultValue="company-profile" className="w-full" onValueChange={setActiveTab}>
             <TabsList className="h-auto flex-wrap justify-start bg-muted p-1">
                 <TabsTrigger value="management">Management & CRM</TabsTrigger>
                 <TabsTrigger value="company-profile">Profile</TabsTrigger>

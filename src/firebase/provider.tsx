@@ -78,6 +78,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
 
   // 2. User Profile Listener
   useEffect(() => {
+    if (isAuthLoading) return;
     if (!firestore || !authState?.uid) {
       setUserData(null);
       setIsUserDataLoading(false);
@@ -96,10 +97,11 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     });
     
     return unsub;
-  }, [firestore, authState?.uid, refreshKey]);
+  }, [firestore, authState?.uid, refreshKey, isAuthLoading]);
 
   // 3. Company Data Listener
   useEffect(() => {
+    if (isAuthLoading) return;
     const companyId = userData?.companyId;
     if (!firestore || !companyId) {
       setCompanyData(null);
@@ -119,8 +121,9 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     });
 
     return unsub;
-  }, [firestore, userData?.companyId]);
+  }, [firestore, userData?.companyId, isAuthLoading]);
 
+  // Enriched user object without spreading the class instance directly
   const enrichedUser = useMemo(() => {
     if (!authState) return null;
     
@@ -136,11 +139,13 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     };
   }, [authState, userData, companyData]);
 
+  // Calculate final loading state
   const isUserLoading = useMemo(() => {
       if (!auth) return false;
       if (isAuthLoading) return true;
       if (!authState) return false;
-      // Resolve loading once we know if documents exist or not
+      
+      // Resolve once listeners settle
       return isUserDataLoading || isCompanyDataLoading;
   }, [isAuthLoading, isUserDataLoading, isCompanyDataLoading, authState, auth]);
 

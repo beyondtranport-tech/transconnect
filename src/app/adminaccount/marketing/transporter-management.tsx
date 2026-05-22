@@ -5,7 +5,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, Truck, Edit, Trash2, Send, CheckCircle, Users, MailCheck, MailQuestion, Filter, Save, Search, Clock } from 'lucide-react';
+import { Loader2, PlusCircle, Truck, Edit, Trash2, Send, Users, MailCheck, MailQuestion, Filter, Save, Search, Clock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -200,6 +200,7 @@ export default function TransporterManagement() {
 
   const columns: ColumnDef<any>[] = [
     { 
+        accessorKey: 'companyName',
         header: 'Transporter', 
         cell: ({ row }) => (
             <div className="flex flex-col">
@@ -210,6 +211,7 @@ export default function TransporterManagement() {
     },
     { accessorKey: 'email', header: 'Email' },
     { 
+        accessorKey: 'lastOutreachAt',
         header: 'Last Outreach', 
         cell: ({row}) => (
             <div className="flex flex-col gap-1">
@@ -219,6 +221,7 @@ export default function TransporterManagement() {
         )
     },
     {
+        accessorKey: 'lastOpenedAt',
         header: 'Read Status',
         cell: ({row}) => (
             <div className="flex items-center gap-2">
@@ -235,6 +238,7 @@ export default function TransporterManagement() {
         )
     },
     { 
+        accessorKey: 'assigneeId',
         header: 'Assignee', 
         cell: ({row}) => (
             <div className="flex items-center gap-2">
