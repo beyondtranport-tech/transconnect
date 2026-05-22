@@ -199,8 +199,16 @@ export default function SupplierManagement() {
   }
 
   const columns: ColumnDef<any>[] = [
-    { accessorKey: 'firstName', header: 'Name', cell: ({ row }) => <div className="font-bold">{row.original.firstName} {row.original.lastName}</div> },
-    { accessorKey: 'companyName', header: 'Company' },
+    { 
+        header: 'Supplier', 
+        cell: ({ row }) => (
+            <div className="flex flex-col">
+                <span className="font-bold">{row.original.companyName || 'N/A'}</span>
+                <span className="text-xs text-muted-foreground">{row.original.firstName} {row.original.lastName}</span>
+            </div>
+        )
+    },
+    { accessorKey: 'email', header: 'Email' },
     { 
         header: 'Last Outreach', 
         cell: ({row}) => (

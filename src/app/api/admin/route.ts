@@ -81,6 +81,7 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true });
             }
             case 'getPartnersByType': {
+                // Return data from the partners collection
                 const snap = await db.collection('partners').where('type', '==', payload.type).get();
                 const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
                 return NextResponse.json({ success: true, data });

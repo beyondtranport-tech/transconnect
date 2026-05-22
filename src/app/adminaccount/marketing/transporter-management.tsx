@@ -5,7 +5,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, Truck, Edit, Trash2, Send, CheckCircle, Users, MailCheck, MailQuestion, Filter, Save, Search } from 'lucide-react';
+import { Loader2, PlusCircle, Truck, Edit, Trash2, Send, CheckCircle, Users, MailCheck, MailQuestion, Filter, Save, Search, Clock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -199,8 +199,16 @@ export default function TransporterManagement() {
   }
 
   const columns: ColumnDef<any>[] = [
-    { accessorKey: 'firstName', header: 'Name', cell: ({ row }) => <div className="font-bold">{row.original.firstName} {row.original.lastName}</div> },
-    { accessorKey: 'companyName', header: 'Company' },
+    { 
+        header: 'Transporter', 
+        cell: ({ row }) => (
+            <div className="flex flex-col">
+                <span className="font-bold">{row.original.companyName || 'N/A'}</span>
+                <span className="text-xs text-muted-foreground">{row.original.firstName} {row.original.lastName}</span>
+            </div>
+        )
+    },
+    { accessorKey: 'email', header: 'Email' },
     { 
         header: 'Last Outreach', 
         cell: ({row}) => (
