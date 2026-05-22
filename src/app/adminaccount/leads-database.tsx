@@ -27,7 +27,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { useCollection, useFirestore, getClientSideAuthToken, useMemoFirebase } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
-import { Loader2, PlusCircle, Users, Edit, Trash2, Search, Send, Copy } from 'lucide-react';
+import { Loader2, PlusCircle, Users, Edit, Trash2, Search, Send, Copy, Filter, MailCheck, MailQuestion } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -37,6 +37,11 @@ import { roles } from '@/lib/roles';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { EngageDialog } from './marketing/EngageDialog';
+import { Label } from '@/components/ui/label';
+import { formatDateSafe } from '@/lib/utils';
+import { EnrichPartnerButton, BulkEnrichButton } from './marketing/EnrichPartnerButton';
+import { PartnerTasksDialog } from './marketing/PartnerTasksDialog';
+import { CommunicationLogDialog } from './marketing/CommunicationLogDialog';
 
 const leadSchema = z.object({
   companyName: z.string().min(1, 'Company name is required'),
@@ -210,7 +215,7 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
             )} />
             <DialogFooter className="pt-4 border-t">
               <Button type="submit" disabled={isLoading}>
-                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null} Save Lead
+                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} Save Lead
               </Button>
             </DialogFooter>
           </form>
@@ -431,6 +436,9 @@ function LeadsDatabaseComponent() {
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
   const [engageLead, setEngageLead] = useState<any | null>(null);
 
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [dataFilter, setDataFilter] = useState('all');
+
   const newLeadDefaults = useMemo(() => {
     const companyName = searchParams.get('newCompanyName');
     if (companyName) {
@@ -455,6 +463,23 @@ function LeadsDatabaseComponent() {
     }
   }, [searchParams, newLeadDefaults, router]);
 
+  const filteredLeads = useMemo(() => {
+    if (!leads) return [];
+    return leads.filter(p => {
+        const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
+        
+        let matchesData = true;
+        if (dataFilter === 'no-email') matchesData = !p.email;
+        else if (dataFilter === 'no-phone') matchesData = !p.phone;
+        else if (dataFilter === 'no-website') matchesData = !p.website;
+        else if (dataFilter === 'has-email') matchesData = !!p.email;
+        else if (dataFilter === 'has-phone') matchesData = !!p.phone;
+        else if (dataFilter === 'has-website') matchesData = !!p.website;
+
+        return matchesStatus && matchesData;
+    });
+  }, [leads, statusFilter, dataFilter]);
+
   async function handleDelete() {
     if (!deleteLead) return;
     try {
@@ -477,21 +502,45 @@ function LeadsDatabaseComponent() {
   }
 
   const columns: ColumnDef<any>[] = useMemo(() => [
-    { accessorKey: 'id', header: 'ID', cell: ({ row }) => <div className="font-mono text-xs">{row.original.id}</div> },
     { accessorKey: 'companyName', header: 'Company' },
     { accessorKey: 'contactPerson', header: 'Contact' },
-    { accessorKey: 'email', header: 'Email' },
-    { accessorKey: 'role', header: 'Role', cell: ({ row }) => <Badge variant="outline">{row.original.role}</Badge> },
+    { 
+        header: 'Last Outreach', 
+        cell: ({row}) => (
+            <div className="flex flex-col gap-1">
+                <span className="text-xs font-bold text-primary">{row.original.lastOutreachSubject || <span className="text-muted-foreground italic">None</span>}</span>
+                {row.original.lastOutreachAt && <span className="text-[10px] text-muted-foreground">{formatDateSafe(row.original.lastOutreachAt)}</span>}
+            </div>
+        )
+    },
+    {
+        header: 'Read Status',
+        cell: ({row}) => (
+            <div className="flex items-center gap-2">
+                {row.original.lastOpenedAt ? (
+                    <Badge variant="default" className="bg-green-100 text-green-700 border-green-200">
+                        <MailCheck className="mr-1 h-3 w-3" /> Read
+                    </Badge>
+                ) : (
+                    <Badge variant="outline" className="text-muted-foreground">
+                        <MailQuestion className="mr-1 h-3 w-3" /> Sent
+                    </Badge>
+                )}
+            </div>
+        )
+    },
     { accessorKey: 'status', header: 'Status', cell: ({ row }) => <Badge className="capitalize">{row.original.status}</Badge> },
     {
       id: 'actions',
       header: <div className="text-right">Actions</div>,
       cell: ({ row }) => (
         <div className="text-right flex items-center justify-end gap-1">
+          <EnrichPartnerButton partner={row.original} onUpdate={forceRefresh} />
           <Button variant="ghost" size="icon" onClick={() => setEngageLead(row.original)} title="Initiate Engagement">
             <Send className="h-4 w-4 text-primary" />
           </Button>
-          <InviteDialog lead={row.original} onInviteSent={forceRefresh} />
+          <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.firstName} />
+          <PartnerTasksDialog partner={row.original} />
           <Button variant="ghost" size="icon" onClick={() => { setEditLead(row.original); setIsEditLeadOpen(true); }}><Edit className="h-4 w-4" /></Button>
           <Button variant="ghost" size="icon" onClick={() => { setDeleteLead(row.original); setIsDeleteAlertOpen(true); }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
         </div>
@@ -507,6 +556,7 @@ function LeadsDatabaseComponent() {
           onOpenChange={(o) => !o && setEngageLead(null)} 
           partner={engageLead} 
           audience={engageLead.role?.toLowerCase().includes('supplier') ? 'suppliers' : engageLead.role?.toLowerCase().includes('transporter') ? 'transporters' : 'partners'} 
+          onEngageSuccess={forceRefresh}
         />
       )}
       <LeadDialog open={isAddLeadOpen} onOpenChange={setIsAddLeadOpen} onSave={forceRefresh} defaultValues={newLeadDefaults} />
@@ -527,12 +577,44 @@ function LeadsDatabaseComponent() {
             <CardDescription>Manage your sales leads.</CardDescription>
           </div>
           <div className="flex items-center gap-2">
+            <BulkEnrichButton partners={leads || []} onComplete={forceRefresh} />
             <DuplicateCleaner onComplete={forceRefresh} />
             <Button onClick={() => setIsAddLeadOpen(true)}><PlusCircle className="mr-2 h-4 w-4" />Add Lead</Button>
           </div>
         </CardHeader>
         <CardContent>
-          {isLoading ? <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin" /></div> : <DataTable columns={columns} data={leads || []} />}
+            <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg">
+                <div className="flex-1 space-y-2">
+                    <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status</Label>
+                    <Select value={statusFilter} onValueChange={setStatusFilter}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Statuses</SelectItem>
+                            <SelectItem value="new">New</SelectItem>
+                            <SelectItem value="contacted">Contacted</SelectItem>
+                            <SelectItem value="qualified">Qualified</SelectItem>
+                            <SelectItem value="unqualified">Unqualified</SelectItem>
+                            <SelectItem value="invited">Invited</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div className="flex-1 space-y-2">
+                    <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Search className="h-3 w-3"/> Data Integrity</Label>
+                    <Select value={dataFilter} onValueChange={setDataFilter}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Records</SelectItem>
+                            <SelectItem value="has-email">Has Email</SelectItem>
+                            <SelectItem value="no-email">Missing Email</SelectItem>
+                            <SelectItem value="has-phone">Has Phone</SelectItem>
+                            <SelectItem value="no-phone">Missing Phone</SelectItem>
+                            <SelectItem value="has-website">Has WWW</SelectItem>
+                            <SelectItem value="no-website">Missing WWW</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+            </div>
+            {isLoading ? <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin" /></div> : <DataTable columns={columns} data={filteredLeads} />}
         </CardContent>
       </Card>
     </>

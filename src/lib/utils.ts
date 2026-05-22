@@ -36,8 +36,8 @@ export function formatNumber(value: number | null | undefined): string {
 }
 
 /**
- * Methodically safe HTML clipboard utility.
- * Avoids 'TypeError: Illegal constructor' by using a resilient hidden-element approach.
+ * Resilient HTML clipboard utility.
+ * Avoids 'TypeError: Illegal constructor' by using a hidden element approach for broad compatibility.
  */
 export async function copyHtmlToClipboard(html: string, plainText?: string) {
     if (typeof window === 'undefined') return false;
@@ -58,17 +58,15 @@ export async function copyHtmlToClipboard(html: string, plainText?: string) {
         range.selectNode(container);
         window.getSelection()?.addRange(range);
 
-        // execCommand('copy') is widely supported and avoids the ClipboardItem constructor crash
         const success = document.execCommand('copy');
         document.body.removeChild(container);
         window.getSelection()?.removeAllRanges();
         
         if (success) return true;
     } catch (e) {
-        console.warn("Resilient HTML copy failed:", e);
+        console.warn("Hidden element copy failed, falling back to writeText:", e);
     }
 
-    // Secondary fallback: Plain text using modern API
     try {
         await navigator.clipboard.writeText(textToCopy);
         return true;

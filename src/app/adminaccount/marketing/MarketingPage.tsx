@@ -108,7 +108,7 @@ function LogAndCopyDialog({ open, onOpenChange, partners, isLoadingPartners, act
         try {
             await onLogAndCopy({ ...values, subject: activeTabLabel });
         } catch (e) {
-            // Error handled by parent
+            // error handled by parent
         } finally {
             setIsLogging(false);
         }
@@ -201,6 +201,7 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
             notes: logData.notes,
         });
 
+        // Use safe utility instead of manual ClipboardItem
         const success = await copyHtmlToClipboard(contentElement.innerHTML);
         if (!success) throw new Error("Copy failed.");
 
@@ -240,14 +241,14 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
             </TabsList>
 
             <div className="mt-6">
-                <TabsContent value="management" id="tab-content-management"><Management /></TabsContent>
-                <TabsContent value="company-profile" id="tab-content-company-profile"><CompanyProfile audience={audience} /></TabsContent>
-                <TabsContent value="tech-architecture" id="tab-content-tech-architecture"><TechArchitecture /></TabsContent>
-                <TabsContent value="revenue-model" id="tab-content-revenue-model"><RevenueModel /></TabsContent>
-                <TabsContent value="offer" id="tab-content-offer"><Offer /></TabsContent>
-                <TabsContent value="pitch" id="tab-content-pitch"><PitchDeck /></TabsContent>
-                <TabsContent value="framework" id="tab-content-framework"><Framework /></TabsContent>
-                <TabsContent value="emails" id="tab-content-emails"><Emails /></TabsContent>
+                <TabsContent value="management"><div id="tab-content-management"><Management /></div></TabsContent>
+                <TabsContent value="company-profile"><div id="tab-content-company-profile"><CompanyProfile audience={audience} /></div></TabsContent>
+                <TabsContent value="tech-architecture"><div id="tab-content-tech-architecture"><TechArchitecture /></div></TabsContent>
+                <TabsContent value="revenue-model"><div id="tab-content-revenue-model"><RevenueModel /></div></TabsContent>
+                <TabsContent value="offer"><div id="tab-content-offer"><Offer /></div></TabsContent>
+                <TabsContent value="pitch"><div id="tab-content-pitch"><PitchDeck /></div></TabsContent>
+                <TabsContent value="framework"><div id="tab-content-framework"><Framework /></div></TabsContent>
+                <TabsContent value="emails"><div id="tab-content-emails"><Emails /></div></TabsContent>
             </div>
         </Tabs>
     </div>

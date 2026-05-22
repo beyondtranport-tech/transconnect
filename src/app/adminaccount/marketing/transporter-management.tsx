@@ -18,7 +18,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { PartnerOversightDialog } from './PartnerOversightDialog';
+import { PartnerTasksDialog } from './PartnerTasksDialog';
+import { CommunicationLogDialog } from './CommunicationLogDialog';
 import { EngageDialog } from './EngageDialog';
 import { formatDateSafe } from '@/lib/utils';
 import { EnrichPartnerButton, BulkEnrichButton } from './EnrichPartnerButton';
@@ -47,7 +48,7 @@ const partnerSchema = z.object({
 });
 type PartnerFormValues = z.infer<typeof partnerSchema>;
 
-function TransporterFormDialog({ open, onOpenChange, partner, onSave }: { open: boolean; onOpenChange: (open: boolean) => void; partner?: any; onSave: () => void; }) {
+function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: boolean; onOpenChange: (open: boolean) => void; partner?: any; onSave: () => void; }) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const form = useForm<PartnerFormValues>({ resolver: zodResolver(partnerSchema) });
@@ -165,8 +166,6 @@ export default function TransporterManagement() {
 
   useEffect(() => { forceRefresh(); }, [forceRefresh]);
 
-  const staffMap = useMemo(() => new Map(staff.map(s => [s.id, `${s.firstName} ${s.lastName}`])), [staff]);
-
   const filteredTransporters = useMemo(() => {
     return partners.filter(p => {
         const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
@@ -225,22 +224,14 @@ export default function TransporterManagement() {
             </div>
         )
     },
-    { 
-        header: 'Assignee', 
-        cell: ({row}) => (
-            <div className="flex items-center gap-2">
-                <Users className="h-3 w-3 text-muted-foreground" />
-                <span className="text-xs font-medium">{staffMap.get(row.original.assigneeId) || <span className="text-muted-foreground italic">Unallocated</span>}</span>
-            </div>
-        )
-    },
     { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
       <div className="flex justify-end gap-1">
         <EnrichPartnerButton partner={row.original} onUpdate={forceRefresh} />
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'engage', data: row.original })} title="Initiate Engagement">
           <Send className="h-4 w-4 text-primary" />
         </Button>
-        <PartnerOversightDialog partner={row.original} onUpdate={forceRefresh} />
+        <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.firstName} />
+        <PartnerTasksDialog partner={row.original} />
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'edit', data: row.original })}><Edit className="h-4 w-4" /></Button>
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'delete', data: row.original })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
       </div>
@@ -254,9 +245,8 @@ export default function TransporterManagement() {
         onOpenChange={(o) => !o && setDialog({ type: null })} 
         partner={dialog.data} 
         audience="transporters" 
-        onEngageSuccess={forceRefresh}
       />
-      <TransporterFormDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={forceRefresh} />
+      <TransporterDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={forceRefresh} />
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
         <AlertDialogContent>
           <AlertDialogHeader><AlertDialogTitle>Delete Transporter?</AlertDialogTitle><AlertDialogDescription>Delete "{dialog.data?.firstName}"?</AlertDialogDescription></AlertDialogHeader>

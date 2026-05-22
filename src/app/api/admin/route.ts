@@ -5,7 +5,6 @@ import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase-admin';
 
-// Helper to convert Firestore Timestamps to JSON-serializable strings
 function serializeTimestamps(docData: any): any {
     if (!docData) return docData;
     const newDocData: { [key: string]: any } = {};
@@ -43,7 +42,6 @@ export async function POST(req: NextRequest) {
         const db = getFirestore(app);
         const isAdmin = decodedToken.email === 'beyondtransport@gmail.com' || decodedToken.email === 'mkoton100@gmail.com';
 
-        // --- AUTHORIZATION ---
         if (!isAdmin) {
              const allowedUserActions = ['saveCompanyLead', 'acceptCommercialAgreement', 'getAuditLogs', 'unpublishShop', 'logCommunication'];
              if (!allowedUserActions.includes(action)) {
@@ -52,39 +50,25 @@ export async function POST(req: NextRequest) {
         }
 
         switch (action) {
-            case 'getPlatformStaff': {
-                const snap = await db.collection('platformStaff').get();
-                const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
-                return NextResponse.json({ success: true, data });
-            }
-            case 'savePlatformStaff': {
-                const { staff } = payload;
-                const ref = staff.id ? db.collection('platformStaff').doc(staff.id) : db.collection('platformStaff').doc();
-                await ref.set({ ...staff, id: ref.id, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
-                return NextResponse.json({ success: true, id: ref.id });
-            }
-            case 'deletePlatformStaff': {
-                await db.collection('platformStaff').doc(payload.staffId).delete();
-                return NextResponse.json({ success: true });
-            }
-            case 'getPartnersByType': {
-                const snap = await db.collection('partners').where('type', '==', payload.type).get();
-                const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
-                return NextResponse.json({ success: true, data });
-            }
             case 'logCommunication': {
                 const { partnerId, type, subject, notes } = payload;
-                const partnerRef = db.collection('partners').doc(partnerId);
                 
-                // Update partner status
-                await partnerRef.update({
+                // Determine if this is a lead or a partner by checking existence
+                const partnerRef = db.collection('partners').doc(partnerId);
+                const leadRef = db.collection('leads').doc(partnerId);
+                
+                const [partnerSnap, leadSnap] = await Promise.all([partnerRef.get(), leadRef.get()]);
+                const targetRef = partnerSnap.exists ? partnerRef : leadSnap.exists ? leadRef : partnerRef;
+
+                const updateData = {
                     lastOutreachAt: FieldValue.serverTimestamp(),
                     lastOutreachSubject: subject,
                     updatedAt: FieldValue.serverTimestamp(),
-                });
+                };
 
-                // Log interaction
-                const logRef = partnerRef.collection('communications').doc();
+                await targetRef.update(updateData);
+
+                const logRef = targetRef.collection('communications').doc();
                 await logRef.set({
                     id: logRef.id,
                     type,
@@ -95,6 +79,11 @@ export async function POST(req: NextRequest) {
                 });
                 
                 return NextResponse.json({ success: true });
+            }
+            case 'getPartnersByType': {
+                const snap = await db.collection('partners').where('type', '==', payload.type).get();
+                const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
+                return NextResponse.json({ success: true, data });
             }
             case 'getMembers': {
                 const companiesSnap = await db.collection('companies').get();
@@ -116,6 +105,21 @@ export async function POST(req: NextRequest) {
                 const logsSnap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(100).get();
                 const data = logsSnap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
                 return NextResponse.json({ success: true, data });
+            }
+            case 'getPlatformStaff': {
+                const snap = await db.collection('platformStaff').get();
+                const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
+                return NextResponse.json({ success: true, data });
+            }
+            case 'savePlatformStaff': {
+                const { staff } = payload;
+                const ref = staff.id ? db.collection('platformStaff').doc(staff.id) : db.collection('platformStaff').doc();
+                await ref.set({ ...staff, id: ref.id, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+                return NextResponse.json({ success: true, id: ref.id });
+            }
+            case 'deletePlatformStaff': {
+                await db.collection('platformStaff').doc(payload.staffId).delete();
+                return NextResponse.json({ success: true });
             }
             case 'saveLead': {
                 const { lead } = payload;
