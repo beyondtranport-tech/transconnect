@@ -44,37 +44,53 @@ export async function copyHtmlToClipboard(html: string, plainText?: string) {
 
     const textToCopy = plainText || html.replace(/<[^>]*>/g, '');
 
-    try {
-        // Step 1: Attempt rich-text copy using modern API if supported and safe
-        if (typeof window.ClipboardItem !== 'undefined' && navigator.clipboard && navigator.clipboard.write) {
-            try {
-                const htmlBlob = new Blob([html], { type: 'text/html' });
-                const textBlob = new Blob([textToCopy], { type: 'text/plain' });
-                
-                // Constructing the items object directly to avoid constructor issues in some environments
-                const items = {
-                    'text/html': htmlBlob,
-                    'text/plain': textBlob,
-                };
-                
-                // Only use the constructor if it's explicitly available and non-restricted
-                const clipboardItem = new window.ClipboardItem(items);
-                await navigator.clipboard.write([clipboardItem]);
-                return true;
-            } catch (innerError) {
-                console.warn("ClipboardItem construction failed, falling back to writeText:", innerError);
-            }
+    // Attempt 1: Modern Async Clipboard API with ClipboardItem check
+    if (typeof window.ClipboardItem !== 'undefined' && navigator.clipboard && navigator.clipboard.write) {
+        try {
+            // Using a plain object instead of a constructor-based items array first
+            const blobHtml = new Blob([html], { type: 'text/html' });
+            const blobText = new Blob([textToCopy], { type: 'text/plain' });
+            
+            const item = new ClipboardItem({
+                'text/html': blobHtml,
+                'text/plain': blobText,
+            });
+            await navigator.clipboard.write([item]);
+            return true;
+        } catch (e) {
+            console.warn("Modern clipboard copy failed, falling back:", e);
         }
-    } catch (e) {
-        console.warn("Advanced clipboard copy failed:", e);
     }
 
-    // Step 2: Reliable fallback to standard plain-text copying
+    // Attempt 2: Older synchronous way using a hidden element
+    // Highly compatible and avoids "Illegal constructor" issue
+    try {
+        const container = document.createElement('div');
+        container.innerHTML = html;
+        container.style.position = 'fixed';
+        container.style.pointerEvents = 'none';
+        container.style.opacity = '0';
+        document.body.appendChild(container);
+
+        window.getSelection()?.removeAllRanges();
+        const range = document.createRange();
+        range.selectNode(container);
+        window.getSelection()?.addRange(range);
+
+        const success = document.execCommand('copy');
+        document.body.removeChild(container);
+        
+        if (success) return true;
+    } catch (e) {
+        console.warn("Fallback HTML copy failed:", e);
+    }
+
+    // Attempt 3: Absolute fallback - plain text only
     try {
         await navigator.clipboard.writeText(textToCopy);
         return true;
     } catch (e) {
-        console.error("Clipboard copy failed entirely:", e);
+        console.error("All copy methods failed:", e);
         return false;
     }
 }

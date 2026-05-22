@@ -297,16 +297,16 @@ export default function PlatformStaffManagement() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {(filteredStaff && filteredStaff.length > 0) ? filteredStaff.map(staff => (
-                    <TableRow key={staff.id}>
-                      <TableCell><div>{staff.firstName} {staff.lastName}</div></TableCell>
-                      <TableCell><div>{staff.email}</div></TableCell>
-                      <TableCell><Badge variant="outline">{staff.department}</Badge></TableCell>
-                      <TableCell><Badge variant={staff.status === 'active' ? 'default' : 'secondary'} className="capitalize">{staff.status}</Badge></TableCell>
+                  {(filteredStaff && filteredStaff.length > 0) ? filteredStaff.map(s => (
+                    <TableRow key={s.id}>
+                      <TableCell><div>{s.firstName} {s.lastName}</div></TableCell>
+                      <TableCell><div>{s.email}</div></TableCell>
+                      <TableCell><Badge variant="outline">{s.department}</Badge></TableCell>
+                      <TableCell><Badge variant={s.status === 'active' ? 'default' : 'secondary'} className="capitalize">{s.status}</Badge></TableCell>
                       <TableCell className="text-right">
                          <div className="flex justify-end gap-1">
-                            <Button variant="ghost" size="icon" onClick={() => handleOpenDialog('edit', staff)}><Edit className="h-4 w-4" /></Button>
-                            <Button variant="ghost" size="icon" onClick={() => handleOpenDialog('delete', staff)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                            <Button variant="ghost" size="icon" onClick={() => handleOpenDialog('edit', s)}><Edit className="h-4 w-4" /></Button>
+                            <Button variant="ghost" size="icon" onClick={() => handleOpenDialog('delete', s)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                          </div>
                       </TableCell>
                     </TableRow>

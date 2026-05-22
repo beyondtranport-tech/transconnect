@@ -92,7 +92,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       setIsUserDataLoading(false);
     }, (err) => {
       console.error("Error fetching user data:", err);
-      setIsUserDataLoading(false); // Ensure loading clears on error
+      setIsUserDataLoading(false);
     });
     
     return unsub;
@@ -115,7 +115,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
         setIsCompanyDataLoading(false);
     }, (err) => {
         console.error("Error fetching company data:", err);
-        setIsCompanyDataLoading(false); // Ensure loading clears on error
+        setIsCompanyDataLoading(false);
     });
 
     return unsub;
@@ -130,7 +130,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     };
   }, [authState, userData, companyData]);
 
-  // Flattened loading state that guarantees resolution
+  // Ensure isUserLoading only returns true while active auth/doc checks are in progress
   const isUserLoading = isAuthLoading || isUserDataLoading || isCompanyDataLoading;
 
   const contextValue = useMemo((): FirebaseContextState => {

@@ -96,30 +96,10 @@ function TransporterFormDialog({ open, onOpenChange, partner, onSave }: { open: 
             <FormField control={form.control} name="address" render={({ field }) => (<FormItem><FormLabel>Address</FormLabel><FormControl><Textarea placeholder="Enter physical address..." {...field} /></FormControl><FormMessage /></FormItem>)} />
             <div className="grid grid-cols-2 gap-4">
               <FormField control={form.control} name="type" render={({ field }) => (
-                <FormItem><FormLabel>Partner Category</FormLabel>
-                   <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                    <SelectContent>
-                      <SelectItem value="partner">Strategic Partner</SelectItem>
-                      <SelectItem value="isa">ISA Agent</SelectItem>
-                      <SelectItem value="investor">Investor</SelectItem>
-                      <SelectItem value="developer">Developer</SelectItem>
-                      <SelectItem value="supplier">Supplier</SelectItem>
-                      <SelectItem value="transporter">Transporter</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </FormItem>
+                <FormItem><FormLabel>Partner Category</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="partner">Strategic Partner</SelectItem><SelectItem value="isa">ISA Agent</SelectItem><SelectItem value="investor">Investor</SelectItem><SelectItem value="developer">Developer</SelectItem><SelectItem value="supplier">Supplier</SelectItem><SelectItem value="transporter">Transporter</SelectItem></SelectContent></Select></FormItem>
               )} />
               <FormField control={form.control} name="status" render={({ field }) => (
-                <FormItem><FormLabel>Status</FormLabel>
-                   <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                    <SelectContent>
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="inactive">Inactive</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </FormItem>
+                <FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="active">Active</SelectItem><SelectItem value="inactive">Inactive</SelectItem></SelectContent></Select></FormItem>
               )} />
             </div>
             <DialogFooter className="pt-4 border-t">
@@ -137,7 +117,7 @@ export default function TransporterManagement() {
   const [partners, setPartners] = useState<any[]>([]);
   const [staff, setStaff] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | 'oversight' | null, data?: any }>({ type: null });
+  const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | null, data?: any }>({ type: null });
 
   const [statusFilter, setStatusFilter] = useState('all');
   const [assigneeFilter, setAssigneeFilter] = useState('all');

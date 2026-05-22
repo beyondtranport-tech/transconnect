@@ -96,30 +96,10 @@ function PartnerDialog({ open, onOpenChange, partner, onSave }: { open: boolean;
             <FormField control={form.control} name="address" render={({ field }) => (<FormItem><FormLabel>Address</FormLabel><FormControl><Textarea placeholder="Enter physical address..." {...field} /></FormControl><FormMessage /></FormItem>)} />
             <div className="grid grid-cols-2 gap-4">
               <FormField control={form.control} name="type" render={({ field }) => (
-                <FormItem><FormLabel>Partner Category</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                    <SelectContent>
-                      <SelectItem value="partner">Strategic Partner</SelectItem>
-                      <SelectItem value="isa">ISA Agent</SelectItem>
-                      <SelectItem value="investor">Investor</SelectItem>
-                      <SelectItem value="developer">Developer</SelectItem>
-                      <SelectItem value="supplier">Supplier</SelectItem>
-                      <SelectItem value="transporter">Transporter</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </FormItem>
+                <FormItem><FormLabel>Partner Category</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="partner">Strategic Partner</SelectItem><SelectItem value="isa">ISA Agent</SelectItem><SelectItem value="investor">Investor</SelectItem><SelectItem value="developer">Developer</SelectItem><SelectItem value="supplier">Supplier</SelectItem><SelectItem value="transporter">Transporter</SelectItem></SelectContent></Select></FormItem>
               )} />
               <FormField control={form.control} name="status" render={({ field }) => (
-                <FormItem><FormLabel>Status</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                    <SelectContent>
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="inactive">Inactive</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </FormItem>
+                <FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="active">Active</SelectItem><SelectItem value="inactive">Inactive</SelectItem></SelectContent></Select></FormItem>
               )} />
             </div>
             <DialogFooter className="pt-4 border-t">
@@ -248,7 +228,7 @@ export default function PartnerManagement() {
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
         <AlertDialogContent>
           <AlertDialogHeader><AlertDialogTitle>Delete Partner?</AlertDialogTitle><AlertDialogDescription>Delete "{dialog.data?.firstName} {dialog.data?.lastName}"?</AlertDialogDescription></AlertDialogHeader>
-          <AlertDialogFooter><AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Yes, delete</AlertDialogAction></AlertDialogFooter>
+          <AlertDialogFooter><AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
       <Card>
