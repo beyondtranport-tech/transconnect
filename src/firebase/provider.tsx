@@ -42,9 +42,11 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   const [authState, setAuthState] = useState<User | null>(null);
   const [userData, setUserData] = useState<any>(null);
   const [companyData, setCompanyData] = useState<any>(null);
+  
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [isUserDataLoading, setIsUserDataLoading] = useState(false);
   const [isCompanyDataLoading, setIsCompanyDataLoading] = useState(false);
+  
   const [userError, setUserError] = useState<Error | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -52,7 +54,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     setRefreshKey(prev => prev + 1);
   }, []);
 
-  // 1. Auth State Listener
+  // 1. Core Auth State Listener
   useEffect(() => {
     if (!auth) {
       setIsAuthLoading(false);
@@ -90,7 +92,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       setIsUserDataLoading(false);
     }, (err) => {
       console.error("Error fetching user data:", err);
-      setIsUserDataLoading(false);
+      setIsUserDataLoading(false); // Ensure loading clears on error
     });
     
     return unsub;
@@ -113,7 +115,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
         setIsCompanyDataLoading(false);
     }, (err) => {
         console.error("Error fetching company data:", err);
-        setIsCompanyDataLoading(false);
+        setIsCompanyDataLoading(false); // Ensure loading clears on error
     });
 
     return unsub;
@@ -128,6 +130,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     };
   }, [authState, userData, companyData]);
 
+  // Flattened loading state that guarantees resolution
   const isUserLoading = isAuthLoading || isUserDataLoading || isCompanyDataLoading;
 
   const contextValue = useMemo((): FirebaseContextState => {

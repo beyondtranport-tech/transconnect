@@ -36,8 +36,8 @@ export function formatNumber(value: number | null | undefined): string {
 }
 
 /**
- * Safely copies HTML content to the clipboard with feature detection.
- * Prevents "Illegal constructor" errors in restricted browser environments.
+ * Safely copies HTML content to the clipboard with robust feature detection.
+ * Avoids "Illegal constructor" errors in restricted browser environments.
  */
 export async function copyHtmlToClipboard(html: string, plainText?: string) {
     if (typeof window === 'undefined') return false;
@@ -45,22 +45,31 @@ export async function copyHtmlToClipboard(html: string, plainText?: string) {
     const textToCopy = plainText || html.replace(/<[^>]*>/g, '');
 
     try {
-        // Feature detection for rich-text copying
+        // Step 1: Attempt rich-text copy using modern API if supported and safe
         if (typeof window.ClipboardItem !== 'undefined' && navigator.clipboard && navigator.clipboard.write) {
-            const htmlBlob = new Blob([html], { type: 'text/html' });
-            const textBlob = new Blob([textToCopy], { type: 'text/plain' });
-            const item = new window.ClipboardItem({
-                'text/html': htmlBlob,
-                'text/plain': textBlob,
-            });
-            await navigator.clipboard.write([item]);
-            return true;
+            try {
+                const htmlBlob = new Blob([html], { type: 'text/html' });
+                const textBlob = new Blob([textToCopy], { type: 'text/plain' });
+                
+                // Constructing the items object directly to avoid constructor issues in some environments
+                const items = {
+                    'text/html': htmlBlob,
+                    'text/plain': textBlob,
+                };
+                
+                // Only use the constructor if it's explicitly available and non-restricted
+                const clipboardItem = new window.ClipboardItem(items);
+                await navigator.clipboard.write([clipboardItem]);
+                return true;
+            } catch (innerError) {
+                console.warn("ClipboardItem construction failed, falling back to writeText:", innerError);
+            }
         }
     } catch (e) {
-        console.warn("Rich clipboard copy failed, falling back to plain text:", e);
+        console.warn("Advanced clipboard copy failed:", e);
     }
 
-    // Standard plain-text fallback
+    // Step 2: Reliable fallback to standard plain-text copying
     try {
         await navigator.clipboard.writeText(textToCopy);
         return true;

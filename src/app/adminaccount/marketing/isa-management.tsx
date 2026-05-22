@@ -5,7 +5,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, Bot, Edit, Trash2, Send, CheckCircle, Users, MailCheck, MailQuestion } from 'lucide-react';
+import { Loader2, PlusCircle, Bot, Edit, Trash2, Send, CheckCircle, Users, MailCheck, MailQuestion, Filter } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -22,6 +22,7 @@ import { PartnerOversightDialog } from './PartnerOversightDialog';
 import { EngageDialog } from './EngageDialog';
 import { formatDateSafe } from '@/lib/utils';
 import { EnrichPartnerButton, BulkEnrichButton } from './EnrichPartnerButton';
+import { Label } from '@/components/ui/label';
 
 async function performAdminAction(token: string, action: string, payload: any) {
   const response = await fetch('/api/admin', {
@@ -122,7 +123,7 @@ function ISADialog({ open, onOpenChange, partner, onSave }: { open: boolean; onO
               )} />
             </div>
             <DialogFooter className="pt-4 border-t">
-              <Button type="submit" disabled={isLoading}>{isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : null} Save ISA</Button>
+              <Button type="submit" disabled={isLoading}>{isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />} Save ISA</Button>
             </DialogFooter>
           </form>
         </Form>
@@ -137,6 +138,9 @@ export default function ISAManagement() {
   const [staff, setStaff] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | null, data?: any }>({ type: null });
+
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [assigneeFilter, setAssigneeFilter] = useState('all');
 
   const forceRefresh = useCallback(async () => {
     setIsLoading(true);
@@ -159,6 +163,14 @@ export default function ISAManagement() {
   useEffect(() => { forceRefresh(); }, [forceRefresh]);
 
   const staffMap = useMemo(() => new Map(staff.map(s => [s.id, `${s.firstName} ${s.lastName}`])), [staff]);
+
+  const filteredISAs = useMemo(() => {
+    return partners.filter(p => {
+        const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
+        const matchesAssignee = assigneeFilter === 'all' || p.assigneeId === assigneeFilter;
+        return matchesStatus && matchesAssignee;
+    });
+  }, [partners, statusFilter, assigneeFilter]);
 
   async function handleDelete() {
     try {
@@ -247,7 +259,33 @@ export default function ISAManagement() {
             <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4" /> Add ISA</Button>
           </div>
         </CardHeader>
-        <CardContent>{isLoading ? <Loader2 className="animate-spin h-8 w-8 mx-auto text-primary" /> : <DataTable columns={columns} data={partners} />}</CardContent>
+        <CardContent>
+            <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg">
+                <div className="flex-1 space-y-2">
+                    <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status Filter</Label>
+                    <Select value={statusFilter} onValueChange={setStatusFilter}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Statuses</SelectItem>
+                            <SelectItem value="active">Active</SelectItem>
+                            <SelectItem value="inactive">Inactive</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div className="flex-1 space-y-2">
+                    <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Users className="h-3 w-3"/> Assignee Filter</Label>
+                    <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Staff</SelectItem>
+                            <SelectItem value="none">Unallocated</SelectItem>
+                            {staff.map(s => <SelectItem key={s.id} value={s.id}>{s.firstName} {s.lastName}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                </div>
+            </div>
+            {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin h-8 w-8 mx-auto text-primary" /></div> : <DataTable columns={columns} data={filteredISAs} />}
+        </CardContent>
       </Card>
     </>
   );

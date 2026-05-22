@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -35,10 +35,11 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
-import { Loader2, PlusCircle, Users, Edit, Trash2, Save } from 'lucide-react';
+import { Loader2, PlusCircle, Users, Edit, Trash2, Save, Filter } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Label } from '@/components/ui/label';
 
 async function performAdminAction(token: string, action: string, payload: any) {
     const response = await fetch('/api/admin', {
@@ -179,6 +180,8 @@ export default function PlatformStaffManagement() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [deptFilter, setDeptFilter] = useState('all');
+
   const forceRefresh = useCallback(async () => {
     setIsLoading(true);
     setError(null);
@@ -199,6 +202,12 @@ export default function PlatformStaffManagement() {
   useEffect(() => {
     forceRefresh();
   }, [forceRefresh]);
+
+  const filteredStaff = useMemo(() => {
+    return staffList.filter(s => {
+        return deptFilter === 'all' || s.department === deptFilter;
+    });
+  }, [staffList, deptFilter]);
 
   const [dialogState, setDialogState] = useState<{ type: 'add' | 'edit' | 'delete' | null, data?: any }>({ type: null, data: undefined });
 
@@ -258,6 +267,21 @@ export default function PlatformStaffManagement() {
           <Button onClick={() => handleOpenDialog('add')}><PlusCircle className="mr-2 h-4 w-4"/>Add Team Member</Button>
         </CardHeader>
         <CardContent>
+            <div className="mb-6 p-4 bg-muted/30 rounded-lg max-w-sm">
+                <div className="space-y-2">
+                    <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Department Filter</Label>
+                    <Select value={deptFilter} onValueChange={setDeptFilter}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Departments</SelectItem>
+                            <SelectItem value="Engagement">Engagement</SelectItem>
+                            <SelectItem value="Technical">Technical</SelectItem>
+                            <SelectItem value="Finance">Finance</SelectItem>
+                            <SelectItem value="Operations">Operations</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+            </div>
           {isLoading ? (
             <div className="flex justify-center items-center py-10"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
           ) : (
@@ -273,7 +297,7 @@ export default function PlatformStaffManagement() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {(staffList && staffList.length > 0) ? staffList.map(staff => (
+                  {(filteredStaff && filteredStaff.length > 0) ? filteredStaff.map(staff => (
                     <TableRow key={staff.id}>
                       <TableCell><div>{staff.firstName} {staff.lastName}</div></TableCell>
                       <TableCell><div>{staff.email}</div></TableCell>
@@ -287,7 +311,7 @@ export default function PlatformStaffManagement() {
                       </TableCell>
                     </TableRow>
                   )) : (
-                    <TableRow><TableCell colSpan={5} className="h-24 text-center">No platform staff found. Add your team to enable lead assignment.</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={5} className="h-24 text-center">No platform staff found matching your criteria.</TableCell></TableRow>
                   )}
                 </TableBody>
               </Table>

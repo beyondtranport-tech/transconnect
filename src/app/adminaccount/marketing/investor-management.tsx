@@ -5,7 +5,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, DollarSign, Edit, Trash2, Send, Copy, CheckCircle, Users } from 'lucide-react';
+import { Loader2, PlusCircle, DollarSign, Edit, Trash2, Send, CheckCircle, Users, Filter } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -23,6 +23,7 @@ import { CommunicationLogDialog } from './CommunicationLogDialog';
 import { EngageDialog } from './EngageDialog';
 import { formatDateSafe } from '@/lib/utils';
 import { EnrichPartnerButton, BulkEnrichButton } from './EnrichPartnerButton';
+import { Label } from '@/components/ui/label';
 
 async function performAdminAction(token: string, action: string, payload: any) {
   const response = await fetch('/api/admin', {
@@ -103,7 +104,7 @@ function InvestorDialog({ open, onOpenChange, partner, onSave }: { open: boolean
               )} />
             </div>
             <DialogFooter className="pt-4 border-t">
-              <Button type="submit" disabled={isLoading}>{isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : null} Save Investor</Button>
+              <Button type="submit" disabled={isLoading}>{isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />} Save Investor</Button>
             </DialogFooter>
           </form>
         </Form>
@@ -115,16 +116,24 @@ function InvestorDialog({ open, onOpenChange, partner, onSave }: { open: boolean
 export default function InvestorManagement() {
   const { toast } = useToast();
   const [partners, setPartners] = useState<any[]>([]);
+  const [staff, setStaff] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | null, data?: any }>({ type: null });
+
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [assigneeFilter, setAssigneeFilter] = useState('all');
 
   const forceRefresh = useCallback(async () => {
     setIsLoading(true);
     try {
       const token = await getClientSideAuthToken();
       if (!token) return;
-      const res = await performAdminAction(token, 'getPartnersByType', { type: 'investor' });
+      const [res, staffRes] = await Promise.all([
+        performAdminAction(token, 'getPartnersByType', { type: 'investor' }),
+        performAdminAction(token, 'getPlatformStaff', {})
+      ]);
       setPartners(res.data || []);
+      setStaff(staffRes.data || []);
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Error', description: e.message });
     } finally {
@@ -133,6 +142,14 @@ export default function InvestorManagement() {
   }, [toast]);
 
   useEffect(() => { forceRefresh(); }, [forceRefresh]);
+
+  const filteredInvestors = useMemo(() => {
+    return partners.filter(p => {
+        const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
+        const matchesAssignee = assigneeFilter === 'all' || p.assigneeId === assigneeFilter;
+        return matchesStatus && matchesAssignee;
+    });
+  }, [partners, statusFilter, assigneeFilter]);
 
   async function handleDelete() {
     try {
@@ -188,7 +205,33 @@ export default function InvestorManagement() {
             <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Investor</Button>
           </div>
         </CardHeader>
-        <CardContent>{isLoading ? <Loader2 className="animate-spin mx-auto" /> : <DataTable columns={columns} data={partners} />}</CardContent>
+        <CardContent>
+            <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg">
+                <div className="flex-1 space-y-2">
+                    <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status Filter</Label>
+                    <Select value={statusFilter} onValueChange={setStatusFilter}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Statuses</SelectItem>
+                            <SelectItem value="active">Active</SelectItem>
+                            <SelectItem value="inactive">Inactive</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div className="flex-1 space-y-2">
+                    <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Users className="h-3 w-3"/> Assignee Filter</Label>
+                    <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Staff</SelectItem>
+                            <SelectItem value="none">Unallocated</SelectItem>
+                            {staff.map(s => <SelectItem key={s.id} value={s.id}>{s.firstName} {s.lastName}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                </div>
+            </div>
+            {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredInvestors} />}
+        </CardContent>
       </Card>
     </>
   );
