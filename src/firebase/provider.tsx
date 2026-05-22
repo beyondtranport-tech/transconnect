@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { DependencyList, createContext, useContext, ReactNode, useMemo, useState, useEffect, useCallback } from 'react';
@@ -44,7 +43,8 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   const [userData, setUserData] = useState<any>(null);
   const [companyData, setCompanyData] = useState<any>(null);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
-  const [isDataLoading, setIsDataLoading] = useState(false);
+  const [isUserDataLoading, setIsUserDataLoading] = useState(false);
+  const [isCompanyDataLoading, setIsCompanyDataLoading] = useState(false);
   const [userError, setUserError] = useState<Error | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -52,6 +52,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     setRefreshKey(prev => prev + 1);
   }, []);
 
+  // 1. Auth State Listener
   useEffect(() => {
     if (!auth) {
       setIsAuthLoading(false);
@@ -63,6 +64,8 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       if (!user) {
         setUserData(null);
         setCompanyData(null);
+        setIsUserDataLoading(false);
+        setIsCompanyDataLoading(false);
       }
     }, (error) => {
       setUserError(error);
@@ -71,42 +74,46 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     return () => unsubscribe();
   }, [auth]);
 
+  // 2. User Profile Listener
   useEffect(() => {
     if (!firestore || !authState?.uid) {
       setUserData(null);
-      setCompanyData(null);
-      setIsDataLoading(false);
+      setIsUserDataLoading(false);
       return;
     }
 
-    setIsDataLoading(true);
-    
+    setIsUserDataLoading(true);
     const userRef = doc(firestore, 'users', authState.uid);
-    const unsubUser = onSnapshot(userRef, (snap) => {
-      const uData = snap.data();
-      setUserData(uData || null);
-      
-      if (uData?.companyId) {
-        const companyRef = doc(firestore, 'companies', uData.companyId);
-        const unsubCompany = onSnapshot(companyRef, (cSnap) => {
-            setCompanyData(cSnap.data() || null);
-            setIsDataLoading(false);
-        }, (err) => {
-            console.error("Error fetching company data:", err);
-            setIsDataLoading(false);
-        });
-        return () => unsubCompany();
-      } else {
-        setCompanyData(null);
-        setIsDataLoading(false);
-      }
+    
+    return onSnapshot(userRef, (snap) => {
+      setUserData(snap.data() || null);
+      setIsUserDataLoading(false);
     }, (err) => {
       console.error("Error fetching user data:", err);
-      setIsDataLoading(false);
+      setIsUserDataLoading(false);
     });
-
-    return () => unsubUser();
   }, [firestore, authState?.uid, refreshKey]);
+
+  // 3. Company Data Listener
+  useEffect(() => {
+    const companyId = userData?.companyId;
+    if (!firestore || !companyId) {
+      setCompanyData(null);
+      setIsCompanyDataLoading(false);
+      return;
+    }
+
+    setIsCompanyDataLoading(true);
+    const companyRef = doc(firestore, 'companies', companyId);
+    
+    return onSnapshot(companyRef, (cSnap) => {
+        setCompanyData(cSnap.data() || null);
+        setIsCompanyDataLoading(false);
+    }, (err) => {
+        console.error("Error fetching company data:", err);
+        setIsCompanyDataLoading(false);
+    });
+  }, [firestore, userData?.companyId]);
 
   const enrichedUser = useMemo(() => {
     if (!authState) return null;
@@ -117,6 +124,8 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     };
   }, [authState, userData, companyData]);
 
+  const isUserLoading = isAuthLoading || isUserDataLoading || isCompanyDataLoading;
+
   const contextValue = useMemo((): FirebaseContextState => {
     const servicesAvailable = !!(firebaseApp && firestore && auth);
     return {
@@ -125,11 +134,11 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       firestore: servicesAvailable ? firestore : null,
       auth: servicesAvailable ? auth : null,
       user: enrichedUser as any,
-      isUserLoading: isAuthLoading || isDataLoading,
+      isUserLoading,
       userError,
       forceRefresh,
     };
-  }, [firebaseApp, firestore, auth, enrichedUser, isAuthLoading, isDataLoading, userError, forceRefresh]);
+  }, [firebaseApp, firestore, auth, enrichedUser, isUserLoading, userError, forceRefresh]);
 
   return (
     <FirebaseContext.Provider value={contextValue}>

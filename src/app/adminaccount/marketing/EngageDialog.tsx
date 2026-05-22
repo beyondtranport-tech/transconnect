@@ -8,6 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Loader2, Mail, MessageSquare, UserCheck, CheckCircle, Link as LinkIcon, Send, ExternalLink } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
+import { copyHtmlToClipboard } from '@/lib/utils';
 
 // Shared components
 import CompanyProfile from './content/CompanyProfile';
@@ -125,7 +126,6 @@ export function EngageDialog({ open, onOpenChange, partner, audience }: EngageDi
             const hasClass = (cls: string) => el.classList.contains(cls);
             let style = el.getAttribute('style') || '';
 
-            // Mapping common tailwind utilities used in templates to inline CSS
             if (hasClass('border')) style += 'border: 1px solid #e2e8f0;';
             if (hasClass('rounded-xl')) style += 'border-radius: 0.75rem;';
             if (hasClass('rounded-lg')) style += 'border-radius: 0.5rem;';
@@ -150,14 +150,11 @@ export function EngageDialog({ open, onOpenChange, partner, audience }: EngageDi
             if (hasClass('shadow-sm')) style += 'box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);';
 
             if (style) el.setAttribute('style', style);
-
-            // Recurse children
             Array.from(el.children).forEach(child => applyInlineStyles(child as HTMLElement));
         };
 
         applyInlineStyles(contentClone);
 
-        // Ensure all images have absolute URLs
         const images = contentClone.querySelectorAll('img');
         const origin = window.location.origin.includes('localhost') ? 'https://studio--ecosystem-hub.us-central1.hosted.app' : window.location.origin;
         images.forEach(img => {
@@ -169,7 +166,6 @@ export function EngageDialog({ open, onOpenChange, partner, audience }: EngageDi
             }
         });
 
-        // 3. Append Tracking Pixel
         const trackingPixel = document.createElement('img');
         trackingPixel.src = `${origin}/api/trackEmailOpen/${partner.id}`;
         trackingPixel.width = 1;
@@ -177,12 +173,12 @@ export function EngageDialog({ open, onOpenChange, partner, audience }: EngageDi
         trackingPixel.style.display = 'none';
         contentClone.appendChild(trackingPixel);
 
-        // 4. Copy to Clipboard using 'text/html' for formatted paste
-        const blob = new Blob([contentClone.innerHTML], { type: 'text/html' });
-        const clipboardItem = new ClipboardItem({ 'text/html': blob });
-        await navigator.clipboard.write([clipboardItem]);
+        // 3. Copy using the safe utility to avoid "Illegal constructor"
+        const success = await copyHtmlToClipboard(contentClone.innerHTML);
 
-        // 5. Launch Email Client (mailto)
+        if (!success) throw new Error("Could not copy content to clipboard.");
+
+        // 4. Launch Email Client (mailto)
         const mailtoUrl = `mailto:${partner.email}?subject=${encodeURIComponent(getSubject())}`;
         window.location.href = mailtoUrl;
 
@@ -287,7 +283,6 @@ export function EngageDialog({ open, onOpenChange, partner, audience }: EngageDi
             </DialogHeader>
 
             <div className="flex-1 flex overflow-hidden">
-                {/* Navigation Sidebar */}
                 <div className="w-64 border-r bg-muted/20 p-4 space-y-2">
                     <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider px-3 mb-4">Choose Document</h4>
                     {[
@@ -308,21 +303,10 @@ export function EngageDialog({ open, onOpenChange, partner, audience }: EngageDi
                             {tab.label}
                         </Button>
                     ))}
-                    
-                    <div className="mt-10 p-4 bg-primary/5 rounded-lg border border-primary/10">
-                        <div className="flex items-center gap-2 text-xs font-bold text-primary mb-2">
-                            <UserCheck className="h-3.5 w-3.5" /> RICH HTML READY
-                        </div>
-                        <p className="text-[10px] text-muted-foreground leading-relaxed">
-                            Formatting and graphics are now inlined to ensure they display correctly in Outlook and Gmail.
-                        </p>
-                    </div>
                 </div>
 
-                {/* Content Preview */}
                 <Card className="flex-1 rounded-none border-0 shadow-none overflow-y-auto bg-slate-50">
                     <CardContent className="p-8">
-                        {/* We use a specific ID for the wrapper to copy everything including the intro */}
                         <div id={`engage-content-wrapper-${activeTab}`} className="bg-white p-8 rounded-lg shadow-sm border mx-auto max-w-[800px]">
                             <EmailWrapper>
                                 {activeTab === 'company-profile' && <CompanyProfile audience={audience} partner={partner} />}
@@ -339,10 +323,6 @@ export function EngageDialog({ open, onOpenChange, partner, audience }: EngageDi
             </div>
             
             <div className="p-4 border-t bg-muted/30 flex justify-between items-center text-xs text-muted-foreground px-6">
-                <div className="flex items-center gap-6">
-                    <span className="flex items-center gap-1.5"><CheckCircle className="h-3.5 w-3.5 text-green-500"/> Tracking pixel included</span>
-                    <span className="flex items-center gap-1.5"><CheckCircle className="h-3.5 w-3.5 text-green-500"/> Dynamic referral link</span>
-                </div>
                 <div className="italic">
                     Drafting Subject: {getSubject()}
                 </div>

@@ -32,6 +32,40 @@ export function formatNumber(value: number | null | undefined): string {
         return '0';
     }
     const fixedValue = value.toFixed(0);
-    // Use a server-safe method to add commas for thousands separation
     return fixedValue.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+/**
+ * Safely copies HTML content to the clipboard with feature detection for the ClipboardItem API.
+ * Prevents "Illegal constructor" errors in restricted browser environments.
+ */
+export async function copyHtmlToClipboard(html: string, plainText?: string) {
+    if (typeof window === 'undefined') return false;
+
+    const textToCopy = plainText || html.replace(/<[^>]*>/g, '');
+
+    try {
+        // Try the modern ClipboardItem API first (requires secure context and constructor support)
+        if (typeof window.ClipboardItem !== 'undefined' && navigator.clipboard && navigator.clipboard.write) {
+            const htmlBlob = new Blob([html], { type: 'text/html' });
+            const textBlob = new Blob([textToCopy], { type: 'text/plain' });
+            const item = new window.ClipboardItem({
+                'text/html': htmlBlob,
+                'text/plain': textBlob,
+            });
+            await navigator.clipboard.write([item]);
+            return true;
+        }
+    } catch (e) {
+        console.warn("Rich clipboard copy failed, falling back to plain text:", e);
+    }
+
+    // Fallback to standard plain-text copying
+    try {
+        await navigator.clipboard.writeText(textToCopy);
+        return true;
+    } catch (e) {
+        console.error("Clipboard copy failed entirely:", e);
+        return false;
+    }
 }
