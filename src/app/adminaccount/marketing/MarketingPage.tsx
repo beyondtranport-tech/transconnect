@@ -72,8 +72,6 @@ interface MarketingPageProps {
   audience: keyof typeof audienceConfig;
 }
 
-type ApiPartnerType = 'partner' | 'isa' | 'investor' | 'developer' | 'supplier' | 'transporter';
-
 async function performAdminAction(token: string, action: string, payload: any) {
     const response = await fetch('/api/admin', {
         method: 'POST',
@@ -110,7 +108,7 @@ function LogAndCopyDialog({ open, onOpenChange, partners, isLoadingPartners, act
         try {
             await onLogAndCopy({ ...values, subject: activeTabLabel });
         } catch (e) {
-            // Error is handled by parent
+            // Error handled by parent
         } finally {
             setIsLogging(false);
         }
@@ -130,7 +128,9 @@ function LogAndCopyDialog({ open, onOpenChange, partners, isLoadingPartners, act
                                 <FormLabel>Log against {singularAudience}</FormLabel>
                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                                     <FormControl><SelectTrigger disabled={isLoadingPartners}><SelectValue placeholder={isLoadingPartners ? "Loading..." : `Select a ${singularAudience.toLowerCase()}...`} /></SelectTrigger></FormControl>
-                                    <SelectContent>{partners.map((p: any) => <SelectItem key={p.id} value={p.id}>{p.firstName} {p.lastName} ({p.companyName || 'N/A'})</SelectItem>)}</SelectContent>
+                                    <SelectContent>
+                                        {partners.map((p: any) => <SelectItem key={p.id} value={p.id}>{p.firstName} {p.lastName} ({p.companyName || 'N/A'})</SelectItem>)}
+                                    </SelectContent>
                                 </Select>
                                 <FormMessage />
                             </FormItem>
@@ -140,7 +140,12 @@ function LogAndCopyDialog({ open, onOpenChange, partners, isLoadingPartners, act
                                 <FormLabel>Communication Type</FormLabel>
                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                                     <FormControl><SelectTrigger><SelectValue placeholder="Select a type..." /></SelectTrigger></FormControl>
-                                    <SelectContent><SelectItem value="Email">Email</SelectItem><SelectItem value="WhatsApp">WhatsApp</SelectItem><SelectItem value="Call">Call</SelectItem><SelectItem value="Meeting">Meeting</SelectItem></SelectContent>
+                                    <SelectContent>
+                                        <SelectItem value="Email">Email</SelectItem>
+                                        <SelectItem value="WhatsApp">WhatsApp</SelectItem>
+                                        <SelectItem value="Call">Call</SelectItem>
+                                        <SelectItem value="Meeting">Meeting</SelectItem>
+                                    </SelectContent>
                                 </Select>
                                 <FormMessage />
                             </FormItem>

@@ -124,7 +124,6 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   const enrichedUser = useMemo(() => {
     if (!authState) return null;
     
-    // Explicitly define properties to avoid spreading the complex User class instance
     return {
       uid: authState.uid,
       email: authState.email,
@@ -132,14 +131,18 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       photoURL: authState.photoURL,
       emailVerified: authState.emailVerified,
       phoneNumber: authState.phoneNumber,
-      // Merge with Firestore profile and company data
       ...userData,
       companyData,
     };
   }, [authState, userData, companyData]);
 
-  // Ensure isUserLoading properly settles
-  const isUserLoading = isAuthLoading || isUserDataLoading || isCompanyDataLoading;
+  // Methodist Resolve: Ensure isUserLoading properly settles even if documents are missing
+  const isUserLoading = useMemo(() => {
+      if (!auth) return false;
+      if (isAuthLoading) return true;
+      if (!authState) return false;
+      return isUserDataLoading || isCompanyDataLoading;
+  }, [isAuthLoading, isUserDataLoading, isCompanyDataLoading, authState, auth]);
 
   const contextValue = useMemo((): FirebaseContextState => {
     const servicesAvailable = !!(firebaseApp && firestore && auth);

@@ -36,21 +36,21 @@ export function formatNumber(value: number | null | undefined): string {
 }
 
 /**
- * Safely copies HTML content to the clipboard with robust feature detection.
- * Avoids "Illegal constructor" errors by using a resilient hidden-element strategy.
+ * Methodically safe HTML clipboard utility.
+ * Avoids 'TypeError: Illegal constructor' by using a resilient hidden-element approach.
  */
 export async function copyHtmlToClipboard(html: string, plainText?: string) {
     if (typeof window === 'undefined') return false;
 
     const textToCopy = plainText || html.replace(/<[^>]*>/g, '');
 
-    // Attempt 1: Safe hidden-element approach to avoid ClipboardItem constructor crash
     try {
         const container = document.createElement('div');
         container.innerHTML = html;
         container.style.position = 'fixed';
         container.style.pointerEvents = 'none';
         container.style.opacity = '0';
+        container.style.left = '-9999px';
         document.body.appendChild(container);
 
         window.getSelection()?.removeAllRanges();
@@ -58,15 +58,17 @@ export async function copyHtmlToClipboard(html: string, plainText?: string) {
         range.selectNode(container);
         window.getSelection()?.addRange(range);
 
+        // execCommand('copy') is widely supported and avoids the ClipboardItem constructor crash
         const success = document.execCommand('copy');
         document.body.removeChild(container);
+        window.getSelection()?.removeAllRanges();
         
         if (success) return true;
     } catch (e) {
-        console.warn("Fallback HTML copy failed:", e);
+        console.warn("Resilient HTML copy failed:", e);
     }
 
-    // Attempt 2: Plain text fallback
+    // Secondary fallback: Plain text using modern API
     try {
         await navigator.clipboard.writeText(textToCopy);
         return true;
