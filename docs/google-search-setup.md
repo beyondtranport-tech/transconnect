@@ -1,48 +1,104 @@
-# Setting up Google Custom Search API for Lead Generation
+# Configuring Google Search for the Leads AI Agent
 
-To enable the AI Lead Agent and Enrichment tools to find real-world company data, you need to configure Google's Custom Search API correctly. This requires two values in your `.env` file: an **API Key** and a **Search Engine ID**.
+Google has recently changed their policy: **New search engines can no longer search the "Entire Web" without a specialized enterprise agreement.** Instead, they are restricted to a list of up to 50 domains.
+
+To get the Leads AI Agent working, we use a **"Business Whitelist"** strategy. By telling Google to search the 50 most data-rich business sites, the AI can still find almost any company.
 
 ---
 
-## Step 1: Get Your Google Cloud API Key
+## Step 1: Update your Search Engine Settings
 
-1.  Go to the [Google Cloud Console](https://console.cloud.google.com/).
-2.  Select your project (`ecosystem-hub`) from the top navigation bar.
-3.  In the navigation menu, go to **APIs & Services > Credentials**.
-4.  Click **+ CREATE CREDENTIALS** at the top and select **API key**.
-5.  Copy this key. This is your `GOOGLE_SEARCH_API_KEY`.
+1.  Go to the [Programmable Search Control Panel](https://programmablesearchengine.google.com/controlpanel/all).
+2.  Select your search engine.
+3.  On the **Basics** tab, find the **"Sites to search"** section.
+4.  If "Search the entire web" is **OFF** and cannot be turned on, you must add the whitelist below.
+5.  Click **"ADD"** and copy-paste the following list of domains (one per line). 
 
-## Step 2: Enable the Custom Search API (CRITICAL)
+### The "Top 50" Business Whitelist
+Copy and paste these into your "Sites to search" list:
+```text
+linkedin.com
+facebook.com
+instagram.com
+twitter.com
+yellowpages.co.za
+brabys.com
+sayellow.com
+easyinfo.co.za
+hotfrog.co.za
+cylex.net.za
+yalwa.co.za
+foursquare.com
+yelp.com
+glassdoor.com
+crunchbase.com
+bloomberg.com
+reuters.com
+news24.com
+moneyweb.co.za
+businesstech.co.za
+businesslive.co.za
+itweb.co.za
+engineeringnews.co.za
+transportworldafrica.co.za
+logisticsupdateafrica.com
+fleetwatch.co.za
+focusontransport.co.za
+truckandtrailer.co.za
+autotrader.co.za
+gumtree.co.za
+junkmail.co.za
+bidorbuy.co.za
+snupit.co.za
+b2byellowpages.com
+kompass.com
+zoominfo.com
+apollo.io
+dnb.com
+whitepages.com
+local.com
+chamberofcommerce.com
+bbb.org
+manta.com
+mapquest.com
+bing.com
+bizcommunity.com
+gov.za
+govpage.co.za
+sa-tenders.co.za
+tendersdirect.co.za
+```
 
-The "403 Access Denied" error means this step was missed. You must explicitly turn on the search service for your project.
+---
 
-1.  Click this direct link to the **[Custom Search API Library Page](https://console.cloud.google.com/apis/library/customsearch.googleapis.com?project=ecosystem-hub)**.
-2.  Click the blue **"ENABLE"** button. (If it says "Manage", it is already enabled).
+## Step 2: Get Your Credentials
 
-## Step 3: Create / Verify Your Search Engine
+1.  **API Key:** Go to [Google Cloud Credentials](https://console.cloud.google.com/apis/credentials?project=ecosystem-hub) and create an **API key**.
+2.  **Search Engine ID:** Copy the **Search engine ID** from the top of the Search Engine Basics page (e.g., `3457246c678064558`).
 
-1.  Go to the [Search Engine Control Panel](https://programmablesearchengine.google.com/controlpanel/all).
-2.  Ensure you are logged into the account that owns the engine (`mkoton100@gmail.com`).
-3.  If you see "Search Engine Not Found", it's a login mismatch. Try opening the link in an Incognito window.
-4.  **Get the ID:** Copy the **Search engine ID** (e.g., `3457246c678064558`).
-5.  **CRITICAL - Search the entire web:** In the "Basics" tab, ensure the **"Search the entire web"** toggle is turned **ON**.
+---
+
+## Step 3: Enable the API (CRITICAL)
+
+The "403 Access Denied" error means this step was missed.
+1.  Click this link: **[Enable Custom Search API](https://console.cloud.google.com/apis/library/customsearch.googleapis.com?project=ecosystem-hub)**.
+2.  Click the blue **"ENABLE"** button.
+
+---
 
 ## Step 4: Update Your .env File
 
-Paste both values into your `.env` file. **Do not use quotes or spaces.**
+Paste both values into your `.env` file. **Do not use quotes.**
 
-```
+```text
 GOOGLE_SEARCH_API_KEY=YOUR_API_KEY_HERE
-CUSTOM_SEARCH_ENGINE_ID=3457246c678064558
+CUSTOM_SEARCH_ENGINE_ID=YOUR_ID_HERE
 ```
 
-## Step 5: Restart Your Server & Check Logs
-
-After saving the `.env` file, you **MUST** stop your terminal (`Ctrl+C`) and run:
+## Step 5: Restart Your Server
+Stop your terminal (`Ctrl+C`) and run:
 ```bash
 npm run dev
 ```
 
-Look at the terminal output at the bottom of your screen. When you click the sparkle tool, the app will log:
-`[GOOGLE SEARCH] Using CX ID: 3457...`
-confirming it is using the correct configuration.
+The AI agent will now use the "Business Whitelist" to find your leads.

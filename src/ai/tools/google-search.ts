@@ -1,4 +1,9 @@
 'use server';
+/**
+ * @fileOverview Google Custom Search Tool for AI Agents.
+ * Handles API interactions and provides detailed error feedback for the new "Sites to search" restrictions.
+ */
+
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 
@@ -18,7 +23,7 @@ const GoogleSearchOutputSchema = z.array(GoogleSearchResultSchema);
 export const googleSearchTool = ai.defineTool(
   {
     name: 'googleSearch',
-    description: 'Performs a Google search to find real-world information. Sourced from global search results.',
+    description: 'Performs a targeted Google search across top business directories and social platforms to find real-world company information.',
     inputSchema: GoogleSearchInputSchema,
     outputSchema: GoogleSearchOutputSchema,
   },
@@ -31,16 +36,14 @@ export const googleSearchTool = ai.defineTool(
 
     if (process.env.NODE_ENV !== 'production') {
         console.log(`[GOOGLE SEARCH] Requesting query: "${input.query}"`);
-        console.log(`[GOOGLE SEARCH] Using API Key: ${apiKey ? apiKey.substring(0, 5) + '...' : 'MISSING'}`);
-        console.log(`[GOOGLE SEARCH] Using CX ID: ${cx ? cx.substring(0, 6) + '...' : 'MISSING'}`);
     }
 
     if (!apiKey) {
-      throw new Error(`CONFIG_ERROR: GOOGLE_SEARCH_API_KEY is missing from environment.`);
+      throw new Error(`CONFIG_ERROR: GOOGLE_SEARCH_API_KEY is missing from your .env file.`);
     }
     
     if (!cx) {
-      throw new Error(`CONFIG_ERROR: CUSTOM_SEARCH_ENGINE_ID is missing from environment.`);
+      throw new Error(`CONFIG_ERROR: CUSTOM_SEARCH_ENGINE_ID is missing from your .env file.`);
     }
 
     if (!input.query || input.query.trim().length === 0) {
@@ -67,22 +70,28 @@ export const googleSearchTool = ai.defineTool(
             const apiMessage = errorData.error?.message || response.statusText;
             
             if (response.status === 403) {
-                throw new Error(`API_ERROR: Access Denied (403). Ensure "Custom Search API" is enabled in your Google Cloud Project. Link: https://console.cloud.google.com/apis/library/customsearch.googleapis.com?project=ecosystem-hub`);
+                throw new Error(`API_ERROR: Access Denied (403). Ensure the "Custom Search API" is enabled in your Google Cloud Console for project "ecosystem-hub".`);
             }
             
             if (response.status === 400) {
-                throw new Error(`API_ERROR: Google returned "Invalid Argument" (400). Found CX ID: "${cx.substring(0, 4)}...". Verify this ID in the "Basics" section of the Programmable Search Control Panel.`);
+                throw new Error(`API_ERROR: Invalid ID (400). Please verify your CUSTOM_SEARCH_ENGINE_ID matches the ID in the Control Panel.`);
             }
             
             throw new Error(`API_ERROR: Google Search failed (${response.status}): ${apiMessage}`);
         }
         
         const data = await response.json();
-        return (data.items || []).map((item: any) => ({
+        const results = (data.items || []).map((item: any) => ({
             title: item.title || 'Untitled',
             link: item.link || '',
             snippet: item.snippet || '',
         }));
+
+        if (results.length === 0) {
+            console.warn(`[GOOGLE SEARCH] Query returned 0 results. This usually means the "Sites to search" list in your Google Control Panel is empty. Refer to docs/google-search-setup.md.`);
+        }
+
+        return results;
 
     } catch (e: any) {
         clearTimeout(timeoutId);
