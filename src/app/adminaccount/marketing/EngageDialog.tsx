@@ -3,14 +3,12 @@
 import React, { useState, useMemo } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent } from '@/components/ui/card';
-import { Loader2, Mail, MessageSquare, UserCheck, CheckCircle, Link as LinkIcon, Send, ExternalLink } from 'lucide-react';
+import { Loader2, Mail, ExternalLink, Send } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { copyHtmlToClipboard } from '@/lib/utils';
 
-// Shared content components
+// Content components
 import CompanyProfile from './content/CompanyProfile';
 import TechArchitecture from './content/TechArchitecture';
 import RevenueModel from './content/RevenueModel';
@@ -133,7 +131,7 @@ export function EngageDialog({ open, onOpenChange, partner, audience, onEngageSu
         trackingPixel.style.display = 'none';
         contentClone.appendChild(trackingPixel);
 
-        // 3. Copy using the safe feature-detecting utility to avoid "Illegal constructor"
+        // 3. Copy using the safe feature-detecting utility to avoid restricted constructor
         const success = await copyHtmlToClipboard(contentClone.innerHTML);
 
         if (!success) throw new Error("Could not copy content to clipboard.");

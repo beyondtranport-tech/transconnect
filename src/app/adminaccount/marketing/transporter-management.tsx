@@ -18,8 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { PartnerTasksDialog } from './PartnerTasksDialog';
-import { CommunicationLogDialog } from './CommunicationLogDialog';
+import { PartnerOversightDialog } from './PartnerOversightDialog';
 import { EngageDialog } from './EngageDialog';
 import { formatDateSafe } from '@/lib/utils';
 import { EnrichPartnerButton, BulkEnrichButton } from './EnrichPartnerButton';
@@ -204,14 +203,14 @@ export default function TransporterManagement() {
         header: 'Transporter', 
         cell: ({ row }) => (
             <div className="flex flex-col">
-                <span className="font-bold">{row.original.companyName || 'N/A'}</span>
-                <span className="text-xs text-muted-foreground">{row.original.firstName} {row.original.lastName}</span>
+                <span className="font-bold">{row.original.companyName || `${row.original.firstName} ${row.original.lastName}`}</span>
+                <span className="text-[10px] uppercase font-bold text-muted-foreground">{row.original.entryType}</span>
             </div>
         )
     },
     { accessorKey: 'email', header: 'Email' },
     { 
-        accessorKey: 'lastOutreachAt',
+        accessorKey: 'lastOutreachSubject',
         header: 'Last Outreach', 
         cell: ({row}) => (
             <div className="flex flex-col gap-1">
@@ -253,8 +252,7 @@ export default function TransporterManagement() {
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'engage', data: row.original })} title="Initiate Engagement">
           <Send className="h-4 w-4 text-primary" />
         </Button>
-        <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.firstName} />
-        <PartnerTasksDialog partner={row.original} />
+        <PartnerOversightDialog partner={row.original} onUpdate={forceRefresh} />
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'edit', data: row.original })}><Edit className="h-4 w-4" /></Button>
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'delete', data: row.original })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
       </div>

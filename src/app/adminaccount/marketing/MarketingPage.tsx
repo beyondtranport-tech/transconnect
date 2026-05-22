@@ -225,14 +225,14 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
                     <p className="text-muted-foreground">Manage leads and browse engagement materials.</p>
                 </div>
             </div>
-            <Button variant="outline" onClick={() => setIsLogDialogOpen(true)} disabled={isLoadingPartners || partners.length === 0}>
+            <Button variant="outline" onClick={() => setIsLogDialogOpen(true)} disabled={isLoadingPartners || (partners.length === 0 && !!Management)}>
                 <ClipboardCopy className="mr-2 h-4 w-4" /> Log & Copy Content
             </Button>
         </div>
 
         <Tabs defaultValue="company-profile" className="w-full" onValueChange={setActiveTab}>
             <TabsList className="h-auto flex-wrap justify-start bg-muted p-1">
-                <TabsTrigger value="management">Management & CRM</TabsTrigger>
+                {Management && <TabsTrigger value="management">Management & CRM</TabsTrigger>}
                 <TabsTrigger value="company-profile">Profile</TabsTrigger>
                 <TabsTrigger value="tech-architecture">Tech</TabsTrigger>
                 <TabsTrigger value="revenue-model">Revenue</TabsTrigger>

@@ -3,7 +3,7 @@
 import React, { DependencyList, createContext, useContext, ReactNode, useMemo, useState, useEffect, useCallback } from 'react';
 import { FirebaseApp } from 'firebase/app';
 import { Firestore, doc, onSnapshot } from 'firebase/firestore';
-import { Auth, User, onAuthStateChanged } from 'firebase/auth';
+import { Auth, onAuthStateChanged } from 'firebase/auth';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener'
 
 interface FirebaseProviderProps {
@@ -39,7 +39,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   firestore,
   auth,
 }) => {
-  const [authState, setAuthState] = useState<User | null>(null);
+  const [authState, setAuthState] = useState<any>(null);
   const [userData, setUserData] = useState<any>(null);
   const [companyData, setCompanyData] = useState<any>(null);
   
@@ -61,7 +61,17 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       return;
     }
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setAuthState(user);
+      if (user) {
+        setAuthState({
+            uid: user.uid,
+            email: user.email,
+            displayName: user.displayName,
+            photoURL: user.photoURL,
+            phoneNumber: user.phoneNumber,
+        });
+      } else {
+        setAuthState(null);
+      }
       setIsAuthLoading(false);
       if (!user) {
         setUserData(null);
@@ -123,29 +133,19 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     return unsub;
   }, [firestore, userData?.companyId, isAuthLoading]);
 
-  // Enriched user object without spreading the class instance directly
   const enrichedUser = useMemo(() => {
     if (!authState) return null;
-    
     return {
-      uid: authState.uid,
-      email: authState.email,
-      displayName: authState.displayName,
-      photoURL: authState.photoURL,
-      emailVerified: authState.emailVerified,
-      phoneNumber: authState.phoneNumber,
+      ...authState,
       ...userData,
       companyData,
     };
   }, [authState, userData, companyData]);
 
-  // Calculate final loading state
   const isUserLoading = useMemo(() => {
       if (!auth) return false;
       if (isAuthLoading) return true;
       if (!authState) return false;
-      
-      // Resolve once listeners settle
       return isUserDataLoading || isCompanyDataLoading;
   }, [isAuthLoading, isUserDataLoading, isCompanyDataLoading, authState, auth]);
 
