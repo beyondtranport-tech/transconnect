@@ -5,7 +5,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, Handshake, Edit, Trash2, Send, Users, MailCheck, MailQuestion, Filter, Save, Search } from 'lucide-react';
+import { Loader2, PlusCircle, Handshake, Edit, Trash2, Send, CheckCircle, Users, MailCheck, MailQuestion, Filter, Save, Search } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -198,9 +198,14 @@ export default function PartnerManagement() {
   }
 
   const columns: ColumnDef<any>[] = [
-    { accessorKey: 'firstName', header: 'Name', cell: ({ row }) => <div className="font-bold">{row.original.firstName} {row.original.lastName}</div> },
+    { 
+        accessorKey: 'firstName', 
+        header: 'Name', 
+        cell: ({ row }) => <div className="font-bold">{row.original.firstName} {row.original.lastName}</div> 
+    },
     { accessorKey: 'companyName', header: 'Company' },
     { 
+        accessorKey: 'lastOutreachSubject',
         header: 'Last Outreach', 
         cell: ({row}) => (
             <div className="flex flex-col gap-1">
@@ -210,6 +215,7 @@ export default function PartnerManagement() {
         )
     },
     {
+        accessorKey: 'lastOpenedAt',
         header: 'Read Status',
         cell: ({row}) => (
             <div className="flex items-center gap-2">
@@ -226,6 +232,7 @@ export default function PartnerManagement() {
         )
     },
     { 
+        accessorKey: 'assigneeId',
         header: 'Assignee', 
         cell: ({row}) => (
             <div className="flex items-center gap-2">
@@ -259,7 +266,7 @@ export default function PartnerManagement() {
       <PartnerDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={forceRefresh} />
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
         <AlertDialogContent>
-          <AlertDialogHeader><AlertDialogTitle>Delete Partner?</AlertDialogTitle><AlertDialogDescription>Delete "{dialog.data?.firstName} {dialog.data?.lastName}"?</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogHeader><AlertDialogTitle>Delete Partner?</AlertDialogTitle><AlertDialogDescription>Delete "{dialog.data?.firstName}"?</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter><AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

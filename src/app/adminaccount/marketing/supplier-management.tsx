@@ -200,16 +200,18 @@ export default function SupplierManagement() {
 
   const columns: ColumnDef<any>[] = [
     { 
+        accessorKey: 'companyName',
         header: 'Supplier', 
         cell: ({ row }) => (
             <div className="flex flex-col">
                 <span className="font-bold">{row.original.companyName || 'N/A'}</span>
-                <span className="text-xs text-muted-foreground">{row.original.firstName} {row.original.lastName}</span>
+                <span className="text-[10px] uppercase font-bold text-muted-foreground">{row.original.entryType}</span>
             </div>
         )
     },
     { accessorKey: 'email', header: 'Email' },
     { 
+        accessorKey: 'lastOutreachSubject',
         header: 'Last Outreach', 
         cell: ({row}) => (
             <div className="flex flex-col gap-1">
@@ -219,6 +221,7 @@ export default function SupplierManagement() {
         )
     },
     {
+        accessorKey: 'lastOpenedAt',
         header: 'Read Status',
         cell: ({row}) => (
             <div className="flex items-center gap-2">
@@ -235,6 +238,7 @@ export default function SupplierManagement() {
         )
     },
     { 
+        accessorKey: 'assigneeId',
         header: 'Assignee', 
         cell: ({row}) => (
             <div className="flex items-center gap-2">
