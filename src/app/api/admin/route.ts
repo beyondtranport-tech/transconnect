@@ -74,8 +74,17 @@ export async function POST(req: NextRequest) {
             }
             case 'logCommunication': {
                 const { partnerId, type, subject, notes } = payload;
-                // Log communication in the partner's sub-collection
-                const logRef = db.collection('partners').doc(partnerId).collection('communications').doc();
+                const partnerRef = db.collection('partners').doc(partnerId);
+                
+                // Update partner status
+                await partnerRef.update({
+                    lastOutreachAt: FieldValue.serverTimestamp(),
+                    lastOutreachSubject: subject,
+                    updatedAt: FieldValue.serverTimestamp(),
+                });
+
+                // Log interaction
+                const logRef = partnerRef.collection('communications').doc();
                 await logRef.set({
                     id: logRef.id,
                     type,
@@ -84,6 +93,7 @@ export async function POST(req: NextRequest) {
                     timestamp: FieldValue.serverTimestamp(),
                     loggedBy: requestorUid,
                 });
+                
                 return NextResponse.json({ success: true });
             }
             case 'getMembers': {

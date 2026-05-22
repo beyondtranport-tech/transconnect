@@ -36,6 +36,7 @@ interface EngageDialogProps {
   onOpenChange: (open: boolean) => void;
   partner: any;
   audience: "partners" | "isa" | "transporters" | "suppliers" | "investors" | "developers";
+  onEngageSuccess?: () => void;
 }
 
 async function performAdminAction(token: string, action: string, payload: any) {
@@ -51,7 +52,7 @@ async function performAdminAction(token: string, action: string, payload: any) {
     return result;
 }
 
-export function EngageDialog({ open, onOpenChange, partner, audience }: EngageDialogProps) {
+export function EngageDialog({ open, onOpenChange, partner, audience, onEngageSuccess }: EngageDialogProps) {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('company-profile');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -82,15 +83,8 @@ export function EngageDialog({ open, onOpenChange, partner, audience }: EngageDi
 
   const getSubject = () => {
       const company = partner?.companyName || 'your business';
-      switch(activeTab) {
-          case 'company-profile': return `Logistics Flow: Company Profile for ${company}`;
-          case 'tech-architecture': return `Digital Ecosystem: Tech Architecture for ${company}`;
-          case 'revenue-model': return `Growth Opportunity: Revenue Model for ${company}`;
-          case 'offer': return `Strategic Offer for ${company}`;
-          case 'pitch': return `The Logistics Flow Pitch for ${company}`;
-          case 'framework': return `Partnership Framework for ${company}`;
-          default: return `Engagement from Logistics Flow`;
-      }
+      const label = activeTab.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+      return `Logistics Flow: ${label} for ${company}`;
   }
 
   const handleLogCopyAndLaunch = async () => {
@@ -109,12 +103,14 @@ export function EngageDialog({ open, onOpenChange, partner, audience }: EngageDi
         const token = await getClientSideAuthToken();
         if (!token) throw new Error("Authentication failed.");
         
-        // 1. Log the outreach
+        const subjectLabel = activeTab.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+
+        // 1. Log the outreach and update the partner's status
         await performAdminAction(token, 'logCommunication', {
             partnerId: partner.id,
             type: 'Email',
-            subject: activeTab,
-            notes: `Personalized engagement content generated and copied for ${partner.firstName}. Email client launched.`,
+            subject: subjectLabel,
+            notes: `Engagement content generated and copied for ${partner.firstName}. Email client launched.`,
         });
 
         // 2. Prepare HTML for clipboard
@@ -147,6 +143,7 @@ export function EngageDialog({ open, onOpenChange, partner, audience }: EngageDi
         window.location.href = mailtoUrl;
 
         toast({ title: 'Ready to Send!', description: `HTML content copied to clipboard. Press Paste (Ctrl+V) in your email.` });
+        if (onEngageSuccess) onEngageSuccess();
         onOpenChange(false);
     } catch (e: any) {
         toast({ variant: 'destructive', title: 'Action Failed', description: e.message });

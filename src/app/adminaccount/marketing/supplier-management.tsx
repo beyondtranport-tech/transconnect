@@ -5,7 +5,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, Building, Edit, Trash2, Send, Copy, CheckCircle, Users } from 'lucide-react';
+import { Loader2, PlusCircle, Building, Edit, Trash2, Send, CheckCircle, Users, MailCheck, MailQuestion } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -95,10 +95,30 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
             <FormField control={form.control} name="address" render={({ field }) => (<FormItem><FormLabel>Address</FormLabel><FormControl><Textarea placeholder="Enter physical address..." {...field} /></FormControl><FormMessage /></FormItem>)} />
             <div className="grid grid-cols-2 gap-4">
               <FormField control={form.control} name="type" render={({ field }) => (
-                <FormItem><FormLabel>Partner Category</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="partner">Strategic Partner</SelectItem><SelectItem value="isa">ISA Agent</SelectItem><SelectItem value="investor">Investor</SelectItem><SelectItem value="developer">Developer</SelectItem><SelectItem value="supplier">Supplier</SelectItem><SelectItem value="transporter">Transporter</SelectItem></SelectContent></Select></FormItem>
+                <FormItem><FormLabel>Partner Category</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                    <SelectContent>
+                      <SelectItem value="partner">Strategic Partner</SelectItem>
+                      <SelectItem value="isa">ISA Agent</SelectItem>
+                      <SelectItem value="investor">Investor</SelectItem>
+                      <SelectItem value="developer">Developer</SelectItem>
+                      <SelectItem value="supplier">Supplier</SelectItem>
+                      <SelectItem value="transporter">Transporter</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormItem>
               )} />
               <FormField control={form.control} name="status" render={({ field }) => (
-                <FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="active">Active</SelectItem><SelectItem value="inactive">Inactive</SelectItem></SelectContent></Select></FormItem>
+                <FormItem><FormLabel>Status</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                    <SelectContent>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="inactive">Inactive</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormItem>
               )} />
             </div>
             <DialogFooter className="pt-4 border-t">
@@ -154,9 +174,33 @@ export default function SupplierManagement() {
   }
 
   const columns: ColumnDef<any>[] = [
-    { accessorKey: 'firstName', header: 'Name', cell: ({ row }) => <div>{row.original.firstName} {row.original.lastName}</div> },
-    { accessorKey: 'email', header: 'Email' },
+    { accessorKey: 'firstName', header: 'Name', cell: ({ row }) => <div className="font-bold">{row.original.firstName} {row.original.lastName}</div> },
     { accessorKey: 'companyName', header: 'Company' },
+    { 
+        header: 'Last Outreach', 
+        cell: ({row}) => (
+            <div className="flex flex-col gap-1">
+                <span className="text-xs font-bold text-primary">{row.original.lastOutreachSubject || <span className="text-muted-foreground italic">None</span>}</span>
+                {row.original.lastOutreachAt && <span className="text-[10px] text-muted-foreground">{formatDateSafe(row.original.lastOutreachAt)}</span>}
+            </div>
+        )
+    },
+    {
+        header: 'Read Status',
+        cell: ({row}) => (
+            <div className="flex items-center gap-2">
+                {row.original.lastOpenedAt ? (
+                    <Badge variant="default" className="bg-green-100 text-green-700 border-green-200">
+                        <MailCheck className="mr-1 h-3 w-3" /> Read
+                    </Badge>
+                ) : (
+                    <Badge variant="outline" className="text-muted-foreground">
+                        <MailQuestion className="mr-1 h-3 w-3" /> Sent
+                    </Badge>
+                )}
+            </div>
+        )
+    },
     { 
         header: 'Assignee', 
         cell: ({row}) => (
@@ -186,6 +230,7 @@ export default function SupplierManagement() {
         onOpenChange={(o) => !o && setDialog({ type: null })} 
         partner={dialog.data} 
         audience="suppliers" 
+        onEngageSuccess={forceRefresh}
       />
       <SupplierDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={forceRefresh} />
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
@@ -202,7 +247,7 @@ export default function SupplierManagement() {
             <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Supplier</Button>
           </div>
         </CardHeader>
-        <CardContent>{isLoading ? <Loader2 className="animate-spin mx-auto" /> : <DataTable columns={columns} data={partners} />}</CardContent>
+        <CardContent>{isLoading ? <Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /> : <DataTable columns={columns} data={partners} />}</CardContent>
       </Card>
     </>
   );
