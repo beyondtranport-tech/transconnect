@@ -142,12 +142,13 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     };
   }, [authState, userData, companyData]);
 
-  // FIX: Ensure isUserLoading resolves even if company data is missing
+  // Decoupled loading state to prevent hang
   const isUserLoading = useMemo(() => {
       if (!auth) return false;
       if (isAuthLoading) return true;
       if (!authState) return false;
-      // If we have auth, wait for user data. Company data is secondary.
+      // We wait for auth and the primary user document. 
+      // Company data is secondary and shouldn't block the UI.
       return isUserDataLoading;
   }, [isAuthLoading, isUserDataLoading, authState, auth]);
 

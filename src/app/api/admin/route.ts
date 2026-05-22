@@ -54,6 +54,7 @@ export async function POST(req: NextRequest) {
                 const { partnerId, type, subject, notes } = payload;
                 const partnerRef = db.collection('partners').doc(partnerId);
                 const leadRef = db.collection('leads').doc(partnerId);
+                
                 const [partnerSnap, leadSnap] = await Promise.all([partnerRef.get(), leadRef.get()]);
                 const targetRef = partnerSnap.exists ? partnerRef : leadSnap.exists ? leadRef : partnerRef;
 
@@ -64,7 +65,7 @@ export async function POST(req: NextRequest) {
                     updatedAt: FieldValue.serverTimestamp(),
                 };
 
-                await targetRef.update(updateData);
+                await targetRef.set(updateData, { merge: true });
 
                 const logRef = targetRef.collection('communications').doc();
                 await logRef.set({
@@ -90,7 +91,7 @@ export async function POST(req: NextRequest) {
                 };
                 const leadRole = roleMapping[type] || type;
 
-                // FIX: Unified query for both Leads and Partners
+                // Unified query for both Leads and Partners
                 const [partnersSnap, leadsSnap] = await Promise.all([
                     db.collection('partners').where('type', '==', type).get(),
                     db.collection('leads').where('role', '==', leadRole).get()

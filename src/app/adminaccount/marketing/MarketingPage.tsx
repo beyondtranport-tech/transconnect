@@ -203,7 +203,7 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
             notes: logData.notes,
         });
 
-        // Use safe utility instead of restricted ClipboardItem constructor
+        // Use resilient copy utility
         const success = await copyHtmlToClipboard(contentElement.innerHTML);
         if (!success) throw new Error("Copy failed.");
 

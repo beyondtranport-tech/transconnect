@@ -18,7 +18,7 @@ export function formatCurrency(amount: number | null | undefined): string {
 export function formatDateSafe(dateValue: any, formatString: string = "dd MMM yyyy"): string {
     if (!dateValue) return 'N/A';
     let date;
-    if (dateValue.toDate && typeof dateValue.toDate === 'function') {
+    if (dateValue && typeof dateValue.toDate === 'function') {
         date = dateValue.toDate();
     } else {
         date = new Date(dateValue);
