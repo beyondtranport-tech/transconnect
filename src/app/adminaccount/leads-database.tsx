@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect, Suspense } from 'react';
@@ -40,7 +39,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { EngageDialog } from './marketing/EngageDialog';
 import { Label } from '@/components/ui/label';
 import { formatDateSafe } from '@/lib/utils';
-import { EnrichPartnerButton, BulkEnrichButton } from './EnrichPartnerButton';
+import { EnrichPartnerButton, BulkEnrichButton } from './marketing/EnrichPartnerButton';
 import { PartnerTasksDialog } from './marketing/PartnerTasksDialog';
 import { CommunicationLogDialog } from './marketing/CommunicationLogDialog';
 import { BulkImportDialog } from './marketing/BulkImportDialog';
@@ -123,7 +122,7 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle>{lead ? 'Edit Lead' : 'Add New Lead'}</DialogTitle>
+          <DialogTitle>{lead ? 'Edit' : 'Add New'} Lead</DialogTitle>
           <DialogDescription>
             Enter the details for the potential member.
           </DialogDescription>
