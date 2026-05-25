@@ -39,7 +39,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Checkbox } from '@/components/ui/checkbox';
 import { EngageDialog } from './marketing/EngageDialog';
 import { Label } from '@/components/ui/label';
-import { formatDateSafe } from '@/lib/utils';
+import { formatDateSafe, cn } from '@/lib/utils';
 import { EnrichPartnerButton, BulkEnrichButton } from './marketing/EnrichPartnerButton';
 import { PartnerTasksDialog } from './marketing/PartnerTasksDialog';
 import { CommunicationLogDialog } from './marketing/CommunicationLogDialog';
@@ -395,10 +395,16 @@ function LeadsDatabaseComponent() {
         const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
         
         let matchesData = true;
-        if (dataFilter === 'no-email') matchesData = !p.email;
+        if (dataFilter === 'no-email') {
+            const email = (p.email || p.email_address || '').toString().toLowerCase().trim();
+            matchesData = !email || email === 'null' || email === 'n/a';
+        }
         else if (dataFilter === 'no-phone') matchesData = !p.phone;
         else if (dataFilter === 'no-website') matchesData = !p.website;
-        else if (dataFilter === 'has-email') matchesData = !!p.email;
+        else if (dataFilter === 'has-email') {
+             const email = (p.email || p.email_address || '').toString().toLowerCase().trim();
+             matchesData = !!email && email !== 'null' && email !== 'n/a';
+        }
         else if (dataFilter === 'has-phone') matchesData = !!p.phone;
         else if (dataFilter === 'has-website') matchesData = !!p.website;
 
@@ -407,31 +413,38 @@ function LeadsDatabaseComponent() {
   }, [leads, statusFilter, dataFilter]);
 
   const newRecordsRemaining = useMemo(() => {
-    return (leads || []).filter(p => !p.email && (!p.status || p.status === 'new')).length;
+    return (leads || []).filter(p => {
+        const email = (p.email || p.email_address || '').toString().toLowerCase().trim();
+        const isInvalid = !email || email === 'null' || email === 'n/a';
+        const isResearchable = !p.status || p.status === 'new' || p.status === 'contacted';
+        return isInvalid && isResearchable;
+    }).length;
   }, [leads]);
 
   const selectedLeadsForBatch = useMemo(() => {
       return (leads || []).filter(l => selectedIds.includes(l.id));
   }, [leads, selectedIds]);
 
-  const handleEnhance50 = () => {
+  const handleEnhance30 = () => {
       if (!leads) return;
       const uniqueNames = new Set<string>();
       const targets: any[] = [];
       
-      // Broader discovery logic: treat missing status as 'new'
       for (const p of leads) {
           const name = (p.companyName || '').trim().toLowerCase();
-          const isNew = !p.status || p.status === 'new';
-          if (!p.email && isNew && name && !uniqueNames.has(name)) {
+          const email = (p.email || p.email_address || '').toString().toLowerCase().trim();
+          const isInvalid = !email || email === 'null' || email === 'n/a';
+          const isResearchable = !p.status || p.status === 'new' || p.status === 'contacted';
+          
+          if (isInvalid && isResearchable && name && !uniqueNames.has(name)) {
               targets.push(p);
               uniqueNames.add(name);
-              if (targets.length >= 50) break;
+              if (targets.length >= 30) break;
           }
       }
       
       if (targets.length === 0) {
-          toast({ title: "No targets found", description: "All records already have emails or are currently being researched." });
+          toast({ title: "No targets found", description: "All records already have valid emails or are qualified." });
           return;
       }
 
@@ -466,14 +479,22 @@ function LeadsDatabaseComponent() {
     { 
         accessorKey: 'contactPerson', 
         header: 'Contact Name',
-        cell: ({ row }) => <div>{row.original.contactPerson || `${row.original.firstName || ''} ${row.original.lastName || ''}`.trim() || 'N/A'}</div>
+        cell: ({ row }) => <div>{row.original.contactPerson || 'N/A'}</div>
     },
     { 
         accessorKey: 'phone', 
         header: 'Contact Number',
-        cell: ({ row }) => <div>{row.original.phone || row.original.telephone_number || 'N/A'}</div>
+        cell: ({ row }) => <div>{row.original.phone || 'N/A'}</div>
     },
-    { accessorKey: 'email', header: 'Email' },
+    { 
+        accessorKey: 'email', 
+        header: 'Email',
+        cell: ({ row }) => {
+            const email = (row.original.email || '').toString().toLowerCase().trim();
+            const isInvalid = !email || email === 'null' || email === 'n/a';
+            return <div className={cn(isInvalid ? "text-muted-foreground italic" : "")}>{isInvalid ? "Missing" : email}</div>
+        }
+    },
     { 
         header: 'Last Outreach', 
         cell: ({row}) => (
@@ -551,13 +572,13 @@ function LeadsDatabaseComponent() {
           <div className="space-y-1">
             <CardTitle className="flex items-center gap-2">
                 <Users /> Lead Database
-                <Badge variant="secondary" className="ml-2">{newRecordsRemaining} New Records</Badge>
+                <Badge variant="secondary" className="ml-2">{newRecordsRemaining} Candidates Left</Badge>
             </CardTitle>
             <CardDescription>Manage your sales leads.</CardDescription>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="default" className="bg-amber-600 hover:bg-amber-700" onClick={handleEnhance50}>
-                <Zap className="mr-2 h-4 w-4" /> Enhance 50 Records
+            <Button variant="default" className="bg-amber-600 hover:bg-amber-700" onClick={handleEnhance30}>
+                <Zap className="mr-2 h-4 w-4" /> Enhance 30 Records
             </Button>
             <BulkImportDialog type="lead" onComplete={forceRefresh}>
                 <Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Bulk Import JSON</Button>

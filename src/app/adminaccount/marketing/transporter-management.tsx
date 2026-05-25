@@ -180,7 +180,7 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
     setIsLoading(true);
     const idsToDelete = duplicates.flatMap((group, index) => {
       const idToKeep = selections[index];
-      if (!idToKeep) return [];
+      if (!idToKeep) return []; // If no selection for a group, don't delete anything
       return group.filter(lead => lead.id !== idToKeep).map(lead => lead.id);
     });
 
@@ -312,7 +312,12 @@ export default function TransporterManagement() {
   }, [partners, statusFilter, assigneeFilter, dataFilter]);
 
   const newRecordsRemaining = useMemo(() => {
-      return partners.filter(p => !p.email && (!p.status || p.status === 'new')).length;
+      return partners.filter(p => {
+          const email = (p.email || p.email_address || '').toString().toLowerCase().trim();
+          const isInvalid = !email || email === 'null' || email === 'n/a';
+          const isResearchable = !p.status || p.status === 'new' || p.status === 'contacted';
+          return isInvalid && isResearchable;
+      }).length;
   }, [partners]);
 
   const selectedLeads = useMemo(() => {
@@ -325,19 +330,21 @@ export default function TransporterManagement() {
       const uniqueNames = new Set<string>();
       const targets: any[] = [];
       
-      // Broader discovery logic: treat missing status as 'new'
       for (const p of partners) {
           const name = (p.companyName || '').trim().toLowerCase();
-          const isNew = !p.status || p.status === 'new';
-          if (!p.email && isNew && name && !uniqueNames.has(name)) {
+          const email = (p.email || p.email_address || '').toString().toLowerCase().trim();
+          const isInvalid = !email || email === 'null' || email === 'n/a';
+          const isResearchable = !p.status || p.status === 'new' || p.status === 'contacted';
+          
+          if (isInvalid && isResearchable && name && !uniqueNames.has(name)) {
               targets.push(p);
               uniqueNames.add(name);
-              if (targets.length >= 30) break; // Reduced to 30 for reliability
+              if (targets.length >= 30) break;
           }
       }
       
       if (targets.length === 0) {
-          toast({ title: "No targets found", description: "All records already have emails or are currently being researched." });
+          toast({ title: "No targets found", description: "All records already have valid emails or are qualified." });
           return;
       }
 
@@ -382,14 +389,22 @@ export default function TransporterManagement() {
     { 
         accessorKey: 'contactPerson', 
         header: 'Contact Name',
-        cell: ({ row }) => <div>{row.original.contactPerson || `${row.original.firstName || ''} ${row.original.lastName || ''}`.trim() || 'N/A'}</div>
+        cell: ({ row }) => <div>{row.original.contactPerson || 'N/A'}</div>
     },
     { 
         accessorKey: 'phone', 
         header: 'Contact Number',
-        cell: ({ row }) => <div>{row.original.phone || row.original.telephone_number || 'N/A'}</div>
+        cell: ({ row }) => <div>{row.original.phone || 'N/A'}</div>
     },
-    { accessorKey: 'email', header: 'Email' },
+    { 
+        accessorKey: 'email', 
+        header: 'Email',
+        cell: ({ row }) => {
+            const email = (row.original.email || '').toString().toLowerCase().trim();
+            const isInvalid = !email || email === 'null' || email === 'n/a';
+            return <div className={cn(isInvalid ? "text-muted-foreground italic" : "")}>{isInvalid ? "Missing" : email}</div>
+        }
+    },
     { accessorKey: 'lastOutreachSubject', header: 'Last Outreach', cell: ({row}) => (
         <div className="flex flex-col gap-1">
             <span className="text-xs font-bold text-primary">{row.original.lastOutreachSubject || 'None'}</span>
@@ -434,7 +449,7 @@ export default function TransporterManagement() {
           <div className="space-y-1">
             <CardTitle className="flex items-center gap-2">
                 <Truck /> Transporters
-                <Badge variant="secondary" className="ml-2">{newRecordsRemaining} New Records</Badge>
+                <Badge variant="secondary" className="ml-2">{newRecordsRemaining} Candidates Left</Badge>
             </CardTitle>
             <CardDescription>Manage your transporter leads and pipeline.</CardDescription>
           </div>
@@ -455,24 +470,24 @@ export default function TransporterManagement() {
         <CardContent>
             <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg">
                 <div className="flex-1 space-y-2">
-                    <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status</Label>
+                    <Filter className="h-3 w-3"/> Status
                     <Select value={statusFilter} onValueChange={setStatusFilter}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="active">Active</SelectItem><SelectItem value="inactive">Inactive</SelectItem><SelectItem value="contacted">Researching</SelectItem><SelectItem value="new">New</SelectItem></SelectContent>
                     </Select>
                 </div>
                 <div className="flex-1 space-y-2">
-                    <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Users className="h-3 w-3"/> Assignee</Label>
+                    <Users className="h-3 w-3"/> Assignee
                     <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="none">Unallocated</SelectItem>{staff.map(s => <SelectItem key={s.id} value={s.id}>{s.firstName} {s.lastName}</SelectItem>)}</SelectContent>
                     </Select>
                 </div>
                 <div className="flex-1 space-y-2">
-                    <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Search className="h-3 w-3"/> Data Integrity</Label>
+                    <Search className="h-3 w-3"/> Data Integrity
                     <Select value={dataFilter} onValueChange={setDataFilter}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="has-email">Has Email</SelectItem><SelectItem value="no-email">No Email</SelectItem></SelectContent>
+                        <SelectContent><SelectItem value="all">All Records</SelectItem><SelectItem value="has-email">Has Email</SelectItem><SelectItem value="no-email">No Email</SelectItem></SelectContent>
                     </Select>
                 </div>
             </div>

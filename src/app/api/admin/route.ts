@@ -25,6 +25,37 @@ function serializeTimestamps(docData: any): any {
     return newDocData;
 }
 
+/**
+ * Normalize AI-sourced fields into standard fields if standard ones are missing.
+ */
+function normalizePartnerData(data: any) {
+    const normalized = { ...data };
+    
+    // Normalize Email
+    const rawEmail = (data.email || '').toString().toLowerCase().trim();
+    const aiEmail = (data.email_address || '').toString().toLowerCase().trim();
+    const isInvalid = (val: string) => !val || val === 'null' || val === 'n/a' || val === 'none' || val === 'undefined';
+
+    if (isInvalid(rawEmail) && !isInvalid(aiEmail)) {
+        normalized.email = aiEmail;
+    }
+
+    // Normalize Phone
+    const rawPhone = (data.phone || data.telephone_number || '').toString().trim();
+    if (isInvalid(normalized.phone) && !isInvalid(rawPhone)) {
+        normalized.phone = rawPhone;
+    }
+
+    // Normalize Contact Person
+    if (!normalized.contactPerson && (normalized.firstName || normalized.lastName)) {
+        normalized.contactPerson = `${normalized.firstName || ''} ${normalized.lastName || ''}`.trim();
+    } else if (!normalized.contactPerson && data.contact_person) {
+        normalized.contactPerson = data.contact_person;
+    }
+
+    return normalized;
+}
+
 export async function POST(req: NextRequest) {
     try {
         const { app, error: initError } = getAdminApp();
@@ -59,7 +90,6 @@ export async function POST(req: NextRequest) {
                 if (leadRole.endsWith('s')) rolesToSearch.push(leadRole.slice(0, -1));
                 else rolesToSearch.push(leadRole + 's');
 
-                // Find leads that are "stuck" in researching status but still have no email
                 const snap = await db.collection('leads')
                     .where('role', 'in', rolesToSearch)
                     .where('status', '==', 'contacted')
@@ -71,7 +101,10 @@ export async function POST(req: NextRequest) {
                 let count = 0;
                 snap.docs.forEach(doc => {
                     const data = doc.data();
-                    if (!data.email && !data.email_address) {
+                    const email = (data.email || data.email_address || '').toString().toLowerCase().trim();
+                    const isInvalid = !email || email === 'null' || email === 'n/a';
+                    
+                    if (isInvalid) {
                         batch.update(doc.ref, { status: 'new', lastOutreachSubject: null, lastOutreachAt: null });
                         batch.update(db.collection('partners').doc(doc.id), { status: 'new' });
                         count++;
@@ -93,7 +126,7 @@ export async function POST(req: NextRequest) {
                 const leadRole = roleMapping[type] || type;
                 
                 for (const p of partners) {
-                    const companyNameClean = (p.companyName || '').trim();
+                    const companyNameClean = (p.companyName || p.company_name || '').trim();
                     if (!companyNameClean) continue;
 
                     const existingLeads = await db.collection('leads').where('companyName', '==', companyNameClean).get();
@@ -101,7 +134,8 @@ export async function POST(req: NextRequest) {
                     const partnerRef = db.collection('partners').doc(ref.id);
                     
                     const existingData = !existingLeads.empty ? existingLeads.docs[0].data() : null;
-                    const hasContactInfo = !!(p.email_address || p.email || p.telephone_number || p.phone);
+                    const email = (p.email_address || p.email || '').toString().toLowerCase().trim();
+                    const hasContactInfo = !!email && email !== 'null' && email !== 'n/a';
                     
                     const updateData = {
                         ...p,
@@ -139,12 +173,13 @@ export async function POST(req: NextRequest) {
 
                 const mergedMap = new Map();
                 partnersSnap.docs.forEach(doc => {
-                    mergedMap.set(doc.id, { id: doc.id, entryType: 'Member', ...serializeTimestamps(doc.data()) });
+                    const data = normalizePartnerData(doc.data());
+                    mergedMap.set(doc.id, { id: doc.id, entryType: 'Member', ...serializeTimestamps(data) });
                 });
                 
                 leadsSnap.docs.forEach(doc => {
                     const existing = mergedMap.get(doc.id);
-                    const leadData = doc.data();
+                    const leadData = normalizePartnerData(doc.data());
                     const finalStatus = (existing?.status === 'active' || existing?.status === 'qualified') 
                         ? existing.status 
                         : (leadData.status || existing?.status || 'new');
@@ -179,7 +214,7 @@ export async function POST(req: NextRequest) {
                 const snap = await db.collection('leads').get();
                 const grouped = new Map<string, any[]>();
                 snap.docs.forEach(doc => {
-                    const data = doc.data();
+                    const data = normalizePartnerData(doc.data());
                     const name = (data.companyName || '').trim().toLowerCase();
                     if (!name) return;
                     if (!grouped.has(name)) grouped.set(name, []);
@@ -203,7 +238,10 @@ export async function POST(req: NextRequest) {
             }
             case 'getMembers': {
                 const snap = await db.collection('companies').get();
-                return NextResponse.json({ success: true, data: snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) })) });
+                return NextResponse.json({ success: true, data: snap.docs.map(doc => {
+                    const data = normalizePartnerData(doc.data());
+                    return { id: doc.id, ...serializeTimestamps(data) };
+                }) });
             }
             case 'getPlatformStaff': {
                 const snap = await db.collection('platformStaff').get();
