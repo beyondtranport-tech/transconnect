@@ -1,7 +1,7 @@
 'use server';
 /**
  * @fileOverview High-intelligence AI research agent for partner contact info.
- * Uses a parallel search strategy to find emails and management names.
+ * Optimized to handle restricted search environments.
  */
 
 import { ai, geminiModel } from '@/ai/genkit';
@@ -40,12 +40,11 @@ const enrichPartnerFlow = ai.defineFlow(
             return { email: null, phone: null, website: null, address: null, contactPerson: null };
         }
 
-        // Parallel Search Strategy:
-        // 1. General search for contact details
-        // 2. Social search for owner/management
+        // Broadened search query to compensate for the 50-domain restriction
+        // We include specific platform keywords to hit the Business Whitelist
         const [generalResults, socialResults] = await Promise.all([
-            googleSearchTool({ query: `${company} contact details phone email outlook.com gmail.com` }),
-            googleSearchTool({ query: `${company} owner manager director facebook linkedin` })
+            googleSearchTool({ query: `"${company}" contact email phone location South Africa` }),
+            googleSearchTool({ query: `"${company}" director owner LinkedIn Facebook company profile` })
         ]);
         
         const allResults = [...(generalResults || []), ...(socialResults || [])];
@@ -61,14 +60,14 @@ const enrichPartnerFlow = ai.defineFlow(
         // Extract using high-intelligence LLM pass
         const extraction = await ai.generate({
             model: geminiModel,
-            system: `You are a precision research agent specializing in the logistics sector.
-            Analyze search results and extract verified contact and management details.
+            system: `You are a precision research agent.
+            Analyze search results and extract verified contact and management details for "${company}".
             
-            PRIORITY RULES:
-            1. Snippets are highly reliable. Look for emails like "namibsroostrp@outlook.com" and numbers like "+264 83...".
+            EXTRACTOR RULES:
+            1. Snippets are highly reliable. Look for emails and local phone formats.
             2. If a field is not present, return 'null'. DO NOT hallucinate.
-            3. Prioritize personal names (Owners/Directors) found on Facebook or LinkedIn snippet previews.
-            4. If multiple emails exist, prioritize company domain or professional outlook/gmail addresses.`,
+            3. Prioritize personal names found on social snippet previews.
+            4. If multiple emails exist, prioritize professional addresses.`,
             prompt: `ANALYZE SEARCH RESULTS FOR "${company}":\n\n${allContent}`,
             output: {
                 schema: EnrichPartnerOutputSchema
