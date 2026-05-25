@@ -40,7 +40,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { EngageDialog } from './marketing/EngageDialog';
 import { Label } from '@/components/ui/label';
 import { formatDateSafe } from '@/lib/utils';
-import { EnrichPartnerButton, BulkEnrichButton } from './marketing/EnrichPartnerButton';
+import { EnrichPartnerButton, BulkEnrichButton } from './EnrichPartnerButton';
 import { PartnerTasksDialog } from './marketing/PartnerTasksDialog';
 import { CommunicationLogDialog } from './marketing/CommunicationLogDialog';
 import { BulkImportDialog } from './marketing/BulkImportDialog';
@@ -445,7 +445,9 @@ function LeadsDatabaseComponent() {
 
   const columns: ColumnDef<any>[] = useMemo(() => [
     { accessorKey: 'companyName', header: 'Company' },
-    { accessorKey: 'contactPerson', header: 'Contact' },
+    { accessorKey: 'contactPerson', header: 'Contact Name' },
+    { accessorKey: 'phone', header: 'Contact Number' },
+    { accessorKey: 'email', header: 'Email' },
     { 
         header: 'Last Outreach', 
         cell: ({row}) => (

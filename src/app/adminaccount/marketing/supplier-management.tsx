@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -41,6 +42,7 @@ const partnerSchema = z.object({
   lastName: z.string().min(1, 'Last name is required'),
   email: z.string().email('Invalid email address').optional().or(z.literal('')),
   phone: z.string().optional(),
+  contactPerson: z.string().optional(),
   companyName: z.string().optional(),
   address: z.string().optional(),
   status: z.enum(['active', 'inactive']),
@@ -56,7 +58,7 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
   useEffect(() => {
     if (open) {
       if (partner) form.reset(partner);
-      else form.reset({ firstName: '', lastName: '', email: '', phone: '', companyName: '', address: '', status: 'active', type: 'supplier' });
+      else form.reset({ firstName: '', lastName: '', email: '', phone: '', contactPerson: '', companyName: '', address: '', status: 'active', type: 'supplier' });
     }
   }, [open, partner, form]);
 
@@ -93,6 +95,7 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
               <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Phone</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
+            <FormField control={form.control} name="contactPerson" render={({ field }) => (<FormItem><FormLabel>Contact Name (Full)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Company Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="address" render={({ field }) => (<FormItem><FormLabel>Address</FormLabel><FormControl><Textarea placeholder="Enter physical address..." {...field} /></FormControl><FormMessage /></FormItem>)} />
             <div className="grid grid-cols-2 gap-4">
@@ -208,6 +211,16 @@ export default function SupplierManagement() {
                 <span className="text-[10px] uppercase font-bold text-muted-foreground">{row.original.entryType}</span>
             </div>
         )
+    },
+    { 
+        accessorKey: 'contactPerson', 
+        header: 'Contact Name',
+        cell: ({ row }) => <div>{row.original.contactPerson || `${row.original.firstName || ''} ${row.original.lastName || ''}`.trim() || 'N/A'}</div>
+    },
+    { 
+        accessorKey: 'phone', 
+        header: 'Contact Number',
+        cell: ({ row }) => <div>{row.original.phone || row.original.telephone_number || 'N/A'}</div>
     },
     { accessorKey: 'email', header: 'Email' },
     { 

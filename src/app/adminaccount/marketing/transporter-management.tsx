@@ -43,6 +43,7 @@ const partnerSchema = z.object({
   lastName: z.string().min(1, 'Last name is required'),
   email: z.string().email('Invalid email address').optional().or(z.literal('')),
   phone: z.string().optional(),
+  contactPerson: z.string().optional(),
   companyName: z.string().optional(),
   address: z.string().optional(),
   status: z.enum(['active', 'inactive', 'contacted']),
@@ -61,7 +62,7 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
   useEffect(() => {
     if (open) {
       if (partner) form.reset(partner);
-      else form.reset({ firstName: '', lastName: '', email: '', phone: '', companyName: '', address: '', status: 'active', type: 'transporter' });
+      else form.reset({ firstName: '', lastName: '', email: '', phone: '', contactPerson: '', companyName: '', address: '', status: 'active', type: 'transporter' });
     }
   }, [open, partner, form]);
 
@@ -98,6 +99,7 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
               <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Phone</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
+            <FormField control={form.control} name="contactPerson" render={({ field }) => (<FormItem><FormLabel>Contact Person (Alternative)</FormLabel><FormControl><Input {...field} placeholder="Full Name" /></FormControl><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Company Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="address" render={({ field }) => (<FormItem><FormLabel>Address</FormLabel><FormControl><Textarea placeholder="Enter physical address..." {...field} /></FormControl><FormMessage /></FormItem>)} />
             <div className="grid grid-cols-2 gap-4">
@@ -238,7 +240,21 @@ export default function TransporterManagement() {
   }
 
   const columns: ColumnDef<any>[] = [
-    { accessorKey: 'companyName', header: 'Transporter', cell: ({ row }) => <div className="font-bold">{row.original.companyName || `${row.original.firstName} ${row.original.lastName}`}</div> },
+    { 
+        accessorKey: 'companyName', 
+        header: 'Transporter', 
+        cell: ({ row }) => <div className="font-bold">{row.original.companyName || `${row.original.firstName} ${row.original.lastName}`}</div> 
+    },
+    { 
+        accessorKey: 'contactPerson', 
+        header: 'Contact Name',
+        cell: ({ row }) => <div>{row.original.contactPerson || `${row.original.firstName || ''} ${row.original.lastName || ''}`.trim() || 'N/A'}</div>
+    },
+    { 
+        accessorKey: 'phone', 
+        header: 'Contact Number',
+        cell: ({ row }) => <div>{row.original.phone || row.original.telephone_number || 'N/A'}</div>
+    },
     { accessorKey: 'email', header: 'Email' },
     { accessorKey: 'lastOutreachSubject', header: 'Last Outreach', cell: ({row}) => (
         <div className="flex flex-col gap-1">

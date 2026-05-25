@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -41,6 +42,7 @@ const partnerSchema = z.object({
   lastName: z.string().min(1, 'Last name is required'),
   email: z.string().email('Invalid email address').optional().or(z.literal('')),
   phone: z.string().optional(),
+  contactPerson: z.string().optional(),
   companyName: z.string().optional(),
   address: z.string().optional(),
   status: z.enum(['active', 'inactive']),
@@ -56,7 +58,7 @@ function DeveloperDialog({ open, onOpenChange, partner, onSave }: { open: boolea
   useEffect(() => {
     if (open) {
       if (partner) form.reset(partner);
-      else form.reset({ firstName: '', lastName: '', email: '', phone: '', companyName: '', address: '', status: 'active', type: 'developer' });
+      else form.reset({ firstName: '', lastName: '', email: '', phone: '', contactPerson: '', companyName: '', address: '', status: 'active', type: 'developer' });
     }
   }, [open, partner, form]);
 
@@ -93,6 +95,7 @@ function DeveloperDialog({ open, onOpenChange, partner, onSave }: { open: boolea
               <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Phone</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
+            <FormField control={form.control} name="contactPerson" render={({ field }) => (<FormItem><FormLabel>Key Contact Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Company Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="address" render={({ field }) => (<FormItem><FormLabel>Address</FormLabel><FormControl><Textarea placeholder="Enter physical address..." {...field} /></FormControl><FormMessage /></FormItem>)} />
             <div className="grid grid-cols-2 gap-4">
@@ -166,6 +169,8 @@ export default function DeveloperManagement() {
 
   useEffect(() => { forceRefresh(); }, [forceRefresh]);
 
+  const staffMap = useMemo(() => new Map(staff.map(s => [s.id, `${s.firstName} ${s.lastName}`])), [staff]);
+
   const filteredDevelopers = useMemo(() => {
     return partners.filter(p => {
         const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
@@ -198,7 +203,16 @@ export default function DeveloperManagement() {
 
   const columns: ColumnDef<any>[] = [
     { accessorKey: 'firstName', header: 'Name', cell: ({ row }) => <div>{row.original.firstName} {row.original.lastName}</div> },
-    { accessorKey: 'email', header: 'Email' },
+    { 
+        accessorKey: 'contactPerson', 
+        header: 'Contact Name',
+        cell: ({ row }) => <div>{row.original.contactPerson || `${row.original.firstName || ''} ${row.original.lastName || ''}`.trim() || 'N/A'}</div>
+    },
+    { 
+        accessorKey: 'phone', 
+        header: 'Contact Number',
+        cell: ({ row }) => <div>{row.original.phone || row.original.telephone_number || 'N/A'}</div>
+    },
     { accessorKey: 'companyName', header: 'Company' },
     { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
       <div className="flex justify-end gap-1">
@@ -221,6 +235,7 @@ export default function DeveloperManagement() {
         onOpenChange={(o) => !o && setDialog({ type: null })} 
         partner={dialog.data} 
         audience="developers" 
+        onEngageSuccess={forceRefresh}
       />
       <DeveloperDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={forceRefresh} />
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
