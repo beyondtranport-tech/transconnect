@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -31,18 +30,27 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
 
     const companyName = partner.companyName || `${partner.firstName} ${partner.lastName}`;
 
-    const aiPrompt = `I need you to act as a precision research agent. Find the current contact and management details for the following South African company. 
+    const aiPrompt = `I need you to act as a precision research agent. Your task is to find the current contact and management details for the following South African company.
 
-Provide the output ONLY as a clean JSON object. 
-The object MUST have these exact keys:
-- company_name
-- contact_person (Owner, Director, or Manager)
-- email_address (verifiable professional address)
-- telephone_number (local SA format or +27)
-- website (primary domain)
-- physical_address (full street address)
+RESEARCH STRATEGY:
+1. Search extensively across LinkedIn, Facebook, X (Twitter), and Instagram for official business pages.
+2. Check top regional directories: YellowPages.co.za, Brabys.com, EasyInfo.co.za, Snupit.co.za, and Cylex.net.za.
+3. Look for professional email addresses. If not found, look for generic ones (info@, sales@, admin@) or personal management addresses found on social profiles.
+4. Identify the name of a key decision-maker (Owner, Director, Manager, or Fleet Manager).
 
-If a field is not found, use null. DO NOT hallucinate.
+OUTPUT FORMAT:
+Provide the output ONLY as a clean JSON object. DO NOT include conversational text.
+
+{
+  "company_name": "${companyName}",
+  "contact_person": "Full Name",
+  "email_address": "Verifiable address",
+  "telephone_number": "Local SA format",
+  "website": "Primary domain",
+  "physical_address": "Full street address"
+}
+
+If a field is not found after deep searching, use null. DO NOT hallucinate.
 
 COMPANY TO RESEARCH:
 ${companyName}`;
@@ -96,7 +104,7 @@ ${companyName}`;
                             AI Research Assistant
                         </DialogTitle>
                         <DialogDescription>
-                            Generate a research prompt for <strong>{companyName}</strong>.
+                            Generate a deep-search prompt for <strong>{companyName}</strong>.
                         </DialogDescription>
                     </DialogHeader>
 
@@ -105,13 +113,13 @@ ${companyName}`;
                             <Info className="h-4 w-4 text-primary" />
                             <AlertTitle>Manual Research Flow</AlertTitle>
                             <AlertDescription>
-                                Copy the prompt below, paste it into Google AI, and then use the <strong>Bulk Import</strong> tool to update this record with the result.
+                                Copy the prompt, paste it into Google AI, and then use the <strong>Bulk Import</strong> tool to update this record.
                             </AlertDescription>
                         </Alert>
 
                         <div className="space-y-2">
-                            <label className="text-xs font-bold uppercase text-muted-foreground">The AI Prompt</label>
-                            <ScrollArea className="h-32 w-full border rounded-md p-3 bg-muted/30">
+                            <label className="text-xs font-bold uppercase text-muted-foreground">High-Precision Prompt</label>
+                            <ScrollArea className="h-48 w-full border rounded-md p-3 bg-muted/30 text-foreground">
                                 <pre className="text-xs whitespace-pre-wrap font-sans">{aiPrompt}</pre>
                             </ScrollArea>
                         </div>
@@ -133,7 +141,5 @@ ${companyName}`;
 }
 
 export function BulkEnrichButton({ partners, onComplete }: { partners: any[], onComplete: () => void }) {
-    // This button is no longer strictly needed for API calls but we keep it for batch prompting if desired.
-    // For now, it opens the BatchResearchDialog logic.
     return null; 
 }

@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState } from 'react';
@@ -24,28 +23,37 @@ export function BatchResearchDialog({ open, onOpenChange, selectedLeads, onCompl
 
     const companyNames = selectedLeads.map(l => l.companyName || `${l.firstName} ${l.lastName}`).join('\n');
     
-    const aiPrompt = `I need you to act as a precision research agent. Find the current contact and management details for the following South African companies. 
+    const aiPrompt = `I need you to act as a high-intelligence research agent. Your task is to find current contact and management details for the following South African companies.
 
-Provide the output ONLY as a clean JSON array of objects. 
+RESEARCH STRATEGY:
+1. Search extensively across LinkedIn, Facebook, X (Twitter), and Instagram for official business pages.
+2. Check top regional directories: YellowPages.co.za, Brabys.com, EasyInfo.co.za, Snupit.co.za, and Cylex.net.za.
+3. Look for professional email addresses. If not found, look for generic ones (info@, sales@, admin@) or personal management addresses found on social profiles.
+4. Identify the name of a key decision-maker (Owner, Director, Manager, or Fleet Manager).
+5. Cross-reference company names with 'South Africa' and 'Logistics' or 'Transport' to ensure accuracy.
+
+OUTPUT FORMAT:
+Provide the output ONLY as a clean JSON array of objects. DO NOT include any conversational text or markdown markers like \`\`\`json.
+
 Each object MUST have these exact keys:
 - company_name
-- contact_person (Owner, Director, or Manager)
-- email_address (verifiable professional address)
-- telephone_number (local SA format or +27)
-- website (primary domain)
-- physical_address (full street address)
+- contact_person (Full Name)
+- email_address (Verifiable)
+- telephone_number (Local SA format or +27)
+- website (Primary domain)
+- physical_address (Full street address)
 
-If a field is not found, use null. DO NOT hallucinate.
+If a field is not found after deep searching, use null. DO NOT hallucinate.
 
 COMPANIES TO RESEARCH:
 ${companyNames}`;
 
     const handleCopyAll = async () => {
-        const fullText = `PROMPT:\n${aiPrompt}\n\nLIST:\n${companyNames}`;
+        const fullText = `INSTRUCTIONS:\n${aiPrompt}\n\nLIST TO PROCESS:\n${companyNames}`;
         try {
             await navigator.clipboard.writeText(fullText);
             setIsCopied(true);
-            toast({ title: "Copied!", description: "Paste this into Google AI now." });
+            toast({ title: "Prompt & List Copied!", description: "Paste this into Google AI now." });
         } catch (e) {
             toast({ variant: 'destructive', title: "Copy Failed", description: "Please manually copy the text from the box." });
         }
@@ -72,7 +80,7 @@ ${companyNames}`;
             const result = await response.json();
             if (!response.ok || !result.success) throw new Error(result.error || "Failed to update records.");
 
-            toast({ title: "Batch Locked", description: `${leadIds.length} records marked as 'Researching'. Sequential queue updated.` });
+            toast({ title: "Batch Locked", description: `${leadIds.length} records marked as 'Researching'. Use the Bulk Import tool to add results.` });
             setIsCopied(false);
             onComplete();
             onOpenChange(false);
@@ -92,7 +100,7 @@ ${companyNames}`;
                         Enhance Batch of {selectedLeads.length}
                     </DialogTitle>
                     <DialogDescription>
-                        Follow these steps carefully to ensure the queue moves forward.
+                        Copy the optimized research prompt and mark these records as "Researching".
                     </DialogDescription>
                 </DialogHeader>
                 
@@ -100,21 +108,21 @@ ${companyNames}`;
                     {!isCopied ? (
                         <Alert>
                             <AlertCircle className="h-4 w-4" />
-                            <AlertTitle>Step 1: Copy Prompt</AlertTitle>
-                            <AlertDescription>Click the button below to copy the list and the precision prompt for Google AI.</AlertDescription>
+                            <AlertTitle>Step 1: Copy Prompt & List</AlertTitle>
+                            <AlertDescription>Click the button below to copy the deep-search instructions and company list.</AlertDescription>
                         </Alert>
                     ) : (
                         <Alert className="bg-green-50 border-green-200 text-green-800">
                             <ClipboardCheck className="h-4 w-4 text-green-600" />
-                            <AlertTitle>Step 2: Lock & Lock</AlertTitle>
-                            <AlertDescription>Now click "Mark as Researching" to move these records out of the 'New' queue.</AlertDescription>
+                            <AlertTitle>Step 2: Lock the Batch</AlertTitle>
+                            <AlertDescription>Now click "Mark as Researching" to move these to the next processing stage.</AlertDescription>
                         </Alert>
                     )}
 
                     <div className="space-y-2">
-                        <label className="text-xs font-bold uppercase text-muted-foreground">The AI Prompt (Copy this)</label>
-                        <ScrollArea className="h-48 w-full border rounded-md p-3 bg-muted/30">
-                            <pre className="text-xs whitespace-pre-wrap font-sans leading-relaxed">{aiPrompt}</pre>
+                        <label className="text-xs font-bold uppercase text-muted-foreground">Deep Search Prompt (Copy this)</label>
+                        <ScrollArea className="h-64 w-full border rounded-md p-3 bg-muted/30">
+                            <pre className="text-[11px] whitespace-pre-wrap font-sans leading-relaxed text-foreground">{aiPrompt}</pre>
                         </ScrollArea>
                     </div>
                 </div>
@@ -125,7 +133,7 @@ ${companyNames}`;
                     </Button>
                     <Button onClick={handleMarkAsResearching} disabled={isLoading || !isCopied} className="bg-amber-600 hover:bg-amber-700 text-white">
                         {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <ClipboardCheck className="mr-2 h-4 w-4" />}
-                        Mark as Researching & Next 50
+                        Mark as Researching
                     </Button>
                 </DialogFooter>
             </DialogContent>

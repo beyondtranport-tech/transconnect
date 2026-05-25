@@ -537,7 +537,6 @@ function LeadsDatabaseComponent() {
             <BulkImportDialog type="lead" onComplete={forceRefresh}>
                 <Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Bulk Import JSON</Button>
             </BulkImportDialog>
-            <BulkEnrichButton partners={leads || []} onComplete={forceRefresh} />
             <DuplicateCleaner onComplete={forceRefresh} />
             <Button onClick={() => setIsAddLeadOpen(true)}><PlusCircle className="mr-2 h-4 w-4" />Add Lead</Button>
           </div>

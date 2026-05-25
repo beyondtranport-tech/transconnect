@@ -422,7 +422,6 @@ export default function TransporterManagement() {
             </Button>
             <Button variant="default" className="bg-amber-600 hover:bg-amber-700" onClick={handleEnhance50}><Zap className="mr-2 h-4 w-4" /> Enhance 50 Records</Button>
             <BulkImportDialog type="transporter" onComplete={forceRefresh}><Button variant="outline">Bulk Import AI JSON</Button></BulkImportDialog>
-            <BulkEnrichButton partners={partners} onComplete={forceRefresh} />
             <DuplicateCleaner onComplete={forceRefresh} />
             <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Record</Button>
           </div>
