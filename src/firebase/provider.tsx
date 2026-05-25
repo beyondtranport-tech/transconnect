@@ -45,7 +45,6 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [isUserDataLoading, setIsUserDataLoading] = useState(false);
-  const [isCompanyDataLoading, setIsCompanyDataLoading] = useState(false);
   
   const [userError, setUserError] = useState<Error | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -71,14 +70,10 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
         });
       } else {
         setAuthState(null);
-      }
-      setIsAuthLoading(false);
-      if (!user) {
         setUserData(null);
         setCompanyData(null);
-        setIsUserDataLoading(false);
-        setIsCompanyDataLoading(false);
       }
+      setIsAuthLoading(false);
     }, (error) => {
       setUserError(error);
       setIsAuthLoading(false);
@@ -88,9 +83,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
 
   // 2. User Profile Listener
   useEffect(() => {
-    if (isAuthLoading) return;
-    if (!firestore || !authState?.uid) {
-      setUserData(null);
+    if (isAuthLoading || !firestore || !authState?.uid) {
       setIsUserDataLoading(false);
       return;
     }
@@ -111,27 +104,21 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
 
   // 3. Company Data Listener
   useEffect(() => {
-    if (isAuthLoading) return;
     const companyId = userData?.companyId;
     if (!firestore || !companyId) {
       setCompanyData(null);
-      setIsCompanyDataLoading(false);
       return;
     }
 
-    setIsCompanyDataLoading(true);
     const companyRef = doc(firestore, 'companies', companyId);
-    
     const unsub = onSnapshot(companyRef, (cSnap) => {
         setCompanyData(cSnap.data() || null);
-        setIsCompanyDataLoading(false);
     }, (err) => {
         console.error("Error fetching company data:", err);
-        setIsCompanyDataLoading(false);
     });
 
     return unsub;
-  }, [firestore, userData?.companyId, isAuthLoading]);
+  }, [firestore, userData?.companyId]);
 
   const enrichedUser = useMemo(() => {
     if (!authState) return null;
@@ -144,13 +131,10 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
 
   // Decoupled loading state to prevent hang
   const isUserLoading = useMemo(() => {
-      if (!auth) return false;
       if (isAuthLoading) return true;
       if (!authState) return false;
-      // We wait for auth and the primary user document. 
-      // Company data is secondary and shouldn't block the UI.
       return isUserDataLoading;
-  }, [isAuthLoading, isUserDataLoading, authState, auth]);
+  }, [isAuthLoading, isUserDataLoading, authState]);
 
   const contextValue = useMemo((): FirebaseContextState => {
     const servicesAvailable = !!(firebaseApp && firestore && auth);

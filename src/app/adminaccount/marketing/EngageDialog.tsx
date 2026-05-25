@@ -3,9 +3,9 @@
 import React, { useState, useMemo } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Loader2, Mail, ExternalLink, Send } from 'lucide-react';
+import { Loader2, ExternalLink, Send } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { getClientSideAuthToken, useUser } from '@/firebase';
+import { getClientSideAuthToken } from '@/firebase';
 import { copyHtmlToClipboard } from '@/lib/utils';
 
 // Content components
@@ -54,7 +54,6 @@ export function EngageDialog({ open, onOpenChange, partner, audience, onEngageSu
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('company-profile');
   const [isProcessing, setIsProcessing] = useState(false);
-  const { user } = useUser();
 
   const audienceLabel = useMemo(() => {
     if (audience === 'isa') return 'ISA Agent';
@@ -131,7 +130,7 @@ export function EngageDialog({ open, onOpenChange, partner, audience, onEngageSu
         trackingPixel.style.display = 'none';
         contentClone.appendChild(trackingPixel);
 
-        // 3. Copy using the safe feature-detecting utility to avoid restricted constructor
+        // 3. Copy using the safe feature-detecting utility
         const success = await copyHtmlToClipboard(contentClone.innerHTML);
 
         if (!success) throw new Error("Could not copy content to clipboard.");

@@ -64,12 +64,10 @@ export async function POST(req: NextRequest) {
                     updatedAt: FieldValue.serverTimestamp(),
                 };
 
-                // Update BOTH if they exist, or the appropriate one
                 const updateBatch = db.batch();
                 if (partnerSnap.exists) updateBatch.set(partnerRef, updateData, { merge: true });
                 if (leadSnap.exists) updateBatch.set(leadRef, updateData, { merge: true });
                 
-                // Always log to the subcollection of the one that exists (prioritize Partner)
                 const logTargetRef = partnerSnap.exists ? partnerRef : leadSnap.exists ? leadRef : partnerRef;
                 const logRef = logTargetRef.collection('communications').doc();
                 
@@ -112,7 +110,6 @@ export async function POST(req: NextRequest) {
                 partnersSnap.docs.forEach(doc => {
                     const existing = mergedMap.get(doc.id);
                     const partnerData = serializeTimestamps(doc.data());
-                    // Merge partner data, keeping outreach fields if partner doc has them, or fallback to lead doc fields
                     mergedMap.set(doc.id, { 
                         ...(existing || {}), 
                         ...partnerData, 
