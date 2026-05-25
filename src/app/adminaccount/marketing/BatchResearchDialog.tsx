@@ -4,7 +4,6 @@
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
 import { Loader2, Copy, ClipboardCheck, Zap } from 'lucide-react';
@@ -50,6 +49,7 @@ ${companyNames}`;
     };
 
     const handleMarkAsResearching = async () => {
+        if (selectedLeads.length === 0) return;
         setIsLoading(true);
         try {
             const token = await getClientSideAuthToken();
@@ -67,9 +67,9 @@ ${companyNames}`;
             });
 
             const result = await response.json();
-            if (!response.ok) throw new Error(result.error);
+            if (!response.ok || !result.success) throw new Error(result.error || "Failed to update records.");
 
-            toast({ title: "Batch Logged", description: `${leadIds.length} records marked as 'contacted' (Researching).` });
+            toast({ title: "Batch Locked", description: `${leadIds.length} records marked as 'Researching'. Sequential queue updated.` });
             onComplete();
             onOpenChange(false);
         } catch (e: any) {
@@ -94,7 +94,7 @@ ${companyNames}`;
                 
                 <div className="space-y-4 py-4">
                     <div className="space-y-2">
-                        <label className="text-xs font-bold uppercase text-muted-foreground">The AI Prompt (Calibri 12pt format expected)</label>
+                        <label className="text-xs font-bold uppercase text-muted-foreground">The AI Prompt (Precision Engineered)</label>
                         <ScrollArea className="h-48 w-full border rounded-md p-3 bg-muted/30">
                             <pre className="text-xs whitespace-pre-wrap font-sans leading-relaxed">{aiPrompt}</pre>
                         </ScrollArea>
@@ -114,7 +114,7 @@ ${companyNames}`;
                     </Button>
                     <Button onClick={handleMarkAsResearching} disabled={isLoading} className="bg-amber-600 hover:bg-amber-700 text-white">
                         {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <ClipboardCheck className="mr-2 h-4 w-4" />}
-                        Mark as Researching & Clear Selection
+                        Mark as Researching & Next 50
                     </Button>
                 </DialogFooter>
             </DialogContent>
