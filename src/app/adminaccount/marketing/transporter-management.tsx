@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -6,7 +5,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, Truck, Edit, Trash2, Send, CheckCircle, Users, MailCheck, MailQuestion, Filter, Save, Search, Lock, Zap } from 'lucide-react';
+import { Loader2, PlusCircle, Truck, Edit, Trash2, Send, CheckCircle, Users, MailCheck, MailQuestion, Filter, Save, Search, Zap } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -25,6 +24,7 @@ import { formatDateSafe } from '@/lib/utils';
 import { EnrichPartnerButton, BulkEnrichButton } from './EnrichPartnerButton';
 import { Label } from '@/components/ui/label';
 import { BatchResearchDialog } from './BatchResearchDialog';
+import { BulkImportDialog } from './BulkImportDialog';
 
 async function performAdminAction(token: string, action: string, payload: any) {
   const response = await fetch('/api/admin', {
@@ -102,14 +102,12 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
             <div className="grid grid-cols-2 gap-4">
               <FormField control={form.control} name="type" render={({ field }) => (
                 <FormItem>
-                    <FormLabel>Partner Category</FormLabel>
+                    <FormLabel>Category</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                         <SelectContent>
-                            <SelectItem value="partner">Strategic Partner</SelectItem>
-                            <SelectItem value="isa">ISA Agent</SelectItem>
-                            <SelectItem value="investor">Investor</SelectItem>
-                            <SelectItem value="developer">Developer</SelectItem>
+                            <SelectItem value="partner">Partner</SelectItem>
+                            <SelectItem value="isa">ISA</SelectItem>
                             <SelectItem value="supplier">Supplier</SelectItem>
                             <SelectItem value="transporter">Transporter</SelectItem>
                         </SelectContent>
@@ -131,7 +129,7 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
               )} />
             </div>
             <DialogFooter className="pt-4 border-t">
-              <Button type="submit" disabled={isLoading}>{isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />} Save Transporter</Button>
+              <Button type="submit" disabled={isLoading}>{isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />} Save</Button>
             </DialogFooter>
           </form>
         </Form>
@@ -196,7 +194,6 @@ export default function TransporterManagement() {
   }, [partners, selectedIds]);
 
   const handleEnhance50 = () => {
-      // Find the first 50 records without emails that are not already being researched
       const targets = partners
         .filter(p => !p.email && p.status !== 'contacted')
         .slice(0, 50);
@@ -208,7 +205,6 @@ export default function TransporterManagement() {
 
       setSelectedIds(targets.map(t => t.id));
       setDialog({ type: 'batch-ai' });
-      toast({ title: `Auto-selected ${targets.length} records`, description: "Preparing AI prompt for Google..." });
   };
 
   async function handleDelete() {
@@ -225,60 +221,29 @@ export default function TransporterManagement() {
   }
 
   const columns: ColumnDef<any>[] = [
-    { 
-        accessorKey: 'companyName',
-        header: 'Transporter', 
-        cell: ({ row }) => (
-            <div className="flex flex-col">
-                <span className="font-bold">{row.original.companyName || `${row.original.firstName} ${row.original.lastName}`}</span>
-                <span className="text-[10px] uppercase font-bold text-muted-foreground">{row.original.entryType}</span>
-            </div>
-        )
-    },
+    { accessorKey: 'companyName', header: 'Transporter', cell: ({ row }) => <div className="font-bold">{row.original.companyName || `${row.original.firstName} ${row.original.lastName}`}</div> },
     { accessorKey: 'email', header: 'Email' },
-    { 
-        accessorKey: 'lastOutreachSubject',
-        header: 'Last Outreach', 
-        cell: ({row}) => (
-            <div className="flex flex-col gap-1">
-                <span className="text-xs font-bold text-primary">{row.original.lastOutreachSubject || <span className="text-muted-foreground italic">None</span>}</span>
-                {row.original.lastOutreachAt && <span className="text-[10px] text-muted-foreground">{formatDateSafe(row.original.lastOutreachAt)}</span>}
-            </div>
-        )
-    },
-    {
-        accessorKey: 'lastOpenedAt',
-        header: 'Read Status',
-        cell: ({row}) => (
-            <div className="flex items-center gap-2">
-                {row.original.lastOpenedAt ? (
-                    <Badge variant="default" className="bg-green-100 text-green-700 border-green-200">
-                        <MailCheck className="mr-1 h-3 w-3" /> Read
-                    </Badge>
-                ) : (
-                    <Badge variant="outline" className="text-muted-foreground">
-                        <MailQuestion className="mr-1 h-3 w-3" /> Sent
-                    </Badge>
-                )}
-            </div>
-        )
-    },
-    { 
-        accessorKey: 'assigneeId',
-        header: 'Assignee', 
-        cell: ({row}) => (
-            <div className="flex items-center gap-2">
-                <Users className="h-3 w-3 text-muted-foreground" />
-                <span className="text-xs font-medium">{staffMap.get(row.original.assigneeId) || <span className="text-muted-foreground italic">Unallocated</span>}</span>
-            </div>
-        )
-    },
+    { accessorKey: 'lastOutreachSubject', header: 'Last Outreach', cell: ({row}) => (
+        <div className="flex flex-col gap-1">
+            <span className="text-xs font-bold text-primary">{row.original.lastOutreachSubject || 'None'}</span>
+            {row.original.lastOutreachAt && <span className="text-[10px] text-muted-foreground">{formatDateSafe(row.original.lastOutreachAt)}</span>}
+        </div>
+    )},
+    { accessorKey: 'lastOpenedAt', header: 'Read Status', cell: ({row}) => (
+        <div className="flex items-center gap-2">
+            {row.original.lastOpenedAt ? <Badge className="bg-green-100 text-green-700"><MailCheck className="mr-1 h-3 w-3" /> Read</Badge> : <Badge variant="outline" className="text-muted-foreground"><MailQuestion className="mr-1 h-3 w-3" /> Sent</Badge>}
+        </div>
+    )},
+    { accessorKey: 'assigneeId', header: 'Assignee', cell: ({row}) => (
+        <div className="flex items-center gap-2">
+            <Users className="h-3 w-3 text-muted-foreground" />
+            <span className="text-xs font-medium">{staffMap.get(row.original.assigneeId) || 'Unallocated'}</span>
+        </div>
+    )},
     { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
       <div className="flex justify-end gap-1">
         <EnrichPartnerButton partner={row.original} onUpdate={forceRefresh} />
-        <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'engage', data: row.original })} title="Initiate Engagement">
-          <Send className="h-4 w-4 text-primary" />
-        </Button>
+        <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'engage', data: row.original })} title="Initiate Engagement"><Send className="h-4 w-4 text-primary" /></Button>
         <PartnerOversightDialog partner={row.original} onUpdate={forceRefresh} />
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'edit', data: row.original })}><Edit className="h-4 w-4" /></Button>
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'delete', data: row.original })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
@@ -288,23 +253,12 @@ export default function TransporterManagement() {
 
   return (
     <>
-      <BatchResearchDialog 
-        open={dialog.type === 'batch-ai'} 
-        onOpenChange={(o) => !o && setDialog({ type: null })} 
-        selectedLeads={selectedLeads} 
-        onComplete={() => { setSelectedIds([]); forceRefresh(); }} 
-      />
-      <EngageDialog 
-        open={dialog.type === 'engage'} 
-        onOpenChange={(o) => !o && setDialog({ type: null })} 
-        partner={dialog.data} 
-        audience="transporters" 
-        onEngageSuccess={forceRefresh}
-      />
+      <BatchResearchDialog open={dialog.type === 'batch-ai'} onOpenChange={(o) => !o && setDialog({ type: null })} selectedLeads={selectedLeads} onComplete={() => { setSelectedIds([]); forceRefresh(); }} />
+      <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.data} audience="transporters" onEngageSuccess={forceRefresh} />
       <TransporterDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={forceRefresh} />
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
         <AlertDialogContent>
-          <AlertDialogHeader><AlertDialogTitle>Delete Transporter?</AlertDialogTitle><AlertDialogDescription>Delete "{dialog.data?.firstName}"?</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogHeader><AlertDialogTitle>Delete Transporter?</AlertDialogTitle><AlertDialogDescription>Delete "{dialog.data?.companyName}"?</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter><AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -312,11 +266,10 @@ export default function TransporterManagement() {
         <CardHeader className="flex flex-row items-center justify-between">
           <div><CardTitle><Truck /> Transporters</CardTitle></div>
           <div className="flex gap-2">
-            <Button variant="default" className="bg-amber-600 hover:bg-amber-700" onClick={handleEnhance50}>
-                <Zap className="mr-2 h-4 w-4" /> Enhance 50 Records
-            </Button>
+            <Button variant="default" className="bg-amber-600 hover:bg-amber-700" onClick={handleEnhance50}><Zap className="mr-2 h-4 w-4" /> Enhance 50 Records</Button>
+            <BulkImportDialog type="transporter" onComplete={forceRefresh}><Button variant="outline">Bulk Import AI JSON</Button></BulkImportDialog>
             <BulkEnrichButton partners={partners} onComplete={forceRefresh} />
-            <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Transporter</Button>
+            <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Record</Button>
           </div>
         </CardHeader>
         <CardContent>
@@ -325,42 +278,25 @@ export default function TransporterManagement() {
                     <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status</Label>
                     <Select value={statusFilter} onValueChange={setStatusFilter}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All Statuses</SelectItem>
-                            <SelectItem value="active">Active</SelectItem>
-                            <SelectItem value="inactive">Inactive</SelectItem>
-                            <SelectItem value="contacted">Contacted</SelectItem>
-                        </SelectContent>
+                        <SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="active">Active</SelectItem><SelectItem value="inactive">Inactive</SelectItem><SelectItem value="contacted">Contacted</SelectItem></SelectContent>
                     </Select>
                 </div>
                 <div className="flex-1 space-y-2">
                     <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Users className="h-3 w-3"/> Assignee</Label>
                     <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All Staff</SelectItem>
-                            <SelectItem value="none">Unallocated</SelectItem>
-                            {staff.map(s => <SelectItem key={s.id} value={s.id}>{s.firstName} {s.lastName}</SelectItem>)}
-                        </SelectContent>
+                        <SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="none">Unallocated</SelectItem>{staff.map(s => <SelectItem key={s.id} value={s.id}>{s.firstName} {s.lastName}</SelectItem>)}</SelectContent>
                     </Select>
                 </div>
                 <div className="flex-1 space-y-2">
                     <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Search className="h-3 w-3"/> Data Integrity</Label>
                     <Select value={dataFilter} onValueChange={setDataFilter}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All Records</SelectItem>
-                            <SelectItem value="has-email">Has Email</SelectItem>
-                            <SelectItem value="no-email">Missing Email</SelectItem>
-                            <SelectItem value="has-phone">Has Phone</SelectItem>
-                            <SelectItem value="no-phone">Missing Phone</SelectItem>
-                            <SelectItem value="has-website">Has WWW</SelectItem>
-                            <SelectItem value="no-website">Missing WWW</SelectItem>
-                        </SelectContent>
+                        <SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="no-email">No Email</SelectItem><SelectItem value="no-phone">No Phone</SelectItem></SelectContent>
                     </Select>
                 </div>
             </div>
-            {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
+            {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div> : (
                 <DataTable columns={columns} data={filteredTransporters} onSelectionChange={setSelectedIds} />
             )}
         </CardContent>

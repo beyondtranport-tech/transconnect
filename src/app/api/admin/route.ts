@@ -1,4 +1,3 @@
-
 'use server';
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -25,14 +24,10 @@ function serializeTimestamps(docData: any): any {
 export async function POST(req: NextRequest) {
     try {
         const { app, error: initError } = getAdminApp();
-        if (initError || !app) {
-            throw new Error(`Admin SDK not initialized: ${initError}`);
-        }
+        if (initError || !app) throw new Error(`Admin SDK not initialized: ${initError}`);
 
         const authorization = req.headers.get('authorization');
-        if (!authorization?.startsWith('Bearer ')) {
-            throw new Error('Unauthorized: Missing or invalid token.');
-        }
+        if (!authorization?.startsWith('Bearer ')) throw new Error('Unauthorized.');
         const token = authorization.split('Bearer ')[1];
         
         const adminAuth = getAuth(app);
@@ -44,65 +39,33 @@ export async function POST(req: NextRequest) {
         const isAdmin = decodedToken.email === 'beyondtransport@gmail.com' || decodedToken.email === 'mkoton100@gmail.com';
 
         if (!isAdmin) {
-             const allowedUserActions = ['saveCompanyLead', 'acceptCommercialAgreement', 'getAuditLogs', 'unpublishShop', 'logCommunication'];
-             if (!allowedUserActions.includes(action)) {
-                 throw new Error("Forbidden: Admin access required.");
-             }
+             const allowedUserActions = ['getAuditLogs', 'logCommunication', 'bulkSavePartners'];
+             if (!allowedUserActions.includes(action)) throw new Error("Forbidden.");
         }
 
         switch (action) {
-            case 'markLeadsAsResearching': {
-                const { leadIds } = payload;
+            case 'bulkSavePartners': {
+                const { partners, type } = payload;
                 const batch = db.batch();
                 
-                for (const id of leadIds) {
-                    const leadRef = db.collection('leads').doc(id);
-                    const partnerRef = db.collection('partners').doc(id);
+                for (const p of partners) {
+                    // Try to find existing record by name to update instead of duplicate
+                    const companyNameClean = p.companyName.trim();
+                    const existingLeads = await db.collection('leads').where('companyName', '==', companyNameClean).get();
                     
-                    const updateData = {
-                        status: 'contacted',
-                        notes: `[AUTO] Added to AI research batch on ${new Date().toLocaleDateString()}`,
+                    const ref = !existingLeads.empty ? existingLeads.docs[0].ref : db.collection('leads').doc();
+                    
+                    batch.set(ref, {
+                        ...p,
+                        id: ref.id,
+                        role: type === 'transporter' ? 'Transporters' : type === 'supplier' ? 'Vendors' : type,
+                        status: p.email ? 'qualified' : 'new',
                         updatedAt: FieldValue.serverTimestamp(),
-                    };
-
-                    batch.set(leadRef, updateData, { merge: true });
-                    batch.set(partnerRef, updateData, { merge: true });
+                        createdAt: FieldValue.serverTimestamp() // set if new via merge
+                    }, { merge: true });
                 }
                 
                 await batch.commit();
-                return NextResponse.json({ success: true });
-            }
-            case 'logCommunication': {
-                const { partnerId, type, subject, notes } = payload;
-                const partnerRef = db.collection('partners').doc(partnerId);
-                const leadRef = db.collection('leads').doc(partnerId);
-                
-                const [partnerSnap, leadSnap] = await Promise.all([partnerRef.get(), leadRef.get()]);
-                
-                const updateData = {
-                    lastOutreachAt: FieldValue.serverTimestamp(),
-                    lastOutreachSubject: subject,
-                    status: 'contacted',
-                    updatedAt: FieldValue.serverTimestamp(),
-                };
-
-                const updateBatch = db.batch();
-                if (partnerSnap.exists) updateBatch.set(partnerRef, updateData, { merge: true });
-                if (leadSnap.exists) updateBatch.set(leadRef, updateData, { merge: true });
-                
-                const logTargetRef = partnerSnap.exists ? partnerRef : leadSnap.exists ? leadRef : partnerRef;
-                const logRef = logTargetRef.collection('communications').doc();
-                
-                updateBatch.set(logRef, {
-                    id: logRef.id,
-                    type,
-                    subject,
-                    notes: notes || '',
-                    timestamp: FieldValue.serverTimestamp(),
-                    loggedBy: requestorUid,
-                });
-                
-                await updateBatch.commit();
                 return NextResponse.json({ success: true });
             }
             case 'getPartnersByType': {
@@ -111,9 +74,7 @@ export async function POST(req: NextRequest) {
                     'transporter': 'Transporters',
                     'supplier': 'Vendors',
                     'partner': 'Strategic Partners',
-                    'isa': 'ISA Agents (Elite)',
-                    'investor': 'Investors',
-                    'developer': 'Developers'
+                    'isa': 'ISA Agents (Elite)'
                 };
                 const leadRole = roleMapping[type] || type;
 
@@ -124,10 +85,12 @@ export async function POST(req: NextRequest) {
 
                 const mergedMap = new Map();
                 
+                // Process Leads first
                 leadsSnap.docs.forEach(doc => {
                     mergedMap.set(doc.id, { id: doc.id, entryType: 'Lead', ...serializeTimestamps(doc.data()) });
                 });
                 
+                // Overlay Partners (merging by ID if they exist in both)
                 partnersSnap.docs.forEach(doc => {
                     const existing = mergedMap.get(doc.id);
                     const partnerData = serializeTimestamps(doc.data());
@@ -135,62 +98,54 @@ export async function POST(req: NextRequest) {
                         ...(existing || {}), 
                         ...partnerData, 
                         id: doc.id, 
-                        entryType: 'Partner' 
+                        entryType: existing ? 'Member' : 'Partner' 
                     });
                 });
 
                 return NextResponse.json({ success: true, data: Array.from(mergedMap.values()) });
             }
-            case 'getMembers': {
-                const companiesSnap = await db.collection('companies').get();
-                const userDocs = await db.collection('users').get();
-                const userMap = new Map(userDocs.docs.map(d => [d.id, d.data()]));
-                const data = companiesSnap.docs.map(doc => {
-                    const c = doc.data();
-                    const u = userMap.get(c.ownerId) || {};
-                    return { id: doc.id, ...serializeTimestamps(c), firstName: u.firstName, lastName: u.lastName, email: u.email };
-                });
-                return NextResponse.json({ success: true, data });
-            }
-            case 'getAuditLogs': {
-                const logsSnap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(100).get();
-                const data = logsSnap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
-                return NextResponse.json({ success: true, data });
-            }
             case 'getPlatformStaff': {
                 const snap = await db.collection('platformStaff').get();
-                const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
-                return NextResponse.json({ success: true, data });
+                return NextResponse.json({ success: true, data: snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) })) });
             }
             case 'savePlatformStaff': {
-                const { staff } = payload;
-                const ref = staff.id ? db.collection('platformStaff').doc(staff.id) : db.collection('platformStaff').doc();
-                await ref.set({ ...staff, id: ref.id, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
-                return NextResponse.json({ success: true, id: ref.id });
+                const ref = payload.staff.id ? db.collection('platformStaff').doc(payload.staff.id) : db.collection('platformStaff').doc();
+                await ref.set({ ...payload.staff, id: ref.id, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+                return NextResponse.json({ success: true });
             }
             case 'deletePlatformStaff': {
                 await db.collection('platformStaff').doc(payload.staffId).delete();
-                return NextResponse.json({ success: true });
-            }
-            case 'saveLead': {
-                const { lead } = payload;
-                const ref = lead.id ? db.collection('leads').doc(lead.id) : db.collection('leads').doc();
-                await ref.set({ ...lead, id: ref.id, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
-                return NextResponse.json({ success: true, id: ref.id });
-            }
-            case 'deleteLead': {
-                await db.collection('leads').doc(payload.leadId).delete();
                 return NextResponse.json({ success: true });
             }
             case 'savePartner': {
                 const { partner } = payload;
                 const ref = partner.id ? db.collection('partners').doc(partner.id) : db.collection('partners').doc();
                 await ref.set({ ...partner, id: ref.id, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
-                return NextResponse.json({ success: true, id: ref.id });
+                return NextResponse.json({ success: true });
             }
             case 'deletePartner': {
                 await db.collection('partners').doc(payload.partnerId).delete();
                 return NextResponse.json({ success: true });
+            }
+            case 'logCommunication': {
+                const { partnerId, type, subject, notes } = payload;
+                const partnerRef = db.collection('partners').doc(partnerId);
+                const leadRef = db.collection('leads').doc(partnerId);
+                
+                const updateData = { lastOutreachAt: FieldValue.serverTimestamp(), lastOutreachSubject: subject, status: 'contacted' };
+                const updateBatch = db.batch();
+                updateBatch.set(partnerRef, updateData, { merge: true });
+                updateBatch.set(leadRef, updateData, { merge: true });
+                
+                const logRef = partnerRef.collection('communications').doc();
+                updateBatch.set(logRef, { id: logRef.id, type, subject, notes: notes || '', timestamp: FieldValue.serverTimestamp(), loggedBy: requestorUid });
+                
+                await updateBatch.commit();
+                return NextResponse.json({ success: true });
+            }
+            case 'getMembers': {
+                const snap = await db.collection('companies').get();
+                return NextResponse.json({ success: true, data: snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) })) });
             }
             default:
                 return NextResponse.json({ success: false, error: 'Invalid action' }, { status: 400 });
