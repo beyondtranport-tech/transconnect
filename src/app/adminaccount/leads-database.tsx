@@ -27,7 +27,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { useCollection, useFirestore, getClientSideAuthToken, useMemoFirebase } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
-import { Loader2, PlusCircle, Users, Edit, Trash2, Search, Send, Copy, Filter, MailCheck, MailQuestion } from 'lucide-react';
+import { Loader2, PlusCircle, Users, Edit, Trash2, Search, Send, Copy, Filter, MailCheck, MailQuestion, FileJson, Upload } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -42,6 +42,7 @@ import { formatDateSafe } from '@/lib/utils';
 import { EnrichPartnerButton, BulkEnrichButton } from './marketing/EnrichPartnerButton';
 import { PartnerTasksDialog } from './marketing/PartnerTasksDialog';
 import { CommunicationLogDialog } from './marketing/CommunicationLogDialog';
+import { BulkImportDialog } from './marketing/BulkImportDialog';
 
 const leadSchema = z.object({
   companyName: z.string().min(1, 'Company name is required'),
@@ -220,88 +221,6 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
             </DialogFooter>
           </form>
         </Form>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function InviteDialog({ lead, onInviteSent }: { lead: any; onInviteSent: () => void; }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [inviteLink, setInviteLink] = useState('');
-  const { toast } = useToast();
-
-  async function handleInvite() {
-    setIsLoading(true);
-    setInviteLink('');
-    try {
-      const token = await getClientSideAuthToken();
-      if (!token) throw new Error("Authentication failed.");
-
-      const response = await fetch('/api/admin', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'inviteLead', payload: { leadId: lead.id } }),
-      });
-      const result = await response.json();
-      if (!result.success) throw new Error(result.error);
-
-      const nameParts = (lead.contactPerson || '').split(' ');
-      const firstName = nameParts[0] || '';
-      const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
-
-      const baseUrl = window.location.origin;
-      const constructedLink = `${baseUrl}/join?email=${encodeURIComponent(lead.email || '')}&firstName=${encodeURIComponent(firstName)}&lastName=${encodeURIComponent(lastName)}`;
-
-      setInviteLink(constructedLink);
-      onInviteSent();
-      toast({ title: "Invite Link Generated", description: "You can now share the secure link." });
-    } catch (e: any) {
-      toast({ variant: 'destructive', title: 'Invite Failed', description: e.message });
-      setIsOpen(false);
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
-  function copyToClipboard() {
-    navigator.clipboard.writeText(inviteLink);
-    toast({ title: 'Link Copied!' });
-  }
-
-  return (
-    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) setInviteLink(''); setIsOpen(open); }}>
-      <DialogTrigger asChild>
-        <Button variant="ghost" size="icon" title="Invite Lead" disabled={lead.status === 'invited' || lead.status === 'registered'}>
-          <Send className="h-4 w-4" />
-        </Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Invite {lead.companyName}</DialogTitle>
-          <DialogDescription>
-            {inviteLink ? "Share this secure sign-up link." : "This will mark the lead as 'invited' and generate a sign-up link."}
-          </DialogDescription>
-        </DialogHeader>
-        {isLoading && <div className="flex justify-center py-4"><Loader2 className="h-6 w-6 animate-spin" /></div>}
-        {inviteLink && (
-          <div className="flex items-center space-x-2 py-4">
-            <Input value={inviteLink} readOnly />
-            <Button onClick={copyToClipboard} size="sm" className="px-3">
-              <Copy className="h-4 w-4" />
-            </Button>
-          </div>
-        )}
-        <DialogFooter>
-          {inviteLink ? (
-            <Button onClick={() => setIsOpen(false)}>Done</Button>
-          ) : (
-            <>
-              <Button variant="ghost" onClick={() => setIsOpen(false)}>Cancel</Button>
-              <Button onClick={handleInvite} disabled={isLoading}>Generate Link</Button>
-            </>
-          )}
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
@@ -577,6 +496,9 @@ function LeadsDatabaseComponent() {
             <CardDescription>Manage your sales leads.</CardDescription>
           </div>
           <div className="flex items-center gap-2">
+            <BulkImportDialog type="lead" onComplete={forceRefresh}>
+                <Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Bulk Import JSON</Button>
+            </BulkImportDialog>
             <BulkEnrichButton partners={leads || []} onComplete={forceRefresh} />
             <DuplicateCleaner onComplete={forceRefresh} />
             <Button onClick={() => setIsAddLeadOpen(true)}><PlusCircle className="mr-2 h-4 w-4" />Add Lead</Button>

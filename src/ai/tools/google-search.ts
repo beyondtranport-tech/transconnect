@@ -28,14 +28,20 @@ export const googleSearchTool = ai.defineTool(
     outputSchema: GoogleSearchOutputSchema,
   },
   async (input: GoogleSearchInput) => {
-    const sanitize = (val: string | undefined) => 
-        val?.replace(/[\u200B-\u200D\uFEFF]/g, '').replace(/["']/g, '').trim() || '';
+    // Sanitize keys to handle accidental copy-pasting of full URLs or extra spaces
+    const sanitizeId = (val: string | undefined) => {
+        if (!val) return '';
+        // If they pasted the full URL like https://.../?cx=123, extract just 123
+        const match = val.match(/cx=([a-zA-Z0-9:]+)/);
+        if (match) return match[1];
+        return val.replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
+    };
 
-    const apiKey = sanitize(process.env.GOOGLE_SEARCH_API_KEY);
-    const cx = sanitize(process.env.CUSTOM_SEARCH_ENGINE_ID);
+    const apiKey = process.env.GOOGLE_SEARCH_API_KEY?.trim() || '';
+    const cx = sanitizeId(process.env.CUSTOM_SEARCH_ENGINE_ID);
 
     if (process.env.NODE_ENV !== 'production') {
-        console.log(`[GOOGLE SEARCH] Requesting query: "${input.query}"`);
+        console.log(`[GOOGLE SEARCH] Requesting query: "${input.query}" using CX: ${cx}`);
     }
 
     if (!apiKey) {
@@ -74,7 +80,7 @@ export const googleSearchTool = ai.defineTool(
             }
             
             if (response.status === 400) {
-                throw new Error(`API_ERROR: Invalid ID (400). Please verify your CUSTOM_SEARCH_ENGINE_ID matches the ID in the Control Panel.`);
+                throw new Error(`API_ERROR: Invalid ID (400). Please verify your CUSTOM_SEARCH_ENGINE_ID matches the ID in the Control Panel (it should be an alphanumeric ID like 70d9...).`);
             }
             
             throw new Error(`API_ERROR: Google Search failed (${response.status}): ${apiMessage}`);
@@ -88,7 +94,7 @@ export const googleSearchTool = ai.defineTool(
         }));
 
         if (results.length === 0) {
-            console.warn(`[GOOGLE SEARCH] Query returned 0 results. This usually means the "Sites to search" list in your Google Control Panel is empty. Refer to docs/google-search-setup.md.`);
+            console.warn(`[GOOGLE SEARCH] Query returned 0 results. This usually means the "Sites to search" list in your Google Control Panel is empty or restricted. Refer to docs/google-search-setup.md.`);
         }
 
         return results;
