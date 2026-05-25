@@ -99,7 +99,7 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
                         </div>
                     </div>
                 ),
-                duration: 10000,
+                duration: 15000,
             });
         } finally {
             setIsEnriching(false);

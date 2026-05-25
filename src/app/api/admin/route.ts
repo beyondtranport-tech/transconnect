@@ -56,8 +56,7 @@ export async function POST(req: NextRequest) {
                 const leadRef = db.collection('leads').doc(partnerId);
                 
                 const [partnerSnap, leadSnap] = await Promise.all([partnerRef.get(), leadRef.get()]);
-                const targetRef = partnerSnap.exists ? partnerRef : leadSnap.exists ? leadRef : partnerRef;
-
+                
                 const updateData = {
                     lastOutreachAt: FieldValue.serverTimestamp(),
                     lastOutreachSubject: subject,
@@ -65,10 +64,16 @@ export async function POST(req: NextRequest) {
                     updatedAt: FieldValue.serverTimestamp(),
                 };
 
-                await targetRef.set(updateData, { merge: true });
-
-                const logRef = targetRef.collection('communications').doc();
-                await logRef.set({
+                // Update BOTH if they exist, or the appropriate one
+                const updateBatch = db.batch();
+                if (partnerSnap.exists) updateBatch.set(partnerRef, updateData, { merge: true });
+                if (leadSnap.exists) updateBatch.set(leadRef, updateData, { merge: true });
+                
+                // Always log to the subcollection of the one that exists (prioritize Partner)
+                const logTargetRef = partnerSnap.exists ? partnerRef : leadSnap.exists ? leadRef : partnerRef;
+                const logRef = logTargetRef.collection('communications').doc();
+                
+                updateBatch.set(logRef, {
                     id: logRef.id,
                     type,
                     subject,
@@ -77,6 +82,7 @@ export async function POST(req: NextRequest) {
                     loggedBy: requestorUid,
                 });
                 
+                await updateBatch.commit();
                 return NextResponse.json({ success: true });
             }
             case 'getPartnersByType': {
@@ -91,18 +97,31 @@ export async function POST(req: NextRequest) {
                 };
                 const leadRole = roleMapping[type] || type;
 
-                // Unified query for both Leads and Partners
                 const [partnersSnap, leadsSnap] = await Promise.all([
                     db.collection('partners').where('type', '==', type).get(),
                     db.collection('leads').where('role', '==', leadRole).get()
                 ]);
 
-                const unified = [
-                    ...partnersSnap.docs.map(doc => ({ id: doc.id, entryType: 'Partner', ...serializeTimestamps(doc.data()) })),
-                    ...leadsSnap.docs.map(doc => ({ id: doc.id, entryType: 'Lead', ...serializeTimestamps(doc.data()) }))
-                ];
+                // Intelligent merge by ID to preserve outreach history across collections
+                const mergedMap = new Map();
+                
+                leadsSnap.docs.forEach(doc => {
+                    mergedMap.set(doc.id, { id: doc.id, entryType: 'Lead', ...serializeTimestamps(doc.data()) });
+                });
+                
+                partnersSnap.docs.forEach(doc => {
+                    const existing = mergedMap.get(doc.id);
+                    const partnerData = serializeTimestamps(doc.data());
+                    // Merge partner data, keeping outreach fields if partner doc has them, or fallback to lead doc fields
+                    mergedMap.set(doc.id, { 
+                        ...(existing || {}), 
+                        ...partnerData, 
+                        id: doc.id, 
+                        entryType: 'Partner' 
+                    });
+                });
 
-                return NextResponse.json({ success: true, data: unified });
+                return NextResponse.json({ success: true, data: Array.from(mergedMap.values()) });
             }
             case 'getMembers': {
                 const companiesSnap = await db.collection('companies').get();
