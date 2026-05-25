@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
         const isAdmin = decodedToken.email === 'beyondtransport@gmail.com' || decodedToken.email === 'mkoton100@gmail.com';
 
         if (!isAdmin) {
-             const allowedUserActions = ['getAuditLogs', 'logCommunication', 'bulkSavePartners', 'getPartnersByType', 'markLeadsAsResearching', 'getPlatformStaff', 'findDuplicateLeads', 'deleteLeads'];
+             const allowedUserActions = ['getAuditLogs', 'logCommunication', 'bulkSavePartners', 'getPartnersByType', 'markLeadsAsResearching', 'getPlatformStaff', 'findDuplicateLeads', 'deleteLeads', 'resetResearchQueue'];
              if (!allowedUserActions.includes(action)) throw new Error("Forbidden.");
         }
 
@@ -90,16 +90,28 @@ export async function POST(req: NextRequest) {
 
                     const existingLeads = await db.collection('leads').where('companyName', '==', companyNameClean).get();
                     const ref = !existingLeads.empty ? existingLeads.docs[0].ref : db.collection('leads').doc();
+                    const partnerRef = db.collection('partners').doc(ref.id);
                     
-                    const isNewOrResearching = !existingLeads.empty && (existingLeads.docs[0].data().status === 'new' || existingLeads.docs[0].data().status === 'contacted');
+                    const existingData = !existingLeads.empty ? existingLeads.docs[0].data() : null;
+                    const existingStatus = existingData?.status || 'new';
 
-                    batch.set(ref, {
+                    // Determine new status: don't revert to 'new' if it was already 'contacted'
+                    const hasContactInfo = !!(p.email_address || p.email || p.telephone_number || p.phone);
+                    const newStatus = hasContactInfo ? 'qualified' : (existingStatus === 'contacted' ? 'contacted' : 'new');
+
+                    const updateData = {
                         ...p,
                         id: ref.id,
                         role: leadRole,
-                        status: (p.email_address || p.email) ? (isNewOrResearching ? 'qualified' : existingLeads.docs[0].data().status || 'qualified') : 'new',
+                        status: newStatus,
                         updatedAt: FieldValue.serverTimestamp(),
-                        createdAt: existingLeads.empty ? FieldValue.serverTimestamp() : existingLeads.docs[0].data().createdAt
+                        createdAt: existingData ? existingData.createdAt : FieldValue.serverTimestamp()
+                    };
+
+                    batch.set(ref, updateData, { merge: true });
+                    batch.set(partnerRef, { 
+                        ...updateData,
+                        type: type 
                     }, { merge: true });
                 }
                 
@@ -122,9 +134,11 @@ export async function POST(req: NextRequest) {
                 ]);
 
                 const mergedMap = new Map();
+                // Priority 1: Leads
                 leadsSnap.docs.forEach(doc => {
                     mergedMap.set(doc.id, { id: doc.id, entryType: 'Lead', ...serializeTimestamps(doc.data()) });
                 });
+                // Priority 2: Partners (overwrites leads if ID matches)
                 partnersSnap.docs.forEach(doc => {
                     const existing = mergedMap.get(doc.id);
                     mergedMap.set(doc.id, { 
@@ -175,6 +189,8 @@ export async function POST(req: NextRequest) {
                     const data = doc.data();
                     if (!data.email && !data.email_address) {
                         batch.update(doc.ref, { status: 'new', lastOutreachSubject: null, lastOutreachAt: null });
+                        // Also reset in partners
+                        batch.update(db.collection('partners').doc(doc.id), { status: 'new' });
                         count++;
                     }
                 });
@@ -205,22 +221,44 @@ export async function POST(req: NextRequest) {
             case 'savePartner': {
                 const { partner } = payload;
                 const ref = partner.id ? db.collection('partners').doc(partner.id) : db.collection('partners').doc();
-                await ref.set({ ...partner, id: ref.id, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+                const leadRef = db.collection('leads').doc(ref.id);
+                
+                const data = { ...partner, id: ref.id, updatedAt: FieldValue.serverTimestamp() };
+                
+                const batch = db.batch();
+                batch.set(ref, data, { merge: true });
+                batch.set(leadRef, data, { merge: true });
+                await batch.commit();
+                
                 return NextResponse.json({ success: true });
             }
             case 'deletePartner': {
-                await db.collection('partners').doc(payload.partnerId).delete();
+                const batch = db.batch();
+                batch.delete(db.collection('partners').doc(payload.partnerId));
+                batch.delete(db.collection('leads').doc(payload.partnerId));
+                await batch.commit();
                 return NextResponse.json({ success: true });
             }
             case 'saveLead': {
                 const { lead } = payload;
                 const ref = lead.id ? db.collection('leads').doc(lead.id) : db.collection('leads').doc();
-                await ref.set({ ...lead, id: ref.id, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+                const partnerRef = db.collection('partners').doc(ref.id);
+                
+                const data = { ...lead, id: ref.id, updatedAt: FieldValue.serverTimestamp() };
+                
+                const batch = db.batch();
+                batch.set(ref, data, { merge: true });
+                batch.set(partnerRef, data, { merge: true });
+                await batch.commit();
+                
                 return NextResponse.json({ success: true });
             }
             case 'deleteLead': {
                 const { leadId } = payload;
-                await db.collection('leads').doc(leadId).delete();
+                const batch = db.batch();
+                batch.delete(db.collection('leads').doc(leadId));
+                batch.delete(db.collection('partners').doc(leadId));
+                await batch.commit();
                 return NextResponse.json({ success: true });
             }
             case 'getDashboardQueues': {

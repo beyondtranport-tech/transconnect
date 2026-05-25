@@ -47,7 +47,7 @@ const partnerSchema = z.object({
   contactPerson: z.string().optional(),
   companyName: z.string().optional(),
   address: z.string().optional(),
-  status: z.enum(['active', 'inactive', 'contacted']),
+  status: z.enum(['active', 'inactive', 'contacted', 'new']),
   type: z.enum(['partner', 'isa', 'investor', 'developer', 'supplier', 'transporter']),
 });
 type PartnerFormValues = z.infer<typeof partnerSchema>;
@@ -127,6 +127,7 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
                             <SelectItem value="active">Active</SelectItem>
                             <SelectItem value="inactive">Inactive</SelectItem>
                             <SelectItem value="contacted">Researching</SelectItem>
+                            <SelectItem value="new">New</SelectItem>
                         </SelectContent>
                     </Select>
                 </FormItem>
@@ -315,6 +316,8 @@ export default function TransporterManagement() {
   }, [partners, selectedIds]);
 
   const handleEnhance50 = () => {
+      // Find 50 records that are 'new' AND don't have an email
+      // Exclude 'contacted' (Researching) and 'qualified' (Done)
       const targets = partners
         .filter(p => !p.email && p.status === 'new')
         .slice(0, 50);

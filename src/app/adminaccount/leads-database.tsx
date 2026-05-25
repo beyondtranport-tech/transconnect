@@ -412,12 +412,14 @@ function LeadsDatabaseComponent() {
 
   const handleEnhance50 = () => {
       if (!leads) return;
+      // Filter for records with NO email and status of 'new'
+      // Exclude 'contacted' (Researching) and 'qualified' (Researched)
       const targets = leads
-        .filter(l => !l.email && l.status !== 'contacted')
+        .filter(l => !l.email && l.status === 'new')
         .slice(0, 50);
       
       if (targets.length === 0) {
-          toast({ title: "No targets found", description: "All leads have emails or are already under research." });
+          toast({ title: "No targets found", description: "All new leads already have emails or are currently being researched." });
           return;
       }
 
@@ -449,8 +451,16 @@ function LeadsDatabaseComponent() {
 
   const columns: ColumnDef<any>[] = useMemo(() => [
     { accessorKey: 'companyName', header: 'Company' },
-    { accessorKey: 'contactPerson', header: 'Contact Name' },
-    { accessorKey: 'phone', header: 'Contact Number' },
+    { 
+        accessorKey: 'contactPerson', 
+        header: 'Contact Name',
+        cell: ({ row }) => <div>{row.original.contactPerson || `${row.original.firstName || ''} ${row.original.lastName || ''}`.trim() || 'N/A'}</div>
+    },
+    { 
+        accessorKey: 'phone', 
+        header: 'Contact Number',
+        cell: ({ row }) => <div>{row.original.phone || row.original.telephone_number || 'N/A'}</div>
+    },
     { accessorKey: 'email', header: 'Email' },
     { 
         header: 'Last Outreach', 
