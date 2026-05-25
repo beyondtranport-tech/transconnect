@@ -108,7 +108,7 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Failed to save lead.');
 
-      toast({ title: Math.random() > 0.5 ? 'Data Saved!' : 'Record Updated!' });
+      toast({ title: 'Record Updated!' });
       onSave();
       onOpenChange(false);
     } catch (e: any) {
