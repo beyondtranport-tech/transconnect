@@ -2,10 +2,12 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Sparkles, Loader2, ExternalLink } from 'lucide-react';
+import { Sparkles, Loader2, Copy, ClipboardCheck, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { enrichPartner } from '@/ai/flows/enrich-partner-flow';
 import { getClientSideAuthToken } from '@/firebase';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 async function performAdminAction(token: string, action: string, payload: any) {
     const response = await fetch('/api/admin', {
@@ -21,158 +23,116 @@ async function performAdminAction(token: string, action: string, payload: any) {
 }
 
 export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpdate: () => void }) {
-    const [isEnriching, setIsEnriching] = useState(false);
+    const [isOpen, setIsOpen] = useState(false);
+    const [isLogging, setIsLogging] = useState(false);
+    const [isCopied, setIsCopied] = useState(false);
     const { toast } = useToast();
 
-    const handleEnrich = async () => {
-        setIsEnriching(true);
+    const companyName = partner.companyName || `${partner.firstName} ${partner.lastName}`;
+
+    const aiPrompt = `I need you to act as a precision research agent. Find the current contact and management details for the following South African company. 
+
+Provide the output ONLY as a clean JSON object. 
+The object MUST have these exact keys:
+- company_name
+- contact_person (Owner, Director, or Manager)
+- email_address (verifiable professional address)
+- telephone_number (local SA format or +27)
+- website (primary domain)
+- physical_address (full street address)
+
+If a field is not found, use null. DO NOT hallucinate.
+
+COMPANY TO RESEARCH:
+${companyName}`;
+
+    const handleCopy = async () => {
         try {
-            const result = await enrichPartner({
-                companyName: partner.companyName || `${partner.firstName} ${partner.lastName}`,
-                contactPerson: partner.firstName === 'Member' ? undefined : `${partner.firstName} ${partner.lastName}`,
-            });
+            await navigator.clipboard.writeText(aiPrompt);
+            setIsCopied(true);
+            toast({ title: "Prompt Copied!", description: "Paste this into Google AI to get the data." });
+        } catch (e) {
+            toast({ variant: 'destructive', title: "Copy Failed" });
+        }
+    };
 
-            if (!result || (!result.email && !result.phone && !result.website && !result.address && !result.contactPerson)) {
-                toast({
-                    variant: 'destructive',
-                    title: "Research Unsuccessful",
-                    description: "The AI agent searched but couldn't find verifiable details. Ensure your Search Engine is set to 'Search the entire web'.",
-                });
-                return;
-            }
-
+    const handleMarkAsResearching = async () => {
+        setIsLogging(true);
+        try {
             const token = await getClientSideAuthToken();
-            if (!token) throw new Error("Authentication failed.");
+            if (!token) throw new Error("Auth failed");
 
-            const dataToUpdate: any = {};
-            if (!partner.email && result.email) dataToUpdate.email = result.email;
-            if (!partner.phone && result.phone) dataToUpdate.phone = result.phone;
-            if (!partner.website && result.website) dataToUpdate.website = result.website;
-            if (!partner.address && result.address) dataToUpdate.address = result.address;
-            
-            if (result.contactPerson && (!partner.firstName || partner.firstName === 'Member' || partner.firstName === '')) {
-                const parts = result.contactPerson.split(' ');
-                dataToUpdate.firstName = parts[0];
-                dataToUpdate.lastName = parts.slice(1).join(' ') || 'Candidate';
-            }
-
-            if (Object.keys(dataToUpdate).length === 0) {
-                 toast({
-                    title: "No New Data",
-                    description: "The research found info that matched your existing records.",
-                });
-                return;
-            }
-
-            await performAdminAction(token, 'savePartner', { partner: { id: partner.id, ...dataToUpdate } });
-
-            toast({
-                title: "Enrichment Successful",
-                description: `Updated details for ${partner.companyName || 'this partner'}.`,
+            await performAdminAction(token, 'markLeadsAsResearching', { 
+                leadIds: [partner.id] 
             });
+
+            toast({ title: "Status Updated", description: "Record is now in the 'Researching' queue." });
+            setIsOpen(false);
             onUpdate();
         } catch (e: any) {
-            const errorMessage = e.message || "";
-            let displayTitle = "Google API Error";
-            let displayMessage = errorMessage;
-
-            if (errorMessage.includes('403') || errorMessage.includes('Access Denied')) {
-                displayTitle = "API Activation Required";
-                displayMessage = "The Custom Search API is not enabled in your Google Cloud Project. Click the link below to enable it now.";
-            } else if (errorMessage.includes('CONFIG_ERROR')) {
-                displayTitle = "Configuration Issue";
-                displayMessage = "Check your .env file. CUSTOM_SEARCH_ENGINE_ID must be the alphanumeric ID from the Control Panel Basics section (e.g. '345...').";
-            }
-
-            toast({ 
-                variant: 'destructive', 
-                title: displayTitle, 
-                description: (
-                    <div className="space-y-3 pt-1">
-                        <p className="text-sm leading-relaxed">{displayMessage}</p>
-                        <div className="flex gap-2">
-                             <Button asChild variant="outline" size="sm" className="h-8 text-xs bg-white text-destructive border-destructive hover:bg-destructive hover:text-white transition-colors">
-                                <a href="https://console.cloud.google.com/apis/library/customsearch.googleapis.com?project=ecosystem-hub" target="_blank" rel="noopener noreferrer">
-                                    <ExternalLink className="mr-1.5 h-3 w-3" /> Enable API Now
-                                </a>
-                            </Button>
-                        </div>
-                    </div>
-                ),
-                duration: 15000,
-            });
+            toast({ variant: 'destructive', title: "Update Failed", description: e.message });
         } finally {
-            setIsEnriching(false);
+            setIsLogging(false);
         }
     };
 
     return (
-        <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={handleEnrich} 
-            disabled={isEnriching}
-            title="AI Research & Enrich"
-        >
-            {isEnriching ? <Loader2 className="h-4 w-4 animate-spin text-primary" /> : <Sparkles className="h-4 w-4 text-primary" />}
-        </Button>
+        <>
+            <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => { setIsCopied(false); setIsOpen(true); }} 
+                title="AI Research Prompt"
+            >
+                <Sparkles className="h-4 w-4 text-primary" />
+            </Button>
+
+            <Dialog open={isOpen} onOpenChange={(o) => !isLogging && setIsOpen(o)}>
+                <DialogContent className="sm:max-w-xl">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <Sparkles className="h-5 w-5 text-primary" />
+                            AI Research Assistant
+                        </DialogTitle>
+                        <DialogDescription>
+                            Generate a research prompt for <strong>{companyName}</strong>.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-4 py-4">
+                        <Alert className="bg-primary/5 border-primary/20">
+                            <Info className="h-4 w-4 text-primary" />
+                            <AlertTitle>Manual Research Flow</AlertTitle>
+                            <AlertDescription>
+                                Copy the prompt below, paste it into Google AI, and then use the <strong>Bulk Import</strong> tool to update this record with the result.
+                            </AlertDescription>
+                        </Alert>
+
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold uppercase text-muted-foreground">The AI Prompt</label>
+                            <ScrollArea className="h-32 w-full border rounded-md p-3 bg-muted/30">
+                                <pre className="text-xs whitespace-pre-wrap font-sans">{aiPrompt}</pre>
+                            </ScrollArea>
+                        </div>
+                    </div>
+
+                    <DialogFooter className="sm:justify-between gap-4">
+                        <Button variant="outline" onClick={handleCopy}>
+                            <Copy className="mr-2 h-4 w-4" /> {isCopied ? 'Copied!' : 'Copy Prompt'}
+                        </Button>
+                        <Button onClick={handleMarkAsResearching} disabled={isLogging || !isCopied} className="bg-primary hover:bg-primary/90 text-white">
+                            {isLogging ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <ClipboardCheck className="mr-2 h-4 w-4" />}
+                            Mark as Researching
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </>
     );
 }
 
 export function BulkEnrichButton({ partners, onComplete }: { partners: any[], onComplete: () => void }) {
-    const [isProcessing, setIsProcessing] = useState(false);
-    const [progress, setProgress] = useState(0);
-    const { toast } = useToast();
-
-    const handleBulkEnrich = async () => {
-        const targets = partners.filter(p => !p.email || !p.website || !p.phone || !p.address);
-        if (targets.length === 0) {
-            toast({ title: "All records are already enriched." });
-            return;
-        }
-
-        setIsProcessing(true);
-        let successCount = 0;
-        
-        for (let i = 0; i < targets.length; i++) {
-            const partner = targets[i];
-            try {
-                const result = await enrichPartner({
-                    companyName: partner.companyName || `${partner.firstName} ${partner.lastName}`,
-                });
-                
-                const dataToUpdate: any = {};
-                if (!partner.email && result.email) dataToUpdate.email = result.email;
-                if (!partner.website && result.website) dataToUpdate.website = result.website;
-                if (!partner.phone && result.phone) dataToUpdate.phone = result.phone;
-                if (!partner.address && result.address) dataToUpdate.address = result.address;
-
-                if (Object.keys(dataToUpdate).length > 0) {
-                    const token = await getClientSideAuthToken();
-                    if (token) {
-                        await performAdminAction(token, 'savePartner', { partner: { id: partner.id, ...dataToUpdate } });
-                        successCount++;
-                    }
-                }
-            } catch (e: any) {
-                if (e.message.includes('403') || e.message.includes('CONFIG_ERROR')) {
-                    toast({ variant: 'destructive', title: "Stopping Bulk Research", description: e.message });
-                    break;
-                }
-            }
-            setProgress(Math.round(((i + 1) / targets.length) * 100));
-        }
-
-        toast({ title: "Bulk Research Finished", description: `Updated ${successCount} records.` });
-        setIsProcessing(false);
-        setProgress(0);
-        onComplete();
-    };
-
-    return (
-        <Button variant="outline" size="sm" onClick={handleBulkEnrich} disabled={isProcessing}>
-            {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4" />}
-            {isProcessing ? `Researching ${progress}%` : 'Bulk AI Research'}
-        </Button>
-    );
+    // This button is no longer strictly needed for API calls but we keep it for batch prompting if desired.
+    // For now, it opens the BatchResearchDialog logic.
+    return null; 
 }
