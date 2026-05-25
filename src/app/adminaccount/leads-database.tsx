@@ -406,20 +406,32 @@ function LeadsDatabaseComponent() {
     });
   }, [leads, statusFilter, dataFilter]);
 
+  const newRecordsRemaining = useMemo(() => {
+    return (leads || []).filter(p => !p.email && (!p.status || p.status === 'new')).length;
+  }, [leads]);
+
   const selectedLeadsForBatch = useMemo(() => {
       return (leads || []).filter(l => selectedIds.includes(l.id));
   }, [leads, selectedIds]);
 
   const handleEnhance50 = () => {
       if (!leads) return;
-      // Filter for records with NO email and status of 'new'
-      // Exclude 'contacted' (Researching) and 'qualified' (Researched)
-      const targets = leads
-        .filter(l => !l.email && l.status === 'new')
-        .slice(0, 50);
+      const uniqueNames = new Set<string>();
+      const targets: any[] = [];
+      
+      // Broader discovery logic: treat missing status as 'new'
+      for (const p of leads) {
+          const name = (p.companyName || '').trim().toLowerCase();
+          const isNew = !p.status || p.status === 'new';
+          if (!p.email && isNew && name && !uniqueNames.has(name)) {
+              targets.push(p);
+              uniqueNames.add(name);
+              if (targets.length >= 50) break;
+          }
+      }
       
       if (targets.length === 0) {
-          toast({ title: "No targets found", description: "All new leads already have emails or are currently being researched." });
+          toast({ title: "No targets found", description: "All records already have emails or are currently being researched." });
           return;
       }
 
@@ -536,8 +548,11 @@ function LeadsDatabaseComponent() {
       </AlertDialog>
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2"><Users /> Lead Database</CardTitle>
+          <div className="space-y-1">
+            <CardTitle className="flex items-center gap-2">
+                <Users /> Lead Database
+                <Badge variant="secondary" className="ml-2">{newRecordsRemaining} New Records</Badge>
+            </CardTitle>
             <CardDescription>Manage your sales leads.</CardDescription>
           </div>
           <div className="flex items-center gap-2">

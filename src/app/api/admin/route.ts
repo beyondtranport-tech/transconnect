@@ -97,6 +97,7 @@ export async function POST(req: NextRequest) {
                     const existingStatus = existingData?.status || 'new';
 
                     const hasContactInfo = !!(p.email_address || p.email || p.telephone_number || p.phone);
+                    // If we found data, it's qualified. If we were researching and found nothing, keep it as contacted.
                     const newStatus = hasContactInfo ? 'qualified' : (existingStatus === 'contacted' ? 'contacted' : 'new');
 
                     const updateData = {
@@ -127,10 +128,15 @@ export async function POST(req: NextRequest) {
                     'isa': 'ISA Agents (Elite)'
                 };
                 const leadRole = roleMapping[type] || type;
+                
+                // Broaden role matching to handle singular/plural variations in the database
+                const rolesToSearch = [leadRole];
+                if (leadRole.endsWith('s')) rolesToSearch.push(leadRole.slice(0, -1));
+                else rolesToSearch.push(leadRole + 's');
 
                 const [partnersSnap, leadsSnap] = await Promise.all([
                     db.collection('partners').where('type', '==', type).get(),
-                    db.collection('leads').where('role', '==', leadRole).get()
+                    db.collection('leads').where('role', 'in', rolesToSearch).get()
                 ]);
 
                 const mergedMap = new Map();
@@ -140,13 +146,10 @@ export async function POST(req: NextRequest) {
                 });
                 
                 // Priority 2: Leads (Prospective Data)
-                // We merge LEADS over PARTNERS but ensure "Advanced" statuses stay
                 leadsSnap.docs.forEach(doc => {
                     const existing = mergedMap.get(doc.id);
                     const leadData = doc.data();
                     
-                    // If the existing partner record is "active", keep it. 
-                    // Otherwise, the lead research status (contacted/qualified) should prevail.
                     const finalStatus = (existing?.status === 'active' || existing?.status === 'qualified') 
                         ? existing.status 
                         : (leadData.status || existing?.status || 'new');
@@ -165,7 +168,6 @@ export async function POST(req: NextRequest) {
                 const { leadIds } = payload;
                 const batch = db.batch();
                 
-                // 1. Get all names and current IDs to update everything related to these companies
                 for (const id of leadIds) {
                     const leadRef = db.collection('leads').doc(id);
                     const partnerRef = db.collection('partners').doc(id);
@@ -190,10 +192,13 @@ export async function POST(req: NextRequest) {
                     'transporter': 'Transporters',
                     'supplier': 'Vendors'
                 };
-                const role = roleMapping[type] || type;
+                const leadRole = roleMapping[type] || type;
+                const rolesToSearch = [leadRole];
+                if (leadRole.endsWith('s')) rolesToSearch.push(leadRole.slice(0, -1));
+                else rolesToSearch.push(leadRole + 's');
 
                 const snap = await db.collection('leads')
-                    .where('role', '==', role)
+                    .where('role', 'in', rolesToSearch)
                     .where('status', '==', 'contacted')
                     .get();
                 
@@ -201,6 +206,7 @@ export async function POST(req: NextRequest) {
                 let count = 0;
                 snap.docs.forEach(doc => {
                     const data = doc.data();
+                    // Only reset if they still don't have an email
                     if (!data.email && !data.email_address) {
                         batch.update(doc.ref, { status: 'new', lastOutreachSubject: null, lastOutreachAt: null });
                         batch.update(db.collection('partners').doc(doc.id), { status: 'new' });

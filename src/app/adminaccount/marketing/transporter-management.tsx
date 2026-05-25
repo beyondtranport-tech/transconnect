@@ -278,7 +278,6 @@ export default function TransporterManagement() {
       const token = await getClientSideAuthToken();
       if (!token) return;
       
-      // Use timestamp query param to force bypass any potential middle-tier cache
       const t = Date.now();
       const [res, staffRes] = await Promise.all([
         performAdminAction(token, 'getPartnersByType', { type: 'transporter', t }),
@@ -314,19 +313,23 @@ export default function TransporterManagement() {
     });
   }, [partners, statusFilter, assigneeFilter, dataFilter]);
 
+  const newRecordsRemaining = useMemo(() => {
+      return partners.filter(p => !p.email && (!p.status || p.status === 'new')).length;
+  }, [partners]);
+
   const selectedLeads = useMemo(() => {
       return partners.filter(p => selectedIds.includes(p.id));
   }, [partners, selectedIds]);
 
   const handleEnhance50 = () => {
-      // FIX: Pick UNIQUE company names to avoid showing duplicate entries in the same prompt
       const uniqueNames = new Set<string>();
       const targets: any[] = [];
       
-      // We strictly pick 'new' records that aren't already being researched
+      // Broader discovery logic: treat missing status as 'new'
       for (const p of partners) {
           const name = (p.companyName || '').trim().toLowerCase();
-          if (!p.email && p.status === 'new' && name && !uniqueNames.has(name)) {
+          const isNew = !p.status || p.status === 'new';
+          if (!p.email && isNew && name && !uniqueNames.has(name)) {
               targets.push(p);
               uniqueNames.add(name);
               if (targets.length >= 50) break;
@@ -334,7 +337,7 @@ export default function TransporterManagement() {
       }
       
       if (targets.length === 0) {
-          toast({ title: "No targets found", description: "All new records already have emails or are currently being researched." });
+          toast({ title: "No targets found", description: "All records already have emails or are currently being researched." });
           return;
       }
 
@@ -428,7 +431,13 @@ export default function TransporterManagement() {
       </AlertDialog>
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <div><CardTitle><Truck /> Transporters</CardTitle></div>
+          <div className="space-y-1">
+            <CardTitle className="flex items-center gap-2">
+                <Truck /> Transporters
+                <Badge variant="secondary" className="ml-2">{newRecordsRemaining} New Records</Badge>
+            </CardTitle>
+            <CardDescription>Manage your transporter leads and pipeline.</CardDescription>
+          </div>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={handleResetQueue} disabled={isResetting}>
                 {isResetting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <RotateCcw className="mr-2 h-4 w-4" />}
