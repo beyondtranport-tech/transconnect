@@ -56,7 +56,8 @@ export const googleSearchTool = ai.defineTool(
         return [];
     }
     
-    const url = new URL('https://www.googleapis.com/googleapis/customsearch/v1');
+    // CORRECT ENDPOINT: https://www.googleapis.com/customsearch/v1
+    const url = new URL('https://www.googleapis.com/customsearch/v1');
     url.searchParams.set('key', apiKey);
     url.searchParams.set('cx', cx);
     url.searchParams.set('q', input.query.trim());
@@ -79,8 +80,12 @@ export const googleSearchTool = ai.defineTool(
                 throw new Error(`API_ERROR: Access Denied (403). Ensure the "Custom Search API" is enabled in your Google Cloud Console for project "ecosystem-hub".`);
             }
             
+            if (response.status === 404) {
+                throw new Error(`API_ERROR: Not Found (404). This usually means your CUSTOM_SEARCH_ENGINE_ID (${cx}) is incorrect. Please verify it in the Google Search Control Panel.`);
+            }
+            
             if (response.status === 400) {
-                throw new Error(`API_ERROR: Invalid ID (400). Please verify your CUSTOM_SEARCH_ENGINE_ID matches the ID in the Control Panel (it should be an alphanumeric ID like 70d9...).`);
+                throw new Error(`API_ERROR: Invalid Request (400). Please verify your API Key and Search Engine ID.`);
             }
             
             throw new Error(`API_ERROR: Google Search failed (${response.status}): ${apiMessage}`);
