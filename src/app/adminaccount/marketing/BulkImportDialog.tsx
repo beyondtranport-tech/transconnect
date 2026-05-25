@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
-import { Loader2, Upload, FileJson, ClipboardPaste, Zap } from 'lucide-react';
+import { Loader2, Upload, FileJson, ClipboardPaste, Zap, CheckCircle, AlertTriangle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -31,35 +31,47 @@ export function BulkImportDialog({ type, onComplete, children }: BulkImportDialo
         }
     };
 
+    /**
+     * Super-Resilient JSON Parser
+     * Extracts valid objects even from fragmented or "messy" AI output.
+     */
     const processJsonData = (rawText: string) => {
-        let cleaned = rawText.trim();
-        
-        // AI Truncation Helper: If it starts with a comma or brace fragment, try to make it an array
-        if (cleaned.startsWith(',') || cleaned.startsWith('}')) {
-            cleaned = '[' + cleaned.replace(/^[,}\s]+/, '') + ']';
-        }
-        if (!cleaned.startsWith('[')) {
-            cleaned = '[' + cleaned + ']';
-        }
-        if (!cleaned.endsWith(']')) {
-            cleaned = cleaned + ']';
+        let results: any[] = [];
+        const text = rawText.trim();
+
+        // Strategy 1: Try standard parsing first
+        try {
+            const parsed = JSON.parse(text);
+            results = Array.isArray(parsed) ? parsed : [parsed];
+        } catch (e) {
+            // Strategy 2: If standard fails, use Regex to find all { ... } blocks
+            // This handles snippets that start or end mid-object or are missing [ ]
+            const objectRegex = /\{(?:[^{}]|((?:\{[^{}]*\})))*\}/g;
+            const matches = text.match(objectRegex);
+
+            if (matches) {
+                matches.forEach(m => {
+                    try {
+                        results.push(JSON.parse(m));
+                    } catch (innerError) {
+                        // Skip unparseable fragments
+                    }
+                });
+            }
         }
 
-        try {
-            const rawData = JSON.parse(cleaned);
-            const dataArray = Array.isArray(rawData) ? rawData : [rawData];
-            
-            return dataArray.map((item: any) => ({
-                companyName: item.company_name || item.companyName || item.company || 'Unknown Company',
-                contactPerson: item.contact_person || item.contactPerson || item.contact || 'N/A',
-                email: item.email_address || item.email || '',
-                phone: item.telephone_number || item.phone || item.cell || '',
-                website: item.website || item.url || '',
-                address: item.physical_address || item.address || '',
-            }));
-        } catch (e) {
-            throw new Error("Invalid JSON format. Please ensure you copied the full code block from Google AI.");
+        if (results.length === 0) {
+            throw new Error("No valid data objects found. Please ensure the AI output contains blocks like { \"company_name\": ... }");
         }
+
+        return results.map((item: any) => ({
+            companyName: item.company_name || item.companyName || item.company || 'Unknown Company',
+            contactPerson: item.contact_person || item.contactPerson || item.contact || 'N/A',
+            email: item.email_address || item.email || '',
+            phone: item.telephone_number || item.phone || item.cell || '',
+            website: item.website || item.url || '',
+            address: item.physical_address || item.address || '',
+        }));
     };
 
     const handleImport = async (source: 'file' | 'paste') => {
@@ -73,12 +85,13 @@ export function BulkImportDialog({ type, onComplete, children }: BulkImportDialo
 
             let partners: any[] = [];
 
-            if (source === 'paste' || (file && file.name.toLowerCase().endsWith('.json'))) {
+            // Deterministic selection of parser based on content
+            if (source === 'paste' || (file && (file.name.toLowerCase().endsWith('.json') || text.includes('{')))) {
                 partners = processJsonData(text);
             } else {
                 // CSV Parsing Logic
                 const rows = text.split(/\r?\n/).filter(row => row.trim().length > 0);
-                if (rows.length < 2) throw new Error("CSV file is empty.");
+                if (rows.length < 2) throw new Error("File is empty or invalid format.");
                 const headers = rows[0].split(',').map(h => h.trim().toLowerCase().replace(/["']/g, ''));
                 partners = rows.slice(1).map(row => {
                     const values = row.split(',').map(v => v.trim().replace(/^["']|["']$/g, ''));
@@ -95,8 +108,8 @@ export function BulkImportDialog({ type, onComplete, children }: BulkImportDialo
                 });
             }
 
-            const validPartners = partners.filter(p => p.companyName || p.email);
-            if (validPartners.length === 0) throw new Error("No valid records found.");
+            const validPartners = partners.filter(p => p.companyName && p.companyName !== 'Unknown Company');
+            if (validPartners.length === 0) throw new Error("No valid company records were found in the text provided.");
 
             const response = await fetch('/api/admin', {
                 method: 'POST',
@@ -107,9 +120,12 @@ export function BulkImportDialog({ type, onComplete, children }: BulkImportDialo
                 }),
             });
 
-            if (!response.ok) throw new Error("Import failed on server.");
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.error || "Import failed on server.");
+            }
 
-            toast({ title: "Import Successful", description: `Added/Updated ${validPartners.length} records.` });
+            toast({ title: "Import Successful", description: `Successfully processed ${validPartners.length} records.` });
             setIsOpen(false);
             setPasteData('');
             onComplete();
@@ -126,33 +142,33 @@ export function BulkImportDialog({ type, onComplete, children }: BulkImportDialo
             <DialogContent className="sm:max-w-2xl">
                 <DialogHeader>
                     <DialogTitle>Bulk Import {type}s</DialogTitle>
-                    <DialogDescription>Import data from CSV files or paste JSON directly from Google AI.</DialogDescription>
+                    <DialogDescription>Paste the results from Google AI or upload a CSV/JSON file.</DialogDescription>
                 </DialogHeader>
                 
                 <Tabs defaultValue="paste" className="py-4">
                     <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="paste"><ClipboardPaste className="mr-2 h-4 w-4" /> Paste JSON</TabsTrigger>
+                        <TabsTrigger value="paste"><ClipboardPaste className="mr-2 h-4 w-4" /> Paste Result</TabsTrigger>
                         <TabsTrigger value="file"><Upload className="mr-2 h-4 w-4" /> Upload File</TabsTrigger>
                     </TabsList>
                     
                     <TabsContent value="paste" className="space-y-4 pt-4">
                         <Alert className="bg-primary/5 border-primary/20">
                             <Zap className="h-4 w-4 text-primary" />
-                            <AlertTitle>Google AI Format Supported</AlertTitle>
-                            <AlertDescription>Simply paste the code block provided by Gemini. I'll automatically clean up the formatting.</AlertDescription>
+                            <AlertTitle>Smart Fragment Detection</AlertTitle>
+                            <AlertDescription>I can now extract records even if you paste a partial or "messy" snippet from the AI chat.</AlertDescription>
                         </Alert>
                         <div className="space-y-2">
-                            <Label>Paste AI Result Block</Label>
+                            <Label>Paste Data Below</Label>
                             <Textarea 
-                                placeholder="[{ 'company_name': ... }]" 
-                                className="min-h-[200px] font-mono text-xs" 
+                                placeholder="Paste the text from Google AI here..." 
+                                className="min-h-[250px] font-mono text-xs" 
                                 value={pasteData}
                                 onChange={(e) => setPasteData(e.target.value)}
                             />
                         </div>
                         <Button className="w-full" onClick={() => handleImport('paste')} disabled={isUploading || !pasteData.trim()}>
                             {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <CheckCircle className="mr-2 h-4 w-4" />}
-                            Import Pasted Data
+                            Process & Import
                         </Button>
                     </TabsContent>
 
@@ -171,5 +187,3 @@ export function BulkImportDialog({ type, onComplete, children }: BulkImportDialo
         </Dialog>
     );
 }
-
-import { CheckCircle } from 'lucide-react';
