@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -215,12 +215,10 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" onClick={findDuplicates} disabled={isLoading}>
-          {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
-          Find & Clean Duplicates
-        </Button>
-      </DialogTrigger>
+      <Button variant="outline" onClick={findDuplicates} disabled={isLoading}>
+        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
+        Find & Clean Duplicates
+      </Button>
       <DialogContent className="max-w-4xl">
         <DialogHeader>
           <DialogTitle>Duplicate Transporter Cleaner</DialogTitle>
@@ -321,7 +319,9 @@ export default function TransporterManagement() {
       return partners.filter(p => selectedIds.includes(p.id));
   }, [partners, selectedIds]);
 
-  const handleEnhance50 = () => {
+  const handleEnhance30 = () => {
+      if (isLoading) return;
+      
       const uniqueNames = new Set<string>();
       const targets: any[] = [];
       
@@ -332,7 +332,7 @@ export default function TransporterManagement() {
           if (!p.email && isNew && name && !uniqueNames.has(name)) {
               targets.push(p);
               uniqueNames.add(name);
-              if (targets.length >= 50) break;
+              if (targets.length >= 30) break; // Reduced to 30 for reliability
           }
       }
       
@@ -443,7 +443,10 @@ export default function TransporterManagement() {
                 {isResetting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <RotateCcw className="mr-2 h-4 w-4" />}
                 Reset Stuck Research
             </Button>
-            <Button variant="default" className="bg-amber-600 hover:bg-amber-700" onClick={handleEnhance50}><Zap className="mr-2 h-4 w-4" /> Enhance 50 Records</Button>
+            <Button variant="default" className="bg-amber-600 hover:bg-amber-700" onClick={handleEnhance30} disabled={isLoading}>
+                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Zap className="mr-2 h-4 w-4" />}
+                Enhance 30 Records
+            </Button>
             <BulkImportDialog type="transporter" onComplete={forceRefresh}><Button variant="outline">Bulk Import AI JSON</Button></BulkImportDialog>
             <DuplicateCleaner onComplete={forceRefresh} />
             <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Record</Button>
@@ -469,7 +472,7 @@ export default function TransporterManagement() {
                     <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Search className="h-3 w-3"/> Data Integrity</Label>
                     <Select value={dataFilter} onValueChange={setDataFilter}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="no-email">No Email</SelectItem><SelectItem value="no-phone">No Phone</SelectItem></SelectContent>
+                        <SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="has-email">Has Email</SelectItem><SelectItem value="no-email">No Email</SelectItem></SelectContent>
                     </Select>
                 </div>
             </div>
