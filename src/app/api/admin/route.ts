@@ -1,5 +1,3 @@
-'use server';
-
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -113,7 +111,6 @@ export async function POST(req: NextRequest) {
                 const { leadIds } = payload;
                 const batch = db.batch();
                 for (const id of leadIds) {
-                    // Update both collections to ensure the status change is caught in merged views
                     const leadRef = db.collection('leads').doc(id);
                     const partnerRef = db.collection('partners').doc(id);
                     
@@ -221,7 +218,6 @@ export async function POST(req: NextRequest) {
                 };
                 await ref.set(logData);
                 
-                // Update parent record outreach summary
                 const parentRef = db.collection('partners').doc(partnerId);
                 const leadRef = db.collection('leads').doc(partnerId);
                 const update = {
