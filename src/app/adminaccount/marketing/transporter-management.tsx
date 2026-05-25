@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -5,7 +6,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, Truck, Edit, Trash2, Send, CheckCircle, Users, MailCheck, MailQuestion, Filter, Save, Search } from 'lucide-react';
+import { Loader2, PlusCircle, Truck, Edit, Trash2, Send, CheckCircle, Users, MailCheck, MailQuestion, Filter, Save, Search, Lock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -23,6 +24,7 @@ import { EngageDialog } from './EngageDialog';
 import { formatDateSafe } from '@/lib/utils';
 import { EnrichPartnerButton, BulkEnrichButton } from './EnrichPartnerButton';
 import { Label } from '@/components/ui/label';
+import { BatchResearchDialog } from './BatchResearchDialog';
 
 async function performAdminAction(token: string, action: string, payload: any) {
   const response = await fetch('/api/admin', {
@@ -42,7 +44,7 @@ const partnerSchema = z.object({
   phone: z.string().optional(),
   companyName: z.string().optional(),
   address: z.string().optional(),
-  status: z.enum(['active', 'inactive']),
+  status: z.enum(['active', 'inactive', 'contacted']),
   type: z.enum(['partner', 'isa', 'investor', 'developer', 'supplier', 'transporter']),
 });
 type PartnerFormValues = z.infer<typeof partnerSchema>;
@@ -50,7 +52,10 @@ type PartnerFormValues = z.infer<typeof partnerSchema>;
 function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: boolean; onOpenChange: (open: boolean) => void; partner?: any; onSave: () => void; }) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const form = useForm<PartnerFormValues>({ resolver: zodResolver(partnerSchema) });
+  const form = useForm<PartnerFormValues>({ 
+      resolver: zodResolver(partnerSchema),
+      defaultValues: { type: 'transporter', status: 'active' }
+  });
 
   useEffect(() => {
     if (open) {
@@ -119,6 +124,7 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
                         <SelectContent>
                             <SelectItem value="active">Active</SelectItem>
                             <SelectItem value="inactive">Inactive</SelectItem>
+                            <SelectItem value="contacted">Contacted</SelectItem>
                         </SelectContent>
                     </Select>
                 </FormItem>
@@ -139,8 +145,9 @@ export default function TransporterManagement() {
   const [partners, setPartners] = useState<any[]>([]);
   const [staff, setStaff] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | null, data?: any }>({ type: null });
+  const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | 'batch-ai' | null, data?: any }>({ type: null });
 
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState('all');
   const [assigneeFilter, setAssigneeFilter] = useState('all');
   const [dataFilter, setDataFilter] = useState('all');
@@ -183,6 +190,10 @@ export default function TransporterManagement() {
         return matchesStatus && matchesAssignee && matchesData;
     });
   }, [partners, statusFilter, assigneeFilter, dataFilter]);
+
+  const selectedLeads = useMemo(() => {
+      return partners.filter(p => selectedIds.includes(p.id));
+  }, [partners, selectedIds]);
 
   async function handleDelete() {
     try {
@@ -261,6 +272,12 @@ export default function TransporterManagement() {
 
   return (
     <>
+      <BatchResearchDialog 
+        open={dialog.type === 'batch-ai'} 
+        onOpenChange={(o) => !o && setDialog({ type: null })} 
+        selectedLeads={selectedLeads} 
+        onComplete={() => { setSelectedIds([]); forceRefresh(); }} 
+      />
       <EngageDialog 
         open={dialog.type === 'engage'} 
         onOpenChange={(o) => !o && setDialog({ type: null })} 
@@ -279,6 +296,11 @@ export default function TransporterManagement() {
         <CardHeader className="flex flex-row items-center justify-between">
           <div><CardTitle><Truck /> Transporters</CardTitle></div>
           <div className="flex gap-2">
+            {selectedIds.length > 0 && (
+                <Button variant="default" className="bg-amber-600 hover:bg-amber-700" onClick={() => setDialog({ type: 'batch-ai' })}>
+                    <Lock className="mr-2 h-4 w-4" /> Batch AI Research ({selectedIds.length})
+                </Button>
+            )}
             <BulkEnrichButton partners={partners} onComplete={forceRefresh} />
             <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Transporter</Button>
           </div>
@@ -293,6 +315,7 @@ export default function TransporterManagement() {
                             <SelectItem value="all">All Statuses</SelectItem>
                             <SelectItem value="active">Active</SelectItem>
                             <SelectItem value="inactive">Inactive</SelectItem>
+                            <SelectItem value="contacted">Contacted</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
@@ -323,7 +346,9 @@ export default function TransporterManagement() {
                     </Select>
                 </div>
             </div>
-            {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredTransporters} />}
+            {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
+                <DataTable columns={columns} data={filteredTransporters} onSelectionChange={setSelectedIds} />
+            )}
         </CardContent>
       </Card>
     </>

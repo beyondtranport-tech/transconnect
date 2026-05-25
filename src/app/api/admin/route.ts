@@ -1,3 +1,4 @@
+
 'use server';
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -50,6 +51,27 @@ export async function POST(req: NextRequest) {
         }
 
         switch (action) {
+            case 'markLeadsAsResearching': {
+                const { leadIds } = payload;
+                const batch = db.batch();
+                
+                for (const id of leadIds) {
+                    const leadRef = db.collection('leads').doc(id);
+                    const partnerRef = db.collection('partners').doc(id);
+                    
+                    const updateData = {
+                        status: 'contacted',
+                        notes: `[AUTO] Added to AI research batch on ${new Date().toLocaleDateString()}`,
+                        updatedAt: FieldValue.serverTimestamp(),
+                    };
+
+                    batch.set(leadRef, updateData, { merge: true });
+                    batch.set(partnerRef, updateData, { merge: true });
+                }
+                
+                await batch.commit();
+                return NextResponse.json({ success: true });
+            }
             case 'logCommunication': {
                 const { partnerId, type, subject, notes } = payload;
                 const partnerRef = db.collection('partners').doc(partnerId);
@@ -100,7 +122,6 @@ export async function POST(req: NextRequest) {
                     db.collection('leads').where('role', '==', leadRole).get()
                 ]);
 
-                // Intelligent merge by ID to preserve outreach history across collections
                 const mergedMap = new Map();
                 
                 leadsSnap.docs.forEach(doc => {
