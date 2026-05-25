@@ -6,7 +6,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, Truck, Edit, Trash2, Send, CheckCircle, Users, MailCheck, MailQuestion, Filter, Save, Search, Lock } from 'lucide-react';
+import { Loader2, PlusCircle, Truck, Edit, Trash2, Send, CheckCircle, Users, MailCheck, MailQuestion, Filter, Save, Search, Lock, Zap } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -195,6 +195,22 @@ export default function TransporterManagement() {
       return partners.filter(p => selectedIds.includes(p.id));
   }, [partners, selectedIds]);
 
+  const handleEnhance50 = () => {
+      // Find the first 50 records without emails that are not already being researched
+      const targets = partners
+        .filter(p => !p.email && p.status !== 'contacted')
+        .slice(0, 50);
+      
+      if (targets.length === 0) {
+          toast({ title: "No targets found", description: "All records have emails or are already under research." });
+          return;
+      }
+
+      setSelectedIds(targets.map(t => t.id));
+      setDialog({ type: 'batch-ai' });
+      toast({ title: `Auto-selected ${targets.length} records`, description: "Preparing AI prompt for Google..." });
+  };
+
   async function handleDelete() {
     try {
       const token = await getClientSideAuthToken();
@@ -296,11 +312,9 @@ export default function TransporterManagement() {
         <CardHeader className="flex flex-row items-center justify-between">
           <div><CardTitle><Truck /> Transporters</CardTitle></div>
           <div className="flex gap-2">
-            {selectedIds.length > 0 && (
-                <Button variant="default" className="bg-amber-600 hover:bg-amber-700" onClick={() => setDialog({ type: 'batch-ai' })}>
-                    <Lock className="mr-2 h-4 w-4" /> Batch AI Research ({selectedIds.length})
-                </Button>
-            )}
+            <Button variant="default" className="bg-amber-600 hover:bg-amber-700" onClick={handleEnhance50}>
+                <Zap className="mr-2 h-4 w-4" /> Enhance 50 Records
+            </Button>
             <BulkEnrichButton partners={partners} onComplete={forceRefresh} />
             <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Transporter</Button>
           </div>

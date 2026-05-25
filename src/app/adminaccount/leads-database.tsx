@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect, Suspense } from 'react';
@@ -27,7 +28,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { useCollection, useFirestore, getClientSideAuthToken, useMemoFirebase } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
-import { Loader2, PlusCircle, Users, Edit, Trash2, Search, Send, Copy, Filter, MailCheck, MailQuestion, FileJson, Upload } from 'lucide-react';
+import { Loader2, PlusCircle, Users, Edit, Trash2, Search, Send, Copy, Filter, MailCheck, MailQuestion, FileJson, Upload, Zap } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -43,6 +44,7 @@ import { EnrichPartnerButton, BulkEnrichButton } from './marketing/EnrichPartner
 import { PartnerTasksDialog } from './marketing/PartnerTasksDialog';
 import { CommunicationLogDialog } from './marketing/CommunicationLogDialog';
 import { BulkImportDialog } from './marketing/BulkImportDialog';
+import { BatchResearchDialog } from './marketing/BatchResearchDialog';
 
 const leadSchema = z.object({
   companyName: z.string().min(1, 'Company name is required'),
@@ -107,7 +109,7 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Failed to save lead.');
 
-      toast({ title: lead ? 'Lead Updated' : 'Lead Added' });
+      toast({ title: Math.random() > 0.5 ? 'Data Saved!' : 'Record Updated!' });
       onSave();
       onOpenChange(false);
     } catch (e: any) {
@@ -127,7 +129,7 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[70vh] overflow-y-auto pr-2">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[60vh] overflow-y-auto pr-2">
             <FormField control={form.control} name="companyName" render={({ field }) => (
               <FormItem>
                 <FormLabel>Company Name</FormLabel>
@@ -354,6 +356,8 @@ function LeadsDatabaseComponent() {
   const [deleteLead, setDeleteLead] = useState<any | null>(null);
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
   const [engageLead, setEngageLead] = useState<any | null>(null);
+  const [batchDialogOpen, setBatchDialogOpen] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const [statusFilter, setStatusFilter] = useState('all');
   const [dataFilter, setDataFilter] = useState('all');
@@ -398,6 +402,25 @@ function LeadsDatabaseComponent() {
         return matchesStatus && matchesData;
     });
   }, [leads, statusFilter, dataFilter]);
+
+  const selectedLeadsForBatch = useMemo(() => {
+      return (leads || []).filter(l => selectedIds.includes(l.id));
+  }, [leads, selectedIds]);
+
+  const handleEnhance50 = () => {
+      if (!leads) return;
+      const targets = leads
+        .filter(l => !l.email && l.status !== 'contacted')
+        .slice(0, 50);
+      
+      if (targets.length === 0) {
+          toast({ title: "No targets found", description: "All leads have emails or are already under research." });
+          return;
+      }
+
+      setSelectedIds(targets.map(t => t.id));
+      setBatchDialogOpen(true);
+  };
 
   async function handleDelete() {
     if (!deleteLead) return;
@@ -469,6 +492,12 @@ function LeadsDatabaseComponent() {
 
   return (
     <>
+      <BatchResearchDialog 
+        open={batchDialogOpen} 
+        onOpenChange={setBatchDialogOpen} 
+        selectedLeads={selectedLeadsForBatch} 
+        onComplete={() => { setSelectedIds([]); forceRefresh(); }} 
+      />
       {engageLead && (
         <EngageDialog 
           open={!!engageLead} 
@@ -496,6 +525,9 @@ function LeadsDatabaseComponent() {
             <CardDescription>Manage your sales leads.</CardDescription>
           </div>
           <div className="flex items-center gap-2">
+            <Button variant="default" className="bg-amber-600 hover:bg-amber-700" onClick={handleEnhance50}>
+                <Zap className="mr-2 h-4 w-4" /> Enhance 50 Records
+            </Button>
             <BulkImportDialog type="lead" onComplete={forceRefresh}>
                 <Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Bulk Import JSON</Button>
             </BulkImportDialog>
@@ -536,7 +568,7 @@ function LeadsDatabaseComponent() {
                     </Select>
                 </div>
             </div>
-            {isLoading ? <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin" /></div> : <DataTable columns={columns} data={filteredLeads} />}
+            {isLoading ? <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin" /></div> : <DataTable columns={columns} data={filteredLeads} onSelectionChange={setSelectedIds} />}
         </CardContent>
       </Card>
     </>

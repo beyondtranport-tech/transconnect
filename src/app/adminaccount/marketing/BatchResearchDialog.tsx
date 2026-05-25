@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
-import { Loader2, Copy, ClipboardCheck, Lock } from 'lucide-react';
+import { Loader2, Copy, ClipboardCheck, Zap } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface BatchResearchDialogProps {
@@ -23,7 +23,7 @@ export function BatchResearchDialog({ open, onOpenChange, selectedLeads, onCompl
 
     const companyNames = selectedLeads.map(l => l.companyName || `${l.firstName} ${l.lastName}`).join('\n');
     
-    const aiPrompt = `I need you to act as a precision research agent. Find the current contact and management details for the following 50 South African companies. 
+    const aiPrompt = `I need you to act as a precision research agent. Find the current contact and management details for the following South African companies. 
 
 Provide the output ONLY as a clean JSON array of objects. 
 Each object MUST have these exact keys:
@@ -41,8 +41,12 @@ ${companyNames}`;
 
     const handleCopyAll = async () => {
         const fullText = `PROMPT:\n${aiPrompt}\n\nLIST:\n${companyNames}`;
-        await navigator.clipboard.writeText(fullText);
-        toast({ title: "Copied to Clipboard!", description: "Paste this into the Google AI interface." });
+        try {
+            await navigator.clipboard.writeText(fullText);
+            toast({ title: "Copied to Clipboard!", description: "Paste this into Google AI (Gemini/ChatGPT)." });
+        } catch (e) {
+            toast({ variant: 'destructive', title: "Copy Failed", description: "Please manually copy the text from the box." });
+        }
     };
 
     const handleMarkAsResearching = async () => {
@@ -65,7 +69,7 @@ ${companyNames}`;
             const result = await response.json();
             if (!response.ok) throw new Error(result.error);
 
-            toast({ title: "Batch Logged", description: `${leadIds.length} records marked as 'researching'.` });
+            toast({ title: "Batch Logged", description: `${leadIds.length} records marked as 'contacted' (Researching).` });
             onComplete();
             onOpenChange(false);
         } catch (e: any) {
@@ -80,24 +84,24 @@ ${companyNames}`;
             <DialogContent className="sm:max-w-2xl">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
-                        <Lock className="h-5 w-5 text-primary" />
-                        Batch AI Research Tool
+                        <Zap className="h-5 w-5 text-amber-500" />
+                        Enhance Batch of {selectedLeads.length}
                     </DialogTitle>
                     <DialogDescription>
-                        Copy the names and the pre-formatted prompt below. Once you've copied them, mark them as "Researching" to prevent duplicate efforts.
+                        Copy the names and the pre-formatted prompt below. Once you've copied them, mark them as "Researching" to move to the next batch.
                     </DialogDescription>
                 </DialogHeader>
                 
                 <div className="space-y-4 py-4">
                     <div className="space-y-2">
-                        <label className="text-xs font-bold uppercase text-muted-foreground">The AI Prompt</label>
+                        <label className="text-xs font-bold uppercase text-muted-foreground">The AI Prompt (Calibri 12pt format expected)</label>
                         <ScrollArea className="h-48 w-full border rounded-md p-3 bg-muted/30">
-                            <pre className="text-xs whitespace-pre-wrap font-sans">{aiPrompt}</pre>
+                            <pre className="text-xs whitespace-pre-wrap font-sans leading-relaxed">{aiPrompt}</pre>
                         </ScrollArea>
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-xs font-bold uppercase text-muted-foreground">Selected Batch ({selectedLeads.length} companies)</label>
+                        <label className="text-xs font-bold uppercase text-muted-foreground">Target Batch List</label>
                         <ScrollArea className="h-24 w-full border rounded-md p-3 bg-muted/10 font-mono text-[10px]">
                             {companyNames}
                         </ScrollArea>
@@ -108,9 +112,9 @@ ${companyNames}`;
                     <Button variant="outline" onClick={handleCopyAll}>
                         <Copy className="mr-2 h-4 w-4" /> Copy Prompt & List
                     </Button>
-                    <Button onClick={handleMarkAsResearching} disabled={isLoading}>
+                    <Button onClick={handleMarkAsResearching} disabled={isLoading} className="bg-amber-600 hover:bg-amber-700 text-white">
                         {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <ClipboardCheck className="mr-2 h-4 w-4" />}
-                        Mark as Researching & Close
+                        Mark as Researching & Clear Selection
                     </Button>
                 </DialogFooter>
             </DialogContent>
