@@ -416,7 +416,7 @@ function LeadsDatabaseComponent() {
     return (leads || []).filter(p => {
         const email = (p.email || p.email_address || '').toString().toLowerCase().trim();
         const isInvalid = !email || email === 'null' || email === 'n/a';
-        const isResearchable = !p.status || p.status === 'new' || p.status === 'contacted';
+        const isResearchable = !p.status || p.status === 'new'; // DO NOT include contacted/researching
         return isInvalid && isResearchable;
     }).length;
   }, [leads]);
@@ -434,7 +434,7 @@ function LeadsDatabaseComponent() {
           const name = (p.companyName || '').trim().toLowerCase();
           const email = (p.email || p.email_address || '').toString().toLowerCase().trim();
           const isInvalid = !email || email === 'null' || email === 'n/a';
-          const isResearchable = !p.status || p.status === 'new' || p.status === 'contacted';
+          const isResearchable = !p.status || p.status === 'new'; // Strict exclusion
           
           if (isInvalid && isResearchable && name && !uniqueNames.has(name)) {
               targets.push(p);
