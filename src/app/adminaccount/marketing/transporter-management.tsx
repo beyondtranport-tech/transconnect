@@ -277,9 +277,12 @@ export default function TransporterManagement() {
     try {
       const token = await getClientSideAuthToken();
       if (!token) return;
+      
+      // Use timestamp query param to force bypass any potential middle-tier cache
+      const t = Date.now();
       const [res, staffRes] = await Promise.all([
-        performAdminAction(token, 'getPartnersByType', { type: 'transporter' }),
-        performAdminAction(token, 'getPlatformStaff', {})
+        performAdminAction(token, 'getPartnersByType', { type: 'transporter', t }),
+        performAdminAction(token, 'getPlatformStaff', { t })
       ]);
       setPartners(res.data || []);
       setStaff(staffRes.data || []);
@@ -316,11 +319,19 @@ export default function TransporterManagement() {
   }, [partners, selectedIds]);
 
   const handleEnhance50 = () => {
-      // Find 50 records that are 'new' AND don't have an email
-      // Exclude 'contacted' (Researching) and 'qualified' (Done)
-      const targets = partners
-        .filter(p => !p.email && p.status === 'new')
-        .slice(0, 50);
+      // FIX: Pick UNIQUE company names to avoid showing duplicate entries in the same prompt
+      const uniqueNames = new Set<string>();
+      const targets: any[] = [];
+      
+      // We strictly pick 'new' records that aren't already being researched
+      for (const p of partners) {
+          const name = (p.companyName || '').trim().toLowerCase();
+          if (!p.email && p.status === 'new' && name && !uniqueNames.has(name)) {
+              targets.push(p);
+              uniqueNames.add(name);
+              if (targets.length >= 50) break;
+          }
+      }
       
       if (targets.length === 0) {
           toast({ title: "No targets found", description: "All new records already have emails or are currently being researched." });

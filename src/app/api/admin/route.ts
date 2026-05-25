@@ -88,6 +88,7 @@ export async function POST(req: NextRequest) {
                     const companyNameClean = (p.companyName || '').trim();
                     if (!companyNameClean) continue;
 
+                    // Update all possible matches by name to prevent shadow records
                     const existingLeads = await db.collection('leads').where('companyName', '==', companyNameClean).get();
                     const ref = !existingLeads.empty ? existingLeads.docs[0].ref : db.collection('leads').doc();
                     const partnerRef = db.collection('partners').doc(ref.id);
@@ -95,7 +96,6 @@ export async function POST(req: NextRequest) {
                     const existingData = !existingLeads.empty ? existingLeads.docs[0].data() : null;
                     const existingStatus = existingData?.status || 'new';
 
-                    // Determine new status: don't revert to 'new' if it was already 'contacted'
                     const hasContactInfo = !!(p.email_address || p.email || p.telephone_number || p.phone);
                     const newStatus = hasContactInfo ? 'qualified' : (existingStatus === 'contacted' ? 'contacted' : 'new');
 
@@ -134,18 +134,29 @@ export async function POST(req: NextRequest) {
                 ]);
 
                 const mergedMap = new Map();
-                // Priority 1: Leads
-                leadsSnap.docs.forEach(doc => {
-                    mergedMap.set(doc.id, { id: doc.id, entryType: 'Lead', ...serializeTimestamps(doc.data()) });
-                });
-                // Priority 2: Partners (overwrites leads if ID matches)
+                // Priority 1: Partners (Registered Members)
                 partnersSnap.docs.forEach(doc => {
+                    mergedMap.set(doc.id, { id: doc.id, entryType: 'Member', ...serializeTimestamps(doc.data()) });
+                });
+                
+                // Priority 2: Leads (Prospective Data)
+                // We merge LEADS over PARTNERS but ensure "Advanced" statuses stay
+                leadsSnap.docs.forEach(doc => {
                     const existing = mergedMap.get(doc.id);
+                    const leadData = doc.data();
+                    
+                    // If the existing partner record is "active", keep it. 
+                    // Otherwise, the lead research status (contacted/qualified) should prevail.
+                    const finalStatus = (existing?.status === 'active' || existing?.status === 'qualified') 
+                        ? existing.status 
+                        : (leadData.status || existing?.status || 'new');
+
                     mergedMap.set(doc.id, { 
                         ...(existing || {}), 
-                        ...serializeTimestamps(doc.data()), 
+                        ...serializeTimestamps(leadData), 
+                        status: finalStatus,
                         id: doc.id, 
-                        entryType: existing ? 'Member' : 'Partner' 
+                        entryType: existing ? 'Member' : 'Lead' 
                     });
                 });
                 return NextResponse.json({ success: true, data: Array.from(mergedMap.values()) });
@@ -153,6 +164,8 @@ export async function POST(req: NextRequest) {
             case 'markLeadsAsResearching': {
                 const { leadIds } = payload;
                 const batch = db.batch();
+                
+                // 1. Get all names and current IDs to update everything related to these companies
                 for (const id of leadIds) {
                     const leadRef = db.collection('leads').doc(id);
                     const partnerRef = db.collection('partners').doc(id);
@@ -167,6 +180,7 @@ export async function POST(req: NextRequest) {
                     batch.set(leadRef, updateData, { merge: true });
                     batch.set(partnerRef, { status: 'contacted', updatedAt: FieldValue.serverTimestamp() }, { merge: true });
                 }
+                
                 await batch.commit();
                 return NextResponse.json({ success: true });
             }
@@ -189,7 +203,6 @@ export async function POST(req: NextRequest) {
                     const data = doc.data();
                     if (!data.email && !data.email_address) {
                         batch.update(doc.ref, { status: 'new', lastOutreachSubject: null, lastOutreachAt: null });
-                        // Also reset in partners
                         batch.update(db.collection('partners').doc(doc.id), { status: 'new' });
                         count++;
                     }
