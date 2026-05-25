@@ -25,6 +25,7 @@ import { EnrichPartnerButton, BulkEnrichButton } from './EnrichPartnerButton';
 import { Label } from '@/components/ui/label';
 import { BatchResearchDialog } from './BatchResearchDialog';
 import { BulkImportDialog } from './BulkImportDialog';
+import { Checkbox } from '@/components/ui/checkbox';
 
 async function performAdminAction(token: string, action: string, payload: any) {
   const response = await fetch('/api/admin', {
@@ -136,6 +137,122 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
             </DialogFooter>
           </form>
         </Form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [duplicates, setDuplicates] = useState<any[][]>([]);
+  const [selections, setSelections] = useState<Record<number, string>>({});
+  const { toast } = useToast();
+
+  async function findDuplicates() {
+    setIsLoading(true);
+    try {
+      const token = await getClientSideAuthToken();
+      if (!token) throw new Error("Auth failed.");
+      const response = await fetch('/api/admin', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'findDuplicateLeads' }),
+        cache: 'no-store'
+      });
+      const result = await response.json();
+      if (!result.success) throw new Error(result.error);
+      setDuplicates(result.data);
+      if (result.data.length === 0) {
+        toast({ title: "No duplicates found." });
+      } else {
+        setIsOpen(true);
+      }
+    } catch (e: any) {
+      toast({ variant: 'destructive', title: "Error finding duplicates", description: e.message });
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  async function handleClean() {
+    setIsLoading(true);
+    const idsToDelete = duplicates.flatMap((group, index) => {
+      const idToKeep = selections[index];
+      if (!idToKeep) return [];
+      return group.filter(lead => lead.id !== idToKeep).map(lead => lead.id);
+    });
+
+    if (idsToDelete.length === 0) {
+      toast({ title: "No duplicates selected for deletion." });
+      setIsLoading(false);
+      setIsOpen(false);
+      return;
+    }
+
+    try {
+      const token = await getClientSideAuthToken();
+      if (!token) throw new Error("Auth failed.");
+      const response = await fetch('/api/admin', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'deleteLeads', payload: { leadIds: idsToDelete } }),
+        cache: 'no-store'
+      });
+      const result = await response.json();
+      if (!result.success) throw new Error(result.error);
+
+      toast({ title: "Duplicates Cleaned!", description: `${idsToDelete.length} duplicate records deleted.` });
+      onComplete();
+      setIsOpen(false);
+    } catch (e: any) {
+      toast({ variant: 'destructive', title: "Error cleaning duplicates", description: e.message });
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" onClick={findDuplicates} disabled={isLoading}>
+          {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
+          Find & Clean Duplicates
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-4xl">
+        <DialogHeader>
+          <DialogTitle>Duplicate Transporter Cleaner</DialogTitle>
+          <DialogDescription>
+            Select the records you want to keep. The others will be deleted.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-6 max-h-[60vh] overflow-y-auto p-4">
+          {duplicates.map((group, groupIndex) => (
+            <Card key={groupIndex}>
+              <CardHeader><CardTitle>Group: {group[0]?.companyName}</CardTitle></CardHeader>
+              <CardContent>
+                {group.map(lead => (
+                  <div key={lead.id} className="flex items-start gap-4 p-2 border-b last:border-b-0">
+                    <Checkbox
+                      id={`lead-${groupIndex}-${lead.id}`}
+                      checked={selections[groupIndex] === lead.id}
+                      onCheckedChange={() => setSelections(prev => ({ ...prev, [groupIndex]: lead.id }))}
+                    />
+                    <label htmlFor={`lead-${groupIndex}-${lead.id}`} className="text-sm">
+                      <p className="font-semibold">{lead.contactPerson || lead.firstName + ' ' + lead.lastName}</p>
+                      <p className="text-muted-foreground">{lead.email || 'No Email'}</p>
+                    </label>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
+          <Button onClick={handleClean} disabled={isLoading}>Clean Selected</Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
@@ -306,6 +423,7 @@ export default function TransporterManagement() {
             <Button variant="default" className="bg-amber-600 hover:bg-amber-700" onClick={handleEnhance50}><Zap className="mr-2 h-4 w-4" /> Enhance 50 Records</Button>
             <BulkImportDialog type="transporter" onComplete={forceRefresh}><Button variant="outline">Bulk Import AI JSON</Button></BulkImportDialog>
             <BulkEnrichButton partners={partners} onComplete={forceRefresh} />
+            <DuplicateCleaner onComplete={forceRefresh} />
             <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Record</Button>
           </div>
         </CardHeader>

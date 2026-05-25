@@ -39,11 +39,40 @@ export async function POST(req: NextRequest) {
         const isAdmin = decodedToken.email === 'beyondtransport@gmail.com' || decodedToken.email === 'mkoton100@gmail.com';
 
         if (!isAdmin) {
-             const allowedUserActions = ['getAuditLogs', 'logCommunication', 'bulkSavePartners', 'getPartnersByType', 'markLeadsAsResearching', 'getPlatformStaff'];
+             const allowedUserActions = ['getAuditLogs', 'logCommunication', 'bulkSavePartners', 'getPartnersByType', 'markLeadsAsResearching', 'getPlatformStaff', 'findDuplicateLeads', 'deleteLeads'];
              if (!allowedUserActions.includes(action)) throw new Error("Forbidden.");
         }
 
         switch (action) {
+            case 'findDuplicateLeads': {
+                const snap = await db.collection('leads').get();
+                const grouped = new Map<string, any[]>();
+                
+                snap.docs.forEach(doc => {
+                    const data = doc.data();
+                    const name = (data.companyName || '').trim().toLowerCase();
+                    if (!name) return;
+                    
+                    if (!grouped.has(name)) grouped.set(name, []);
+                    grouped.get(name)!.push({ id: doc.id, ...serializeTimestamps(data) });
+                });
+                
+                const duplicates = Array.from(grouped.values()).filter(group => group.length > 1);
+                return NextResponse.json({ success: true, data: duplicates });
+            }
+            case 'deleteLeads': {
+                const { leadIds } = payload;
+                if (!Array.isArray(leadIds)) throw new Error("Invalid leadIds array.");
+                
+                const batch = db.batch();
+                leadIds.forEach(id => {
+                    batch.delete(db.collection('leads').doc(id));
+                    batch.delete(db.collection('partners').doc(id));
+                });
+                
+                await batch.commit();
+                return NextResponse.json({ success: true });
+            }
             case 'bulkSavePartners': {
                 const { partners, type } = payload;
                 const batch = db.batch();
@@ -190,7 +219,8 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true });
             }
             case 'deleteLead': {
-                await db.collection('leads').doc(payload.leadId).delete();
+                const { leadId } = payload;
+                await db.collection('leads').doc(leadId).delete();
                 return NextResponse.json({ success: true });
             }
             case 'getDashboardQueues': {
