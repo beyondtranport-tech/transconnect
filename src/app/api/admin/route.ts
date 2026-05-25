@@ -5,6 +5,8 @@ import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase-admin';
 
+export const dynamic = 'force-dynamic';
+
 // Helper to convert Firestore Timestamps to JSON-serializable strings
 function serializeTimestamps(docData: any): any {
     if (!docData) return docData;
@@ -33,14 +35,13 @@ export async function POST(req: NextRequest) {
         
         const adminAuth = getAuth(app);
         const decodedToken = await adminAuth.verifyIdToken(token);
-        const requestorUid = decodedToken.uid;
         
         const { action, payload } = await req.json();
         const db = getFirestore(app);
         const isAdmin = decodedToken.email === 'beyondtransport@gmail.com' || decodedToken.email === 'mkoton100@gmail.com';
 
         if (!isAdmin) {
-             const allowedUserActions = ['getAuditLogs', 'logCommunication', 'bulkSavePartners', 'getPartnersByType', 'markLeadsAsResearching'];
+             const allowedUserActions = ['getAuditLogs', 'logCommunication', 'bulkSavePartners', 'getPartnersByType', 'markLeadsAsResearching', 'getPlatformStaff'];
              if (!allowedUserActions.includes(action)) throw new Error("Forbidden.");
         }
 
@@ -69,7 +70,6 @@ export async function POST(req: NextRequest) {
                         ...p,
                         id: ref.id,
                         role: leadRole,
-                        // If it has an email and was previously new/researching, promote to qualified
                         status: (p.email_address || p.email) ? (isNewOrResearching ? 'qualified' : existingLeads.docs[0].data().status || 'qualified') : 'new',
                         updatedAt: FieldValue.serverTimestamp(),
                         createdAt: existingLeads.empty ? FieldValue.serverTimestamp() : existingLeads.docs[0].data().createdAt
@@ -113,13 +113,19 @@ export async function POST(req: NextRequest) {
                 const { leadIds } = payload;
                 const batch = db.batch();
                 for (const id of leadIds) {
+                    // Update both collections to ensure the status change is caught in merged views
                     const leadRef = db.collection('leads').doc(id);
-                    batch.set(leadRef, { 
+                    const partnerRef = db.collection('partners').doc(id);
+                    
+                    const updateData = { 
                         status: 'contacted', 
                         lastOutreachSubject: 'Manual AI Research', 
                         lastOutreachAt: FieldValue.serverTimestamp(), 
                         updatedAt: FieldValue.serverTimestamp() 
-                    }, { merge: true });
+                    };
+
+                    batch.set(leadRef, updateData, { merge: true });
+                    batch.set(partnerRef, { status: 'contacted', updatedAt: FieldValue.serverTimestamp() }, { merge: true });
                 }
                 await batch.commit();
                 return NextResponse.json({ success: true });
@@ -141,7 +147,6 @@ export async function POST(req: NextRequest) {
                 let count = 0;
                 snap.docs.forEach(doc => {
                     const data = doc.data();
-                    // Reset only if they still don't have an email
                     if (!data.email && !data.email_address) {
                         batch.update(doc.ref, { status: 'new', lastOutreachSubject: null, lastOutreachAt: null });
                         count++;
@@ -187,6 +192,10 @@ export async function POST(req: NextRequest) {
                 await ref.set({ ...lead, id: ref.id, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
                 return NextResponse.json({ success: true });
             }
+            case 'deleteLead': {
+                await db.collection('leads').doc(payload.leadId).delete();
+                return NextResponse.json({ success: true });
+            }
             case 'getDashboardQueues': {
                 const [shopsSnap, agreementsSnap] = await Promise.all([
                     db.collectionGroup('shops').where('status', '==', 'pending_review').get(),
@@ -200,17 +209,32 @@ export async function POST(req: NextRequest) {
                     } 
                 });
             }
-            case 'getWalletTransactions': {
-                const snap = await db.collectionGroup('transactions').orderBy('date', 'desc').limit(100).get();
-                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
-            }
-             case 'getWalletPayments': {
-                const snap = await db.collectionGroup('walletPayments').orderBy('createdAt', 'desc').limit(100).get();
-                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
-            }
-            case 'getContributions': {
-                const snap = await db.collection('contributions').orderBy('createdAt', 'desc').limit(100).get();
-                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
+            case 'logCommunication': {
+                const { partnerId, type, subject, notes } = payload;
+                const ref = db.collection('partners').doc(partnerId).collection('communications').doc();
+                const logData = {
+                    id: ref.id,
+                    type,
+                    subject,
+                    notes: notes || '',
+                    timestamp: FieldValue.serverTimestamp()
+                };
+                await ref.set(logData);
+                
+                // Update parent record outreach summary
+                const parentRef = db.collection('partners').doc(partnerId);
+                const leadRef = db.collection('leads').doc(partnerId);
+                const update = {
+                    lastOutreachSubject: subject,
+                    lastOutreachAt: FieldValue.serverTimestamp(),
+                    updatedAt: FieldValue.serverTimestamp()
+                };
+                await Promise.all([
+                    parentRef.set(update, { merge: true }),
+                    leadRef.set(update, { merge: true })
+                ]);
+                
+                return NextResponse.json({ success: true });
             }
             default:
                 return NextResponse.json({ success: false, error: `Action "${action}" not implemented.` }, { status: 400 });

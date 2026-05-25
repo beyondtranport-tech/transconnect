@@ -103,6 +103,7 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
           action: 'saveLead',
           payload: { lead: { id: lead?.id, ...values } }
         }),
+        cache: 'no-store'
       });
 
       const result = await response.json();
@@ -243,6 +244,7 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'findDuplicateLeads' }),
+        cache: 'no-store'
       });
       const result = await response.json();
       if (!result.success) throw new Error(result.error);
@@ -281,6 +283,7 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'deleteLeads', payload: { leadIds: idsToDelete } }),
+        cache: 'no-store'
       });
       const result = await response.json();
       if (!result.success) throw new Error(result.error);
@@ -430,6 +433,7 @@ function LeadsDatabaseComponent() {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'deleteLead', payload: { leadId: deleteLead.id } }),
+        cache: 'no-store'
       });
       if (!response.ok) throw new Error((await response.json()).error || 'Failed to delete lead.');
       toast({ title: 'Lead Deleted' });

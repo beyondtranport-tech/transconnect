@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -32,6 +31,7 @@ async function performAdminAction(token: string, action: string, payload: any) {
     method: 'POST',
     headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({ action, payload }),
+    cache: 'no-store'
   });
   const result = await response.json();
   if (!response.ok || !result.success) throw new Error(result.error || `API Error: ${action}`);
@@ -125,7 +125,7 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
                         <SelectContent>
                             <SelectItem value="active">Active</SelectItem>
                             <SelectItem value="inactive">Inactive</SelectItem>
-                            <SelectItem value="contacted">Contacted</SelectItem>
+                            <SelectItem value="contacted">Researching</SelectItem>
                         </SelectContent>
                     </Select>
                 </FormItem>
@@ -333,7 +333,7 @@ export default function TransporterManagement() {
                     </Select>
                 </div>
             </div>
-            {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div> : (
+            {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
                 <DataTable columns={columns} data={filteredTransporters} onSelectionChange={setSelectedIds} />
             )}
         </CardContent>
