@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -20,7 +20,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { PartnerOversightDialog } from './PartnerOversightDialog';
 import { EngageDialog } from './EngageDialog';
-import { formatDateSafe } from '@/lib/utils';
+import { formatDateSafe, cn } from '@/lib/utils';
 import { EnrichPartnerButton, BulkEnrichButton } from './EnrichPartnerButton';
 import { Label } from '@/components/ui/label';
 import { BatchResearchDialog } from './BatchResearchDialog';
@@ -180,7 +180,7 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
     setIsLoading(true);
     const idsToDelete = duplicates.flatMap((group, index) => {
       const idToKeep = selections[index];
-      if (!idToKeep) return []; // If no selection for a group, don't delete anything
+      if (!idToKeep) return [];
       return group.filter(lead => lead.id !== idToKeep).map(lead => lead.id);
     });
 
@@ -215,10 +215,12 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <Button variant="outline" onClick={findDuplicates} disabled={isLoading}>
-        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
-        Find & Clean Duplicates
-      </Button>
+      <DialogTrigger asChild>
+        <Button variant="outline" onClick={findDuplicates} disabled={isLoading}>
+          {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
+          Find & Clean Duplicates
+        </Button>
+      </DialogTrigger>
       <DialogContent className="max-w-4xl">
         <DialogHeader>
           <DialogTitle>Duplicate Transporter Cleaner</DialogTitle>
@@ -300,10 +302,16 @@ export default function TransporterManagement() {
         const matchesAssignee = assigneeFilter === 'all' || p.assigneeId === assigneeFilter;
         
         let matchesData = true;
-        if (dataFilter === 'no-email') matchesData = !p.email;
+        if (dataFilter === 'no-email') {
+            const email = (p.email || p.email_address || '').toString().toLowerCase().trim();
+            matchesData = !email || email === 'null' || email === 'n/a';
+        }
         else if (dataFilter === 'no-phone') matchesData = !p.phone;
         else if (dataFilter === 'no-website') matchesData = !p.website;
-        else if (dataFilter === 'has-email') matchesData = !!p.email;
+        else if (dataFilter === 'has-email') {
+            const email = (p.email || p.email_address || '').toString().toLowerCase().trim();
+            matchesData = !!email && email !== 'null' && email !== 'n/a';
+        }
         else if (dataFilter === 'has-phone') matchesData = !!p.phone;
         else if (dataFilter === 'has-website') matchesData = !!p.website;
 
@@ -470,21 +478,21 @@ export default function TransporterManagement() {
         <CardContent>
             <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg">
                 <div className="flex-1 space-y-2">
-                    <Filter className="h-3 w-3"/> Status
+                    <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status</Label>
                     <Select value={statusFilter} onValueChange={setStatusFilter}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="active">Active</SelectItem><SelectItem value="inactive">Inactive</SelectItem><SelectItem value="contacted">Researching</SelectItem><SelectItem value="new">New</SelectItem></SelectContent>
                     </Select>
                 </div>
                 <div className="flex-1 space-y-2">
-                    <Users className="h-3 w-3"/> Assignee
+                    <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Users className="h-3 w-3"/> Assignee</Label>
                     <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="none">Unallocated</SelectItem>{staff.map(s => <SelectItem key={s.id} value={s.id}>{s.firstName} {s.lastName}</SelectItem>)}</SelectContent>
                     </Select>
                 </div>
                 <div className="flex-1 space-y-2">
-                    <Search className="h-3 w-3"/> Data Integrity
+                    <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Search className="h-3 w-3"/> Data Integrity</Label>
                     <Select value={dataFilter} onValueChange={setDataFilter}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent><SelectItem value="all">All Records</SelectItem><SelectItem value="has-email">Has Email</SelectItem><SelectItem value="no-email">No Email</SelectItem></SelectContent>
