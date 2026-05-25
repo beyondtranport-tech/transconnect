@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -5,7 +6,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, Truck, Edit, Trash2, Send, CheckCircle, Users, MailCheck, MailQuestion, Filter, Save, Search, Zap } from 'lucide-react';
+import { Loader2, PlusCircle, Truck, Edit, Trash2, Send, CheckCircle, Users, MailCheck, MailQuestion, Filter, Save, Search, Zap, RotateCcw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -143,6 +144,7 @@ export default function TransporterManagement() {
   const [partners, setPartners] = useState<any[]>([]);
   const [staff, setStaff] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isResetting, setIsResetting] = useState(false);
   const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | 'batch-ai' | null, data?: any }>({ type: null });
 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -195,16 +197,31 @@ export default function TransporterManagement() {
 
   const handleEnhance50 = () => {
       const targets = partners
-        .filter(p => !p.email && p.status !== 'contacted')
+        .filter(p => !p.email && p.status === 'new')
         .slice(0, 50);
       
       if (targets.length === 0) {
-          toast({ title: "No targets found", description: "All records have emails or are already under research." });
+          toast({ title: "No targets found", description: "All new records already have emails or are currently being researched." });
           return;
       }
 
       setSelectedIds(targets.map(t => t.id));
       setDialog({ type: 'batch-ai' });
+  };
+
+  const handleResetQueue = async () => {
+      setIsResetting(true);
+      try {
+          const token = await getClientSideAuthToken();
+          if (!token) return;
+          const result = await performAdminAction(token, 'resetResearchQueue', { type: 'transporter' });
+          toast({ title: "Queue Reset", description: `${result.count} records set back to 'New'.` });
+          forceRefresh();
+      } catch (e: any) {
+          toast({ variant: 'destructive', title: "Reset Failed", description: e.message });
+      } finally {
+          setIsResetting(false);
+      }
   };
 
   async function handleDelete() {
@@ -266,6 +283,10 @@ export default function TransporterManagement() {
         <CardHeader className="flex flex-row items-center justify-between">
           <div><CardTitle><Truck /> Transporters</CardTitle></div>
           <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={handleResetQueue} disabled={isResetting}>
+                {isResetting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <RotateCcw className="mr-2 h-4 w-4" />}
+                Reset Stuck Research
+            </Button>
             <Button variant="default" className="bg-amber-600 hover:bg-amber-700" onClick={handleEnhance50}><Zap className="mr-2 h-4 w-4" /> Enhance 50 Records</Button>
             <BulkImportDialog type="transporter" onComplete={forceRefresh}><Button variant="outline">Bulk Import AI JSON</Button></BulkImportDialog>
             <BulkEnrichButton partners={partners} onComplete={forceRefresh} />
@@ -278,7 +299,7 @@ export default function TransporterManagement() {
                     <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status</Label>
                     <Select value={statusFilter} onValueChange={setStatusFilter}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="active">Active</SelectItem><SelectItem value="inactive">Inactive</SelectItem><SelectItem value="contacted">Contacted</SelectItem></SelectContent>
+                        <SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="active">Active</SelectItem><SelectItem value="inactive">Inactive</SelectItem><SelectItem value="contacted">Researching</SelectItem><SelectItem value="new">New</SelectItem></SelectContent>
                     </Select>
                 </div>
                 <div className="flex-1 space-y-2">

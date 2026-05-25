@@ -6,8 +6,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
-import { Loader2, Copy, ClipboardCheck, Zap } from 'lucide-react';
+import { Loader2, Copy, ClipboardCheck, Zap, AlertCircle } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 interface BatchResearchDialogProps {
     open: boolean;
@@ -18,6 +19,7 @@ interface BatchResearchDialogProps {
 
 export function BatchResearchDialog({ open, onOpenChange, selectedLeads, onComplete }: BatchResearchDialogProps) {
     const [isLoading, setIsLoading] = useState(false);
+    const [isCopied, setIsCopied] = useState(false);
     const { toast } = useToast();
 
     const companyNames = selectedLeads.map(l => l.companyName || `${l.firstName} ${l.lastName}`).join('\n');
@@ -42,7 +44,8 @@ ${companyNames}`;
         const fullText = `PROMPT:\n${aiPrompt}\n\nLIST:\n${companyNames}`;
         try {
             await navigator.clipboard.writeText(fullText);
-            toast({ title: "Copied to Clipboard!", description: "Paste this into Google AI (Gemini/ChatGPT)." });
+            setIsCopied(true);
+            toast({ title: "Copied!", description: "Paste this into Google AI now." });
         } catch (e) {
             toast({ variant: 'destructive', title: "Copy Failed", description: "Please manually copy the text from the box." });
         }
@@ -70,6 +73,7 @@ ${companyNames}`;
             if (!response.ok || !result.success) throw new Error(result.error || "Failed to update records.");
 
             toast({ title: "Batch Locked", description: `${leadIds.length} records marked as 'Researching'. Sequential queue updated.` });
+            setIsCopied(false);
             onComplete();
             onOpenChange(false);
         } catch (e: any) {
@@ -80,7 +84,7 @@ ${companyNames}`;
     };
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
+        <Dialog open={open} onOpenChange={(o) => { if(!isLoading) onOpenChange(o); }}>
             <DialogContent className="sm:max-w-2xl">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
@@ -88,22 +92,29 @@ ${companyNames}`;
                         Enhance Batch of {selectedLeads.length}
                     </DialogTitle>
                     <DialogDescription>
-                        Copy the names and the pre-formatted prompt below. Once you've copied them, mark them as "Researching" to move to the next batch.
+                        Follow these steps carefully to ensure the queue moves forward.
                     </DialogDescription>
                 </DialogHeader>
                 
                 <div className="space-y-4 py-4">
-                    <div className="space-y-2">
-                        <label className="text-xs font-bold uppercase text-muted-foreground">The AI Prompt (Precision Engineered)</label>
-                        <ScrollArea className="h-48 w-full border rounded-md p-3 bg-muted/30">
-                            <pre className="text-xs whitespace-pre-wrap font-sans leading-relaxed">{aiPrompt}</pre>
-                        </ScrollArea>
-                    </div>
+                    {!isCopied ? (
+                        <Alert>
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertTitle>Step 1: Copy Prompt</AlertTitle>
+                            <AlertDescription>Click the button below to copy the list and the precision prompt for Google AI.</AlertDescription>
+                        </Alert>
+                    ) : (
+                        <Alert className="bg-green-50 border-green-200 text-green-800">
+                            <ClipboardCheck className="h-4 w-4 text-green-600" />
+                            <AlertTitle>Step 2: Lock & Lock</AlertTitle>
+                            <AlertDescription>Now click "Mark as Researching" to move these records out of the 'New' queue.</AlertDescription>
+                        </Alert>
+                    )}
 
                     <div className="space-y-2">
-                        <label className="text-xs font-bold uppercase text-muted-foreground">Target Batch List</label>
-                        <ScrollArea className="h-24 w-full border rounded-md p-3 bg-muted/10 font-mono text-[10px]">
-                            {companyNames}
+                        <label className="text-xs font-bold uppercase text-muted-foreground">The AI Prompt (Copy this)</label>
+                        <ScrollArea className="h-48 w-full border rounded-md p-3 bg-muted/30">
+                            <pre className="text-xs whitespace-pre-wrap font-sans leading-relaxed">{aiPrompt}</pre>
                         </ScrollArea>
                     </div>
                 </div>
@@ -112,7 +123,7 @@ ${companyNames}`;
                     <Button variant="outline" onClick={handleCopyAll}>
                         <Copy className="mr-2 h-4 w-4" /> Copy Prompt & List
                     </Button>
-                    <Button onClick={handleMarkAsResearching} disabled={isLoading} className="bg-amber-600 hover:bg-amber-700 text-white">
+                    <Button onClick={handleMarkAsResearching} disabled={isLoading || !isCopied} className="bg-amber-600 hover:bg-amber-700 text-white">
                         {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <ClipboardCheck className="mr-2 h-4 w-4" />}
                         Mark as Researching & Next 50
                     </Button>
