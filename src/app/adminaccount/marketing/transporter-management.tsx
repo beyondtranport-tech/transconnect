@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -5,7 +6,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, Truck, Edit, Trash2, Send, CheckCircle, Users, MailCheck, MailQuestion, Filter, Save, Search, Zap, RotateCcw } from 'lucide-react';
+import { Loader2, PlusCircle, Truck, Edit, Trash2, Send, CheckCircle, Users, MailCheck, MailQuestion, Filter, Save, Search, Zap, RotateCcw, XCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -302,16 +303,13 @@ export default function TransporterManagement() {
         const matchesAssignee = assigneeFilter === 'all' || p.assigneeId === assigneeFilter;
         
         let matchesData = true;
-        if (dataFilter === 'no-email') {
-            const email = (p.email || p.email_address || '').toString().toLowerCase().trim();
-            matchesData = !email || email === 'null' || email === 'n/a';
-        }
+        const email = (p.email || p.email_address || '').toString().toLowerCase().trim();
+        const isInvalidEmail = !email || email === 'null' || email === 'n/a' || email === 'none';
+
+        if (dataFilter === 'no-email') matchesData = isInvalidEmail;
         else if (dataFilter === 'no-phone') matchesData = !p.phone;
         else if (dataFilter === 'no-website') matchesData = !p.website;
-        else if (dataFilter === 'has-email') {
-            const email = (p.email || p.email_address || '').toString().toLowerCase().trim();
-            matchesData = !!email && email !== 'null' && email !== 'n/a';
-        }
+        else if (dataFilter === 'has-email') matchesData = !isInvalidEmail;
         else if (dataFilter === 'has-phone') matchesData = !!p.phone;
         else if (dataFilter === 'has-website') matchesData = !!p.website;
 
@@ -322,9 +320,10 @@ export default function TransporterManagement() {
   const newRecordsRemaining = useMemo(() => {
       return partners.filter(p => {
           const email = (p.email || p.email_address || '').toString().toLowerCase().trim();
-          const isInvalid = !email || email === 'null' || email === 'n/a';
-          const isResearchable = !p.status || p.status === 'new'; // Strict exclusion of contacted
-          return isInvalid && isResearchable;
+          const isInvalidEmail = !email || email === 'null' || email === 'n/a' || email === 'none';
+          // Now including 'contacted' records if they are still missing an email
+          const isResearchable = !p.status || p.status === 'new' || p.status === 'contacted'; 
+          return isInvalidEmail && isResearchable;
       }).length;
   }, [partners]);
 
@@ -341,10 +340,11 @@ export default function TransporterManagement() {
       for (const p of partners) {
           const name = (p.companyName || '').trim().toLowerCase();
           const email = (p.email || p.email_address || '').toString().toLowerCase().trim();
-          const isInvalid = !email || email === 'null' || email === 'n/a';
-          const isResearchable = !p.status || p.status === 'new'; // DO NOT include contacted/researching
+          const isInvalidEmail = !email || email === 'null' || email === 'n/a' || email === 'none';
+          // Including 'contacted' but prioritized for 'new' or blank status
+          const isResearchable = !p.status || p.status === 'new' || p.status === 'contacted'; 
           
-          if (isInvalid && isResearchable && name && !uniqueNames.has(name)) {
+          if (isInvalidEmail && isResearchable && name && !uniqueNames.has(name)) {
               targets.push(p);
               uniqueNames.add(name);
               if (targets.length >= 30) break;
@@ -409,7 +409,7 @@ export default function TransporterManagement() {
         header: 'Email',
         cell: ({ row }) => {
             const email = (row.original.email || '').toString().toLowerCase().trim();
-            const isInvalid = !email || email === 'null' || email === 'n/a';
+            const isInvalid = !email || email === 'null' || email === 'n/a' || email === 'none';
             return <div className={cn(isInvalid ? "text-muted-foreground italic" : "")}>{isInvalid ? "Missing" : email}</div>
         }
     },
@@ -419,11 +419,14 @@ export default function TransporterManagement() {
             {row.original.lastOutreachAt && <span className="text-[10px] text-muted-foreground">{formatDateSafe(row.original.lastOutreachAt)}</span>}
         </div>
     )},
-    { accessorKey: 'lastOpenedAt', header: 'Read Status', cell: ({row}) => (
-        <div className="flex items-center gap-2">
-            {row.original.lastOpenedAt ? <Badge className="bg-green-100 text-green-700"><MailCheck className="mr-1 h-3 w-3" /> Read</Badge> : <Badge variant="outline" className="text-muted-foreground"><MailQuestion className="mr-1 h-3 w-3" /> Sent</Badge>}
-        </div>
-    )},
+    { accessorKey: 'lastOpenedAt', header: 'Read Status', cell: ({row}) => {
+        if (!row.original.lastOutreachAt) return <span className="text-[10px] text-muted-foreground uppercase font-bold">No Outreach</span>;
+        return (
+            <div className="flex items-center gap-2">
+                {row.original.lastOpenedAt ? <Badge className="bg-green-100 text-green-700"><MailCheck className="mr-1 h-3 w-3" /> Read</Badge> : <Badge variant="outline" className="text-muted-foreground"><MailQuestion className="mr-1 h-3 w-3" /> Sent</Badge>}
+            </div>
+        )
+    }},
     { accessorKey: 'assigneeId', header: 'Assignee', cell: ({row}) => (
         <div className="flex items-center gap-2">
             <Users className="h-3 w-3 text-muted-foreground" />

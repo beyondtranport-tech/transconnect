@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect, Suspense } from 'react';
@@ -395,16 +396,13 @@ function LeadsDatabaseComponent() {
         const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
         
         let matchesData = true;
-        if (dataFilter === 'no-email') {
-            const email = (p.email || p.email_address || '').toString().toLowerCase().trim();
-            matchesData = !email || email === 'null' || email === 'n/a';
-        }
+        const email = (p.email || p.email_address || '').toString().toLowerCase().trim();
+        const isInvalidEmail = !email || email === 'null' || email === 'n/a' || email === 'none';
+
+        if (dataFilter === 'no-email') matchesData = isInvalidEmail;
         else if (dataFilter === 'no-phone') matchesData = !p.phone;
         else if (dataFilter === 'no-website') matchesData = !p.website;
-        else if (dataFilter === 'has-email') {
-             const email = (p.email || p.email_address || '').toString().toLowerCase().trim();
-             matchesData = !!email && email !== 'null' && email !== 'n/a';
-        }
+        else if (dataFilter === 'has-email') matchesData = !isInvalidEmail;
         else if (dataFilter === 'has-phone') matchesData = !!p.phone;
         else if (dataFilter === 'has-website') matchesData = !!p.website;
 
@@ -415,9 +413,10 @@ function LeadsDatabaseComponent() {
   const newRecordsRemaining = useMemo(() => {
     return (leads || []).filter(p => {
         const email = (p.email || p.email_address || '').toString().toLowerCase().trim();
-        const isInvalid = !email || email === 'null' || email === 'n/a';
-        const isResearchable = !p.status || p.status === 'new'; // DO NOT include contacted/researching
-        return isInvalid && isResearchable;
+        const isInvalidEmail = !email || email === 'null' || email === 'n/a' || email === 'none';
+        // Now including 'contacted' records if they are still missing an email
+        const isResearchable = !p.status || p.status === 'new' || p.status === 'contacted'; 
+        return isInvalidEmail && isResearchable;
     }).length;
   }, [leads]);
 
@@ -433,10 +432,11 @@ function LeadsDatabaseComponent() {
       for (const p of leads) {
           const name = (p.companyName || '').trim().toLowerCase();
           const email = (p.email || p.email_address || '').toString().toLowerCase().trim();
-          const isInvalid = !email || email === 'null' || email === 'n/a';
-          const isResearchable = !p.status || p.status === 'new'; // Strict exclusion
+          const isInvalidEmail = !email || email === 'null' || email === 'n/a' || email === 'none';
+          // Including 'contacted' but prioritized for 'new' or blank status
+          const isResearchable = !p.status || p.status === 'new' || p.status === 'contacted'; 
           
-          if (isInvalid && isResearchable && name && !uniqueNames.has(name)) {
+          if (isInvalidEmail && isResearchable && name && !uniqueNames.has(name)) {
               targets.push(p);
               uniqueNames.add(name);
               if (targets.length >= 30) break;
@@ -491,7 +491,7 @@ function LeadsDatabaseComponent() {
         header: 'Email',
         cell: ({ row }) => {
             const email = (row.original.email || '').toString().toLowerCase().trim();
-            const isInvalid = !email || email === 'null' || email === 'n/a';
+            const isInvalid = !email || email === 'null' || email === 'n/a' || email === 'none';
             return <div className={cn(isInvalid ? "text-muted-foreground italic" : "")}>{isInvalid ? "Missing" : email}</div>
         }
     },
@@ -506,19 +506,22 @@ function LeadsDatabaseComponent() {
     },
     {
         header: 'Read Status',
-        cell: ({row}) => (
-            <div className="flex items-center gap-2">
-                {row.original.lastOpenedAt ? (
-                    <Badge variant="default" className="bg-green-100 text-green-700 border-green-200">
-                        <MailCheck className="mr-1 h-3 w-3" /> Read
-                    </Badge>
-                ) : (
-                    <Badge variant="outline" className="text-muted-foreground">
-                        <MailQuestion className="mr-1 h-3 w-3" /> Sent
-                    </Badge>
-                )}
-            </div>
-        )
+        cell: ({row}) => {
+            if (!row.original.lastOutreachAt) return <span className="text-[10px] text-muted-foreground uppercase font-bold">No Outreach</span>;
+            return (
+                <div className="flex items-center gap-2">
+                    {row.original.lastOpenedAt ? (
+                        <Badge variant="default" className="bg-green-100 text-green-700 border-green-200">
+                            <MailCheck className="mr-1 h-3 w-3" /> Read
+                        </Badge>
+                    ) : (
+                        <Badge variant="outline" className="text-muted-foreground">
+                            <MailQuestion className="mr-1 h-3 w-3" /> Sent
+                        </Badge>
+                    )}
+                </div>
+            )
+        }
     },
     { accessorKey: 'status', header: 'Status', cell: ({ row }) => <Badge className="capitalize">{row.original.status}</Badge> },
     {
