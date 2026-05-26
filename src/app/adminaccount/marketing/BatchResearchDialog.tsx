@@ -21,30 +21,20 @@ export function BatchResearchDialog({ open, onOpenChange, selectedLeads, onCompl
     const [isCopied, setIsCopied] = useState(false);
     const { toast } = useToast();
 
-    // ID-First identification for AI
-    const companyList = selectedLeads.map(l => `[ID: ${l.id}] NAME: ${l.companyName || `${l.firstName} ${l.lastName}`}`).join('\n');
+    // ID-First identification for AI - minimized for token efficiency
+    const companyList = selectedLeads.map(l => `[ID: ${l.id}] ${l.companyName || `${l.firstName} ${l.lastName}`}`).join('\n');
     
     const aiPrompt = `STRICT INSTRUCTION: RETURN ONLY A RAW JSON ARRAY. NO CONVERSATIONAL TEXT. NO MARKDOWN CODE BLOCKS. 
 
-ACT AS A HIGH-INTELLIGENCE INVESTIGATIVE RESEARCH AGENT. Find CURRENT contact and management details for the following South African companies.
+ACT AS A HIGH-INTELLIGENCE INVESTIGATIVE RESEARCH AGENT. Find CURRENT contact details for the following South African companies.
 
 INVESTIGATIVE RULES:
 1. IDENTITY PERSISTENCE (CRITICAL): For every record, you MUST return the "record_id" exactly as provided in the brackets [ID: ...]. This is used for database syncing.
 2. LEADERSHIP SEARCH: Actively search for the name of the "Managing Director", "Owner", or "Principal". Return this in "contact_person".
 3. REGISTRY CHECK: Cross-reference with the SARS Carrier/Clearing Database and CIPC records to find verified professional emails.
 
-REQUIRED OUTPUT SCHEMA (JSON ARRAY):
-[
-  {
-    "record_id": "The provided ID from the brackets",
-    "company_name": "Verified Company Name",
-    "contact_person": "Full Name of Director/Owner",
-    "email_address": "Verified Email Address",
-    "telephone_number": "Phone Number",
-    "website": "URL",
-    "physical_address": "Full Physical Address"
-  }
-]
+OUTPUT FORMAT (JSON ARRAY):
+[{"record_id":"...","company_name":"...","contact_person":"...","email_address":"...","telephone_number":"...","website":"...","physical_address":"..."}]
 
 COMPANIES TO RESEARCH:
 ${companyList}`;

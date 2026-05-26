@@ -132,7 +132,7 @@ export async function POST(req: NextRequest) {
                     let existingData = null;
 
                     if (targetId) {
-                        // Check both collections for the ID
+                        // Priority 1: ID-Locked matching across both collections
                         const [leadSnap, partnerSnap] = await Promise.all([
                             db.collection('leads').doc(targetId).get(),
                             db.collection('partners').doc(targetId).get()
@@ -142,12 +142,13 @@ export async function POST(req: NextRequest) {
                             existingData = leadSnap.exists ? leadSnap.data() : partnerSnap.data();
                             updatedCount++;
                         } else {
-                            // ID provided but not found? Reset to allow name-based match
+                            // ID provided but not found? This should be rare with our prompts.
                             targetId = null;
                         }
                     }
 
                     if (!targetId) {
+                        // Priority 2: Name-based fallback to prevent duplicates
                         const companyNameClean = (normalized.companyName || '').trim();
                         if (!companyNameClean) continue;
                         const existingLeads = await db.collection('leads').where('companyName', '==', companyNameClean).get();
