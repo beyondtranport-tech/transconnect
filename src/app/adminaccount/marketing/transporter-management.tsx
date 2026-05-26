@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
@@ -25,6 +25,7 @@ import { EnrichPartnerButton, BulkEnrichButton } from './EnrichPartnerButton';
 import { Label } from '@/components/ui/label';
 import { BatchResearchDialog } from './BatchResearchDialog';
 import { BulkImportDialog } from './BulkImportDialog';
+import { BulkOutreachUpdateDialog } from './BulkOutreachUpdateDialog';
 import { Checkbox } from '@/components/ui/checkbox';
 
 async function performAdminAction(token: string, action: string, payload: any) {
@@ -475,6 +476,9 @@ export default function TransporterManagement() {
             <CardDescription>Manage your transporter leads and pipeline.</CardDescription>
           </div>
           <div className="flex gap-2">
+            <BulkOutreachUpdateDialog onComplete={forceRefresh}>
+                <Button variant="outline"><Send className="mr-2 h-4 w-4" /> Bulk Update Outreach</Button>
+            </BulkOutreachUpdateDialog>
             <Button variant="outline" size="sm" onClick={handleResetQueue} disabled={isResetting}>
                 {isResetting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <RotateCcw className="mr-2 h-4 w-4" />}
                 Reset Stuck Research

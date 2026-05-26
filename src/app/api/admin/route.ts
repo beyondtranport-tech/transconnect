@@ -74,11 +74,64 @@ export async function POST(req: NextRequest) {
 
         // Basic permissions check
         if (!isAdmin) {
-             const allowedUserActions = ['getAuditLogs', 'logCommunication', 'bulkSavePartners', 'getPartnersByType', 'markLeadsAsResearching', 'getPlatformStaff', 'findDuplicateLeads', 'deleteLeads', 'resetResearchQueue'];
+             const allowedUserActions = ['getAuditLogs', 'logCommunication', 'bulkSavePartners', 'getPartnersByType', 'markLeadsAsResearching', 'getPlatformStaff', 'findDuplicateLeads', 'deleteLeads', 'resetResearchQueue', 'bulkUpdateOutreach'];
              if (!allowedUserActions.includes(action)) throw new Error("Forbidden.");
         }
 
         switch (action) {
+            case 'bulkUpdateOutreach': {
+                const { entries, subject } = payload;
+                if (!entries || !Array.isArray(entries)) throw new Error("Invalid payload.");
+
+                // Fetch all to avoid N+1 query overhead for 5,000 records
+                const snap = await db.collection('leads').get();
+                const nameMap = new Map();
+                const emailMap = new Map();
+
+                snap.docs.forEach(doc => {
+                    const data = doc.data();
+                    const name = (data.companyName || '').trim().toLowerCase();
+                    const email = (data.email || '').trim().toLowerCase();
+                    if (name) {
+                        if (!nameMap.has(name)) nameMap.set(name, []);
+                        nameMap.get(name).push(doc);
+                    }
+                    if (email) {
+                        if (!emailMap.has(email)) emailMap.set(email, []);
+                        emailMap.get(email).push(doc);
+                    }
+                });
+
+                const batch = db.batch();
+                let count = 0;
+                const processedIds = new Set();
+
+                for (const entry of entries) {
+                    const cleanEntry = entry.trim().toLowerCase();
+                    if (!cleanEntry) continue;
+
+                    // Match by name or email
+                    const matches = [...(nameMap.get(cleanEntry) || []), ...(emailMap.get(cleanEntry) || [])];
+                    
+                    matches.forEach(docRef => {
+                        if (!processedIds.has(docRef.id)) {
+                            const update = {
+                                lastOutreachSubject: subject,
+                                lastOutreachAt: FieldValue.serverTimestamp(),
+                                status: 'contacted',
+                                updatedAt: FieldValue.serverTimestamp()
+                            };
+                            batch.update(docRef.ref, update);
+                            batch.set(db.collection('partners').doc(docRef.id), update, { merge: true });
+                            processedIds.add(docRef.id);
+                            count++;
+                        }
+                    });
+                }
+                
+                if (count > 0) await batch.commit();
+                return NextResponse.json({ success: true, count });
+            }
             case 'resetResearchQueue': {
                 const { type } = payload;
                 const roleMapping: Record<string, string> = {

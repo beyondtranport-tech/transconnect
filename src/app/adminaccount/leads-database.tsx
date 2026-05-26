@@ -45,6 +45,7 @@ import { PartnerTasksDialog } from './marketing/PartnerTasksDialog';
 import { CommunicationLogDialog } from './marketing/CommunicationLogDialog';
 import { BulkImportDialog } from './marketing/BulkImportDialog';
 import { BatchResearchDialog } from './marketing/BatchResearchDialog';
+import { BulkOutreachUpdateDialog } from './marketing/BulkOutreachUpdateDialog';
 
 const leadSchema = z.object({
   companyName: z.string().min(1, 'Company name is required'),
@@ -587,6 +588,9 @@ function LeadsDatabaseComponent() {
             <CardDescription>Manage your sales leads.</CardDescription>
           </div>
           <div className="flex items-center gap-2">
+            <BulkOutreachUpdateDialog onComplete={forceRefresh}>
+                <Button variant="outline"><Send className="mr-2 h-4 w-4" /> Bulk Update Outreach</Button>
+            </BulkOutreachUpdateDialog>
             <Button variant="default" className="bg-amber-600 hover:bg-amber-700" onClick={handleEnhance30}>
                 <Zap className="mr-2 h-4 w-4" /> Enhance 30 Records
             </Button>
