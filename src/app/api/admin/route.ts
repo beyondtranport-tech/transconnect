@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
 
                 const snap = await db.collection('leads')
                     .where('role', 'in', rolesToSearch)
-                    .where('status', '==', 'contacted')
+                    .where('status', 'in', ['contacted', 'qualified'])
                     .get();
                 
                 if (snap.empty) return NextResponse.json({ success: true, count: 0 });
@@ -105,8 +105,16 @@ export async function POST(req: NextRequest) {
                     const isInvalid = !email || email === 'null' || email === 'n/a';
                     
                     if (isInvalid) {
-                        batch.update(doc.ref, { status: 'new', lastOutreachSubject: null, lastOutreachAt: null });
-                        batch.update(db.collection('partners').doc(doc.id), { status: 'new' });
+                        batch.update(doc.ref, { 
+                            status: 'new', 
+                            researchStatus: 'pending',
+                            updatedAt: FieldValue.serverTimestamp()
+                        });
+                        batch.update(db.collection('partners').doc(doc.id), { 
+                            status: 'new',
+                            researchStatus: 'pending',
+                            updatedAt: FieldValue.serverTimestamp() 
+                        });
                         count++;
                     }
                 });
@@ -142,6 +150,7 @@ export async function POST(req: NextRequest) {
                         id: ref.id,
                         role: leadRole,
                         status: hasContactInfo ? 'qualified' : 'contacted',
+                        researchStatus: 'completed',
                         updatedAt: FieldValue.serverTimestamp(),
                         createdAt: existingData ? existingData.createdAt : FieldValue.serverTimestamp()
                     };
@@ -200,12 +209,11 @@ export async function POST(req: NextRequest) {
                 for (const id of leadIds) {
                     const update = { 
                         status: 'contacted', 
-                        lastOutreachSubject: 'Manual AI Research', 
-                        lastOutreachAt: FieldValue.serverTimestamp(), 
+                        researchStatus: 'researching',
                         updatedAt: FieldValue.serverTimestamp() 
                     };
                     batch.set(db.collection('leads').doc(id), update, { merge: true });
-                    batch.set(db.collection('partners').doc(id), { status: 'contacted', updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+                    batch.set(db.collection('partners').doc(id), { status: 'contacted', researchStatus: 'researching', updatedAt: FieldValue.serverTimestamp() }, { merge: true });
                 }
                 await batch.commit();
                 return NextResponse.json({ success: true });

@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -6,7 +5,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, Truck, Edit, Trash2, Send, CheckCircle, Users, MailCheck, MailQuestion, Filter, Save, Search, Zap, RotateCcw, XCircle } from 'lucide-react';
+import { Loader2, PlusCircle, Truck, Edit, Trash2, Send, CheckCircle, Users, MailCheck, MailQuestion, Filter, Save, Search, Zap, RotateCcw, XCircle, Sparkles } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -321,9 +320,9 @@ export default function TransporterManagement() {
       return partners.filter(p => {
           const email = (p.email || p.email_address || '').toString().toLowerCase().trim();
           const isInvalidEmail = !email || email === 'null' || email === 'n/a' || email === 'none';
-          // Now including 'contacted' records if they are still missing an email
-          const isResearchable = !p.status || p.status === 'new' || p.status === 'contacted'; 
-          return isInvalidEmail && isResearchable;
+          // Includes records that need research
+          const isResearchable = !p.status || p.status === 'new' || (p.status === 'contacted' && isInvalidEmail); 
+          return isResearchable;
       }).length;
   }, [partners]);
 
@@ -341,10 +340,11 @@ export default function TransporterManagement() {
           const name = (p.companyName || '').trim().toLowerCase();
           const email = (p.email || p.email_address || '').toString().toLowerCase().trim();
           const isInvalidEmail = !email || email === 'null' || email === 'n/a' || email === 'none';
-          // Including 'contacted' but prioritized for 'new' or blank status
-          const isResearchable = !p.status || p.status === 'new' || p.status === 'contacted'; 
           
-          if (isInvalidEmail && isResearchable && name && !uniqueNames.has(name)) {
+          // Selection criteria: Missing email AND (New OR already marked but incomplete)
+          const isResearchable = !p.status || p.status === 'new' || (p.status === 'contacted' && isInvalidEmail); 
+          
+          if (isResearchable && name && !uniqueNames.has(name)) {
               targets.push(p);
               uniqueNames.add(name);
               if (targets.length >= 30) break;
@@ -409,13 +409,23 @@ export default function TransporterManagement() {
         header: 'Email',
         cell: ({ row }) => {
             const email = (row.original.email || '').toString().toLowerCase().trim();
-            const isInvalid = !email || email === 'null' || email === 'n/a' || email === 'none';
+            const isInvalid = !email || email === 'null' || email === 'n/a';
             return <div className={cn(isInvalid ? "text-muted-foreground italic" : "")}>{isInvalid ? "Missing" : email}</div>
+        }
+    },
+    {
+        header: 'Research',
+        cell: ({row}) => {
+            const isResearching = row.original.researchStatus === 'researching';
+            const isCompleted = row.original.researchStatus === 'completed' || !!row.original.email;
+            if (isResearching) return <Badge variant="outline" className="animate-pulse text-amber-600 border-amber-200 bg-amber-50">Searching...</Badge>;
+            if (isCompleted) return <Badge variant="default" className="bg-green-100 text-green-700 border-green-200">Enriched</Badge>;
+            return <span className="text-xs text-muted-foreground">-</span>;
         }
     },
     { accessorKey: 'lastOutreachSubject', header: 'Last Outreach', cell: ({row}) => (
         <div className="flex flex-col gap-1">
-            <span className="text-xs font-bold text-primary">{row.original.lastOutreachSubject || 'None'}</span>
+            <span className="text-xs font-bold text-primary">{row.original.lastOutreachSubject || <span className="text-muted-foreground italic font-normal">None</span>}</span>
             {row.original.lastOutreachAt && <span className="text-[10px] text-muted-foreground">{formatDateSafe(row.original.lastOutreachAt)}</span>}
         </div>
     )},
