@@ -43,10 +43,10 @@ REQUIRED OUTPUT SCHEMA (JSON):
 {
   "company_name": "${companyName}",
   "contact_person": "Full Name or null",
-  "email_address": "email@example.com or null",
-  "telephone_number": "011... or null",
-  "website": "www... or null",
-  "physical_address": "Street... or null"
+  "email_address": "Email Address or null",
+  "telephone_number": "Phone Number or null",
+  "website": "Website URL or null",
+  "physical_address": "Physical Address or null"
 }
 
 COMPANY TO RESEARCH:

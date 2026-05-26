@@ -36,19 +36,19 @@ RESEARCH STRATEGY:
 REQUIRED OUTPUT SCHEMA (JSON ARRAY):
 [
   {
-    "company_name": "Exact Name",
+    "company_name": "Company Name Here",
     "contact_person": "Full Name or null",
-    "email_address": "email@example.com or null",
-    "telephone_number": "011... or null",
-    "website": "www... or null",
-    "physical_address": "Street... or null"
+    "email_address": "Email Address or null",
+    "telephone_number": "Phone Number or null",
+    "website": "Website URL or null",
+    "physical_address": "Physical Address or null"
   }
 ]
 
 COMPANIES TO RESEARCH:
 ${companyNames}
 
-FINAL REMINDER: RETURN ONLY THE JSON ARRAY. START WITH [ AND END WITH ].`;
+FINAL REMINDER: RETURN ONLY THE RAW JSON ARRAY. START WITH [ AND END WITH ].`;
 
     const handleCopyAll = async () => {
         try {
