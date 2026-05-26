@@ -40,7 +40,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { EngageDialog } from './marketing/EngageDialog';
 import { Label } from '@/components/ui/label';
 import { formatDateSafe, cn } from '@/lib/utils';
-import { EnrichPartnerButton, BulkEnrichButton } from './marketing/EnrichPartnerButton';
+import { EnrichPartnerButton } from './marketing/EnrichPartnerButton';
 import { PartnerTasksDialog } from './marketing/PartnerTasksDialog';
 import { CommunicationLogDialog } from './marketing/CommunicationLogDialog';
 import { BulkImportDialog } from './marketing/BulkImportDialog';

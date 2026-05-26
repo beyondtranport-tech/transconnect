@@ -26,10 +26,10 @@ export function BatchResearchDialog({ open, onOpenChange, selectedLeads, onCompl
     
     const aiPrompt = `STRICT INSTRUCTION: RETURN ONLY A RAW JSON ARRAY. NO CONVERSATIONAL TEXT. NO MARKDOWN CODE BLOCKS. 
 
-ACT AS A HIGH-INTELLIGENCE INVESTIGATIVE RESEARCH AGENT. Your goal is to find CURRENT contact and management details for the following South African companies.
+ACT AS A HIGH-INTELLIGENCE INVESTIGATIVE RESEARCH AGENT. Find CURRENT contact and management details for the following South African companies.
 
 INVESTIGATIVE RULES:
-1. IDENTITY PERSISTENCE (CRITICAL): For every record, you MUST return the "record_id" exactly as provided in the brackets [ID: ...]. This is more important than the name.
+1. IDENTITY PERSISTENCE (CRITICAL): For every record, you MUST return the "record_id" exactly as provided in the brackets [ID: ...]. This is used for database syncing.
 2. LEADERSHIP SEARCH: Actively search for the name of the "Managing Director", "Owner", or "Principal". Return this in "contact_person".
 3. REGISTRY CHECK: Cross-reference with the SARS Carrier/Clearing Database and CIPC records to find verified professional emails.
 

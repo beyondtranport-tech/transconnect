@@ -24,7 +24,6 @@ function serializeTimestamps(docData: any): any {
 /**
  * Universal Data Normalization
  * Strictly maps diverse AI fields to standard CRM fields (firstName, lastName, email, etc.)
- * Handles ID recovery and namespacing.
  */
 function normalizePartnerData(data: any) {
     const result: any = { ...data };
@@ -34,7 +33,6 @@ function normalizePartnerData(data: any) {
         ['member', 'candidate', 'null', 'n/a', 'none', 'undefined', 'n a'].includes(val.toString().toLowerCase().trim());
 
     // 1. Recover Record ID
-    // Search for ID in various possible keys returned by AI
     const idKeys = ['record_id', 'recordId', 'id', 'record', 'uid'];
     for (const key of idKeys) {
         const val = data[key]?.toString().trim();
@@ -64,7 +62,6 @@ function normalizePartnerData(data: any) {
     });
 
     // 3. Handle Identity Construction (firstName/lastName)
-    // First, try explicit name fields
     const firstNameKeys = ['firstName', 'first_name', 'fname', 'given_name'];
     const lastNameKeys = ['lastName', 'last_name', 'lname', 'surname', 'family_name'];
 
@@ -77,7 +74,6 @@ function normalizePartnerData(data: any) {
         if (val && !isPlaceholder(val)) { result.lastName = val; break; }
     }
 
-    // If still missing, split from Full Name / Contact Person
     if (!result.firstName) {
         const rawContact = (data.contact_person || data.contactPerson || data.contact || '').toString().trim();
         if (rawContact && !isPlaceholder(rawContact)) {
@@ -88,7 +84,6 @@ function normalizePartnerData(data: any) {
         }
     }
 
-    // Fallback defaults for mandatory fields
     if (!result.firstName) result.firstName = 'Member';
     if (!result.lastName) result.lastName = 'Candidate';
 
@@ -133,54 +128,53 @@ export async function POST(req: NextRequest) {
 
                 for (const p of partners) {
                     const normalized = normalizePartnerData(p);
-                    
-                    let leadRef;
+                    let targetId = normalized.record_id;
                     let existingData = null;
 
-                    // 1. PRIMARY MATCH: UNIQUE ID (IDENTITY PERSISTENCE)
-                    if (normalized.record_id) {
-                        leadRef = db.collection('leads').doc(normalized.record_id);
-                        const docSnap = await leadRef.get();
-                        if (docSnap.exists) {
-                            existingData = docSnap.data();
+                    if (targetId) {
+                        // Check both collections for the ID
+                        const [leadSnap, partnerSnap] = await Promise.all([
+                            db.collection('leads').doc(targetId).get(),
+                            db.collection('partners').doc(targetId).get()
+                        ]);
+                        
+                        if (leadSnap.exists || partnerSnap.exists) {
+                            existingData = leadSnap.exists ? leadSnap.data() : partnerSnap.data();
                             updatedCount++;
                         } else {
-                            // The ID provided by AI doesn't exist? This is rare, but we fallback to name
-                            leadRef = null;
+                            // ID provided but not found? Reset to allow name-based match
+                            targetId = null;
                         }
                     }
 
-                    // 2. SECONDARY MATCH: COMPANY NAME
-                    if (!leadRef) {
+                    if (!targetId) {
                         const companyNameClean = (normalized.companyName || '').trim();
                         if (!companyNameClean) continue;
                         const existingLeads = await db.collection('leads').where('companyName', '==', companyNameClean).get();
                         if (!existingLeads.empty) {
-                            leadRef = existingLeads.docs[0].ref;
+                            targetId = existingLeads.docs[0].id;
                             existingData = existingLeads.docs[0].data();
                             updatedCount++;
                         } else {
-                            // 3. CREATE NEW RECORD
-                            leadRef = db.collection('leads').doc();
+                            const newRef = db.collection('leads').doc();
+                            targetId = newRef.id;
                             createdCount++;
                         }
                     }
 
-                    const partnerRef = db.collection('partners').doc(leadRef.id);
-                    const email = (normalized.email || '').toString().toLowerCase().trim();
-                    const hasContactInfo = !!email && email !== 'null' && email !== 'n/a';
+                    const leadRef = db.collection('leads').doc(targetId);
+                    const partnerRef = db.collection('partners').doc(targetId);
                     
                     const updateData = {
                         ...normalized,
-                        id: leadRef.id,
+                        id: targetId,
                         role: leadRole,
-                        // Ensure we don't downgrade status if already active
                         status: (existingData?.status === 'active' || existingData?.status === 'registered') 
                             ? existingData.status 
-                            : (hasContactInfo ? 'qualified' : 'contacted'),
+                            : (normalized.email ? 'qualified' : 'contacted'),
                         researchStatus: 'completed',
                         updatedAt: FieldValue.serverTimestamp(),
-                        createdAt: existingData ? (existingData.createdAt || FieldValue.serverTimestamp()) : FieldValue.serverTimestamp()
+                        createdAt: existingData?.createdAt || FieldValue.serverTimestamp()
                     };
 
                     batch.set(leadRef, updateData, { merge: true });
@@ -190,7 +184,7 @@ export async function POST(req: NextRequest) {
                 await batch.commit();
                 return NextResponse.json({ 
                     success: true, 
-                    message: `Bulk update complete. Updated: ${updatedCount}, Created: ${createdCount}.`,
+                    message: `Import complete. Records updated: ${updatedCount}, New: ${createdCount}.`,
                     updatedCount,
                     createdCount
                 });
@@ -215,8 +209,7 @@ export async function POST(req: NextRequest) {
 
                 const mergedMap = new Map();
                 partnersSnap.docs.forEach(doc => {
-                    const data = doc.data();
-                    mergedMap.set(doc.id, { id: doc.id, entryType: 'Member', ...serializeTimestamps(data) });
+                    mergedMap.set(doc.id, { id: doc.id, entryType: 'Member', ...serializeTimestamps(doc.data()) });
                 });
                 
                 leadsSnap.docs.forEach(doc => {

@@ -33,8 +33,7 @@ export function BulkImportDialog({ type, onComplete, children }: BulkImportDialo
 
     /**
      * Resilient Data Extractor
-     * Handled JSON arrays, individual objects, and fragmented text.
-     * Delegates mapping/normalization to the high-intelligence backend layer.
+     * Picks out JSON records even from messy conversational text.
      */
     const extractItemsFromText = (rawText: string) => {
         let results: any[] = [];
@@ -51,7 +50,6 @@ export function BulkImportDialog({ type, onComplete, children }: BulkImportDialo
             return Array.isArray(parsed) ? parsed : [parsed];
         } catch (e) {
             // 3. Fragment Recovery (Regex Extraction for { ... })
-            // This allows the user to paste a conversation that merely contains the records.
             const objectRegex = /\{(?:[^{}]|((?:\{[^{}]*\})))*\}/g;
             const matches = text.match(objectRegex);
 
@@ -68,7 +66,7 @@ export function BulkImportDialog({ type, onComplete, children }: BulkImportDialo
         }
 
         if (results.length === 0) {
-            throw new Error("No valid data found. Please ensure the text contains JSON objects like { \"company_name\": ... }");
+            throw new Error("No valid data found. Ensure the text contains JSON records.");
         }
 
         return results;
@@ -83,27 +81,8 @@ export function BulkImportDialog({ type, onComplete, children }: BulkImportDialo
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication failed.");
 
-            let rawPartners: any[] = [];
+            const rawPartners = extractItemsFromText(text);
 
-            // Process based on format
-            if (source === 'paste' || (file && (file.name.toLowerCase().endsWith('.json') || text.includes('{')))) {
-                rawPartners = extractItemsFromText(text);
-            } else {
-                // CSV Basic Fallback
-                const rows = text.split(/\r?\n/).filter(row => row.trim().length > 0);
-                if (rows.length < 2) throw new Error("File format not recognized.");
-                const headers = rows[0].split(',').map(h => h.trim().toLowerCase().replace(/["']/g, ''));
-                rawPartners = rows.slice(1).map(row => {
-                    const values = row.split(',').map(v => v.trim().replace(/^["']|["']$/g, ''));
-                    const p: any = {};
-                    headers.forEach((h, i) => { p[h] = values[i]; });
-                    return p;
-                });
-            }
-
-            if (rawPartners.length === 0) throw new Error("No data extracted.");
-
-            // Send to Backend for normalization and storage
             const response = await fetch('/api/admin', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -113,12 +92,16 @@ export function BulkImportDialog({ type, onComplete, children }: BulkImportDialo
                 }),
             });
 
+            const result = await response.json();
             if (!response.ok) {
-                const err = await response.json();
-                throw new Error(err.error || "Import failed on server.");
+                throw new Error(result.error || "Import failed on server.");
             }
 
-            toast({ title: "Import Successful", description: `Successfully processed ${rawPartners.length} records. Contacts are now 'Enriched'.` });
+            toast({ 
+                title: "Import Successful", 
+                description: result.message || `Processed ${rawPartners.length} records.`
+            });
+            
             setIsOpen(false);
             setPasteData('');
             setFile(null);
@@ -136,25 +119,25 @@ export function BulkImportDialog({ type, onComplete, children }: BulkImportDialo
             <DialogContent className="sm:max-w-2xl">
                 <DialogHeader>
                     <DialogTitle>Bulk Import {type}s</DialogTitle>
-                    <DialogDescription>Paste AI research results or upload a file. The system will automatically map the contact details.</DialogDescription>
+                    <DialogDescription>Paste AI results or upload a file. Existing records will be updated by ID.</DialogDescription>
                 </DialogHeader>
                 
                 <Tabs defaultValue="paste" className="py-4">
                     <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="paste"><ClipboardPaste className="mr-2 h-4 w-4" /> Paste Text/JSON</TabsTrigger>
+                        <TabsTrigger value="paste"><ClipboardPaste className="mr-2 h-4 w-4" /> Paste Results</TabsTrigger>
                         <TabsTrigger value="file"><Upload className="mr-2 h-4 w-4" /> Upload File</TabsTrigger>
                     </TabsList>
                     
                     <TabsContent value="paste" className="space-y-4 pt-4">
                         <Alert className="bg-primary/5 border-primary/20">
                             <Zap className="h-4 w-4 text-primary" />
-                            <AlertTitle>Smart Fragment Detection</AlertTitle>
-                            <AlertDescription>You can paste the entire AI chat response here. I will automatically extract any records I find and ignore the rest.</AlertDescription>
+                            <AlertTitle>Smart Extraction Active</AlertTitle>
+                            <AlertDescription>You can paste the entire AI chat response here. Records will be matched to your database by their unique ID.</AlertDescription>
                         </Alert>
                         <div className="space-y-2">
-                            <Label>Paste Content Below</Label>
+                            <Label>Paste AI Response</Label>
                             <Textarea 
-                                placeholder="Paste text or JSON objects here..." 
+                                placeholder="Paste the JSON list from AI here..." 
                                 className="min-h-[250px] font-mono text-xs" 
                                 value={pasteData}
                                 onChange={(e) => setPasteData(e.target.value)}
@@ -162,14 +145,14 @@ export function BulkImportDialog({ type, onComplete, children }: BulkImportDialo
                         </div>
                         <Button className="w-full" onClick={() => handleImport('paste')} disabled={isUploading || !pasteData.trim()}>
                             {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <CheckCircle className="mr-2 h-4 w-4" />}
-                            Extract & Import
+                            Process Import
                         </Button>
                     </TabsContent>
 
                     <TabsContent value="file" className="space-y-4 pt-4">
                         <div className="space-y-2">
-                            <Label htmlFor="import-file">Select CSV or JSON File</Label>
-                            <Input id="import-file" type="file" accept=".csv,.json" onChange={handleFileChange} disabled={isUploading} />
+                            <Label htmlFor="import-file">Select JSON File</Label>
+                            <Input id="import-file" type="file" accept=".json" onChange={handleFileChange} disabled={isUploading} />
                         </div>
                         <Button className="w-full" onClick={() => handleImport('file')} disabled={isUploading || !file}>
                             {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Upload className="mr-2 h-4 w-4" />}
