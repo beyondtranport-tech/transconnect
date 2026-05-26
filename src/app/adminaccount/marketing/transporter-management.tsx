@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -299,7 +298,6 @@ export default function TransporterManagement() {
 
   const staffMap = useMemo(() => new Map(staff.map(s => [s.id, `${s.firstName} ${s.lastName}`])), [staff]);
 
-  // STRICT Sequential Logic: Candidates are only those NOT currently searching and NOT yet completed/enriched
   const newRecordsRemaining = useMemo(() => {
       return partners.filter(p => {
           const email = (p.email || p.email_address || '').toString().toLowerCase().trim();
@@ -327,7 +325,6 @@ export default function TransporterManagement() {
           const email = (p.email || p.email_address || '').toString().toLowerCase().trim();
           const isInvalidEmail = !email || email === 'null' || email === 'n/a' || email === 'none';
           
-          // STRICT EXCLUSION: Skip if explicitly searching or already enriched
           const isSearching = p.researchStatus === 'researching';
           const isEnriched = p.researchStatus === 'completed' || !isInvalidEmail;
           
@@ -375,6 +372,23 @@ export default function TransporterManagement() {
     }
   }
 
+  const filteredTransporters = useMemo(() => {
+    return partners.filter(p => {
+        const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
+        const matchesAssignee = assigneeFilter === 'all' || p.assigneeId === assigneeFilter;
+        
+        let matchesData = true;
+        if (dataFilter === 'no-email') matchesData = !p.email;
+        else if (dataFilter === 'no-phone') matchesData = !p.phone;
+        else if (dataFilter === 'no-website') matchesData = !p.website;
+        else if (dataFilter === 'has-email') matchesData = !!p.email;
+        else if (dataFilter === 'has-phone') matchesData = !!p.phone;
+        else if (dataFilter === 'has-website') matchesData = !!p.website;
+
+        return matchesStatus && matchesAssignee && matchesData;
+    });
+  }, [partners, statusFilter, assigneeFilter, dataFilter]);
+
   const columns: ColumnDef<any>[] = [
     { 
         accessorKey: 'companyName', 
@@ -403,12 +417,12 @@ export default function TransporterManagement() {
     {
         header: 'Enhanced Status',
         cell: ({row}) => {
-            const isSearching = row.original.researchStatus === 'researching';
+            const isResearching = row.original.researchStatus === 'researching';
             const email = (row.original.email || '').toString().toLowerCase().trim();
             const isInvalidEmail = !email || email === 'null' || email === 'n/a';
             const isCompleted = row.original.researchStatus === 'completed' || !isInvalidEmail;
 
-            if (isSearching) return <Badge variant="outline" className="animate-pulse text-amber-600 border-amber-200 bg-amber-50">Searching...</Badge>;
+            if (isResearching) return <Badge variant="outline" className="animate-pulse text-amber-600 border-amber-200 bg-amber-50">Searching...</Badge>;
             if (isCompleted) return <Badge variant="default" className="bg-green-100 text-green-700 border-green-200">Enriched</Badge>;
             return <span className="text-xs text-muted-foreground">-</span>;
         }
