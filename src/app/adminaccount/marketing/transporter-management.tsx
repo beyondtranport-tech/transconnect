@@ -299,32 +299,16 @@ export default function TransporterManagement() {
 
   const staffMap = useMemo(() => new Map(staff.map(s => [s.id, `${s.firstName} ${s.lastName}`])), [staff]);
 
-  const filteredTransporters = useMemo(() => {
-    return partners.filter(p => {
-        const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
-        const matchesAssignee = assigneeFilter === 'all' || p.assigneeId === assigneeFilter;
-        
-        let matchesData = true;
-        const email = (p.email || p.email_address || '').toString().toLowerCase().trim();
-        const isInvalidEmail = !email || email === 'null' || email === 'n/a' || email === 'none';
-
-        if (dataFilter === 'no-email') matchesData = isInvalidEmail;
-        else if (dataFilter === 'no-phone') matchesData = !p.phone;
-        else if (dataFilter === 'no-website') matchesData = !p.website;
-        else if (dataFilter === 'has-email') matchesData = !isInvalidEmail;
-        else if (dataFilter === 'has-phone') matchesData = !!p.phone;
-        else if (dataFilter === 'has-website') matchesData = !!p.website;
-
-        return matchesStatus && matchesAssignee && matchesData;
-    });
-  }, [partners, statusFilter, assigneeFilter, dataFilter]);
-
+  // STRICT Sequential Logic: Candidates are only those NOT currently searching and NOT yet completed/enriched
   const newRecordsRemaining = useMemo(() => {
       return partners.filter(p => {
           const email = (p.email || p.email_address || '').toString().toLowerCase().trim();
           const isInvalidEmail = !email || email === 'null' || email === 'n/a' || email === 'none';
-          const isResearchable = !p.status || p.status === 'new' || (p.status === 'contacted' && isInvalidEmail); 
-          return isResearchable;
+          
+          const isSearching = p.researchStatus === 'researching';
+          const isEnriched = p.researchStatus === 'completed' || !isInvalidEmail;
+          
+          return !isSearching && !isEnriched;
       }).length;
   }, [partners]);
 
@@ -343,9 +327,11 @@ export default function TransporterManagement() {
           const email = (p.email || p.email_address || '').toString().toLowerCase().trim();
           const isInvalidEmail = !email || email === 'null' || email === 'n/a' || email === 'none';
           
-          const isResearchable = !p.status || p.status === 'new' || (p.status === 'contacted' && isInvalidEmail); 
+          // STRICT EXCLUSION: Skip if explicitly searching or already enriched
+          const isSearching = p.researchStatus === 'researching';
+          const isEnriched = p.researchStatus === 'completed' || !isInvalidEmail;
           
-          if (isResearchable && name && !uniqueNames.has(name)) {
+          if (!isSearching && !isEnriched && name && !uniqueNames.has(name)) {
               targets.push(p);
               uniqueNames.add(name);
               if (targets.length >= 30) break;
@@ -353,7 +339,7 @@ export default function TransporterManagement() {
       }
       
       if (targets.length === 0) {
-          toast({ title: "No targets found", description: "All records already have valid emails or are qualified." });
+          toast({ title: "No targets found", description: "All records are either currently being researched or have valid contact data." });
           return;
       }
 
@@ -417,9 +403,12 @@ export default function TransporterManagement() {
     {
         header: 'Enhanced Status',
         cell: ({row}) => {
-            const isResearching = row.original.researchStatus === 'researching';
-            const isCompleted = row.original.researchStatus === 'completed' || !!row.original.email;
-            if (isResearching) return <Badge variant="outline" className="animate-pulse text-amber-600 border-amber-200 bg-amber-50">Searching...</Badge>;
+            const isSearching = row.original.researchStatus === 'researching';
+            const email = (row.original.email || '').toString().toLowerCase().trim();
+            const isInvalidEmail = !email || email === 'null' || email === 'n/a';
+            const isCompleted = row.original.researchStatus === 'completed' || !isInvalidEmail;
+
+            if (isSearching) return <Badge variant="outline" className="animate-pulse text-amber-600 border-amber-200 bg-amber-50">Searching...</Badge>;
             if (isCompleted) return <Badge variant="default" className="bg-green-100 text-green-700 border-green-200">Enriched</Badge>;
             return <span className="text-xs text-muted-foreground">-</span>;
         }

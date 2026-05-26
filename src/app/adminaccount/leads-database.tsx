@@ -412,12 +412,16 @@ function LeadsDatabaseComponent() {
     });
   }, [leads, statusFilter, dataFilter]);
 
+  // STRICT Sequential Logic: Filter only records NOT yet searching and NOT yet enriched
   const newRecordsRemaining = useMemo(() => {
     return (leads || []).filter(p => {
         const email = (p.email || p.email_address || '').toString().toLowerCase().trim();
         const isInvalidEmail = !email || email === 'null' || email === 'n/a' || email === 'none';
-        const isResearchable = !p.status || p.status === 'new' || (p.status === 'contacted' && isInvalidEmail); 
-        return isResearchable;
+        
+        const isSearching = p.researchStatus === 'researching';
+        const isEnriched = p.researchStatus === 'completed' || !isInvalidEmail;
+        
+        return !isSearching && !isEnriched;
     }).length;
   }, [leads]);
 
@@ -434,9 +438,12 @@ function LeadsDatabaseComponent() {
           const name = (p.companyName || '').trim().toLowerCase();
           const email = (p.email || p.email_address || '').toString().toLowerCase().trim();
           const isInvalidEmail = !email || email === 'null' || email === 'n/a' || email === 'none';
-          const isResearchable = !p.status || p.status === 'new' || (p.status === 'contacted' && isInvalidEmail); 
           
-          if (isResearchable && name && !uniqueNames.has(name)) {
+          // STRICT EXCLUSION: Skip if searching, completed, or already has an email
+          const isSearching = p.researchStatus === 'researching';
+          const isEnriched = p.researchStatus === 'completed' || !isInvalidEmail;
+          
+          if (!isSearching && !isEnriched && name && !uniqueNames.has(name)) {
               targets.push(p);
               uniqueNames.add(name);
               if (targets.length >= 30) break;
@@ -444,7 +451,7 @@ function LeadsDatabaseComponent() {
       }
       
       if (targets.length === 0) {
-          toast({ title: "No targets found", description: "All records already have valid emails or are qualified." });
+          toast({ title: "No targets found", description: "All records are either currently being researched or have valid contact data." });
           return;
       }
 
@@ -499,7 +506,10 @@ function LeadsDatabaseComponent() {
         header: 'Enhanced Status',
         cell: ({row}) => {
             const isResearching = row.original.researchStatus === 'researching';
-            const isCompleted = row.original.researchStatus === 'completed' || !!row.original.email;
+            const email = (row.original.email || '').toString().toLowerCase().trim();
+            const isInvalidEmail = !email || email === 'null' || email === 'n/a';
+            const isCompleted = row.original.researchStatus === 'completed' || !isInvalidEmail;
+
             if (isResearching) return <Badge variant="outline" className="animate-pulse text-amber-600 border-amber-200 bg-amber-50">Searching...</Badge>;
             if (isCompleted) return <Badge variant="default" className="bg-green-100 text-green-700 border-green-200">Enriched</Badge>;
             return <span className="text-xs text-muted-foreground">-</span>;
@@ -560,7 +570,7 @@ function LeadsDatabaseComponent() {
       {engageLead && (
         <EngageDialog 
           open={!!engageLead} 
-          onOpenChange={(o) => !o && setType(null)} 
+          onOpenChange={(o) => !o && setEngageLead(null)} 
           partner={engageLead} 
           audience={engageLead.role?.toLowerCase().includes('supplier') ? 'suppliers' : engageLead.role?.toLowerCase().includes('transporter') ? 'transporters' : 'partners'} 
           onEngageSuccess={forceRefresh}
