@@ -37,17 +37,17 @@ ACT AS A HIGH-INTELLIGENCE INVESTIGATIVE RESEARCH AGENT. Find CURRENT contact an
 INVESTIGATIVE STRATEGY:
 1. LEADERSHIP SEARCH: Actively look for the name of the "Managing Director", "Owner", or "Principal".
 2. REGISTRY CHECK: Cross-reference with the SARS Carrier/Clearing Database and CIPC records.
-3. SOCIAL INTELLIGENCE: Search LinkedIn and Facebook for official pages.
-4. LOCATION PRECISION: Find the physical office location. If the full address is missing, YOU MUST provide the Suburb and City.
+3. IDENTITY PERSISTENCE: You MUST return "record_id": "${partner.id}" in your response.
 
 REQUIRED OUTPUT SCHEMA (JSON):
 {
+  "record_id": "${partner.id}",
   "company_name": "${companyName}",
   "contact_person": "Full Name of Director/Owner",
   "email_address": "Verified Email Address",
   "telephone_number": "Phone Number",
   "website": "URL",
-  "physical_address": "Full Physical Address (or Suburb, City)"
+  "physical_address": "Full Physical Address"
 }
 
 COMPANY TO RESEARCH:

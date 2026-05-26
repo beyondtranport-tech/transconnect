@@ -32,10 +32,14 @@ function normalizePartnerData(data: any) {
         !val || 
         ['member', 'candidate', 'null', 'n/a', 'none', 'undefined', 'n a'].includes(val.toString().toLowerCase().trim());
 
+    // Standardize IDs
+    if (data.record_id) result.record_id = data.record_id;
+    else if (data.id) result.record_id = data.id;
+
     // 1. Map Core Identifiers
     const maps = {
         companyName: ['company_name', 'company', 'name', 'business_name'],
-        email: ['email_address', 'emailAddress', 'mail'],
+        email: ['email_address', 'emailAddress', 'mail', 'email'],
         phone: ['telephone_number', 'telephone', 'phone_number', 'cell', 'mobile'],
         address: ['physical_address', 'physicalAddress', 'location'],
         website: ['url', 'site', 'website', 'website_url']
@@ -104,10 +108,10 @@ export async function POST(req: NextRequest) {
                 for (const p of partners) {
                     const normalized = normalizePartnerData(p);
                     
-                    // ID-FIRST MATCHING: The most reliable way to update the correct record
                     let leadRef;
                     let existingData = null;
 
+                    // ID-FIRST MATCHING
                     if (normalized.record_id && normalized.record_id.length > 5) {
                         leadRef = db.collection('leads').doc(normalized.record_id);
                         const docSnap = await leadRef.get();
@@ -312,6 +316,44 @@ export async function POST(req: NextRequest) {
                     });
                 }
                 if (count > 0) await batch.commit();
+                return NextResponse.json({ success: true, count });
+            }
+            case 'findDuplicateLeads': {
+                const snap = await db.collection('leads').get();
+                const nameMap = new Map<string, any[]>();
+                snap.docs.forEach(doc => {
+                    const name = doc.data().companyName?.trim().toLowerCase();
+                    if (!name) return;
+                    if (!nameMap.has(name)) nameMap.set(name, []);
+                    nameMap.get(name)!.push({ id: doc.id, ...doc.data() });
+                });
+                const duplicates = Array.from(nameMap.values()).filter(group => group.length > 1);
+                return NextResponse.json({ success: true, data: duplicates });
+            }
+            case 'deleteLeads': {
+                const { leadIds } = payload;
+                const batch = db.batch();
+                for (const id of leadIds) {
+                    batch.delete(db.collection('leads').doc(id));
+                    batch.delete(db.collection('partners').doc(id));
+                }
+                await batch.commit();
+                return NextResponse.json({ success: true });
+            }
+            case 'resetResearchQueue': {
+                const { type } = payload;
+                const snap = await db.collection('leads').where('researchStatus', '==', 'researching').get();
+                const batch = db.batch();
+                let count = 0;
+                snap.docs.forEach(doc => {
+                    const data = doc.data();
+                    // Optional: only reset if type matches (transporter roles mapped to type)
+                    const reset = { researchStatus: FieldValue.delete(), status: 'new' };
+                    batch.update(doc.ref, reset);
+                    batch.set(db.collection('partners').doc(doc.id), reset, { merge: true });
+                    count++;
+                });
+                await batch.commit();
                 return NextResponse.json({ success: true, count });
             }
             default:
