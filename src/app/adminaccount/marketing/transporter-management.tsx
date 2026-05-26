@@ -7,7 +7,8 @@ import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
   Loader2, PlusCircle, Truck, Edit, Trash2, Send, CheckCircle, Users, Filter, Save, 
-  Search, Zap, RotateCcw, XCircle, Info, Sparkles, AlertCircle, MailCheck, MailQuestion 
+  Search, Zap, RotateCcw, XCircle, Info, Sparkles, AlertCircle, MailCheck, MailQuestion,
+  ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
@@ -31,7 +32,6 @@ import { BulkImportDialog } from './BulkImportDialog';
 import { BulkOutreachUpdateDialog } from './BulkOutreachUpdateDialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { serverTimestamp } from 'firebase/firestore';
 
 async function performAdminAction(token: string, action: string, payload: any) {
   const response = await fetch('/api/admin', {
@@ -363,7 +363,7 @@ export default function TransporterManagement() {
 
   const staffMap = useMemo(() => new Map(staff.map(s => [s.id, `${s.firstName} ${s.lastName}`])), [staff]);
 
-  const newRecordsRemaining = useMemo(() => {
+  const freshCandidatesRemaining = useMemo(() => {
       return partners.filter(p => {
           const email = (p.email || p.email_address || '').toString().toLowerCase().trim();
           const isInvalidEmail = !email || email === 'null' || email === 'n/a' || email === 'none';
@@ -555,7 +555,7 @@ export default function TransporterManagement() {
           <div className="space-y-1">
             <CardTitle className="flex items-center gap-2">
                 <Truck /> Transporters
-                <Badge variant="secondary" className="ml-2">{newRecordsRemaining} Fresh Candidates</Badge>
+                <Badge variant="secondary" className="ml-2">{freshCandidatesRemaining} Fresh Candidates</Badge>
             </CardTitle>
             <CardDescription>Manage your transporter leads and pipeline.</CardDescription>
           </div>

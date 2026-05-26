@@ -18,13 +18,15 @@ export function useDataTable<TData>(data: TData[], columns: ColumnDef<TData>[]) 
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState('');
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
+  const [pageIndex, setPageIndex] = useState(0);
+  const pageSize = 50;
 
   const getNestedValue = (obj: any, path?: string): any => {
     if (!path || obj === null || obj === undefined) return undefined;
     return path.split('.').reduce((acc, part) => acc && acc[part], obj as any);
   };
 
-  const rows = useMemo(() => {
+  const filteredRows = useMemo(() => {
     let processedData = [...data];
 
     // Apply global filter
@@ -56,15 +58,20 @@ export function useDataTable<TData>(data: TData[], columns: ColumnDef<TData>[]) 
         });
     }
 
-    return processedData.map(original => ({ original }));
+    return processedData;
 
   }, [data, columns, globalFilter, sorting]);
+
+  const pagedRows = useMemo(() => {
+    const start = pageIndex * pageSize;
+    return filteredRows.slice(start, start + pageSize).map(original => ({ original }));
+  }, [filteredRows, pageIndex, pageSize]);
 
   const toggleAll = (checked: boolean) => {
       const newSelection: Record<string, boolean> = {};
       if (checked) {
-          rows.forEach((row) => {
-              const id = (row.original as any).id;
+          filteredRows.forEach((item: any) => {
+              const id = item.id;
               if (id) newSelection[id] = true;
           });
       }
@@ -80,9 +87,15 @@ export function useDataTable<TData>(data: TData[], columns: ColumnDef<TData>[]) 
       });
   };
 
+  const canNextPage = (pageIndex + 1) * pageSize < filteredRows.length;
+  const canPrevPage = pageIndex > 0;
+  
+  const nextPage = () => { if (canNextPage) setPageIndex(prev => prev + 1); };
+  const prevPage = () => { if (canPrevPage) setPageIndex(prev => prev - 1); };
 
   return {
-    rows,
+    rows: pagedRows,
+    filteredCount: filteredRows.length,
     setSorting,
     setGlobalFilter,
     sorting,
@@ -90,6 +103,13 @@ export function useDataTable<TData>(data: TData[], columns: ColumnDef<TData>[]) 
     rowSelection,
     setRowSelection,
     toggleAll,
-    toggleRow
+    toggleRow,
+    pageIndex,
+    pageCount: Math.ceil(filteredRows.length / pageSize),
+    pageSize,
+    nextPage,
+    prevPage,
+    canNextPage,
+    canPrevPage
   };
 }

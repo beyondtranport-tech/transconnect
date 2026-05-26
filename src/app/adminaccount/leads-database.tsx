@@ -471,7 +471,7 @@ function LeadsDatabaseComponent() {
     });
   }, [leads, statusFilter, dataFilter]);
 
-  const newRecordsRemaining = useMemo(() => {
+  const candidatesRemaining = useMemo(() => {
     return (leads || []).filter(p => {
         const email = (p.email || p.email_address || '').toString().toLowerCase().trim();
         const isInvalidEmail = !email || email === 'null' || email === 'n/a' || email === 'none';
@@ -652,7 +652,7 @@ function LeadsDatabaseComponent() {
           <div className="space-y-1">
             <CardTitle className="flex items-center gap-2">
                 <Users /> Lead Database
-                <Badge variant="secondary" className="ml-2">{newRecordsRemaining} Candidates Left</Badge>
+                <Badge variant="secondary" className="ml-2">{candidatesRemaining} Candidates Left</Badge>
             </CardTitle>
             <CardDescription>Manage your sales leads.</CardDescription>
           </div>
