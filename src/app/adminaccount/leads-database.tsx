@@ -28,7 +28,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { useCollection, useFirestore, getClientSideAuthToken, useMemoFirebase } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
-import { Loader2, PlusCircle, Users, Edit, Trash2, Search, Send, Copy, Filter, MailCheck, MailQuestion, FileJson, Upload, Zap, Info, AlertCircle } from 'lucide-react';
+import { Loader2, PlusCircle, Users, Edit, Trash2, Search, Send, Copy, Filter, MailCheck, MailQuestion, FileJson, Upload, Zap, Info, AlertCircle, RotateCcw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -423,6 +423,7 @@ function LeadsDatabaseComponent() {
   const [engageLead, setEngageLead] = useState<any | null>(null);
   const [batchDialogOpen, setBatchDialogOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isResetting, setIsResetting] = useState(false);
 
   const [statusFilter, setStatusFilter] = useState('all');
   const [dataFilter, setDataFilter] = useState('all');
@@ -487,7 +488,7 @@ function LeadsDatabaseComponent() {
       return (leads || []).filter(l => selectedIds.includes(l.id));
   }, [leads, selectedIds]);
 
-  const handleEnhance30 = () => {
+  const handleEnhanceBatch = (size: number) => {
       if (!leads) return;
       const uniqueNames = new Set<string>();
       const targets: any[] = [];
@@ -503,7 +504,7 @@ function LeadsDatabaseComponent() {
           if (!isSearching && !isEnriched && name && !uniqueNames.has(name)) {
               targets.push(p);
               uniqueNames.add(name);
-              if (targets.length >= 30) break;
+              if (targets.length >= size) break;
           }
       }
       
@@ -514,6 +515,28 @@ function LeadsDatabaseComponent() {
 
       setSelectedIds(targets.map(t => t.id));
       setBatchDialogOpen(true);
+  };
+
+  const handleResetQueue = async () => {
+      setIsResetting(true);
+      try {
+          const token = await getClientSideAuthToken();
+          if (!token) return;
+          const response = await fetch('/api/admin', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'resetResearchQueue', payload: { type: 'lead' } }),
+          });
+          const result = await response.json();
+          if (!response.ok) throw new Error(result.error);
+
+          toast({ title: "Queue Reset", description: `${result.count} records set back to 'New'.` });
+          forceRefresh();
+      } catch (e: any) {
+          toast({ variant: 'destructive', title: "Reset Failed", description: e.message });
+      } finally {
+          setIsResetting(false);
+      }
   };
 
   async function handleDelete() {
@@ -657,11 +680,15 @@ function LeadsDatabaseComponent() {
             <CardDescription>Manage your sales leads.</CardDescription>
           </div>
           <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={handleResetQueue} disabled={isResetting}>
+                {isResetting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <RotateCcw className="mr-2 h-4 w-4" />}
+                Reset Stuck Research
+            </Button>
             <BulkOutreachUpdateDialog onComplete={forceRefresh}>
                 <Button variant="outline"><Send className="mr-2 h-4 w-4" /> Bulk Update Outreach</Button>
             </BulkOutreachUpdateDialog>
-            <Button variant="default" className="bg-amber-600 hover:bg-amber-700" onClick={handleEnhance30}>
-                <Zap className="mr-2 h-4 w-4" /> Enhance 30 Records
+            <Button variant="default" className="bg-amber-600 hover:bg-amber-700" onClick={() => handleEnhanceBatch(100)}>
+                <Zap className="mr-2 h-4 w-4" /> Master Batch (100)
             </Button>
             <BulkImportDialog type="lead" onComplete={forceRefresh}>
                 <Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Bulk Import JSON</Button>

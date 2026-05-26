@@ -7,8 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
   Loader2, PlusCircle, Truck, Edit, Trash2, Send, CheckCircle, Users, Filter, Save, 
-  Search, Zap, RotateCcw, XCircle, Info, Sparkles, AlertCircle, MailCheck, MailQuestion,
-  ChevronLeft, ChevronRight, ClipboardCheck, Copy
+  Search, Zap, RotateCcw, XCircle, Info, Sparkles, AlertCircle, MailCheck, MailQuestion
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
@@ -379,7 +378,7 @@ export default function TransporterManagement() {
       return partners.filter(p => selectedIds.includes(p.id));
   }, [partners, selectedIds]);
 
-  const handleEnhance30 = () => {
+  const handleEnhanceBatch = (size: number) => {
       if (isLoading) return;
       
       const uniqueNames = new Set<string>();
@@ -396,7 +395,7 @@ export default function TransporterManagement() {
           if (!isSearching && !isEnriched && name && !uniqueNames.has(name)) {
               targets.push(p);
               uniqueNames.add(name);
-              if (targets.length >= 30) break;
+              if (targets.length >= size) break;
           }
       }
       
@@ -567,9 +566,9 @@ export default function TransporterManagement() {
                 {isResetting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <RotateCcw className="mr-2 h-4 w-4" />}
                 Reset Stuck Research
             </Button>
-            <Button variant="default" className="bg-amber-600 hover:bg-amber-700" onClick={handleEnhance30} disabled={isLoading}>
+            <Button variant="default" className="bg-amber-600 hover:bg-amber-700" onClick={() => handleEnhanceBatch(100)} disabled={isLoading}>
                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Zap className="mr-2 h-4 w-4" />}
-                Enhance 30 Records
+                Master Batch (100)
             </Button>
             <BulkImportDialog type="transporter" onComplete={forceRefresh}><Button variant="outline">Bulk Import AI JSON</Button></BulkImportDialog>
             <DuplicateCleaner onComplete={forceRefresh} />

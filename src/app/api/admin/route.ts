@@ -61,28 +61,12 @@ function normalizePartnerData(data: any) {
         result.contactPerson = rawContact;
         
         // Reconstruct first/last names if currently placeholders or empty
-        const currentFirst = (result.firstName || '').toString().toLowerCase();
-        if (!currentFirst || currentFirst === 'member' || currentFirst === 'candidate') {
-            const parts = rawContact.split(' ');
-            result.firstName = parts[0] || 'Member';
-            result.lastName = parts.slice(1).join(' ') || 'Candidate';
-        }
+        const parts = rawContact.split(' ');
+        result.firstName = parts[0] || 'Member';
+        result.lastName = parts.slice(1).join(' ') || 'Candidate';
     }
 
     return result;
-}
-
-/**
- * Improved name normalization for duplicate detection
- */
-function normalizeNameForMatch(name: string): string {
-    return (name || '')
-        .toString()
-        .toLowerCase()
-        .replace(/[^\w\s]/g, '') // Remove punctuation
-        .replace(/\b(pty|ltd|cc|corp|inc|limited|proprietary|south africa|sa)\b/g, '') // Remove legal suffixes
-        .replace(/\s+/g, ' ') // Collapse spaces
-        .trim();
 }
 
 export async function POST(req: NextRequest) {
@@ -219,6 +203,20 @@ export async function POST(req: NextRequest) {
                 await batch.commit();
                 return NextResponse.json({ success: true });
             }
+            case 'resetResearchQueue': {
+                const { type } = payload;
+                const snap = await db.collection('leads').where('researchStatus', '==', 'researching').get();
+                const batch = db.batch();
+                let count = 0;
+                snap.docs.forEach(doc => {
+                    const reset = { researchStatus: FieldValue.delete(), status: 'new' };
+                    batch.update(doc.ref, reset);
+                    batch.set(db.collection('partners').doc(doc.id), reset, { merge: true });
+                    count++;
+                });
+                if (count > 0) await batch.commit();
+                return NextResponse.json({ success: true, count });
+            }
             case 'getAuditLogs': {
                 const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(100).get();
                 return NextResponse.json({ success: true, data: snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) })) });
@@ -343,7 +341,7 @@ export async function POST(req: NextRequest) {
 
                 const nameMap = new Map<string, any[]>();
                 masterList.forEach(item => {
-                    const name = normalizeNameForMatch(item.companyName);
+                    const name = (item.companyName || '').toString().toLowerCase().trim();
                     if (!name) return;
                     if (!nameMap.has(name)) nameMap.set(name, []);
                     nameMap.get(name)!.push(item);
@@ -377,19 +375,6 @@ export async function POST(req: NextRequest) {
                 }
                 await batch.commit();
                 return NextResponse.json({ success: true });
-            }
-            case 'resetResearchQueue': {
-                const snap = await db.collection('leads').where('researchStatus', '==', 'researching').get();
-                const batch = db.batch();
-                let count = 0;
-                snap.docs.forEach(doc => {
-                    const reset = { researchStatus: FieldValue.delete(), status: 'new' };
-                    batch.update(doc.ref, reset);
-                    batch.set(db.collection('partners').doc(doc.id), reset, { merge: true });
-                    count++;
-                });
-                await batch.commit();
-                return NextResponse.json({ success: true, count });
             }
             default:
                 return NextResponse.json({ success: false, error: `Action "${action}" not implemented.` }, { status: 400 });
