@@ -398,7 +398,7 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
         <DialogFooter className="p-4 border-t">
           <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
           <Button onClick={handleClean} disabled={isLoading} className="bg-destructive hover:bg-destructive/90">
-             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Trash2 className="mr-2 h-4 w-4"/>}
+             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
              Delete Unselected & Clean
           </Button>
         </DialogFooter>

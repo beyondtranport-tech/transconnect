@@ -332,7 +332,6 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, count });
             }
             case 'findDuplicateLeads': {
-                // Cross-collection duplicate check
                 const [leadsSnap, partnersSnap] = await Promise.all([
                     db.collection('leads').get(),
                     db.collection('partners').get()
@@ -352,12 +351,10 @@ export async function POST(req: NextRequest) {
 
                 const duplicates = Array.from(nameMap.entries())
                     .filter(([name, group]) => {
-                        // A duplicate is identified by DIFFERENT IDs for the SAME company name
                         const uniqueIds = new Set(group.map(g => g.id));
                         return uniqueIds.size > 1;
                     })
                     .map(([name, group]) => {
-                        // De-duplicate records by ID within the group (if the same ID is in both collections)
                         const uniqueRecords: any[] = [];
                         const seenIds = new Set();
                         group.forEach(rec => {

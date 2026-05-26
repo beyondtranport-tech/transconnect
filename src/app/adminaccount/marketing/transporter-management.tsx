@@ -8,7 +8,7 @@ import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
   Loader2, PlusCircle, Truck, Edit, Trash2, Send, CheckCircle, Users, Filter, Save, 
   Search, Zap, RotateCcw, XCircle, Info, Sparkles, AlertCircle, MailCheck, MailQuestion,
-  ChevronLeft, ChevronRight
+  ChevronLeft, ChevronRight, ClipboardCheck, Copy
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
@@ -317,7 +317,7 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
         <DialogFooter className="p-4 border-t">
           <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
           <Button onClick={handleClean} disabled={isLoading} className="bg-destructive hover:bg-destructive/90">
-             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Trash2 className="mr-2 h-4 w-4"/>}
+             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
              Delete Unselected & Clean
           </Button>
         </DialogFooter>
@@ -534,7 +534,7 @@ export default function TransporterManagement() {
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'engage', data: row.original })} title="Initiate Engagement"><Send className="h-4 w-4 text-primary" /></Button>
         <PartnerOversightDialog partner={row.original} onUpdate={forceRefresh} />
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'edit', data: row.original })}><Edit className="h-4 w-4" /></Button>
-        <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'delete', data: row.original })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+        <Button variant="ghost" size="icon" onClick={() => { setDialog({ type: 'delete', data: row.original }); }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
       </div>
     )},
   ];
