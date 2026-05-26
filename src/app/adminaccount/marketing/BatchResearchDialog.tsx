@@ -21,7 +21,8 @@ export function BatchResearchDialog({ open, onOpenChange, selectedLeads, onCompl
     const [isCopied, setIsCopied] = useState(false);
     const { toast } = useToast();
 
-    const companyNames = selectedLeads.map(l => l.companyName || `${l.firstName} ${l.lastName}`).join('\n');
+    // Map leads to a string that includes ID for strict matching
+    const companyList = selectedLeads.map(l => `ID: ${l.id} | NAME: ${l.companyName || `${l.firstName} ${l.lastName}`}`).join('\n');
     
     const aiPrompt = `STRICT INSTRUCTION: RETURN ONLY A RAW JSON ARRAY. NO CONVERSATIONAL TEXT. NO MARKDOWN CODE BLOCKS.
 
@@ -29,25 +30,25 @@ ACT AS A HIGH-INTELLIGENCE INVESTIGATIVE RESEARCH AGENT. Your goal is to find CU
 
 INVESTIGATIVE STRATEGY:
 1. LEADERSHIP SEARCH: Actively search for the name of the "Managing Director", "Owner", or "Principal" for every company.
-2. REGISTRY CHECK: Cross-reference with the SARS Carrier/Clearing Database and CIPC records to find official registrations.
-3. SOCIAL INTELLIGENCE: Search LinkedIn and Facebook for official business pages to find email/phone patterns.
-4. LOCATION PRECISION: Find the physical office location. If the full address is missing, YOU MUST at least provide the Suburb and City.
-5. NO LAZY NULLS: Do not return "null" if info exists on LinkedIn or professional directories.
+2. REGISTRY CHECK: Cross-reference with the SARS Carrier/Clearing Database and CIPC records.
+3. NO LAZY NULLS: If the full address is missing, provide at least the Suburb and City.
+4. IDENTITY PERSISTENCE: You MUST return the "record_id" provided in the list for every record.
 
 REQUIRED OUTPUT SCHEMA (JSON ARRAY):
 [
   {
-    "company_name": "Company Name",
+    "record_id": "The provided Record ID",
+    "company_name": "Verified Company Name",
     "contact_person": "Full Name of Director/Owner",
     "email_address": "Verified Email Address",
     "telephone_number": "Phone Number",
     "website": "URL",
-    "physical_address": "Full Physical Address (or Suburb, City)"
+    "physical_address": "Full Physical Address"
   }
 ]
 
 COMPANIES TO RESEARCH:
-${companyNames}`;
+${companyList}`;
 
     const handleCopyAll = async () => {
         try {
@@ -109,7 +110,7 @@ ${companyNames}`;
                         <Alert>
                             <AlertCircle className="h-4 w-4" />
                             <AlertTitle>Step 1: Copy Prompt & List</AlertTitle>
-                            <AlertDescription>Click the button below to copy the deep-search instructions and company list.</AlertDescription>
+                            <AlertDescription>Click the button below to copy the deep-search instructions. It includes Record IDs to ensure the data matches correctly.</AlertDescription>
                         </Alert>
                     ) : (
                         <Alert className="bg-green-50 border-green-200 text-green-800">

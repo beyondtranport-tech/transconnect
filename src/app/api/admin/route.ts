@@ -5,10 +5,6 @@ import { getAdminApp } from '@/lib/firebase-admin';
 
 export const dynamic = 'force-dynamic';
 
-/**
- * High-Performance Serialization
- * Optimized for datasets of 5,000+ records.
- */
 function serializeTimestamps(docData: any): any {
     if (!docData) return docData;
     const newDocData: { [key: string]: any } = {};
@@ -26,58 +22,50 @@ function serializeTimestamps(docData: any): any {
 }
 
 /**
- * Robust Data Normalization Layer
- * Maps fragmented AI/External field names into standard CRM schema.
- * Ensures "Edit" forms are fully populated after import.
+ * Universal Data Normalization
+ * Strictly maps diverse AI fields to standard CRM fields (firstName, lastName, email, etc.)
  */
 function normalizePartnerData(data: any) {
-    const normalized = { ...data };
-    
-    // Normalize Company Name
-    const rawCompany = (data.companyName || data.company_name || data.company || '').toString().trim();
-    if (rawCompany) normalized.companyName = rawCompany;
+    const result: any = { ...data };
 
-    // Normalize Email
-    const rawEmail = (data.email || '').toString().toLowerCase().trim();
-    const aiEmail = (data.email_address || data.emailAddress || '').toString().toLowerCase().trim();
-    const isInvalid = (val: string) => !val || val === 'null' || val === 'n/a' || val === 'none' || val === 'undefined';
+    const isPlaceholder = (val: string) => 
+        !val || 
+        ['member', 'candidate', 'null', 'n/a', 'none', 'undefined', 'n a'].includes(val.toString().toLowerCase().trim());
 
-    if (isInvalid(rawEmail) && !isInvalid(aiEmail)) {
-        normalized.email = aiEmail;
-    }
+    // 1. Map Core Identifiers
+    const maps = {
+        companyName: ['company_name', 'company', 'name', 'business_name'],
+        email: ['email_address', 'emailAddress', 'mail'],
+        phone: ['telephone_number', 'telephone', 'phone_number', 'cell', 'mobile'],
+        address: ['physical_address', 'physicalAddress', 'location'],
+        website: ['url', 'site', 'website', 'website_url']
+    };
 
-    // Normalize Phone
-    const rawPhone = (data.phone || data.telephone_number || data.telephoneNumber || data.telephone || data.cell || '').toString().trim();
-    if (isInvalid(normalized.phone) && !isInvalid(rawPhone)) {
-        normalized.phone = rawPhone;
-    }
+    Object.entries(maps).forEach(([standardKey, aiKeys]) => {
+        for (const key of aiKeys) {
+            const val = data[key]?.toString().trim();
+            if (val && !isPlaceholder(val)) {
+                result[standardKey] = val;
+                break;
+            }
+        }
+    });
 
-    // Normalize Address
-    const rawAddress = (data.address || data.physical_address || data.physicalAddress || '').toString().trim();
-    if (isInvalid(normalized.address) && !isInvalid(rawAddress)) {
-        normalized.address = rawAddress;
-    }
-
-    // Normalize Website
-    const rawUrl = (data.url || data.website || data.site || '').toString().trim();
-    if (isInvalid(normalized.website) && !isInvalid(rawUrl)) {
-        normalized.website = rawUrl;
-    }
-
-    // Normalize Contact Person & Identity Construction (Crucial for CRM Edit Forms)
-    const contactPerson = (data.contactPerson || data.contact_person || data.contactPersonName || data.contact || '').toString().trim();
-    if (!isInvalid(contactPerson)) {
-        normalized.contactPerson = contactPerson;
+    // 2. Handle Contact Person & Identity
+    const rawContact = (data.contact_person || data.contactPerson || data.contact || '').toString().trim();
+    if (rawContact && !isPlaceholder(rawContact)) {
+        result.contactPerson = rawContact;
         
-        // If first/last names are missing (common in AI imports), reconstruct them from contactPerson
-        if (!normalized.firstName || !normalized.lastName || normalized.firstName === 'Member') {
-            const parts = contactPerson.split(' ');
-            normalized.firstName = parts[0] || 'Member';
-            normalized.lastName = parts.slice(1).join(' ') || 'Candidate';
+        // Reconstruct first/last names if currently placeholders or empty
+        const currentFirst = (result.firstName || '').toString().toLowerCase();
+        if (!currentFirst || currentFirst === 'member' || currentFirst === 'candidate') {
+            const parts = rawContact.split(' ');
+            result.firstName = parts[0] || 'Member';
+            result.lastName = parts.slice(1).join(' ') || 'Candidate';
         }
     }
 
-    return normalized;
+    return result;
 }
 
 export async function POST(req: NextRequest) {
@@ -115,29 +103,43 @@ export async function POST(req: NextRequest) {
                 
                 for (const p of partners) {
                     const normalized = normalizePartnerData(p);
-                    const companyNameClean = (normalized.companyName || '').trim();
-                    if (!companyNameClean) continue;
-
-                    // Search for existing by company name to merge data
-                    const existingLeads = await db.collection('leads').where('companyName', '==', companyNameClean).get();
-                    const ref = !existingLeads.empty ? existingLeads.docs[0].ref : db.collection('leads').doc();
-                    const partnerRef = db.collection('partners').doc(ref.id);
                     
-                    const existingData = !existingLeads.empty ? existingLeads.docs[0].data() : null;
+                    // ID-FIRST MATCHING: The most reliable way to update the correct record
+                    let leadRef;
+                    let existingData = null;
+
+                    if (normalized.record_id && normalized.record_id.length > 5) {
+                        leadRef = db.collection('leads').doc(normalized.record_id);
+                        const docSnap = await leadRef.get();
+                        if (docSnap.exists) existingData = docSnap.data();
+                    } else {
+                        // Fallback to name matching
+                        const companyNameClean = (normalized.companyName || '').trim();
+                        if (!companyNameClean) continue;
+                        const existingLeads = await db.collection('leads').where('companyName', '==', companyNameClean).get();
+                        if (!existingLeads.empty) {
+                            leadRef = existingLeads.docs[0].ref;
+                            existingData = existingLeads.docs[0].data();
+                        } else {
+                            leadRef = db.collection('leads').doc();
+                        }
+                    }
+
+                    const partnerRef = db.collection('partners').doc(leadRef.id);
                     const email = (normalized.email || '').toString().toLowerCase().trim();
                     const hasContactInfo = !!email && email !== 'null' && email !== 'n/a';
                     
                     const updateData = {
                         ...normalized,
-                        id: ref.id,
+                        id: leadRef.id,
                         role: leadRole,
                         status: hasContactInfo ? 'qualified' : (existingData?.status || 'contacted'),
-                        researchStatus: 'completed', // Mark as Green in UI
+                        researchStatus: 'completed',
                         updatedAt: FieldValue.serverTimestamp(),
-                        createdAt: existingData ? existingData.createdAt : FieldValue.serverTimestamp()
+                        createdAt: existingData ? (existingData.createdAt || FieldValue.serverTimestamp()) : FieldValue.serverTimestamp()
                     };
 
-                    batch.set(ref, updateData, { merge: true });
+                    batch.set(leadRef, updateData, { merge: true });
                     batch.set(partnerRef, { ...updateData, type: type }, { merge: true });
                 }
                 
@@ -164,13 +166,13 @@ export async function POST(req: NextRequest) {
 
                 const mergedMap = new Map();
                 partnersSnap.docs.forEach(doc => {
-                    const data = normalizePartnerData(doc.data());
+                    const data = doc.data();
                     mergedMap.set(doc.id, { id: doc.id, entryType: 'Member', ...serializeTimestamps(data) });
                 });
                 
                 leadsSnap.docs.forEach(doc => {
                     const existing = mergedMap.get(doc.id);
-                    const leadData = normalizePartnerData(doc.data());
+                    const leadData = doc.data();
                     const finalStatus = (existing?.status === 'active' || existing?.status === 'qualified') 
                         ? existing.status 
                         : (leadData.status || existing?.status || 'new');
@@ -195,57 +197,8 @@ export async function POST(req: NextRequest) {
                         updatedAt: FieldValue.serverTimestamp() 
                     };
                     batch.set(db.collection('leads').doc(id), update, { merge: true });
-                    batch.set(db.collection('partners').doc(id), { status: 'contacted', researchStatus: 'researching', updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+                    batch.set(db.collection('partners').doc(id), update, { merge: true });
                 }
-                await batch.commit();
-                return NextResponse.json({ success: true });
-            }
-            case 'resetResearchQueue': {
-                const { type } = payload;
-                const roleMapping: Record<string, string> = {
-                    'transporter': 'Transporters',
-                    'supplier': 'Vendors',
-                    'partner': 'Strategic Partners',
-                    'isa': 'ISA Agents (Elite)'
-                };
-                const leadRole = roleMapping[type] || type;
-                
-                const snap = await db.collection('leads')
-                    .where('role', '==', leadRole)
-                    .where('researchStatus', '==', 'researching')
-                    .get();
-
-                const batch = db.batch();
-                let count = 0;
-                snap.docs.forEach(doc => {
-                    const update = { researchStatus: null, status: 'new', updatedAt: FieldValue.serverTimestamp() };
-                    batch.update(doc.ref, update);
-                    batch.set(db.collection('partners').doc(doc.id), update, { merge: true });
-                    count++;
-                });
-
-                if (count > 0) await batch.commit();
-                return NextResponse.json({ success: true, count });
-            }
-            case 'findDuplicateLeads': {
-                const snap = await db.collection('leads').get();
-                const grouped = new Map<string, any[]>();
-                snap.docs.forEach(doc => {
-                    const data = normalizePartnerData(doc.data());
-                    const name = (data.companyName || '').trim().toLowerCase();
-                    if (!name) return;
-                    if (!grouped.has(name)) grouped.set(name, []);
-                    grouped.get(name)!.push({ id: doc.id, ...serializeTimestamps(data) });
-                });
-                const duplicates = Array.from(grouped.values()).filter(group => group.length > 1);
-                return NextResponse.json({ success: true, data: duplicates });
-            }
-            case 'deleteLeads': {
-                const batch = db.batch();
-                payload.leadIds.forEach((id: string) => {
-                    batch.delete(db.collection('leads').doc(id));
-                    batch.delete(db.collection('partners').doc(id));
-                });
                 await batch.commit();
                 return NextResponse.json({ success: true });
             }
@@ -255,10 +208,7 @@ export async function POST(req: NextRequest) {
             }
             case 'getMembers': {
                 const snap = await db.collection('companies').get();
-                return NextResponse.json({ success: true, data: snap.docs.map(doc => {
-                    const data = normalizePartnerData(doc.data());
-                    return { id: doc.id, ...serializeTimestamps(data) };
-                }) });
+                return NextResponse.json({ success: true, data: snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) })) });
             }
             case 'getPlatformStaff': {
                 const snap = await db.collection('platformStaff').get();
