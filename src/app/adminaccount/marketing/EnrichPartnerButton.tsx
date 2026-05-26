@@ -32,21 +32,22 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
 
     const aiPrompt = `STRICT INSTRUCTION: RETURN ONLY A RAW JSON OBJECT. NO CONVERSATIONAL TEXT. NO MARKDOWN.
 
-Find the current contact and management details for the following South African company.
+ACT AS A HIGH-INTELLIGENCE INVESTIGATIVE RESEARCH AGENT. Find CURRENT contact and management details for the following South African company.
 
-RESEARCH STRATEGY:
-1. Search LinkedIn, Facebook, Instagram, and X for official pages.
-2. Check directories: YellowPages.co.za, Brabys.com, EasyInfo.co.za, Snupit.co.za.
-3. Look for professional emails. If not found, guess based on management social signatures.
+INVESTIGATIVE STRATEGY:
+1. LEADERSHIP SEARCH: Actively look for the name of the "Managing Director", "Owner", or "Principal".
+2. REGISTRY CHECK: Cross-reference with the SARS Carrier/Clearing Database and CIPC records.
+3. SOCIAL INTELLIGENCE: Search LinkedIn and Facebook for official pages.
+4. LOCATION PRECISION: Find the physical office location. If the full address is missing, YOU MUST provide the Suburb and City.
 
 REQUIRED OUTPUT SCHEMA (JSON):
 {
   "company_name": "${companyName}",
-  "contact_person": "Full Name or null",
-  "email_address": "Email Address or null",
-  "telephone_number": "Phone Number or null",
-  "website": "Website URL or null",
-  "physical_address": "Physical Address or null"
+  "contact_person": "Full Name of Director/Owner",
+  "email_address": "Verified Email Address",
+  "telephone_number": "Phone Number",
+  "website": "URL",
+  "physical_address": "Full Physical Address (or Suburb, City)"
 }
 
 COMPANY TO RESEARCH:
@@ -72,7 +73,7 @@ ${companyName}`;
                 leadIds: [partner.id] 
             });
 
-            toast({ title: "Status Updated", description: "Record is now in the 'Researching' queue." });
+            toast({ title: "Status Updated", description: "Record is now in the 'Searching' queue." });
             setIsOpen(false);
             onUpdate();
         } catch (e: any) {
@@ -98,7 +99,7 @@ ${companyName}`;
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
                             <Sparkles className="h-5 w-5 text-primary" />
-                            AI Research Assistant
+                            AI Investigative Assistant
                         </DialogTitle>
                         <DialogDescription>
                             Generate a deep-search prompt for <strong>{companyName}</strong>.
@@ -108,14 +109,14 @@ ${companyName}`;
                     <div className="space-y-4 py-4">
                         <Alert className="bg-primary/5 border-primary/20">
                             <Info className="h-4 w-4 text-primary" />
-                            <AlertTitle>Manual Research Flow</AlertTitle>
+                            <AlertTitle>Deep Search Strategy</AlertTitle>
                             <AlertDescription>
-                                Copy the prompt, paste it into Google AI, and then use the <strong>Bulk Import</strong> tool to update this record.
+                                This prompt commands the AI to search for Managing Directors and official SARS registries to find details that are often missing from basic snippets.
                             </AlertDescription>
                         </Alert>
 
                         <div className="space-y-2">
-                            <label className="text-xs font-bold uppercase text-muted-foreground">High-Precision Prompt</label>
+                            <label className="text-xs font-bold uppercase text-muted-foreground">Investigative Prompt</label>
                             <ScrollArea className="h-48 w-full border rounded-md p-3 bg-muted/30 text-foreground">
                                 <pre className="text-xs whitespace-pre-wrap font-sans">{aiPrompt}</pre>
                             </ScrollArea>
@@ -129,7 +130,7 @@ ${companyName}`;
                         </Button>
                         <Button onClick={handleMarkAsResearching} disabled={isLogging || !isCopied} className="bg-primary hover:bg-primary/90 text-white">
                             {isLogging ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <ClipboardCheck className="mr-2 h-4 w-4" />}
-                            Mark as Researching
+                            Mark as Searching
                         </Button>
                     </DialogFooter>
                 </DialogContent>

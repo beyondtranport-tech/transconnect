@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -21,7 +21,7 @@ import * as z from 'zod';
 import { PartnerOversightDialog } from './PartnerOversightDialog';
 import { EngageDialog } from './EngageDialog';
 import { formatDateSafe, cn } from '@/lib/utils';
-import { EnrichPartnerButton, BulkEnrichButton } from './EnrichPartnerButton';
+import { EnrichPartnerButton } from './EnrichPartnerButton';
 import { Label } from '@/components/ui/label';
 import { BatchResearchDialog } from './BatchResearchDialog';
 import { BulkImportDialog } from './BulkImportDialog';
@@ -336,7 +336,7 @@ export default function TransporterManagement() {
       }
       
       if (targets.length === 0) {
-          toast({ title: "No targets found", description: "All records are either currently being researched or have valid contact data." });
+          toast({ title: "No fresh candidates found", description: "All records are either currently being researched, enriched, or have valid email addresses." });
           return;
       }
 
@@ -378,10 +378,13 @@ export default function TransporterManagement() {
         const matchesAssignee = assigneeFilter === 'all' || p.assigneeId === assigneeFilter;
         
         let matchesData = true;
-        if (dataFilter === 'no-email') matchesData = !p.email;
+        const email = (p.email || p.email_address || '').toString().toLowerCase().trim();
+        const isInvalidEmail = !email || email === 'null' || email === 'n/a' || email === 'none';
+
+        if (dataFilter === 'no-email') matchesData = isInvalidEmail;
         else if (dataFilter === 'no-phone') matchesData = !p.phone;
         else if (dataFilter === 'no-website') matchesData = !p.website;
-        else if (dataFilter === 'has-email') matchesData = !!p.email;
+        else if (dataFilter === 'has-email') matchesData = !isInvalidEmail;
         else if (dataFilter === 'has-phone') matchesData = !!p.phone;
         else if (dataFilter === 'has-website') matchesData = !!p.website;
 
@@ -403,14 +406,14 @@ export default function TransporterManagement() {
     { 
         accessorKey: 'phone', 
         header: 'Contact Number',
-        cell: ({ row }) => <div>{row.original.phone || 'N/A'}</div>
+        cell: ({ row }) => <div>{row.original.phone || row.original.telephone_number || 'N/A'}</div>
     },
     { 
         accessorKey: 'email', 
         header: 'Email',
         cell: ({ row }) => {
             const email = (row.original.email || '').toString().toLowerCase().trim();
-            const isInvalid = !email || email === 'null' || email === 'n/a';
+            const isInvalid = !email || email === 'null' || email === 'n/a' || email === 'none';
             return <div className={cn(isInvalid ? "text-muted-foreground italic" : "")}>{isInvalid ? "Missing" : email}</div>
         }
     },
@@ -419,7 +422,7 @@ export default function TransporterManagement() {
         cell: ({row}) => {
             const isResearching = row.original.researchStatus === 'researching';
             const email = (row.original.email || '').toString().toLowerCase().trim();
-            const isInvalidEmail = !email || email === 'null' || email === 'n/a';
+            const isInvalidEmail = !email || email === 'null' || email === 'n/a' || email === 'none';
             const isCompleted = row.original.researchStatus === 'completed' || !isInvalidEmail;
 
             if (isResearching) return <Badge variant="outline" className="animate-pulse text-amber-600 border-amber-200 bg-amber-50">Searching...</Badge>;
@@ -485,7 +488,7 @@ export default function TransporterManagement() {
           <div className="space-y-1">
             <CardTitle className="flex items-center gap-2">
                 <Truck /> Transporters
-                <Badge variant="secondary" className="ml-2">{newRecordsRemaining} Candidates Left</Badge>
+                <Badge variant="secondary" className="ml-2">{newRecordsRemaining} Fresh Candidates</Badge>
             </CardTitle>
             <CardDescription>Manage your transporter leads and pipeline.</CardDescription>
           </div>
@@ -536,7 +539,11 @@ export default function TransporterManagement() {
                         <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Search className="h-3 w-3"/> Data Integrity</Label>
                         <Select value={dataFilter} onValueChange={setDataFilter}>
                             <SelectTrigger><SelectValue /></SelectTrigger>
-                            <SelectContent><SelectItem value="all">All Records</SelectItem><SelectItem value="has-email">Has Email</SelectItem><SelectItem value="no-email">No Email</SelectItem></SelectContent>
+                            <SelectContent>
+                                <SelectItem value="all">All Records</SelectItem>
+                                <SelectItem value="has-email">Has Email</SelectItem>
+                                <SelectItem value="no-email">Missing Email</SelectItem>
+                            </SelectContent>
                         </Select>
                     </div>
                 </div>

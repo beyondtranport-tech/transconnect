@@ -25,23 +25,24 @@ export function BatchResearchDialog({ open, onOpenChange, selectedLeads, onCompl
     
     const aiPrompt = `STRICT INSTRUCTION: RETURN ONLY A RAW JSON ARRAY. NO CONVERSATIONAL TEXT. NO MARKDOWN CODE BLOCKS.
 
-I need you to act as a high-intelligence research agent. Find current contact and management details for the following South African companies.
+ACT AS A HIGH-INTELLIGENCE INVESTIGATIVE RESEARCH AGENT. Your goal is to find CURRENT contact and management details for the following South African companies.
 
-RESEARCH STRATEGY:
-1. Search LinkedIn, Facebook, Instagram, and X for official pages.
-2. Check directories: YellowPages.co.za, Brabys.com, EasyInfo.co.za, Snupit.co.za.
-3. Look for professional emails. If not found, search for management names and guess based on domain pattern or look for personal social contacts.
-4. Identify Owner/Director/Manager.
+INVESTIGATIVE STRATEGY:
+1. LEADERSHIP SEARCH: Actively look for the names of "Managing Director", "Owner", "CEO", or "Director" for every company.
+2. REGISTRY CHECK: Cross-reference with the SARS Carrier/Clearing Database and CIPC records to find official registrations.
+3. SOCIAL INTELLIGENCE: Search LinkedIn, Facebook, and Instagram for official business pages to find email/phone patterns.
+4. LOCATION PRECISION: Find the physical office location. If the full address is missing, YOU MUST at least provide the Suburb and City.
+5. NO LAZY NULLS: Do not return "null" if info exists on LinkedIn or directories like YellowPages.co.za or Brabys.
 
 REQUIRED OUTPUT SCHEMA (JSON ARRAY):
 [
   {
-    "company_name": "Company Name Here",
-    "contact_person": "Full Name or null",
-    "email_address": "Email Address or null",
-    "telephone_number": "Phone Number or null",
-    "website": "Website URL or null",
-    "physical_address": "Physical Address or null"
+    "company_name": "Company Name",
+    "contact_person": "Full Name of Director/Owner",
+    "email_address": "Verified Email",
+    "telephone_number": "Phone Number",
+    "website": "URL",
+    "physical_address": "Full Physical Address (or Suburb, City)"
   }
 ]
 
@@ -81,7 +82,7 @@ FINAL REMINDER: RETURN ONLY THE RAW JSON ARRAY. START WITH [ AND END WITH ].`;
             const result = await response.json();
             if (!response.ok || !result.success) throw new Error(result.error || "Failed to update records.");
 
-            toast({ title: "Batch Locked", description: `${leadIds.length} records marked as 'Researching'. Use the Bulk Import tool to add results.` });
+            toast({ title: "Batch Locked", description: `${leadIds.length} records marked as 'Searching'. Use the Bulk Import tool to add results.` });
             setIsCopied(false);
             onComplete();
             onOpenChange(false);
@@ -101,7 +102,7 @@ FINAL REMINDER: RETURN ONLY THE RAW JSON ARRAY. START WITH [ AND END WITH ].`;
                         Enhance Batch of {selectedLeads.length}
                     </DialogTitle>
                     <DialogDescription>
-                        Copy the optimized research prompt and mark these records as "Researching".
+                        Copy the optimized research prompt and mark these records as "Searching".
                     </DialogDescription>
                 </DialogHeader>
                 
@@ -121,7 +122,7 @@ FINAL REMINDER: RETURN ONLY THE RAW JSON ARRAY. START WITH [ AND END WITH ].`;
                     )}
 
                     <div className="space-y-2">
-                        <label className="text-xs font-bold uppercase text-muted-foreground">Deep Search Prompt (Copy this)</label>
+                        <label className="text-xs font-bold uppercase text-muted-foreground">High-Intelligence Research Prompt</label>
                         <ScrollArea className="h-64 w-full border rounded-md p-3 bg-muted/30">
                             <pre className="text-[11px] whitespace-pre-wrap font-sans leading-relaxed text-foreground">{aiPrompt}</pre>
                         </ScrollArea>
@@ -134,7 +135,7 @@ FINAL REMINDER: RETURN ONLY THE RAW JSON ARRAY. START WITH [ AND END WITH ].`;
                     </Button>
                     <Button onClick={handleMarkAsResearching} disabled={isLoading || !isCopied} className="bg-amber-600 hover:bg-amber-700 text-white">
                         {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <ClipboardCheck className="mr-2 h-4 w-4" />}
-                        Mark as Researching
+                        Mark as Searching
                     </Button>
                 </DialogFooter>
             </DialogContent>
