@@ -21,22 +21,22 @@ export function BatchResearchDialog({ open, onOpenChange, selectedLeads, onCompl
     const [isCopied, setIsCopied] = useState(false);
     const { toast } = useToast();
 
-    // Map leads to a string that includes ID for strict matching
-    const companyList = selectedLeads.map(l => `ID: ${l.id} | NAME: ${l.companyName || `${l.firstName} ${l.lastName}`}`).join('\n');
+    // ID-First identification for AI
+    const companyList = selectedLeads.map(l => `[ID: ${l.id}] NAME: ${l.companyName || `${l.firstName} ${l.lastName}`}`).join('\n');
     
-    const aiPrompt = `STRICT INSTRUCTION: RETURN ONLY A RAW JSON ARRAY. NO CONVERSATIONAL TEXT. NO MARKDOWN CODE BLOCKS.
+    const aiPrompt = `STRICT INSTRUCTION: RETURN ONLY A RAW JSON ARRAY. NO CONVERSATIONAL TEXT. NO MARKDOWN CODE BLOCKS. 
 
 ACT AS A HIGH-INTELLIGENCE INVESTIGATIVE RESEARCH AGENT. Your goal is to find CURRENT contact and management details for the following South African companies.
 
-INVESTIGATIVE STRATEGY:
-1. LEADERSHIP SEARCH: Actively search for the name of the "Managing Director", "Owner", or "Principal" for every company.
-2. REGISTRY CHECK: Cross-reference with the SARS Carrier/Clearing Database and CIPC records.
-3. IDENTITY PERSISTENCE: You MUST return the "record_id" exactly as provided in the list below for every record.
+INVESTIGATIVE RULES:
+1. IDENTITY PERSISTENCE (CRITICAL): For every record, you MUST return the "record_id" exactly as provided in the brackets [ID: ...]. This is more important than the name.
+2. LEADERSHIP SEARCH: Actively search for the name of the "Managing Director", "Owner", or "Principal". Return this in "contact_person".
+3. REGISTRY CHECK: Cross-reference with the SARS Carrier/Clearing Database and CIPC records to find verified professional emails.
 
 REQUIRED OUTPUT SCHEMA (JSON ARRAY):
 [
   {
-    "record_id": "The provided Record ID",
+    "record_id": "The provided ID from the brackets",
     "company_name": "Verified Company Name",
     "contact_person": "Full Name of Director/Owner",
     "email_address": "Verified Email Address",
@@ -53,7 +53,7 @@ ${companyList}`;
         try {
             await navigator.clipboard.writeText(aiPrompt);
             setIsCopied(true);
-            toast({ title: "Prompt & List Copied!", description: "Paste this into Google AI now." });
+            toast({ title: "Prompt & List Copied!", description: "Paste this into your high-context AI (like Gemini 1.5 Pro) now." });
         } catch (e) {
             toast({ variant: 'destructive', title: "Copy Failed", description: "Please manually copy the text from the box." });
         }
@@ -80,7 +80,7 @@ ${companyList}`;
             const result = await response.json();
             if (!response.ok || !result.success) throw new Error(result.error || "Failed to update records.");
 
-            toast({ title: "Batch Locked", description: `${leadIds.length} records marked as 'Searching'. Use the Bulk Import tool to add results.` });
+            toast({ title: "Batch Locked", description: `${leadIds.length} records marked as 'Searching'. Paste the results into Bulk Import when done.` });
             setIsCopied(false);
             onComplete();
             onOpenChange(false);
@@ -97,10 +97,10 @@ ${companyList}`;
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <Zap className="h-5 w-5 text-amber-500" />
-                        Enhance Batch of {selectedLeads.length}
+                        Master Batch Enrichment ({selectedLeads.length})
                     </DialogTitle>
                     <DialogDescription>
-                        Copy the optimized research prompt and mark these records as "Searching".
+                        Copy this prompt and provide it to the AI. Then use **Bulk Import** to save the results.
                     </DialogDescription>
                 </DialogHeader>
                 
@@ -108,14 +108,14 @@ ${companyList}`;
                     {!isCopied ? (
                         <Alert>
                             <AlertCircle className="h-4 w-4" />
-                            <AlertTitle>Step 1: Copy Prompt & List</AlertTitle>
-                            <AlertDescription>Click the button below to copy the deep-search instructions. It includes Record IDs to ensure the data matches correctly.</AlertDescription>
+                            <AlertTitle>Step 1: Copy Prompt & IDs</AlertTitle>
+                            <AlertDescription>The prompt below contains unique IDs. The AI must return these IDs for the import to correctly update your existing records.</AlertDescription>
                         </Alert>
                     ) : (
                         <Alert className="bg-green-50 border-green-200 text-green-800">
                             <ClipboardCheck className="h-4 w-4 text-green-600" />
-                            <AlertTitle>Step 2: Lock the Batch</AlertTitle>
-                            <AlertDescription>Now click "Mark as Searching" to move these to the next processing stage.</AlertDescription>
+                            <AlertTitle>Step 2: Lock the Records</AlertTitle>
+                            <AlertDescription>Records will be marked as "Searching" so you don't process them twice. Proceed now.</AlertDescription>
                         </Alert>
                     )}
 
@@ -129,7 +129,7 @@ ${companyList}`;
 
                 <DialogFooter className="sm:justify-between gap-4">
                     <Button variant="outline" onClick={handleCopyAll}>
-                        <Copy className="mr-2 h-4 w-4" /> Copy Prompt & List
+                        <Copy className="mr-2 h-4 w-4" /> Copy Prompt & IDs
                     </Button>
                     <Button onClick={handleMarkAsResearching} disabled={isLoading || !isCopied} className="bg-amber-600 hover:bg-amber-700 text-white">
                         {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <ClipboardCheck className="mr-2 h-4 w-4" />}

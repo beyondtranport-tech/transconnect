@@ -24,25 +24,33 @@ function serializeTimestamps(docData: any): any {
 /**
  * Universal Data Normalization
  * Strictly maps diverse AI fields to standard CRM fields (firstName, lastName, email, etc.)
+ * Handles ID recovery and namespacing.
  */
 function normalizePartnerData(data: any) {
     const result: any = { ...data };
 
-    const isPlaceholder = (val: string) => 
+    const isPlaceholder = (val: any) => 
         !val || 
         ['member', 'candidate', 'null', 'n/a', 'none', 'undefined', 'n a'].includes(val.toString().toLowerCase().trim());
 
-    // Standardize IDs
-    if (data.record_id) result.record_id = data.record_id;
-    else if (data.id) result.record_id = data.id;
+    // 1. Recover Record ID
+    // Search for ID in various possible keys returned by AI
+    const idKeys = ['record_id', 'recordId', 'id', 'record', 'uid'];
+    for (const key of idKeys) {
+        const val = data[key]?.toString().trim();
+        if (val && !isPlaceholder(val) && val.length > 5) {
+            result.record_id = val;
+            break;
+        }
+    }
 
-    // 1. Map Core Identifiers
+    // 2. Map Core Identifiers with extensive aliases
     const maps = {
-        companyName: ['company_name', 'company', 'name', 'business_name'],
-        email: ['email_address', 'emailAddress', 'mail', 'email'],
-        phone: ['telephone_number', 'telephone', 'phone_number', 'cell', 'mobile'],
-        address: ['physical_address', 'physicalAddress', 'location'],
-        website: ['url', 'site', 'website', 'website_url']
+        companyName: ['company_name', 'companyName', 'company', 'name', 'business_name', 'business'],
+        email: ['email_address', 'emailAddress', 'mail', 'email', 'e_mail'],
+        phone: ['telephone_number', 'telephone', 'phone_number', 'cell', 'mobile', 'contact_number', 'tel'],
+        address: ['physical_address', 'physicalAddress', 'location', 'address', 'street'],
+        website: ['url', 'site', 'website', 'website_url', 'web']
     };
 
     Object.entries(maps).forEach(([standardKey, aiKeys]) => {
@@ -55,16 +63,34 @@ function normalizePartnerData(data: any) {
         }
     });
 
-    // 2. Handle Contact Person & Identity
-    const rawContact = (data.contact_person || data.contactPerson || data.contact || '').toString().trim();
-    if (rawContact && !isPlaceholder(rawContact)) {
-        result.contactPerson = rawContact;
-        
-        // Reconstruct first/last names if currently placeholders or empty
-        const parts = rawContact.split(' ');
-        result.firstName = parts[0] || 'Member';
-        result.lastName = parts.slice(1).join(' ') || 'Candidate';
+    // 3. Handle Identity Construction (firstName/lastName)
+    // First, try explicit name fields
+    const firstNameKeys = ['firstName', 'first_name', 'fname', 'given_name'];
+    const lastNameKeys = ['lastName', 'last_name', 'lname', 'surname', 'family_name'];
+
+    for (const key of firstNameKeys) {
+        const val = data[key]?.toString().trim();
+        if (val && !isPlaceholder(val)) { result.firstName = val; break; }
     }
+    for (const key of lastNameKeys) {
+        const val = data[key]?.toString().trim();
+        if (val && !isPlaceholder(val)) { result.lastName = val; break; }
+    }
+
+    // If still missing, split from Full Name / Contact Person
+    if (!result.firstName) {
+        const rawContact = (data.contact_person || data.contactPerson || data.contact || '').toString().trim();
+        if (rawContact && !isPlaceholder(rawContact)) {
+            result.contactPerson = rawContact;
+            const parts = rawContact.split(' ');
+            result.firstName = parts[0] || 'Member';
+            result.lastName = parts.slice(1).join(' ') || 'Candidate';
+        }
+    }
+
+    // Fallback defaults for mandatory fields
+    if (!result.firstName) result.firstName = 'Member';
+    if (!result.lastName) result.lastName = 'Candidate';
 
     return result;
 }
@@ -102,27 +128,41 @@ export async function POST(req: NextRequest) {
                 };
                 const leadRole = roleMapping[type] || type;
                 
+                let updatedCount = 0;
+                let createdCount = 0;
+
                 for (const p of partners) {
                     const normalized = normalizePartnerData(p);
                     
                     let leadRef;
                     let existingData = null;
 
-                    // ID-FIRST MATCHING
-                    if (normalized.record_id && normalized.record_id.length > 5) {
+                    // 1. PRIMARY MATCH: UNIQUE ID (IDENTITY PERSISTENCE)
+                    if (normalized.record_id) {
                         leadRef = db.collection('leads').doc(normalized.record_id);
                         const docSnap = await leadRef.get();
-                        if (docSnap.exists) existingData = docSnap.data();
-                    } else {
-                        // Fallback to name matching
+                        if (docSnap.exists) {
+                            existingData = docSnap.data();
+                            updatedCount++;
+                        } else {
+                            // The ID provided by AI doesn't exist? This is rare, but we fallback to name
+                            leadRef = null;
+                        }
+                    }
+
+                    // 2. SECONDARY MATCH: COMPANY NAME
+                    if (!leadRef) {
                         const companyNameClean = (normalized.companyName || '').trim();
                         if (!companyNameClean) continue;
                         const existingLeads = await db.collection('leads').where('companyName', '==', companyNameClean).get();
                         if (!existingLeads.empty) {
                             leadRef = existingLeads.docs[0].ref;
                             existingData = existingLeads.docs[0].data();
+                            updatedCount++;
                         } else {
+                            // 3. CREATE NEW RECORD
                             leadRef = db.collection('leads').doc();
+                            createdCount++;
                         }
                     }
 
@@ -134,7 +174,10 @@ export async function POST(req: NextRequest) {
                         ...normalized,
                         id: leadRef.id,
                         role: leadRole,
-                        status: hasContactInfo ? 'qualified' : (existingData?.status || 'contacted'),
+                        // Ensure we don't downgrade status if already active
+                        status: (existingData?.status === 'active' || existingData?.status === 'registered') 
+                            ? existingData.status 
+                            : (hasContactInfo ? 'qualified' : 'contacted'),
                         researchStatus: 'completed',
                         updatedAt: FieldValue.serverTimestamp(),
                         createdAt: existingData ? (existingData.createdAt || FieldValue.serverTimestamp()) : FieldValue.serverTimestamp()
@@ -145,7 +188,12 @@ export async function POST(req: NextRequest) {
                 }
                 
                 await batch.commit();
-                return NextResponse.json({ success: true });
+                return NextResponse.json({ 
+                    success: true, 
+                    message: `Bulk update complete. Updated: ${updatedCount}, Created: ${createdCount}.`,
+                    updatedCount,
+                    createdCount
+                });
             }
             case 'getPartnersByType': {
                 const { type } = payload;
@@ -174,7 +222,7 @@ export async function POST(req: NextRequest) {
                 leadsSnap.docs.forEach(doc => {
                     const existing = mergedMap.get(doc.id);
                     const leadData = doc.data();
-                    const finalStatus = (existing?.status === 'active' || existing?.status === 'qualified') 
+                    const finalStatus = (existing?.status === 'active' || existing?.status === 'qualified' || existing?.status === 'registered') 
                         ? existing.status 
                         : (leadData.status || existing?.status || 'new');
 
@@ -204,7 +252,6 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true });
             }
             case 'resetResearchQueue': {
-                const { type } = payload;
                 const snap = await db.collection('leads').where('researchStatus', '==', 'researching').get();
                 const batch = db.batch();
                 let count = 0;
