@@ -32,11 +32,11 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
 
     const aiPrompt = `STRICT INSTRUCTION: RETURN ONLY A RAW JSON OBJECT. NO CONVERSATIONAL TEXT. NO MARKDOWN.
 
-ACT AS A HIGH-INTELLIGENCE INVESTIGATIVE RESEARCH AGENT. Find CURRENT contact and management details for the following South African company.
+ACT AS A PROFESSIONAL RESEARCH AGENT. Find CURRENT public contact details for the following South African business.
 
-INVESTIGATIVE STRATEGY:
-1. LEADERSHIP SEARCH: Actively look for the name of the "Managing Director", "Owner", or "Principal".
-2. REGISTRY CHECK: Cross-reference with the SARS Carrier/Clearing Database and CIPC records.
+RESEARCH STRATEGY:
+1. SEARCH CHANNELS: Scour public business directories (Yellow Pages, Brabys, Snupit), LinkedIn company profiles, and Facebook business pages.
+2. KEY CONTACT: Look for the name of the Owner, Managing Director, or Branch Manager.
 3. IDENTITY PERSISTENCE: You MUST return "record_id": "${partner.id}" in your response.
 
 REQUIRED OUTPUT SCHEMA (JSON):
@@ -57,7 +57,7 @@ ${companyName}`;
         try {
             await navigator.clipboard.writeText(aiPrompt);
             setIsCopied(true);
-            toast({ title: "Prompt Copied!", description: "Paste this into Google AI to get the data." });
+            toast({ title: "Prompt Copied!", description: "Paste this into your AI now." });
         } catch (e) {
             toast({ variant: 'destructive', title: "Copy Failed" });
         }
@@ -99,7 +99,7 @@ ${companyName}`;
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
                             <Sparkles className="h-5 w-5 text-primary" />
-                            AI Investigative Assistant
+                            Individual AI Research
                         </DialogTitle>
                         <DialogDescription>
                             Generate a deep-search prompt for <strong>{companyName}</strong>.
@@ -109,14 +109,14 @@ ${companyName}`;
                     <div className="space-y-4 py-4">
                         <Alert className="bg-primary/5 border-primary/20">
                             <Info className="h-4 w-4 text-primary" />
-                            <AlertTitle>Deep Search Strategy</AlertTitle>
+                            <AlertTitle>Public Search Active</AlertTitle>
                             <AlertDescription>
-                                This prompt commands the AI to search for Managing Directors and official SARS registries to find details that are often missing from basic snippets.
+                                This prompt instructs the AI to check verified public directories and social platforms to find missing contact data.
                             </AlertDescription>
                         </Alert>
 
                         <div className="space-y-2">
-                            <label className="text-xs font-bold uppercase text-muted-foreground">Investigative Prompt</label>
+                            <label className="text-xs font-bold uppercase text-muted-foreground">AI Research Prompt</label>
                             <ScrollArea className="h-48 w-full border rounded-md p-3 bg-muted/30 text-foreground">
                                 <pre className="text-xs whitespace-pre-wrap font-sans">{aiPrompt}</pre>
                             </ScrollArea>

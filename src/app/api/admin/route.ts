@@ -24,16 +24,17 @@ function serializeTimestamps(docData: any): any {
 /**
  * Universal Data Normalization
  * Strictly maps diverse AI fields to standard CRM fields (firstName, lastName, email, etc.)
+ * IGNORES "null" or placeholder values to prevent overwriting existing data.
  */
 function normalizePartnerData(data: any) {
-    const result: any = { ...data };
+    const result: any = {};
 
     const isPlaceholder = (val: any) => 
         !val || 
-        ['member', 'candidate', 'null', 'n/a', 'none', 'undefined', 'n a'].includes(val.toString().toLowerCase().trim());
+        ['member', 'candidate', 'null', 'n/a', 'none', 'undefined', 'n a', 'unknown'].includes(val.toString().toLowerCase().trim());
 
     // 1. Recover Record ID
-    const idKeys = ['record_id', 'recordId', 'id', 'record', 'uid'];
+    const idKeys = ['record_id', 'recordId', 'id', 'record', 'uid', 'recordid'];
     for (const key of idKeys) {
         const val = data[key]?.toString().trim();
         if (val && !isPlaceholder(val) && val.length > 5) {
@@ -46,7 +47,7 @@ function normalizePartnerData(data: any) {
     const maps = {
         companyName: ['company_name', 'companyName', 'company', 'name', 'business_name', 'business'],
         email: ['email_address', 'emailAddress', 'mail', 'email', 'e_mail'],
-        phone: ['telephone_number', 'telephone', 'phone_number', 'cell', 'mobile', 'contact_number', 'tel'],
+        phone: ['telephone_number', 'telephone', 'phone_number', 'cell', 'mobile', 'contact_number', 'tel', 'phone'],
         address: ['physical_address', 'physicalAddress', 'location', 'address', 'street'],
         website: ['url', 'site', 'website', 'website_url', 'web']
     };
@@ -62,30 +63,22 @@ function normalizePartnerData(data: any) {
     });
 
     // 3. Handle Identity Construction (firstName/lastName)
-    const firstNameKeys = ['firstName', 'first_name', 'fname', 'given_name'];
-    const lastNameKeys = ['lastName', 'last_name', 'lname', 'surname', 'family_name'];
-
-    for (const key of firstNameKeys) {
+    const contactKeys = ['contact_person', 'contactPerson', 'contact', 'person', 'owner', 'director', 'manager', 'leadership'];
+    let contactVal = '';
+    for (const key of contactKeys) {
         const val = data[key]?.toString().trim();
-        if (val && !isPlaceholder(val)) { result.firstName = val; break; }
-    }
-    for (const key of lastNameKeys) {
-        const val = data[key]?.toString().trim();
-        if (val && !isPlaceholder(val)) { result.lastName = val; break; }
-    }
-
-    if (!result.firstName) {
-        const rawContact = (data.contact_person || data.contactPerson || data.contact || '').toString().trim();
-        if (rawContact && !isPlaceholder(rawContact)) {
-            result.contactPerson = rawContact;
-            const parts = rawContact.split(' ');
-            result.firstName = parts[0] || 'Member';
-            result.lastName = parts.slice(1).join(' ') || 'Candidate';
+        if (val && !isPlaceholder(val)) {
+            contactVal = val;
+            break;
         }
     }
 
-    if (!result.firstName) result.firstName = 'Member';
-    if (!result.lastName) result.lastName = 'Candidate';
+    if (contactVal) {
+        result.contactPerson = contactVal;
+        const parts = contactVal.split(' ');
+        result.firstName = parts[0];
+        result.lastName = parts.slice(1).join(' ') || 'Candidate';
+    }
 
     return result;
 }
@@ -132,7 +125,6 @@ export async function POST(req: NextRequest) {
                     let existingData = null;
 
                     if (targetId) {
-                        // Priority 1: ID-Locked matching across both collections
                         const [leadSnap, partnerSnap] = await Promise.all([
                             db.collection('leads').doc(targetId).get(),
                             db.collection('partners').doc(targetId).get()
@@ -142,13 +134,11 @@ export async function POST(req: NextRequest) {
                             existingData = leadSnap.exists ? leadSnap.data() : partnerSnap.data();
                             updatedCount++;
                         } else {
-                            // ID provided but not found? This should be rare with our prompts.
                             targetId = null;
                         }
                     }
 
                     if (!targetId) {
-                        // Priority 2: Name-based fallback to prevent duplicates
                         const companyNameClean = (normalized.companyName || '').trim();
                         if (!companyNameClean) continue;
                         const existingLeads = await db.collection('leads').where('companyName', '==', companyNameClean).get();

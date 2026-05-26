@@ -26,12 +26,13 @@ export function BatchResearchDialog({ open, onOpenChange, selectedLeads, onCompl
     
     const aiPrompt = `STRICT INSTRUCTION: RETURN ONLY A RAW JSON ARRAY. NO CONVERSATIONAL TEXT. NO MARKDOWN CODE BLOCKS. 
 
-ACT AS A HIGH-INTELLIGENCE INVESTIGATIVE RESEARCH AGENT. Find CURRENT contact details for the following South African companies.
+ACT AS A PROFESSIONAL RESEARCH AGENT. Find verified public contact details for the following South African transport/logistics businesses.
 
-INVESTIGATIVE RULES:
-1. IDENTITY PERSISTENCE (CRITICAL): For every record, you MUST return the "record_id" exactly as provided in the brackets [ID: ...]. This is used for database syncing.
-2. LEADERSHIP SEARCH: Actively search for the name of the "Managing Director", "Owner", or "Principal". Return this in "contact_person".
-3. REGISTRY CHECK: Cross-reference with the SARS Carrier/Clearing Database and CIPC records to find verified professional emails.
+RESEARCH STRATEGY:
+1. IDENTITY PERSISTENCE: For every record, you MUST return the "record_id" exactly as provided in the brackets [ID: ...].
+2. SEARCH CHANNELS: Scour public business directories (Yellow Pages, Brabys), LinkedIn company profiles, and Facebook business pages.
+3. KEY CONTACT: Look for the name of the Owner, Managing Director, or Branch Manager.
+4. VALIDATION: Ensure the email is a professional address (e.g. info@company.co.za) or a verified person's address.
 
 OUTPUT FORMAT (JSON ARRAY):
 [{"record_id":"...","company_name":"...","contact_person":"...","email_address":"...","telephone_number":"...","website":"...","physical_address":"..."}]
@@ -43,7 +44,7 @@ ${companyList}`;
         try {
             await navigator.clipboard.writeText(aiPrompt);
             setIsCopied(true);
-            toast({ title: "Prompt & List Copied!", description: "Paste this into your high-context AI (like Gemini 1.5 Pro) now." });
+            toast({ title: "Prompt & List Copied!", description: "Paste this into your AI (like Gemini 1.5 Pro) now." });
         } catch (e) {
             toast({ variant: 'destructive', title: "Copy Failed", description: "Please manually copy the text from the box." });
         }
@@ -110,7 +111,7 @@ ${companyList}`;
                     )}
 
                     <div className="space-y-2">
-                        <label className="text-xs font-bold uppercase text-muted-foreground">High-Intelligence Research Prompt</label>
+                        <label className="text-xs font-bold uppercase text-muted-foreground">AI Research Prompt</label>
                         <ScrollArea className="h-64 w-full border rounded-md p-3 bg-muted/30">
                             <pre className="text-[11px] whitespace-pre-wrap font-sans leading-relaxed text-foreground">{aiPrompt}</pre>
                         </ScrollArea>
