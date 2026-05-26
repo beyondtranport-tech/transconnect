@@ -40,7 +40,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { EngageDialog } from './marketing/EngageDialog';
 import { Label } from '@/components/ui/label';
 import { formatDateSafe, cn } from '@/lib/utils';
-import { EnrichPartnerButton } from './marketing/EnrichPartnerButton';
+import { EnrichPartnerButton, BulkEnrichButton } from './marketing/EnrichPartnerButton';
 import { PartnerTasksDialog } from './marketing/PartnerTasksDialog';
 import { CommunicationLogDialog } from './marketing/CommunicationLogDialog';
 import { BulkImportDialog } from './marketing/BulkImportDialog';
@@ -335,6 +335,29 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
         </Alert>
 
         <div className="flex-1 overflow-y-auto p-4 space-y-6">
+          <div className="flex items-center justify-between mb-4 p-3 bg-muted rounded-md border border-dashed">
+            <div className="flex items-center gap-2">
+                <Checkbox 
+                    id="select-all-recommended-leads" 
+                    checked={Object.keys(selections).length === duplicates.length}
+                    onCheckedChange={(checked) => {
+                        if (checked) {
+                            const newSelections: Record<number, string> = {};
+                            duplicates.forEach((group, index) => {
+                                const member = group.find(r => r.source === 'Member');
+                                newSelections[index] = member ? member.id : group[0].id;
+                            });
+                            setSelections(newSelections);
+                        } else {
+                            setSelections({});
+                        }
+                    }}
+                />
+                <Label htmlFor="select-all-recommended-leads" className="text-xs font-bold cursor-pointer">Apply Recommended Selections to ALL Groups</Label>
+            </div>
+            <p className="text-[10px] text-muted-foreground uppercase font-bold">{duplicates.length} Duplicate Groups Found</p>
+          </div>
+
           {duplicates.map((group, groupIndex) => {
              const groupName = group.find(r => r.companyName)?.companyName || 'Unnamed Group';
              return (

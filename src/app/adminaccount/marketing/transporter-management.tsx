@@ -5,7 +5,10 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, Truck, Edit, Trash2, Send, CheckCircle, Users, Filter, Save, Search, Zap, RotateCcw, XCircle, Info, Sparkles, AlertCircle, MailCheck, MailQuestion } from 'lucide-react';
+import { 
+  Loader2, PlusCircle, Truck, Edit, Trash2, Send, CheckCircle, Users, Filter, Save, 
+  Search, Zap, RotateCcw, XCircle, Info, Sparkles, AlertCircle, MailCheck, MailQuestion 
+} from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -251,6 +254,29 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
         </Alert>
 
         <div className="flex-1 overflow-y-auto p-4 space-y-6">
+          <div className="flex items-center justify-between mb-4 p-3 bg-muted rounded-md border border-dashed">
+            <div className="flex items-center gap-2">
+                <Checkbox 
+                    id="select-all-recommended" 
+                    checked={Object.keys(selections).length === duplicates.length}
+                    onCheckedChange={(checked) => {
+                        if (checked) {
+                            const newSelections: Record<number, string> = {};
+                            duplicates.forEach((group, index) => {
+                                const member = group.find(r => r.source === 'Member');
+                                newSelections[index] = member ? member.id : group[0].id;
+                            });
+                            setSelections(newSelections);
+                        } else {
+                            setSelections({});
+                        }
+                    }}
+                />
+                <Label htmlFor="select-all-recommended" className="text-xs font-bold cursor-pointer">Apply Recommended Selections to ALL Groups</Label>
+            </div>
+            <p className="text-[10px] text-muted-foreground uppercase font-bold">{duplicates.length} Duplicate Groups Found</p>
+          </div>
+
           {duplicates.map((group, groupIndex) => {
              const groupName = group.find(r => r.companyName)?.companyName || 'Unnamed Group';
              return (
