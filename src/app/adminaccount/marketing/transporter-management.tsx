@@ -5,7 +5,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, Truck, Edit, Trash2, Send, CheckCircle, Users, MailCheck, MailQuestion, Filter, Save, Search, Zap, RotateCcw, XCircle, Info, Sparkles } from 'lucide-react';
+import { Loader2, PlusCircle, Truck, Edit, Trash2, Send, CheckCircle, Users, Filter, Save, Search, Zap, RotateCcw, XCircle, Info, Sparkles, AlertCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -171,6 +171,14 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
       if (result.data.length === 0) {
         toast({ title: "No duplicates found." });
       } else {
+        // Pre-select recommended records (prefer Members over Leads)
+        const initialSelections: Record<number, string> = {};
+        result.data.forEach((group: any[], index: number) => {
+            const memberRecord = group.find(r => r.source === 'Member');
+            if (memberRecord) initialSelections[index] = memberRecord.id;
+            else initialSelections[index] = group[0].id;
+        });
+        setSelections(initialSelections);
         setIsOpen(true);
       }
     } catch (e: any) {
@@ -225,48 +233,67 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
           Find & Clean Duplicates
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-4xl">
+      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Duplicate Transporter Cleaner</DialogTitle>
           <DialogDescription>
-            Select the records you want to keep. The others in the group will be deleted.
+            Select the records you want to keep. All unselected records in the group will be deleted.
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-6 max-h-[60vh] overflow-y-auto p-4">
+        
+        <Alert className="bg-amber-50 border-amber-200">
+            <Info className="h-4 w-4 text-amber-600" />
+            <AlertTitle>Recommendation Guide</AlertTitle>
+            <AlertDescription className="text-xs">
+                Always keep <strong>Members</strong> (Registered users) and delete <strong>Leads</strong> (Projections). 
+                Deleting a Member record will break their live account access.
+            </AlertDescription>
+        </Alert>
+
+        <div className="flex-1 overflow-y-auto p-4 space-y-6">
           {duplicates.map((group, groupIndex) => {
              const groupName = group.find(r => r.companyName)?.companyName || 'Unnamed Group';
              return (
-                <Card key={groupIndex}>
-                <CardHeader><CardTitle>Group: {groupName}</CardTitle></CardHeader>
-                <CardContent>
-                    {group.map(lead => (
-                    <div key={lead.id} className="flex items-start gap-4 p-2 border-b last:border-b-0">
-                        <Checkbox
-                        id={`lead-${groupIndex}-${lead.id}`}
-                        checked={selections[groupIndex] === lead.id}
-                        onCheckedChange={() => setSelections(prev => ({ ...prev, [groupIndex]: lead.id }))}
-                        />
-                        <label htmlFor={`lead-${groupIndex}-${lead.id}`} className="text-sm cursor-pointer w-full">
-                        <div className="flex justify-between items-start">
-                            <div>
-                                <p className="font-semibold">{lead.companyName || 'No Company Name'}</p>
-                                <p className="text-xs text-muted-foreground">{lead.contactPerson || lead.firstName + ' ' + lead.lastName}</p>
-                                <p className="text-xs font-mono text-muted-foreground">{lead.id}</p>
+                <Card key={groupIndex} className="shadow-none border">
+                <CardHeader className="py-3 bg-muted/30"><CardTitle className="text-sm font-bold">Group: {groupName}</CardTitle></CardHeader>
+                <CardContent className="p-0">
+                    {group.map(lead => {
+                        const isRecommended = lead.source === 'Member';
+                        return (
+                            <div key={lead.id} className={cn("flex items-start gap-4 p-4 border-b last:border-b-0", selections[groupIndex] === lead.id ? "bg-primary/5" : "")}>
+                                <Checkbox
+                                    id={`lead-${groupIndex}-${lead.id}`}
+                                    checked={selections[groupIndex] === lead.id}
+                                    onCheckedChange={() => setSelections(prev => ({ ...prev, [groupIndex]: lead.id }))}
+                                />
+                                <label htmlFor={`lead-${groupIndex}-${lead.id}`} className="text-sm cursor-pointer w-full">
+                                    <div className="flex justify-between items-start">
+                                        <div>
+                                            <div className="flex items-center gap-2">
+                                                <p className="font-bold">{lead.companyName || 'No Company Name'}</p>
+                                                {isRecommended && <Badge variant="default" className="bg-green-100 text-green-700 text-[10px] uppercase">Recommended</Badge>}
+                                            </div>
+                                            <p className="text-xs text-muted-foreground">{lead.contactPerson || `${lead.firstName || ''} ${lead.lastName || ''}`.trim() || 'No Contact Name'}</p>
+                                            <p className="text-[10px] font-mono text-muted-foreground mt-1">{lead.id}</p>
+                                        </div>
+                                        <Badge variant={lead.source === 'Member' ? 'default' : 'outline'} className="text-[10px] uppercase font-extrabold">{lead.source}</Badge>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground mt-2">{lead.email || 'No Email'} • {lead.phone || lead.telephone_number || 'No Phone'}</p>
+                                </label>
                             </div>
-                            <Badge variant="outline" className="text-[10px] uppercase font-bold">{lead.source}</Badge>
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1">{lead.email || 'No Email'}</p>
-                        </label>
-                    </div>
-                    ))}
+                        )
+                    })}
                 </CardContent>
                 </Card>
              )
           })}
         </div>
-        <DialogFooter>
+        <DialogFooter className="p-4 border-t">
           <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
-          <Button onClick={handleClean} disabled={isLoading}>Clean Selected</Button>
+          <Button onClick={handleClean} disabled={isLoading} className="bg-destructive hover:bg-destructive/90">
+             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Trash2 className="mr-2 h-4 w-4"/>}
+             Delete Unselected & Clean
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
