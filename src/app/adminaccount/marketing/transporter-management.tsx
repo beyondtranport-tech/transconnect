@@ -5,7 +5,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, Truck, Edit, Trash2, Send, CheckCircle, Users, Filter, Save, Search, Zap, RotateCcw, XCircle, Info, Sparkles, AlertCircle } from 'lucide-react';
+import { Loader2, PlusCircle, Truck, Edit, Trash2, Send, CheckCircle, Users, Filter, Save, Search, Zap, RotateCcw, XCircle, Info, Sparkles, AlertCircle, MailCheck, MailQuestion } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -18,16 +18,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { PartnerOversightDialog } from './PartnerOversightDialog';
+import { PartnerTasksDialog } from './PartnerTasksDialog';
+import { CommunicationLogDialog } from './CommunicationLogDialog';
 import { EngageDialog } from './EngageDialog';
 import { formatDateSafe, cn } from '@/lib/utils';
-import { EnrichPartnerButton } from './EnrichPartnerButton';
+import { EnrichPartnerButton, BulkEnrichButton } from './EnrichPartnerButton';
 import { Label } from '@/components/ui/label';
 import { BatchResearchDialog } from './BatchResearchDialog';
 import { BulkImportDialog } from './BulkImportDialog';
 import { BulkOutreachUpdateDialog } from './BulkOutreachUpdateDialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { serverTimestamp } from 'firebase/firestore';
 
 async function performAdminAction(token: string, action: string, payload: any) {
   const response = await fetch('/api/admin', {
