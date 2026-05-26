@@ -30,27 +30,24 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
 
     const companyName = partner.companyName || `${partner.firstName} ${partner.lastName}`;
 
-    const aiPrompt = `I need you to act as a precision research agent. Your task is to find the current contact and management details for the following South African company.
+    const aiPrompt = `STRICT INSTRUCTION: RETURN ONLY A RAW JSON OBJECT. NO CONVERSATIONAL TEXT. NO MARKDOWN.
+
+Find the current contact and management details for the following South African company.
 
 RESEARCH STRATEGY:
-1. Search extensively across LinkedIn, Facebook, X (Twitter), and Instagram for official business pages.
-2. Check top regional directories: YellowPages.co.za, Brabys.com, EasyInfo.co.za, Snupit.co.za, and Cylex.net.za.
-3. Look for professional email addresses. If not found, look for generic ones (info@, sales@, admin@) or personal management addresses found on social profiles.
-4. Identify the name of a key decision-maker (Owner, Director, Manager, or Fleet Manager).
+1. Search LinkedIn, Facebook, Instagram, and X for official pages.
+2. Check directories: YellowPages.co.za, Brabys.com, EasyInfo.co.za, Snupit.co.za.
+3. Look for professional emails. If not found, guess based on management social signatures.
 
-OUTPUT FORMAT:
-Provide the output ONLY as a clean JSON object. DO NOT include conversational text.
-
+REQUIRED OUTPUT SCHEMA (JSON):
 {
   "company_name": "${companyName}",
-  "contact_person": "Full Name",
-  "email_address": "Verifiable address",
-  "telephone_number": "Local SA format",
-  "website": "Primary domain",
-  "physical_address": "Full street address"
+  "contact_person": "Full Name or null",
+  "email_address": "email@example.com or null",
+  "telephone_number": "011... or null",
+  "website": "www... or null",
+  "physical_address": "Street... or null"
 }
-
-If a field is not found after deep searching, use null. DO NOT hallucinate.
 
 COMPANY TO RESEARCH:
 ${companyName}`;
@@ -127,7 +124,8 @@ ${companyName}`;
 
                     <DialogFooter className="sm:justify-between gap-4">
                         <Button variant="outline" onClick={handleCopy}>
-                            <Copy className="mr-2 h-4 w-4" /> {isCopied ? 'Copied!' : 'Copy Prompt'}
+                            {isCopied ? <ClipboardCheck className="mr-2 h-4 w-4 text-green-600" /> : <Copy className="mr-2 h-4 w-4" />} 
+                            {isCopied ? 'Copied!' : 'Copy Prompt'}
                         </Button>
                         <Button onClick={handleMarkAsResearching} disabled={isLogging || !isCopied} className="bg-primary hover:bg-primary/90 text-white">
                             {isLogging ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <ClipboardCheck className="mr-2 h-4 w-4" />}

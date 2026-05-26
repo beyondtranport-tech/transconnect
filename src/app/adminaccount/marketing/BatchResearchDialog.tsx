@@ -23,35 +23,36 @@ export function BatchResearchDialog({ open, onOpenChange, selectedLeads, onCompl
 
     const companyNames = selectedLeads.map(l => l.companyName || `${l.firstName} ${l.lastName}`).join('\n');
     
-    const aiPrompt = `I need you to act as a high-intelligence research agent. Your task is to find current contact and management details for the following South African companies.
+    const aiPrompt = `STRICT INSTRUCTION: RETURN ONLY A RAW JSON ARRAY. NO CONVERSATIONAL TEXT. NO MARKDOWN CODE BLOCKS.
+
+I need you to act as a high-intelligence research agent. Find current contact and management details for the following South African companies.
 
 RESEARCH STRATEGY:
-1. Search extensively across LinkedIn, Facebook, X (Twitter), and Instagram for official business pages.
-2. Check top regional directories: YellowPages.co.za, Brabys.com, EasyInfo.co.za, Snupit.co.za, and Cylex.net.za.
-3. Look for professional email addresses. If not found, look for generic ones (info@, sales@, admin@) or personal management addresses found on social profiles.
-4. Identify the name of a key decision-maker (Owner, Director, Manager, or Fleet Manager).
-5. Cross-reference company names with 'South Africa' and 'Logistics' or 'Transport' to ensure accuracy.
+1. Search LinkedIn, Facebook, Instagram, and X for official pages.
+2. Check directories: YellowPages.co.za, Brabys.com, EasyInfo.co.za, Snupit.co.za.
+3. Look for professional emails. If not found, search for management names and guess based on domain pattern or look for personal social contacts.
+4. Identify Owner/Director/Manager.
 
-OUTPUT FORMAT:
-Provide the output ONLY as a clean JSON array of objects. DO NOT include any conversational text or markdown markers like \`\`\`json.
-
-Each object MUST have these exact keys:
-- company_name
-- contact_person (Full Name)
-- email_address (Verifiable)
-- telephone_number (Local SA format or +27)
-- website (Primary domain)
-- physical_address (Full street address)
-
-If a field is not found after deep searching, use null. DO NOT hallucinate.
+REQUIRED OUTPUT SCHEMA (JSON ARRAY):
+[
+  {
+    "company_name": "Exact Name",
+    "contact_person": "Full Name or null",
+    "email_address": "email@example.com or null",
+    "telephone_number": "011... or null",
+    "website": "www... or null",
+    "physical_address": "Street... or null"
+  }
+]
 
 COMPANIES TO RESEARCH:
-${companyNames}`;
+${companyNames}
+
+FINAL REMINDER: RETURN ONLY THE JSON ARRAY. START WITH [ AND END WITH ].`;
 
     const handleCopyAll = async () => {
-        const fullText = `INSTRUCTIONS:\n${aiPrompt}\n\nLIST TO PROCESS:\n${companyNames}`;
         try {
-            await navigator.clipboard.writeText(fullText);
+            await navigator.clipboard.writeText(aiPrompt);
             setIsCopied(true);
             toast({ title: "Prompt & List Copied!", description: "Paste this into Google AI now." });
         } catch (e) {

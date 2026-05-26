@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState } from 'react';
@@ -33,20 +32,24 @@ export function BulkImportDialog({ type, onComplete, children }: BulkImportDialo
     };
 
     /**
-     * Super-Resilient JSON Parser
-     * Extracts valid objects even from fragmented or "messy" AI output.
+     * Resilient JSON Parser
+     * Handles markdown wrappers and extracts valid objects from fragmented text.
      */
     const processJsonData = (rawText: string) => {
         let results: any[] = [];
-        const text = rawText.trim();
+        let text = rawText.trim();
 
-        // Strategy 1: Try standard parsing first
+        // 1. Strip Markdown code blocks if present
+        if (text.includes('```')) {
+            text = text.replace(/```(?:json)?/g, '').replace(/```/g, '').trim();
+        }
+
+        // 2. Try standard parsing first
         try {
             const parsed = JSON.parse(text);
             results = Array.isArray(parsed) ? parsed : [parsed];
         } catch (e) {
-            // Strategy 2: If standard fails, use Regex to find all { ... } blocks
-            // This handles snippets that start or end mid-object or are missing [ ]
+            // 3. Fallback: Regex extraction for { ... } blocks
             const objectRegex = /\{(?:[^{}]|((?:\{[^{}]*\})))*\}/g;
             const matches = text.match(objectRegex);
 
@@ -86,7 +89,7 @@ export function BulkImportDialog({ type, onComplete, children }: BulkImportDialo
 
             let partners: any[] = [];
 
-            // Deterministic selection of parser based on content
+            // Process based on source
             if (source === 'paste' || (file && (file.name.toLowerCase().endsWith('.json') || text.includes('{')))) {
                 partners = processJsonData(text);
             } else {
@@ -155,8 +158,8 @@ export function BulkImportDialog({ type, onComplete, children }: BulkImportDialo
                     <TabsContent value="paste" className="space-y-4 pt-4">
                         <Alert className="bg-primary/5 border-primary/20">
                             <Zap className="h-4 w-4 text-primary" />
-                            <AlertTitle>Smart Fragment Detection</AlertTitle>
-                            <AlertDescription>I can now extract records even if you paste a partial or "messy" snippet from the AI chat.</AlertDescription>
+                            <AlertTitle>Smart Markdown Detection</AlertTitle>
+                            <AlertDescription>I can now strip markdown wrappers automatically. Just paste exactly what the AI gave you.</AlertDescription>
                         </Alert>
                         <div className="space-y-2">
                             <Label>Paste Data Below</Label>
