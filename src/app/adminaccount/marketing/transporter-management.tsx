@@ -110,7 +110,7 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
                 <FormItem>
                     <FormLabel>Category</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                        <FormControl><SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger></FormControl>
                         <SelectContent>
                             <SelectItem value="partner">Partner</SelectItem>
                             <SelectItem value="isa">ISA</SelectItem>
@@ -124,7 +124,7 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
                 <FormItem>
                     <FormLabel>Status</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                        <FormControl><SelectTrigger><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
                         <SelectContent>
                             <SelectItem value="active">Active</SelectItem>
                             <SelectItem value="inactive">Inactive</SelectItem>
@@ -136,7 +136,9 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
               )} />
             </div>
             <DialogFooter className="pt-4 border-t">
-              <Button type="submit" disabled={isLoading}>{isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />} Save</Button>
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />} Save
+              </Button>
             </DialogFooter>
           </form>
         </Form>
@@ -227,30 +229,40 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
         <DialogHeader>
           <DialogTitle>Duplicate Transporter Cleaner</DialogTitle>
           <DialogDescription>
-            Select the records you want to keep. The others will be deleted.
+            Select the records you want to keep. The others in the group will be deleted.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-6 max-h-[60vh] overflow-y-auto p-4">
-          {duplicates.map((group, groupIndex) => (
-            <Card key={groupIndex}>
-              <CardHeader><CardTitle>Group: {group[0]?.companyName}</CardTitle></CardHeader>
-              <CardContent>
-                {group.map(lead => (
-                  <div key={lead.id} className="flex items-start gap-4 p-2 border-b last:border-b-0">
-                    <Checkbox
-                      id={`lead-${groupIndex}-${lead.id}`}
-                      checked={selections[groupIndex] === lead.id}
-                      onCheckedChange={() => setSelections(prev => ({ ...prev, [groupIndex]: lead.id }))}
-                    />
-                    <label htmlFor={`lead-${groupIndex}-${lead.id}`} className="text-sm">
-                      <p className="font-semibold">{lead.contactPerson || lead.firstName + ' ' + lead.lastName}</p>
-                      <p className="text-muted-foreground">{lead.email || 'No Email'}</p>
-                    </label>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          ))}
+          {duplicates.map((group, groupIndex) => {
+             const groupName = group.find(r => r.companyName)?.companyName || 'Unnamed Group';
+             return (
+                <Card key={groupIndex}>
+                <CardHeader><CardTitle>Group: {groupName}</CardTitle></CardHeader>
+                <CardContent>
+                    {group.map(lead => (
+                    <div key={lead.id} className="flex items-start gap-4 p-2 border-b last:border-b-0">
+                        <Checkbox
+                        id={`lead-${groupIndex}-${lead.id}`}
+                        checked={selections[groupIndex] === lead.id}
+                        onCheckedChange={() => setSelections(prev => ({ ...prev, [groupIndex]: lead.id }))}
+                        />
+                        <label htmlFor={`lead-${groupIndex}-${lead.id}`} className="text-sm cursor-pointer w-full">
+                        <div className="flex justify-between items-start">
+                            <div>
+                                <p className="font-semibold">{lead.companyName || 'No Company Name'}</p>
+                                <p className="text-xs text-muted-foreground">{lead.contactPerson || lead.firstName + ' ' + lead.lastName}</p>
+                                <p className="text-xs font-mono text-muted-foreground">{lead.id}</p>
+                            </div>
+                            <Badge variant="outline" className="text-[10px] uppercase font-bold">{lead.source}</Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">{lead.email || 'No Email'}</p>
+                        </label>
+                    </div>
+                    ))}
+                </CardContent>
+                </Card>
+             )
+          })}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>

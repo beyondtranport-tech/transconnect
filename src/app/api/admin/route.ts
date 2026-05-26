@@ -319,15 +319,43 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, count });
             }
             case 'findDuplicateLeads': {
-                const snap = await db.collection('leads').get();
+                // Cross-collection duplicate check
+                const [leadsSnap, partnersSnap] = await Promise.all([
+                    db.collection('leads').get(),
+                    db.collection('partners').get()
+                ]);
+
+                const masterList: any[] = [];
+                leadsSnap.docs.forEach(doc => masterList.push({ id: doc.id, source: 'Lead', ...doc.data() }));
+                partnersSnap.docs.forEach(doc => masterList.push({ id: doc.id, source: 'Member', ...doc.data() }));
+
                 const nameMap = new Map<string, any[]>();
-                snap.docs.forEach(doc => {
-                    const name = doc.data().companyName?.trim().toLowerCase();
-                    if (!name) return;
+                masterList.forEach(item => {
+                    const name = (item.companyName || '').toString().trim().toLowerCase();
+                    if (!name || name === 'null' || name === 'n/a') return;
                     if (!nameMap.has(name)) nameMap.set(name, []);
-                    nameMap.get(name)!.push({ id: doc.id, ...doc.data() });
+                    nameMap.get(name)!.push(item);
                 });
-                const duplicates = Array.from(nameMap.values()).filter(group => group.length > 1);
+
+                const duplicates = Array.from(nameMap.entries())
+                    .filter(([name, group]) => {
+                        // A duplicate is identified by DIFFERENT IDs for the SAME company name
+                        const uniqueIds = new Set(group.map(g => g.id));
+                        return uniqueIds.size > 1;
+                    })
+                    .map(([name, group]) => {
+                        // De-duplicate records by ID within the group (if the same ID is in both collections)
+                        const uniqueRecords: any[] = [];
+                        const seenIds = new Set();
+                        group.forEach(rec => {
+                            if (!seenIds.has(rec.id)) {
+                                seenIds.add(rec.id);
+                                uniqueRecords.push(rec);
+                            }
+                        });
+                        return uniqueRecords;
+                    });
+
                 return NextResponse.json({ success: true, data: duplicates });
             }
             case 'deleteLeads': {
@@ -341,13 +369,10 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true });
             }
             case 'resetResearchQueue': {
-                const { type } = payload;
                 const snap = await db.collection('leads').where('researchStatus', '==', 'researching').get();
                 const batch = db.batch();
                 let count = 0;
                 snap.docs.forEach(doc => {
-                    const data = doc.data();
-                    // Optional: only reset if type matches (transporter roles mapped to type)
                     const reset = { researchStatus: FieldValue.delete(), status: 'new' };
                     batch.update(doc.ref, reset);
                     batch.set(db.collection('partners').doc(doc.id), reset, { merge: true });

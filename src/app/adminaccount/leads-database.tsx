@@ -40,7 +40,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { EngageDialog } from './marketing/EngageDialog';
 import { Label } from '@/components/ui/label';
 import { formatDateSafe, cn } from '@/lib/utils';
-import { EnrichPartnerButton, BulkEnrichButton } from './marketing/EnrichPartnerButton';
+import { EnrichPartnerButton, BulkEnrichButton } from './EnrichPartnerButton';
 import { PartnerTasksDialog } from './marketing/PartnerTasksDialog';
 import { CommunicationLogDialog } from './marketing/CommunicationLogDialog';
 import { BulkImportDialog } from './marketing/BulkImportDialog';
@@ -317,26 +317,36 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-6 max-h-[60vh] overflow-y-auto p-4">
-          {duplicates.map((group, groupIndex) => (
-            <Card key={groupIndex}>
-              <CardHeader><CardTitle>Group: {group[0]?.companyName}</CardTitle></CardHeader>
-              <CardContent>
-                {group.map(lead => (
-                  <div key={lead.id} className="flex items-start gap-4 p-2 border-b last:border-b-0">
-                    <Checkbox
-                      id={`lead-${groupIndex}-${lead.id}`}
-                      checked={selections[groupIndex] === lead.id}
-                      onCheckedChange={() => setSelections(prev => ({ ...prev, [groupIndex]: lead.id }))}
-                    />
-                    <label htmlFor={`lead-${groupIndex}-${lead.id}`} className="text-sm">
-                      <p className="font-semibold">{lead.contactPerson || 'No Contact'}</p>
-                      <p className="text-muted-foreground">{lead.email || 'No Email'}</p>
-                    </label>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          ))}
+          {duplicates.map((group, groupIndex) => {
+             const groupName = group.find(r => r.companyName)?.companyName || 'Unnamed Group';
+             return (
+                <Card key={groupIndex}>
+                <CardHeader><CardTitle>Group: {groupName}</CardTitle></CardHeader>
+                <CardContent>
+                    {group.map(lead => (
+                    <div key={lead.id} className="flex items-start gap-4 p-2 border-b last:border-b-0">
+                        <Checkbox
+                        id={`lead-${groupIndex}-${lead.id}`}
+                        checked={selections[groupIndex] === lead.id}
+                        onCheckedChange={() => setSelections(prev => ({ ...prev, [groupIndex]: lead.id }))}
+                        />
+                        <label htmlFor={`lead-${groupIndex}-${lead.id}`} className="text-sm cursor-pointer w-full">
+                            <div className="flex justify-between items-start">
+                                <div>
+                                    <p className="font-semibold">{lead.companyName || 'No Company Name'}</p>
+                                    <p className="text-xs text-muted-foreground">{lead.contactPerson || lead.firstName + ' ' + lead.lastName}</p>
+                                    <p className="text-xs font-mono text-muted-foreground">{lead.id}</p>
+                                </div>
+                                <Badge variant="outline" className="text-[10px] uppercase font-bold">{lead.source}</Badge>
+                            </div>
+                            <p className="text-muted-foreground mt-1">{lead.email || 'No Email'}</p>
+                        </label>
+                    </div>
+                    ))}
+                </CardContent>
+                </Card>
+             )
+          })}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
