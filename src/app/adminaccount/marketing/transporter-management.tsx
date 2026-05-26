@@ -27,6 +27,8 @@ import { BatchResearchDialog } from './BatchResearchDialog';
 import { BulkImportDialog } from './BulkImportDialog';
 import { BulkOutreachUpdateDialog } from './BulkOutreachUpdateDialog';
 import { Checkbox } from '@/components/ui/checkbox';
+import { CommunicationLogDialog } from './CommunicationLogDialog';
+import { PartnerTasksDialog } from './PartnerTasksDialog';
 
 async function performAdminAction(token: string, action: string, payload: any) {
   const response = await fetch('/api/admin', {
@@ -321,7 +323,6 @@ export default function TransporterManagement() {
       return partners.filter(p => {
           const email = (p.email || p.email_address || '').toString().toLowerCase().trim();
           const isInvalidEmail = !email || email === 'null' || email === 'n/a' || email === 'none';
-          // Includes records that need research
           const isResearchable = !p.status || p.status === 'new' || (p.status === 'contacted' && isInvalidEmail); 
           return isResearchable;
       }).length;
@@ -342,7 +343,6 @@ export default function TransporterManagement() {
           const email = (p.email || p.email_address || '').toString().toLowerCase().trim();
           const isInvalidEmail = !email || email === 'null' || email === 'n/a' || email === 'none';
           
-          // Selection criteria: Missing email AND (New OR already marked but incomplete)
           const isResearchable = !p.status || p.status === 'new' || (p.status === 'contacted' && isInvalidEmail); 
           
           if (isResearchable && name && !uniqueNames.has(name)) {
@@ -415,7 +415,7 @@ export default function TransporterManagement() {
         }
     },
     {
-        header: 'Research',
+        header: 'Enhanced Status',
         cell: ({row}) => {
             const isResearching = row.original.researchStatus === 'researching';
             const isCompleted = row.original.researchStatus === 'completed' || !!row.original.email;
@@ -424,20 +424,31 @@ export default function TransporterManagement() {
             return <span className="text-xs text-muted-foreground">-</span>;
         }
     },
-    { accessorKey: 'lastOutreachSubject', header: 'Last Outreach', cell: ({row}) => (
-        <div className="flex flex-col gap-1">
-            <span className="text-xs font-bold text-primary">{row.original.lastOutreachSubject || <span className="text-muted-foreground italic font-normal">None</span>}</span>
-            {row.original.lastOutreachAt && <span className="text-[10px] text-muted-foreground">{formatDateSafe(row.original.lastOutreachAt)}</span>}
-        </div>
-    )},
-    { accessorKey: 'lastOpenedAt', header: 'Read Status', cell: ({row}) => {
-        if (!row.original.lastOutreachAt) return <span className="text-[10px] text-muted-foreground uppercase font-bold">No Outreach</span>;
-        return (
-            <div className="flex items-center gap-2">
-                {row.original.lastOpenedAt ? <Badge className="bg-green-100 text-green-700"><MailCheck className="mr-1 h-3 w-3" /> Read</Badge> : <Badge variant="outline" className="text-muted-foreground"><MailQuestion className="mr-1 h-3 w-3" /> Sent</Badge>}
-            </div>
-        )
-    }},
+    {
+        header: 'Outreach Status',
+        cell: ({row}) => {
+            if (!row.original.lastOutreachAt) return <span className="text-[10px] text-muted-foreground uppercase font-bold">No Outreach</span>;
+            return (
+                <div className="flex flex-col gap-1.5">
+                    <div className="flex flex-col">
+                        <span className="text-xs font-bold text-primary">{row.original.lastOutreachSubject}</span>
+                        <span className="text-[10px] text-muted-foreground">{formatDateSafe(row.original.lastOutreachAt)}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        {row.original.lastOpenedAt ? (
+                            <Badge variant="default" className="bg-green-100 text-green-700 border-green-200 text-[10px] h-4">
+                                <MailCheck className="mr-1 h-3 w-3" /> Read
+                            </Badge>
+                        ) : (
+                            <Badge variant="outline" className="text-muted-foreground text-[10px] h-4">
+                                <MailQuestion className="mr-1 h-3 w-3" /> Sent
+                            </Badge>
+                        )}
+                    </div>
+                </div>
+            )
+        }
+    },
     { accessorKey: 'assigneeId', header: 'Assignee', cell: ({row}) => (
         <div className="flex items-center gap-2">
             <Users className="h-3 w-3 text-muted-foreground" />

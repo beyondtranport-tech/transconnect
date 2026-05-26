@@ -494,7 +494,7 @@ function LeadsDatabaseComponent() {
         }
     },
     {
-        header: 'Research',
+        header: 'Enhanced Status',
         cell: ({row}) => {
             const isResearching = row.original.researchStatus === 'researching';
             const isCompleted = row.original.researchStatus === 'completed' || !!row.original.email;
@@ -503,30 +503,27 @@ function LeadsDatabaseComponent() {
             return <span className="text-xs text-muted-foreground">-</span>;
         }
     },
-    { 
-        header: 'Last Outreach', 
-        cell: ({row}) => (
-            <div className="flex flex-col gap-1">
-                <span className="text-xs font-bold text-primary">{row.original.lastOutreachSubject || <span className="text-muted-foreground italic font-normal">None</span>}</span>
-                {row.original.lastOutreachAt && <span className="text-[10px] text-muted-foreground">{formatDateSafe(row.original.lastOutreachAt)}</span>}
-            </div>
-        )
-    },
     {
-        header: 'Read Status',
+        header: 'Outreach Status',
         cell: ({row}) => {
             if (!row.original.lastOutreachAt) return <span className="text-[10px] text-muted-foreground uppercase font-bold">No Outreach</span>;
             return (
-                <div className="flex items-center gap-2">
-                    {row.original.lastOpenedAt ? (
-                        <Badge variant="default" className="bg-green-100 text-green-700 border-green-200">
-                            <MailCheck className="mr-1 h-3 w-3" /> Read
-                        </Badge>
-                    ) : (
-                        <Badge variant="outline" className="text-muted-foreground">
-                            <MailQuestion className="mr-1 h-3 w-3" /> Sent
-                        </Badge>
-                    )}
+                <div className="flex flex-col gap-1.5">
+                    <div className="flex flex-col">
+                        <span className="text-xs font-bold text-primary">{row.original.lastOutreachSubject}</span>
+                        <span className="text-[10px] text-muted-foreground">{formatDateSafe(row.original.lastOutreachAt)}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        {row.original.lastOpenedAt ? (
+                            <Badge variant="default" className="bg-green-100 text-green-700 border-green-200 text-[10px] h-4">
+                                <MailCheck className="mr-1 h-3 w-3" /> Read
+                            </Badge>
+                        ) : (
+                            <Badge variant="outline" className="text-muted-foreground text-[10px] h-4">
+                                <MailQuestion className="mr-1 h-3 w-3" /> Sent
+                            </Badge>
+                        )}
+                    </div>
                 </div>
             )
         }
