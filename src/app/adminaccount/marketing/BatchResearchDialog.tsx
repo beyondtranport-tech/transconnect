@@ -28,18 +28,18 @@ export function BatchResearchDialog({ open, onOpenChange, selectedLeads, onCompl
 ACT AS A HIGH-INTELLIGENCE INVESTIGATIVE RESEARCH AGENT. Your goal is to find CURRENT contact and management details for the following South African companies.
 
 INVESTIGATIVE STRATEGY:
-1. LEADERSHIP SEARCH: Actively look for the names of "Managing Director", "Owner", "CEO", or "Director" for every company.
+1. LEADERSHIP SEARCH: Actively search for the name of the "Managing Director", "Owner", or "Principal" for every company.
 2. REGISTRY CHECK: Cross-reference with the SARS Carrier/Clearing Database and CIPC records to find official registrations.
-3. SOCIAL INTELLIGENCE: Search LinkedIn, Facebook, and Instagram for official business pages to find email/phone patterns.
+3. SOCIAL INTELLIGENCE: Search LinkedIn and Facebook for official business pages to find email/phone patterns.
 4. LOCATION PRECISION: Find the physical office location. If the full address is missing, YOU MUST at least provide the Suburb and City.
-5. NO LAZY NULLS: Do not return "null" if info exists on LinkedIn or directories like YellowPages.co.za or Brabys.
+5. NO LAZY NULLS: Do not return "null" if info exists on LinkedIn or professional directories.
 
 REQUIRED OUTPUT SCHEMA (JSON ARRAY):
 [
   {
     "company_name": "Company Name",
     "contact_person": "Full Name of Director/Owner",
-    "email_address": "Verified Email",
+    "email_address": "Verified Email Address",
     "telephone_number": "Phone Number",
     "website": "URL",
     "physical_address": "Full Physical Address (or Suburb, City)"
@@ -47,9 +47,7 @@ REQUIRED OUTPUT SCHEMA (JSON ARRAY):
 ]
 
 COMPANIES TO RESEARCH:
-${companyNames}
-
-FINAL REMINDER: RETURN ONLY THE RAW JSON ARRAY. START WITH [ AND END WITH ].`;
+${companyNames}`;
 
     const handleCopyAll = async () => {
         try {
@@ -117,7 +115,7 @@ FINAL REMINDER: RETURN ONLY THE RAW JSON ARRAY. START WITH [ AND END WITH ].`;
                         <Alert className="bg-green-50 border-green-200 text-green-800">
                             <ClipboardCheck className="h-4 w-4 text-green-600" />
                             <AlertTitle>Step 2: Lock the Batch</AlertTitle>
-                            <AlertDescription>Now click "Mark as Researching" to move these to the next processing stage.</AlertDescription>
+                            <AlertDescription>Now click "Mark as Searching" to move these to the next processing stage.</AlertDescription>
                         </Alert>
                     )}
 

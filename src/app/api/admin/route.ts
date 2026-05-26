@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 
 /**
  * High-Performance Serialization
- * Optimized for datasets of 5,000+ records by avoiding recursive deep-walking.
+ * Optimized for datasets of 5,000+ records.
  */
 function serializeTimestamps(docData: any): any {
     if (!docData) return docData;
@@ -26,14 +26,15 @@ function serializeTimestamps(docData: any): any {
 }
 
 /**
- * Normalize AI-sourced fields into standard fields if standard ones are missing.
+ * Normalize AI-sourced fields into standard CRM fields.
+ * Essential for ensuring "Edit" forms are not empty after import.
  */
 function normalizePartnerData(data: any) {
     const normalized = { ...data };
     
     // Normalize Email
     const rawEmail = (data.email || '').toString().toLowerCase().trim();
-    const aiEmail = (data.email_address || '').toString().toLowerCase().trim();
+    const aiEmail = (data.email_address || data.emailAddress || '').toString().toLowerCase().trim();
     const isInvalid = (val: string) => !val || val === 'null' || val === 'n/a' || val === 'none' || val === 'undefined';
 
     if (isInvalid(rawEmail) && !isInvalid(aiEmail)) {
@@ -41,16 +42,24 @@ function normalizePartnerData(data: any) {
     }
 
     // Normalize Phone
-    const rawPhone = (data.phone || data.telephone_number || '').toString().trim();
+    const rawPhone = (data.phone || data.telephone_number || data.telephoneNumber || '').toString().trim();
     if (isInvalid(normalized.phone) && !isInvalid(rawPhone)) {
         normalized.phone = rawPhone;
     }
 
-    // Normalize Contact Person
-    if (!normalized.contactPerson && (normalized.firstName || normalized.lastName)) {
-        normalized.contactPerson = `${normalized.firstName || ''} ${normalized.lastName || ''}`.trim();
-    } else if (!normalized.contactPerson && data.contact_person) {
-        normalized.contactPerson = data.contact_person;
+    // Normalize Address
+    const rawAddress = (data.address || data.physical_address || data.physicalAddress || '').toString().trim();
+    if (isInvalid(normalized.address) && !isInvalid(rawAddress)) {
+        normalized.address = rawAddress;
+    }
+
+    // Normalize Names (Critical for Edit Forms)
+    const contactPerson = (data.contactPerson || data.contact_person || data.contactPersonName || '').toString().trim();
+    if (!isInvalid(contactPerson) && (!normalized.firstName || !normalized.lastName)) {
+        const parts = contactPerson.split(' ');
+        normalized.firstName = parts[0];
+        normalized.lastName = parts.slice(1).join(' ') || 'N/A';
+        normalized.contactPerson = contactPerson;
     }
 
     return normalized;
@@ -72,109 +81,12 @@ export async function POST(req: NextRequest) {
         const db = getFirestore(app);
         const isAdmin = decodedToken.email === 'beyondtransport@gmail.com' || decodedToken.email === 'mkoton100@gmail.com';
 
-        // Basic permissions check
         if (!isAdmin) {
              const allowedUserActions = ['getAuditLogs', 'logCommunication', 'bulkSavePartners', 'getPartnersByType', 'markLeadsAsResearching', 'getPlatformStaff', 'findDuplicateLeads', 'deleteLeads', 'resetResearchQueue', 'bulkUpdateOutreach'];
              if (!allowedUserActions.includes(action)) throw new Error("Forbidden.");
         }
 
         switch (action) {
-            case 'bulkUpdateOutreach': {
-                const { entries, subject } = payload;
-                if (!entries || !Array.isArray(entries)) throw new Error("Invalid payload.");
-
-                // Fetch all to avoid N+1 query overhead for 5,000 records
-                const snap = await db.collection('leads').get();
-                const nameMap = new Map();
-                const emailMap = new Map();
-
-                snap.docs.forEach(doc => {
-                    const data = doc.data();
-                    const name = (data.companyName || '').trim().toLowerCase();
-                    const email = (data.email || '').trim().toLowerCase();
-                    if (name) {
-                        if (!nameMap.has(name)) nameMap.set(name, []);
-                        nameMap.get(name).push(doc);
-                    }
-                    if (email) {
-                        if (!emailMap.has(email)) emailMap.set(email, []);
-                        emailMap.get(email).push(doc);
-                    }
-                });
-
-                const batch = db.batch();
-                let count = 0;
-                const processedIds = new Set();
-
-                for (const entry of entries) {
-                    const cleanEntry = entry.trim().toLowerCase();
-                    if (!cleanEntry) continue;
-
-                    // Match by name or email
-                    const matches = [...(nameMap.get(cleanEntry) || []), ...(emailMap.get(cleanEntry) || [])];
-                    
-                    matches.forEach(docRef => {
-                        if (!processedIds.has(docRef.id)) {
-                            const update = {
-                                lastOutreachSubject: subject,
-                                lastOutreachAt: FieldValue.serverTimestamp(),
-                                status: 'contacted',
-                                updatedAt: FieldValue.serverTimestamp()
-                            };
-                            batch.update(docRef.ref, update);
-                            batch.set(db.collection('partners').doc(docRef.id), update, { merge: true });
-                            processedIds.add(docRef.id);
-                            count++;
-                        }
-                    });
-                }
-                
-                if (count > 0) await batch.commit();
-                return NextResponse.json({ success: true, count });
-            }
-            case 'resetResearchQueue': {
-                const { type } = payload;
-                const roleMapping: Record<string, string> = {
-                    'transporter': 'Transporters',
-                    'supplier': 'Vendors'
-                };
-                const leadRole = roleMapping[type] || type;
-                const rolesToSearch = [leadRole];
-                if (leadRole.endsWith('s')) rolesToSearch.push(leadRole.slice(0, -1));
-                else rolesToSearch.push(leadRole + 's');
-
-                const snap = await db.collection('leads')
-                    .where('role', 'in', rolesToSearch)
-                    .where('status', 'in', ['contacted', 'qualified'])
-                    .get();
-                
-                if (snap.empty) return NextResponse.json({ success: true, count: 0 });
-
-                const batch = db.batch();
-                let count = 0;
-                snap.docs.forEach(doc => {
-                    const data = doc.data();
-                    const email = (data.email || data.email_address || '').toString().toLowerCase().trim();
-                    const isInvalid = !email || email === 'null' || email === 'n/a';
-                    
-                    if (isInvalid) {
-                        batch.update(doc.ref, { 
-                            status: 'new', 
-                            researchStatus: 'pending',
-                            updatedAt: FieldValue.serverTimestamp()
-                        });
-                        batch.update(db.collection('partners').doc(doc.id), { 
-                            status: 'new',
-                            researchStatus: 'pending',
-                            updatedAt: FieldValue.serverTimestamp() 
-                        });
-                        count++;
-                    }
-                });
-                
-                if (count > 0) await batch.commit();
-                return NextResponse.json({ success: true, count });
-            }
             case 'bulkSavePartners': {
                 const { partners, type } = payload;
                 const batch = db.batch();
@@ -187,7 +99,8 @@ export async function POST(req: NextRequest) {
                 const leadRole = roleMapping[type] || type;
                 
                 for (const p of partners) {
-                    const companyNameClean = (p.companyName || p.company_name || '').trim();
+                    const normalized = normalizePartnerData(p);
+                    const companyNameClean = (normalized.companyName || normalized.company_name || '').trim();
                     if (!companyNameClean) continue;
 
                     const existingLeads = await db.collection('leads').where('companyName', '==', companyNameClean).get();
@@ -195,11 +108,11 @@ export async function POST(req: NextRequest) {
                     const partnerRef = db.collection('partners').doc(ref.id);
                     
                     const existingData = !existingLeads.empty ? existingLeads.docs[0].data() : null;
-                    const email = (p.email_address || p.email || '').toString().toLowerCase().trim();
+                    const email = (normalized.email || '').toString().toLowerCase().trim();
                     const hasContactInfo = !!email && email !== 'null' && email !== 'n/a';
                     
                     const updateData = {
-                        ...p,
+                        ...normalized,
                         id: ref.id,
                         role: leadRole,
                         status: hasContactInfo ? 'qualified' : 'contacted',
@@ -319,7 +232,8 @@ export async function POST(req: NextRequest) {
             }
             case 'savePartner': {
                 const ref = payload.partner.id ? db.collection('partners').doc(payload.partner.id) : db.collection('partners').doc();
-                const data = { ...payload.partner, id: ref.id, updatedAt: FieldValue.serverTimestamp() };
+                const normalized = normalizePartnerData(payload.partner);
+                const data = { ...normalized, id: ref.id, updatedAt: FieldValue.serverTimestamp() };
                 const batch = db.batch();
                 batch.set(ref, data, { merge: true });
                 batch.set(db.collection('leads').doc(ref.id), data, { merge: true });
@@ -335,7 +249,8 @@ export async function POST(req: NextRequest) {
             }
             case 'saveLead': {
                 const ref = payload.lead.id ? db.collection('leads').doc(payload.lead.id) : db.collection('leads').doc();
-                const data = { ...payload.lead, id: ref.id, updatedAt: FieldValue.serverTimestamp() };
+                const normalized = normalizePartnerData(payload.lead);
+                const data = { ...normalized, id: ref.id, updatedAt: FieldValue.serverTimestamp() };
                 const batch = db.batch();
                 batch.set(ref, data, { merge: true });
                 batch.set(db.collection('partners').doc(ref.id), data, { merge: true });
@@ -372,6 +287,39 @@ export async function POST(req: NextRequest) {
                     db.collection('leads').doc(partnerId).set(update, { merge: true })
                 ]);
                 return NextResponse.json({ success: true });
+            }
+            case 'bulkUpdateOutreach': {
+                const { entries, subject } = payload;
+                if (!entries || !Array.isArray(entries)) throw new Error("Invalid entries.");
+                const snap = await db.collection('leads').get();
+                const nameMap = new Map();
+                const emailMap = new Map();
+                snap.docs.forEach(doc => {
+                    const data = doc.data();
+                    const name = (data.companyName || '').trim().toLowerCase();
+                    const email = (data.email || '').trim().toLowerCase();
+                    if (name) { if (!nameMap.has(name)) nameMap.set(name, []); nameMap.get(name).push(doc); }
+                    if (email) { if (!emailMap.has(email)) emailMap.set(email, []); emailMap.get(email).push(doc); }
+                });
+                const batch = db.batch();
+                let count = 0;
+                const processed = new Set();
+                for (const entry of entries) {
+                    const clean = entry.trim().toLowerCase();
+                    if (!clean) continue;
+                    const matches = [...(nameMap.get(clean) || []), ...(emailMap.get(clean) || [])];
+                    matches.forEach(docRef => {
+                        if (!processed.has(docRef.id)) {
+                            const update = { lastOutreachSubject: subject, lastOutreachAt: FieldValue.serverTimestamp(), status: 'contacted', updatedAt: FieldValue.serverTimestamp() };
+                            batch.update(docRef.ref, update);
+                            batch.set(db.collection('partners').doc(docRef.id), update, { merge: true });
+                            processed.add(docRef.id);
+                            count++;
+                        }
+                    });
+                }
+                if (count > 0) await batch.commit();
+                return NextResponse.json({ success: true, count });
             }
             default:
                 return NextResponse.json({ success: false, error: `Action "${action}" not implemented.` }, { status: 400 });
