@@ -32,50 +32,46 @@ export function BulkImportDialog({ type, onComplete, children }: BulkImportDialo
     };
 
     /**
-     * Resilient JSON Parser
-     * Handles markdown wrappers and extracts valid objects from fragmented text.
+     * Resilient Data Extractor
+     * Handled JSON arrays, individual objects, and fragmented text.
+     * Delegates mapping/normalization to the high-intelligence backend layer.
      */
-    const processJsonData = (rawText: string) => {
+    const extractItemsFromText = (rawText: string) => {
         let results: any[] = [];
         let text = rawText.trim();
 
-        // 1. Strip Markdown code blocks if present
+        // 1. Markdown Cleanup
         if (text.includes('```')) {
             text = text.replace(/```(?:json)?/g, '').replace(/```/g, '').trim();
         }
 
-        // 2. Try standard parsing first
+        // 2. Direct Parse Attempt
         try {
             const parsed = JSON.parse(text);
-            results = Array.isArray(parsed) ? parsed : [parsed];
+            return Array.isArray(parsed) ? parsed : [parsed];
         } catch (e) {
-            // 3. Fallback: Regex extraction for { ... } blocks
+            // 3. Fragment Recovery (Regex Extraction for { ... })
+            // This allows the user to paste a conversation that merely contains the records.
             const objectRegex = /\{(?:[^{}]|((?:\{[^{}]*\})))*\}/g;
             const matches = text.match(objectRegex);
 
             if (matches) {
                 matches.forEach(m => {
                     try {
-                        results.push(JSON.parse(m));
+                        const obj = JSON.parse(m);
+                        if (obj && typeof obj === 'object') results.push(obj);
                     } catch (innerError) {
-                        // Skip unparseable fragments
+                        // Skip non-json noise
                     }
                 });
             }
         }
 
         if (results.length === 0) {
-            throw new Error("No valid data objects found. Please ensure the AI output contains blocks like { \"company_name\": ... }");
+            throw new Error("No valid data found. Please ensure the text contains JSON objects like { \"company_name\": ... }");
         }
 
-        return results.map((item: any) => ({
-            companyName: item.company_name || item.companyName || item.company || 'Unknown Company',
-            contactPerson: item.contact_person || item.contactPerson || item.contact || 'N/A',
-            email: item.email_address || item.email || '',
-            phone: item.telephone_number || item.phone || item.cell || '',
-            website: item.website || item.url || '',
-            address: item.physical_address || item.address || '',
-        }));
+        return results;
     };
 
     const handleImport = async (source: 'file' | 'paste') => {
@@ -87,40 +83,33 @@ export function BulkImportDialog({ type, onComplete, children }: BulkImportDialo
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication failed.");
 
-            let partners: any[] = [];
+            let rawPartners: any[] = [];
 
-            // Process based on source
+            // Process based on format
             if (source === 'paste' || (file && (file.name.toLowerCase().endsWith('.json') || text.includes('{')))) {
-                partners = processJsonData(text);
+                rawPartners = extractItemsFromText(text);
             } else {
-                // CSV Parsing Logic
+                // CSV Basic Fallback
                 const rows = text.split(/\r?\n/).filter(row => row.trim().length > 0);
-                if (rows.length < 2) throw new Error("File is empty or invalid format.");
+                if (rows.length < 2) throw new Error("File format not recognized.");
                 const headers = rows[0].split(',').map(h => h.trim().toLowerCase().replace(/["']/g, ''));
-                partners = rows.slice(1).map(row => {
+                rawPartners = rows.slice(1).map(row => {
                     const values = row.split(',').map(v => v.trim().replace(/^["']|["']$/g, ''));
                     const p: any = {};
-                    headers.forEach((h, i) => {
-                        if (h.includes('company')) p.companyName = values[i];
-                        else if (h.includes('email')) p.email = values[i];
-                        else if (h.includes('phone') || h === 'telephone_number') p.phone = values[i];
-                        else if (h.includes('name') || h === 'contact_person') p.contactPerson = values[i];
-                        else if (h.includes('website')) p.website = values[i];
-                        else if (h.includes('address')) p.address = values[i];
-                    });
+                    headers.forEach((h, i) => { p[h] = values[i]; });
                     return p;
                 });
             }
 
-            const validPartners = partners.filter(p => p.companyName && p.companyName !== 'Unknown Company');
-            if (validPartners.length === 0) throw new Error("No valid company records were found in the text provided.");
+            if (rawPartners.length === 0) throw new Error("No data extracted.");
 
+            // Send to Backend for normalization and storage
             const response = await fetch('/api/admin', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     action: 'bulkSavePartners',
-                    payload: { partners: validPartners, type }
+                    payload: { partners: rawPartners, type }
                 }),
             });
 
@@ -129,9 +118,10 @@ export function BulkImportDialog({ type, onComplete, children }: BulkImportDialo
                 throw new Error(err.error || "Import failed on server.");
             }
 
-            toast({ title: "Import Successful", description: `Successfully processed ${validPartners.length} records.` });
+            toast({ title: "Import Successful", description: `Successfully processed ${rawPartners.length} records. Contacts are now 'Enriched'.` });
             setIsOpen(false);
             setPasteData('');
+            setFile(null);
             onComplete();
         } catch (e: any) {
             toast({ variant: 'destructive', title: "Import Error", description: e.message });
@@ -146,25 +136,25 @@ export function BulkImportDialog({ type, onComplete, children }: BulkImportDialo
             <DialogContent className="sm:max-w-2xl">
                 <DialogHeader>
                     <DialogTitle>Bulk Import {type}s</DialogTitle>
-                    <DialogDescription>Paste the results from Google AI or upload a CSV/JSON file.</DialogDescription>
+                    <DialogDescription>Paste AI research results or upload a file. The system will automatically map the contact details.</DialogDescription>
                 </DialogHeader>
                 
                 <Tabs defaultValue="paste" className="py-4">
                     <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="paste"><ClipboardPaste className="mr-2 h-4 w-4" /> Paste Result</TabsTrigger>
+                        <TabsTrigger value="paste"><ClipboardPaste className="mr-2 h-4 w-4" /> Paste Text/JSON</TabsTrigger>
                         <TabsTrigger value="file"><Upload className="mr-2 h-4 w-4" /> Upload File</TabsTrigger>
                     </TabsList>
                     
                     <TabsContent value="paste" className="space-y-4 pt-4">
                         <Alert className="bg-primary/5 border-primary/20">
                             <Zap className="h-4 w-4 text-primary" />
-                            <AlertTitle>Smart Markdown Detection</AlertTitle>
-                            <AlertDescription>I can now strip markdown wrappers automatically. Just paste exactly what the AI gave you.</AlertDescription>
+                            <AlertTitle>Smart Fragment Detection</AlertTitle>
+                            <AlertDescription>You can paste the entire AI chat response here. I will automatically extract any records I find and ignore the rest.</AlertDescription>
                         </Alert>
                         <div className="space-y-2">
-                            <Label>Paste Data Below</Label>
+                            <Label>Paste Content Below</Label>
                             <Textarea 
-                                placeholder="Paste the text from Google AI here..." 
+                                placeholder="Paste text or JSON objects here..." 
                                 className="min-h-[250px] font-mono text-xs" 
                                 value={pasteData}
                                 onChange={(e) => setPasteData(e.target.value)}
@@ -172,7 +162,7 @@ export function BulkImportDialog({ type, onComplete, children }: BulkImportDialo
                         </div>
                         <Button className="w-full" onClick={() => handleImport('paste')} disabled={isUploading || !pasteData.trim()}>
                             {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <CheckCircle className="mr-2 h-4 w-4" />}
-                            Process & Import
+                            Extract & Import
                         </Button>
                     </TabsContent>
 
@@ -183,7 +173,7 @@ export function BulkImportDialog({ type, onComplete, children }: BulkImportDialo
                         </div>
                         <Button className="w-full" onClick={() => handleImport('file')} disabled={isUploading || !file}>
                             {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Upload className="mr-2 h-4 w-4" />}
-                            Upload and Import
+                            Upload and Process
                         </Button>
                     </TabsContent>
                 </Tabs>

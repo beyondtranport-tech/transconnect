@@ -26,12 +26,17 @@ function serializeTimestamps(docData: any): any {
 }
 
 /**
- * Normalize AI-sourced fields into standard CRM fields.
- * Essential for ensuring "Edit" forms are not empty after import.
+ * Robust Data Normalization Layer
+ * Maps fragmented AI/External field names into standard CRM schema.
+ * Ensures "Edit" forms are fully populated after import.
  */
 function normalizePartnerData(data: any) {
     const normalized = { ...data };
     
+    // Normalize Company Name
+    const rawCompany = (data.companyName || data.company_name || data.company || '').toString().trim();
+    if (rawCompany) normalized.companyName = rawCompany;
+
     // Normalize Email
     const rawEmail = (data.email || '').toString().toLowerCase().trim();
     const aiEmail = (data.email_address || data.emailAddress || '').toString().toLowerCase().trim();
@@ -42,7 +47,7 @@ function normalizePartnerData(data: any) {
     }
 
     // Normalize Phone
-    const rawPhone = (data.phone || data.telephone_number || data.telephoneNumber || '').toString().trim();
+    const rawPhone = (data.phone || data.telephone_number || data.telephoneNumber || data.telephone || data.cell || '').toString().trim();
     if (isInvalid(normalized.phone) && !isInvalid(rawPhone)) {
         normalized.phone = rawPhone;
     }
@@ -53,13 +58,23 @@ function normalizePartnerData(data: any) {
         normalized.address = rawAddress;
     }
 
-    // Normalize Names (Critical for Edit Forms)
-    const contactPerson = (data.contactPerson || data.contact_person || data.contactPersonName || '').toString().trim();
-    if (!isInvalid(contactPerson) && (!normalized.firstName || !normalized.lastName)) {
-        const parts = contactPerson.split(' ');
-        normalized.firstName = parts[0];
-        normalized.lastName = parts.slice(1).join(' ') || 'N/A';
+    // Normalize Website
+    const rawUrl = (data.url || data.website || data.site || '').toString().trim();
+    if (isInvalid(normalized.website) && !isInvalid(rawUrl)) {
+        normalized.website = rawUrl;
+    }
+
+    // Normalize Contact Person & Identity Construction (Crucial for CRM Edit Forms)
+    const contactPerson = (data.contactPerson || data.contact_person || data.contactPersonName || data.contact || '').toString().trim();
+    if (!isInvalid(contactPerson)) {
         normalized.contactPerson = contactPerson;
+        
+        // If first/last names are missing (common in AI imports), reconstruct them from contactPerson
+        if (!normalized.firstName || !normalized.lastName || normalized.firstName === 'Member') {
+            const parts = contactPerson.split(' ');
+            normalized.firstName = parts[0] || 'Member';
+            normalized.lastName = parts.slice(1).join(' ') || 'Candidate';
+        }
     }
 
     return normalized;
@@ -100,9 +115,10 @@ export async function POST(req: NextRequest) {
                 
                 for (const p of partners) {
                     const normalized = normalizePartnerData(p);
-                    const companyNameClean = (normalized.companyName || normalized.company_name || '').trim();
+                    const companyNameClean = (normalized.companyName || '').trim();
                     if (!companyNameClean) continue;
 
+                    // Search for existing by company name to merge data
                     const existingLeads = await db.collection('leads').where('companyName', '==', companyNameClean).get();
                     const ref = !existingLeads.empty ? existingLeads.docs[0].ref : db.collection('leads').doc();
                     const partnerRef = db.collection('partners').doc(ref.id);
@@ -115,8 +131,8 @@ export async function POST(req: NextRequest) {
                         ...normalized,
                         id: ref.id,
                         role: leadRole,
-                        status: hasContactInfo ? 'qualified' : 'contacted',
-                        researchStatus: 'completed',
+                        status: hasContactInfo ? 'qualified' : (existingData?.status || 'contacted'),
+                        researchStatus: 'completed', // Mark as Green in UI
                         updatedAt: FieldValue.serverTimestamp(),
                         createdAt: existingData ? existingData.createdAt : FieldValue.serverTimestamp()
                     };
@@ -183,6 +199,33 @@ export async function POST(req: NextRequest) {
                 }
                 await batch.commit();
                 return NextResponse.json({ success: true });
+            }
+            case 'resetResearchQueue': {
+                const { type } = payload;
+                const roleMapping: Record<string, string> = {
+                    'transporter': 'Transporters',
+                    'supplier': 'Vendors',
+                    'partner': 'Strategic Partners',
+                    'isa': 'ISA Agents (Elite)'
+                };
+                const leadRole = roleMapping[type] || type;
+                
+                const snap = await db.collection('leads')
+                    .where('role', '==', leadRole)
+                    .where('researchStatus', '==', 'researching')
+                    .get();
+
+                const batch = db.batch();
+                let count = 0;
+                snap.docs.forEach(doc => {
+                    const update = { researchStatus: null, status: 'new', updatedAt: FieldValue.serverTimestamp() };
+                    batch.update(doc.ref, update);
+                    batch.set(db.collection('partners').doc(doc.id), update, { merge: true });
+                    count++;
+                });
+
+                if (count > 0) await batch.commit();
+                return NextResponse.json({ success: true, count });
             }
             case 'findDuplicateLeads': {
                 const snap = await db.collection('leads').get();
