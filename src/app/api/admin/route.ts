@@ -24,7 +24,6 @@ function serializeTimestamps(docData: any): any {
 /**
  * Universal Data Normalization
  * Strictly maps diverse AI fields to standard CRM fields (firstName, lastName, email, etc.)
- * IGNORES "null" or placeholder values to prevent overwriting existing data.
  */
 function normalizePartnerData(data: any) {
     const result: any = {};
@@ -33,7 +32,7 @@ function normalizePartnerData(data: any) {
         !val || 
         ['member', 'candidate', 'null', 'n/a', 'none', 'undefined', 'n a', 'unknown'].includes(val.toString().toLowerCase().trim());
 
-    // 1. Recover Record ID
+    // 1. Recover Record ID - VITAL for matching
     const idKeys = ['record_id', 'recordId', 'id', 'record', 'uid', 'recordid'];
     for (const key of idKeys) {
         const val = data[key]?.toString().trim();
@@ -43,7 +42,7 @@ function normalizePartnerData(data: any) {
         }
     }
 
-    // 2. Map Core Identifiers with extensive aliases
+    // 2. Map Core Identifiers
     const maps = {
         companyName: ['company_name', 'companyName', 'company', 'name', 'business_name', 'business'],
         email: ['email_address', 'emailAddress', 'mail', 'email', 'e_mail'],
@@ -62,7 +61,7 @@ function normalizePartnerData(data: any) {
         }
     });
 
-    // 3. Handle Identity Construction (firstName/lastName)
+    // 3. Identity Construction (firstName/lastName)
     const contactKeys = ['contact_person', 'contactPerson', 'contact', 'person', 'owner', 'director', 'manager', 'leadership'];
     let contactVal = '';
     for (const key of contactKeys) {
@@ -122,23 +121,24 @@ export async function POST(req: NextRequest) {
                 for (const p of partners) {
                     const normalized = normalizePartnerData(p);
                     let targetId = normalized.record_id;
-                    let existingData = null;
+                    let existingData: any = null;
 
+                    // STRATEGY: ID-ABSOLUTE MATCHING
+                    // If the AI returned an ID, we use it. We don't discard it if doc lookup fails.
                     if (targetId) {
-                        const [leadSnap, partnerSnap] = await Promise.all([
-                            db.collection('leads').doc(targetId).get(),
-                            db.collection('partners').doc(targetId).get()
-                        ]);
+                        const leadSnap = await db.collection('leads').doc(targetId).get();
+                        const partnerSnap = await db.collection('partners').doc(targetId).get();
                         
                         if (leadSnap.exists || partnerSnap.exists) {
                             existingData = leadSnap.exists ? leadSnap.data() : partnerSnap.data();
                             updatedCount++;
                         } else {
-                            targetId = null;
+                            // The ID was provided but doc not found? 
+                            // Likely a sync issue, but we proceed with the ID to ensure we update the intended record.
+                            createdCount++;
                         }
-                    }
-
-                    if (!targetId) {
+                    } else {
+                        // Name-based fallback ONLY if no ID was provided
                         const companyNameClean = (normalized.companyName || '').trim();
                         if (!companyNameClean) continue;
                         const existingLeads = await db.collection('leads').where('companyName', '==', companyNameClean).get();
@@ -160,22 +160,26 @@ export async function POST(req: NextRequest) {
                         ...normalized,
                         id: targetId,
                         role: leadRole,
-                        status: (existingData?.status === 'active' || existingData?.status === 'registered') 
+                        // Maintain status if it's already high-level (Member)
+                        status: (existingData?.status === 'active' || existingData?.status === 'registered' || existingData?.status === 'qualified') 
                             ? existingData.status 
                             : (normalized.email ? 'qualified' : 'contacted'),
-                        researchStatus: 'completed',
+                        researchStatus: 'completed', // CLEAR THE SEARCHING STATE
                         updatedAt: FieldValue.serverTimestamp(),
                         createdAt: existingData?.createdAt || FieldValue.serverTimestamp()
                     };
 
                     batch.set(leadRef, updateData, { merge: true });
-                    batch.set(partnerRef, { ...updateData, type: type }, { merge: true });
+                    // Only update partners collection if it's already a member OR if it's a specific partner type
+                    if (existingData || ['partner', 'isa', 'investor', 'developer'].includes(type)) {
+                        batch.set(partnerRef, { ...updateData, type: existingData?.type || type }, { merge: true });
+                    }
                 }
                 
                 await batch.commit();
                 return NextResponse.json({ 
                     success: true, 
-                    message: `Import complete. Records updated: ${updatedCount}, New: ${createdCount}.`,
+                    message: `Import complete. Updated: ${updatedCount}, New: ${createdCount}.`,
                     updatedCount,
                     createdCount
                 });
@@ -199,6 +203,7 @@ export async function POST(req: NextRequest) {
                 ]);
 
                 const mergedMap = new Map();
+                // Map documents from both collections to their ID
                 partnersSnap.docs.forEach(doc => {
                     mergedMap.set(doc.id, { id: doc.id, entryType: 'Member', ...serializeTimestamps(doc.data()) });
                 });
@@ -206,6 +211,8 @@ export async function POST(req: NextRequest) {
                 leadsSnap.docs.forEach(doc => {
                     const existing = mergedMap.get(doc.id);
                     const leadData = doc.data();
+                    
+                    // Prioritize Member status over Lead status
                     const finalStatus = (existing?.status === 'active' || existing?.status === 'qualified' || existing?.status === 'registered') 
                         ? existing.status 
                         : (leadData.status || existing?.status || 'new');
