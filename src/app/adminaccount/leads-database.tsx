@@ -46,6 +46,7 @@ import { CommunicationLogDialog } from './marketing/CommunicationLogDialog';
 import { BulkImportDialog } from './marketing/BulkImportDialog';
 import { BatchResearchDialog } from './marketing/BatchResearchDialog';
 import { BulkOutreachUpdateDialog } from './marketing/BulkOutreachUpdateDialog';
+import { PartnerOversightDialog } from './marketing/PartnerOversightDialog';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const leadSchema = z.object({
@@ -255,7 +256,6 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
       if (result.data.length === 0) {
         toast({ title: "No duplicates found." });
       } else {
-        // Pre-select recommended records (prefer Members over Leads)
         const initialSelections: Record<number, string> = {};
         result.data.forEach((group: any[], index: number) => {
             const memberRecord = group.find(r => r.source === 'Member');
@@ -588,6 +588,7 @@ function LeadsDatabaseComponent() {
           </Button>
           <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.firstName} />
           <PartnerTasksDialog partner={row.original} />
+          <PartnerOversightDialog partner={row.original} onUpdate={forceRefresh} />
           <Button variant="ghost" size="icon" onClick={() => { setEditLead(row.original); setIsEditLeadOpen(true); }}><Edit className="h-4 w-4" /></Button>
           <Button variant="ghost" size="icon" onClick={() => { setDeleteLead(row.original); setIsDeleteAlertOpen(true); }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
         </div>

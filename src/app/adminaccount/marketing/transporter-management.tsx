@@ -18,8 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { PartnerTasksDialog } from './PartnerTasksDialog';
-import { CommunicationLogDialog } from './CommunicationLogDialog';
+import { PartnerOversightDialog } from './PartnerOversightDialog';
 import { EngageDialog } from './EngageDialog';
 import { formatDateSafe, cn } from '@/lib/utils';
 import { EnrichPartnerButton, BulkEnrichButton } from './EnrichPartnerButton';
@@ -173,7 +172,6 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
       if (result.data.length === 0) {
         toast({ title: "No duplicates found." });
       } else {
-        // Pre-select recommended records (prefer Members over Leads)
         const initialSelections: Record<number, string> = {};
         result.data.forEach((group: any[], index: number) => {
             const memberRecord = group.find(r => r.source === 'Member');
