@@ -72,6 +72,19 @@ function normalizePartnerData(data: any) {
     return result;
 }
 
+/**
+ * Improved name normalization for duplicate detection
+ */
+function normalizeNameForMatch(name: string): string {
+    return (name || '')
+        .toString()
+        .toLowerCase()
+        .replace(/[^\w\s]/g, '') // Remove punctuation
+        .replace(/\b(pty|ltd|cc|corp|inc|limited|proprietary|south africa|sa)\b/g, '') // Remove legal suffixes
+        .replace(/\s+/g, ' ') // Collapse spaces
+        .trim();
+}
+
 export async function POST(req: NextRequest) {
     try {
         const { app, error: initError } = getAdminApp();
@@ -331,8 +344,8 @@ export async function POST(req: NextRequest) {
 
                 const nameMap = new Map<string, any[]>();
                 masterList.forEach(item => {
-                    const name = (item.companyName || '').toString().trim().toLowerCase();
-                    if (!name || name === 'null' || name === 'n/a') return;
+                    const name = normalizeNameForMatch(item.companyName);
+                    if (!name) return;
                     if (!nameMap.has(name)) nameMap.set(name, []);
                     nameMap.get(name)!.push(item);
                 });
