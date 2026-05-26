@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect, Suspense } from 'react';
@@ -28,7 +29,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { useCollection, useFirestore, getClientSideAuthToken, useMemoFirebase } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
-import { Loader2, PlusCircle, Users, Edit, Trash2, Search, Send, Copy, Filter, MailCheck, MailQuestion, FileJson, Upload, Zap } from 'lucide-react';
+import { Loader2, PlusCircle, Users, Edit, Trash2, Search, Send, Copy, Filter, MailCheck, MailQuestion, FileJson, Upload, Zap, Info } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -46,6 +47,7 @@ import { CommunicationLogDialog } from './marketing/CommunicationLogDialog';
 import { BulkImportDialog } from './marketing/BulkImportDialog';
 import { BatchResearchDialog } from './marketing/BatchResearchDialog';
 import { BulkOutreachUpdateDialog } from './marketing/BulkOutreachUpdateDialog';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const leadSchema = z.object({
   companyName: z.string().min(1, 'Company name is required'),
@@ -558,7 +560,7 @@ function LeadsDatabaseComponent() {
       {engageLead && (
         <EngageDialog 
           open={!!engageLead} 
-          onOpenChange={(o) => !o && setEngageLead(null)} 
+          onOpenChange={(o) => !o && setType(null)} 
           partner={engageLead} 
           audience={engageLead.role?.toLowerCase().includes('supplier') ? 'suppliers' : engageLead.role?.toLowerCase().includes('transporter') ? 'transporters' : 'partners'} 
           onEngageSuccess={forceRefresh}
@@ -599,35 +601,46 @@ function LeadsDatabaseComponent() {
           </div>
         </CardHeader>
         <CardContent>
-            <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg">
-                <div className="flex-1 space-y-2">
-                    <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status</Label>
-                    <Select value={statusFilter} onValueChange={setStatusFilter}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All Statuses</SelectItem>
-                            <SelectItem value="new">New</SelectItem>
-                            <SelectItem value="contacted">Contacted</SelectItem>
-                            <SelectItem value="qualified">Qualified</SelectItem>
-                            <SelectItem value="unqualified">Unqualified</SelectItem>
-                            <SelectItem value="invited">Invited</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-                <div className="flex-1 space-y-2">
-                    <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Search className="h-3 w-3"/> Data Integrity</Label>
-                    <Select value={dataFilter} onValueChange={setDataFilter}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All Records</SelectItem>
-                            <SelectItem value="has-email">Has Email</SelectItem>
-                            <SelectItem value="no-email">Missing Email</SelectItem>
-                            <SelectItem value="has-phone">Has Phone</SelectItem>
-                            <SelectItem value="no-phone">Missing Phone</SelectItem>
-                            <SelectItem value="has-website">Has WWW</SelectItem>
-                            <SelectItem value="no-website">Missing WWW</SelectItem>
-                        </SelectContent>
-                    </Select>
+            <div className="space-y-4 mb-6">
+                <Alert className="bg-primary/5 border-primary/20">
+                    <Info className="h-4 w-4 text-primary" />
+                    <AlertTitle>Pipeline Guide</AlertTitle>
+                    <AlertDescription className="text-xs space-y-1">
+                        <p>• <span className="font-bold text-amber-600">Searching (Orange):</span> Record is currently locked in an AI research batch. Use the <strong>Bulk Import</strong> tool to add findings.</p>
+                        <p>• <span className="font-bold text-green-700">Enriched (Green):</span> Contact details have been successfully found by AI.</p>
+                        <p>• <span className="font-bold">New:</span> Record is available for future research batches.</p>
+                    </AlertDescription>
+                </Alert>
+                <div className="flex flex-col md:flex-row gap-4 p-4 bg-muted/30 rounded-lg">
+                    <div className="flex-1 space-y-2">
+                        <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status</Label>
+                        <Select value={statusFilter} onValueChange={setStatusFilter}>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Statuses</SelectItem>
+                                <SelectItem value="new">New</SelectItem>
+                                <SelectItem value="contacted">Contacted</SelectItem>
+                                <SelectItem value="qualified">Qualified</SelectItem>
+                                <SelectItem value="unqualified">Unqualified</SelectItem>
+                                <SelectItem value="invited">Invited</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="flex-1 space-y-2">
+                        <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Search className="h-3 w-3"/> Data Integrity</Label>
+                        <Select value={dataFilter} onValueChange={setDataFilter}>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Records</SelectItem>
+                                <SelectItem value="has-email">Has Email</SelectItem>
+                                <SelectItem value="no-email">Missing Email</SelectItem>
+                                <SelectItem value="has-phone">Has Phone</SelectItem>
+                                <SelectItem value="no-phone">Missing Phone</SelectItem>
+                                <SelectItem value="has-website">Has WWW</SelectItem>
+                                <SelectItem value="no-website">Missing WWW</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
                 </div>
             </div>
             {isLoading ? <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin" /></div> : <DataTable columns={columns} data={filteredLeads} onSelectionChange={setSelectedIds} />}

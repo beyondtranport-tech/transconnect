@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -5,7 +6,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, Truck, Edit, Trash2, Send, CheckCircle, Users, MailCheck, MailQuestion, Filter, Save, Search, Zap, RotateCcw, XCircle, Sparkles } from 'lucide-react';
+import { Loader2, PlusCircle, Truck, Edit, Trash2, Send, CheckCircle, Users, MailCheck, MailQuestion, Filter, Save, Search, Zap, RotateCcw, XCircle, Info, Sparkles } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -27,8 +28,7 @@ import { BatchResearchDialog } from './BatchResearchDialog';
 import { BulkImportDialog } from './BulkImportDialog';
 import { BulkOutreachUpdateDialog } from './BulkOutreachUpdateDialog';
 import { Checkbox } from '@/components/ui/checkbox';
-import { CommunicationLogDialog } from './CommunicationLogDialog';
-import { PartnerTasksDialog } from './PartnerTasksDialog';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 async function performAdminAction(token: string, action: string, payload: any) {
   const response = await fetch('/api/admin', {
@@ -504,27 +504,38 @@ export default function TransporterManagement() {
           </div>
         </CardHeader>
         <CardContent>
-            <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg">
-                <div className="flex-1 space-y-2">
-                    <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status</Label>
-                    <Select value={statusFilter} onValueChange={setStatusFilter}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="active">Active</SelectItem><SelectItem value="inactive">Inactive</SelectItem><SelectItem value="contacted">Researching</SelectItem><SelectItem value="new">New</SelectItem></SelectContent>
-                    </Select>
-                </div>
-                <div className="flex-1 space-y-2">
-                    <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Users className="h-3 w-3"/> Assignee</Label>
-                    <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="none">Unallocated</SelectItem>{staff.map(s => <SelectItem key={s.id} value={s.id}>{s.firstName} {s.lastName}</SelectItem>)}</SelectContent>
-                    </Select>
-                </div>
-                <div className="flex-1 space-y-2">
-                    <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Search className="h-3 w-3"/> Data Integrity</Label>
-                    <Select value={dataFilter} onValueChange={setDataFilter}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent><SelectItem value="all">All Records</SelectItem><SelectItem value="has-email">Has Email</SelectItem><SelectItem value="no-email">No Email</SelectItem></SelectContent>
-                    </Select>
+            <div className="space-y-4 mb-6">
+                <Alert className="bg-primary/5 border-primary/20">
+                    <Info className="h-4 w-4 text-primary" />
+                    <AlertTitle>Pipeline Guide</AlertTitle>
+                    <AlertDescription className="text-xs space-y-1">
+                        <p>• <span className="font-bold text-amber-600">Searching (Orange):</span> Record is currently locked in an AI research batch. Use the <strong>Bulk Import</strong> tool to add findings.</p>
+                        <p>• <span className="font-bold text-green-700">Enriched (Green):</span> Contact details have been successfully found by AI.</p>
+                        <p>• <span className="font-bold">New:</span> Record is available for future research batches.</p>
+                    </AlertDescription>
+                </Alert>
+                <div className="flex flex-col md:flex-row gap-4 p-4 bg-muted/30 rounded-lg">
+                    <div className="flex-1 space-y-2">
+                        <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status</Label>
+                        <Select value={statusFilter} onValueChange={setStatusFilter}>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="active">Active</SelectItem><SelectItem value="inactive">Inactive</SelectItem><SelectItem value="contacted">Researching</SelectItem><SelectItem value="new">New</SelectItem></SelectContent>
+                        </Select>
+                    </div>
+                    <div className="flex-1 space-y-2">
+                        <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Users className="h-3 w-3"/> Assignee</Label>
+                        <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="none">Unallocated</SelectItem>{staff.map(s => <SelectItem key={s.id} value={s.id}>{s.firstName} {s.lastName}</SelectItem>)}</SelectContent>
+                        </Select>
+                    </div>
+                    <div className="flex-1 space-y-2">
+                        <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Search className="h-3 w-3"/> Data Integrity</Label>
+                        <Select value={dataFilter} onValueChange={setDataFilter}>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent><SelectItem value="all">All Records</SelectItem><SelectItem value="has-email">Has Email</SelectItem><SelectItem value="no-email">No Email</SelectItem></SelectContent>
+                        </Select>
+                    </div>
                 </div>
             </div>
             {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
