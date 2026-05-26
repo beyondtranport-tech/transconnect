@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect, Suspense } from 'react';
@@ -503,6 +502,7 @@ function LeadsDatabaseComponent() {
         }
     },
     {
+        accessorKey: 'researchStatus',
         header: 'Enhanced Status',
         cell: ({row}) => {
             const isResearching = row.original.researchStatus === 'researching';
@@ -516,6 +516,7 @@ function LeadsDatabaseComponent() {
         }
     },
     {
+        accessorKey: 'lastOutreachAt',
         header: 'Outreach Status',
         cell: ({row}) => {
             if (!row.original.lastOutreachAt) return <span className="text-[10px] text-muted-foreground uppercase font-bold">No Outreach</span>;

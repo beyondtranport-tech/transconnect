@@ -183,7 +183,7 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
     const idsToDelete = duplicates.flatMap((group, index) => {
       const idToKeep = selections[index];
       if (!idToKeep) return [];
-      return group.filter(lead => lead.id !== idToKeep).map(lead => league.id);
+      return group.filter(lead => lead.id !== idToKeep).map(lead => lead.id);
     });
 
     if (idsToDelete.length === 0) {
@@ -418,6 +418,7 @@ export default function TransporterManagement() {
         }
     },
     {
+        accessorKey: 'researchStatus',
         header: 'Enhanced Status',
         cell: ({row}) => {
             const isResearching = row.original.researchStatus === 'researching';
@@ -431,6 +432,7 @@ export default function TransporterManagement() {
         }
     },
     {
+        accessorKey: 'lastOutreachAt',
         header: 'Outreach Status',
         cell: ({row}) => {
             if (!row.original.lastOutreachAt) return <span className="text-[10px] text-muted-foreground uppercase font-bold">No Outreach</span>;
