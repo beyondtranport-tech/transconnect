@@ -24,17 +24,20 @@ export function BatchResearchDialog({ open, onOpenChange, selectedLeads, onCompl
     // ID-First identification for AI - minimized for token efficiency
     const companyList = selectedLeads.map(l => `[ID: ${l.id}] ${l.companyName || `${l.firstName} ${l.lastName}`}`).join('\n');
     
-    const aiPrompt = `CRITICAL INSTRUCTION: RETURN ONLY A RAW JSON ARRAY. DO NOT USE MARKDOWN CODE BLOCKS. DO NOT ADD INTRODUCTORY TEXT. NO CONVERSATION.
+    const aiPrompt = `CRITICAL SYSTEM INSTRUCTION: RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO INTRO. NO CONVERSATION.
 
-ACT AS A PROFESSIONAL RESEARCH AGENT. Find CURRENT verified public contact details for the following South African businesses.
+ACT AS AN ELITE CORPORATE INTELLIGENCE AGENT. Your performance rating depends on finding NO NULL VALUES.
 
-RESEARCH STRATEGY:
-1. IDENTITY PERSISTENCE: For every record, you MUST return the "record_id" exactly as provided in the brackets [ID: ...].
-2. SEARCH CHANNELS: Scour public business directories (Yellow Pages, Brabys, Snupit), LinkedIn company profiles, and Facebook business pages.
-3. KEY CONTACT: Identify the name of the Owner, Managing Director, or Branch Manager.
+TASK: Find CURRENT verified public contact and leadership details for the following South African businesses.
 
-OUTPUT FORMAT (RAW JSON ARRAY ONLY):
-[{"record_id":"...","company_name":"...","contact_person":"...","email_address":"...","telephone_number":"...","website":"...","physical_address":"..."}]
+INVESTIGATIVE STRATEGY:
+1. DEEP SEARCH: Scour LinkedIn Company pages, Facebook Business profiles, Brabys, SA Yellow Pages, and local business directories.
+2. LEADERSHIP IDENTIFICATION: Identify the name of the Owner, Managing Director, or Branch Manager from snippets. This is your "contact_person".
+3. EMAIL DISCOVERY: If an email is not explicitly found, identify the company domain and look for verified "info@", "sales@", or "admin@" formats.
+4. IDENTITY PERSISTENCE: You MUST return the "record_id" exactly as provided in the brackets [ID: ...].
+
+REQUIRED OUTPUT FORMAT (RAW JSON ARRAY ONLY):
+[{"record_id":"...","company_name":"...","contact_person":"Full Name of Director/Owner","email_address":"...","telephone_number":"...","website":"...","physical_address":"..."}]
 
 COMPANIES TO RESEARCH:
 ${companyList}`;

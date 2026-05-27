@@ -30,7 +30,7 @@ function normalizePartnerData(data: any) {
 
     const isPlaceholder = (val: any) => 
         !val || 
-        ['member', 'candidate', 'null', 'n/a', 'none', 'undefined', 'n a', 'unknown'].includes(val.toString().toLowerCase().trim());
+        ['member', 'candidate', 'null', 'n/a', 'none', 'undefined', 'n a', 'unknown', 'null@null.com'].includes(val.toString().toLowerCase().trim());
 
     // 1. Recover Record ID - VITAL for matching
     const idKeys = ['record_id', 'recordId', 'id', 'record', 'uid', 'recordid'];
@@ -132,11 +132,9 @@ export async function POST(req: NextRequest) {
                             existingData = leadSnap.exists ? leadSnap.data() : partnerSnap.data();
                             updatedCount++;
                         } else {
-                            // Proceed with ID to ensure we update the intended record
                             createdCount++;
                         }
                     } else {
-                        // Name-based fallback ONLY if no ID was provided
                         const companyNameClean = (normalized.companyName || '').trim();
                         if (!companyNameClean) continue;
                         const existingLeads = await db.collection('leads').where('companyName', '==', companyNameClean).get();
@@ -158,7 +156,6 @@ export async function POST(req: NextRequest) {
                         ...normalized,
                         id: targetId,
                         role: leadRole,
-                        // Maintain high-level status if present
                         status: (existingData?.status === 'active' || existingData?.status === 'registered' || existingData?.status === 'qualified') 
                             ? existingData.status 
                             : (normalized.email ? 'qualified' : 'contacted'),
@@ -167,9 +164,10 @@ export async function POST(req: NextRequest) {
                         createdAt: existingData?.createdAt || FieldValue.serverTimestamp()
                     };
 
-                    // Guard against null overwrites
+                    // Aggressively strip placeholders and nulls to prevent overwriting valid data
                     Object.keys(updateData).forEach(key => {
-                        if ((updateData as any)[key] === null || (updateData as any)[key] === undefined || (updateData as any)[key] === 'null') {
+                        const val = (updateData as any)[key];
+                        if (val === null || val === undefined || val === 'null' || val === 'N/A' || val === 'None') {
                             delete (updateData as any)[key];
                         }
                     });

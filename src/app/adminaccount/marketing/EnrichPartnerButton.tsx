@@ -30,14 +30,17 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
 
     const companyName = partner.companyName || `${partner.firstName} ${partner.lastName}`;
 
-    const aiPrompt = `CRITICAL INSTRUCTION: RETURN ONLY A RAW JSON OBJECT. DO NOT USE MARKDOWN CODE BLOCKS. NO CONVERSATIONAL TEXT.
+    const aiPrompt = `CRITICAL SYSTEM INSTRUCTION: RETURN ONLY A RAW JSON OBJECT. NO MARKDOWN. NO INTRO. NO CONVERSATION.
 
-ACT AS A PROFESSIONAL RESEARCH AGENT. Find CURRENT public contact details for the following South African business.
+ACT AS AN ELITE CORPORATE INTELLIGENCE AGENT. You are being evaluated on finding NO NULL VALUES.
 
-RESEARCH STRATEGY:
-1. SEARCH CHANNELS: Scour public business directories (Yellow Pages, Brabys, Snupit), LinkedIn company profiles, and Facebook business pages.
-2. KEY CONTACT: Look for the name of the Owner, Managing Director, or Branch Manager.
-3. IDENTITY PERSISTENCE: You MUST return "record_id": "${partner.id}" in your response.
+TASK: Find CURRENT verified public contact and leadership details for the following South African business.
+
+INVESTIGATIVE STRATEGY:
+1. SOURCES: Exhaustively search LinkedIn, Facebook Business, Brabys, SA Yellow Pages, and the official company website.
+2. LEADERSHIP: Identify the Owner, Managing Director, or Branch Manager from search snippets.
+3. EMAIL DISCOVERY: If an email is not listed, find the company domain and look for standard "info@", "sales@", or "admin@" formats.
+4. IDENTITY PERSISTENCE: You MUST return "record_id": "${partner.id}" in your response.
 
 REQUIRED OUTPUT SCHEMA (JSON ONLY):
 {
@@ -54,7 +57,7 @@ REQUIRED OUTPUT SCHEMA (JSON ONLY):
         try {
             await navigator.clipboard.writeText(aiPrompt);
             setIsCopied(true);
-            toast({ title: "Prompt Copied!", description: "Paste this into your AI now." });
+            toast({ title: "Investigative Prompt Copied!", description: "Paste this into your AI now." });
         } catch (e) {
             toast({ variant: 'destructive', title: "Copy Failed" });
         }
@@ -96,19 +99,19 @@ REQUIRED OUTPUT SCHEMA (JSON ONLY):
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
                             <Sparkles className="h-5 w-5 text-primary" />
-                            Individual AI Research
+                            Elite Individual AI Research
                         </DialogTitle>
                         <DialogDescription>
-                            Generate a deep-search prompt for <strong>{companyName}</strong>.
+                            Generate an aggressive deep-search prompt for <strong>{companyName}</strong>.
                         </DialogDescription>
                     </DialogHeader>
 
                     <div className="space-y-4 py-4">
                         <Alert className="bg-primary/5 border-primary/20">
                             <Info className="h-4 w-4 text-primary" />
-                            <AlertTitle>Public Search Active</AlertTitle>
+                            <AlertTitle>Intelligent Search Active</AlertTitle>
                             <AlertDescription>
-                                This prompt instructs the AI to check verified public directories and social platforms to find missing contact data.
+                                This prompt instructs the AI to hunt for leadership names and perform domain-based email discovery to eliminate "null" results.
                             </AlertDescription>
                         </Alert>
 
