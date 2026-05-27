@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect, Suspense } from 'react';
@@ -27,7 +26,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useCollection, useFirestore, getClientSideAuthToken, useMemoFirebase } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
-import { Loader2, PlusCircle, Users, Edit, Trash2, Search, Send, Copy, Filter, MailCheck, MailQuestion, Download, Zap, Info, RotateCcw, Upload } from 'lucide-react';
+import { Loader2, PlusCircle, Users, Edit, Trash2, Search, Send, Copy, Filter, Mail, Download, Zap, Info, RotateCcw, Upload } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -39,9 +38,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { EngageDialog } from './marketing/EngageDialog';
 import { Label } from '@/components/ui/label';
 import { formatDateSafe, cn } from '@/lib/utils';
-import { EnrichPartnerButton } from './EnrichPartnerButton';
-import { PartnerTasksDialog } from './PartnerTasksDialog';
-import { CommunicationLogDialog } from './CommunicationLogDialog';
+import { EnrichPartnerButton } from './marketing/EnrichPartnerButton';
+import { PartnerTasksDialog } from './marketing/PartnerTasksDialog';
+import { CommunicationLogDialog } from './marketing/CommunicationLogDialog';
 import { BulkImportDialog } from './marketing/BulkImportDialog';
 import { BatchResearchDialog } from './marketing/BatchResearchDialog';
 import { BulkOutreachUpdateDialog } from './marketing/BulkOutreachUpdateDialog';
@@ -654,11 +653,11 @@ function LeadsDatabaseComponent() {
                     <div className="flex items-center gap-2">
                         {row.original.lastOpenedAt ? (
                             <Badge variant="default" className="bg-green-100 text-green-700 border-green-200 text-[10px] h-4">
-                                <MailCheck className="mr-1 h-3 w-3" /> Read
+                                <Mail className="mr-1 h-3 w-3" /> Read
                             </Badge>
                         ) : (
                             <Badge variant="outline" className="text-muted-foreground text-[10px] h-4">
-                                <MailQuestion className="mr-1 h-3 w-3" /> Sent
+                                <Mail className="mr-1 h-3 w-3" /> Sent
                             </Badge>
                         )}
                     </div>

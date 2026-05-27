@@ -1,8 +1,9 @@
+
 'use client';
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Sparkles, Loader2, Copy, ClipboardCheck, Info } from 'lucide-react';
+import { Sparkles, Loader2, Copy, ClipboardCheck, Info, Zap } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -30,9 +31,9 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
 
     const companyName = partner.companyName || `${partner.firstName} ${partner.lastName}`;
 
-    const aiPrompt = `CRITICAL SYSTEM INSTRUCTION: RETURN ONLY A RAW JSON OBJECT. NO MARKDOWN. NO INTRO. NO CONVERSATION.
+    const aiPrompt = `CRITICAL SYSTEM INSTRUCTION: RETURN ONLY A RAW JSON OBJECT. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
 
-ACT AS AN ELITE CORPORATE INTELLIGENCE AGENT. You are being evaluated on finding NO NULL VALUES.
+ACT AS AN ELITE CORPORATE INTELLIGENCE AGENT. YOU ARE BEING EVALUATED ON FINDING NO NULL VALUES.
 
 TASK: Find CURRENT verified public contact and leadership details for the following South African business.
 
@@ -135,6 +136,35 @@ REQUIRED OUTPUT SCHEMA (JSON ONLY):
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+        </>
+    );
+}
+
+export function BulkEnrichButton({ partners, onComplete }: { partners: any[], onComplete: () => void }) {
+    const [open, setOpen] = useState(false);
+    
+    // Select first 30 "fresh" candidates (missing email and not currently researching)
+    const targets = useMemo(() => {
+        return partners.filter(p => {
+            const email = (p.email || p.email_address || '').toString().toLowerCase().trim();
+            const isInvalid = !email || email === 'null' || email === 'n/a';
+            return isInvalid && p.researchStatus !== 'researching';
+        }).slice(0, 30);
+    }, [partners]);
+
+    if (targets.length === 0) return null;
+
+    return (
+        <>
+            <BatchResearchDialog 
+                open={open} 
+                onOpenChange={setOpen} 
+                selectedLeads={targets} 
+                onComplete={onComplete} 
+            />
+            <Button variant="outline" className="text-amber-600 border-amber-200 bg-amber-50" onClick={() => setOpen(true)}>
+                <Zap className="mr-2 h-4 w-4" /> Batch Research ({targets.length})
+            </Button>
         </>
     );
 }

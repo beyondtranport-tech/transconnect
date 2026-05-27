@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -6,7 +5,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, Bot, Edit, Trash2, Send, CheckCircle, Users, MailCheck, MailQuestion, Filter, Save, Search } from 'lucide-react';
+import { Loader2, PlusCircle, Bot, Edit, Trash2, Send, CheckCircle, Users, Filter, Save, Search, Mail } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -228,11 +227,11 @@ export default function ISAManagement() {
             <div className="flex items-center gap-2">
                 {row.original.lastOpenedAt ? (
                     <Badge variant="default" className="bg-green-100 text-green-700 border-green-200">
-                        <MailCheck className="mr-1 h-3 w-3" /> Read
+                        <Mail className="mr-1 h-3 w-3" /> Read
                     </Badge>
                 ) : (
                     <Badge variant="outline" className="text-muted-foreground">
-                        <MailQuestion className="mr-1 h-3 w-3" /> Sent
+                        <Mail className="mr-1 h-3 w-3" /> Sent
                     </Badge>
                 )}
             </div>

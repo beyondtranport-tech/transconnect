@@ -25,14 +25,14 @@ export function BatchResearchDialog({ open, onOpenChange, selectedLeads, onCompl
     // ID-First identification for AI - minimized for token efficiency
     const companyList = selectedLeads.map(l => `[ID: ${l.id}] ${l.companyName || `${l.firstName} ${l.lastName}`}`).join('\n');
     
-    const aiPrompt = `CRITICAL SYSTEM INSTRUCTION: RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO INTRO. NO CONVERSATION.
+    const aiPrompt = `CRITICAL SYSTEM INSTRUCTION: RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
 
-ACT AS AN ELITE CORPORATE INTELLIGENCE AGENT. Your performance rating depends on finding NO NULL VALUES.
+ACT AS AN ELITE CORPORATE INTELLIGENCE AGENT. YOUR ENTIRE PERFORMANCE RATING DEPENDS ON FINDING NO NULL VALUES.
 
 TASK: Find CURRENT verified public contact and leadership details for the following South African businesses.
 
 INVESTIGATIVE STRATEGY:
-1. DEEP SEARCH: Scour LinkedIn Company pages, Facebook Business profiles, Brabys, SA Yellow Pages, and local business directories.
+1. DEEP SEARCH: Exhaustively search LinkedIn Company pages, Facebook Business profiles, Brabys, SA Yellow Pages, and local business directories.
 2. LEADERSHIP IDENTIFICATION: Identify the name of the Owner, Managing Director, or Branch Manager from snippets. This is your "contact_person".
 3. EMAIL DISCOVERY: If an email is not explicitly found, identify the company domain and look for verified "info@", "sales@", or "admin@" formats.
 4. IDENTITY PERSISTENCE: You MUST return the "record_id" exactly as provided in the brackets [ID: ...].

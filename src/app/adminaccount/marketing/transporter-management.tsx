@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -8,7 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
   Loader2, PlusCircle, Truck, Edit, Trash2, Send, CheckCircle, Users, Filter, Save, 
-  Search, Zap, RotateCcw, XCircle, Info, Sparkles, AlertCircle, MailCheck, MailQuestion, Download, Copy
+  Search, Zap, RotateCcw, XCircle, Info, Sparkles, AlertCircle, Mail, Download, Copy
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
@@ -23,9 +22,10 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { PartnerOversightDialog } from './PartnerOversightDialog';
+import { CommunicationLogDialog } from './CommunicationLogDialog';
 import { EngageDialog } from './EngageDialog';
 import { formatDateSafe, cn } from '@/lib/utils';
-import { EnrichPartnerButton } from './EnrichPartnerButton';
+import { EnrichPartnerButton, BulkEnrichButton } from './EnrichPartnerButton';
 import { Label } from '@/components/ui/label';
 import { BatchResearchDialog } from './BatchResearchDialog';
 import { BulkImportDialog } from './BulkImportDialog';
@@ -556,11 +556,11 @@ export default function TransporterManagement() {
                     <div className="flex items-center gap-2">
                         {row.original.lastOpenedAt ? (
                             <Badge variant="default" className="bg-green-100 text-green-700 border-green-200 text-[10px] h-4">
-                                <MailCheck className="mr-1 h-3 w-3" /> Read
+                                <Mail className="mr-1 h-3 w-3" /> Read
                             </Badge>
                         ) : (
                             <Badge variant="outline" className="text-muted-foreground text-[10px] h-4">
-                                <MailQuestion className="mr-1 h-3 w-3" /> Sent
+                                <Mail className="mr-1 h-3 w-3" /> Sent
                             </Badge>
                         )}
                     </div>
@@ -578,6 +578,7 @@ export default function TransporterManagement() {
       <div className="flex justify-end gap-1">
         <EnrichPartnerButton partner={row.original} onUpdate={forceRefresh} />
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'engage', data: row.original })} title="Initiate Engagement"><Send className="h-4 w-4 text-primary" /></Button>
+        <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.firstName} />
         <PartnerOversightDialog partner={row.original} onUpdate={forceRefresh} />
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'edit', data: row.original })}><Edit className="h-4 w-4" /></Button>
         <Button variant="ghost" size="icon" onClick={() => { setDialog({ type: 'delete', data: row.original }); }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
