@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect, Suspense } from 'react';
@@ -28,7 +29,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { useCollection, useFirestore, getClientSideAuthToken, useMemoFirebase } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
-import { Loader2, PlusCircle, Users, Edit, Trash2, Search, Send, Copy, Filter, MailCheck, MailQuestion, FileJson, Upload, Zap, Info, AlertCircle, RotateCcw } from 'lucide-react';
+import { Loader2, PlusCircle, Users, Edit, Trash2, Search, Send, Copy, Filter, MailCheck, MailQuestion, FileJson, Upload, Zap, Info, AlertCircle, RotateCcw, Download } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -472,6 +473,50 @@ function LeadsDatabaseComponent() {
     });
   }, [leads, statusFilter, dataFilter]);
 
+  const handleCopyBccList = () => {
+      const emails = filteredLeads
+          .map(l => (l.email || '').toString().toLowerCase().trim())
+          .filter(email => email && email !== 'null' && email !== 'n/a' && email.includes('@'));
+      
+      if (emails.length === 0) {
+          toast({ variant: 'destructive', title: "No Emails Found", description: "The current filtered list has no valid email addresses." });
+          return;
+      }
+      
+      navigator.clipboard.writeText(emails.join(', '));
+      toast({ title: "BCC List Copied!", description: `${emails.length} email addresses are ready for Gmail.` });
+  };
+
+  const handleExportCsv = () => {
+    if (filteredLeads.length === 0) return;
+    
+    const headers = ["Company Name", "Contact Person", "Email", "Phone", "Role", "Status", "Website"];
+    const rows = filteredLeads.map(l => [
+        l.companyName || '',
+        l.contactPerson || '',
+        l.email || '',
+        l.phone || '',
+        l.role || '',
+        l.status || '',
+        l.website || ''
+    ]);
+
+    const csvContent = [
+        headers.join(','),
+        ...rows.map(r => r.map(cell => `"${(cell || '').toString().replace(/"/g, '""')}"`).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `logistics-flow-leads-${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast({ title: "Export Ready", description: "CSV file downloaded. You can upload this to Gmail Mail Merge." });
+  };
+
   const candidatesRemaining = useMemo(() => {
     return (leads || []).filter(p => {
         const email = (p.email || p.email_address || '').toString().toLowerCase().trim();
@@ -671,7 +716,7 @@ function LeadsDatabaseComponent() {
         </AlertDialogContent>
       </AlertDialog>
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-1">
             <CardTitle className="flex items-center gap-2">
                 <Users /> Lead Database
@@ -679,13 +724,19 @@ function LeadsDatabaseComponent() {
             </CardTitle>
             <CardDescription>Manage your sales leads.</CardDescription>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="outline" onClick={handleExportCsv} title="Export for Gmail Mail Merge">
+                <Download className="mr-2 h-4 w-4" /> Export CSV
+            </Button>
+            <Button variant="outline" onClick={handleCopyBccList} title="Copy addresses for Gmail BCC">
+                <Copy className="mr-2 h-4 w-4" /> Copy BCC List
+            </Button>
             <Button variant="outline" size="sm" onClick={handleResetQueue} disabled={isResetting}>
                 {isResetting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <RotateCcw className="mr-2 h-4 w-4" />}
                 Reset Stuck Research
             </Button>
             <BulkOutreachUpdateDialog onComplete={forceRefresh}>
-                <Button variant="outline"><Send className="mr-2 h-4 w-4" /> Bulk Update Outreach</Button>
+                <Button variant="outline"><Send className="mr-2 h-4 w-4" /> Bulk Update Status</Button>
             </BulkOutreachUpdateDialog>
             <Button variant="default" className="bg-amber-600 hover:bg-amber-700" onClick={() => handleEnhanceBatch(100)}>
                 <Zap className="mr-2 h-4 w-4" /> Master Batch (100)

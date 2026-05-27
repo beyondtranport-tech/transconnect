@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -132,9 +133,11 @@ export async function POST(req: NextRequest) {
                             existingData = leadSnap.exists ? leadSnap.data() : partnerSnap.data();
                             updatedCount++;
                         } else {
+                            // If ID provided but not found, we use that ID anyway (trusting AI/Context)
                             createdCount++;
                         }
                     } else {
+                        // Match by Company Name fallback
                         const companyNameClean = (normalized.companyName || '').trim();
                         if (!companyNameClean) continue;
                         const existingLeads = await db.collection('leads').where('companyName', '==', companyNameClean).get();
@@ -164,7 +167,7 @@ export async function POST(req: NextRequest) {
                         createdAt: existingData?.createdAt || FieldValue.serverTimestamp()
                     };
 
-                    // Aggressively strip placeholders and nulls to prevent overwriting valid data
+                    // Aggressively strip placeholders and nulls
                     Object.keys(updateData).forEach(key => {
                         const val = (updateData as any)[key];
                         if (val === null || val === undefined || val === 'null' || val === 'N/A' || val === 'None') {

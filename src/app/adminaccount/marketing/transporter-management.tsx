@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -7,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
   Loader2, PlusCircle, Truck, Edit, Trash2, Send, CheckCircle, Users, Filter, Save, 
-  Search, Zap, RotateCcw, XCircle, Info, Sparkles, AlertCircle, MailCheck, MailQuestion
+  Search, Zap, RotateCcw, XCircle, Info, Sparkles, AlertCircle, MailCheck, MailQuestion, Download, Copy
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
@@ -378,6 +379,70 @@ export default function TransporterManagement() {
       return partners.filter(p => selectedIds.includes(p.id));
   }, [partners, selectedIds]);
 
+  const filteredTransporters = useMemo(() => {
+    return partners.filter(p => {
+        const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
+        const matchesAssignee = assigneeFilter === 'all' || p.assigneeId === assigneeFilter;
+        
+        let matchesData = true;
+        const email = (p.email || p.email_address || '').toString().toLowerCase().trim();
+        const isInvalidEmail = !email || email === 'null' || email === 'n/a' || email === 'none';
+
+        if (dataFilter === 'no-email') matchesData = isInvalidEmail;
+        else if (dataFilter === 'no-phone') matchesData = !p.phone;
+        else if (dataFilter === 'no-website') matchesData = !p.website;
+        else if (dataFilter === 'has-email') matchesData = !isInvalidEmail;
+        else if (dataFilter === 'has-phone') matchesData = !!p.phone;
+        else if (dataFilter === 'has-website') matchesData = !!p.website;
+
+        return matchesStatus && matchesAssignee && matchesData;
+    });
+  }, [partners, statusFilter, assigneeFilter, dataFilter]);
+
+  const handleCopyBccList = () => {
+    const emails = filteredTransporters
+        .map(t => (t.email || t.email_address || '').toString().toLowerCase().trim())
+        .filter(email => email && email !== 'null' && email !== 'n/a' && email.includes('@'));
+    
+    if (emails.length === 0) {
+        toast({ variant: 'destructive', title: "No Emails Found", description: "The current filtered list has no valid email addresses." });
+        return;
+    }
+    
+    navigator.clipboard.writeText(emails.join(', '));
+    toast({ title: "BCC List Copied!", description: `${emails.length} email addresses copied for Gmail.` });
+  };
+
+  const handleExportCsv = () => {
+    if (filteredTransporters.length === 0) return;
+    
+    const headers = ["Transporter Name", "Contact Person", "Email", "Phone", "Status", "Assignee"];
+    const rows = filteredTransporters.map(t => [
+        t.companyName || `${t.firstName} ${t.lastName}`,
+        t.contactPerson || '',
+        t.email || t.email_address || '',
+        t.phone || t.telephone_number || '',
+        t.status || '',
+        staffMap.get(t.assigneeId) || 'Unallocated'
+    ]);
+
+    const csvContent = [
+        headers.join(','),
+        ...rows.map(r => r.map(cell => `"${(cell || '').toString().replace(/"/g, '""')}"`).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `transporters-export-${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast({ title: "Export Complete", description: "CSV downloaded. Use Gmail's Mail Merge feature to send personalized emails." });
+  };
+
+
   const handleEnhanceBatch = (size: number) => {
       if (isLoading) return;
       
@@ -436,26 +501,6 @@ export default function TransporterManagement() {
     }
   }
 
-  const filteredTransporters = useMemo(() => {
-    return partners.filter(p => {
-        const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
-        const matchesAssignee = assigneeFilter === 'all' || p.assigneeId === assigneeFilter;
-        
-        let matchesData = true;
-        const email = (p.email || p.email_address || '').toString().toLowerCase().trim();
-        const isInvalidEmail = !email || email === 'null' || email === 'n/a' || email === 'none';
-
-        if (dataFilter === 'no-email') matchesData = isInvalidEmail;
-        else if (dataFilter === 'no-phone') matchesData = !p.phone;
-        else if (dataFilter === 'no-website') matchesData = !p.website;
-        else if (dataFilter === 'has-email') matchesData = !isInvalidEmail;
-        else if (dataFilter === 'has-phone') matchesData = !!p.phone;
-        else if (dataFilter === 'has-website') matchesData = !!p.website;
-
-        return matchesStatus && matchesAssignee && matchesData;
-    });
-  }, [partners, statusFilter, assigneeFilter, dataFilter]);
-
   const columns: ColumnDef<any>[] = [
     { 
         accessorKey: 'companyName', 
@@ -476,7 +521,7 @@ export default function TransporterManagement() {
         accessorKey: 'email', 
         header: 'Email',
         cell: ({ row }) => {
-            const email = (row.original.email || '').toString().toLowerCase().trim();
+            const email = (row.original.email || row.original.email_address || '').toString().toLowerCase().trim();
             const isInvalid = !email || email === 'null' || email === 'n/a' || email === 'none';
             return <div className={cn(isInvalid ? "text-muted-foreground italic" : "")}>{isInvalid ? "Missing" : email}</div>
         }
@@ -486,7 +531,7 @@ export default function TransporterManagement() {
         header: 'Enhanced Status',
         cell: ({row}) => {
             const isResearching = row.original.researchStatus === 'researching';
-            const email = (row.original.email || '').toString().toLowerCase().trim();
+            const email = (row.original.email || row.original.email_address || '').toString().toLowerCase().trim();
             const isInvalidEmail = !email || email === 'null' || email === 'n/a' || email === 'none';
             const isCompleted = row.original.researchStatus === 'completed' || !isInvalidEmail;
 
@@ -550,7 +595,7 @@ export default function TransporterManagement() {
         </AlertDialogContent>
       </AlertDialog>
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-1">
             <CardTitle className="flex items-center gap-2">
                 <Truck /> Transporters
@@ -558,14 +603,20 @@ export default function TransporterManagement() {
             </CardTitle>
             <CardDescription>Manage your transporter leads and pipeline.</CardDescription>
           </div>
-          <div className="flex gap-2">
-            <BulkOutreachUpdateDialog onComplete={forceRefresh}>
-                <Button variant="outline"><Send className="mr-2 h-4 w-4" /> Bulk Update Outreach</Button>
-            </BulkOutreachUpdateDialog>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="outline" onClick={handleExportCsv} title="Export for Gmail Mail Merge">
+                <Download className="mr-2 h-4 w-4" /> Export CSV
+            </Button>
+            <Button variant="outline" onClick={handleCopyBccList} title="Copy addresses for Gmail BCC">
+                <Copy className="mr-2 h-4 w-4" /> Copy BCC List
+            </Button>
             <Button variant="outline" size="sm" onClick={handleResetQueue} disabled={isResetting}>
                 {isResetting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <RotateCcw className="mr-2 h-4 w-4" />}
                 Reset Stuck Research
             </Button>
+            <BulkOutreachUpdateDialog onComplete={forceRefresh}>
+                <Button variant="outline"><Send className="mr-2 h-4 w-4" /> Bulk Update Status</Button>
+            </BulkOutreachUpdateDialog>
             <Button variant="default" className="bg-amber-600 hover:bg-amber-700" onClick={() => handleEnhanceBatch(100)} disabled={isLoading}>
                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Zap className="mr-2 h-4 w-4" />}
                 Master Batch (100)
