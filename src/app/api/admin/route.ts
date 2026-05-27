@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -25,19 +24,26 @@ function serializeTimestamps(docData: any): any {
 /**
  * Universal Data Normalization
  * Strictly maps diverse AI fields to standard CRM fields (firstName, lastName, email, etc.)
+ * Also intelligently strips generic placeholders like "The Director".
  */
 function normalizePartnerData(data: any) {
     const result: any = {};
 
-    const isPlaceholder = (val: any) => 
-        !val || 
-        ['member', 'candidate', 'null', 'n/a', 'none', 'undefined', 'n a', 'unknown', 'null@null.com'].includes(val.toString().toLowerCase().trim());
+    const isPlaceholder = (val: any) => {
+        if (!val) return true;
+        const low = val.toString().toLowerCase().trim();
+        return [
+            'member', 'candidate', 'null', 'n/a', 'none', 'undefined', 'n a', 'unknown', 
+            'null@null.com', 'the director', 'the manager', 'director', 'manager', 
+            'branch manager', 'managing director', 'ceo of', 'the owner', 'owner'
+        ].includes(low) || low.length < 2;
+    }
 
     // 1. Recover Record ID
     const idKeys = ['record_id', 'recordId', 'id', 'record', 'uid', 'recordid'];
     for (const key of idKeys) {
         const val = data[key]?.toString().trim();
-        if (val && !isPlaceholder(val) && val.length > 5) {
+        if (val && val.length > 5 && !['null', 'none'].includes(val.toLowerCase())) {
             result.record_id = val;
             break;
         }
@@ -62,7 +68,7 @@ function normalizePartnerData(data: any) {
         }
     });
 
-    // 3. Identity Construction
+    // 3. Identity Construction (Only if NOT a generic title)
     const contactKeys = ['contact_person', 'contactPerson', 'contact', 'person', 'owner', 'director', 'manager', 'leadership'];
     let contactVal = '';
     for (const key of contactKeys) {
@@ -77,7 +83,7 @@ function normalizePartnerData(data: any) {
         result.contactPerson = contactVal;
         const parts = contactVal.split(' ');
         result.firstName = parts[0];
-        result.lastName = parts.slice(1).join(' ') || 'Candidate';
+        result.lastName = parts.slice(1).join(' ') || '';
     }
 
     return result;
@@ -114,67 +120,40 @@ export async function POST(req: NextRequest) {
 
                 for (const p of partners) {
                     const normalized = normalizePartnerData(p);
-                    let targetId = normalized.record_id;
-                    let existingData: any = null;
+                    const targetId = normalized.record_id;
 
-                    if (targetId) {
-                        // ID-Absolute matching: Check both potential collections
-                        const [leadSnap, partnerSnap] = await Promise.all([
-                            db.collection('leads').doc(targetId).get(),
-                            db.collection('partners').doc(targetId).get()
-                        ]);
-                        
-                        if (leadSnap.exists || partnerSnap.exists) {
-                            existingData = leadSnap.exists ? leadSnap.data() : partnerSnap.data();
-                            updatedCount++;
-                        } else {
-                            // Create new with this ID if provided but not found
-                            createdCount++;
-                        }
-                    } else {
-                        // Fuzzy match by name if no ID
-                        const companyNameClean = (normalized.companyName || '').trim();
-                        if (!companyNameClean) continue;
-                        const existingLeads = await db.collection('leads').where('companyName', '==', companyNameClean).get();
-                        if (!existingLeads.empty) {
-                            targetId = existingLeads.docs[0].id;
-                            existingData = existingLeads.docs[0].data();
-                            updatedCount++;
-                        } else {
-                            const newRef = db.collection('leads').doc();
-                            targetId = newRef.id;
-                            createdCount++;
-                        }
-                    }
+                    if (!targetId) continue;
 
                     const leadRef = db.collection('leads').doc(targetId);
                     const partnerRef = db.collection('partners').doc(targetId);
                     
-                    const updateData = {
+                    const updateData: any = {
                         ...normalized,
-                        id: targetId,
                         researchStatus: 'completed',
-                        status: (existingData?.status === 'active' || existingData?.status === 'registered' || existingData?.status === 'qualified') 
-                            ? existingData.status 
-                            : (normalized.email ? 'qualified' : 'contacted'),
-                        updatedAt: FieldValue.serverTimestamp(),
-                        createdAt: existingData?.createdAt || FieldValue.serverTimestamp()
+                        updatedAt: FieldValue.serverTimestamp()
                     };
 
+                    // Only update status if it's currently a low-tier status
+                    // registered/qualified/active stay protected
+                    const currentSnap = await leadRef.get();
+                    const currentData = currentSnap.data();
+                    if (!['active', 'qualified', 'registered'].includes(currentData?.status || '')) {
+                        updateData.status = normalized.email ? 'qualified' : 'contacted';
+                    }
+
                     batch.set(leadRef, updateData, { merge: true });
-                    batch.set(partnerRef, { ...updateData, type: existingData?.type || type }, { merge: true });
+                    batch.set(partnerRef, { ...updateData, type: currentData?.type || type }, { merge: true });
+                    updatedCount++;
                 }
                 
                 await batch.commit();
                 return NextResponse.json({ 
                     success: true, 
-                    message: `Import complete. ${updatedCount} records enriched.`,
-                    updatedCount,
-                    createdCount
+                    message: `Import complete. ${updatedCount} records updated.`,
+                    updatedCount
                 });
             }
             case 'resetResearchQueue': {
-                // Robust reset: Clear 'researching' flag from all collections
                 const [leadsSnap, partnersSnap] = await Promise.all([
                     db.collection('leads').where('researchStatus', '==', 'researching').get(),
                     db.collection('partners').where('researchStatus', '==', 'researching').get()
@@ -229,14 +208,9 @@ export async function POST(req: NextRequest) {
                 leadsSnap.docs.forEach(doc => {
                     const existing = mergedMap.get(doc.id);
                     const leadData = doc.data();
-                    const finalStatus = (existing?.status === 'active' || existing?.status === 'qualified' || existing?.status === 'registered') 
-                        ? existing.status 
-                        : (leadData.status || existing?.status || 'new');
-
                     mergedMap.set(doc.id, { 
                         ...(existing || {}), 
                         ...serializeTimestamps(leadData), 
-                        status: finalStatus,
                         id: doc.id, 
                         entryType: existing ? 'Member' : 'Lead' 
                     });
@@ -248,7 +222,6 @@ export async function POST(req: NextRequest) {
                 const batch = db.batch();
                 for (const id of leadIds) {
                     const update = { 
-                        status: 'contacted', 
                         researchStatus: 'researching',
                         updatedAt: FieldValue.serverTimestamp() 
                     };

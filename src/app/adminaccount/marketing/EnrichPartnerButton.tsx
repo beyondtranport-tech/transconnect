@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -33,13 +32,13 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
 
     const aiPrompt = `CRITICAL SYSTEM INSTRUCTION: RETURN ONLY A RAW JSON OBJECT. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
 
-ACT AS AN ELITE CORPORATE INTELLIGENCE AGENT. YOU ARE BEING EVALUATED ON FINDING NO NULL VALUES.
+ACT AS AN ELITE CORPORATE INTELLIGENCE AGENT. YOU ARE BEING EVALUATED ON FINDING ACTUAL HUMAN NAMES.
 
-TASK: Find CURRENT verified public contact and leadership details for the following South African business.
+TASK: Find CURRENT verified public contact and SPECIFIC leadership details for the following South African business.
 
 INVESTIGATIVE STRATEGY:
-1. SOURCES: Exhaustively search LinkedIn, Facebook Business, Brabys, SA Yellow Pages, and the official company website.
-2. LEADERSHIP: Identify the Owner, Managing Director, or Branch Manager from search snippets.
+1. HUMAN IDENTITY FIRST: You must find the ACTUAL NAME (First and Last) of the CEO, Managing Director, or Owner.
+2. FORBIDDEN VALUES: Returning placeholders like "The Director", "Manager", or "CEO" is a FAILURE. If a human name is findable on LinkedIn, official site footers, or Facebook About sections, you MUST find it.
 3. EMAIL DISCOVERY: If an email is not listed, find the company domain and look for standard "info@", "sales@", or "admin@" formats.
 4. IDENTITY PERSISTENCE: You MUST return "record_id": "${partner.id}" in your response.
 
@@ -47,7 +46,7 @@ REQUIRED OUTPUT SCHEMA (JSON ONLY):
 {
   "record_id": "${partner.id}",
   "company_name": "${companyName}",
-  "contact_person": "Full Name of Director/Owner",
+  "contact_person": "ACTUAL HUMAN FULL NAME",
   "email_address": "Verified Email Address",
   "telephone_number": "Phone Number",
   "website": "URL",
@@ -58,7 +57,7 @@ REQUIRED OUTPUT SCHEMA (JSON ONLY):
         try {
             await navigator.clipboard.writeText(aiPrompt);
             setIsCopied(true);
-            toast({ title: "Investigative Prompt Copied!", description: "Paste this into your AI now." });
+            toast({ title: "Forensic Prompt Copied!", description: "The AI is now commanded to find actual human names." });
         } catch (e) {
             toast({ variant: 'destructive', title: "Copy Failed" });
         }
@@ -100,24 +99,24 @@ REQUIRED OUTPUT SCHEMA (JSON ONLY):
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
                             <Sparkles className="h-5 w-5 text-primary" />
-                            Elite Individual AI Research
+                            Forensic Individual AI Research
                         </DialogTitle>
                         <DialogDescription>
-                            Generate an aggressive deep-search prompt for <strong>{companyName}</strong>.
+                            Generate a deep-search prompt optimized to find actual names for <strong>{companyName}</strong>.
                         </DialogDescription>
                     </DialogHeader>
 
                     <div className="space-y-4 py-4">
                         <Alert className="bg-primary/5 border-primary/20">
                             <Info className="h-4 w-4 text-primary" />
-                            <AlertTitle>Intelligent Search Active</AlertTitle>
+                            <AlertTitle>Forensic Search Active</AlertTitle>
                             <AlertDescription>
-                                This prompt instructs the AI to hunt for leadership names and perform domain-based email discovery to eliminate "null" results.
+                                This prompt forbids the AI from returning generic titles and commands a hunt for actual human leadership names.
                             </AlertDescription>
                         </Alert>
 
                         <div className="space-y-2">
-                            <label className="text-xs font-bold uppercase text-muted-foreground">AI Research Prompt</label>
+                            <label className="text-xs font-bold uppercase text-muted-foreground">AI Forensic Prompt</label>
                             <ScrollArea className="h-48 w-full border rounded-md p-3 bg-muted/30 text-foreground">
                                 <pre className="text-xs whitespace-pre-wrap font-sans">{aiPrompt}</pre>
                             </ScrollArea>
@@ -136,35 +135,6 @@ REQUIRED OUTPUT SCHEMA (JSON ONLY):
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-        </>
-    );
-}
-
-export function BulkEnrichButton({ partners, onComplete }: { partners: any[], onComplete: () => void }) {
-    const [open, setOpen] = useState(false);
-    
-    // Select first 30 "fresh" candidates (missing email and not currently researching)
-    const targets = useMemo(() => {
-        return partners.filter(p => {
-            const email = (p.email || p.email_address || '').toString().toLowerCase().trim();
-            const isInvalid = !email || email === 'null' || email === 'n/a';
-            return isInvalid && p.researchStatus !== 'researching';
-        }).slice(0, 30);
-    }, [partners]);
-
-    if (targets.length === 0) return null;
-
-    return (
-        <>
-            <BatchResearchDialog 
-                open={open} 
-                onOpenChange={setOpen} 
-                selectedLeads={targets} 
-                onComplete={onComplete} 
-            />
-            <Button variant="outline" className="text-amber-600 border-amber-200 bg-amber-50" onClick={() => setOpen(true)}>
-                <Zap className="mr-2 h-4 w-4" /> Batch Research ({targets.length})
-            </Button>
         </>
     );
 }

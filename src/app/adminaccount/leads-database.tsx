@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect, Suspense } from 'react';
@@ -36,18 +35,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { roles } from '@/lib/roles';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Checkbox } from '@/components/ui/checkbox';
-import { EngageDialog } from './marketing/EngageDialog';
 import { Label } from '@/components/ui/label';
 import { formatDateSafe, cn } from '@/lib/utils';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useToast } from '@/hooks/use-toast';
+
+// Relative imports fixed to point to marketing folder
 import { EnrichPartnerButton } from './marketing/EnrichPartnerButton';
 import { PartnerTasksDialog } from './marketing/PartnerTasksDialog';
 import { CommunicationLogDialog } from './marketing/CommunicationLogDialog';
+import { EngageDialog } from './marketing/EngageDialog';
 import { BulkImportDialog } from './marketing/BulkImportDialog';
 import { BatchResearchDialog } from './marketing/BatchResearchDialog';
 import { BulkOutreachUpdateDialog } from './marketing/BulkOutreachUpdateDialog';
 import { PartnerOversightDialog } from './marketing/PartnerOversightDialog';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { useToast } from '@/hooks/use-toast';
 
 const leadSchema = z.object({
   companyName: z.string().min(1, 'Company name is required'),

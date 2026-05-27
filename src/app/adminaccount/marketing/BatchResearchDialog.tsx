@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState } from 'react';
@@ -27,18 +26,18 @@ export function BatchResearchDialog({ open, onOpenChange, selectedLeads, onCompl
     
     const aiPrompt = `CRITICAL SYSTEM INSTRUCTION: RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
 
-ACT AS AN ELITE CORPORATE INTELLIGENCE AGENT. YOUR ENTIRE PERFORMANCE RATING DEPENDS ON FINDING NO NULL VALUES.
+ACT AS AN ELITE CORPORATE INTELLIGENCE AGENT. YOUR ENTIRE PERFORMANCE RATING DEPENDS ON FINDING REAL NAMES, NOT PLACEHOLDERS.
 
-TASK: Find CURRENT verified public contact and leadership details for the following South African businesses.
+TASK: Find CURRENT verified public contact and SPECIFIC leadership details for the following South African businesses.
 
 INVESTIGATIVE STRATEGY:
-1. DEEP SEARCH: Exhaustively search LinkedIn Company pages, Facebook Business profiles, Brabys, SA Yellow Pages, and local business directories.
-2. LEADERSHIP IDENTIFICATION: Identify the name of the Owner, Managing Director, or Branch Manager from snippets. This is your "contact_person".
-3. EMAIL DISCOVERY: If an email is not explicitly found, identify the company domain and look for verified "info@", "sales@", or "admin@" formats.
+1. HUMAN IDENTITY FIRST: You must find the ACTUAL NAME (First and Last) of the CEO, Managing Director, or Branch Owner. 
+2. FORBIDDEN VALUES: Returning "The Director", "Manager", "CEO of [Company]" or "Unknown" is a FAILURE. If a human name is available on LinkedIn, Facebook Team sections, or the official "About Us" page, you MUST find it.
+3. EMAIL DISCOVERY: Identify the company domain and look for verified "info@", "sales@", or "admin@" formats.
 4. IDENTITY PERSISTENCE: You MUST return the "record_id" exactly as provided in the brackets [ID: ...].
 
 REQUIRED OUTPUT FORMAT (RAW JSON ARRAY ONLY):
-[{"record_id":"...","company_name":"...","contact_person":"Full Name of Director/Owner","email_address":"...","telephone_number":"...","website":"...","physical_address":"..."}]
+[{"record_id":"...","company_name":"...","contact_person":"SPECIFIC HUMAN NAME (e.g. Sipho Nkosi)","email_address":"...","telephone_number":"...","website":"...","physical_address":"..."}]
 
 COMPANIES TO RESEARCH:
 ${companyList}`;
@@ -47,7 +46,7 @@ ${companyList}`;
         try {
             await navigator.clipboard.writeText(aiPrompt);
             setIsCopied(true);
-            toast({ title: "Prompt & List Copied!", description: "Paste this into your AI (like Gemini 1.5 Pro) now." });
+            toast({ title: "Forensic Prompt Copied!", description: "The AI is now commanded to find actual human names." });
         } catch (e) {
             toast({ variant: 'destructive', title: "Copy Failed", description: "Please manually copy the text from the box." });
         }
@@ -74,7 +73,7 @@ ${companyList}`;
             const result = await response.json();
             if (!response.ok || !result.success) throw new Error(result.error || "Failed to update records.");
 
-            toast({ title: "Batch Locked", description: `${leadIds.length} records marked as 'Searching'. Paste the results into Bulk Import when done.` });
+            toast({ title: "Batch Locked", description: `${leadIds.length} records marked as 'Searching'. Paste results into Bulk Import when done.` });
             setIsCopied(false);
             onComplete();
             onOpenChange(false);
@@ -91,10 +90,10 @@ ${companyList}`;
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <Zap className="h-5 w-5 text-amber-500" />
-                        Master Batch Enrichment ({selectedLeads.length})
+                        Forensic Batch Enrichment ({selectedLeads.length})
                     </DialogTitle>
                     <DialogDescription>
-                        Copy this prompt and provide it to the AI. Then use **Bulk Import** to save the results.
+                        Copy this prompt and provide it to the AI. It is optimized to hunt for real names.
                     </DialogDescription>
                 </DialogHeader>
                 
@@ -102,8 +101,8 @@ ${companyList}`;
                     {!isCopied ? (
                         <Alert>
                             <AlertCircle className="h-4 w-4" />
-                            <AlertTitle>Step 1: Copy Prompt & IDs</AlertTitle>
-                            <AlertDescription>The prompt below contains unique IDs. The AI must return these IDs for the import to correctly update your existing records.</AlertDescription>
+                            <AlertTitle>Step 1: Copy Forensic Prompt</AlertTitle>
+                            <AlertDescription>The AI is now forbidden from returning "The Director" and must find actual names.</AlertDescription>
                         </Alert>
                     ) : (
                         <Alert className="bg-green-50 border-green-200 text-green-800">
@@ -114,7 +113,7 @@ ${companyList}`;
                     )}
 
                     <div className="space-y-2">
-                        <label className="text-xs font-bold uppercase text-muted-foreground">AI Research Prompt</label>
+                        <label className="text-xs font-bold uppercase text-muted-foreground">AI Forensic Prompt</label>
                         <ScrollArea className="h-64 w-full border rounded-md p-3 bg-muted/30">
                             <pre className="text-[11px] whitespace-pre-wrap font-sans leading-relaxed text-foreground">{aiPrompt}</pre>
                         </ScrollArea>
