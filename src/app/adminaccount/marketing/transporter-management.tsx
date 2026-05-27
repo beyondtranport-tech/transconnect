@@ -468,7 +468,7 @@ export default function TransporterManagement() {
       }
       
       if (targets.length === 0) {
-          toast({ title: "No fresh candidates found", description: "All records are either already enriched or currently locked in another search." });
+          toast({ title: "No fresh candidates found", description: "All records are either already enriched or currently locked in another search. Try 'Reset Stuck Research' if you have records stuck on 'Searching...'." });
           return;
       }
 

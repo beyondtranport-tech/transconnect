@@ -108,13 +108,6 @@ export async function POST(req: NextRequest) {
             case 'bulkSavePartners': {
                 const { partners, type } = payload;
                 const batch = db.batch();
-                const roleMapping: Record<string, string> = {
-                    'transporter': 'Transporters',
-                    'supplier': 'Vendors',
-                    'partner': 'Strategic Partners',
-                    'isa': 'ISA Agents (Elite)'
-                };
-                const leadRole = roleMapping[type] || type;
                 
                 let updatedCount = 0;
                 let createdCount = 0;
@@ -125,16 +118,21 @@ export async function POST(req: NextRequest) {
                     let existingData: any = null;
 
                     if (targetId) {
-                        const leadSnap = await db.collection('leads').doc(targetId).get();
-                        const partnerSnap = await db.collection('partners').doc(targetId).get();
+                        // ID-Absolute matching: Check both potential collections
+                        const [leadSnap, partnerSnap] = await Promise.all([
+                            db.collection('leads').doc(targetId).get(),
+                            db.collection('partners').doc(targetId).get()
+                        ]);
                         
                         if (leadSnap.exists || partnerSnap.exists) {
                             existingData = leadSnap.exists ? leadSnap.data() : partnerSnap.data();
                             updatedCount++;
                         } else {
+                            // Create new with this ID if provided but not found
                             createdCount++;
                         }
                     } else {
+                        // Fuzzy match by name if no ID
                         const companyNameClean = (normalized.companyName || '').trim();
                         if (!companyNameClean) continue;
                         const existingLeads = await db.collection('leads').where('companyName', '==', companyNameClean).get();
@@ -155,11 +153,10 @@ export async function POST(req: NextRequest) {
                     const updateData = {
                         ...normalized,
                         id: targetId,
-                        role: leadRole,
+                        researchStatus: 'completed',
                         status: (existingData?.status === 'active' || existingData?.status === 'registered' || existingData?.status === 'qualified') 
                             ? existingData.status 
                             : (normalized.email ? 'qualified' : 'contacted'),
-                        researchStatus: 'completed',
                         updatedAt: FieldValue.serverTimestamp(),
                         createdAt: existingData?.createdAt || FieldValue.serverTimestamp()
                     };
@@ -171,10 +168,40 @@ export async function POST(req: NextRequest) {
                 await batch.commit();
                 return NextResponse.json({ 
                     success: true, 
-                    message: `Import complete. Updated: ${updatedCount}, New: ${createdCount}.`,
+                    message: `Import complete. ${updatedCount} records enriched.`,
                     updatedCount,
                     createdCount
                 });
+            }
+            case 'resetResearchQueue': {
+                // Robust reset: Clear 'researching' flag from all collections
+                const [leadsSnap, partnersSnap] = await Promise.all([
+                    db.collection('leads').where('researchStatus', '==', 'researching').get(),
+                    db.collection('partners').where('researchStatus', '==', 'researching').get()
+                ]);
+
+                const batch = db.batch();
+                let count = 0;
+                const processed = new Set();
+                const resetObj = { researchStatus: FieldValue.delete() };
+
+                leadsSnap.docs.forEach(doc => {
+                    batch.update(doc.ref, resetObj);
+                    batch.set(db.collection('partners').doc(doc.id), resetObj, { merge: true });
+                    processed.add(doc.id);
+                    count++;
+                });
+
+                partnersSnap.docs.forEach(doc => {
+                    if (!processed.has(doc.id)) {
+                        batch.update(doc.ref, resetObj);
+                        batch.set(db.collection('leads').doc(doc.id), resetObj, { merge: true });
+                        count++;
+                    }
+                });
+
+                if (count > 0) await batch.commit();
+                return NextResponse.json({ success: true, count });
             }
             case 'getPartnersByType': {
                 const { type } = payload;
@@ -230,19 +257,6 @@ export async function POST(req: NextRequest) {
                 }
                 await batch.commit();
                 return NextResponse.json({ success: true });
-            }
-            case 'resetResearchQueue': {
-                const snap = await db.collection('leads').where('researchStatus', '==', 'researching').get();
-                const batch = db.batch();
-                let count = 0;
-                snap.docs.forEach(doc => {
-                    const reset = { researchStatus: FieldValue.delete(), status: 'new' };
-                    batch.update(doc.ref, reset);
-                    batch.set(db.collection('partners').doc(doc.id), reset, { merge: true });
-                    count++;
-                });
-                if (count > 0) await batch.commit();
-                return NextResponse.json({ success: true, count });
             }
             case 'findDuplicateLeads': {
                 const [leadsSnap, partnersSnap] = await Promise.all([
