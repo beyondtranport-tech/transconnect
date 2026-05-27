@@ -397,7 +397,7 @@ export default function TransporterManagement() {
 
         return matchesStatus && matchesAssignee && matchesData;
     });
-  }, [partners, statusFilter, assigneeFilter, dataFilter]);
+  }, [partners, statusFilter, assigneeFilter, dataFilter, staffMap]);
 
   const handleCopyBccList = () => {
     const emails = filteredTransporters

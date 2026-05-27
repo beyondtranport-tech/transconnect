@@ -25,7 +25,6 @@ function serializeTimestamps(docData: any): any {
 /**
  * Universal Data Normalization
  * Strictly maps diverse AI fields to standard CRM fields (firstName, lastName, email, etc.)
- * Aggressively ignores "null" or placeholder strings to protect existing data.
  */
 function normalizePartnerData(data: any) {
     const result: any = {};
@@ -34,7 +33,7 @@ function normalizePartnerData(data: any) {
         !val || 
         ['member', 'candidate', 'null', 'n/a', 'none', 'undefined', 'n a', 'unknown', 'null@null.com'].includes(val.toString().toLowerCase().trim());
 
-    // 1. Recover Record ID - VITAL for matching
+    // 1. Recover Record ID
     const idKeys = ['record_id', 'recordId', 'id', 'record', 'uid', 'recordid'];
     for (const key of idKeys) {
         const val = data[key]?.toString().trim();
@@ -63,7 +62,7 @@ function normalizePartnerData(data: any) {
         }
     });
 
-    // 3. Identity Construction (firstName/lastName) from full contact person name
+    // 3. Identity Construction
     const contactKeys = ['contact_person', 'contactPerson', 'contact', 'person', 'owner', 'director', 'manager', 'leadership'];
     let contactVal = '';
     for (const key of contactKeys) {
@@ -137,7 +136,6 @@ export async function POST(req: NextRequest) {
                             createdCount++;
                         }
                     } else {
-                        // Match by Company Name fallback (Secondary Key)
                         const companyNameClean = (normalized.companyName || '').trim();
                         if (!companyNameClean) continue;
                         const existingLeads = await db.collection('leads').where('companyName', '==', companyNameClean).get();
@@ -167,7 +165,7 @@ export async function POST(req: NextRequest) {
                         createdAt: existingData?.createdAt || FieldValue.serverTimestamp()
                     };
 
-                    // Aggressively strip placeholders and nulls
+                    // Strip placeholders
                     Object.keys(updateData).forEach(key => {
                         const val = (updateData as any)[key];
                         if (val === null || val === undefined || val === 'null' || val === 'N/A' || val === 'None') {
@@ -257,6 +255,53 @@ export async function POST(req: NextRequest) {
                 });
                 if (count > 0) await batch.commit();
                 return NextResponse.json({ success: true, count });
+            }
+            case 'findDuplicateLeads': {
+                const [leadsSnap, partnersSnap] = await Promise.all([
+                    db.collection('leads').get(),
+                    db.collection('partners').get()
+                ]);
+
+                const masterList: any[] = [];
+                leadsSnap.docs.forEach(doc => masterList.push({ id: doc.id, source: 'Lead', ...doc.data() }));
+                partnersSnap.docs.forEach(doc => masterList.push({ id: doc.id, source: 'Member', ...doc.data() }));
+
+                const nameMap = new Map<string, any[]>();
+                masterList.forEach(item => {
+                    const name = (item.companyName || '').toString().toLowerCase().trim();
+                    if (!name) return;
+                    if (!nameMap.has(name)) nameMap.set(name, []);
+                    nameMap.get(name)!.push(item);
+                });
+
+                const duplicates = Array.from(nameMap.entries())
+                    .filter(([name, group]) => {
+                        const uniqueIds = new Set(group.map(g => g.id));
+                        return uniqueIds.size > 1;
+                    })
+                    .map(([name, group]) => {
+                        const uniqueRecords: any[] = [];
+                        const seenIds = new Set();
+                        group.forEach(rec => {
+                            if (!seenIds.has(rec.id)) {
+                                seenIds.add(rec.id);
+                                uniqueRecords.push(rec);
+                            }
+                        });
+                        return uniqueRecords;
+                    });
+
+                return NextResponse.json({ success: true, data: duplicates });
+            }
+            case 'deleteLeads': {
+                const { leadIds } = payload;
+                const batch = db.batch();
+                for (const id of leadIds) {
+                    batch.delete(db.collection('leads').doc(id));
+                    batch.delete(db.collection('partners').doc(id));
+                }
+                await batch.commit();
+                return NextResponse.json({ success: true });
             }
             case 'getAuditLogs': {
                 const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(100).get();
@@ -369,53 +414,6 @@ export async function POST(req: NextRequest) {
                 }
                 if (count > 0) await batch.commit();
                 return NextResponse.json({ success: true, count });
-            }
-            case 'findDuplicateLeads': {
-                const [leadsSnap, partnersSnap] = await Promise.all([
-                    db.collection('leads').get(),
-                    db.collection('partners').get()
-                ]);
-
-                const masterList: any[] = [];
-                leadsSnap.docs.forEach(doc => masterList.push({ id: doc.id, source: 'Lead', ...doc.data() }));
-                partnersSnap.docs.forEach(doc => masterList.push({ id: doc.id, source: 'Member', ...doc.data() }));
-
-                const nameMap = new Map<string, any[]>();
-                masterList.forEach(item => {
-                    const name = (item.companyName || '').toString().toLowerCase().trim();
-                    if (!name) return;
-                    if (!nameMap.has(name)) nameMap.set(name, []);
-                    nameMap.get(name)!.push(item);
-                });
-
-                const duplicates = Array.from(nameMap.entries())
-                    .filter(([name, group]) => {
-                        const uniqueIds = new Set(group.map(g => g.id));
-                        return uniqueIds.size > 1;
-                    })
-                    .map(([name, group]) => {
-                        const uniqueRecords: any[] = [];
-                        const seenIds = new Set();
-                        group.forEach(rec => {
-                            if (!seenIds.has(rec.id)) {
-                                seenIds.add(rec.id);
-                                uniqueRecords.push(rec);
-                            }
-                        });
-                        return uniqueRecords;
-                    });
-
-                return NextResponse.json({ success: true, data: duplicates });
-            }
-            case 'deleteLeads': {
-                const { leadIds } = payload;
-                const batch = db.batch();
-                for (const id of leadIds) {
-                    batch.delete(db.collection('leads').doc(id));
-                    batch.delete(db.collection('partners').doc(id));
-                }
-                await batch.commit();
-                return NextResponse.json({ success: true });
             }
             default:
                 return NextResponse.json({ success: false, error: `Action "${action}" not implemented.` }, { status: 400 });
