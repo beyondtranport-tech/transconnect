@@ -134,7 +134,6 @@ export async function POST(req: NextRequest) {
                             existingData = leadSnap.exists ? leadSnap.data() : partnerSnap.data();
                             updatedCount++;
                         } else {
-                            // ID provided but not found - likely a system error or manual ID. Create/Set it.
                             createdCount++;
                         }
                     } else {
@@ -163,12 +162,12 @@ export async function POST(req: NextRequest) {
                         status: (existingData?.status === 'active' || existingData?.status === 'registered' || existingData?.status === 'qualified') 
                             ? existingData.status 
                             : (normalized.email ? 'qualified' : 'contacted'),
-                        researchStatus: 'completed', // Clear "Searching..." status
+                        researchStatus: 'completed',
                         updatedAt: FieldValue.serverTimestamp(),
                         createdAt: existingData?.createdAt || FieldValue.serverTimestamp()
                     };
 
-                    // Aggressively strip placeholders and nulls to prevent overwriting valid data
+                    // Aggressively strip placeholders and nulls
                     Object.keys(updateData).forEach(key => {
                         const val = (updateData as any)[key];
                         if (val === null || val === undefined || val === 'null' || val === 'N/A' || val === 'None') {
@@ -177,7 +176,6 @@ export async function POST(req: NextRequest) {
                     });
 
                     batch.set(leadRef, updateData, { merge: true });
-                    // Only update partner collection if it's a known non-lead partner type or already exists there
                     if (existingData || ['partner', 'isa', 'investor', 'developer'].includes(type)) {
                         batch.set(partnerRef, { ...updateData, type: existingData?.type || type }, { merge: true });
                     }
