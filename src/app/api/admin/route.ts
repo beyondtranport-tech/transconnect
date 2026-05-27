@@ -25,6 +25,7 @@ function serializeTimestamps(docData: any): any {
 /**
  * Universal Data Normalization
  * Strictly maps diverse AI fields to standard CRM fields (firstName, lastName, email, etc.)
+ * Aggressively ignores "null" or placeholder strings to protect existing data.
  */
 function normalizePartnerData(data: any) {
     const result: any = {};
@@ -124,7 +125,7 @@ export async function POST(req: NextRequest) {
                     let targetId = normalized.record_id;
                     let existingData: any = null;
 
-                    // STRATEGY: ID-ABSOLUTE MATCHING
+                    // STRATEGY: ID-ABSOLUTE MATCHING (Primary Key)
                     if (targetId) {
                         const leadSnap = await db.collection('leads').doc(targetId).get();
                         const partnerSnap = await db.collection('partners').doc(targetId).get();
@@ -133,11 +134,11 @@ export async function POST(req: NextRequest) {
                             existingData = leadSnap.exists ? leadSnap.data() : partnerSnap.data();
                             updatedCount++;
                         } else {
-                            // If ID provided but not found, we use that ID anyway (trusting AI/Context)
+                            // ID provided but not found - likely a system error or manual ID. Create/Set it.
                             createdCount++;
                         }
                     } else {
-                        // Match by Company Name fallback
+                        // Match by Company Name fallback (Secondary Key)
                         const companyNameClean = (normalized.companyName || '').trim();
                         if (!companyNameClean) continue;
                         const existingLeads = await db.collection('leads').where('companyName', '==', companyNameClean).get();
@@ -162,12 +163,12 @@ export async function POST(req: NextRequest) {
                         status: (existingData?.status === 'active' || existingData?.status === 'registered' || existingData?.status === 'qualified') 
                             ? existingData.status 
                             : (normalized.email ? 'qualified' : 'contacted'),
-                        researchStatus: 'completed', 
+                        researchStatus: 'completed', // Clear "Searching..." status
                         updatedAt: FieldValue.serverTimestamp(),
                         createdAt: existingData?.createdAt || FieldValue.serverTimestamp()
                     };
 
-                    // Aggressively strip placeholders and nulls
+                    // Aggressively strip placeholders and nulls to prevent overwriting valid data
                     Object.keys(updateData).forEach(key => {
                         const val = (updateData as any)[key];
                         if (val === null || val === undefined || val === 'null' || val === 'N/A' || val === 'None') {
@@ -176,6 +177,7 @@ export async function POST(req: NextRequest) {
                     });
 
                     batch.set(leadRef, updateData, { merge: true });
+                    // Only update partner collection if it's a known non-lead partner type or already exists there
                     if (existingData || ['partner', 'isa', 'investor', 'developer'].includes(type)) {
                         batch.set(partnerRef, { ...updateData, type: existingData?.type || type }, { merge: true });
                     }
@@ -245,6 +247,7 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true });
             }
             case 'resetResearchQueue': {
+                const { type } = payload;
                 const snap = await db.collection('leads').where('researchStatus', '==', 'researching').get();
                 const batch = db.batch();
                 let count = 0;

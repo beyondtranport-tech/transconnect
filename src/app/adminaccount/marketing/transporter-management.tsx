@@ -375,7 +375,7 @@ export default function TransporterManagement() {
       }).length;
   }, [partners]);
 
-  const selectedLeads = useMemo(() => {
+  const selectedLeadsForBatch = useMemo(() => {
       return partners.filter(p => selectedIds.includes(p.id));
   }, [partners, selectedIds]);
 
@@ -585,7 +585,7 @@ export default function TransporterManagement() {
 
   return (
     <>
-      <BatchResearchDialog open={dialog.type === 'batch-ai'} onOpenChange={(o) => !o && setDialog({ type: null })} selectedLeads={selectedLeads} onComplete={() => { setSelectedIds([]); forceRefresh(); }} />
+      <BatchResearchDialog open={dialog.type === 'batch-ai'} onOpenChange={(o) => !o && setDialog({ type: null })} selectedLeads={selectedLeadsForBatch} onComplete={() => { setSelectedIds([]); forceRefresh(); }} />
       <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.data} audience="transporters" onEngageSuccess={forceRefresh} />
       <TransporterDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={forceRefresh} />
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
