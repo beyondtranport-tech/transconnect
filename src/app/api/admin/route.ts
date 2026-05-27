@@ -124,7 +124,6 @@ export async function POST(req: NextRequest) {
                     let targetId = normalized.record_id;
                     let existingData: any = null;
 
-                    // STRATEGY: ID-ABSOLUTE MATCHING (Primary Key)
                     if (targetId) {
                         const leadSnap = await db.collection('leads').doc(targetId).get();
                         const partnerSnap = await db.collection('partners').doc(targetId).get();
@@ -160,15 +159,13 @@ export async function POST(req: NextRequest) {
                         status: (existingData?.status === 'active' || existingData?.status === 'registered' || existingData?.status === 'qualified') 
                             ? existingData.status 
                             : (normalized.email ? 'qualified' : 'contacted'),
-                        researchStatus: 'completed', // Clears "Searching" and marks as "Enriched"
+                        researchStatus: 'completed',
                         updatedAt: FieldValue.serverTimestamp(),
                         createdAt: existingData?.createdAt || FieldValue.serverTimestamp()
                     };
 
                     batch.set(leadRef, updateData, { merge: true });
-                    if (existingData || ['partner', 'isa', 'investor', 'developer'].includes(type)) {
-                        batch.set(partnerRef, { ...updateData, type: existingData?.type || type }, { merge: true });
-                    }
+                    batch.set(partnerRef, { ...updateData, type: existingData?.type || type }, { merge: true });
                 }
                 
                 await batch.commit();
@@ -235,7 +232,6 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true });
             }
             case 'resetResearchQueue': {
-                const { type } = payload;
                 const snap = await db.collection('leads').where('researchStatus', '==', 'researching').get();
                 const batch = db.batch();
                 let count = 0;

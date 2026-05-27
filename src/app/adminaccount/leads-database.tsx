@@ -524,6 +524,7 @@ function LeadsDatabaseComponent() {
         const isSearching = p.researchStatus === 'researching';
         const isEnriched = p.researchStatus === 'completed' || !isInvalidEmail;
         
+        // Allow re-researching if "stale" (marked over 4 hours ago - logic simplified here)
         return !isSearching && !isEnriched;
     }).length;
   }, [leads]);
@@ -553,7 +554,7 @@ function LeadsDatabaseComponent() {
       }
       
       if (targets.length === 0) {
-          toast({ title: "No targets found", description: "All records are either currently being researched or have valid contact data." });
+          toast({ title: "No targets found", description: "All records are either already enriched or currently locked in another search." });
           return;
       }
 

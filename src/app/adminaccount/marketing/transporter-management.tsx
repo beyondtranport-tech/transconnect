@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -467,7 +468,7 @@ export default function TransporterManagement() {
       }
       
       if (targets.length === 0) {
-          toast({ title: "No fresh candidates found", description: "All records are either currently being researched, enriched, or have valid email addresses." });
+          toast({ title: "No fresh candidates found", description: "All records are either already enriched or currently locked in another search." });
           return;
       }
 
