@@ -39,14 +39,15 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { EngageDialog } from './marketing/EngageDialog';
 import { Label } from '@/components/ui/label';
 import { formatDateSafe, cn } from '@/lib/utils';
-import { EnrichPartnerButton } from './marketing/EnrichPartnerButton';
-import { PartnerTasksDialog } from './marketing/PartnerTasksDialog';
-import { CommunicationLogDialog } from './marketing/CommunicationLogDialog';
+import { EnrichPartnerButton } from './EnrichPartnerButton';
+import { PartnerTasksDialog } from './PartnerTasksDialog';
+import { CommunicationLogDialog } from './CommunicationLogDialog';
 import { BulkImportDialog } from './marketing/BulkImportDialog';
 import { BatchResearchDialog } from './marketing/BatchResearchDialog';
 import { BulkOutreachUpdateDialog } from './marketing/BulkOutreachUpdateDialog';
 import { PartnerOversightDialog } from './marketing/PartnerOversightDialog';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useToast } from '@/hooks/use-toast';
 
 const leadSchema = z.object({
   companyName: z.string().min(1, 'Company name is required'),
@@ -737,7 +738,8 @@ function LeadsDatabaseComponent() {
                 <Button variant="outline"><Send className="mr-2 h-4 w-4" /> Bulk Update Status</Button>
             </BulkOutreachUpdateDialog>
             <Button variant="default" className="bg-amber-600 hover:bg-amber-700" onClick={() => handleEnhanceBatch(100)}>
-                <Zap className="mr-2 h-4 w-4" /> Master Batch (100)
+                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Zap className="mr-2 h-4 w-4" />}
+                Master Batch (100)
             </Button>
             <BulkImportDialog type="lead" onComplete={forceRefresh}>
                 <Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Bulk Import JSON</Button>

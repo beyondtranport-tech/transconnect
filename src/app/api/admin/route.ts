@@ -153,6 +153,7 @@ export async function POST(req: NextRequest) {
                     const leadRef = db.collection('leads').doc(targetId);
                     const partnerRef = db.collection('partners').doc(targetId);
                     
+                    // Logic update: Ensure researchStatus is marked 'completed' (Enriched)
                     const updateData = {
                         ...normalized,
                         id: targetId,
@@ -160,7 +161,7 @@ export async function POST(req: NextRequest) {
                         status: (existingData?.status === 'active' || existingData?.status === 'registered' || existingData?.status === 'qualified') 
                             ? existingData.status 
                             : (normalized.email ? 'qualified' : 'contacted'),
-                        researchStatus: 'completed',
+                        researchStatus: 'completed', // This marks it as "Enriched" in the UI
                         updatedAt: FieldValue.serverTimestamp(),
                         createdAt: existingData?.createdAt || FieldValue.serverTimestamp()
                     };
