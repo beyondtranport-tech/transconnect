@@ -61,7 +61,7 @@ function normalizePartnerData(data: any) {
         }
     });
 
-    // 3. Identity Construction (firstName/lastName)
+    // 3. Identity Construction (firstName/lastName) from full contact person name
     const contactKeys = ['contact_person', 'contactPerson', 'contact', 'person', 'owner', 'director', 'manager', 'leadership'];
     let contactVal = '';
     for (const key of contactKeys) {
@@ -124,7 +124,6 @@ export async function POST(req: NextRequest) {
                     let existingData: any = null;
 
                     // STRATEGY: ID-ABSOLUTE MATCHING
-                    // If the AI returned an ID, we use it. We don't discard it if doc lookup fails.
                     if (targetId) {
                         const leadSnap = await db.collection('leads').doc(targetId).get();
                         const partnerSnap = await db.collection('partners').doc(targetId).get();
@@ -133,8 +132,7 @@ export async function POST(req: NextRequest) {
                             existingData = leadSnap.exists ? leadSnap.data() : partnerSnap.data();
                             updatedCount++;
                         } else {
-                            // The ID was provided but doc not found? 
-                            // Likely a sync issue, but we proceed with the ID to ensure we update the intended record.
+                            // Proceed with ID to ensure we update the intended record
                             createdCount++;
                         }
                     } else {
@@ -160,17 +158,23 @@ export async function POST(req: NextRequest) {
                         ...normalized,
                         id: targetId,
                         role: leadRole,
-                        // Maintain status if it's already high-level (Member)
+                        // Maintain high-level status if present
                         status: (existingData?.status === 'active' || existingData?.status === 'registered' || existingData?.status === 'qualified') 
                             ? existingData.status 
                             : (normalized.email ? 'qualified' : 'contacted'),
-                        researchStatus: 'completed', // CLEAR THE SEARCHING STATE
+                        researchStatus: 'completed', 
                         updatedAt: FieldValue.serverTimestamp(),
                         createdAt: existingData?.createdAt || FieldValue.serverTimestamp()
                     };
 
+                    // Guard against null overwrites
+                    Object.keys(updateData).forEach(key => {
+                        if ((updateData as any)[key] === null || (updateData as any)[key] === undefined || (updateData as any)[key] === 'null') {
+                            delete (updateData as any)[key];
+                        }
+                    });
+
                     batch.set(leadRef, updateData, { merge: true });
-                    // Only update partners collection if it's already a member OR if it's a specific partner type
                     if (existingData || ['partner', 'isa', 'investor', 'developer'].includes(type)) {
                         batch.set(partnerRef, { ...updateData, type: existingData?.type || type }, { merge: true });
                     }
@@ -203,7 +207,6 @@ export async function POST(req: NextRequest) {
                 ]);
 
                 const mergedMap = new Map();
-                // Map documents from both collections to their ID
                 partnersSnap.docs.forEach(doc => {
                     mergedMap.set(doc.id, { id: doc.id, entryType: 'Member', ...serializeTimestamps(doc.data()) });
                 });
@@ -211,8 +214,6 @@ export async function POST(req: NextRequest) {
                 leadsSnap.docs.forEach(doc => {
                     const existing = mergedMap.get(doc.id);
                     const leadData = doc.data();
-                    
-                    // Prioritize Member status over Lead status
                     const finalStatus = (existing?.status === 'active' || existing?.status === 'qualified' || existing?.status === 'registered') 
                         ? existing.status 
                         : (leadData.status || existing?.status || 'new');

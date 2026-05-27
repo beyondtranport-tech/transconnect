@@ -30,7 +30,7 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
 
     const companyName = partner.companyName || `${partner.firstName} ${partner.lastName}`;
 
-    const aiPrompt = `STRICT INSTRUCTION: RETURN ONLY A RAW JSON OBJECT. NO CONVERSATIONAL TEXT. NO MARKDOWN.
+    const aiPrompt = `CRITICAL INSTRUCTION: RETURN ONLY A RAW JSON OBJECT. DO NOT USE MARKDOWN CODE BLOCKS. NO CONVERSATIONAL TEXT.
 
 ACT AS A PROFESSIONAL RESEARCH AGENT. Find CURRENT public contact details for the following South African business.
 
@@ -39,7 +39,7 @@ RESEARCH STRATEGY:
 2. KEY CONTACT: Look for the name of the Owner, Managing Director, or Branch Manager.
 3. IDENTITY PERSISTENCE: You MUST return "record_id": "${partner.id}" in your response.
 
-REQUIRED OUTPUT SCHEMA (JSON):
+REQUIRED OUTPUT SCHEMA (JSON ONLY):
 {
   "record_id": "${partner.id}",
   "company_name": "${companyName}",
@@ -48,10 +48,7 @@ REQUIRED OUTPUT SCHEMA (JSON):
   "telephone_number": "Phone Number",
   "website": "URL",
   "physical_address": "Full Physical Address"
-}
-
-COMPANY TO RESEARCH:
-${companyName}`;
+}`;
 
     const handleCopy = async () => {
         try {
@@ -137,8 +134,4 @@ ${companyName}`;
             </Dialog>
         </>
     );
-}
-
-export function BulkEnrichButton({ partners, onComplete }: { partners: any[], onComplete: () => void }) {
-    return null; 
 }

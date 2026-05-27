@@ -33,7 +33,7 @@ export function BulkImportDialog({ type, onComplete, children }: BulkImportDialo
 
     /**
      * Resilient Data Extractor
-     * Picks out JSON records even from messy conversational text.
+     * Picks out JSON records even from messy conversational text or markdown blocks.
      */
     const extractItemsFromText = (rawText: string) => {
         let results: any[] = [];
@@ -49,7 +49,7 @@ export function BulkImportDialog({ type, onComplete, children }: BulkImportDialo
             const parsed = JSON.parse(text);
             return Array.isArray(parsed) ? parsed : [parsed];
         } catch (e) {
-            // 3. Fragment Recovery (Regex Extraction for { ... })
+            // 3. Fragment Recovery (Regex Extraction for { ... } or [ ... ])
             const objectRegex = /\{(?:[^{}]|((?:\{[^{}]*\})))*\}/g;
             const matches = text.match(objectRegex);
 
@@ -66,7 +66,7 @@ export function BulkImportDialog({ type, onComplete, children }: BulkImportDialo
         }
 
         if (results.length === 0) {
-            throw new Error("No valid data found. Ensure the text contains JSON records.");
+            throw new Error("No valid JSON found. Ensure the response contains valid record objects.");
         }
 
         return results;
@@ -119,7 +119,7 @@ export function BulkImportDialog({ type, onComplete, children }: BulkImportDialo
             <DialogContent className="sm:max-w-2xl">
                 <DialogHeader>
                     <DialogTitle>Bulk Import {type}s</DialogTitle>
-                    <DialogDescription>Paste AI results or upload a file. Existing records will be updated by ID.</DialogDescription>
+                    <DialogDescription>Paste the raw response from the AI. Our parser will extract the relevant data automatically.</DialogDescription>
                 </DialogHeader>
                 
                 <Tabs defaultValue="paste" className="py-4">
@@ -131,21 +131,21 @@ export function BulkImportDialog({ type, onComplete, children }: BulkImportDialo
                     <TabsContent value="paste" className="space-y-4 pt-4">
                         <Alert className="bg-primary/5 border-primary/20">
                             <Zap className="h-4 w-4 text-primary" />
-                            <AlertTitle>Smart Extraction Active</AlertTitle>
-                            <AlertDescription>You can paste the entire AI chat response here. Records will be matched to your database by their unique ID.</AlertDescription>
+                            <AlertTitle>Intelligent Parser Active</AlertTitle>
+                            <AlertDescription>You can paste the entire AI chat response here. We'll find the JSON records and map them to your existing IDs.</AlertDescription>
                         </Alert>
                         <div className="space-y-2">
                             <Label>Paste AI Response</Label>
                             <Textarea 
-                                placeholder="Paste the JSON list from AI here..." 
-                                className="min-h-[250px] font-mono text-xs" 
+                                placeholder="Paste the response from AI here..." 
+                                className="min-h-[300px] font-mono text-xs" 
                                 value={pasteData}
                                 onChange={(e) => setPasteData(e.target.value)}
                             />
                         </div>
                         <Button className="w-full" onClick={() => handleImport('paste')} disabled={isUploading || !pasteData.trim()}>
                             {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <CheckCircle className="mr-2 h-4 w-4" />}
-                            Process Import
+                            Extract and Import Data
                         </Button>
                     </TabsContent>
 

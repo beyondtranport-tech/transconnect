@@ -24,17 +24,16 @@ export function BatchResearchDialog({ open, onOpenChange, selectedLeads, onCompl
     // ID-First identification for AI - minimized for token efficiency
     const companyList = selectedLeads.map(l => `[ID: ${l.id}] ${l.companyName || `${l.firstName} ${l.lastName}`}`).join('\n');
     
-    const aiPrompt = `STRICT INSTRUCTION: RETURN ONLY A RAW JSON ARRAY. NO CONVERSATIONAL TEXT. NO MARKDOWN CODE BLOCKS. 
+    const aiPrompt = `CRITICAL INSTRUCTION: RETURN ONLY A RAW JSON ARRAY. DO NOT USE MARKDOWN CODE BLOCKS. DO NOT ADD INTRODUCTORY TEXT. NO CONVERSATION.
 
-ACT AS A PROFESSIONAL RESEARCH AGENT. Find verified public contact details for the following South African transport/logistics businesses.
+ACT AS A PROFESSIONAL RESEARCH AGENT. Find CURRENT verified public contact details for the following South African businesses.
 
 RESEARCH STRATEGY:
 1. IDENTITY PERSISTENCE: For every record, you MUST return the "record_id" exactly as provided in the brackets [ID: ...].
-2. SEARCH CHANNELS: Scour public business directories (Yellow Pages, Brabys), LinkedIn company profiles, and Facebook business pages.
-3. KEY CONTACT: Look for the name of the Owner, Managing Director, or Branch Manager.
-4. VALIDATION: Ensure the email is a professional address (e.g. info@company.co.za) or a verified person's address.
+2. SEARCH CHANNELS: Scour public business directories (Yellow Pages, Brabys, Snupit), LinkedIn company profiles, and Facebook business pages.
+3. KEY CONTACT: Identify the name of the Owner, Managing Director, or Branch Manager.
 
-OUTPUT FORMAT (JSON ARRAY):
+OUTPUT FORMAT (RAW JSON ARRAY ONLY):
 [{"record_id":"...","company_name":"...","contact_person":"...","email_address":"...","telephone_number":"...","website":"...","physical_address":"..."}]
 
 COMPANIES TO RESEARCH:
