@@ -8,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
   Loader2, PlusCircle, Truck, Edit, Trash2, Send, CheckCircle, Users, Filter, Save, 
-  Search, Zap, RotateCcw, XCircle, Info, Sparkles, AlertCircle, Mail, Download, Copy, ShieldCheck, Tag, Clock
+  Search, Zap, RotateCcw, XCircle, Info, Sparkles, AlertCircle, Mail, Download, Copy, ShieldCheck, Tag, Clock, Ban
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
@@ -55,7 +55,7 @@ const partnerSchema = z.object({
   contactPerson: z.string().optional(),
   companyName: z.string().optional(),
   address: z.string().optional(),
-  status: z.enum(['active', 'inactive', 'contacted', 'new', 'qualified', 'invited', 'registered']),
+  status: z.enum(['active', 'inactive', 'contacted', 'new', 'qualified', 'invited']),
   type: z.enum(['partner', 'isa', 'investor', 'developer', 'supplier', 'transporter']),
 });
 type PartnerFormValues = z.infer<typeof partnerSchema>;
@@ -157,7 +157,7 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
             <Info className="h-4 w-4 text-amber-600" />
             <AlertTitle>Recommendation Guide</AlertTitle>
             <AlertDescription className="text-xs">
-                Always keep <strong>Members</strong> (Registered users) and delete <strong>Leads</strong> (Projections). 
+                Always keep <strong>Members</strong> (Active accounts) and delete <strong>Leads</strong> (Projections). 
                 Deleting a Member record will break their live account access.
             </AlertDescription>
         </Alert>
@@ -312,7 +312,6 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
                             <SelectItem value="contacted">Researching</SelectItem>
                             <SelectItem value="qualified">Qualified</SelectItem>
                             <SelectItem value="invited">Invited</SelectItem>
-                            <SelectItem value="registered">Registered</SelectItem>
                             <SelectItem value="new">New</SelectItem>
                         </SelectContent>
                     </Select>
@@ -378,7 +377,7 @@ export default function TransporterManagement() {
           const isSearching = p.researchStatus === 'researching';
           const isEnriched = p.researchStatus === 'completed' || !isInvalidEmail;
           
-          return !isSearching && !isEnriched;
+          return !isSearching && !isEnriched && p.status !== 'active';
       }).length;
   }, [partners]);
 
@@ -582,7 +581,6 @@ export default function TransporterManagement() {
                 'contacted': { label: 'Researching', color: 'bg-amber-100 text-amber-700' },
                 'qualified': { label: 'Qualified', color: 'bg-blue-100 text-blue-700' },
                 'invited': { label: 'Invited', color: 'bg-purple-100 text-purple-700' },
-                'registered': { label: 'Registered', color: 'bg-green-100 text-green-700' },
                 'active': { label: 'Member (Active)', color: 'bg-green-600 text-white' },
             };
             const config = statusMap[row.original.status] || { label: row.original.status, color: 'bg-muted' };
@@ -610,7 +608,10 @@ export default function TransporterManagement() {
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
         <AlertDialogContent>
           <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Delete "{dialog.data?.companyName || 'this record'}"?</AlertDialogDescription></AlertDialogHeader>
-          <AlertDialogFooter><AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction></AlertDialogFooter>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
       <Card>
@@ -618,9 +619,9 @@ export default function TransporterManagement() {
           <div className="space-y-1">
             <CardTitle className="flex items-center gap-2">
                 <Truck /> Transporters
-                <Badge variant="secondary" className="ml-2">{freshCandidatesRemaining} Fresh Candidates</Badge>
+                <Badge variant="secondary" className="ml-2">{freshCandidatesRemaining} Leads Remaining</Badge>
             </CardTitle>
-            <CardDescription>Manage your transporter leads and pipeline.</CardDescription>
+            <CardDescription>Automated onboarding pipeline. Users become active immediately upon sign-up.</CardDescription>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Button variant="outline" size="sm" onClick={handleAutoCategorize} disabled={isCategorizing}>
@@ -647,12 +648,11 @@ export default function TransporterManagement() {
             <div className="space-y-4 mb-6">
                 <Alert className="bg-primary/5 border-primary/20">
                     <Info className="h-4 w-4 text-primary" />
-                    <AlertTitle>Intelligent CRM Funnel</AlertTitle>
+                    <AlertTitle>Automated Funnel Active</AlertTitle>
                     <AlertDescription className="text-xs space-y-1 leading-relaxed">
                         <p>• <strong>New/Researching:</strong> Initial phase. Use Forensic AI to find names.</p>
-                        <p>• <strong>Qualified:</strong> Contact details verified. Ready for the Digital Handshake.</p>
-                        <p>• <strong>Invited:</strong> Sign-up link sent. Monitor open rates in the Outreach column.</p>
-                        <p>• <strong>Member (Active):</strong> Account live and confirmed by administrator.</p>
+                        <p>• <strong>Qualified:</strong> Details verified. Ready for Digital Handshake.</p>
+                        <p>• <strong>Member (Active):</strong> Account is live. No manual confirmation required.</p>
                     </AlertDescription>
                 </Alert>
                 <div className="flex flex-col md:flex-row gap-4 p-4 bg-muted/30 rounded-lg">
@@ -666,7 +666,6 @@ export default function TransporterManagement() {
                                 <SelectItem value="contacted">Researching</SelectItem>
                                 <SelectItem value="qualified">Qualified</SelectItem>
                                 <SelectItem value="invited">Invited</SelectItem>
-                                <SelectItem value="registered">Registered</SelectItem>
                                 <SelectItem value="active">Member (Active)</SelectItem>
                             </SelectContent>
                         </Select>

@@ -55,9 +55,9 @@ export async function POST(req: NextRequest) {
     let leadData = null;
     if (!leadsSnap.empty) {
         leadData = leadsSnap.docs[0].data();
-        // Close the loop: Mark lead as registered
+        // Close the loop: Mark lead as active member immediately
         await leadsSnap.docs[0].ref.update({
-            status: 'registered',
+            status: 'active',
             convertedAt: FieldValue.serverTimestamp(),
             updatedAt: FieldValue.serverTimestamp()
         });
@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
         pendingBalance: 0,
         availableBalance: 0,
         loyaltyTier: 'bronze',
-        status: 'active',
+        status: 'active', // Active immediately upon sign-up
         leadId: leadData?.id || null, // Create the hard-link for success tracking
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
@@ -124,7 +124,7 @@ export async function POST(req: NextRequest) {
     
     await batch.commit();
 
-    return NextResponse.json({ success: true, message: 'User and Company records created. Lead attribution completed.' });
+    return NextResponse.json({ success: true, message: 'User and Company records created and activated.' });
 
   } catch (error: any) {
     console.error(`Error in checkAndCreateUser:`, error);

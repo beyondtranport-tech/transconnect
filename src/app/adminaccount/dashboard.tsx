@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -63,14 +64,14 @@ export default function DashboardContent() {
 
     const funnelData = useMemo(() => {
         const total = leads.length;
-        const reached = leads.filter(l => ['contacted', 'invited', 'registered'].includes(l.status)).length;
+        const reached = leads.filter(l => ['contacted', 'invited', 'active'].includes(l.status)).length;
         const converted = companies.filter(c => c.leadId).length;
         const paying = companies.filter(c => c.leadId && c.membershipId !== 'free').length;
 
         return [
             { stage: 'AI Leads Found', count: total, color: 'hsl(var(--muted))' },
             { stage: 'Outreached', count: reached, color: 'hsl(var(--primary))', opacity: 0.6 },
-            { stage: 'Registered Members', count: converted, color: 'hsl(var(--primary))', opacity: 0.8 },
+            { stage: 'Active Members', count: converted, color: 'hsl(var(--primary))', opacity: 0.8 },
             { stage: 'Paying Members', count: paying, color: 'hsl(var(--primary))', opacity: 1 },
         ];
     }, [leads, companies]);
@@ -82,7 +83,7 @@ export default function DashboardContent() {
             <div className="flex justify-between items-end">
                 <div>
                     <h1 className="text-2xl font-bold font-headline">Pipeline Intelligence</h1>
-                    <p className="text-muted-foreground">Monitoring the flow from AI Research to Paying Members.</p>
+                    <p className="text-muted-foreground">Monitoring the automated flow from AI Research to Live Members.</p>
                 </div>
                 <Button variant="outline" onClick={loadData} size="sm"><Clock className="mr-2 h-4 w-4"/> Refresh Metrics</Button>
             </div>
@@ -109,8 +110,8 @@ export default function DashboardContent() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <Card className="lg:col-span-2 shadow-xl border-primary/10">
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-xl"><TrendingUp className="h-5 w-5 text-primary"/> Pipeline Success Visualization</CardTitle>
-                        <CardDescription>Real-time conversion breakdown of all AI-sourced leads.</CardDescription>
+                        <CardTitle className="flex items-center gap-2 text-xl"><TrendingUp className="h-5 w-5 text-primary"/> Automated Pipeline Tracking</CardTitle>
+                        <CardDescription>Real-time conversion breakdown. Leads are active members immediately upon sign-up.</CardDescription>
                     </CardHeader>
                     <CardContent className="h-80">
                         <ResponsiveContainer width="100%" height="100%">
@@ -131,15 +132,15 @@ export default function DashboardContent() {
 
                 <Card className="shadow-xl border-primary/10">
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><Zap className="h-5 w-5 text-amber-500"/> Conversion Insights</CardTitle>
-                        <CardDescription>Top sources for converted members.</CardDescription>
+                        <CardTitle className="flex items-center gap-2"><Zap className="h-5 w-5 text-amber-500"/> Growth Insights</CardTitle>
+                        <CardDescription>Recent conversions from your lead pipeline.</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-6">
                             <div className="flex items-center justify-between">
                                 <div className="space-y-1">
-                                    <p className="text-sm font-bold">Overall Conversion</p>
-                                    <p className="text-[10px] uppercase text-muted-foreground tracking-widest">Research to Membership</p>
+                                    <p className="text-sm font-bold">Pipeline Efficiency</p>
+                                    <p className="text-[10px] uppercase text-muted-foreground tracking-widest">Research to Live Account</p>
                                 </div>
                                 <div className="text-2xl font-black text-primary">
                                     {leads.length > 0 ? ((companies.filter(c => c.leadId).length / leads.length) * 100).toFixed(1) : 0}%
@@ -147,7 +148,7 @@ export default function DashboardContent() {
                             </div>
                             <Separator />
                             <div className="space-y-4">
-                                <h4 className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Recent Conversions</h4>
+                                <h4 className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Recently Joined</h4>
                                 {companies.filter(c => c.leadId).slice(0, 3).map(c => (
                                     <div key={c.id} className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30">
                                         <div className="bg-green-100 p-1.5 rounded-full"><CheckCircle2 className="h-4 w-4 text-green-600" /></div>

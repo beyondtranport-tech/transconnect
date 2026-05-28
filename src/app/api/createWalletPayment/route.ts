@@ -1,3 +1,4 @@
+
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from 'firebase-admin/auth';
@@ -74,7 +75,7 @@ export async function POST(req: NextRequest) {
             pendingBalance: 0,
             availableBalance: 0,
             loyaltyTier: 'bronze',
-            status: 'pending',
+            status: 'active', // Changed from pending to active to remove manual step
             createdAt: FieldValue.serverTimestamp(),
             updatedAt: FieldValue.serverTimestamp(),
         };
@@ -95,7 +96,6 @@ export async function POST(req: NextRequest) {
         batch.set(companyRef, newCompanyData);
         batch.set(userDocRef, newUserData, { merge: true });
     }
-    // --- End User and Company check ---
     
     const collectionPath = `companies/${companyId}/walletPayments`;
     const collectionRef = db.collection(collectionPath);

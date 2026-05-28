@@ -56,7 +56,7 @@ const leadSchema = z.object({
   email: z.string().email('Invalid email address').optional().or(z.literal('')),
   phone: z.string().optional(),
   role: z.string().min(1, 'Role is required'),
-  status: z.enum(['new', 'contacted', 'qualified', 'unqualified', 'invited', 'registered']).default('new'),
+  status: z.enum(['new', 'contacted', 'qualified', 'invited', 'active']).default('new'),
   notes: z.string().optional(),
   website: z.string().url().optional().or(z.literal('')),
   address: z.string().optional(),
@@ -206,7 +206,6 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
                       <SelectItem value="contacted">Researching</SelectItem>
                       <SelectItem value="qualified">Qualified</SelectItem>
                       <SelectItem value="invited">Invited</SelectItem>
-                      <SelectItem value="registered">Registered</SelectItem>
                       <SelectItem value="active">Member (Active)</SelectItem>
                     </SelectContent>
                   </Select>
@@ -555,7 +554,7 @@ function LeadsDatabaseComponent() {
         const isSearching = p.researchStatus === 'researching';
         const isEnriched = p.researchStatus === 'completed' || !isInvalidEmail;
         
-        return !isSearching && !isEnriched;
+        return !isSearching && !isEnriched && p.status !== 'active';
     }).length;
   }, [leads]);
 
@@ -576,7 +575,7 @@ function LeadsDatabaseComponent() {
           const isSearching = p.researchStatus === 'researching';
           const isEnriched = p.researchStatus === 'completed' || !isInvalidEmail;
           
-          if (!isSearching && !isEnriched && name && !uniqueNames.has(name)) {
+          if (!isSearching && !isEnriched && name && !uniqueNames.has(name) && p.status !== 'active') {
               targets.push(p);
               uniqueNames.add(name);
               if (targets.length >= size) break;
@@ -584,7 +583,7 @@ function LeadsDatabaseComponent() {
       }
       
       if (targets.length === 0) {
-          toast({ title: "No fresh candidates found", description: "All records are enriched or locked." });
+          toast({ title: "No fresh candidates found", description: "All records are enriched or active." });
           return;
       }
 
@@ -696,7 +695,6 @@ function LeadsDatabaseComponent() {
                 'contacted': { label: 'Researching', color: 'bg-amber-100 text-amber-700' },
                 'qualified': { label: 'Qualified', color: 'bg-blue-100 text-blue-700' },
                 'invited': { label: 'Invited', color: 'bg-purple-100 text-purple-700' },
-                'registered': { label: 'Registered', color: 'bg-green-100 text-green-700' },
                 'active': { label: 'Member (Active)', color: 'bg-green-600 text-white' },
             };
             const config = statusMap[row.original.status] || { label: row.original.status, color: 'bg-muted' };
@@ -757,7 +755,7 @@ function LeadsDatabaseComponent() {
                 <Users /> Lead Database
                 <Badge variant="secondary" className="ml-2">{candidatesRemaining} Candidates</Badge>
             </CardTitle>
-            <CardDescription>Manage your prospective member pipeline.</CardDescription>
+            <CardDescription>Manage your prospective member pipeline. New users are active immediately upon registration.</CardDescription>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Button variant="outline" size="sm" onClick={handleAutoCategorize} disabled={isCategorizing}>
