@@ -1,18 +1,39 @@
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Gift, DollarSign, TrendingUp, Handshake, CheckCircle, ShoppingBasket, Award, Presentation } from 'lucide-react';
-import React from 'react';
+import { Gift, DollarSign, TrendingUp, ShoppingBasket, Presentation, Truck, Users, Ship } from 'lucide-react';
+import React, { useMemo } from 'react';
 import { useConfig } from '@/hooks/use-config';
 import { Loader2 } from 'lucide-react';
-import { formatCurrency } from '@/lib/utils';
 
+/**
+ * Dynamic Pitch Deck
+ * Tailors the specific value proposition based on the partner category.
+ */
 export default function PitchDeck({ partner }: { partner?: any }) {
     const recipientName = partner?.firstName || 'Partner';
     const companyName = partner?.companyName || 'your business';
+    const businessCategory = partner?.entryType || 'General Transport';
+
+    const isForwarder = businessCategory === 'Freight Forwarder';
+    const isHaulier = businessCategory === 'Haulier';
 
     const { data: isaConfig, isLoading } = useConfig<any>('isaPitch');
+
+    const pivotContent = useMemo(() => {
+        if (isForwarder) {
+            return {
+                title: "Pivot: Digitalized Subcontracting",
+                icon: Ship,
+                description: "Instead of searching for loads, we help you search for verified, high-quality capacity to fulfill your appointments."
+            };
+        }
+        return {
+            title: "Pivot: Revenue Protection",
+            icon: Truck,
+            description: "We protect your profit margins by reducing your largest expenses: fuel, tires, and deadhead miles."
+        };
+    }, [isForwarder]);
 
     if (isLoading) {
         return (
@@ -24,7 +45,6 @@ export default function PitchDeck({ partner }: { partner?: any }) {
 
     const isaMembershipShare = isaConfig?.membershipCommission || 30;
     const isaFinanceShare = isaConfig?.financeMallCommission || 20;
-    const isaSupplierShare = isaConfig?.supplierMallCommission || 20;
     const isaMarketplaceShare = isaConfig?.marketplaceCommission || 50;
 
     return (
@@ -33,9 +53,22 @@ export default function PitchDeck({ partner }: { partner?: any }) {
                 <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit mb-4">
                     <Presentation className="h-10 w-10 text-primary" />
                 </div>
-                <CardTitle className="text-3xl font-bold font-headline">Strategic Partnership Proposal: {companyName}</CardTitle>
+                <CardTitle className="text-3xl font-bold font-headline">Strategic Proposal: {companyName}</CardTitle>
                 <CardDescription className="text-lg text-muted-foreground mt-2">A personalized roadmap for {recipientName} to achieve exponential growth through collaboration.</CardDescription>
             </CardHeader>
+
+            {/* Segment Specific Pivot */}
+            <Card className="border-l-4 border-l-amber-500 bg-amber-50/30">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        {React.createElement(pivotContent.icon, { className: "h-6 w-6 text-amber-600" })}
+                        {pivotContent.title}
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-lg text-amber-900">{pivotContent.description}</p>
+                </CardContent>
+            </Card>
 
             <Card className="border-l-4 border-l-primary">
                 <CardHeader>

@@ -1,11 +1,9 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Building, Target, Lightbulb, CheckCircle, Handshake, ArrowRight, Truck, Network, ShieldCheck } from "lucide-react";
+import { Building, Target, Lightbulb, CheckCircle, Handshake, Truck, Network, ShieldCheck, Zap, Ship } from "lucide-react";
 import Image from 'next/image';
 import data from '@/lib/placeholder-images.json';
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
 import { useMemo } from "react";
 
 const { placeholderImages } = data;
@@ -33,6 +31,8 @@ export default function CompanyProfile({ audience, partner }: { audience: string
     const businessCategory = partner?.entryType || 'General Transport';
 
     const isForwarder = businessCategory === 'Freight Forwarder';
+    const isLogistics = businessCategory === 'Logistics Provider';
+    const isDistributor = businessCategory === 'Distribution Partner';
 
     const opportunityConfig = useMemo(() => {
         if (audience === 'transporters') {
@@ -44,16 +44,16 @@ export default function CompanyProfile({ audience, partner }: { audience: string
                             <p className="text-lg text-muted-foreground">As a <strong>Freight Forwarder</strong>, {companyName} sits at the center of the appointment process. Logistics Flow acts as your digital operational backbone.</p>
                             <div className="grid md:grid-cols-2 gap-6">
                                 <div className="p-4 border rounded-lg bg-blue-50 border-blue-100">
-                                    <h4 className="font-bold text-blue-900 flex items-center gap-2"><Network className="h-4 w-4"/>Vetted Transporter Access</h4>
-                                    <ul className="mt-2 space-y-2 text-blue-800 text-sm list-none">
+                                    <h4 className="font-bold text-blue-900 flex items-center gap-2"><Ship className="h-4 w-4"/>Vetted Haulier Access</h4>
+                                    <ul className="mt-2 space-y-2 text-blue-800 text-xs list-none">
                                         <li>• Appoint reliable hauliers from our verified database.</li>
                                         <li>• Reduce risk with pre-vetted compliance documentation.</li>
-                                        <li>• Real-time availability for urgent subcontracting.</li>
+                                        <li>• Real-time availability for urgent subcontracting needs.</li>
                                     </ul>
                                 </div>
                                 <div className="p-4 border rounded-lg bg-green-50 border-green-100">
                                     <h4 className="font-bold text-green-900 flex items-center gap-2"><Handshake className="h-4 w-4"/>Monetize Your Network</h4>
-                                    <ul className="mt-2 space-y-2 text-green-800 text-sm list-none">
+                                    <ul className="mt-2 space-y-2 text-green-800 text-xs list-none">
                                         <li>• Onboard your preferred hauliers to our ecosystem.</li>
                                         <li>• Earn recurring commissions on their platform activity.</li>
                                         <li>• Increase haulier loyalty through group discount access.</li>
@@ -65,6 +65,28 @@ export default function CompanyProfile({ audience, partner }: { audience: string
                 };
             }
 
+            if (isLogistics || isDistributor) {
+                return {
+                    title: `Scale & Visibility for ${companyName}`,
+                    content: (
+                        <div className="space-y-6">
+                            <p className="text-lg text-muted-foreground">Logistics Flow provides the digital infrastructure to manage complex supply chain relationships with total transparency.</p>
+                            <div className="grid md:grid-cols-2 gap-6">
+                                <div className="p-4 border rounded-lg bg-slate-50">
+                                    <h4 className="font-semibold text-foreground flex items-center gap-2"><Network className="h-4 w-4"/>Unified Network View</h4>
+                                    <p className="text-xs text-muted-foreground mt-1">Consolidate all supplier and carrier data into a single, real-time dashboard for {companyName}.</p>
+                                </div>
+                                <div className="p-4 border rounded-lg bg-slate-50">
+                                    <h4 className="font-semibold text-foreground flex items-center gap-2"><Zap className="h-4 w-4"/>AI Optimization</h4>
+                                    <p className="text-xs text-muted-foreground mt-1">Utilize our tech stack to optimize distribution routes and reduce fleet operating costs.</p>
+                                </div>
+                            </div>
+                        </div>
+                    )
+                };
+            }
+
+            // Standard Haulier / Transporter
             return {
                 title: `${recipientName}'s Transporter Opportunity`,
                 content: (
@@ -72,16 +94,16 @@ export default function CompanyProfile({ audience, partner }: { audience: string
                         <p className="text-lg text-muted-foreground">Logistics Flow offers two powerful pathways for {companyName}: benefit from the ecosystem as a Member, or earn significant revenue by building the network as an ISA Partner.</p>
                         <div className="grid md:grid-cols-2 gap-6">
                             <div className="p-4 border rounded-lg bg-slate-50">
-                                <h4 className="font-semibold text-foreground">1. Membership Benefits</h4>
-                                <ul className="mt-2 list-disc list-inside space-y-2 text-muted-foreground text-sm">
+                                <h4 className="font-semibold text-foreground flex items-center gap-2"><Truck className="h-4 w-4"/>1. Membership Benefits</h4>
+                                <ul className="mt-2 list-disc list-inside space-y-2 text-muted-foreground text-xs">
                                     <li>Access group discounts on parts, fuel, and services.</li>
                                     <li>Use AI tools to find loads and reduce empty miles.</li>
                                     <li>Build a trusted business profile to unlock funding.</li>
                                 </ul>
                             </div>
                             <div className="p-4 border rounded-lg bg-slate-50">
-                                <h4 className="font-semibold text-foreground">2. Become an ISA Partner</h4>
-                                <ul className="mt-2 list-disc list-inside space-y-2 text-muted-foreground text-sm">
+                                <h4 className="font-semibold text-foreground flex items-center gap-2"><Handshake className="h-4 w-4"/>2. Become an ISA Partner</h4>
+                                <ul className="mt-2 list-disc list-inside space-y-2 text-muted-foreground text-xs">
                                     <li>For transporters with a strong industry network.</li>
                                     <li>Earn recurring commissions from every referral.</li>
                                     <li>Turn relationships into a consistent revenue stream.</li>
@@ -92,6 +114,7 @@ export default function CompanyProfile({ audience, partner }: { audience: string
                 )
             };
         }
+        
         if (audience === 'suppliers') {
             return {
                 title: `${recipientName}'s Supplier Opportunity`,
@@ -120,6 +143,7 @@ export default function CompanyProfile({ audience, partner }: { audience: string
                 )
             };
         }
+        
         return {
             title: `Partnership Opportunity for ${recipientName}`,
             content: (
@@ -128,7 +152,7 @@ export default function CompanyProfile({ audience, partner }: { audience: string
                 </p>
             )
         };
-    }, [audience, recipientName, companyName, isForwarder]);
+    }, [audience, recipientName, companyName, isForwarder, isLogistics, isDistributor]);
 
     return (
         <div className="space-y-12">
@@ -167,8 +191,8 @@ export default function CompanyProfile({ audience, partner }: { audience: string
                         The Industry Problem
                     </h2>
                     <p className="text-muted-foreground text-sm mb-4">The transport sector is fragmented and capital-constrained. {isForwarder ? 'Forwarders' : 'Businesses'} like {companyName} often face:</p>
-                    <ul className="list-disc list-inside space-y-2 text-muted-foreground text-sm">
-                        <li><span className="font-semibold text-foreground">High Operating Costs:</span> {isForwarder ? 'Subcontractor inefficiency' : 'Lack of collective buying power'}.</li>
+                    <ul className="list-disc list-inside space-y-2 text-muted-foreground text-xs">
+                        <li><span className="font-semibold text-foreground">High Operating Costs:</span> {isForwarder ? 'Carrier fragmentation' : 'Lack of collective buying power'}.</li>
                         <li><span className="font-semibold text-foreground">Limited Access to Capital:</span> Banks don't understand industry risk.</li>
                         <li><span className="font-semibold text-foreground">Inefficient Operations:</span> {isForwarder ? 'Manual appointment cycles' : 'Empty miles and manual processes'}.</li>
                     </ul>

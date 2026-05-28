@@ -1,19 +1,40 @@
 'use client';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Gift, DollarSign, TrendingUp, Handshake, CheckCircle, ShoppingBasket, Award, Network } from 'lucide-react';
-import React from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { DollarSign, TrendingUp, Handshake, Network, Ship, Truck } from 'lucide-react';
+import React, { useMemo } from 'react';
 import { useConfig } from '@/hooks/use-config';
 import { Loader2 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 
+/**
+ * Tailored Revenue Model
+ * Shows different monetization scenarios based on the business category.
+ */
 export default function RevenueModel({ partner }: { partner?: any }) {
     const recipientName = partner?.firstName || 'Partner';
     const companyName = partner?.companyName || 'your business';
+    const businessCategory = partner?.entryType || 'General Transport';
+
+    const isForwarder = businessCategory === 'Freight Forwarder';
 
     const { data: isaConfig, isLoading } = useConfig<any>('isaPitch');
     const { data: mallCommissions } = useConfig<any>('mallCommissions');
+
+    const scenarioText = useMemo(() => {
+        if (isForwarder) {
+            return {
+                title: "The Forwarder Scenario",
+                icon: Ship,
+                description: "Onboard your haulier network. When you appoint them for a load, their membership and activity contribute to your revenue share."
+            };
+        }
+        return {
+            title: "The Haulier Scenario",
+            icon: Truck,
+            description: "Onboard your fellow transporters. As they find loads and save on tires, you earn a recurring share of the ecosystem value."
+        };
+    }, [isForwarder]);
 
     if (isLoading) {
         return (
@@ -51,6 +72,18 @@ export default function RevenueModel({ partner }: { partner?: any }) {
                 <CardDescription className="text-lg text-muted-foreground mt-2">How {companyName} can turn industry relationships into a passive revenue engine.</CardDescription>
             </CardHeader>
             
+            <Card className="border-l-4 border-l-amber-500 bg-amber-50/20">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        {React.createElement(scenarioText.icon, { className: "h-5 w-5 text-amber-600" })}
+                        {scenarioText.title}
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-sm text-amber-900">{scenarioText.description}</p>
+                </CardContent>
+            </Card>
+
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">Step 1: Onboard Your Network</CardTitle>
@@ -70,19 +103,19 @@ export default function RevenueModel({ partner }: { partner?: any }) {
                  <CardContent className="space-y-6 pt-6">
                     <div className="grid md:grid-cols-2 gap-6">
                         <div className="p-4 border rounded-lg bg-background shadow-sm">
-                            <h4 className="font-semibold flex items-center gap-2"><TrendingUp/>Annuity Membership Share</h4>
-                            <p className="text-sm mt-2 text-muted-foreground">Receive a <strong className="text-primary">{networkMembershipShare}% share</strong> of all membership fees paid by {companyName}'s referrals. This is a monthly recurring income that scales as you grow your list.</p>
+                            <h4 className="font-semibold flex items-center gap-2"><TrendingUp className="h-4 w-4 text-primary"/>Annuity Membership Share</h4>
+                            <p className="text-sm mt-2 text-muted-foreground">Receive a <strong className="text-primary">{networkMembershipShare}% share</strong> of all membership fees paid by {companyName}'s referrals. This is a monthly recurring income.</p>
                         </div>
                         <div className="p-4 border rounded-lg bg-background shadow-sm">
-                            <h4 className="font-semibold flex items-center gap-2"><DollarSign/>Transactional Commission</h4>
-                            <p className="text-sm mt-2 text-muted-foreground">Get a <strong className="text-primary">{networkTransactionalShare}% share</strong> of the platform's commission whenever your network members buy parts, tires, or access finance.</p>
+                            <h4 className="font-semibold flex items-center gap-2"><DollarSign className="h-4 w-4 text-primary"/>Transactional Commission</h4>
+                            <p className="text-sm mt-2 text-muted-foreground">Get a <strong className="text-primary">{networkTransactionalShare}% share</strong> of the platform's commission whenever your network members buy parts or access finance.</p>
                         </div>
                     </div>
                      <div>
-                        <h4 className="font-semibold text-muted-foreground mb-4">Potential Scenarios for {companyName}:</h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm bg-muted/30 p-4 rounded-md">
-                            <p><strong className="text-foreground">Finance Mall:</strong> A referral finances a <strong className="font-mono">{formatCurrency(exampleDealSize)}</strong> asset. The platform earns a {exampleOriginationFeePercent}% fee. Your share: <strong className="text-green-600 font-bold">{formatCurrency(networkExampleDealShare)}</strong>.</p>
-                            <p><strong className="text-foreground">Supplier Mall:</strong> Your referrals spend {formatCurrency(exampleSupplierSpend)} on parts. The platform earns a {supplierMallPlatformCommission*100}% commission. Your share: <strong className="text-green-600 font-bold">{formatCurrency(networkSupplierEarnings)}</strong>.</p>
+                        <h4 className="font-semibold text-muted-foreground mb-4">Calculated Scenario for {companyName}:</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs bg-muted/30 p-4 rounded-md font-mono">
+                            <p><strong>Finance Mall:</strong> Deal of {formatCurrency(exampleDealSize)} results in a share of <strong className="text-green-600">{formatCurrency(networkExampleDealShare)}</strong> for you.</p>
+                            <p><strong>Supplier Mall:</strong> Collective spend of {formatCurrency(exampleSupplierSpend)} results in a share of <strong className="text-green-600">{formatCurrency(networkSupplierEarnings)}</strong> for you.</p>
                         </div>
                     </div>
                 </CardContent>
@@ -96,8 +129,8 @@ export default function RevenueModel({ partner }: { partner?: any }) {
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <p className="text-muted-foreground">
-                        At Logistics Flow, we guarantee that {companyName}'s customer list and business contacts remain your property. We provide the mechanism to monetize these relationships without ever exposing your data to third parties. Our model is built on mutual trust and the collective growth of the logistics ecosystem.
+                    <p className="text-muted-foreground text-sm">
+                        At Logistics Flow, we guarantee that {companyName}'s customer list and business contacts remain your property. We provide the mechanism to monetize these relationships without ever exposing your sensitive data to third parties.
                     </p>
                 </CardContent>
             </Card>
