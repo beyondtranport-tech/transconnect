@@ -1,7 +1,8 @@
+
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Handshake, ShieldCheck, Zap, ArrowRight } from "lucide-react";
+import { Handshake, ShieldCheck, Zap, ArrowRight, FileText, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function DigitalHandshake({ partner }: { partner?: any }) {
@@ -31,20 +32,30 @@ export default function DigitalHandshake({ partner }: { partner?: any }) {
                     </p>
                     <div className="grid md:grid-cols-2 gap-4 pt-4">
                         <div className="p-4 bg-white rounded-lg border shadow-sm text-left">
-                            <h4 className="font-bold text-sm mb-1">Privacy First (POPI)</h4>
-                            <p className="text-xs text-muted-foreground">We respect your privacy. We require your explicit consent before sharing specific matched opportunities or industry data with your business.</p>
+                            <div className="flex items-center gap-2 mb-2">
+                                <Lock className="h-4 w-4 text-primary" />
+                                <h4 className="font-bold text-sm">Privacy First (POPI)</h4>
+                            </div>
+                            <p className="text-xs text-muted-foreground leading-relaxed">We respect your privacy. You will be prompted to review and accept our formal POPI agreement, ensuring your data is handled with 100% compliance.</p>
                         </div>
                         <div className="p-4 bg-white rounded-lg border shadow-sm text-left">
-                            <h4 className="font-bold text-sm mb-1">Qualified Intelligence</h4>
-                            <p className="text-xs text-muted-foreground">By accepting this handshake, you authorize our AI engine to begin identifying relevant cost-saving deals and loads tailored for {companyName}.</p>
+                             <div className="flex items-center gap-2 mb-2">
+                                <Zap className="h-4 w-4 text-primary" />
+                                <h4 className="font-bold text-sm">Qualified Intelligence</h4>
+                            </div>
+                            <p className="text-xs text-muted-foreground leading-relaxed">By establishing this handshake, you authorize our AI engine to begin identifying relevant cost-saving deals and freight loads specifically for {companyName}.</p>
                         </div>
                     </div>
                 </CardContent>
             </Card>
 
             <div className="p-8 border rounded-xl bg-white text-center shadow-sm">
+                <div className="flex items-center justify-center gap-2 mb-4 text-primary">
+                    <FileText className="h-5 w-5" />
+                    <span className="text-sm font-bold uppercase tracking-widest">Formal Opt-In Request</span>
+                </div>
                 <p className="font-bold text-lg mb-2">Ready to establish the connection, {recipientName}?</p>
-                <p className="text-sm text-muted-foreground mb-6">The first step is a simple digital confirmation of your interest. No registration is required yet.</p>
+                <p className="text-sm text-muted-foreground mb-6">The first step is a simple digital confirmation of your interest. You will be able to read our full POPI agreement on the next page.</p>
                 <div className="flex justify-center">
                     <Button className="gap-2 px-8 py-6 text-lg" variant="default">
                         Send Handshake Request <ArrowRight className="h-5 w-5" />
@@ -53,8 +64,8 @@ export default function DigitalHandshake({ partner }: { partner?: any }) {
             </div>
 
             <div className="pt-8 border-t text-center">
-                <p className="text-xs text-muted-foreground">
-                    Logistics Flow is a verified digital ecosystem. All interactions are logged on a secure ledger to protect the integrity of our members' networks.
+                <p className="text-xs text-muted-foreground italic">
+                    Logistics Flow is a verified digital ecosystem. All interactions are logged on a secure, encrypted ledger to protect the integrity of our members' networks and information.
                 </p>
             </div>
         </div>
