@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -112,14 +113,25 @@ export function EngageDialog({ open, onOpenChange, partner, audience, onEngageSu
         });
 
         // 2. Prepare HTML for clipboard
+        // We ensure all relative links and images are absolute before copying
         const contentClone = contentElement.cloneNode(true) as HTMLElement;
-        const origin = window.location.origin.includes('localhost') ? 'https://studio--ecosystem-hub.us-central1.hosted.app' : window.location.origin;
+        const origin = 'https://studio--ecosystem-hub.us-central1.hosted.app';
         
+        // Fix relative images
         const images = contentClone.querySelectorAll('img');
         images.forEach(img => {
             const src = img.getAttribute('src');
             if (src?.startsWith('/')) {
                 img.src = `${origin}${src}`;
+            }
+        });
+
+        // Fix relative links
+        const links = contentClone.querySelectorAll('a');
+        links.forEach(a => {
+            const href = a.getAttribute('href');
+            if (href?.startsWith('/')) {
+                a.href = `${origin}${href}`;
             }
         });
 
