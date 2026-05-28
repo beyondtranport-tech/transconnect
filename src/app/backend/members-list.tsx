@@ -38,9 +38,9 @@ const tierColors: { [key: string]: string } = {
 const statusColors: { [key: string]: { label: string, color: string } } = {
   active: { label: 'Member (Active)', color: 'bg-green-600 text-white' },
   suspended: { label: 'Suspended', color: 'bg-destructive text-white' },
-  pending: { label: 'Pending', color: 'bg-slate-100 text-slate-700' },
-  invited: { label: 'Invited', color: 'bg-purple-100 text-purple-700' },
-  qualified: { label: 'Qualified', color: 'bg-blue-100 text-blue-700' },
+  pending: { label: 'Initial Registration', color: 'bg-slate-100 text-slate-700' },
+  invited: { label: 'Invitation Sent', color: 'bg-purple-100 text-purple-700' },
+  qualified: { label: 'Lead (Qualified)', color: 'bg-blue-100 text-blue-700' },
 };
 
 async function fetchFromAdminAPI(token: string, action: string, payload?: any) {
@@ -118,8 +118,8 @@ export default function MembersList() {
                 "text-[10px] uppercase font-extrabold gap-1.5",
                 isAI ? "bg-amber-50 text-amber-700 border-amber-200" : "bg-slate-50 text-muted-foreground"
               )}>
-                {isAI ? <Sparkles className="h-3 w-3" /> : <Building2 className="h-3 w-3" />}
-                {isAI ? 'AI Converted' : 'Organic Sign-up'}
+                {isAI ? <Sparkles className="h-3 w-3" /> : <UserCheck className="h-3 w-3" />}
+                {row.original.source}
               </Badge>
             )
           }
@@ -161,8 +161,8 @@ export default function MembersList() {
                     {!row.original.provisional ? (
                          <MemberActionMenu member={row.original} onUpdate={forceRefresh} />
                     ) : (
-                        <Button variant="ghost" size="sm" asChild>
-                            <Link href={`/adminaccount?view=leads-database&search=${row.original.id}`}>View Lead</Link>
+                        <Button variant="ghost" size="sm" asChild title="View Full Lead Details">
+                            <Link href={`/adminaccount?view=leads-database&search=${row.original.id}`}><PlusCircle className="h-4 w-4 mr-2"/>Convert</Link>
                         </Button>
                     )}
                 </div>

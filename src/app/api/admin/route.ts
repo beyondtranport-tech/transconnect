@@ -131,10 +131,11 @@ export async function POST(req: NextRequest) {
         switch (action) {
             case 'getMembers': {
                 // FETCH: Companies (Live), Users (Identities), and engaged Leads (Funnel Successes)
-                const [companiesSnap, usersSnap, leadsSnap] = await Promise.all([
+                const [companiesSnap, usersSnap, leadsSnap, partnersSnap] = await Promise.all([
                     db.collection('companies').get(),
                     db.collection('users').get(),
-                    db.collection('leads').where('status', 'in', ['active', 'invited', 'qualified']).get()
+                    db.collection('leads').where('status', 'in', ['active', 'invited', 'qualified']).get(),
+                    db.collection('partners').where('status', 'in', ['active', 'invited', 'qualified']).get()
                 ]);
 
                 const userMap = new Map();
@@ -151,18 +152,23 @@ export async function POST(req: NextRequest) {
                         firstName: owner.firstName || 'User',
                         lastName: owner.lastName || (doc.id.slice(0, 4)),
                         email: owner.email || 'N/A',
-                        source: company.leadId ? 'AI Converted' : 'Organic Sign-up'
+                        source: company.leadId ? 'AI Funnel Success' : 'Direct Registration'
                     };
                 });
 
                 // PROVISIONAL MEMBERS: Leads that reached the success stage but haven't signed up yet
-                const engagedLeads = leadsSnap.docs
-                    .filter(doc => !companyLeadIds.has(doc.id))
-                    .map(doc => {
-                        const rawLead = doc.data();
+                // Use a map to merge leads and partners uniquely by ID
+                const engagedMap = new Map();
+                [...leadsSnap.docs, ...partnersSnap.docs].forEach(doc => {
+                    if (!companyLeadIds.has(doc.id)) {
+                        engagedMap.set(doc.id, doc.data());
+                    }
+                });
+
+                const engagedLeads = Array.from(engagedMap.entries()).map(([id, rawLead]) => {
                         const lead = normalizePartnerData(rawLead);
                         return {
-                            id: doc.id,
+                            id: id,
                             ...serializeTimestamps(rawLead),
                             companyName: lead.companyName || 'Provisional Co.',
                             firstName: lead.firstName || 'Member',
@@ -170,8 +176,8 @@ export async function POST(req: NextRequest) {
                             email: lead.email || 'N/A',
                             membershipId: 'free',
                             status: rawLead.status || 'new',
-                            source: 'AI Funnel',
-                            leadId: doc.id,
+                            source: 'AI Funnel Success',
+                            leadId: id,
                             provisional: true
                         };
                     });
