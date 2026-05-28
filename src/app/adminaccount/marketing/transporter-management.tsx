@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -680,7 +679,8 @@ export default function TransporterManagement() {
                                 <SelectItem value="Logistics">Logistics</SelectItem>
                                 <SelectItem value="Forwarder">Forwarder</SelectItem>
                                 <SelectItem value="Distribution">Distribution</SelectItem>
-                                {uniqueCategories.filter(c => !['Transport', 'Logistics', 'Forwarder', 'Distribution'].includes(c)).map(cat => (
+                                <SelectItem value="Warehousing">Warehousing</SelectItem>
+                                {uniqueCategories.filter(c => !['Transport', 'Logistics', 'Forwarder', 'Distribution', 'Warehousing'].includes(c)).map(cat => (
                                     <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                                 ))}
                             </SelectContent>

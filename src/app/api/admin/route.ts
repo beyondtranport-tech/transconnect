@@ -97,6 +97,8 @@ function normalizePartnerData(data: any) {
         result.entryType = 'Courier';
     } else if (name.includes('shipping') || name.includes('maritime') || name.includes('port')) {
         result.entryType = 'Port';
+    } else if (name.includes('warehouse')) {
+        result.entryType = 'Warehousing';
     } else {
         result.entryType = 'General';
     }
