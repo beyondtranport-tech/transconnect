@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -121,7 +120,7 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
       const response = await fetch('/api/admin', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'deleteLeads', payload: { leadIds: idsToDelete } }),
+        body: JSON.stringify({ action: 'deleteLeads', payload: { FridgeLeadIds: idsToDelete } }),
         cache: 'no-store'
       });
       const result = await response.json();
@@ -199,7 +198,7 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
                                 <Checkbox
                                     id={`lead-${groupIndex}-${lead.id}`}
                                     checked={selections[groupIndex] === lead.id}
-                                    onCheckedChange={() => setSelections(prev => ({ ...prev, [groupIndex]: lead.id }))}
+                                    onCheckedChange={() => handleSelection(groupIndex, lead.id)}
                                 />
                                 <label htmlFor={`lead-${groupIndex}-${lead.id}`} className="text-sm cursor-pointer w-full">
                                     <div className="flex justify-between items-start">
