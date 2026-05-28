@@ -425,14 +425,15 @@ export default function TransporterManagement() {
   const handleExportCsv = () => {
     if (filteredTransporters.length === 0) return;
     
-    const headers = ["Transporter Name", "Contact Person", "Email", "Phone", "Status", "Assignee"];
+    const headers = ["Transporter Name", "Contact Person", "Email", "Phone", "Status", "Assignee", "Category"];
     const rows = filteredTransporters.map(t => [
         t.companyName || `${t.firstName} ${t.lastName}`,
         t.contactPerson || '',
         t.email || t.email_address || '',
         t.phone || t.telephone_number || '',
         t.status || '',
-        staffMap.get(t.assigneeId) || 'Unallocated'
+        staffMap.get(t.assigneeId) || 'Unallocated',
+        t.entryType || 'General'
     ]);
 
     const csvContent = [
@@ -448,7 +449,7 @@ export default function TransporterManagement() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    toast({ title: "Export Complete", description: "CSV downloaded. Use Gmail's Mail Merge feature to send personalized emails." });
+    toast({ title: "Export Complete", description: "CSV downloaded." });
   };
 
 
@@ -528,18 +529,13 @@ export default function TransporterManagement() {
   const columns: ColumnDef<any>[] = [
     { 
         accessorKey: 'companyName', 
-        header: 'Transporter', 
-        cell: ({ row }) => (
-            <div className="flex flex-col">
-                <div className="font-bold">{row.original.companyName || `${row.original.firstName} ${row.original.lastName}`}</div>
-                {row.original.entryType && (
-                    <div className="flex items-center gap-1 mt-0.5">
-                        <Tag className="h-2.5 w-2.5 text-muted-foreground" />
-                        <span className="text-[10px] font-bold text-muted-foreground uppercase">{row.original.entryType}</span>
-                    </div>
-                )}
-            </div>
-        )
+        header: 'Transporter Name', 
+        cell: ({ row }) => <div className="font-bold">{row.original.companyName || `${row.original.firstName} ${row.original.lastName}`}</div>
+    },
+    { 
+        accessorKey: 'entryType', 
+        header: 'Category',
+        cell: ({row}) => row.original.entryType ? <Badge variant="outline" className="text-[10px] uppercase font-bold">{row.original.entryType}</Badge> : <span className="text-muted-foreground italic text-xs">Uncategorized</span>
     },
     { 
         accessorKey: 'contactPerson', 
@@ -556,61 +552,33 @@ export default function TransporterManagement() {
         }
     },
     {
-        accessorKey: 'consentStatus',
-        header: 'POPI Consent',
-        cell: ({row}) => {
-            const status = row.original.consentStatus || 'pending';
-            if (status === 'accepted') return <Badge className="bg-green-100 text-green-700 border-green-200"><CheckCircle className="mr-1 h-3 w-3" /> Opted In</Badge>;
-            if (status === 'declined') return <Badge variant="destructive"><XCircle className="mr-1 h-3 w-3" /> Declined</Badge>;
-            return <Badge variant="outline" className="text-muted-foreground">Pending</Badge>;
-        }
-    },
-    {
         accessorKey: 'researchStatus',
-        header: 'Enhanced Status',
+        header: 'Enhanced',
         cell: ({row}) => {
             const isResearching = row.original.researchStatus === 'researching';
             const email = (row.original.email || row.original.email_address || '').toString().toLowerCase().trim();
             const isInvalidEmail = !email || email === 'null' || email === 'n/a' || email === 'none';
             const isCompleted = row.original.researchStatus === 'completed' || !isInvalidEmail;
 
-            if (isResearching) return <Badge variant="outline" className="animate-pulse text-amber-600 border-amber-200 bg-amber-50">Searching...</Badge>;
-            if (isCompleted) return <Badge variant="default" className="bg-green-100 text-green-700 border-green-200">Enriched</Badge>;
+            if (isResearching) return <Badge variant="outline" className="animate-pulse text-amber-600 border-amber-200 bg-amber-50 text-[10px]">Searching...</Badge>;
+            if (isCompleted) return <Badge variant="default" className="bg-green-100 text-green-700 border-green-200 text-[10px]">Enriched</Badge>;
             return <span className="text-xs text-muted-foreground">-</span>;
         }
     },
     {
         accessorKey: 'lastOutreachAt',
-        header: 'Outreach Status',
+        header: 'Last Outreach',
         cell: ({row}) => {
-            if (!row.original.lastOutreachAt) return <span className="text-[10px] text-muted-foreground uppercase font-bold">No Outreach</span>;
+            if (!row.original.lastOutreachAt) return <span className="text-[10px] text-muted-foreground uppercase font-bold">None</span>;
             return (
-                <div className="flex flex-col gap-1.5">
-                    <div className="flex flex-col">
-                        <span className="text-xs font-bold text-primary">{row.original.lastOutreachSubject}</span>
-                        <span className="text-[10px] text-muted-foreground">{formatDateSafe(row.original.lastOutreachAt)}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        {row.original.lastOpenedAt ? (
-                            <Badge variant="default" className="bg-green-100 text-green-700 border-green-200 text-[10px] h-4">
-                                <Mail className="mr-1 h-3 w-3" /> Read
-                            </Badge>
-                        ) : (
-                            <Badge variant="outline" className="text-muted-foreground text-[10px] h-4">
-                                <Mail className="mr-1 h-3 w-3" /> Sent
-                            </Badge>
-                        )}
-                    </div>
+                <div className="flex flex-col">
+                    <span className="text-[10px] font-bold text-primary truncate max-w-[100px]">{row.original.lastOutreachSubject}</span>
+                    <span className="text-[10px] text-muted-foreground">{formatDateSafe(row.original.lastOutreachAt)}</span>
                 </div>
             )
         }
     },
-    { accessorKey: 'assigneeId', header: 'Assignee', cell: ({row}) => (
-        <div className="flex items-center gap-2">
-            <Users className="h-3 w-3 text-muted-foreground" />
-            <span className="text-xs font-medium">{staffMap.get(row.original.assigneeId) || 'Unallocated'}</span>
-        </div>
-    )},
+    { accessorKey: 'status', header: 'Status', cell: ({ row }) => <Badge className="capitalize text-[10px]">{row.original.status}</Badge> },
     { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
       <div className="flex justify-end gap-1">
         <EnrichPartnerButton partner={row.original} onUpdate={forceRefresh} />
@@ -683,7 +651,7 @@ export default function TransporterManagement() {
                     <div className="flex-1 space-y-2">
                         <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status</Label>
                         <Select value={statusFilter} onValueChange={setStatusFilter}>
-                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Statuses</SelectItem>
                                 <SelectItem value="active">Active</SelectItem>
@@ -696,9 +664,9 @@ export default function TransporterManagement() {
                         </Select>
                     </div>
                     <div className="flex-1 space-y-2">
-                        <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Tag className="h-3 w-3"/> Category</Label>
+                        <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Tag className="h-3 w-3"/> Focus Category</Label>
                         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Categories</SelectItem>
                                 {uniqueCategories.map(cat => (
@@ -710,14 +678,14 @@ export default function TransporterManagement() {
                     <div className="flex-1 space-y-2">
                         <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Users className="h-3 w-3"/> Assignee</Label>
                         <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                             <SelectContent><SelectItem value="all">All Staff</SelectItem><SelectItem value="none">Unallocated</SelectItem>{staff.map(s => <SelectItem key={s.id} value={s.id}>{s.firstName} {s.lastName}</SelectItem>)}</SelectContent>
                         </Select>
                     </div>
                     <div className="flex-1 space-y-2">
                         <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Search className="h-3 w-3"/> Data Integrity</Label>
                         <Select value={dataFilter} onValueChange={setDataFilter}>
-                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Records</SelectItem>
                                 <SelectItem value="has-email">Has Email</SelectItem>

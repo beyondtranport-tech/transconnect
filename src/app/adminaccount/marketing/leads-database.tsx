@@ -638,18 +638,12 @@ function LeadsDatabaseComponent() {
   const columns: ColumnDef<any>[] = useMemo(() => [
     { 
         accessorKey: 'companyName', 
-        header: 'Company',
-        cell: ({row}) => (
-            <div className="flex flex-col">
-                <div className="font-bold">{row.original.companyName}</div>
-                {row.original.entryType && (
-                    <div className="flex items-center gap-1 mt-0.5">
-                        <Tag className="h-2.5 w-2.5 text-muted-foreground" />
-                        <span className="text-[10px] font-bold text-muted-foreground uppercase">{row.original.entryType}</span>
-                    </div>
-                )}
-            </div>
-        )
+        header: 'Company Name'
+    },
+    { 
+        accessorKey: 'entryType', 
+        header: 'Category',
+        cell: ({row}) => row.original.entryType ? <Badge variant="outline" className="text-[10px] uppercase font-bold">{row.original.entryType}</Badge> : <span className="text-muted-foreground italic text-xs">Uncategorized</span>
     },
     { 
         accessorKey: 'contactPerson', 
@@ -733,7 +727,7 @@ function LeadsDatabaseComponent() {
       {editLead && <LeadDialog open={isEditLeadOpen} onOpenChange={setIsEditLeadOpen} lead={editLead} onSave={forceRefresh} />}
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
         <AlertDialogContent>
-          <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Delete lead for {deleteLead?.companyName}.</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This action will permanently delete the lead for {deleteLead?.companyName}.</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setDeleteLead(null)}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction>
@@ -785,7 +779,7 @@ function LeadsDatabaseComponent() {
                     </Select>
                 </div>
                 <div className="space-y-2">
-                    <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Tag className="h-3 w-3"/> Category</Label>
+                    <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Tag className="h-3 w-3"/> Focus Category</Label>
                     <Select value={categoryFilter} onValueChange={setCategoryFilter}>
                         <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                         <SelectContent>
