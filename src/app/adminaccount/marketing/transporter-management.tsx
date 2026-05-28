@@ -340,6 +340,7 @@ export default function TransporterManagement() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState('all');
   const [assigneeFilter, setAssigneeFilter] = useState('all');
+  const [categoryFilter, setCategoryFilter] = useState('all');
   const [dataFilter, setDataFilter] = useState('all');
 
   const forceRefresh = useCallback(async () => {
@@ -386,6 +387,7 @@ export default function TransporterManagement() {
     return partners.filter(p => {
         const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
         const matchesAssignee = assigneeFilter === 'all' || p.assigneeId === assigneeFilter;
+        const matchesCategory = categoryFilter === 'all' || p.entryType === categoryFilter;
         
         let matchesData = true;
         const email = (p.email || p.email_address || '').toString().toLowerCase().trim();
@@ -398,9 +400,13 @@ export default function TransporterManagement() {
         else if (dataFilter === 'has-phone') matchesData = !!p.phone;
         else if (dataFilter === 'has-website') matchesData = !!p.website;
 
-        return matchesStatus && matchesAssignee && matchesData;
+        return matchesStatus && matchesAssignee && matchesCategory && matchesData;
     });
-  }, [partners, statusFilter, assigneeFilter, dataFilter]);
+  }, [partners, statusFilter, assigneeFilter, categoryFilter, dataFilter]);
+
+  const uniqueCategories = useMemo(() => {
+    return [...new Set(partners.map(p => p.entryType).filter(Boolean))].sort();
+  }, [partners]);
 
   const handleCopyBccList = () => {
     const emails = filteredTransporters
@@ -679,7 +685,7 @@ export default function TransporterManagement() {
                         <Select value={statusFilter} onValueChange={setStatusFilter}>
                             <SelectTrigger><SelectValue /></SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">All</SelectItem>
+                                <SelectItem value="all">All Statuses</SelectItem>
                                 <SelectItem value="active">Active</SelectItem>
                                 <SelectItem value="inactive">Inactive</SelectItem>
                                 <SelectItem value="contacted">Researching</SelectItem>
@@ -690,10 +696,22 @@ export default function TransporterManagement() {
                         </Select>
                     </div>
                     <div className="flex-1 space-y-2">
+                        <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Tag className="h-3 w-3"/> Category</Label>
+                        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Categories</SelectItem>
+                                {uniqueCategories.map(cat => (
+                                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="flex-1 space-y-2">
                         <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Users className="h-3 w-3"/> Assignee</Label>
                         <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
                             <SelectTrigger><SelectValue /></SelectTrigger>
-                            <SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="none">Unallocated</SelectItem>{staff.map(s => <SelectItem key={s.id} value={s.id}>{s.firstName} {s.lastName}</SelectItem>)}</SelectContent>
+                            <SelectContent><SelectItem value="all">All Staff</SelectItem><SelectItem value="none">Unallocated</SelectItem>{staff.map(s => <SelectItem key={s.id} value={s.id}>{s.firstName} {s.lastName}</SelectItem>)}</SelectContent>
                         </Select>
                     </div>
                     <div className="flex-1 space-y-2">

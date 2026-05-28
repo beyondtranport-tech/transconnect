@@ -83,18 +83,20 @@ function normalizePartnerData(data: any) {
         result.lastName = parts.slice(1).join(' ') || '';
     }
 
-    // --- INTELLIGENT CATEGORIZATION ENGINE ---
+    // --- EXPANDED INTELLIGENT CATEGORIZATION ENGINE ---
     const name = (result.companyName || '').toLowerCase();
     if (name.includes('forward')) {
         result.entryType = 'Freight Forwarder';
-    } else if (name.includes('logistics')) {
-        result.entryType = 'Logistics Provider';
     } else if (name.includes('distrib')) {
         result.entryType = 'Distribution Partner';
-    } else if (name.includes('truck') || name.includes('transport') || name.includes('haul')) {
+    } else if (name.includes('logistics') || name.includes('supply')) {
+        result.entryType = 'Logistics Provider';
+    } else if (name.includes('truck') || name.includes('transport') || name.includes('haul') || name.includes('carrier')) {
         result.entryType = 'Haulier';
-    } else if (name.includes('courier')) {
+    } else if (name.includes('courier') || name.includes('express')) {
         result.entryType = 'Courier Service';
+    } else if (name.includes('shipping') || name.includes('maritime') || name.includes('port')) {
+        result.entryType = 'Port & Maritime';
     } else {
         result.entryType = 'General Transport';
     }
@@ -126,18 +128,29 @@ export async function POST(req: NextRequest) {
         switch (action) {
             case 'bulkCategorizeLeads': {
                 const snap = await db.collection('leads').get();
+                const partnersSnap = await db.collection('partners').get();
                 const batch = db.batch();
                 let count = 0;
+                
                 snap.docs.forEach(doc => {
                     const data = doc.data();
                     const normalized = normalizePartnerData(data);
                     if (normalized.entryType !== data.entryType) {
                         const update = { entryType: normalized.entryType, updatedAt: FieldValue.serverTimestamp() };
                         batch.set(doc.ref, update, { merge: true });
-                        batch.set(db.collection('partners').doc(doc.id), update, { merge: true });
                         count++;
                     }
                 });
+
+                partnersSnap.docs.forEach(doc => {
+                    const data = doc.data();
+                    const normalized = normalizePartnerData(data);
+                    if (normalized.entryType !== data.entryType) {
+                        const update = { entryType: normalized.entryType, updatedAt: FieldValue.serverTimestamp() };
+                        batch.set(doc.ref, update, { merge: true });
+                    }
+                });
+
                 if (count > 0) await batch.commit();
                 return NextResponse.json({ success: true, count });
             }
