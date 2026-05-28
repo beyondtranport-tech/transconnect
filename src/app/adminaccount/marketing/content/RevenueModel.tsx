@@ -30,7 +30,7 @@ export default function RevenueModel({ partner }: { partner?: any }) {
             };
         }
         return {
-            title: "The Haulier Scenario",
+            title: "The Transport Scenario",
             icon: Truck,
             description: "Onboard your fellow transporters. As they find loads and save on tires, you earn a recurring share of the ecosystem value."
         };

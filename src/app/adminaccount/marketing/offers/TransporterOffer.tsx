@@ -82,11 +82,11 @@ export default function TransporterOffer({ partner }: { partner?: any }) {
         );
     }
 
-    // 2. Logic for Standard Hauliers / Trucking Companies
+    // 2. Logic for Standard Transport / Trucking Companies
     return (
         <div className="space-y-8">
             <div>
-                <h1 className="text-3xl font-bold font-headline">The Haulier Profitability Offer</h1>
+                <h1 className="text-3xl font-bold font-headline">The Transport Profitability Offer</h1>
                 <p className="text-lg text-muted-foreground mt-2">
                     Break the constraints of high operating costs and wasted capacity with our unified haulier tools.
                 </p>
