@@ -33,6 +33,8 @@ function normalizePartnerData(data: any) {
     const isPlaceholder = (val: any) => {
         if (!val) return true;
         const low = val.toString().toLowerCase().trim();
+        // Aggressively match "The director of..." and other placeholders
+        if (low.startsWith('the director of') || low.startsWith('the manager of') || low.startsWith('the owner of')) return true;
         return [
             'member', 'candidate', 'null', 'n/a', 'none', 'undefined', 'n a', 'unknown', 
             'null@null.com', 'the director', 'the manager', 'director', 'manager', 
@@ -113,63 +115,99 @@ export async function POST(req: NextRequest) {
         }
 
         switch (action) {
+            case 'getPlatformStaff': {
+                const snap = await db.collection('platformStaff').get();
+                return NextResponse.json({ success: true, data: snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) })) });
+            }
+            case 'savePlatformStaff': {
+                const { staff } = payload;
+                const ref = staff.id ? db.collection('platformStaff').doc(staff.id) : db.collection('platformStaff').doc();
+                await ref.set({ ...staff, id: ref.id, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+                return NextResponse.json({ success: true });
+            }
+            case 'deletePlatformStaff': {
+                await db.collection('platformStaff').doc(payload.staffId).delete();
+                return NextResponse.json({ success: true });
+            }
+            case 'getDashboardQueues': {
+                const [shopsSnap, agreementsSnap] = await Promise.all([
+                    db.collectionGroup('shops').where('status', '==', 'pending_review').get(),
+                    db.collectionGroup('agreements').where('status', '==', 'proposed').get()
+                ]);
+                return NextResponse.json({ 
+                    success: true, 
+                    data: { 
+                        pendingShops: shopsSnap.docs.map(d => ({ id: d.id, ...d.data() })),
+                        proposedAgreements: agreementsSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+                    } 
+                });
+            }
+            case 'findDuplicateLeads': {
+                const snap = await db.collection('leads').get();
+                const groups: Record<string, any[]> = {};
+                snap.docs.forEach(doc => {
+                    const data = doc.data();
+                    const name = (data.companyName || '').trim().toLowerCase();
+                    if (name) {
+                        if (!groups[name]) groups[name] = [];
+                        groups[name].push({ id: doc.id, source: 'Lead', ...data });
+                    }
+                });
+                const duplicates = Object.values(groups).filter(g => g.length > 1);
+                return NextResponse.json({ success: true, data: duplicates });
+            }
+            case 'deleteLeads': {
+                const { leadIds } = payload;
+                const batch = db.batch();
+                for (const id of leadIds) {
+                    batch.delete(db.collection('leads').doc(id));
+                    batch.delete(db.collection('partners').doc(id));
+                }
+                await batch.commit();
+                return NextResponse.json({ success: true });
+            }
             case 'bulkSavePartners': {
                 const { partners, type } = payload;
                 const batch = db.batch();
-                
                 let updatedCount = 0;
-
                 for (const p of partners) {
                     const normalized = normalizePartnerData(p);
                     const targetId = normalized.record_id;
-
                     if (!targetId) continue;
-
                     const leadRef = db.collection('leads').doc(targetId);
                     const partnerRef = db.collection('partners').doc(targetId);
-                    
                     const updateData: any = {
                         ...normalized,
                         researchStatus: 'completed',
                         updatedAt: FieldValue.serverTimestamp()
                     };
-
                     const currentSnap = await leadRef.get();
                     const currentData = currentSnap.data();
                     if (!['active', 'qualified', 'registered'].includes(currentData?.status || '')) {
                         updateData.status = normalized.email ? 'qualified' : 'contacted';
                     }
-
                     batch.set(leadRef, updateData, { merge: true });
                     batch.set(partnerRef, { ...updateData, type: currentData?.type || type }, { merge: true });
                     updatedCount++;
                 }
-                
                 await batch.commit();
-                return NextResponse.json({ 
-                    success: true, 
-                    message: `Import complete. ${updatedCount} records updated.`,
-                    updatedCount
-                });
+                return NextResponse.json({ success: true, message: `Import complete. ${updatedCount} records updated.`, updatedCount });
             }
             case 'resetResearchQueue': {
                 const [leadsSnap, partnersSnap] = await Promise.all([
                     db.collection('leads').where('researchStatus', '==', 'researching').get(),
                     db.collection('partners').where('researchStatus', '==', 'researching').get()
                 ]);
-
                 const batch = db.batch();
                 let count = 0;
                 const processed = new Set();
                 const resetObj = { researchStatus: FieldValue.delete() };
-
                 leadsSnap.docs.forEach(doc => {
                     batch.update(doc.ref, resetObj);
                     batch.set(db.collection('partners').doc(doc.id), resetObj, { merge: true });
                     processed.add(doc.id);
                     count++;
                 });
-
                 partnersSnap.docs.forEach(doc => {
                     if (!processed.has(doc.id)) {
                         batch.update(doc.ref, resetObj);
@@ -177,7 +215,6 @@ export async function POST(req: NextRequest) {
                         count++;
                     }
                 });
-
                 if (count > 0) await batch.commit();
                 return NextResponse.json({ success: true, count });
             }
