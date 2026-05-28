@@ -1,10 +1,9 @@
-
 'use client';
 
 import React, { useState, useMemo } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Loader2, ExternalLink, Send, ClipboardCheck, Mail } from 'lucide-react';
+import { Loader2, ExternalLink, Send, ClipboardCheck, Mail, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
 import { copyHtmlToClipboard } from '@/lib/utils';
@@ -44,6 +43,7 @@ async function performAdminAction(token: string, action: string, payload: any) {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ action, payload }),
+        cache: 'no-store'
     });
     const result = await response.json();
     if (!response.ok || !result.success) {
@@ -60,9 +60,9 @@ export function EngageDialog({ open, onOpenChange, partner, audience, onEngageSu
   const audienceLabel = useMemo(() => {
     if (audience === 'isa') return 'ISA Agent';
     if (audience === 'suppliers') return 'Supplier';
-    if (audience === 'transporters') return 'Transporter';
+    if (audience === 'transporters') return partner?.entryType || 'Transporter';
     return audience.slice(0, -1).charAt(0).toUpperCase() + audience.slice(1, -1);
-  }, [audience]);
+  }, [audience, partner]);
 
   const Offer = useMemo(() => {
     if (audience === 'investors') return InvestorOffer;
@@ -93,48 +93,43 @@ export function EngageDialog({ open, onOpenChange, partner, audience, onEngageSu
     const contentElement = document.getElementById(contentId);
 
     if (!contentElement) {
-        toast({ variant: 'destructive', title: "Content Error", description: "Could not find the content tab. Please try refreshing." });
+        toast({ variant: 'destructive', title: "Content Error", description: "Could not find content tab." });
         return;
     }
 
     setIsProcessing(true);
     try {
         const token = await getClientSideAuthToken();
-        if (!token) throw new Error("Authentication failed. Please sign in again.");
+        if (!token) throw new Error("Auth failed.");
         
         const subjectLabel = activeTab.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 
-        // 1. Log the outreach
+        // 1. Log communication
         await performAdminAction(token, 'logCommunication', {
             partnerId: partner.id,
             type: 'Email',
             subject: subjectLabel,
-            notes: `System generated and copied engagement for ${partner.firstName}.`,
+            notes: `System generated engagement for ${partner.firstName} (${partner.entryType || 'General'}).`,
         });
+        toast({ title: "Step 1: Interaction Logged", description: "History updated." });
 
-        // 2. Prepare HTML for clipboard
+        // 2. Prepare HTML
         const contentClone = contentElement.cloneNode(true) as HTMLElement;
-        const origin = 'https://studio--ecosystem-hub.us-central1.hosted.app';
+        const origin = window.location.origin;
         
-        // Fix relative images to absolute
         const images = contentClone.querySelectorAll('img');
         images.forEach(img => {
             const src = img.getAttribute('src');
-            if (src?.startsWith('/')) {
-                img.src = `${origin}${src}`;
-            }
+            if (src?.startsWith('/')) img.src = `${origin}${src}`;
         });
 
-        // Fix relative links to absolute
         const links = contentClone.querySelectorAll('a');
         links.forEach(a => {
             const href = a.getAttribute('href');
-            if (href?.startsWith('/')) {
-                a.href = `${origin}${href}`;
-            }
+            if (href?.startsWith('/')) a.href = `${origin}${href}`;
         });
 
-        // Add tracking pixel at the bottom (less suspicious to filters)
+        // Tracking pixel
         const trackingPixel = document.createElement('img');
         trackingPixel.src = `${origin}/api/trackEmailOpen/${partner.id}?t=${Date.now()}`;
         trackingPixel.width = 1;
@@ -143,25 +138,20 @@ export function EngageDialog({ open, onOpenChange, partner, audience, onEngageSu
         trackingPixel.style.opacity = '0.01';
         contentClone.appendChild(trackingPixel);
 
-        // 3. Copy using the resilient HTML utility
+        // 3. Copy HTML
         const success = await copyHtmlToClipboard(contentClone.innerHTML);
+        if (!success) throw new Error("Clipboard failed.");
+        toast({ title: "Step 2: Content Copied", description: "HTML layout is in your clipboard." });
 
-        if (!success) throw new Error("Clipboard access denied. Please allow clipboard permissions.");
-
-        // 4. Launch Email Client
+        // 4. Launch Client
         const mailtoUrl = `mailto:${partner.email}?subject=${encodeURIComponent(getSubject())}`;
         window.location.href = mailtoUrl;
-
-        toast({ 
-            title: 'Ready to Send!', 
-            description: `Communication logged. Outreach copied. Paste (Ctrl+V) into your email now.` 
-        });
+        toast({ title: "Step 3: Launching Email", description: "Paste the content into your mail app now." });
         
         if (onEngageSuccess) onEngageSuccess();
         onOpenChange(false);
     } catch (e: any) {
-        console.error("Engagement failure:", e);
-        toast({ variant: 'destructive', title: 'Action Failed', description: e.message });
+        toast({ variant: 'destructive', title: 'Engagement Failed', description: e.message });
     } finally {
         setIsProcessing(false);
     }
@@ -177,18 +167,16 @@ export function EngageDialog({ open, onOpenChange, partner, audience, onEngageSu
                     <div>
                         <DialogTitle className="text-2xl font-bold flex items-center gap-2">
                             <Send className="h-6 w-6 text-primary" />
-                            Initiate Engagement: {partner.firstName} {partner.lastName}
+                            Engagement: {partner.firstName} {partner.lastName}
                         </DialogTitle>
                         <DialogDescription className="mt-1">
-                            {audienceLabel} from {partner.companyName || 'N/A'}
+                            {audienceLabel} • {partner.companyName || 'N/A'}
                         </DialogDescription>
                     </div>
-                    <div className="flex gap-2">
-                        <Button size="lg" onClick={handleLogCopyAndLaunch} disabled={isProcessing || !partner.email}>
-                            {isProcessing ? <Loader2 className="mr-2 h-5 w-5 animate-spin"/> : <ExternalLink className="mr-2 h-5 w-5" />}
-                            Log, Copy & Open Email
-                        </Button>
-                    </div>
+                    <Button size="lg" onClick={handleLogCopyAndLaunch} disabled={isProcessing || !partner.email}>
+                        {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <ExternalLink className="mr-2 h-4 w-4" />}
+                        Log, Copy & Open Email
+                    </Button>
                 </div>
             </DialogHeader>
 

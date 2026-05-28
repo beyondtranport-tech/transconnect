@@ -1,7 +1,7 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Building, Target, Lightbulb, CheckCircle, Handshake, ArrowRight } from "lucide-react";
+import { Building, Target, Lightbulb, CheckCircle, Handshake, ArrowRight, Truck, Network, ShieldCheck } from "lucide-react";
 import Image from 'next/image';
 import data from '@/lib/placeholder-images.json';
 import { Button } from "@/components/ui/button";
@@ -30,9 +30,41 @@ const corePillars = [
 export default function CompanyProfile({ audience, partner }: { audience: string, partner?: any }) {
     const recipientName = partner?.firstName || 'Partner';
     const companyName = partner?.companyName || 'your business';
+    const businessCategory = partner?.entryType || 'General Transport';
+
+    const isForwarder = businessCategory === 'Freight Forwarder';
 
     const opportunityConfig = useMemo(() => {
         if (audience === 'transporters') {
+            if (isForwarder) {
+                return {
+                    title: `Strategic Value for ${companyName} (Forwarding)`,
+                    content: (
+                        <div className="space-y-6">
+                            <p className="text-lg text-muted-foreground">As a <strong>Freight Forwarder</strong>, {companyName} sits at the center of the appointment process. Logistics Flow acts as your digital operational backbone.</p>
+                            <div className="grid md:grid-cols-2 gap-6">
+                                <div className="p-4 border rounded-lg bg-blue-50 border-blue-100">
+                                    <h4 className="font-bold text-blue-900 flex items-center gap-2"><Network className="h-4 w-4"/>Vetted Transporter Access</h4>
+                                    <ul className="mt-2 space-y-2 text-blue-800 text-sm list-none">
+                                        <li>• Appoint reliable hauliers from our verified database.</li>
+                                        <li>• Reduce risk with pre-vetted compliance documentation.</li>
+                                        <li>• Real-time availability for urgent subcontracting.</li>
+                                    </ul>
+                                </div>
+                                <div className="p-4 border rounded-lg bg-green-50 border-green-100">
+                                    <h4 className="font-bold text-green-900 flex items-center gap-2"><Handshake className="h-4 w-4"/>Monetize Your Network</h4>
+                                    <ul className="mt-2 space-y-2 text-green-800 text-sm list-none">
+                                        <li>• Onboard your preferred hauliers to our ecosystem.</li>
+                                        <li>• Earn recurring commissions on their platform activity.</li>
+                                        <li>• Increase haulier loyalty through group discount access.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    )
+                };
+            }
+
             return {
                 title: `${recipientName}'s Transporter Opportunity`,
                 content: (
@@ -96,7 +128,7 @@ export default function CompanyProfile({ audience, partner }: { audience: string
                 </p>
             )
         };
-    }, [audience, recipientName, companyName]);
+    }, [audience, recipientName, companyName, isForwarder]);
 
     return (
         <div className="space-y-12">
@@ -134,11 +166,11 @@ export default function CompanyProfile({ audience, partner }: { audience: string
                         <Lightbulb className="h-6 w-6 text-destructive" />
                         The Industry Problem
                     </h2>
-                    <p className="text-muted-foreground text-sm mb-4">The transport sector is fragmented and capital-constrained. Businesses like {companyName} often face:</p>
+                    <p className="text-muted-foreground text-sm mb-4">The transport sector is fragmented and capital-constrained. {isForwarder ? 'Forwarders' : 'Businesses'} like {companyName} often face:</p>
                     <ul className="list-disc list-inside space-y-2 text-muted-foreground text-sm">
-                        <li><span className="font-semibold text-foreground">High Operating Costs:</span> Lack of collective buying power.</li>
+                        <li><span className="font-semibold text-foreground">High Operating Costs:</span> {isForwarder ? 'Subcontractor inefficiency' : 'Lack of collective buying power'}.</li>
                         <li><span className="font-semibold text-foreground">Limited Access to Capital:</span> Banks don't understand industry risk.</li>
-                        <li><span className="font-semibold text-foreground">Inefficient Operations:</span> Empty miles and manual processes.</li>
+                        <li><span className="font-semibold text-foreground">Inefficient Operations:</span> {isForwarder ? 'Manual appointment cycles' : 'Empty miles and manual processes'}.</li>
                     </ul>
                 </div>
                  <div className="h-full p-6 border rounded-xl bg-white shadow-sm">

@@ -22,9 +22,7 @@ function serializeTimestamps(docData: any): any {
 }
 
 /**
- * Universal Data Normalization
- * Strictly maps diverse AI fields to standard CRM fields (firstName, lastName, email, etc.)
- * Also intelligently strips generic placeholders like "The Director".
+ * Universal Data Normalization & Intelligent Categorization
  */
 function normalizePartnerData(data: any) {
     const result: any = {};
@@ -32,7 +30,6 @@ function normalizePartnerData(data: any) {
     const isPlaceholder = (val: any) => {
         if (!val) return true;
         const low = val.toString().toLowerCase().trim();
-        // Aggressively match "The director of..." and other placeholders
         if (low.startsWith('the director of') || low.startsWith('the manager of') || low.startsWith('the owner of')) return true;
         return [
             'member', 'candidate', 'null', 'n/a', 'none', 'undefined', 'n a', 'unknown', 
@@ -42,7 +39,6 @@ function normalizePartnerData(data: any) {
         ].includes(low) || low.length < 2;
     }
 
-    // 1. Recover Record ID
     const idKeys = ['record_id', 'recordId', 'id', 'record', 'uid', 'recordid'];
     for (const key of idKeys) {
         const val = data[key]?.toString().trim();
@@ -52,7 +48,6 @@ function normalizePartnerData(data: any) {
         }
     }
 
-    // 2. Map Core Identifiers
     const maps = {
         companyName: ['company_name', 'companyName', 'company', 'name', 'business_name', 'business'],
         email: ['email_address', 'emailAddress', 'mail', 'email', 'e_mail'],
@@ -71,7 +66,6 @@ function normalizePartnerData(data: any) {
         }
     });
 
-    // 3. Identity Construction (Only if NOT a generic title)
     const contactKeys = ['contact_person', 'contactPerson', 'contact', 'person', 'owner', 'director', 'manager', 'leadership'];
     let contactVal = '';
     for (const key of contactKeys) {
@@ -87,6 +81,22 @@ function normalizePartnerData(data: any) {
         const parts = contactVal.split(' ');
         result.firstName = parts[0];
         result.lastName = parts.slice(1).join(' ') || '';
+    }
+
+    // --- INTELLIGENT CATEGORIZATION ENGINE ---
+    const name = (result.companyName || '').toLowerCase();
+    if (name.includes('forward')) {
+        result.entryType = 'Freight Forwarder';
+    } else if (name.includes('logistics')) {
+        result.entryType = 'Logistics Provider';
+    } else if (name.includes('distrib')) {
+        result.entryType = 'Distribution Partner';
+    } else if (name.includes('truck') || name.includes('transport') || name.includes('haul')) {
+        result.entryType = 'Haulier';
+    } else if (name.includes('courier')) {
+        result.entryType = 'Courier Service';
+    } else {
+        result.entryType = 'General Transport';
     }
 
     return result;
@@ -109,11 +119,28 @@ export async function POST(req: NextRequest) {
         const isAdmin = decodedToken.email === 'beyondtransport@gmail.com' || decodedToken.email === 'mkoton100@gmail.com';
 
         if (!isAdmin) {
-             const allowedUserActions = ['getAuditLogs', 'logCommunication', 'bulkSavePartners', 'getPartnersByType', 'markLeadsAsResearching', 'getPlatformStaff', 'findDuplicateLeads', 'deleteLeads', 'resetResearchQueue', 'bulkUpdateOutreach'];
+             const allowedUserActions = ['getAuditLogs', 'logCommunication', 'bulkSavePartners', 'getPartnersByType', 'markLeadsAsResearching', 'getPlatformStaff', 'findDuplicateLeads', 'deleteLeads', 'resetResearchQueue', 'bulkUpdateOutreach', 'bulkCategorizeLeads'];
              if (!allowedUserActions.includes(action)) throw new Error("Forbidden.");
         }
 
         switch (action) {
+            case 'bulkCategorizeLeads': {
+                const snap = await db.collection('leads').get();
+                const batch = db.batch();
+                let count = 0;
+                snap.docs.forEach(doc => {
+                    const data = doc.data();
+                    const normalized = normalizePartnerData(data);
+                    if (normalized.entryType !== data.entryType) {
+                        const update = { entryType: normalized.entryType, updatedAt: FieldValue.serverTimestamp() };
+                        batch.set(doc.ref, update, { merge: true });
+                        batch.set(db.collection('partners').doc(doc.id), update, { merge: true });
+                        count++;
+                    }
+                });
+                if (count > 0) await batch.commit();
+                return NextResponse.json({ success: true, count });
+            }
             case 'getPlatformStaff': {
                 const snap = await db.collection('platformStaff').get();
                 return NextResponse.json({ success: true, data: snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) })) });

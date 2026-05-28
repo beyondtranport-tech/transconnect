@@ -7,7 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
   Loader2, PlusCircle, Truck, Edit, Trash2, Send, CheckCircle, Users, Filter, Save, 
-  Search, Zap, RotateCcw, XCircle, Info, Sparkles, AlertCircle, Mail, Download, Copy, ShieldCheck
+  Search, Zap, RotateCcw, XCircle, Info, Sparkles, AlertCircle, Mail, Download, Copy, ShieldCheck, Tag
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
@@ -25,7 +25,7 @@ import { PartnerOversightDialog } from './PartnerOversightDialog';
 import { CommunicationLogDialog } from './CommunicationLogDialog';
 import { EngageDialog } from './EngageDialog';
 import { formatDateSafe, cn } from '@/lib/utils';
-import { EnrichPartnerButton } from './EnrichPartnerButton';
+import { EnrichPartnerButton, BulkEnrichButton } from './EnrichPartnerButton';
 import { Label } from '@/components/ui/label';
 import { BatchResearchDialog } from './BatchResearchDialog';
 import { BulkImportDialog } from './BulkImportDialog';
@@ -153,187 +153,13 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
   );
 }
 
-function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [duplicates, setDuplicates] = useState<any[][]>([]);
-  const [selections, setSelections] = useState<Record<number, string>>({});
-  const { toast } = useToast();
-
-  async function findDuplicates() {
-    setIsLoading(true);
-    try {
-      const token = await getClientSideAuthToken();
-      if (!token) throw new Error("Auth failed.");
-      const response = await fetch('/api/admin', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'findDuplicateLeads' }),
-        cache: 'no-store'
-      });
-      const result = await response.json();
-      if (!result.success) throw new Error(result.error);
-      setDuplicates(result.data);
-      if (result.data.length === 0) {
-        toast({ title: "No duplicates found." });
-      } else {
-        const initialSelections: Record<number, string> = {};
-        result.data.forEach((group: any[], index: number) => {
-            const memberRecord = group.find(r => r.source === 'Member');
-            if (memberRecord) initialSelections[index] = memberRecord.id;
-            else initialSelections[index] = group[0].id;
-        });
-        setSelections(initialSelections);
-        setIsOpen(true);
-      }
-    } catch (e: any) {
-      toast({ variant: 'destructive', title: "Error finding duplicates", description: e.message });
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
-  async function handleClean() {
-    setIsLoading(true);
-    const idsToDelete = duplicates.flatMap((group, index) => {
-      const idToKeep = selections[index];
-      if (!idToKeep) return [];
-      return group.filter(lead => lead.id !== idToKeep).map(lead => lead.id);
-    });
-
-    if (idsToDelete.length === 0) {
-      toast({ title: "No duplicates selected for deletion." });
-      setIsLoading(false);
-      setIsOpen(false);
-      return;
-    }
-
-    try {
-      const token = await getClientSideAuthToken();
-      if (!token) throw new Error("Auth failed.");
-      const response = await fetch('/api/admin', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'deleteLeads', payload: { leadIds: idsToDelete } }),
-        cache: 'no-store'
-      });
-      const result = await response.json();
-      if (!result.success) throw new Error(result.error);
-
-      toast({ title: "Duplicates Cleaned!", description: `${idsToDelete.length} duplicate records deleted.` });
-      onComplete();
-      setIsOpen(false);
-    } catch (e: any) {
-      toast({ variant: 'destructive', title: "Error cleaning duplicates", description: e.message });
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
-  return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" onClick={findDuplicates} disabled={isLoading}>
-          {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
-          Find & Clean Duplicates
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle>Duplicate Transporter Cleaner</DialogTitle>
-          <DialogDescription>
-            Select the records you want to keep. All unselected records in the group will be deleted.
-          </DialogDescription>
-        </DialogHeader>
-        
-        <Alert className="bg-amber-50 border-amber-200">
-            <AlertCircle className="h-4 w-4 text-amber-600" />
-            <AlertTitle>Recommendation Guide</AlertTitle>
-            <AlertDescription className="text-xs">
-                Always keep <strong>Members</strong> (Registered users) and delete <strong>Leads</strong> (Projections). 
-                Deleting a Member record will break their live account access.
-            </AlertDescription>
-        </Alert>
-
-        <div className="flex-1 overflow-y-auto p-4 space-y-6">
-          <div className="flex items-center justify-between mb-4 p-3 bg-muted rounded-md border border-dashed">
-            <div className="flex items-center gap-2">
-                <Checkbox 
-                    id="select-all-recommended" 
-                    checked={Object.keys(selections).length === duplicates.length}
-                    onCheckedChange={(checked) => {
-                        if (checked) {
-                            const newSelections: Record<number, string> = {};
-                            duplicates.forEach((group, index) => {
-                                const member = group.find(r => r.source === 'Member');
-                                newSelections[index] = member ? member.id : group[0].id;
-                            });
-                            setSelections(newSelections);
-                        } else {
-                            setSelections({});
-                        }
-                    }}
-                />
-                <Label htmlFor="select-all-recommended" className="text-xs font-bold cursor-pointer">Apply Recommended Selections to ALL Groups</Label>
-            </div>
-            <p className="text-[10px] text-muted-foreground uppercase font-bold">{duplicates.length} Duplicate Groups Found</p>
-          </div>
-
-          {duplicates.map((group, groupIndex) => {
-             const groupName = group.find(r => r.companyName)?.companyName || 'Unnamed Group';
-             return (
-                <Card key={groupIndex} className="shadow-none border">
-                <CardHeader className="py-3 bg-muted/30"><CardTitle className="text-sm font-bold">Group: {groupName}</CardTitle></CardHeader>
-                <CardContent className="p-0">
-                    {group.map(lead => {
-                        const isRecommended = lead.source === 'Member';
-                        return (
-                            <div key={lead.id} className={cn("flex items-start gap-4 p-4 border-b last:border-b-0", selections[groupIndex] === lead.id ? "bg-primary/5" : "")}>
-                                <Checkbox
-                                    id={`lead-${groupIndex}-${lead.id}`}
-                                    checked={selections[groupIndex] === lead.id}
-                                    onCheckedChange={() => setSelections(prev => ({ ...prev, [groupIndex]: lead.id }))}
-                                />
-                                <label htmlFor={`lead-${groupIndex}-${lead.id}`} className="text-sm cursor-pointer w-full">
-                                    <div className="flex justify-between items-start">
-                                        <div>
-                                            <div className="flex items-center gap-2">
-                                                <p className="font-bold">{lead.companyName || 'No Company Name'}</p>
-                                                {isRecommended && <Badge variant="default" className="bg-green-100 text-green-700 text-[10px] uppercase">Recommended</Badge>}
-                                            </div>
-                                            <p className="text-xs text-muted-foreground">{lead.contactPerson || `${lead.firstName || ''} ${lead.lastName || ''}`.trim() || 'No Contact Name'}</p>
-                                            <p className="text-[10px] font-mono text-muted-foreground mt-1">{lead.id}</p>
-                                        </div>
-                                        <Badge variant={lead.source === 'Member' ? 'default' : 'outline'} className="text-[10px] uppercase font-extrabold">{lead.source}</Badge>
-                                    </div>
-                                    <p className="text-xs text-muted-foreground mt-2">{lead.email || 'No Email'} • {lead.phone || lead.telephone_number || 'No Phone'}</p>
-                                </label>
-                            </div>
-                        )
-                    })}
-                </CardContent>
-                </Card>
-             )
-          })}
-        </div>
-        <DialogFooter className="p-4 border-t">
-          <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
-          <Button onClick={handleClean} disabled={isLoading} className="bg-destructive hover:bg-destructive/90">
-             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
-             Delete Unselected & Clean
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
 export default function TransporterManagement() {
   const { toast } = useToast();
   const [partners, setPartners] = useState<any[]>([]);
   const [staff, setStaff] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isResetting, setIsResetting] = useState(false);
+  const [isCategorizing, setIsCategorizing] = useState(false);
   const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | 'batch-ai' | null, data?: any }>({ type: null });
 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -467,7 +293,7 @@ export default function TransporterManagement() {
       }
       
       if (targets.length === 0) {
-          toast({ title: "No fresh candidates found", description: "All records are either already enriched or currently locked in another search. Try 'Reset Stuck Research' if you have records stuck on 'Searching...'." });
+          toast({ title: "No fresh candidates found", description: "All records are either already enriched or currently locked in another search." });
           return;
       }
 
@@ -490,6 +316,21 @@ export default function TransporterManagement() {
       }
   };
 
+  const handleAutoCategorize = async () => {
+      setIsCategorizing(true);
+      try {
+          const token = await getClientSideAuthToken();
+          if (!token) return;
+          const result = await performAdminAction(token, 'bulkCategorizeLeads', {});
+          toast({ title: "Categorization Complete", description: `Auto-tagged ${result.count} transporters based on company keywords.` });
+          forceRefresh();
+      } catch (e: any) {
+          toast({ variant: 'destructive', title: "Tagging Failed", description: e.message });
+      } finally {
+          setIsCategorizing(false);
+      }
+  };
+
   async function handleDelete() {
     try {
       const token = await getClientSideAuthToken();
@@ -507,7 +348,17 @@ export default function TransporterManagement() {
     { 
         accessorKey: 'companyName', 
         header: 'Transporter', 
-        cell: ({ row }) => <div className="font-bold">{row.original.companyName || `${row.original.firstName} ${row.original.lastName}`}</div> 
+        cell: ({ row }) => (
+            <div className="flex flex-col">
+                <div className="font-bold">{row.original.companyName || `${row.original.firstName} ${row.original.lastName}`}</div>
+                {row.original.entryType && (
+                    <div className="flex items-center gap-1 mt-0.5">
+                        <Tag className="h-2.5 w-2.5 text-muted-foreground" />
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase">{row.original.entryType}</span>
+                    </div>
+                )}
+            </div>
+        )
     },
     { 
         accessorKey: 'contactPerson', 
@@ -618,6 +469,10 @@ export default function TransporterManagement() {
             <Button variant="outline" onClick={handleCopyBccList} title="Copy addresses for Gmail BCC">
                 <Copy className="mr-2 h-4 w-4" /> Copy BCC List
             </Button>
+             <Button variant="outline" size="sm" onClick={handleAutoCategorize} disabled={isCategorizing}>
+                {isCategorizing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Tag className="mr-2 h-4 w-4" />}
+                Auto-Categorize
+            </Button>
             <Button variant="outline" size="sm" onClick={handleResetQueue} disabled={isResetting}>
                 {isResetting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <RotateCcw className="mr-2 h-4 w-4" />}
                 Reset Stuck Research
@@ -638,11 +493,9 @@ export default function TransporterManagement() {
             <div className="space-y-4 mb-6">
                 <Alert className="bg-primary/5 border-primary/20">
                     <Info className="h-4 w-4 text-primary" />
-                    <AlertTitle>Pipeline Guide</AlertTitle>
-                    <AlertDescription className="text-xs space-y-1">
-                        <p>• <span className="font-bold text-amber-600">Searching (Orange):</span> Record is currently locked in an AI research batch.</p>
-                        <p>• <span className="font-bold text-green-700">Enriched (Green):</span> Contact details have been successfully found.</p>
-                        <p>• <span className="font-bold text-blue-700">Opted In:</span> Lead has provided digital consent to be contacted.</p>
+                    <AlertTitle>Intelligent CRM Insight</AlertTitle>
+                    <AlertDescription className="text-xs space-y-1 leading-relaxed">
+                        <p>We've automatically categorized your transporters based on naming conventions. <strong>Freight Forwarders</strong> are uniquely identified to receive appointment-focused messaging, while <strong>Hauliers</strong> are targeted for cost-reduction and load matching.</p>
                     </AlertDescription>
                 </Alert>
                 <div className="flex flex-col md:flex-row gap-4 p-4 bg-muted/30 rounded-lg">
