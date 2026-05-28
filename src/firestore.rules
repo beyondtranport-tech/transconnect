@@ -1,5 +1,6 @@
 rules_version = '2';
 
+// Security Rules Version: 1.0.4 - Admin Payout & Transaction Fix
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -18,15 +19,28 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
 
-    // --- 2. PARTNER CRM SUB-COLLECTIONS ---
-    match /partners/{partnerId}/communications/{docId} {
+    // --- 2. PARTNER CRM & ENRICHMENT ---
+    match /partners/{partnerId} {
       allow read, write: if isAdmin();
+      
+      match /communications/{docId} {
+        allow read, write: if isAdmin();
+      }
+      match /tasks/{docId} {
+        allow read, write: if isAdmin();
+      }
     }
-    match /partners/{partnerId}/tasks/{docId} {
+
+    match /leads/{leadId} {
       allow read, write: if isAdmin();
     }
 
-    // --- 3. USER-SPECIFIC RULES (FOR NON-ADMINS) ---
+    // --- 3. COMPANY & MEMBER DATA (ADMIN OVERRIDE) ---
+    match /companies/{companyId}/{allPaths=**} {
+      allow read, write: if isAdmin();
+    }
+
+    // --- 4. USER-SPECIFIC RULES (FOR NON-ADMINS) ---
     match /users/{userId} {
       allow read, update: if request.auth != null && request.auth.uid == userId;
       allow create: if request.auth != null; 
@@ -49,7 +63,7 @@ service cloud.firestore {
       }
     }
     
-    // --- 4. PUBLIC & GLOBAL COLLECTIONS ---
+    // --- 5. PUBLIC & GLOBAL COLLECTIONS ---
     match /shops/{shopId}/{path=**} {
       allow get, list: if true;
     }
