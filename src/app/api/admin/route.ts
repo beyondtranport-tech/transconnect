@@ -83,7 +83,6 @@ function normalizePartnerData(data: any) {
         result.lastName = parts.slice(1).join(' ') || '';
     }
 
-    // --- INTELLIGENT SINGLE-WORD CATEGORIZATION ---
     const name = (result.companyName || '').toLowerCase();
     if (name.includes('forward')) {
         result.entryType = 'Forwarder';
@@ -128,6 +127,84 @@ export async function POST(req: NextRequest) {
         }
 
         switch (action) {
+            case 'getMembers': {
+                // ENRICHED FETCH: Join Companies with Users to get owner details
+                const [companiesSnap, usersSnap] = await Promise.all([
+                    db.collection('companies').get(),
+                    db.collection('users').get()
+                ]);
+
+                const userMap = new Map();
+                usersSnap.docs.forEach(u => userMap.set(u.id, u.data()));
+
+                const data = companiesSnap.docs.map(doc => {
+                    const company = doc.data();
+                    const owner = userMap.get(company.ownerId) || {};
+                    return {
+                        id: doc.id,
+                        ...serializeTimestamps(company),
+                        firstName: owner.firstName || 'Unknown',
+                        lastName: owner.lastName || 'Member',
+                        email: owner.email || 'N/A'
+                    };
+                });
+
+                return NextResponse.json({ success: true, data });
+            }
+
+            case 'getPartnersByType': {
+                const { type } = payload;
+                const roleMapping: Record<string, string> = {
+                    'transporter': 'Transporters',
+                    'supplier': 'Vendors',
+                    'partner': 'Strategic Partners',
+                    'isa': 'ISA Agents (Elite)'
+                };
+                const leadRole = roleMapping[type] || type;
+                const rolesToSearch = [leadRole];
+                if (leadRole.endsWith('s')) rolesToSearch.push(leadRole.slice(0, -1));
+                else rolesToSearch.push(leadRole + 's');
+
+                // ENRICHED FETCH: Join Leads with Companies to verify ACTIVE status
+                const [partnersSnap, leadsSnap, companiesSnap] = await Promise.all([
+                    db.collection('partners').where('type', '==', type).get(),
+                    db.collection('leads').where('role', 'in', rolesToSearch).get(),
+                    db.collection('companies').get()
+                ]);
+
+                const companyLeadIndex = new Map();
+                companiesSnap.docs.forEach(c => {
+                    const cData = c.data();
+                    if (cData.leadId) companyLeadIndex.set(cData.leadId, c.id);
+                });
+
+                const mergedMap = new Map();
+                partnersSnap.docs.forEach(doc => {
+                    const pData = doc.data();
+                    const isLive = companyLeadIndex.has(doc.id);
+                    mergedMap.set(doc.id, { 
+                        id: doc.id, 
+                        entryType: isLive ? 'Member' : 'Lead',
+                        ...serializeTimestamps(pData),
+                        status: isLive ? 'active' : (pData.status || 'new')
+                    });
+                });
+                
+                leadsSnap.docs.forEach(doc => {
+                    const existing = mergedMap.get(doc.id);
+                    const leadData = doc.data();
+                    const isLive = companyLeadIndex.has(doc.id);
+                    mergedMap.set(doc.id, { 
+                        ...(existing || {}), 
+                        ...serializeTimestamps(leadData), 
+                        id: doc.id, 
+                        entryType: isLive ? 'Member' : (existing ? 'Member' : 'Lead'),
+                        status: isLive ? 'active' : (leadData.status || (existing?.status) || 'new')
+                    });
+                });
+                return NextResponse.json({ success: true, data: Array.from(mergedMap.values()) });
+            }
+
             case 'bulkCategorizeLeads': {
                 const snap = await db.collection('leads').get();
                 const partnersSnap = await db.collection('partners').get();
@@ -221,13 +298,12 @@ export async function POST(req: NextRequest) {
                     const currentSnap = await leadRef.get();
                     const currentData = currentSnap.data();
 
-                    // Determine the next logical status in the funnel
                     let nextStatus = currentData?.status || 'new';
                     if (!['active', 'registered'].includes(nextStatus)) {
                         if (normalized.email && normalized.contactPerson) {
                             nextStatus = 'qualified';
                         } else {
-                            nextStatus = 'contacted'; // Mark as "Researching" in UI terms
+                            nextStatus = 'contacted'; 
                         }
                     }
 
@@ -270,48 +346,13 @@ export async function POST(req: NextRequest) {
                 if (count > 0) await batch.commit();
                 return NextResponse.json({ success: true, count });
             }
-            case 'getPartnersByType': {
-                const { type } = payload;
-                const roleMapping: Record<string, string> = {
-                    'transporter': 'Transporters',
-                    'supplier': 'Vendors',
-                    'partner': 'Strategic Partners',
-                    'isa': 'ISA Agents (Elite)'
-                };
-                const leadRole = roleMapping[type] || type;
-                const rolesToSearch = [leadRole];
-                if (leadRole.endsWith('s')) rolesToSearch.push(leadRole.slice(0, -1));
-                else rolesToSearch.push(leadRole + 's');
-
-                const [partnersSnap, leadsSnap] = await Promise.all([
-                    db.collection('partners').where('type', '==', type).get(),
-                    db.collection('leads').where('role', 'in', rolesToSearch).get()
-                ]);
-
-                const mergedMap = new Map();
-                partnersSnap.docs.forEach(doc => {
-                    mergedMap.set(doc.id, { id: doc.id, entryType: 'Member', ...serializeTimestamps(doc.data()) });
-                });
-                
-                leadsSnap.docs.forEach(doc => {
-                    const existing = mergedMap.get(doc.id);
-                    const leadData = doc.data();
-                    mergedMap.set(doc.id, { 
-                        ...(existing || {}), 
-                        ...serializeTimestamps(leadData), 
-                        id: doc.id, 
-                        entryType: existing ? 'Member' : 'Lead' 
-                    });
-                });
-                return NextResponse.json({ success: true, data: Array.from(mergedMap.values()) });
-            }
             case 'markLeadsAsResearching': {
                 const { leadIds } = payload;
                 const batch = db.batch();
                 for (const id of leadIds) {
                     const update = { 
                         researchStatus: 'researching',
-                        status: 'contacted', // Set status to 'contacted' (Researching in UI)
+                        status: 'contacted', 
                         updatedAt: FieldValue.serverTimestamp() 
                     };
                     batch.set(db.collection('leads').doc(id), update, { merge: true });
@@ -322,10 +363,6 @@ export async function POST(req: NextRequest) {
             }
             case 'getAuditLogs': {
                 const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(100).get();
-                return NextResponse.json({ success: true, data: snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) })) });
-            }
-            case 'getMembers': {
-                const snap = await db.collection('companies').get();
                 return NextResponse.json({ success: true, data: snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) })) });
             }
             case 'savePartner': {
@@ -367,7 +404,6 @@ export async function POST(req: NextRequest) {
                 const ref = db.collection('partners').doc(partnerId).collection('communications').doc();
                 await ref.set({ id: ref.id, type, subject, notes: notes || '', timestamp: FieldValue.serverTimestamp() });
                 
-                // If it's a handshake, we might want to mark as 'invited'
                 const newStatus = subject.toLowerCase().includes('handshake') ? 'invited' : 'contacted';
                 
                 const update = { 

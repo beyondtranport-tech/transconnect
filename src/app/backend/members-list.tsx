@@ -1,18 +1,16 @@
-
 'use client';
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Users, PlusCircle, Sparkles, UserCheck } from 'lucide-react';
+import { Loader2, Users, PlusCircle, Sparkles } from 'lucide-react';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { Badge } from '@/components/ui/badge';
 import { getClientSideAuthToken } from '@/firebase';
-import { cn } from '@/lib/utils';
+import { cn, formatDateSafe } from '@/lib/utils';
 import MemberActionMenu from './member-action-menu';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { formatDateSafe } from '@/lib/utils';
 
 interface Member {
     id: string;
@@ -87,36 +85,36 @@ export default function MembersList() {
     const columns: ColumnDef<Member>[] = useMemo(() => [
         {
           accessorKey: 'owner',
-          header: 'Owner',
+          header: 'Account Owner',
           cell: ({ row }) => (
-            <div>
-              <p className="font-medium">{row.original.firstName} {row.original.lastName}</p>
+            <div className="flex flex-col">
+              <p className="font-bold text-sm">{row.original.firstName} {row.original.lastName}</p>
               <p className="text-xs text-muted-foreground">{row.original.email}</p>
             </div>
           ),
         },
         {
           accessorKey: 'companyName',
-          header: 'Company',
-          cell: ({ row }) => <div>{row.original.companyName}</div>,
+          header: 'Company Entity',
+          cell: ({ row }) => <div className="font-semibold">{row.original.companyName}</div>,
         },
         {
           accessorKey: 'leadId',
-          header: 'Source',
+          header: 'Origin Source',
           cell: ({ row }) => row.original.leadId ? (
-            <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
-                <Sparkles className="mr-1 h-3 w-3" /> AI Lead
+            <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 text-[10px] uppercase font-bold">
+                <Sparkles className="mr-1 h-3 w-3" /> AI Converted
             </Badge>
           ) : (
-            <Badge variant="outline" className="text-muted-foreground">Organic</Badge>
+            <Badge variant="outline" className="text-[10px] uppercase font-bold text-muted-foreground">Organic Web</Badge>
           )
         },
         {
           accessorKey: 'membershipId',
-          header: 'Membership',
+          header: 'Plan',
           cell: ({ row }) => (
             <Badge 
-                className={cn("capitalize", tierColors[row.original.membershipId?.toLowerCase() || 'free'] || 'bg-gray-200 text-gray-800')}
+                className={cn("capitalize text-[10px]", tierColors[row.original.membershipId?.toLowerCase() || 'free'] || 'bg-gray-200 text-gray-800')}
                 variant="outline"
             >
                 {row.original.membershipId}
@@ -127,19 +125,19 @@ export default function MembersList() {
             accessorKey: 'status',
             header: 'Status',
             cell: ({ row }) => (
-                <Badge variant={statusColors[row.original.status || 'active'] || 'default'} className="capitalize">
+                <Badge variant={statusColors[row.original.status || 'active'] || 'default'} className="capitalize text-[10px]">
                     {row.original.status || 'Active'}
                 </Badge>
             ),
         },
         {
           accessorKey: 'createdAt',
-          header: 'Joined',
-          cell: ({ row }) => formatDateSafe(row.original.createdAt, 'dd MMM yyyy')
+          header: 'Registration Date',
+          cell: ({ row }) => <span className="text-xs text-muted-foreground">{formatDateSafe(row.original.createdAt, 'dd MMM yyyy')}</span>
         },
         {
             id: 'actions',
-            header: <div className="text-right">Actions</div>,
+            header: <div className="text-right">Manage</div>,
             cell: ({ row }) => (
                 <div className="text-right">
                     <MemberActionMenu member={row.original} onUpdate={forceRefresh} />
@@ -155,12 +153,12 @@ export default function MembersList() {
                 <div>
                     <CardTitle className="flex items-center gap-2"><Users /> Member Roster</CardTitle>
                     <CardDescription>
-                        Consolidated view of all members. Highlighting successful lead-to-member conversions.
+                        A joined view of companies and their owners. Highlighting successful AI-to-Member conversions.
                     </CardDescription>
                 </div>
-                 <Button asChild>
+                 <Button asChild variant="outline">
                     <Link href="/adminaccount?view=leads-database&action=add-member">
-                        <PlusCircle className="mr-2 h-4 w-4" /> Add Member
+                        <PlusCircle className="mr-2 h-4 w-4" /> Provision New Member
                     </Link>
                 </Button>
             </CardHeader>
