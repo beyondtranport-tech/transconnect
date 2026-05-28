@@ -3,7 +3,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, Users, FileText, HeartHandshake, DollarSign, UserCheck, Clock, FileSignature, TrendingUp, Send, CheckCircle2, Zap } from 'lucide-react';
+import { Loader2, Users, FileText, HeartHandshake, DollarSign, UserCheck, Clock, FileSignature, TrendingUp, Send, CheckCircle2, Zap, ArrowRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,7 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { formatCurrency, formatDateSafe } from '@/lib/utils';
+import { Separator } from '@/components/ui/separator';
 
 async function fetchFromAdminAPI(token: string, action: string, payload?: any) {
     const response = await fetch('/api/admin', {
@@ -81,23 +82,23 @@ export default function DashboardContent() {
         <div className="space-y-8">
             <div className="flex justify-between items-end">
                 <div>
-                    <h1 className="text-2xl font-bold">Conversion Funnel Analytics</h1>
+                    <h1 className="text-2xl font-bold font-headline">Pipeline Intelligence</h1>
                     <p className="text-muted-foreground">Monitoring the flow from AI Research to Paying Members.</p>
                 </div>
-                <Button variant="outline" onClick={loadData} size="sm"><Clock className="mr-2 h-4 w-4"/> Refresh Analytics</Button>
+                <Button variant="outline" onClick={loadData} size="sm"><Clock className="mr-2 h-4 w-4"/> Refresh Metrics</Button>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
                 {funnelData.map((stage, idx) => (
                     <Card key={stage.stage} className="relative overflow-hidden">
                         <CardHeader className="pb-2">
-                            <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">{stage.stage}</CardTitle>
+                            <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{stage.stage}</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-3xl font-bold">{stage.count}</div>
+                            <div className="text-3xl font-extrabold">{stage.count}</div>
                             {idx > 0 && funnelData[idx-1].count > 0 && (
-                                <p className="text-xs font-semibold text-green-600 mt-1">
-                                    {((stage.count / funnelData[idx-1].count) * 100).toFixed(1)}% step conversion
+                                <p className="text-[10px] font-bold text-green-600 mt-1 uppercase">
+                                    {((stage.count / funnelData[idx-1].count) * 100).toFixed(1)}% conversion
                                 </p>
                             )}
                         </CardContent>
@@ -107,17 +108,17 @@ export default function DashboardContent() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <Card className="lg:col-span-2">
+                <Card className="lg:col-span-2 shadow-xl border-primary/10">
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><TrendingUp className="h-5 w-5 text-primary"/> Pipeline Performance</CardTitle>
-                        <CardDescription>Visual representation of the member acquisition funnel.</CardDescription>
+                        <CardTitle className="flex items-center gap-2 text-xl"><TrendingUp className="h-5 w-5 text-primary"/> Pipeline Success Visualization</CardTitle>
+                        <CardDescription>Real-time conversion breakdown of all AI-sourced leads.</CardDescription>
                     </CardHeader>
                     <CardContent className="h-80">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={funnelData} layout="vertical" margin={{ left: 40, right: 40 }}>
                                 <CartesianGrid strokeDasharray="3 3" horizontal={false} />
                                 <XAxis type="number" hide />
-                                <YAxis dataKey="stage" type="category" width={150} tick={{ fontSize: 12 }} />
+                                <YAxis dataKey="stage" type="category" width={150} tick={{ fontSize: 12, fontWeight: 'bold' }} />
                                 <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: '8px' }} />
                                 <Bar dataKey="count" radius={[0, 4, 4, 0]}>
                                     {funnelData.map((entry, index) => (
@@ -129,9 +130,9 @@ export default function DashboardContent() {
                     </CardContent>
                 </Card>
 
-                <Card>
+                <Card className="shadow-xl border-primary/10">
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><Zap className="h-5 w-5 text-amber-500"/> Campaign Quick Hits</CardTitle>
+                        <CardTitle className="flex items-center gap-2"><Zap className="h-5 w-5 text-amber-500"/> Conversion Insights</CardTitle>
                         <CardDescription>Top sources for converted members.</CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -139,30 +140,33 @@ export default function DashboardContent() {
                             <div className="flex items-center justify-between">
                                 <div className="space-y-1">
                                     <p className="text-sm font-bold">Overall Conversion</p>
-                                    <p className="text-xs text-muted-foreground">Leads to Paying Members</p>
+                                    <p className="text-[10px] uppercase text-muted-foreground tracking-widest">Research to Membership</p>
                                 </div>
-                                <div className="text-xl font-extrabold text-primary">
-                                    {leads.length > 0 ? ((companies.filter(c => c.leadId && c.membershipId !== 'free').length / leads.length) * 100).toFixed(1) : 0}%
+                                <div className="text-2xl font-black text-primary">
+                                    {leads.length > 0 ? ((companies.filter(c => c.leadId).length / leads.length) * 100).toFixed(1) : 0}%
                                 </div>
                             </div>
                             <Separator />
                             <div className="space-y-4">
-                                <h4 className="text-xs font-bold uppercase text-muted-foreground tracking-widest">Recent Conversions</h4>
+                                <h4 className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Recent Conversions</h4>
                                 {companies.filter(c => c.leadId).slice(0, 3).map(c => (
                                     <div key={c.id} className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30">
                                         <div className="bg-green-100 p-1.5 rounded-full"><CheckCircle2 className="h-4 w-4 text-green-600" /></div>
                                         <div className="flex-1 min-w-0">
                                             <p className="text-sm font-bold truncate">{c.companyName}</p>
-                                            <p className="text-[10px] text-muted-foreground uppercase">{c.membershipId} Plan</p>
+                                            <p className="text-[10px] text-muted-foreground uppercase">{c.membershipId || 'Free'} Plan</p>
                                         </div>
                                     </div>
                                 ))}
+                                {companies.filter(c => c.leadId).length === 0 && (
+                                    <p className="text-xs text-center text-muted-foreground py-4">Waiting for first lead conversion...</p>
+                                )}
                             </div>
                         </div>
                     </CardContent>
                     <CardFooter>
-                        <Button variant="ghost" className="w-full text-xs" asChild>
-                            <Link href="/backend?view=members">View Full Member Roster <ArrowRight className="ml-2 h-3 w-3"/></Link>
+                        <Button variant="ghost" className="w-full text-[10px] uppercase font-bold tracking-widest" asChild>
+                            <Link href="/backend?view=members">View All Members <ArrowRight className="ml-2 h-3 w-3"/></Link>
                         </Button>
                     </CardFooter>
                 </Card>

@@ -33,7 +33,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Building2, User, Eye, EyeOff, Handshake } from 'lucide-react';
+import { Loader2, Building2, User, Eye, EyeOff, Handshake, Lock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 const formSchema = z.object({
@@ -57,12 +57,20 @@ function JoinFormComponent() {
   const { user, isUserLoading, forceRefresh } = useUser();
   const redirectParam = searchParams.get('redirect');
 
+  // Attribution & Integrity Params
+  const userRole = searchParams.get('role');
+  const financierType = searchParams.get('type');
+  const referrerId = searchParams.get('ref');
+  const emailParam = searchParams.get('email');
+  const firstNameParam = searchParams.get('firstName');
+  const lastNameParam = searchParams.get('lastName');
+  const phoneParam = searchParams.get('phone');
+
   // This effect handles the final redirect after the user profile is confirmed to be loaded.
   useEffect(() => {
-    // Only redirect if we've started the process and the user object is fully loaded (including claims and firestore data).
     if (authActionInitiated && !isUserLoading && user?.uid && user?.companyId) {
-        setIsLoading(false); // Turn off the main loading spinner
-        setAuthActionInitiated(false); // Reset the trigger
+        setIsLoading(false);
+        setAuthActionInitiated(false);
         toast({
             title: 'Account Ready!',
             description: "Redirecting to your dashboard...",
@@ -72,15 +80,6 @@ function JoinFormComponent() {
         router.push(redirectParam || defaultRedirect);
     }
   }, [authActionInitiated, isUserLoading, user, router, redirectParam, toast]);
-
-
-  const userRole = searchParams.get('role');
-  const financierType = searchParams.get('type');
-  const referrerId = searchParams.get('ref');
-  const emailParam = searchParams.get('email');
-  const firstNameParam = searchParams.get('firstName');
-  const lastNameParam = searchParams.get('lastName');
-  const phoneParam = searchParams.get('phone');
 
   const form = useForm<JoinFormValues>({
     resolver: zodResolver(formSchema),
@@ -104,14 +103,7 @@ function JoinFormComponent() {
       return;
     }
     
-    if (!auth) {
-        toast({
-            variant: 'destructive',
-            title: 'Authentication Error',
-            description: 'Could not connect to authentication service. Please try again later.',
-        });
-        return;
-    }
+    if (!auth) return;
     
     setIsLoading(true);
     try {
@@ -121,11 +113,7 @@ function JoinFormComponent() {
         description: `If an account exists for ${email}, a password reset link has been sent.`,
       });
     } catch (error: any) {
-       toast({
-        variant: 'destructive',
-        title: 'Error sending reset email',
-        description: 'Please try again later.',
-      });
+       toast({ variant: 'destructive', title: 'Error sending reset email', description: 'Please try again later.' });
     } finally {
         setIsLoading(false);
     }
@@ -135,11 +123,7 @@ function JoinFormComponent() {
   const onSubmit = async (values: JoinFormValues) => {
     setIsLoading(true);
     if (!auth) {
-      toast({
-        variant: 'destructive',
-        title: 'Initialization Error',
-        description: 'Firebase is not ready. Please try again in a moment.',
-      });
+      toast({ variant: 'destructive', title: 'Initialization Error', description: 'Services are not ready. Please try again.' });
       setIsLoading(false);
       return;
     }
@@ -156,9 +140,6 @@ function JoinFormComponent() {
       });
       
       const token = await getIdToken(user, true);
-      if (!token) {
-        throw new Error("Could not retrieve auth token after user creation.");
-      }
       
       const checkAndCreateUserResponse = await fetch('/api/checkAndCreateUser', {
           method: 'POST',
@@ -171,7 +152,7 @@ function JoinFormComponent() {
       
       if (!checkAndCreateUserResponse.ok) {
           const result = await checkAndCreateUserResponse.json();
-          throw new Error(result.error || "Failed to create user profile in database.");
+          throw new Error(result.error || "Failed to create user profile.");
       }
       
       await fetch('/api/auth/session', {
@@ -183,125 +164,63 @@ function JoinFormComponent() {
       setAuthActionInitiated(true);
       forceRefresh();
       
-      toast({
-        title: 'Account Created!',
-        description: "Finalizing your profile, please wait...",
-      });
+      toast({ title: 'Account Created!', description: "Finalizing your profile..." });
 
     } catch (error: any) {
-      let title = 'An error occurred.';
-      let description = 'Please try again.';
-      if (error.code === 'auth/email-already-in-use') {
-        title = 'Email already in use.';
-        description = 'Please sign in or use a different email address.';
-      } else {
-        description = error.message;
-      }
       toast({
         variant: 'destructive',
-        title,
-        description,
+        title: 'Join Failed',
+        description: error.message,
       });
       setIsLoading(false);
     }
   };
   
-  const getRoleLabel = () => {
-    if (!userRole) return null;
-    let label = userRole.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-    if (financierType) {
-      label += ` (${financierType.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())})`;
-    }
-    return label;
-  }
-  
-  const RoleIcon = userRole === 'financier' ? Building2 : User;
-  const roleLabel = getRoleLabel();
-
+  const roleLabel = userRole?.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 
   return (
     <Card className="w-full max-w-lg">
       <CardHeader className="text-center">
-        <CardTitle className="text-3xl font-bold font-headline">
-          Join Logistics Flow for Free
-        </CardTitle>
-        <CardDescription>
-          Create your account to get started. Membership is free for the first year.
-        </CardDescription>
+        <CardTitle className="text-3xl font-bold font-headline">Join Logistics Flow</CardTitle>
+        <CardDescription>Create your secure account to access the ecosystem.</CardDescription>
       </CardHeader>
       <CardContent>
         {roleLabel && (
           <div className="mb-4">
             <Badge variant="outline" className="w-full justify-center p-2 text-sm">
-                <RoleIcon className="mr-2 h-4 w-4" />
                 Registering as: {roleLabel}
             </Badge>
           </div>
         )}
-        {referrerId === 'WCTA' && (
-            <div className="mb-4">
-                <Badge variant="secondary" className="w-full justify-center p-2 text-sm">
-                    <Handshake className="mr-2 h-4 w-4 text-primary" />
-                    Joining with WCTA Benefits
-                </Badge>
-            </div>
-        )}
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            {emailParam && (
+                <div className="bg-primary/5 p-3 rounded-md border border-primary/20 flex items-center gap-3 mb-2">
+                    <Lock className="h-4 w-4 text-primary" />
+                    <p className="text-xs text-primary font-medium">Your registration email is locked to ensure lead attribution.</p>
+                </div>
+            )}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <FormField
-                control={form.control}
-                name="firstName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>First Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="John" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="lastName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Last Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Doe" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <FormField control={form.control} name="firstName" render={({ field }) => ( <FormItem><FormLabel>First Name</FormLabel><FormControl><Input placeholder="John" {...field} /></FormControl><FormMessage /></FormItem> )} />
+              <FormField control={form.control} name="lastName" render={({ field }) => ( <FormItem><FormLabel>Last Name</FormLabel><FormControl><Input placeholder="Doe" {...field} /></FormControl><FormMessage /></FormItem> )} />
             </div>
             <FormField
               control={form.control}
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>Email Address</FormLabel>
                   <FormControl>
-                    <Input placeholder="you@example.com" {...field} disabled={!!emailParam} />
+                    <div className="relative">
+                        <Input placeholder="you@example.com" {...field} disabled={!!emailParam} />
+                        {!!emailParam && <Lock className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />}
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-             <FormField
-              control={form.control}
-              name="phone"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Phone Number</FormLabel>
-                  <FormControl>
-                    <Input placeholder="(123) 456-7890" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+             <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel>Phone Number</FormLabel><FormControl><Input placeholder="(123) 456-7890" {...field} /></FormControl><FormMessage /></FormItem> )} />
             <FormField
               control={form.control}
               name="password"
@@ -315,19 +234,8 @@ function JoinFormComponent() {
                   </div>
                   <FormControl>
                     <div className="relative">
-                        <Input
-                            type={showPassword ? "text" : "password"}
-                            className="pr-10"
-                            autoComplete="new-password"
-                            {...field}
-                        />
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="absolute inset-y-0 right-0 h-full px-3 text-muted-foreground hover:bg-transparent"
-                            onClick={() => setShowPassword((prev) => !prev)}
-                        >
+                        <Input type={showPassword ? "text" : "password"} className="pr-10" autoComplete="new-password" {...field} />
+                        <Button type="button" variant="ghost" size="icon" className="absolute inset-y-0 right-0 h-full px-3 text-muted-foreground hover:bg-transparent" onClick={() => setShowPassword((prev) => !prev)}>
                             {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                         </Button>
                     </div>
@@ -337,16 +245,13 @@ function JoinFormComponent() {
               )}
             />
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               {isLoading ? 'Creating Account...' : 'Create Free Account'}
             </Button>
           </form>
         </Form>
         <div className="mt-4 text-center text-sm">
-          Already have an account?{' '}
-          <Link href="/signin" className="underline">
-            Sign In
-          </Link>
+          Already have an account? <Link href="/signin" className="underline">Sign In</Link>
         </div>
       </CardContent>
     </Card>
@@ -362,5 +267,3 @@ export default function JoinPage() {
     </div>
   );
 }
-
-    

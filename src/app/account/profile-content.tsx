@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useForm } from 'react-hook-form';
@@ -15,7 +16,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
-import { Loader2, User, Save } from 'lucide-react';
+import { Loader2, User, Save, Lock } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useUser, getClientSideAuthToken } from '@/firebase';
 import { useRouter } from 'next/navigation';
@@ -137,10 +138,14 @@ export default function ProfileContent() {
                 />
               </div>
                 <FormItem>
-                    <FormLabel>Email (Cannot be changed)</FormLabel>
+                    <FormLabel>Login Email (Primary Identity)</FormLabel>
                     <FormControl>
-                        <Input disabled value={user?.email || 'Loading...'} />
+                        <div className="relative">
+                            <Input disabled value={user?.email || 'Loading...'} className="bg-muted" />
+                            <Lock className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
+                        </div>
                     </FormControl>
+                    <p className="text-[10px] text-muted-foreground mt-1">To ensure data integrity, your login email cannot be changed by the user.</p>
                 </FormItem>
               <FormField
                 control={form.control}

@@ -41,7 +41,7 @@ import { formatDateSafe, cn } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 
-// Fixed relative imports
+// Absolute imports for clarity and build stability
 import { EnrichPartnerButton } from '@/app/adminaccount/marketing/EnrichPartnerButton';
 import { PartnerTasksDialog } from '@/app/adminaccount/marketing/PartnerTasksDialog';
 import { CommunicationLogDialog } from '@/app/adminaccount/marketing/CommunicationLogDialog';
@@ -555,7 +555,7 @@ function LeadsDatabaseComponent() {
       }
       
       if (targets.length === 0) {
-          toast({ title: "No fresh candidates found", description: "All records are either already enriched or currently locked in another search. Try 'Reset Stuck Research' if necessary." });
+          toast({ title: "No fresh candidates found", description: "All records are enriched or locked. Try 'Reset Stuck Research'." });
           return;
       }
 
