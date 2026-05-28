@@ -5,8 +5,7 @@ import React from "react";
 
 /**
  * Digital Handshake Content
- * Optimized for high deliverability. Uses standard HTML structures to bypass spam filters
- * while maintaining professional branding.
+ * Optimized for high deliverability and professional impact.
  */
 export default function DigitalHandshake({ partner }: { partner?: any }) {
     const recipientName = partner?.firstName || 'Partner';
@@ -36,6 +35,16 @@ export default function DigitalHandshake({ partner }: { partner?: any }) {
                 </p>
             </div>
 
+            {/* Strategic Intro Paragraph */}
+            <div style={{ marginBottom: '24px', padding: '0 8px' }}>
+                <p style={{ fontSize: '15px', color: '#334155', lineHeight: '1.7', margin: '0' }}>
+                    Dear {recipientName}, for too long, the transport industry has been held back by fragmentation, high operating costs, and limited access to capital. <strong>Logistics Flow</strong> exists to break these constraints. We have built a unified digital ecosystem that combines collective buying power with AI-driven efficiency to help you move more with less.
+                </p>
+                <p style={{ fontSize: '15px', color: '#334155', lineHeight: '1.7', marginTop: '12px' }}>
+                    Before we move into commercial discussions or matching you with our network of vetted suppliers and financiers, we require a formal <strong>Digital Handshake</strong>. This ensures our partnership is built on data integrity and full compliance with the POPI Act.
+                </p>
+            </div>
+
             {/* Context Box */}
             <div style={{ 
                 border: '1px solid #e2e8f0', 
@@ -44,36 +53,17 @@ export default function DigitalHandshake({ partner }: { partner?: any }) {
                 padding: '24px',
                 marginBottom: '32px'
             }}>
-                <h2 style={{ fontSize: '18px', fontWeight: 'bold', color: '#0f172a', margin: '0 0 12px' }}>Establishing Trust & Consent</h2>
-                <p style={{ color: '#475569', fontSize: '15px', lineHeight: '1.6', margin: '0 0 20px' }}>
-                    Before we move into commercial discussions, we believe in establishing a formal "Digital Handshake." This ensures our partnership is built on data integrity and full compliance with the POPI Act.
-                </p>
-                
-                <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '20px' }}>
-                    <p style={{ fontSize: '14px', fontWeight: 'bold', color: '#1e293b', marginBottom: '8px' }}>What this enables:</p>
-                    <div style={{ fontSize: '13px', color: '#64748b', lineHeight: '1.8' }}>
-                        <p style={{ margin: '4px 0' }}>• <strong>Verified Identity:</strong> Confirms your standing in the ecosystem.</p>
-                        <p style={{ margin: '4px 0' }}>• <strong>Legal Compliance:</strong> Securely records your marketing preferences.</p>
-                        <p style={{ margin: '4px 0' }}>• <strong>Market Intelligence:</strong> Authorizes our AI to identify relevant cost-saving opportunities for you.</p>
-                    </div>
-                </div>
-            </div>
-
-            {/* Compliance Preview */}
-            <div style={{ padding: '20px', backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', marginBottom: '32px' }}>
-                <p style={{ fontSize: '11px', fontWeight: 'bold', color: '#94a3b8', textTransform: 'uppercase', marginBottom: '12px', borderBottom: '1px solid #f1f5f9', paddingBottom: '8px' }}>
-                    Data Standards Summary
-                </p>
-                <div style={{ fontSize: '12px', color: '#64748b', lineHeight: '1.5' }}>
-                    <p style={{ marginBottom: '8px' }}><strong>• Security:</strong> We use industry-standard encryption for all business data.</p>
-                    <p style={{ marginBottom: '8px' }}><strong>• No Selling:</strong> Your data is never sold. It is only used to match services.</p>
-                    <p style={{ marginBottom: '0' }}><strong>• Control:</strong> You maintain full control over your communication preferences.</p>
+                <h2 style={{ fontSize: '18px', fontWeight: 'bold', color: '#0f172a', margin: '0 0 12px' }}>Why establish this connection?</h2>
+                <div style={{ fontSize: '14px', color: '#64748b', lineHeight: '1.8' }}>
+                    <p style={{ margin: '4px 0' }}>• <strong>Verified Identity:</strong> Establish your standing within our community.</p>
+                    <p style={{ margin: '4px 0' }}>• <strong>Data Security:</strong> Ensure your business data is handled with POPI-compliant care.</p>
+                    <p style={{ margin: '4px 0' }}>• <strong>Intelligence Access:</strong> Authorize our AI to find cost-saving load and finance matches for {companyName}.</p>
                 </div>
             </div>
 
             {/* CTA Section - Table based for best email rendering */}
             <div style={{ textAlign: 'center', padding: '32px', backgroundColor: '#f1f5f9', borderRadius: '12px' }}>
-                <p style={{ fontSize: '16px', fontWeight: 'bold', color: '#0f172a', marginBottom: '24px' }}>Ready to establish the connection, {recipientName}?</p>
+                <p style={{ fontSize: '16px', fontWeight: 'bold', color: '#0f172a', marginBottom: '24px' }}>Ready to unlock the ecosystem, {recipientName}?</p>
                 
                 <table role="presentation" border={0} cellPadding="0" cellSpacing="0" style={{ margin: '0 auto' }}>
                     <tr>
@@ -100,7 +90,7 @@ export default function DigitalHandshake({ partner }: { partner?: any }) {
                     </tr>
                 </table>
                 <p style={{ fontSize: '12px', color: '#94a3b8', marginTop: '24px' }}>
-                    Acceptance will be logged on our secure platform ledger.
+                    Establishing this handshake secures your place in our <strong>Priority Communication Pipeline</strong>, providing a transparent audit trail of all matched opportunities and group benefits.
                 </p>
             </div>
 

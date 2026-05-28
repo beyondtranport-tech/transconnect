@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardFooter, CardTitle } from '@/components/ui/card';
@@ -49,7 +50,7 @@ const EmailTemplate = ({ subject, content, partner, referralLink }: { subject: s
                         <div className="flex items-center gap-4">
                             <span className="flex items-center gap-1"><LinkIcon className="h-3 w-3"/> Referral ID: <span className="font-mono text-primary font-bold">{partner.id}</span></span>
                         </div>
-                        <span className="italic">Copy HTML via the main toolbar to include hidden tracking.</span>
+                        <span className="italic">Establish the handshake to activate the communication pipeline.</span>
                     </div>
                 </CardFooter>
             )}
@@ -63,17 +64,17 @@ const templates = {
         content: `
 Hi [Partner Name],
 
-I'm reaching out from Logistics Flow. We're currently expanding our network of strategic partners, and we'd love to have [Your Company] involved.
+For too long, the transport industry has been held back by fragmentation and high operating costs. Logistics Flow exists to break these constraints. We have built a unified digital ecosystem that combines collective buying power with AI-driven efficiency to help you move more with less.
 
-Before we dive into the details, we believe in a "Digital Handshake" to ensure we are fully compliant with your privacy preferences and the POPI Act.
+Before we move into commercial discussions, we believe in a "Digital Handshake" to establish a compliant, secure connection and ensure we are fully aligned with your privacy preferences and the POPI Act.
 
-Please take 30 seconds to establish the connection and provide your formal marketing consent here:
+Please take 30 seconds to establish the connection here:
 [Opt-in Link]
 
 Establish this foundation now to:
-- Receive matching partnership alerts.
+- Receive matched partnership alerts.
 - Access community-negotiated benefits.
-- Participate in our revenue-sharing model.
+- Secure your place in our priority communication pipeline.
 
 Best regards,
 

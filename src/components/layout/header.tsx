@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -48,8 +49,9 @@ export function Header() {
   const auth = useAuth();
   const { cartItems, isCartLoading } = useCart();
 
-  // Detect public landing page mode to hide private elements (Avatar, Nav, etc.)
-  const isPublicLandingPage = pathname?.startsWith('/opt-in/');
+  // STRICTOR PRIVACY: Detect public landing page mode to hide private elements (Avatar, Nav, etc.)
+  // Hide all user-specific components on opt-in or registration paths
+  const isPublicLandingPage = pathname?.startsWith('/opt-in/') || pathname === '/join' || pathname === '/signin';
 
   const handleSignOut = async () => {
     if (!auth) return;
@@ -135,7 +137,7 @@ export function Header() {
 
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-            {/* Hide Avatar and Cart on public landing pages */}
+            {/* Hide Avatar and Cart on public landing pages to prevent admin identity leakage */}
             {!isPublicLandingPage && (
               <>
                 <Button asChild variant="ghost" size="icon">

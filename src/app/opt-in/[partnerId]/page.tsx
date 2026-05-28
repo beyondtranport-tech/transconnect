@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -9,7 +10,6 @@ import { useToast } from '@/hooks/use-toast';
 import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 
@@ -23,7 +23,7 @@ export default function OptInPage() {
     const [completed, setCompleted] = useState(false);
     const [showFullTerms, setShowFullTerms] = useState(false);
 
-    // Explicit state for granular consent
+    // Using basic state for the three consent items
     const [marketingConsent, setMarketingConsent] = useState(false);
     const [popiConsent, setPopiConsent] = useState(false);
     const [termsConsent, setTermsConsent] = useState(false);
@@ -35,7 +35,7 @@ export default function OptInPage() {
 
     const { data: partner, isLoading } = useDoc(partnerRef);
 
-    // Requirement: All three boxes must be checked to enable establishment
+    // Logic: All three boxes must be checked to enable the established handshake
     const canAccept = useMemo(() => {
         return marketingConsent && popiConsent && termsConsent;
     }, [marketingConsent, popiConsent, termsConsent]);
@@ -98,12 +98,12 @@ export default function OptInPage() {
                 <Card className="max-w-md w-full text-center border-green-500 bg-green-50/50 shadow-2xl">
                     <CardHeader>
                         <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
-                        <CardTitle>Handshake Complete!</CardTitle>
+                        <CardTitle>Handshake Established!</CardTitle>
                         <CardDescription>Thank you, {partner?.firstName}. Your participation is confirmed.</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <p className="text-sm text-muted-foreground leading-relaxed">
-                            A record of your consent for <strong>{partner?.companyName || 'your business'}</strong> has been logged on our secure ledger. You are now officially part of the Logistics Flow ecosystem and will receive matched opportunities shortly.
+                            A record of your consent for <strong>{partner?.companyName || 'your business'}</strong> has been logged on our secure ledger. You have been added to our priority communication pipeline and will receive verified load and finance opportunities shortly.
                         </p>
                     </CardContent>
                     <CardFooter>
@@ -115,15 +115,15 @@ export default function OptInPage() {
     }
 
     return (
-        <div className="flex justify-center items-center min-h-screen p-4 bg-muted/30">
+        <div className="flex justify-center items-center min-h-screen p-4 bg-slate-50">
             <Card className="max-w-xl w-full shadow-2xl border-primary/10">
                 <CardHeader className="text-center border-b pb-6 bg-white rounded-t-xl">
                     <div className="bg-primary/10 p-3 rounded-full w-fit mx-auto mb-4">
                         <ShieldCheck className="h-8 w-8 text-primary" />
                     </div>
-                    <CardTitle className="text-2xl font-headline font-bold">Confirm Your Participation</CardTitle>
+                    <CardTitle className="text-2xl font-headline font-bold">The Digital Handshake</CardTitle>
                     <CardDescription className="text-sm">
-                        Hi {partner?.firstName}, please review and accept our communication standards for <strong>{partner?.companyName || 'your business'}</strong>.
+                        Establishing a compliant foundation for <strong>{partner?.companyName || 'your business'}</strong>.
                     </CardDescription>
                 </CardHeader>
                 
@@ -131,54 +131,57 @@ export default function OptInPage() {
                     <div className="space-y-6">
                         {/* 1. Marketing Consent */}
                         <div className="flex items-start gap-4 p-4 border rounded-lg hover:bg-slate-50 transition-colors bg-white">
-                            <Checkbox 
+                            <input 
+                                type="checkbox"
                                 id="marketing-check" 
-                                className="mt-1 h-5 w-5"
+                                className="mt-1.5 h-5 w-5 rounded border-gray-300 text-primary focus:ring-primary"
                                 checked={marketingConsent}
-                                onCheckedChange={(val) => setMarketingConsent(!!val)}
+                                onChange={(e) => setMarketingConsent(e.target.checked)}
                             />
                             <div className="flex-1 space-y-1">
                                 <Label htmlFor="marketing-check" className="text-sm font-bold flex items-center gap-2 cursor-pointer text-foreground">
                                     <Mail className="h-4 w-4 text-primary"/> Marketing & Match Consent
                                 </Label>
                                 <p className="text-xs text-muted-foreground leading-relaxed">
-                                    I agree to receive electronic communications regarding matched freight loads, community-negotiated discounts, and platform updates.
+                                    I agree to receive electronic communications regarding load matches, group discounts, and priority platform updates.
                                 </p>
                             </div>
                         </div>
 
                         {/* 2. POPI Consent */}
                         <div className="flex items-start gap-4 p-4 border rounded-lg hover:bg-slate-50 transition-colors bg-white">
-                            <Checkbox 
+                            <input 
+                                type="checkbox"
                                 id="popi-check" 
-                                className="mt-1 h-5 w-5"
+                                className="mt-1.5 h-5 w-5 rounded border-gray-300 text-primary focus:ring-primary"
                                 checked={popiConsent}
-                                onCheckedChange={(val) => setPopiConsent(!!val)}
+                                onChange={(e) => setPopiConsent(e.target.checked)}
                             />
                             <div className="flex-1 space-y-1">
                                 <Label htmlFor="popi-check" className="text-sm font-bold flex items-center gap-2 cursor-pointer text-foreground">
-                                    <Lock className="h-4 w-4 text-primary"/> POPI & Privacy Act Compliance
+                                    <Lock className="h-4 w-4 text-primary"/> POPI Act Compliance
                                 </Label>
                                 <p className="text-xs text-muted-foreground leading-relaxed">
-                                    I acknowledge that my personal information will be handled securely and in accordance with the Protection of Personal Information Act (POPI).
+                                    I acknowledge that my business and personal information will be handled securely and solely to facilitate ecosystem matching.
                                 </p>
                             </div>
                         </div>
 
                         {/* 3. Platform Terms */}
                         <div className="flex items-start gap-4 p-4 border rounded-lg hover:bg-slate-50 transition-colors bg-white">
-                            <Checkbox 
+                            <input 
+                                type="checkbox"
                                 id="terms-check" 
-                                className="mt-1 h-5 w-5"
+                                className="mt-1.5 h-5 w-5 rounded border-gray-300 text-primary focus:ring-primary"
                                 checked={termsConsent}
-                                onCheckedChange={(val) => setTermsConsent(!!val)}
+                                onChange={(e) => setTermsConsent(e.target.checked)}
                             />
                             <div className="flex-1 space-y-1">
                                 <Label htmlFor="terms-check" className="text-sm font-bold flex items-center gap-2 cursor-pointer text-foreground">
-                                    <FileText className="h-4 w-4 text-primary"/> Platform Terms
+                                    <FileText className="h-4 w-4 text-primary"/> Platform Master Terms
                                 </Label>
                                 <p className="text-xs text-muted-foreground leading-relaxed">
-                                    I have read and agree to the general platform terms and conditions for network participants.
+                                    I have reviewed and agree to the general terms and conditions for network participants.
                                 </p>
                             </div>
                         </div>
@@ -188,22 +191,22 @@ export default function OptInPage() {
                         <div className="flex items-center justify-between mb-2">
                              <h4 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
                                 <Scale className="h-3 w-3" />
-                                Legal Disclosure Summary
+                                Privacy Disclosure Summary
                             </h4>
                             <Button variant="link" size="sm" className="h-auto p-0 text-[10px] font-bold uppercase text-primary" onClick={() => setShowFullTerms(!showFullTerms)}>
-                                {showFullTerms ? 'Hide Terms' : 'Read Full Terms'}
+                                {showFullTerms ? 'Hide Details' : 'Read Full Disclosure'}
                             </Button>
                         </div>
                         
                         <ScrollArea className={cn("transition-all duration-300", showFullTerms ? "h-64" : "h-0 overflow-hidden")}>
                             <div className="text-xs space-y-4 text-muted-foreground leading-relaxed pr-4 pb-4">
-                                <p><strong>1. Data Purpose:</strong> Information is collected solely to facilitate commerce, unlock capital solutions, and negotiate group-based discounts with vetted suppliers.</p>
-                                <p><strong>2. Third-Party Access:</strong> Your individual identifiable data is never sold. It is only shared with financiers or suppliers upon your explicit request for a quote.</p>
-                                <p><strong>3. Security:</strong> We utilize enterprise-grade encryption and secure infrastructure to ensure your business data is protected.</p>
-                                <p><strong>4. Withdrawal:</strong> You may withdraw your consent at any time by contacting our compliance officer at privacy@logisticsflow.co.za.</p>
+                                <p><strong>1. Data Collection:</strong> We collect business identity, fleet, and contact data to identify commercial synergies.</p>
+                                <p><strong>2. Processing Logic:</strong> Your data is used by our AI to match you with load providers, lenders, and discounted suppliers.</p>
+                                <p><strong>3. Zero-Sale Policy:</strong> We do not sell your personal data to third-party marketing lists. Access is only provided to partners you specifically request quotes from.</p>
+                                <p><strong>4. Security:</strong> All data is stored in encrypted Firestore repositories with strict path-based security rules.</p>
                             </div>
                         </ScrollArea>
-                        {!showFullTerms && <p className="text-[10px] text-muted-foreground italic">Click "Read Full Terms" for detailed POPI and data security disclosures.</p>}
+                        {!showFullTerms && <p className="text-[10px] text-muted-foreground italic">Establishing this handshake confirms your standing in our secure communication pipeline.</p>}
                     </div>
                 </CardContent>
 
@@ -222,7 +225,7 @@ export default function OptInPage() {
                             I decline participation
                         </Button>
                         <p className="text-[10px] font-medium text-muted-foreground flex items-center gap-1">
-                            <Info className="h-3 w-3"/> Secure, encrypted session
+                            <Info className="h-3 w-3"/> POPI Compliant Session
                         </p>
                     </div>
                 </CardFooter>

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardFooter, CardTitle } from '@/components/ui/card';
@@ -46,7 +47,7 @@ const EmailTemplate = ({ subject, content, partner, referralLink }: { subject: s
             </CardContent>
             {partner && (
                 <CardFooter className="px-0 pt-4 border-t mt-4 text-xs text-muted-foreground italic text-center">
-                    Copy HTML via the main toolbar to embed tracking and log this interaction.
+                    Establish the handshake to secure your place in the communication pipeline.
                 </CardFooter>
             )}
         </Card>
@@ -59,17 +60,17 @@ const getTemplates = (supplierType: string) => ({
         content: `
 Hi [Supplier Name],
 
-I'm reaching out from Logistics Flow. We're currently expanding our network of ${supplierType} vendors, and we'd love to have [Your Company] listed.
+The transport industry is often fragmented, leading to high costs and inefficient sales channels for suppliers. Logistics Flow exists to break these constraints. We have built a unified digital ecosystem that connects qualified suppliers with a community of fleet owners actively seeking your products.
 
-Before we can send you quote requests or invite you to create your digital storefront, we require a "Digital Handshake" to confirm your interest and ensure we are POPI-compliant.
+Before we can send you quote requests or invite you to create your digital storefront, we require a "Digital Handshake" to establish a compliant, secure connection and ensure we are POPI-compliant.
 
 Please take 30 seconds to establish the connection here:
 [Opt-in Link]
 
 Establishing this handshake allows you to:
-- Reach a targeted community of fleet owners.
+- Reach a targeted market of verified transporters.
 - Receive direct RFQs for ${supplierType}.
-- Enable embedded finance for your customers.
+- Secure your standing in our priority communication pipeline.
 
 Best regards,
 

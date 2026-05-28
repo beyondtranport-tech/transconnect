@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -48,7 +49,7 @@ const EmailTemplate = ({ subject, content, partner, referralLink }: { subject: s
             </CardContent>
              {partner && (
                 <CardFooter className="px-0 pt-4 border-t mt-4 text-xs text-muted-foreground italic text-center">
-                    Copy HTML via the main toolbar to embed tracking and log this interaction.
+                    Secure your standing in our communication pipeline by establishing the handshake.
                 </CardFooter>
             )}
         </Card>
@@ -57,21 +58,21 @@ const EmailTemplate = ({ subject, content, partner, referralLink }: { subject: s
 
 const getTemplates = (transporterType: string) => ({
     handshake: {
-        subject: "The Digital Handshake: Confirming [Your Company]'s Network Access",
+        subject: "The Digital Handshake: [Your Company] Transporter Access",
         content: `
 Hi [Name],
 
-I'm reaching out from Logistics Flow. We're currently expanding our network of transport professionals in the ${transporterType} sector, and we'd love to have [Your Company] involved.
+Inefficiency is a silent tax on your transport business. Logistics Flow is a unified digital ecosystem designed to break the constraints of high operating costs and empty miles. We connect you with a network of vetted suppliers and matching freight opportunities, using collective power to boost your bottom line.
 
-Before we can send you matching freight loads or group discount offers, we believe in a "Digital Handshake" to confirm your interest and ensure we are POPI-compliant.
+Before we can send you matching freight loads or group discount offers, we require a "Digital Handshake" to establish a compliant, secure connection and ensure we are POPI-compliant.
 
-Please take 30 seconds to review our standards and provide your formal marketing consent here:
+Please take 30 seconds to establish the connection here:
 [Opt-in Link]
 
 By accepting this handshake, you unlock:
 - Access to community-negotiated parts and tire discounts.
-- AI-matched freight load alerts.
-- A digital business profile to unlock easier asset financing.
+- AI-matched freight load alerts to reduce empty miles.
+- A secure place in our priority communication pipeline.
 
 Best regards,
 
