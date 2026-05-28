@@ -26,7 +26,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useCollection, useFirestore, getClientSideAuthToken, useMemoFirebase } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
-import { Loader2, PlusCircle, Users, Edit, Trash2, Search, Send, Copy, Filter, Mail, Download, Zap, Info, RotateCcw, Upload, CheckCircle, XCircle } from 'lucide-react';
+import { Loader2, PlusCircle, Users, Edit, Trash2, Search, Send, Copy, Filter, Mail, Download, Zap, Info, RotateCcw, Upload, CheckCircle, XCircle, Tag, Save } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -55,7 +55,7 @@ const leadSchema = z.object({
   email: z.string().email('Invalid email address').optional().or(z.literal('')),
   phone: z.string().optional(),
   role: z.string().min(1, 'Role is required'),
-  status: z.enum(['new', 'contacted', 'qualified', 'unqualified', 'invited', 'registered']).default('new'),
+  status: z.enum(['new', 'contacted', 'qualified', 'invited', 'active']).default('new'),
   notes: z.string().optional(),
   website: z.string().url().optional().or(z.literal('')),
   address: z.string().optional(),
@@ -202,11 +202,10 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
                     </FormControl>
                     <SelectContent>
                       <SelectItem value="new">New</SelectItem>
-                      <SelectItem value="contacted">Contacted</SelectItem>
+                      <SelectItem value="contacted">Researching</SelectItem>
                       <SelectItem value="qualified">Qualified</SelectItem>
-                      <SelectItem value="unqualified">Unqualified</SelectItem>
                       <SelectItem value="invited">Invited</SelectItem>
-                      <SelectItem value="registered">Registered</SelectItem>
+                      <SelectItem value="active">Member (Active)</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -424,9 +423,24 @@ function LeadsDatabaseComponent() {
   const [batchDialogOpen, setBatchDialogOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isResetting, setIsResetting] = useState(false);
+  const [isCategorizing, setIsCategorizing] = useState(false);
 
   const [statusFilter, setStatusFilter] = useState('all');
+  const [categoryFilter, setCategoryFilter] = useState('all');
   const [dataFilter, setDataFilter] = useState('all');
+
+  const statusStats = useMemo(() => {
+    const stats = { new: 0, researching: 0, qualified: 0, invited: 0, active: 0 };
+    (leads || []).forEach(p => {
+        const s = p.status;
+        if (s === 'new') stats.new++;
+        else if (s === 'contacted') stats.researching++;
+        else if (s === 'qualified') stats.qualified++;
+        else if (s === 'invited') stats.invited++;
+        else if (s === 'active') stats.active++;
+    });
+    return stats;
+  }, [leads]);
 
   const newLeadDefaults = useMemo(() => {
     const companyName = searchParams.get('newCompanyName');
@@ -456,6 +470,7 @@ function LeadsDatabaseComponent() {
     if (!leads) return [];
     return leads.filter(p => {
         const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
+        const matchesCategory = categoryFilter === 'all' || p.entryType === categoryFilter;
         
         let matchesData = true;
         const email = (p.email || p.email_address || '').toString().toLowerCase().trim();
@@ -468,9 +483,14 @@ function LeadsDatabaseComponent() {
         else if (dataFilter === 'has-phone') matchesData = !!p.phone;
         else if (dataFilter === 'has-website') matchesData = !!p.website;
 
-        return matchesStatus && matchesData;
+        return matchesStatus && matchesCategory && matchesData;
     });
-  }, [leads, statusFilter, dataFilter]);
+  }, [leads, statusFilter, categoryFilter, dataFilter]);
+
+  const uniqueCategories = useMemo(() => {
+    if (!leads) return [];
+    return [...new Set(leads.map(l => l.entryType).filter(Boolean))].sort();
+  }, [leads]);
 
   const handleCopyBccList = () => {
       const emails = filteredLeads
@@ -489,7 +509,7 @@ function LeadsDatabaseComponent() {
   const handleExportCsv = () => {
     if (filteredLeads.length === 0) return;
     
-    const headers = ["Company Name", "Contact Person", "Email", "Phone", "Role", "Status", "Website"];
+    const headers = ["Company Name", "Contact Person", "Email", "Phone", "Role", "Status", "Website", "Category"];
     const rows = filteredLeads.map(l => [
         l.companyName || '',
         l.contactPerson || '',
@@ -497,7 +517,8 @@ function LeadsDatabaseComponent() {
         l.phone || '',
         l.role || '',
         l.status || '',
-        l.website || ''
+        l.website || '',
+        l.entryType || 'General'
     ]);
 
     const csvContent = [
@@ -513,7 +534,28 @@ function LeadsDatabaseComponent() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    toast({ title: "Export Ready", description: "CSV file downloaded. You can upload this to Gmail Mail Merge." });
+    toast({ title: "Export Ready", description: "CSV file downloaded." });
+  };
+
+  const handleAutoCategorize = async () => {
+      setIsCategorizing(true);
+      try {
+          const token = await getClientSideAuthToken();
+          if (!token) return;
+          const response = await fetch('/api/admin', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'bulkCategorizeLeads' }),
+          });
+          const result = await response.json();
+          if (!response.ok) throw new Error(result.error);
+          toast({ title: "Categorization Complete", description: `Tagged ${result.count} records.` });
+          forceRefresh();
+      } catch (e: any) {
+          toast({ variant: 'destructive', title: "Tagging Failed", description: e.message });
+      } finally {
+          setIsCategorizing(false);
+      }
   };
 
   const candidatesRemaining = useMemo(() => {
@@ -524,7 +566,7 @@ function LeadsDatabaseComponent() {
         const isSearching = p.researchStatus === 'researching';
         const isEnriched = p.researchStatus === 'completed' || !isInvalidEmail;
         
-        return !isSearching && !isEnriched;
+        return !isSearching && !isEnriched && p.status !== 'active';
     }).length;
   }, [leads]);
 
@@ -545,7 +587,7 @@ function LeadsDatabaseComponent() {
           const isSearching = p.researchStatus === 'researching';
           const isEnriched = p.researchStatus === 'completed' || !isInvalidEmail;
           
-          if (!isSearching && !isEnriched && name && !uniqueNames.has(name)) {
+          if (!isSearching && !isEnriched && name && !uniqueNames.has(name) && p.status !== 'active') {
               targets.push(p);
               uniqueNames.add(name);
               if (targets.length >= size) break;
@@ -553,7 +595,7 @@ function LeadsDatabaseComponent() {
       }
       
       if (targets.length === 0) {
-          toast({ title: "No fresh candidates found", description: "All records are enriched or locked. Try 'Reset Stuck Research'." });
+          toast({ title: "No fresh candidates found", description: "All records are enriched or active." });
           return;
       }
 
@@ -606,7 +648,15 @@ function LeadsDatabaseComponent() {
   }
 
   const columns: ColumnDef<any>[] = useMemo(() => [
-    { accessorKey: 'companyName', header: 'Company' },
+    { 
+        accessorKey: 'companyName', 
+        header: 'Company Name'
+    },
+    { 
+        accessorKey: 'entryType', 
+        header: 'Category',
+        cell: ({row}) => row.original.entryType ? <Badge variant="outline" className="text-[10px] uppercase font-bold">{row.original.entryType}</Badge> : <span className="text-muted-foreground italic text-xs">Uncategorized</span>
+    },
     { 
         accessorKey: 'contactPerson', 
         header: 'Contact Name',
@@ -622,56 +672,47 @@ function LeadsDatabaseComponent() {
         }
     },
     {
-        accessorKey: 'consentStatus',
-        header: 'POPI Consent',
-        cell: ({row}) => {
-            const status = row.original.consentStatus || 'pending';
-            if (status === 'accepted') return <Badge className="bg-green-100 text-green-700 border-green-200"><CheckCircle className="mr-1 h-3 w-3" /> Opted In</Badge>;
-            if (status === 'declined') return <Badge variant="destructive"><XCircle className="mr-1 h-3 w-3" /> Declined</Badge>;
-            return <Badge variant="outline" className="text-muted-foreground">Pending</Badge>;
-        }
-    },
-    {
         accessorKey: 'researchStatus',
-        header: 'Enhanced Status',
+        header: 'Enhanced',
         cell: ({row}) => {
             const isResearching = row.original.researchStatus === 'researching';
             const email = (row.original.email || '').toString().toLowerCase().trim();
             const isInvalidEmail = !email || email === 'null' || email === 'n/a';
             const isCompleted = row.original.researchStatus === 'completed' || !isInvalidEmail;
 
-            if (isResearching) return <Badge variant="outline" className="animate-pulse text-amber-600 border-amber-200 bg-amber-50">Searching...</Badge>;
-            if (isCompleted) return <Badge variant="default" className="bg-green-100 text-green-700 border-green-200">Enriched</Badge>;
+            if (isResearching) return <Badge variant="outline" className="animate-pulse text-amber-600 border-amber-200 bg-amber-50 text-[10px]">Searching...</Badge>;
+            if (isCompleted) return <Badge variant="default" className="bg-green-100 text-green-700 border-green-200 text-[10px]">Enriched</Badge>;
             return <span className="text-xs text-muted-foreground">-</span>;
         }
     },
     {
         accessorKey: 'lastOutreachAt',
-        header: 'Outreach Status',
+        header: 'Outreach',
         cell: ({row}) => {
-            if (!row.original.lastOutreachAt) return <span className="text-[10px] text-muted-foreground uppercase font-bold">No Outreach</span>;
+            if (!row.original.lastOutreachAt) return <span className="text-[10px] text-muted-foreground uppercase font-bold">None</span>;
             return (
-                <div className="flex flex-col gap-1.5">
-                    <div className="flex flex-col">
-                        <span className="text-xs font-bold text-primary">{row.original.lastOutreachSubject}</span>
-                        <span className="text-[10px] text-muted-foreground">{formatDateSafe(row.original.lastOutreachAt)}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        {row.original.lastOpenedAt ? (
-                            <Badge variant="default" className="bg-green-100 text-green-700 border-green-200 text-[10px] h-4">
-                                <Mail className="mr-1 h-3 w-3" /> Read
-                            </Badge>
-                        ) : (
-                            <Badge variant="outline" className="text-muted-foreground text-[10px] h-4">
-                                <Mail className="mr-1 h-3 w-3" /> Sent
-                            </Badge>
-                        )}
-                    </div>
+                <div className="flex flex-col">
+                    <span className="text-[10px] font-bold text-primary truncate max-w-[100px]">{row.original.lastOutreachSubject}</span>
+                    <span className="text-[10px] text-muted-foreground">{formatDateSafe(row.original.lastOutreachAt)}</span>
                 </div>
             )
         }
     },
-    { accessorKey: 'status', header: 'Status', cell: ({ row }) => <Badge className="capitalize">{row.original.status}</Badge> },
+    {
+        accessorKey: 'status',
+        header: 'Status',
+        cell: ({ row }) => {
+            const statusMap: Record<string, { label: string, color: string }> = {
+                'new': { label: 'New', color: 'bg-slate-100 text-slate-700' },
+                'contacted': { label: 'Researching', color: 'bg-amber-100 text-amber-700' },
+                'qualified': { label: 'Qualified', color: 'bg-blue-100 text-blue-700' },
+                'invited': { label: 'Invited', color: 'bg-purple-100 text-purple-700' },
+                'active': { label: 'Member (Active)', color: 'bg-green-600 text-white' },
+            };
+            const config = statusMap[row.original.status] || { label: row.original.status, color: 'bg-muted' };
+            return <Badge className={cn("capitalize text-[10px]", config.color)} variant="outline">{config.label}</Badge>
+        }
+    },
     {
       id: 'actions',
       header: <div className="text-right">Actions</div>,
@@ -712,89 +753,135 @@ function LeadsDatabaseComponent() {
       {editLead && <LeadDialog open={isEditLeadOpen} onOpenChange={setIsEditLeadOpen} lead={editLead} onSave={forceRefresh} />}
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
         <AlertDialogContent>
-          <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Delete lead for {deleteLead?.companyName}.</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This action will permanently delete the lead for {deleteLead?.companyName}.</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setDeleteLead(null)}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      <Card>
-        <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="space-y-6">
+        <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4 px-0 pt-0">
           <div className="space-y-1">
             <CardTitle className="flex items-center gap-2">
                 <Users /> Lead Database
-                <Badge variant="secondary" className="ml-2">{candidatesRemaining} Candidates Left</Badge>
+                <Badge variant="secondary" className="ml-2">{candidatesRemaining} Candidates</Badge>
             </CardTitle>
-            <CardDescription>Manage your sales leads.</CardDescription>
+            <CardDescription>Manage your prospective member pipeline. New users are active immediately upon registration.</CardDescription>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Button variant="outline" onClick={handleExportCsv} title="Export for Gmail Mail Merge">
-                <Download className="mr-2 h-4 w-4" /> Export CSV
-            </Button>
-            <Button variant="outline" onClick={handleCopyBccList} title="Copy addresses for Gmail BCC">
-                <Copy className="mr-2 h-4 w-4" /> Copy BCC List
+            <Button variant="outline" size="sm" onClick={handleAutoCategorize} disabled={isCategorizing}>
+                {isCategorizing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Tag className="mr-2 h-4 w-4" />}
+                Auto-Categorize
             </Button>
             <Button variant="outline" size="sm" onClick={handleResetQueue} disabled={isResetting}>
                 {isResetting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <RotateCcw className="mr-2 h-4 w-4" />}
-                Reset Stuck Research
+                Reset Stuck
             </Button>
-            <BulkOutreachUpdateDialog onComplete={forceRefresh}>
-                <Button variant="outline"><Send className="mr-2 h-4 w-4" /> Bulk Update Status</Button>
-            </BulkOutreachUpdateDialog>
             <Button variant="default" className="bg-amber-600 hover:bg-amber-700" onClick={() => handleEnhanceBatch(100)}>
                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Zap className="mr-2 h-4 w-4" />}
                 Master Batch (100)
             </Button>
             <BulkImportDialog type="lead" onComplete={forceRefresh}>
-                <Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Bulk Import JSON</Button>
+                <Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Import JSON</Button>
             </BulkImportDialog>
             <DuplicateCleaner onComplete={forceRefresh} />
             <Button onClick={() => setIsAddLeadOpen(true)}><PlusCircle className="mr-2 h-4 w-4" />Add Lead</Button>
           </div>
         </CardHeader>
-        <CardContent>
-            <div className="space-y-4 mb-6">
-                <Alert className="bg-primary/5 border-primary/20">
-                    <Info className="h-4 w-4 text-primary" />
-                    <AlertTitle>Pipeline Guide</AlertTitle>
-                    <AlertDescription className="text-xs space-y-1">
-                        <p>• <span className="font-bold text-amber-600">Searching (Orange):</span> Record is currently locked in an AI research batch.</p>
-                        <p>• <span className="font-bold text-green-700">Enriched (Green):</span> Contact details have been successfully found.</p>
-                        <p>• <span className="font-bold text-blue-700">Opted In:</span> Lead has provided digital consent to be contacted.</p>
-                    </AlertDescription>
-                </Alert>
-                <div className="flex flex-col md:flex-row gap-4 p-4 bg-muted/30 rounded-lg">
-                    <div className="flex-1 space-y-2">
-                        <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status</Label>
-                        <Select value={statusFilter} onValueChange={setStatusFilter}>
-                            <SelectTrigger><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All Statuses</SelectItem>
-                                <SelectItem value="new">New</SelectItem>
-                                <SelectItem value="contacted">Contacted</SelectItem>
-                                <SelectItem value="qualified">Qualified</SelectItem>
-                                <SelectItem value="unqualified">Unqualified</SelectItem>
-                                <SelectItem value="invited">Invited</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div className="flex-1 space-y-2">
-                        <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Search className="h-3 w-3"/> Data Integrity</Label>
-                        <Select value={dataFilter} onValueChange={setDataFilter}>
-                            <SelectTrigger><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All Records</SelectItem>
-                                <SelectItem value="has-email">Has Email</SelectItem>
-                                <SelectItem value="no-email">Missing Email</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                </div>
-            </div>
-            {isLoading ? <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin" /></div> : <DataTable columns={columns} data={filteredLeads} onSelectionChange={setSelectedIds} />}
-        </CardContent>
-      </Card>
+
+        {/* Pipeline Statistics Bar */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <Card className="bg-slate-50 border-none shadow-none">
+                <CardContent className="p-4 text-center">
+                    <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">New</p>
+                    <p className="text-2xl font-black mt-1">{statusStats.new}</p>
+                </CardContent>
+            </Card>
+            <Card className="bg-amber-50 border-none shadow-none text-amber-700">
+                <CardContent className="p-4 text-center">
+                    <p className="text-[10px] font-black uppercase tracking-widest">Researching</p>
+                    <p className="text-2xl font-black mt-1">{statusStats.researching}</p>
+                </CardContent>
+            </Card>
+            <Card className="bg-blue-50 border-none shadow-none text-blue-700">
+                <CardContent className="p-4 text-center">
+                    <p className="text-[10px] font-black uppercase tracking-widest">Qualified</p>
+                    <p className="text-2xl font-black mt-1">{statusStats.qualified}</p>
+                </CardContent>
+            </Card>
+            <Card className="bg-purple-50 border-none shadow-none text-purple-700">
+                <CardContent className="p-4 text-center">
+                    <p className="text-[10px] font-black uppercase tracking-widest">Invited</p>
+                    <p className="text-2xl font-black mt-1">{statusStats.invited}</p>
+                </CardContent>
+            </Card>
+            <Card className="bg-green-600 border-none shadow-lg text-white">
+                <CardContent className="p-4 text-center">
+                    <p className="text-[10px] font-black uppercase tracking-widest opacity-80">Member (Active)</p>
+                    <p className="text-2xl font-black mt-1">{statusStats.active}</p>
+                </CardContent>
+            </Card>
+        </div>
+
+        <Card>
+          <CardContent className="pt-6">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg">
+                  <div className="space-y-2">
+                      <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status</Label>
+                      <Select value={statusFilter} onValueChange={setStatusFilter}>
+                          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                              <SelectItem value="all">All Statuses</SelectItem>
+                              <SelectItem value="new">New</SelectItem>
+                              <SelectItem value="contacted">Researching</SelectItem>
+                              <SelectItem value="qualified">Qualified</SelectItem>
+                              <SelectItem value="invited">Invited</SelectItem>
+                              <SelectItem value="active">Member (Active)</SelectItem>
+                          </SelectContent>
+                      </Select>
+                  </div>
+                  <div className="space-y-2">
+                      <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Tag className="h-3 w-3"/> Focus Category</Label>
+                      <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                              <SelectItem value="all">All Categories</SelectItem>
+                              <SelectItem value="Transport">Transport</SelectItem>
+                              <SelectItem value="Logistics">Logistics</SelectItem>
+                              <SelectItem value="Forwarder">Forwarder</SelectItem>
+                              <SelectItem value="Distribution">Distribution</SelectItem>
+                              <SelectItem value="Warehousing">Warehousing</SelectItem>
+                              {uniqueCategories.filter(c => !['Transport', 'Logistics', 'Forwarder', 'Distribution', 'Warehousing'].includes(c)).map(cat => (
+                                  <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                              ))}
+                          </SelectContent>
+                      </Select>
+                  </div>
+                  <div className="space-y-2">
+                      <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Search className="h-3 w-3"/> Data Filter</Label>
+                      <Select value={dataFilter} onValueChange={setDataFilter}>
+                          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                              <SelectItem value="all">All Records</SelectItem>
+                              <SelectItem value="has-email">Has Email</SelectItem>
+                              <SelectItem value="no-email">Missing Email</SelectItem>
+                          </SelectContent>
+                      </Select>
+                  </div>
+                  <div className="flex items-end gap-2">
+                      <Button variant="outline" size="sm" onClick={handleExportCsv} className="h-8 text-xs flex-1">
+                          <Download className="mr-1 h-3 w-3" /> CSV
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={handleCopyBccList} className="h-8 text-xs flex-1">
+                          <Copy className="mr-1 h-3 w-3" /> BCC
+                      </Button>
+                  </div>
+              </div>
+              {isLoading ? <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin" /></div> : <DataTable columns={columns} data={filteredLeads} onSelectionChange={setSelectedIds} />}
+          </CardContent>
+        </Card>
+      </div>
     </>
   );
 }
