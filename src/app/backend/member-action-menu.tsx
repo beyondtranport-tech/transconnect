@@ -96,7 +96,7 @@ export default function MemberActionMenu({ member, onUpdate }: { member: any; on
   const getAlertStrings = () => {
       switch(actionToConfirm) {
           case 'delete': return { title: "Delete Member?", description: "This will permanently delete the member and all associated data. This action cannot be undone." };
-          case 'confirm': return { title: "Confirm Member?", description: "This will activate the member's account, setting their status to 'active'." };
+          case 'confirm': return { title: "Confirm Member Account?", description: "This will activate the member's account, setting their status to 'Member (Active)' and enabling platform features." };
           case 'unconfirm': return { title: "Suspend Member?", description: "This will suspend the member's account, setting their status to 'suspended'." };
           default: return { title: "Are you sure?", description: "This action cannot be undone." };
       }
@@ -146,7 +146,7 @@ export default function MemberActionMenu({ member, onUpdate }: { member: any; on
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onSelect={() => openConfirmation('confirm')}>
-                  <CheckCircle className="mr-2 h-4 w-4" /> Confirm
+                  <CheckCircle className="mr-2 h-4 w-4" /> Confirm Member
                 </DropdownMenuItem>
                 <DropdownMenuItem onSelect={() => openConfirmation('unconfirm')}>
                   <XCircle className="mr-2 h-4 w-4" /> Suspend
@@ -175,5 +175,3 @@ export default function MemberActionMenu({ member, onUpdate }: { member: any; on
     </>
   );
 }
-
-    
