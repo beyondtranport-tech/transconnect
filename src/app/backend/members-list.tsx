@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Users, PlusCircle, Sparkles } from 'lucide-react';
+import { Loader2, Users, PlusCircle, Sparkles, Building2 } from 'lucide-react';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { Badge } from '@/components/ui/badge';
@@ -22,10 +22,12 @@ interface Member {
     createdAt?: string;
     email?: string;
     leadId?: string;
+    source?: string;
 }
 
 const tierColors: { [key: string]: string } = {
   free: 'bg-gray-200 text-gray-800',
+  provisional: 'bg-amber-100 text-amber-800',
   basic: 'bg-blue-200 text-blue-800',
   standard: 'bg-green-200 text-green-800',
   premium: 'bg-purple-200 text-purple-800',
@@ -85,7 +87,7 @@ export default function MembersList() {
     const columns: ColumnDef<Member>[] = useMemo(() => [
         {
           accessorKey: 'owner',
-          header: 'Account Owner',
+          header: 'Primary Contact',
           cell: ({ row }) => (
             <div className="flex flex-col">
               <p className="font-bold text-sm">{row.original.firstName} {row.original.lastName}</p>
@@ -95,19 +97,29 @@ export default function MembersList() {
         },
         {
           accessorKey: 'companyName',
-          header: 'Company Entity',
-          cell: ({ row }) => <div className="font-semibold">{row.original.companyName}</div>,
+          header: 'Business Entity',
+          cell: ({ row }) => (
+            <div className="flex flex-col">
+              <p className="font-semibold text-sm">{row.original.companyName}</p>
+              <p className="text-[10px] font-mono text-muted-foreground uppercase">{row.original.id}</p>
+            </div>
+          )
         },
         {
-          accessorKey: 'leadId',
-          header: 'Origin Source',
-          cell: ({ row }) => row.original.leadId ? (
-            <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 text-[10px] uppercase font-bold">
-                <Sparkles className="mr-1 h-3 w-3" /> AI Converted
-            </Badge>
-          ) : (
-            <Badge variant="outline" className="text-[10px] uppercase font-bold text-muted-foreground">Organic Web</Badge>
-          )
+          accessorKey: 'source',
+          header: 'Source Origin',
+          cell: ({ row }) => {
+            const isAI = row.original.source === 'AI Converted' || !!row.original.leadId;
+            return (
+              <Badge variant="outline" className={cn(
+                "text-[10px] uppercase font-bold gap-1",
+                isAI ? "bg-amber-50 text-amber-700 border-amber-200" : "bg-slate-50 text-muted-foreground"
+              )}>
+                {isAI ? <Sparkles className="h-3 w-3" /> : <Building2 className="h-3 w-3" />}
+                {isAI ? 'AI Converted' : 'Organic Sign-up'}
+              </Badge>
+            )
+          }
         },
         {
           accessorKey: 'membershipId',
@@ -123,7 +135,7 @@ export default function MembersList() {
         },
         {
             accessorKey: 'status',
-            header: 'Status',
+            header: 'System Status',
             cell: ({ row }) => (
                 <Badge variant={statusColors[row.original.status || 'active'] || 'default'} className="capitalize text-[10px]">
                     {row.original.status || 'Active'}
@@ -132,7 +144,7 @@ export default function MembersList() {
         },
         {
           accessorKey: 'createdAt',
-          header: 'Registration Date',
+          header: 'Acquisition Date',
           cell: ({ row }) => <span className="text-xs text-muted-foreground">{formatDateSafe(row.original.createdAt, 'dd MMM yyyy')}</span>
         },
         {
@@ -151,9 +163,9 @@ export default function MembersList() {
         <Card>
             <CardHeader className="flex flex-row items-center justify-between">
                 <div>
-                    <CardTitle className="flex items-center gap-2"><Users /> Member Roster</CardTitle>
+                    <CardTitle className="flex items-center gap-2"><Users /> Member Registry</CardTitle>
                     <CardDescription>
-                        A joined view of companies and their owners. Highlighting successful AI-to-Member conversions.
+                        Unified view of live accounts and engagement conversions. {members.length} entities tracked.
                     </CardDescription>
                 </div>
                  <Button asChild variant="outline">
@@ -169,7 +181,7 @@ export default function MembersList() {
                     </div>
                  ) : error ? (
                     <div className="text-center py-20 text-destructive bg-destructive/10 rounded-md">
-                        <h3 className="font-semibold">Error loading members</h3>
+                        <h3 className="font-semibold">Error joining member data</h3>
                         <p className="text-sm">{error}</p>
                     </div>
                  ) : (

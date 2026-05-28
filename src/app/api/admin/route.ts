@@ -88,6 +88,8 @@ function normalizePartnerData(data: any) {
         result.entryType = 'Forwarder';
     } else if (name.includes('distrib')) {
         result.entryType = 'Distribution';
+    } else if (name.includes('warehouse')) {
+        result.entryType = 'Warehousing';
     } else if (name.includes('logistics') || name.includes('supply')) {
         result.entryType = 'Logistics';
     } else if (name.includes('truck') || name.includes('transport') || name.includes('haul') || name.includes('carrier') || name.includes('vervoer')) {
@@ -96,8 +98,6 @@ function normalizePartnerData(data: any) {
         result.entryType = 'Courier';
     } else if (name.includes('shipping') || name.includes('maritime') || name.includes('port')) {
         result.entryType = 'Port';
-    } else if (name.includes('warehouse')) {
-        result.entryType = 'Warehousing';
     } else {
         result.entryType = 'General';
     }
@@ -128,28 +128,52 @@ export async function POST(req: NextRequest) {
 
         switch (action) {
             case 'getMembers': {
-                // ENRICHED FETCH: Join Companies with Users to get owner details
-                const [companiesSnap, usersSnap] = await Promise.all([
+                // UNIFIED BRIDGE: Join Companies (Live) and Leads (Converted/Active)
+                const [companiesSnap, usersSnap, leadsSnap] = await Promise.all([
                     db.collection('companies').get(),
-                    db.collection('users').get()
+                    db.collection('users').get(),
+                    db.collection('leads').where('status', '==', 'active').get()
                 ]);
 
                 const userMap = new Map();
                 usersSnap.docs.forEach(u => userMap.set(u.id, u.data()));
 
-                const data = companiesSnap.docs.map(doc => {
+                const companyLeadIds = new Set();
+                const liveMembers = companiesSnap.docs.map(doc => {
                     const company = doc.data();
                     const owner = userMap.get(company.ownerId) || {};
+                    if (company.leadId) companyLeadIds.add(company.leadId);
                     return {
                         id: doc.id,
                         ...serializeTimestamps(company),
-                        firstName: owner.firstName || 'Unknown',
-                        lastName: owner.lastName || 'Member',
-                        email: owner.email || 'N/A'
+                        firstName: owner.firstName || 'User',
+                        lastName: owner.lastName || (doc.id.slice(0, 4)),
+                        email: owner.email || 'N/A',
+                        source: 'Live Account'
                     };
                 });
 
-                return NextResponse.json({ success: true, data });
+                // Include active leads that haven't created a company account yet as "Provisional Members"
+                const provisionalMembers = leadsSnap.docs
+                    .filter(doc => !companyLeadIds.has(doc.id))
+                    .map(doc => {
+                        const lead = doc.data();
+                        const parts = (lead.contactPerson || '').split(' ');
+                        return {
+                            id: doc.id,
+                            ...serializeTimestamps(lead),
+                            companyName: lead.companyName || 'Provisional Co.',
+                            firstName: lead.firstName || parts[0] || 'Member',
+                            lastName: lead.lastName || parts.slice(1).join(' ') || '(Lead)',
+                            email: lead.email || 'N/A',
+                            membershipId: 'free',
+                            status: 'active',
+                            source: 'AI Converted',
+                            leadId: doc.id
+                        };
+                    });
+
+                return NextResponse.json({ success: true, data: [...liveMembers, ...provisionalMembers] });
             }
 
             case 'getPartnersByType': {
@@ -165,7 +189,6 @@ export async function POST(req: NextRequest) {
                 if (leadRole.endsWith('s')) rolesToSearch.push(leadRole.slice(0, -1));
                 else rolesToSearch.push(leadRole + 's');
 
-                // ENRICHED FETCH: Join Leads with Companies to verify ACTIVE status
                 const [partnersSnap, leadsSnap, companiesSnap] = await Promise.all([
                     db.collection('partners').where('type', '==', type).get(),
                     db.collection('leads').where('role', 'in', rolesToSearch).get(),
