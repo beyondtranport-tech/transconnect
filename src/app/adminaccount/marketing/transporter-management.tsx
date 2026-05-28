@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -8,7 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
   Loader2, PlusCircle, Truck, Edit, Trash2, Send, CheckCircle, Users, Filter, Save, 
-  Search, Zap, RotateCcw, XCircle, Info, Sparkles, AlertCircle, Mail, Download, Copy
+  Search, Zap, RotateCcw, XCircle, Info, Sparkles, AlertCircle, Mail, Download, Copy, ShieldCheck
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
@@ -400,7 +399,7 @@ export default function TransporterManagement() {
 
         return matchesStatus && matchesAssignee && matchesData;
     });
-  }, [partners, statusFilter, assigneeFilter, dataFilter, staffMap]);
+  }, [partners, statusFilter, assigneeFilter, dataFilter]);
 
   const handleCopyBccList = () => {
     const emails = filteredTransporters
@@ -516,17 +515,22 @@ export default function TransporterManagement() {
         cell: ({ row }) => <div>{row.original.contactPerson || 'N/A'}</div>
     },
     { 
-        accessorKey: 'phone', 
-        header: 'Contact Number',
-        cell: ({ row }) => <div>{row.original.phone || row.original.telephone_number || 'N/A'}</div>
-    },
-    { 
         accessorKey: 'email', 
         header: 'Email',
         cell: ({ row }) => {
             const email = (row.original.email || row.original.email_address || '').toString().toLowerCase().trim();
             const isInvalid = !email || email === 'null' || email === 'n/a' || email === 'none';
             return <div className={cn(isInvalid ? "text-muted-foreground italic" : "")}>{isInvalid ? "Missing" : email}</div>
+        }
+    },
+    {
+        accessorKey: 'consentStatus',
+        header: 'POPI Consent',
+        cell: ({row}) => {
+            const status = row.original.consentStatus || 'pending';
+            if (status === 'accepted') return <Badge className="bg-green-100 text-green-700 border-green-200"><CheckCircle className="mr-1 h-3 w-3" /> Opted In</Badge>;
+            if (status === 'declined') return <Badge variant="destructive"><XCircle className="mr-1 h-3 w-3" /> Declined</Badge>;
+            return <Badge variant="outline" className="text-muted-foreground">Pending</Badge>;
         }
     },
     {
@@ -636,9 +640,9 @@ export default function TransporterManagement() {
                     <Info className="h-4 w-4 text-primary" />
                     <AlertTitle>Pipeline Guide</AlertTitle>
                     <AlertDescription className="text-xs space-y-1">
-                        <p>• <span className="font-bold text-amber-600">Searching (Orange):</span> Record is currently locked in an AI research batch. Use the <strong>Bulk Import</strong> tool to add findings.</p>
-                        <p>• <span className="font-bold text-green-700">Enriched (Green):</span> Contact details have been successfully found by AI.</p>
-                        <p>• <span className="font-bold">New:</span> Record is available for future research batches.</p>
+                        <p>• <span className="font-bold text-amber-600">Searching (Orange):</span> Record is currently locked in an AI research batch.</p>
+                        <p>• <span className="font-bold text-green-700">Enriched (Green):</span> Contact details have been successfully found.</p>
+                        <p>• <span className="font-bold text-blue-700">Opted In:</span> Lead has provided digital consent to be contacted.</p>
                     </AlertDescription>
                 </Alert>
                 <div className="flex flex-col md:flex-row gap-4 p-4 bg-muted/30 rounded-lg">

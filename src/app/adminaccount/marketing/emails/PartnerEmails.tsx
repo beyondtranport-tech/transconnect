@@ -1,16 +1,12 @@
 'use client';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { ClipboardCopy, Mail, UserCheck, Link as LinkIcon } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { Card, CardContent, CardDescription, CardHeader, CardFooter } from '@/components/ui/card';
+import { Mail, UserCheck, Link as LinkIcon, ShieldCheck } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import React from 'react';
 import { useUser } from '@/firebase';
 
 const EmailTemplate = ({ subject, content, partner, referralLink }: { subject: string, content: string, partner: any, referralLink: string }) => {
-    const { toast } = useToast();
-    
     const personalizedContent = React.useMemo(() => {
         let text = content;
         const name = partner?.firstName || '[Partner Name]';
@@ -62,6 +58,30 @@ const EmailTemplate = ({ subject, content, partner, referralLink }: { subject: s
 };
 
 const templates = {
+    consent: {
+        subject: "Confirming Your Logistics Flow Network Participation",
+        content: `
+Hi [Partner Name],
+
+I'm reaching out from Logistics Flow. We're currently expanding our network of strategic partners, and we'd love to have [Your Company] involved.
+
+Before we can send you specific opportunities or platform updates, we need to ensure we are fully compliant with your privacy preferences.
+
+Please take 30 seconds to review our terms and provide your formal marketing consent here:
+[Opt-in Link]
+
+Why opt-in?
+- Receive matching partnership alerts.
+- Access community-negotiated benefits.
+- Participate in our revenue-sharing model.
+
+We respect your privacy and will never spam you. You can manage your preferences at any time.
+
+Best regards,
+
+The Logistics Flow Team
+        `
+    },
     intro: {
         subject: "Partnership Opportunity with Logistics Flow",
         content: `
@@ -93,43 +113,9 @@ An all-in-one platform that brings together:
 - A Value-Added Marketplace: We provide essential third-party products, like the Mahala Hub for drivers, which offers benefits and rewards.
 - Powerful Tech Tools: Including an AI-powered system to match available trucks with freight loads.
 
-What we want from a partner:
-- To introduce Logistics Flow to your network of transporters and suppliers.
-- To act as an ambassador for our mission to empower transport businesses.
-
-What we will give you in return:
-- A Free Lifetime Premium Membership.
-- A Recurring Revenue Stream: Earn a significant, recurring commission on all membership and subscription fees from every member you bring into the network.
-- Transactional Revenue Share: Earn a share of the revenue Logistics Flow generates from your network's activity across our Finance and Supplier Malls.
-
 This is a true business partnership where your earnings grow with your network's activity.
 
 I would be delighted to schedule a more detailed call to walk you through the platform and the commission structure.
-
-Best regards,
-
-[Your Name]
-        `
-    },
-    revenue: {
-        subject: "How the Logistics Flow Partnership Revenue Works",
-        content: `
-Dear [Partner Name],
-
-Thanks for your interest. Here’s a simple explanation of how our partnership model creates value for you:
-
-1. Recurring Subscription Revenue:
-You earn a percentage share of all membership fees from every member you refer. It's a recurring annuity for as long as they remain a member.
-
-2. Transactional Commission:
-Your earnings grow as your network uses the platform.
-- Finance Mall: When a member from your network finances a truck, you get a share of our origination fee.
-- Supplier Mall: When your network buys parts, you get a share of our commission.
-- Marketplace Products: You get a share of our commission on every value-added product (like RAF Assist or Mahala Hub subscriptions) sold to your network.
-
-This multi-stream approach ensures your income grows exponentially as your network's activity on our platform increases.
-
-Let me know if you have any questions.
 
 Best regards,
 
@@ -143,16 +129,7 @@ Hi [Partner Name],
 
 The transport industry thrives on relationships. You already have a network of transporters, suppliers, and contacts that you've built over years. Logistics Flow provides the tools to turn those relationships into a powerful, automated revenue engine.
 
-Think about it:
-- Who do you buy parts from?
-- Who do you subcontract loads to?
-- Who asks you for advice on financing?
-
-Every one of these interactions is an opportunity. By introducing them to Logistics Flow—where they can get better pricing, find more work, or access capital—you are not only helping them, but you are also building your own business within our ecosystem.
-
 Your unique referral link is ready: [Referral Link]
-
-Our platform handles the tracking, the transactions, and the payouts. Your job is to do what you already do best: connect people and solve problems. We just provide the framework for you to get paid for it.
 
 Ready to leverage your most valuable asset?
 
@@ -164,10 +141,10 @@ Best regards,
 };
 
 const tabs = [
+    { value: "consent", label: "0. POPI Consent", icon: ShieldCheck },
     { value: "intro", label: "1. Intro" },
     { value: "proposal", label: "2. Proposal" },
-    { value: "revenue", label: "3. Revenue" },
-    { value: "invitation", label: "4. Invite Link" },
+    { value: "invitation", label: "3. Invite Link" },
 ];
 
 
@@ -182,16 +159,17 @@ export default function PartnerEmails({ partner }: { partner?: any }) {
 
     return (
         <div className="space-y-6">
-            <div className="bg-muted/50 p-4 rounded-lg flex items-center gap-3">
-                <Mail className="h-5 w-5 text-primary" />
-                <p className="text-sm">These templates are configured to dynamically merge recipient data when you copy them using the <strong>Log & Copy</strong> button.</p>
-            </div>
-            
-            <Tabs defaultValue="intro" className="w-full">
-                <TabsList className="grid w-full grid-cols-4 bg-muted/30">
-                   {tabs.map(tab => (
-                       <TabsTrigger key={tab.value} value={tab.value} className="text-xs">{tab.label}</TabsTrigger>
-                   ))}
+            <Tabs defaultValue="consent" className="w-full">
+                <TabsList className="h-auto flex-wrap justify-start bg-muted/30">
+                   {tabs.map(tab => {
+                       const Icon = tab.icon;
+                       return (
+                           <TabsTrigger key={tab.value} value={tab.value} className="text-xs gap-2">
+                               {Icon && <Icon className="h-3 w-3" />}
+                               {tab.label}
+                           </TabsTrigger>
+                       );
+                   })}
                 </TabsList>
                 {Object.entries(templates).map(([key, t]) => (
                     <TabsContent key={key} value={key} className="mt-6">
