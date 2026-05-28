@@ -329,8 +329,8 @@ export async function POST(req: NextRequest) {
                     const data = doc.data();
                     const name = (data.companyName || '').trim().toLowerCase();
                     const email = (data.email || '').trim().toLowerCase();
-                    if (name) { if (!nameMap.has(name)) nameMap.set(name, []); nameMap.get(name).push(doc); }
-                    if (email) { if (!emailMap.has(email)) emailMap.set(email, []); emailMap.get(email).push(doc); }
+                    if (name) { if (!nameMap.has(name)) nameMap.set(name, []); nameMap.set(name, [...nameMap.get(name), doc]); }
+                    if (email) { if (!emailMap.has(email)) emailMap.set(email, []); emailMap.set(email, [...emailMap.get(email), doc]); }
                 });
                 const batch = db.batch();
                 let count = 0;

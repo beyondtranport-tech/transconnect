@@ -247,7 +247,7 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
         </DialogHeader>
         
         <Alert className="bg-amber-50 border-amber-200">
-            <Info className="h-4 w-4 text-amber-600" />
+            <AlertCircle className="h-4 w-4 text-amber-600" />
             <AlertTitle>Recommendation Guide</AlertTitle>
             <AlertDescription className="text-xs">
                 Always keep <strong>Members</strong> (Registered users) and delete <strong>Leads</strong> (Projections). 

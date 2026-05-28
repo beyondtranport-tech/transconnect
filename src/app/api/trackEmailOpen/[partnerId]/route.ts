@@ -1,4 +1,3 @@
-
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminApp } from '@/lib/firebase-admin';
@@ -14,13 +13,17 @@ export async function GET(req: NextRequest, { params }: { params: { partnerId: s
   if (app && partnerId) {
     try {
         const db = getFirestore(app);
-        const partnerRef = db.collection('partners').doc(partnerId);
         
-        // Log the open event asynchronously
-        partnerRef.update({
+        const update = {
             lastOpenedAt: FieldValue.serverTimestamp(),
             updatedAt: FieldValue.serverTimestamp()
-        }).catch(err => console.error("Tracking update failed:", err));
+        };
+
+        // Mirror update to both leads and partners for unified funnel tracking
+        await Promise.all([
+            db.collection('partners').doc(partnerId).set(update, { merge: true }),
+            db.collection('leads').doc(partnerId).set(update, { merge: true })
+        ]);
         
     } catch (e) {
         console.error("Tracking pixel error:", e);
