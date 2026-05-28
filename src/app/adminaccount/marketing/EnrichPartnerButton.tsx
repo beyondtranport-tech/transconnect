@@ -1,8 +1,9 @@
+
 'use client';
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Sparkles, Loader2, Copy, ClipboardCheck, Info, Zap } from 'lucide-react';
+import { Sparkles, Loader2, Copy, ClipboardCheck, Info, Zap, Search } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -38,7 +39,7 @@ TASK: Find CURRENT verified public contact and SPECIFIC leadership details for t
 
 INVESTIGATIVE STRATEGY:
 1. HUMAN IDENTITY FIRST: You must find the ACTUAL NAME (First and Last) of the CEO, Managing Director, or Owner.
-2. FORBIDDEN VALUES: Returning placeholders like "The Director", "Manager", or "CEO" is a FAILURE. If a human name is findable on LinkedIn, official site footers, or Facebook About sections, you MUST find it.
+2. FORBIDDEN VALUES: Returning placeholders like "The Director", "Manager", or "CEO" is a FAILURE. You MUST find a real name via LinkedIn, official site footers, or Facebook About sections.
 3. EMAIL DISCOVERY: If an email is not listed, find the company domain and look for standard "info@", "sales@", or "admin@" formats.
 4. IDENTITY PERSISTENCE: You MUST return "record_id": "${partner.id}" in your response.
 
@@ -46,8 +47,8 @@ REQUIRED OUTPUT SCHEMA (JSON ONLY):
 {
   "record_id": "${partner.id}",
   "company_name": "${companyName}",
-  "contact_person": "ACTUAL HUMAN FULL NAME",
-  "email_address": "Verified Email Address",
+  "contact_person": "ACTUAL HUMAN FULL NAME (e.g. Sipho Nkosi)",
+  "email_address": "Verified Corporate Email",
   "telephone_number": "Phone Number",
   "website": "URL",
   "physical_address": "Full Physical Address"
@@ -89,9 +90,9 @@ REQUIRED OUTPUT SCHEMA (JSON ONLY):
                 variant="ghost" 
                 size="icon" 
                 onClick={() => { setIsCopied(false); setIsOpen(true); }} 
-                title="AI Research Prompt"
+                title="Generate Forensic Prompt"
             >
-                <Sparkles className="h-4 w-4 text-primary" />
+                <Search className="h-4 w-4 text-primary" />
             </Button>
 
             <Dialog open={isOpen} onOpenChange={(o) => !isLogging && setIsOpen(o)}>
@@ -109,16 +110,16 @@ REQUIRED OUTPUT SCHEMA (JSON ONLY):
                     <div className="space-y-4 py-4">
                         <Alert className="bg-primary/5 border-primary/20">
                             <Info className="h-4 w-4 text-primary" />
-                            <AlertTitle>Forensic Search Active</AlertTitle>
-                            <AlertDescription>
-                                This prompt forbids the AI from returning generic titles and commands a hunt for actual human leadership names.
+                            <AlertTitle>Forensic Search Command</AlertTitle>
+                            <AlertDescription className="text-xs">
+                                This prompt strictly forbids placeholders and commands the AI to hunt for verified human leadership details.
                             </AlertDescription>
                         </Alert>
 
                         <div className="space-y-2">
-                            <label className="text-xs font-bold uppercase text-muted-foreground">AI Forensic Prompt</label>
+                            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">AI Forensic Command</label>
                             <ScrollArea className="h-48 w-full border rounded-md p-3 bg-muted/30 text-foreground">
-                                <pre className="text-xs whitespace-pre-wrap font-sans">{aiPrompt}</pre>
+                                <pre className="text-xs whitespace-pre-wrap font-mono leading-relaxed">{aiPrompt}</pre>
                             </ScrollArea>
                         </div>
                     </div>
@@ -129,12 +130,28 @@ REQUIRED OUTPUT SCHEMA (JSON ONLY):
                             {isCopied ? 'Copied!' : 'Copy Prompt'}
                         </Button>
                         <Button onClick={handleMarkAsResearching} disabled={isLogging || !isCopied} className="bg-primary hover:bg-primary/90 text-white">
-                            {isLogging ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <ClipboardCheck className="mr-2 h-4 w-4" />}
+                            {isLogging ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Zap className="mr-2 h-4 w-4" />}
                             Mark as Searching
                         </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
         </>
+    );
+}
+
+export function BulkEnrichButton({ partners, onComplete }: { partners: any[], onComplete: () => void }) {
+    const [open, setOpen] = useState(false);
+    const selectedPartners = useMemo(() => {
+        return partners.filter(p => !p.email || p.researchStatus === 'researching').slice(0, 10);
+    }, [partners]);
+
+    return (
+        <BatchResearchDialog 
+            open={open} 
+            onOpenChange={setOpen} 
+            selectedLeads={selectedPartners} 
+            onComplete={onComplete} 
+        />
     );
 }

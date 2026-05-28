@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
-import { Loader2, Copy, ClipboardCheck, Zap, AlertCircle } from 'lucide-react';
+import { Loader2, Copy, ClipboardCheck, Zap, AlertCircle, Search } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
@@ -32,8 +32,8 @@ TASK: Find CURRENT verified public contact and SPECIFIC leadership details for t
 
 INVESTIGATIVE STRATEGY:
 1. HUMAN IDENTITY FIRST: You must find the ACTUAL NAME (First and Last) of the CEO, Managing Director, or Owner. 
-2. FORBIDDEN VALUES: Returning "The Director", "Manager", "CEO of [Company]" or "Unknown" is a FAILURE. If a human name is available on LinkedIn, Facebook Team sections, or the official "About Us" page, you MUST find it.
-3. PROACTIVE EMAIL SEARCH: Identify the company domain. Look for verified "info@", "sales@", or "admin@" formats. If no email is explicitly listed, provide the most likely corporate format.
+2. FORBIDDEN VALUES: Returning "The Director", "Manager", "CEO of [Company]" or "Unknown" is a FAILURE. You MUST find a specific human name from LinkedIn, Facebook Team sections, or the official "About Us" page.
+3. PROACTIVE EMAIL SEARCH: Identify the company domain. Look for verified "info@", "sales@", or "admin@" formats.
 4. IDENTITY PERSISTENCE: You MUST return the "record_id" exactly as provided in the brackets [ID: ...].
 
 REQUIRED OUTPUT FORMAT (RAW JSON ARRAY ONLY):
@@ -89,33 +89,33 @@ ${companyList}`;
             <DialogContent className="sm:max-w-2xl">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
-                        <Zap className="h-5 w-5 text-amber-500" />
+                        <Search className="h-5 w-5 text-primary" />
                         Forensic Batch Enrichment ({selectedLeads.length})
                     </DialogTitle>
                     <DialogDescription>
-                        Copy this prompt and provide it to the AI. It is optimized to hunt for real names.
+                        Command the AI to perform a deep-search for actual leadership names and verified contacts.
                     </DialogDescription>
                 </DialogHeader>
                 
                 <div className="space-y-4 py-4">
                     {!isCopied ? (
-                        <Alert>
-                            <AlertCircle className="h-4 w-4" />
+                        <Alert className="bg-amber-50 border-amber-200">
+                            <AlertCircle className="h-4 w-4 text-amber-600" />
                             <AlertTitle>Step 1: Copy Forensic Prompt</AlertTitle>
-                            <AlertDescription>The AI is now forbidden from returning "The Director" and must find actual names.</AlertDescription>
+                            <AlertDescription className="text-xs">The AI is now forbidden from returning "The Director" and must hunt for actual names on social platforms.</AlertDescription>
                         </Alert>
                     ) : (
                         <Alert className="bg-green-50 border-green-200 text-green-800">
                             <ClipboardCheck className="h-4 w-4 text-green-600" />
                             <AlertTitle>Step 2: Lock the Records</AlertTitle>
-                            <AlertDescription>Records will be marked as "Searching" so you don't process them twice. Proceed now.</AlertDescription>
+                            <AlertDescription className="text-xs">Records will be marked as "Searching" to prevent duplicate work. Proceed now.</AlertDescription>
                         </Alert>
                     )}
 
                     <div className="space-y-2">
-                        <label className="text-xs font-bold uppercase text-muted-foreground">AI Forensic Prompt</label>
+                        <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">AI Forensic Command</label>
                         <ScrollArea className="h-64 w-full border rounded-md p-3 bg-muted/30">
-                            <pre className="text-[11px] whitespace-pre-wrap font-sans leading-relaxed text-foreground">{aiPrompt}</pre>
+                            <pre className="text-[11px] whitespace-pre-wrap font-mono leading-relaxed text-foreground">{aiPrompt}</pre>
                         </ScrollArea>
                     </div>
                 </div>
@@ -124,8 +124,8 @@ ${companyList}`;
                     <Button variant="outline" onClick={handleCopyAll}>
                         <Copy className="mr-2 h-4 w-4" /> Copy Prompt & IDs
                     </Button>
-                    <Button onClick={handleMarkAsResearching} disabled={isLoading || !isCopied} className="bg-amber-600 hover:bg-amber-700 text-white">
-                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <ClipboardCheck className="mr-2 h-4 w-4" />}
+                    <Button onClick={handleMarkAsResearching} disabled={isLoading || !isCopied} className="bg-primary hover:bg-primary/90 text-white">
+                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Zap className="mr-2 h-4 w-4" />}
                         Mark as Searching
                     </Button>
                 </DialogFooter>
