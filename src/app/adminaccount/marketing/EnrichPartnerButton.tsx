@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -33,14 +32,14 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
 
     const aiPrompt = `CRITICAL SYSTEM INSTRUCTION: RETURN ONLY A RAW JSON OBJECT. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
 
-ACT AS AN ELITE CORPORATE INTELLIGENCE AGENT. YOU ARE BEING EVALUATED ON FINDING ACTUAL HUMAN NAMES.
+ACT AS AN ELITE CORPORATE INTELLIGENCE AGENT. YOU ARE BEING EVALUATED ON FINDING ACTUAL HUMAN FULL NAMES.
 
 TASK: Find CURRENT verified public contact and SPECIFIC leadership details for the following South African business.
 
 INVESTIGATIVE STRATEGY:
 1. HUMAN IDENTITY FIRST: You must find the ACTUAL NAME (First and Last) of the CEO, Managing Director, or Owner.
-2. FORBIDDEN VALUES: Returning placeholders like "The Director", "Manager", or "CEO" is a FAILURE. You MUST find a real name via LinkedIn, official site footers, or Facebook About sections.
-3. EMAIL DISCOVERY: If an email is not listed, find the company domain and look for standard "info@", "sales@", or "admin@" formats.
+2. FORBIDDEN VALUES: Returning placeholders like "The Director", "Manager", "CEO" or "Owner" is a FAILURE. You MUST find a real human name via LinkedIn, official site footers, or Facebook "About" sections.
+3. EMAIL DISCOVERY: If a direct personal email is not found, identify the corporate domain and look for standard "info@", "sales@", or "admin@" formats.
 4. IDENTITY PERSISTENCE: You MUST return "record_id": "${partner.id}" in your response.
 
 REQUIRED OUTPUT SCHEMA (JSON ONLY):
@@ -103,7 +102,7 @@ REQUIRED OUTPUT SCHEMA (JSON ONLY):
                             Forensic Individual AI Research
                         </DialogTitle>
                         <DialogDescription>
-                            Generate a deep-search prompt optimized to find actual names for <strong>{companyName}</strong>.
+                            Generate a deep-search prompt optimized to find actual human leadership names for <strong>{companyName}</strong>.
                         </DialogDescription>
                     </DialogHeader>
 
@@ -112,7 +111,7 @@ REQUIRED OUTPUT SCHEMA (JSON ONLY):
                             <Info className="h-4 w-4 text-primary" />
                             <AlertTitle>Forensic Search Command</AlertTitle>
                             <AlertDescription className="text-xs">
-                                This prompt strictly forbids placeholders and commands the AI to hunt for verified human leadership details.
+                                This prompt strictly forbids placeholders and commands the AI to hunt for verified human leadership details and corporate contact paths.
                             </AlertDescription>
                         </Alert>
 
@@ -126,8 +125,8 @@ REQUIRED OUTPUT SCHEMA (JSON ONLY):
 
                     <DialogFooter className="sm:justify-between gap-4">
                         <Button variant="outline" onClick={handleCopy}>
-                            {isCopied ? <ClipboardCheck className="mr-2 h-4 w-4 text-green-600" /> : <Copy className="mr-2 h-4 w-4" />} 
-                            {isCopied ? 'Copied!' : 'Copy Prompt'}
+                            <Copy className="mr-2 h-4 w-4" /> 
+                            {isCopied ? 'Copied!' : 'Copy Forensic Prompt'}
                         </Button>
                         <Button onClick={handleMarkAsResearching} disabled={isLogging || !isCopied} className="bg-primary hover:bg-primary/90 text-white">
                             {isLogging ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Zap className="mr-2 h-4 w-4" />}

@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -129,7 +128,7 @@ export default function OptInPage() {
                                 id="marketing-consent" 
                                 className="mt-1"
                                 checked={consentMarketing}
-                                onCheckedChange={(c) => setConsentMarketing(!!checked)}
+                                onCheckedChange={(val) => setConsentMarketing(!!val)}
                             />
                             <div className="flex-1 space-y-1">
                                 <Label htmlFor="marketing-consent" className="text-sm font-bold flex items-center gap-2 cursor-pointer">
@@ -146,7 +145,7 @@ export default function OptInPage() {
                                 id="popi-consent" 
                                 className="mt-1"
                                 checked={consentPopi}
-                                onCheckedChange={(c) => setConsentPopi(!!checked)}
+                                onCheckedChange={(val) => setConsentPopi(!!val)}
                             />
                             <div className="flex-1 space-y-1">
                                 <Label htmlFor="popi-consent" className="text-sm font-bold flex items-center gap-2 cursor-pointer">
@@ -163,7 +162,7 @@ export default function OptInPage() {
                                 id="terms-consent" 
                                 className="mt-1"
                                 checked={consentTerms}
-                                onCheckedChange={(c) => setConsentTerms(!!checked)}
+                                onCheckedChange={(val) => setConsentTerms(!!val)}
                             />
                             <div className="flex-1 space-y-1">
                                 <Label htmlFor="terms-consent" className="text-sm font-bold flex items-center gap-2 cursor-pointer">
@@ -205,7 +204,7 @@ export default function OptInPage() {
                         onClick={() => handleAction('accepted')} 
                         disabled={isProcessing || !canAccept}
                     >
-                        {isProcessing ? <Loader2 className="mr-2 h-5 w-5 animate-spin"/> : <CheckCircle className="mr-2 h-5 w-5" />}
+                        {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <CheckCircle className="mr-2 h-4 w-4" />}
                         Accept & Establish Connection
                     </Button>
                     <div className="flex items-center justify-between w-full">
@@ -223,8 +222,4 @@ export default function OptInPage() {
             </Card>
         </div>
     );
-}
-
-function checked(checked: any): any {
-    throw new Error('Function not implemented.');
 }
