@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,14 +18,15 @@ export default function OptInPage() {
     const partnerId = params.partnerId as string;
     const firestore = useFirestore();
     const { toast } = useToast();
+    
     const [isProcessing, setIsProcessing] = useState(false);
     const [completed, setCompleted] = useState(false);
     const [showFullTerms, setShowFullTerms] = useState(false);
 
-    // Individual Consent States
-    const [consentMarketing, setConsentMarketing] = useState(false);
-    const [consentPopi, setConsentPopi] = useState(false);
-    const [consentTerms, setConsentTerms] = useState(false);
+    // Explicit state for granular consent
+    const [marketingConsent, setMarketingConsent] = useState(false);
+    const [popiConsent, setPopiConsent] = useState(false);
+    const [termsConsent, setTermsConsent] = useState(false);
 
     const partnerRef = useMemoFirebase(() => {
         if (!firestore || !partnerId) return null;
@@ -34,10 +35,10 @@ export default function OptInPage() {
 
     const { data: partner, isLoading } = useDoc(partnerRef);
 
-    // Requirement: All boxes must be checked to establish the handshake
+    // Requirement: All three boxes must be checked to enable establishment
     const canAccept = useMemo(() => {
-        return consentMarketing && consentPopi && consentTerms;
-    }, [consentMarketing, consentPopi, consentTerms]);
+        return marketingConsent && popiConsent && termsConsent;
+    }, [marketingConsent, popiConsent, termsConsent]);
 
     const handleAction = async (status: 'accepted' | 'declined') => {
         if (status === 'accepted' && !canAccept) return;
@@ -55,7 +56,7 @@ export default function OptInPage() {
             });
             
             const result = await response.json();
-            if (!response.ok || !result.success) throw new Error(result.error);
+            if (!response.ok || !result.success) throw new Error(result.error || "Failed to record consent.");
 
             toast({ title: status === 'accepted' ? "Handshake Established" : "Preferences Saved" });
             setCompleted(true);
@@ -67,7 +68,11 @@ export default function OptInPage() {
     };
 
     if (isLoading) {
-        return <div className="flex justify-center items-center min-h-screen bg-muted/10"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
+        return (
+            <div className="flex justify-center items-center min-h-screen bg-muted/10">
+                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            </div>
+        );
     }
 
     if (!partner && !isLoading) {
@@ -98,7 +103,7 @@ export default function OptInPage() {
                     </CardHeader>
                     <CardContent>
                         <p className="text-sm text-muted-foreground leading-relaxed">
-                            A record of your consent for <strong>{partner?.companyName}</strong> has been logged on our secure ledger. You are now officially part of the Logistics Flow ecosystem and will receive matched opportunities shortly.
+                            A record of your consent for <strong>{partner?.companyName || 'your business'}</strong> has been logged on our secure ledger. You are now officially part of the Logistics Flow ecosystem and will receive matched opportunities shortly.
                         </p>
                     </CardContent>
                     <CardFooter>
@@ -116,23 +121,24 @@ export default function OptInPage() {
                     <div className="bg-primary/10 p-3 rounded-full w-fit mx-auto mb-4">
                         <ShieldCheck className="h-8 w-8 text-primary" />
                     </div>
-                    <CardTitle className="text-2xl font-headline font-bold">Establish Your Handshake</CardTitle>
+                    <CardTitle className="text-2xl font-headline font-bold">Confirm Your Participation</CardTitle>
                     <CardDescription className="text-sm">
                         Hi {partner?.firstName}, please review and accept our communication standards for <strong>{partner?.companyName || 'your business'}</strong>.
                     </CardDescription>
                 </CardHeader>
+                
                 <CardContent className="py-8 space-y-8 bg-white">
                     <div className="space-y-6">
                         {/* 1. Marketing Consent */}
-                        <div className="flex items-start gap-4 p-4 border rounded-lg hover:bg-slate-50 transition-colors">
+                        <div className="flex items-start gap-4 p-4 border rounded-lg hover:bg-slate-50 transition-colors bg-white">
                             <Checkbox 
                                 id="marketing-check" 
                                 className="mt-1 h-5 w-5"
-                                checked={consentMarketing}
-                                onCheckedChange={(val) => setConsentMarketing(!!val)}
+                                checked={marketingConsent}
+                                onCheckedChange={(val) => setMarketingConsent(!!val)}
                             />
                             <div className="flex-1 space-y-1">
-                                <Label htmlFor="marketing-check" className="text-sm font-bold flex items-center gap-2 cursor-pointer">
+                                <Label htmlFor="marketing-check" className="text-sm font-bold flex items-center gap-2 cursor-pointer text-foreground">
                                     <Mail className="h-4 w-4 text-primary"/> Marketing & Match Consent
                                 </Label>
                                 <p className="text-xs text-muted-foreground leading-relaxed">
@@ -142,15 +148,15 @@ export default function OptInPage() {
                         </div>
 
                         {/* 2. POPI Consent */}
-                        <div className="flex items-start gap-4 p-4 border rounded-lg hover:bg-slate-50 transition-colors">
+                        <div className="flex items-start gap-4 p-4 border rounded-lg hover:bg-slate-50 transition-colors bg-white">
                             <Checkbox 
                                 id="popi-check" 
                                 className="mt-1 h-5 w-5"
-                                checked={consentPopi}
-                                onCheckedChange={(val) => setConsentPopi(!!val)}
+                                checked={popiConsent}
+                                onCheckedChange={(val) => setPopiConsent(!!val)}
                             />
                             <div className="flex-1 space-y-1">
-                                <Label htmlFor="popi-check" className="text-sm font-bold flex items-center gap-2 cursor-pointer">
+                                <Label htmlFor="popi-check" className="text-sm font-bold flex items-center gap-2 cursor-pointer text-foreground">
                                     <Lock className="h-4 w-4 text-primary"/> POPI & Privacy Act Compliance
                                 </Label>
                                 <p className="text-xs text-muted-foreground leading-relaxed">
@@ -160,15 +166,15 @@ export default function OptInPage() {
                         </div>
 
                         {/* 3. Platform Terms */}
-                        <div className="flex items-start gap-4 p-4 border rounded-lg hover:bg-slate-50 transition-colors">
+                        <div className="flex items-start gap-4 p-4 border rounded-lg hover:bg-slate-50 transition-colors bg-white">
                             <Checkbox 
                                 id="terms-check" 
                                 className="mt-1 h-5 w-5"
-                                checked={consentTerms}
-                                onCheckedChange={(val) => setConsentTerms(!!val)}
+                                checked={termsConsent}
+                                onCheckedChange={(val) => setTermsConsent(!!val)}
                             />
                             <div className="flex-1 space-y-1">
-                                <Label htmlFor="terms-check" className="text-sm font-bold flex items-center gap-2 cursor-pointer">
+                                <Label htmlFor="terms-check" className="text-sm font-bold flex items-center gap-2 cursor-pointer text-foreground">
                                     <FileText className="h-4 w-4 text-primary"/> Platform Terms
                                 </Label>
                                 <p className="text-xs text-muted-foreground leading-relaxed">
@@ -200,6 +206,7 @@ export default function OptInPage() {
                         {!showFullTerms && <p className="text-[10px] text-muted-foreground italic">Click "Read Full Terms" for detailed POPI and data security disclosures.</p>}
                     </div>
                 </CardContent>
+
                 <CardFooter className="flex-col gap-4 border-t pt-6 bg-slate-50/50 rounded-b-xl">
                     <Button 
                         className="w-full py-7 text-lg font-black uppercase tracking-tight shadow-lg" 
