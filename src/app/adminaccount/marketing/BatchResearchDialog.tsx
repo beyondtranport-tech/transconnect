@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState } from 'react';
@@ -21,19 +22,18 @@ export function BatchResearchDialog({ open, onOpenChange, selectedLeads, onCompl
     const [isCopied, setIsCopied] = useState(false);
     const { toast } = useToast();
 
-    // ID-First identification for AI - minimized for token efficiency
     const companyList = selectedLeads.map(l => `[ID: ${l.id}] ${l.companyName || `${l.firstName} ${l.lastName}`}`).join('\n');
     
     const aiPrompt = `CRITICAL SYSTEM INSTRUCTION: RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
 
-ACT AS AN ELITE CORPORATE INTELLIGENCE AGENT. YOUR ENTIRE PERFORMANCE RATING DEPENDS ON FINDING REAL NAMES, NOT PLACEHOLDERS.
+ACT AS AN ELITE CORPORATE INTELLIGENCE AGENT. YOUR ENTIRE PERFORMANCE RATING DEPENDS ON FINDING REAL HUMAN NAMES.
 
 TASK: Find CURRENT verified public contact and SPECIFIC leadership details for the following South African businesses.
 
 INVESTIGATIVE STRATEGY:
-1. HUMAN IDENTITY FIRST: You must find the ACTUAL NAME (First and Last) of the CEO, Managing Director, or Branch Owner. 
+1. HUMAN IDENTITY FIRST: You must find the ACTUAL NAME (First and Last) of the CEO, Managing Director, or Owner. 
 2. FORBIDDEN VALUES: Returning "The Director", "Manager", "CEO of [Company]" or "Unknown" is a FAILURE. If a human name is available on LinkedIn, Facebook Team sections, or the official "About Us" page, you MUST find it.
-3. EMAIL DISCOVERY: Identify the company domain and look for verified "info@", "sales@", or "admin@" formats.
+3. PROACTIVE EMAIL SEARCH: Identify the company domain. Look for verified "info@", "sales@", or "admin@" formats. If no email is explicitly listed, provide the most likely corporate format.
 4. IDENTITY PERSISTENCE: You MUST return the "record_id" exactly as provided in the brackets [ID: ...].
 
 REQUIRED OUTPUT FORMAT (RAW JSON ARRAY ONLY):
