@@ -128,7 +128,7 @@ export async function POST(req: NextRequest) {
 
         switch (action) {
             case 'getMembers': {
-                // UNIFIED BRIDGE: Join Companies (Live) and Leads (Converted/Active)
+                // UNIFIED BRIDGE: Join Companies (Live), Users (Identity), and Leads (Provisional)
                 const [companiesSnap, usersSnap, leadsSnap] = await Promise.all([
                     db.collection('companies').get(),
                     db.collection('users').get(),
@@ -157,14 +157,14 @@ export async function POST(req: NextRequest) {
                 const provisionalMembers = leadsSnap.docs
                     .filter(doc => !companyLeadIds.has(doc.id))
                     .map(doc => {
-                        const lead = doc.data();
-                        const parts = (lead.contactPerson || '').split(' ');
+                        const rawLead = doc.data();
+                        const lead = normalizePartnerData(rawLead);
                         return {
                             id: doc.id,
-                            ...serializeTimestamps(lead),
+                            ...serializeTimestamps(rawLead),
                             companyName: lead.companyName || 'Provisional Co.',
-                            firstName: lead.firstName || parts[0] || 'Member',
-                            lastName: lead.lastName || parts.slice(1).join(' ') || '(Lead)',
+                            firstName: lead.firstName || 'Member',
+                            lastName: lead.lastName || '(Lead)',
                             email: lead.email || 'N/A',
                             membershipId: 'free',
                             status: 'active',
