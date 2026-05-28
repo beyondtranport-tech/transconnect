@@ -4,7 +4,7 @@
 import React, { useState, useMemo } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Loader2, ExternalLink, Send, Handshake } from 'lucide-react';
+import { Loader2, ExternalLink, Send, ClipboardCheck, Mail } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
 import { copyHtmlToClipboard } from '@/lib/utils';
@@ -93,14 +93,14 @@ export function EngageDialog({ open, onOpenChange, partner, audience, onEngageSu
     const contentElement = document.getElementById(contentId);
 
     if (!contentElement) {
-        toast({ variant: 'destructive', title: "Content Error", description: "Could not find the content to copy." });
+        toast({ variant: 'destructive', title: "Content Error", description: "Could not find the content tab. Please try refreshing." });
         return;
     }
 
     setIsProcessing(true);
     try {
         const token = await getClientSideAuthToken();
-        if (!token) throw new Error("Authentication failed.");
+        if (!token) throw new Error("Authentication failed. Please sign in again.");
         
         const subjectLabel = activeTab.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 
@@ -109,15 +109,14 @@ export function EngageDialog({ open, onOpenChange, partner, audience, onEngageSu
             partnerId: partner.id,
             type: 'Email',
             subject: subjectLabel,
-            notes: `Engagement content generated and copied for ${partner.firstName}. Email client launched.`,
+            notes: `System generated and copied engagement for ${partner.firstName}.`,
         });
 
         // 2. Prepare HTML for clipboard
-        // We ensure all relative links and images are absolute before copying
         const contentClone = contentElement.cloneNode(true) as HTMLElement;
         const origin = 'https://studio--ecosystem-hub.us-central1.hosted.app';
         
-        // Fix relative images
+        // Fix relative images to absolute
         const images = contentClone.querySelectorAll('img');
         images.forEach(img => {
             const src = img.getAttribute('src');
@@ -126,7 +125,7 @@ export function EngageDialog({ open, onOpenChange, partner, audience, onEngageSu
             }
         });
 
-        // Fix relative links
+        // Fix relative links to absolute
         const links = contentClone.querySelectorAll('a');
         links.forEach(a => {
             const href = a.getAttribute('href');
@@ -135,27 +134,33 @@ export function EngageDialog({ open, onOpenChange, partner, audience, onEngageSu
             }
         });
 
-        // Add tracking pixel
+        // Add tracking pixel at the bottom (less suspicious to filters)
         const trackingPixel = document.createElement('img');
-        trackingPixel.src = `${origin}/api/trackEmailOpen/${partner.id}`;
+        trackingPixel.src = `${origin}/api/trackEmailOpen/${partner.id}?t=${Date.now()}`;
         trackingPixel.width = 1;
         trackingPixel.height = 1;
-        trackingPixel.style.display = 'none';
+        trackingPixel.style.display = 'block';
+        trackingPixel.style.opacity = '0.01';
         contentClone.appendChild(trackingPixel);
 
         // 3. Copy using the resilient HTML utility
         const success = await copyHtmlToClipboard(contentClone.innerHTML);
 
-        if (!success) throw new Error("Could not copy content to clipboard.");
+        if (!success) throw new Error("Clipboard access denied. Please allow clipboard permissions.");
 
         // 4. Launch Email Client
         const mailtoUrl = `mailto:${partner.email}?subject=${encodeURIComponent(getSubject())}`;
         window.location.href = mailtoUrl;
 
-        toast({ title: 'Ready to Send!', description: `HTML content copied to clipboard. Press Paste (Ctrl+V) in your email.` });
+        toast({ 
+            title: 'Ready to Send!', 
+            description: `Communication logged. Outreach copied. Paste (Ctrl+V) into your email now.` 
+        });
+        
         if (onEngageSuccess) onEngageSuccess();
         onOpenChange(false);
     } catch (e: any) {
+        console.error("Engagement failure:", e);
         toast({ variant: 'destructive', title: 'Action Failed', description: e.message });
     } finally {
         setIsProcessing(false);
@@ -212,7 +217,7 @@ export function EngageDialog({ open, onOpenChange, partner, audience, onEngageSu
 
                 <div className="flex-1 overflow-y-auto bg-slate-50 p-8">
                     <div id={`engage-content-wrapper-${activeTab}`} className="bg-white p-8 rounded-lg shadow-sm border mx-auto max-w-[800px]">
-                        <div style={{ fontFamily: 'sans-serif', color: '#1e293b', lineHeight: '1.6' }}>
+                        <div style={{ fontFamily: 'Arial, sans-serif', color: '#1e293b', lineHeight: '1.6' }}>
                             <p style={{ marginBottom: '16px' }}>Good day {partner.firstName},</p>
                             <div style={{ borderTop: '2px solid #f1f5f9', paddingTop: '24px', marginTop: '24px' }}>
                                 {activeTab === 'digital-handshake' && <DigitalHandshake partner={partner} />}
