@@ -14,6 +14,8 @@ function serializeTimestamps(docData: any): any {
             newDocData[key] = value.toDate().toISOString();
         } else if (value && typeof value === 'object' && value._methodName === 'serverTimestamp') {
             newDocData[key] = new Date().toISOString();
+        } else if (value && typeof value === 'object' && !Array.isArray(value)) {
+            newDocData[key] = serializeTimestamps(value);
         } else {
             newDocData[key] = value;
         }
@@ -128,11 +130,11 @@ export async function POST(req: NextRequest) {
 
         switch (action) {
             case 'getMembers': {
-                // UNIFIED BRIDGE: Join Companies (Live), Users (Identity), and Leads (Provisional)
+                // FETCH: Companies (Live), Users (Identities), and engaged Leads (Funnel Successes)
                 const [companiesSnap, usersSnap, leadsSnap] = await Promise.all([
                     db.collection('companies').get(),
                     db.collection('users').get(),
-                    db.collection('leads').where('status', '==', 'active').get()
+                    db.collection('leads').where('status', 'in', ['active', 'invited', 'qualified']).get()
                 ]);
 
                 const userMap = new Map();
@@ -149,12 +151,12 @@ export async function POST(req: NextRequest) {
                         firstName: owner.firstName || 'User',
                         lastName: owner.lastName || (doc.id.slice(0, 4)),
                         email: owner.email || 'N/A',
-                        source: 'Live Account'
+                        source: company.leadId ? 'AI Converted' : 'Organic Sign-up'
                     };
                 });
 
-                // Include active leads that haven't created a company account yet as "Provisional Members"
-                const provisionalMembers = leadsSnap.docs
+                // PROVISIONAL MEMBERS: Leads that reached the success stage but haven't signed up yet
+                const engagedLeads = leadsSnap.docs
                     .filter(doc => !companyLeadIds.has(doc.id))
                     .map(doc => {
                         const rawLead = doc.data();
@@ -167,13 +169,14 @@ export async function POST(req: NextRequest) {
                             lastName: lead.lastName || '(Lead)',
                             email: lead.email || 'N/A',
                             membershipId: 'free',
-                            status: 'active',
-                            source: 'AI Converted',
-                            leadId: doc.id
+                            status: rawLead.status || 'new',
+                            source: 'AI Funnel',
+                            leadId: doc.id,
+                            provisional: true
                         };
                     });
 
-                return NextResponse.json({ success: true, data: [...liveMembers, ...provisionalMembers] });
+                return NextResponse.json({ success: true, data: [...liveMembers, ...engagedLeads] });
             }
 
             case 'getPartnersByType': {
@@ -221,7 +224,7 @@ export async function POST(req: NextRequest) {
                         ...(existing || {}), 
                         ...serializeTimestamps(leadData), 
                         id: doc.id, 
-                        entryType: isLive ? 'Member' : (existing ? 'Member' : 'Lead'),
+                        entryType: isLive ? 'Member' : (existing ? (existing.entryType) : 'Lead'),
                         status: isLive ? 'active' : (leadData.status || (existing?.status) || 'new')
                     });
                 });

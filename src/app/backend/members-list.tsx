@@ -18,11 +18,12 @@ interface Member {
     lastName?: string;
     companyName?: string;
     membershipId?: string;
-    status?: 'active' | 'suspended' | 'pending';
+    status?: 'active' | 'suspended' | 'pending' | 'invited' | 'qualified';
     createdAt?: string;
     email?: string;
     leadId?: string;
     source?: string;
+    provisional?: boolean;
 }
 
 const tierColors: { [key: string]: string } = {
@@ -34,10 +35,12 @@ const tierColors: { [key: string]: string } = {
   enterprise: 'bg-yellow-200 text-yellow-800',
 };
 
-const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
-  active: 'default',
-  suspended: 'destructive',
-  pending: 'secondary',
+const statusColors: { [key: string]: { label: string, color: string } } = {
+  active: { label: 'Member (Active)', color: 'bg-green-600 text-white' },
+  suspended: { label: 'Suspended', color: 'bg-destructive text-white' },
+  pending: { label: 'Pending', color: 'bg-slate-100 text-slate-700' },
+  invited: { label: 'Invited', color: 'bg-purple-100 text-purple-700' },
+  qualified: { label: 'Qualified', color: 'bg-blue-100 text-blue-700' },
 };
 
 async function fetchFromAdminAPI(token: string, action: string, payload?: any) {
@@ -107,12 +110,12 @@ export default function MembersList() {
         },
         {
           accessorKey: 'source',
-          header: 'Source Origin',
+          header: 'Origin Source',
           cell: ({ row }) => {
-            const isAI = row.original.source === 'AI Converted' || !!row.original.leadId;
+            const isAI = row.original.source?.includes('AI') || !!row.original.leadId;
             return (
               <Badge variant="outline" className={cn(
-                "text-[10px] uppercase font-bold gap-1",
+                "text-[10px] uppercase font-extrabold gap-1.5",
                 isAI ? "bg-amber-50 text-amber-700 border-amber-200" : "bg-slate-50 text-muted-foreground"
               )}>
                 {isAI ? <Sparkles className="h-3 w-3" /> : <Building2 className="h-3 w-3" />}
@@ -126,7 +129,7 @@ export default function MembersList() {
           header: 'Plan',
           cell: ({ row }) => (
             <Badge 
-                className={cn("capitalize text-[10px]", tierColors[row.original.membershipId?.toLowerCase() || 'free'] || 'bg-gray-200 text-gray-800')}
+                className={cn("capitalize text-[10px] font-bold", tierColors[row.original.membershipId?.toLowerCase() || 'free'] || 'bg-gray-200 text-gray-800')}
                 variant="outline"
             >
                 {row.original.membershipId}
@@ -135,12 +138,15 @@ export default function MembersList() {
         },
         {
             accessorKey: 'status',
-            header: 'System Status',
-            cell: ({ row }) => (
-                <Badge variant={statusColors[row.original.status || 'active'] || 'default'} className="capitalize text-[10px]">
-                    {row.original.status || 'Active'}
-                </Badge>
-            ),
+            header: 'Lifecycle Status',
+            cell: ({ row }) => {
+                const config = statusColors[row.original.status || 'pending'] || { label: row.original.status, color: 'bg-muted' };
+                return (
+                    <Badge className={cn("capitalize text-[10px] border-none font-bold", config.color)}>
+                        {config.label}
+                    </Badge>
+                )
+            },
         },
         {
           accessorKey: 'createdAt',
@@ -152,7 +158,13 @@ export default function MembersList() {
             header: <div className="text-right">Manage</div>,
             cell: ({ row }) => (
                 <div className="text-right">
-                    <MemberActionMenu member={row.original} onUpdate={forceRefresh} />
+                    {!row.original.provisional ? (
+                         <MemberActionMenu member={row.original} onUpdate={forceRefresh} />
+                    ) : (
+                        <Button variant="ghost" size="sm" asChild>
+                            <Link href={`/adminaccount?view=leads-database&search=${row.original.id}`}>View Lead</Link>
+                        </Button>
+                    )}
                 </div>
             )
         }
@@ -163,9 +175,9 @@ export default function MembersList() {
         <Card>
             <CardHeader className="flex flex-row items-center justify-between">
                 <div>
-                    <CardTitle className="flex items-center gap-2"><Users /> Member Registry</CardTitle>
+                    <CardTitle className="flex items-center gap-2"><Users /> Unified Member Registry</CardTitle>
                     <CardDescription>
-                        Unified view of live accounts and engagement conversions. {members.length} entities tracked.
+                        Combined view of live accounts and high-intent leads. {members.length} entities tracked.
                     </CardDescription>
                 </div>
                  <Button asChild variant="outline">
