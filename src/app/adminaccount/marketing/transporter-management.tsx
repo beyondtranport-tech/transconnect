@@ -26,7 +26,7 @@ import { PartnerOversightDialog } from './PartnerOversightDialog';
 import { CommunicationLogDialog } from './CommunicationLogDialog';
 import { EngageDialog } from './EngageDialog';
 import { formatDateSafe, cn } from '@/lib/utils';
-import { EnrichPartnerButton, BulkEnrichButton } from './EnrichPartnerButton';
+import { EnrichPartnerButton } from './EnrichPartnerButton';
 import { Label } from '@/components/ui/label';
 import { BatchResearchDialog } from './BatchResearchDialog';
 import { BulkImportDialog } from './BulkImportDialog';

@@ -23,7 +23,7 @@ import { PartnerTasksDialog } from './PartnerTasksDialog';
 import { CommunicationLogDialog } from './CommunicationLogDialog';
 import { EngageDialog } from './EngageDialog';
 import { formatDateSafe } from '@/lib/utils';
-import { EnrichPartnerButton, BulkEnrichButton } from './EnrichPartnerButton';
+import { EnrichPartnerButton } from './EnrichPartnerButton';
 import { Label } from '@/components/ui/label';
 
 async function performAdminAction(token: string, action: string, payload: any) {
@@ -235,6 +235,7 @@ export default function InvestorManagement() {
         onOpenChange={(o) => !o && setDialog({ type: null })} 
         partner={dialog.data} 
         audience="investors" 
+        onEngageSuccess={forceRefresh}
       />
       <InvestorDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={forceRefresh} />
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
@@ -247,7 +248,6 @@ export default function InvestorManagement() {
         <CardHeader className="flex flex-row items-center justify-between">
           <div><CardTitle><DollarSign /> Investors</CardTitle></div>
           <div className="flex gap-2">
-            <BulkEnrichButton partners={partners} onComplete={forceRefresh} />
             <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Investor</Button>
           </div>
         </CardHeader>

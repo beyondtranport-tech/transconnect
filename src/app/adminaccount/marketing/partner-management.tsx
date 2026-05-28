@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -19,9 +20,10 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { PartnerOversightDialog } from './PartnerOversightDialog';
+import { CommunicationLogDialog } from './CommunicationLogDialog';
 import { EngageDialog } from './EngageDialog';
 import { formatDateSafe } from '@/lib/utils';
-import { EnrichPartnerButton, BulkEnrichButton } from './EnrichPartnerButton';
+import { EnrichPartnerButton } from './EnrichPartnerButton';
 import { Label } from '@/components/ui/label';
 
 async function performAdminAction(token: string, action: string, payload: any) {
@@ -286,7 +288,6 @@ export default function PartnerManagement() {
         <CardHeader className="flex flex-row items-center justify-between">
           <div><CardTitle><Handshake /> Strategic Partners</CardTitle></div>
           <div className="flex gap-2">
-            <BulkEnrichButton partners={partners} onComplete={forceRefresh} />
             <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Partner</Button>
           </div>
         </CardHeader>
