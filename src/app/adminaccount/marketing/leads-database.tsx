@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect, Suspense } from 'react';
@@ -206,6 +207,7 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
                       <SelectItem value="qualified">Qualified</SelectItem>
                       <SelectItem value="invited">Invited</SelectItem>
                       <SelectItem value="registered">Registered</SelectItem>
+                      <SelectItem value="active">Member (Active)</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -695,6 +697,7 @@ function LeadsDatabaseComponent() {
                 'qualified': { label: 'Qualified', color: 'bg-blue-100 text-blue-700' },
                 'invited': { label: 'Invited', color: 'bg-purple-100 text-purple-700' },
                 'registered': { label: 'Registered', color: 'bg-green-100 text-green-700' },
+                'active': { label: 'Member (Active)', color: 'bg-green-600 text-white' },
             };
             const config = statusMap[row.original.status] || { label: row.original.status, color: 'bg-muted' };
             return <Badge className={cn("capitalize text-[10px]", config.color)} variant="outline">{config.label}</Badge>
@@ -788,6 +791,7 @@ function LeadsDatabaseComponent() {
                             <SelectItem value="contacted">Researching</SelectItem>
                             <SelectItem value="qualified">Qualified</SelectItem>
                             <SelectItem value="invited">Invited</SelectItem>
+                            <SelectItem value="active">Member (Active)</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
@@ -797,7 +801,11 @@ function LeadsDatabaseComponent() {
                         <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">All Categories</SelectItem>
-                            {uniqueCategories.map(cat => (
+                            <SelectItem value="Transport">Transport</SelectItem>
+                            <SelectItem value="Logistics">Logistics</SelectItem>
+                            <SelectItem value="Forwarder">Forwarder</SelectItem>
+                            <SelectItem value="Distribution">Distribution</SelectItem>
+                            {uniqueCategories.filter(c => !['Transport', 'Logistics', 'Forwarder', 'Distribution'].includes(c)).map(cat => (
                                 <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                             ))}
                         </SelectContent>

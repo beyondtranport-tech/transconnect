@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -306,7 +307,7 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl><SelectTrigger><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
                         <SelectContent>
-                            <SelectItem value="active">Active</SelectItem>
+                            <SelectItem value="active">Member (Active)</SelectItem>
                             <SelectItem value="inactive">Inactive</SelectItem>
                             <SelectItem value="contacted">Researching</SelectItem>
                             <SelectItem value="qualified">Qualified</SelectItem>
@@ -582,6 +583,7 @@ export default function TransporterManagement() {
                 'qualified': { label: 'Qualified', color: 'bg-blue-100 text-blue-700' },
                 'invited': { label: 'Invited', color: 'bg-purple-100 text-purple-700' },
                 'registered': { label: 'Registered', color: 'bg-green-100 text-green-700' },
+                'active': { label: 'Member (Active)', color: 'bg-green-600 text-white' },
             };
             const config = statusMap[row.original.status] || { label: row.original.status, color: 'bg-muted' };
             return <Badge className={cn("capitalize text-[10px]", config.color)} variant="outline">{config.label}</Badge>
@@ -650,6 +652,7 @@ export default function TransporterManagement() {
                         <p>• <strong>New/Researching:</strong> Initial phase. Use Forensic AI to find names.</p>
                         <p>• <strong>Qualified:</strong> Contact details verified. Ready for the Digital Handshake.</p>
                         <p>• <strong>Invited:</strong> Sign-up link sent. Monitor open rates in the Outreach column.</p>
+                        <p>• <strong>Member (Active):</strong> Account live and confirmed by administrator.</p>
                     </AlertDescription>
                 </Alert>
                 <div className="flex flex-col md:flex-row gap-4 p-4 bg-muted/30 rounded-lg">
@@ -664,6 +667,7 @@ export default function TransporterManagement() {
                                 <SelectItem value="qualified">Qualified</SelectItem>
                                 <SelectItem value="invited">Invited</SelectItem>
                                 <SelectItem value="registered">Registered</SelectItem>
+                                <SelectItem value="active">Member (Active)</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
@@ -673,7 +677,11 @@ export default function TransporterManagement() {
                             <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Categories</SelectItem>
-                                {uniqueCategories.map(cat => (
+                                <SelectItem value="Transport">Transport</SelectItem>
+                                <SelectItem value="Logistics">Logistics</SelectItem>
+                                <SelectItem value="Forwarder">Forwarder</SelectItem>
+                                <SelectItem value="Distribution">Distribution</SelectItem>
+                                {uniqueCategories.filter(c => !['Transport', 'Logistics', 'Forwarder', 'Distribution'].includes(c)).map(cat => (
                                     <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                                 ))}
                             </SelectContent>
