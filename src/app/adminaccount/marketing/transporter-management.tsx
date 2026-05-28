@@ -22,7 +22,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { PartnerOversightDialog } from './PartnerOversightDialog';
-import { CommunicationLogDialog } from './CommunicationLogDialog';
 import { EngageDialog } from './EngageDialog';
 import { formatDateSafe, cn } from '@/lib/utils';
 import { EnrichPartnerButton, BulkEnrichButton } from './EnrichPartnerButton';
@@ -57,6 +56,181 @@ const partnerSchema = z.object({
   type: z.enum(['partner', 'isa', 'investor', 'developer', 'supplier', 'transporter']),
 });
 type PartnerFormValues = z.infer<typeof partnerSchema>;
+
+function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [duplicates, setDuplicates] = useState<any[][]>([]);
+  const [selections, setSelections] = useState<Record<number, string>>({});
+  const { toast } = useToast();
+
+  async function findDuplicates() {
+    setIsLoading(true);
+    try {
+      const token = await getClientSideAuthToken();
+      if (!token) throw new Error("Auth failed.");
+      const response = await fetch('/api/admin', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'findDuplicateLeads' }),
+        cache: 'no-store'
+      });
+      const result = await response.json();
+      if (!result.success) throw new Error(result.error);
+      setDuplicates(result.data);
+      if (result.data.length === 0) {
+        toast({ title: "No duplicates found." });
+      } else {
+        const initialSelections: Record<number, string> = {};
+        result.data.forEach((group: any[], index: number) => {
+            const memberRecord = group.find(r => r.source === 'Member');
+            if (memberRecord) initialSelections[index] = memberRecord.id;
+            else initialSelections[index] = group[0].id;
+        });
+        setSelections(initialSelections);
+        setIsOpen(true);
+      }
+    } catch (e: any) {
+      toast({ variant: 'destructive', title: "Error finding duplicates", description: e.message });
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  async function handleClean() {
+    setIsLoading(true);
+    const idsToDelete = duplicates.flatMap((group, index) => {
+      const idToKeep = selections[index];
+      if (!idToKeep) return [];
+      return group.filter(lead => lead.id !== idToKeep).map(lead => lead.id);
+    });
+
+    if (idsToDelete.length === 0) {
+      toast({ title: "No duplicates selected for deletion." });
+      setIsLoading(false);
+      setIsOpen(false);
+      return;
+    }
+
+    try {
+      const token = await getClientSideAuthToken();
+      if (!token) throw new Error("Auth failed.");
+      const response = await fetch('/api/admin', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'deleteLeads', payload: { leadIds: idsToDelete } }),
+        cache: 'no-store'
+      });
+      const result = await response.json();
+      if (!result.success) throw new Error(result.error);
+
+      toast({ title: "Duplicates Cleaned!", description: `${idsToDelete.length} duplicate records deleted.` });
+      onComplete();
+      setIsOpen(false);
+    } catch (e: any) {
+      toast({ variant: 'destructive', title: "Error cleaning duplicates", description: e.message });
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" onClick={findDuplicates} disabled={isLoading}>
+          {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
+          Find & Clean Duplicates
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
+        <DialogHeader>
+          <DialogTitle>Duplicate Lead Cleaner</DialogTitle>
+          <DialogDescription>
+            Select the records you want to keep. All unselected records in the group will be deleted.
+          </DialogDescription>
+        </DialogHeader>
+        
+        <Alert className="bg-amber-50 border-amber-200">
+            <Info className="h-4 w-4 text-amber-600" />
+            <AlertTitle>Recommendation Guide</AlertTitle>
+            <AlertDescription className="text-xs">
+                Always keep <strong>Members</strong> (Registered users) and delete <strong>Leads</strong> (Projections). 
+                Deleting a Member record will break their live account access.
+            </AlertDescription>
+        </Alert>
+
+        <div className="flex-1 overflow-y-auto p-4 space-y-6">
+          <div className="flex items-center justify-between mb-4 p-3 bg-muted rounded-md border border-dashed">
+            <div className="flex items-center gap-2">
+                <Checkbox 
+                    id="select-all-recommended-leads" 
+                    checked={Object.keys(selections).length === duplicates.length}
+                    onCheckedChange={(checked) => {
+                        if (checked) {
+                            const newSelections: Record<number, string> = {};
+                            duplicates.forEach((group, index) => {
+                                const member = group.find(r => r.source === 'Member');
+                                newSelections[index] = member ? member.id : group[0].id;
+                            });
+                            setSelections(newSelections);
+                        } else {
+                            setSelections({});
+                        }
+                    }}
+                />
+                <Label htmlFor="select-all-recommended-leads" className="text-xs font-bold cursor-pointer">Apply Recommended Selections to ALL Groups</Label>
+            </div>
+            <p className="text-[10px] text-muted-foreground uppercase font-bold">{duplicates.length} Duplicate Groups Found</p>
+          </div>
+
+          {duplicates.map((group, groupIndex) => {
+             const groupName = group.find(r => r.companyName)?.companyName || 'Unnamed Group';
+             return (
+                <Card key={groupIndex} className="shadow-none border">
+                <CardHeader className="py-3 bg-muted/30"><CardTitle className="text-sm font-bold">Group: {groupName}</CardTitle></CardHeader>
+                <CardContent className="p-0">
+                    {group.map(lead => {
+                        const isRecommended = lead.source === 'Member';
+                        return (
+                            <div key={lead.id} className={cn("flex items-start gap-4 p-4 border-b last:border-b-0", selections[groupIndex] === lead.id ? "bg-primary/5" : "")}>
+                                <Checkbox
+                                    id={`lead-${groupIndex}-${lead.id}`}
+                                    checked={selections[groupIndex] === lead.id}
+                                    onCheckedChange={() => setSelections(prev => ({ ...prev, [groupIndex]: lead.id }))}
+                                />
+                                <label htmlFor={`lead-${groupIndex}-${lead.id}`} className="text-sm cursor-pointer w-full">
+                                    <div className="flex justify-between items-start">
+                                        <div>
+                                            <div className="flex items-center gap-2">
+                                                <p className="font-bold">{lead.companyName || 'No Company Name'}</p>
+                                                {isRecommended && <Badge variant="default" className="bg-green-100 text-green-700 text-[10px] uppercase">Recommended</Badge>}
+                                            </div>
+                                            <p className="text-xs text-muted-foreground">{lead.contactPerson || `${lead.firstName || ''} ${lead.lastName || ''}`.trim() || 'No Contact Name'}</p>
+                                            <p className="text-[10px] font-mono text-muted-foreground mt-1">{lead.id}</p>
+                                        </div>
+                                        <Badge variant={lead.source === 'Member' ? 'default' : 'outline'} className="text-[10px] uppercase font-extrabold">{lead.source}</Badge>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground mt-2">{lead.email || 'No Email'} • {lead.phone || lead.telephone_number || 'No Phone'}</p>
+                                </label>
+                            </div>
+                        )
+                    })}
+                </CardContent>
+                </Card>
+             )
+          })}
+        </div>
+        <DialogFooter className="p-4 border-t">
+          <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
+          <Button onClick={handleClean} disabled={isLoading} className="bg-destructive hover:bg-destructive/90">
+             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+             Delete Unselected & Clean
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: boolean; onOpenChange: (open: boolean) => void; partner?: any; onSave: () => void; }) {
   const [isLoading, setIsLoading] = useState(false);
