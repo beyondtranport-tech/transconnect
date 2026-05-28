@@ -56,24 +56,22 @@ const EmailTemplate = ({ subject, content, partner, referralLink }: { subject: s
 };
 
 const getTemplates = (transporterType: string) => ({
-    consent: {
-        subject: `Confirming Your Logistics Flow Network Participation`,
+    handshake: {
+        subject: "The Digital Handshake: Confirming [Your Company]'s Network Access",
         content: `
 Hi [Name],
 
 I'm reaching out from Logistics Flow. We're currently expanding our network of transport professionals in the ${transporterType} sector, and we'd love to have [Your Company] involved.
 
-Before we can send you specific opportunities, group discount offers, or load matching data, we need to ensure we are fully compliant with your privacy preferences.
+Before we can send you matching freight loads or group discount offers, we believe in a "Digital Handshake" to confirm your interest and ensure we are POPI-compliant.
 
-Please take 30 seconds to review our terms and provide your formal marketing consent here:
+Please take 30 seconds to review our standards and provide your formal marketing consent here:
 [Opt-in Link]
 
-Why opt-in?
-- Gain access to community-negotiated parts and tire discounts.
-- Receive matching freight load alerts via our AI engine.
-- Build a digital profile to unlock easier asset financing.
-
-We respect your privacy and will never spam you. You can manage your preferences at any time.
+By accepting this handshake, you unlock:
+- Access to community-negotiated parts and tire discounts.
+- AI-matched freight load alerts.
+- A digital business profile to unlock easier asset financing.
 
 Best regards,
 
@@ -115,7 +113,7 @@ Best regards,
 });
 
 const tabs = [
-    { value: "consent", label: "0. POPI Consent", icon: ShieldCheck },
+    { value: "handshake", label: "0. Digital Handshake", icon: ShieldCheck },
     { value: "intro", label: "1. Cost Savings" },
     { value: "loads", label: "2. Load Matching" },
 ];
@@ -135,7 +133,7 @@ export default function TransporterEmails({ partner }: { partner?: any }) {
 
     return (
         <div className="space-y-8">
-            <Tabs defaultValue="consent" className="w-full">
+            <Tabs defaultValue="handshake" className="w-full">
                 <TabsList className="h-auto flex-wrap justify-start bg-muted/30">
                    {tabs.map(tab => (
                        <TabsTrigger key={tab.value} value={tab.value} className="gap-2 text-xs">

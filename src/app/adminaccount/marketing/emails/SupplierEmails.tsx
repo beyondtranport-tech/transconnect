@@ -1,6 +1,6 @@
 'use client';
 
-import { Card, CardContent, CardDescription, CardHeader, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardFooter, CardTitle } from '@/components/ui/card';
 import { UserCheck, ShieldCheck } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import React from 'react';
@@ -54,24 +54,22 @@ const EmailTemplate = ({ subject, content, partner, referralLink }: { subject: s
 };
 
 const getTemplates = (supplierType: string) => ({
-    consent: {
-        subject: `Confirming Your Supplier Profile for Logistics Flow`,
+    handshake: {
+        subject: `The Digital Handshake: [Your Company] Supplier Profile`,
         content: `
 Hi [Supplier Name],
 
 I'm reaching out from Logistics Flow. We're currently expanding our network of ${supplierType} vendors, and we'd love to have [Your Company] listed.
 
-Before we can send you quote requests or invite you to create your digital storefront, we need to ensure we are fully compliant with your privacy preferences.
+Before we can send you quote requests or invite you to create your digital storefront, we require a "Digital Handshake" to confirm your interest and ensure we are POPI-compliant.
 
-Please take 30 seconds to review our terms and provide your formal marketing consent here:
+Please take 30 seconds to establish the connection here:
 [Opt-in Link]
 
-Why opt-in?
+Establishing this handshake allows you to:
 - Reach a targeted community of fleet owners.
 - Receive direct RFQs for ${supplierType}.
 - Enable embedded finance for your customers.
-
-We respect your privacy and will never spam you. You can manage your preferences at any time.
 
 Best regards,
 
@@ -115,7 +113,7 @@ Best regards,
 });
 
 const tabs = [
-    { value: "consent", label: "0. POPI Consent", icon: ShieldCheck },
+    { value: "handshake", label: "0. Digital Handshake", icon: ShieldCheck },
     { value: "intro", label: "1. Digital Branch" },
     { value: "revenue", label: "2. Revenue Model" },
 ];
@@ -135,7 +133,7 @@ export default function SupplierEmails({ partner }: { partner?: any }) {
 
     return (
         <div className="space-y-6">
-            <Tabs defaultValue="consent" className="w-full">
+            <Tabs defaultValue="handshake" className="w-full">
                 <TabsList className="h-auto flex-wrap justify-start bg-muted/30">
                    {tabs.map(tab => {
                        const Icon = tab.icon;

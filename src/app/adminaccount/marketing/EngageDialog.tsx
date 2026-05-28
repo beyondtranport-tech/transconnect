@@ -3,12 +3,13 @@
 import React, { useState, useMemo } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Loader2, ExternalLink, Send } from 'lucide-react';
+import { Loader2, ExternalLink, Send, Handshake } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
 import { copyHtmlToClipboard } from '@/lib/utils';
 
 // Content components
+import DigitalHandshake from './content/DigitalHandshake';
 import CompanyProfile from './content/CompanyProfile';
 import TechArchitecture from './content/TechArchitecture';
 import RevenueModel from './content/RevenueModel';
@@ -52,7 +53,7 @@ async function performAdminAction(token: string, action: string, payload: any) {
 
 export function EngageDialog({ open, onOpenChange, partner, audience, onEngageSuccess }: EngageDialogProps) {
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState('company-profile');
+  const [activeTab, setActiveTab] = useState('digital-handshake');
   const [isProcessing, setIsProcessing] = useState(false);
 
   const audienceLabel = useMemo(() => {
@@ -130,7 +131,7 @@ export function EngageDialog({ open, onOpenChange, partner, audience, onEngageSu
         trackingPixel.style.display = 'none';
         contentClone.appendChild(trackingPixel);
 
-        // 3. Copy using the safe feature-detecting utility
+        // 3. Copy using the resilient HTML utility
         const success = await copyHtmlToClipboard(contentClone.innerHTML);
 
         if (!success) throw new Error("Could not copy content to clipboard.");
@@ -177,6 +178,7 @@ export function EngageDialog({ open, onOpenChange, partner, audience, onEngageSu
             <div className="flex-1 flex overflow-hidden">
                 <div className="w-64 border-r bg-muted/20 p-4 space-y-2">
                     {[
+                        { id: 'digital-handshake', label: 'Digital Handshake' },
                         { id: 'company-profile', label: 'Company Profile' },
                         { id: 'tech-architecture', label: 'Tech Architecture' },
                         { id: 'revenue-model', label: 'Revenue Model' },
@@ -201,6 +203,7 @@ export function EngageDialog({ open, onOpenChange, partner, audience, onEngageSu
                         <div style={{ fontFamily: 'sans-serif', color: '#1e293b', lineHeight: '1.6' }}>
                             <p style={{ marginBottom: '16px' }}>Good day {partner.firstName},</p>
                             <div style={{ borderTop: '2px solid #f1f5f9', paddingTop: '24px', marginTop: '24px' }}>
+                                {activeTab === 'digital-handshake' && <DigitalHandshake partner={partner} />}
                                 {activeTab === 'company-profile' && <CompanyProfile audience={audience} partner={partner} />}
                                 {activeTab === 'tech-architecture' && <TechArchitecture partner={partner} />}
                                 {activeTab === 'revenue-model' && <RevenueModel partner={partner} />}

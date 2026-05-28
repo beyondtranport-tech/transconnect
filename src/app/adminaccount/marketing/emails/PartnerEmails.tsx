@@ -1,6 +1,6 @@
 'use client';
 
-import { Card, CardContent, CardDescription, CardHeader, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardFooter, CardTitle } from '@/components/ui/card';
 import { Mail, UserCheck, Link as LinkIcon, ShieldCheck } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import React from 'react';
@@ -58,24 +58,22 @@ const EmailTemplate = ({ subject, content, partner, referralLink }: { subject: s
 };
 
 const templates = {
-    consent: {
-        subject: "Confirming Your Logistics Flow Network Participation",
+    handshake: {
+        subject: "The Digital Handshake: Connecting with Logistics Flow",
         content: `
 Hi [Partner Name],
 
 I'm reaching out from Logistics Flow. We're currently expanding our network of strategic partners, and we'd love to have [Your Company] involved.
 
-Before we can send you specific opportunities or platform updates, we need to ensure we are fully compliant with your privacy preferences.
+Before we dive into the details, we believe in a "Digital Handshake" to ensure we are fully compliant with your privacy preferences and the POPI Act.
 
-Please take 30 seconds to review our terms and provide your formal marketing consent here:
+Please take 30 seconds to establish the connection and provide your formal marketing consent here:
 [Opt-in Link]
 
-Why opt-in?
+Establish this foundation now to:
 - Receive matching partnership alerts.
 - Access community-negotiated benefits.
 - Participate in our revenue-sharing model.
-
-We respect your privacy and will never spam you. You can manage your preferences at any time.
 
 Best regards,
 
@@ -141,7 +139,7 @@ Best regards,
 };
 
 const tabs = [
-    { value: "consent", label: "0. POPI Consent", icon: ShieldCheck },
+    { value: "handshake", label: "0. Digital Handshake", icon: ShieldCheck },
     { value: "intro", label: "1. Intro" },
     { value: "proposal", label: "2. Proposal" },
     { value: "invitation", label: "3. Invite Link" },
@@ -159,7 +157,7 @@ export default function PartnerEmails({ partner }: { partner?: any }) {
 
     return (
         <div className="space-y-6">
-            <Tabs defaultValue="consent" className="w-full">
+            <Tabs defaultValue="handshake" className="w-full">
                 <TabsList className="h-auto flex-wrap justify-start bg-muted/30">
                    {tabs.map(tab => {
                        const Icon = tab.icon;
