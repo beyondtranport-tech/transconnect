@@ -1,10 +1,9 @@
-
 'use client';
 
 import React, { useMemo, useCallback, useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Award, Gem, Loader2, Percent, Star, UserCheck } from 'lucide-react';
+import { Award, Gem, Loader2, Percent, Star, UserCheck, TrendingUp, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useConfig } from '@/hooks/use-config';
@@ -32,21 +31,16 @@ const tierColors: { [key: string]: string } = {
     gold: 'bg-yellow-200 text-yellow-800',
 };
 
-
 async function fetchFromAdminAPI(token: string, action: string, payload?: any) {
     const response = await fetch('/api/admin', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ action, payload }),
     });
-
     const result = await response.json();
-    if (!response.ok || !result.success) {
-        throw new Error(result.error || `API Error for action: ${action}`);
-    }
+    if (!response.ok || !result.success) throw new Error(result.error || `API Error: ${action}`);
     return result.data;
 }
-
 
 export default function MemberLoyaltyStatus() {
     const { toast } = useToast();
@@ -58,21 +52,17 @@ export default function MemberLoyaltyStatus() {
         setIsLoadingData(true);
         try {
             const token = await getClientSideAuthToken();
-            if (!token) throw new Error("Authentication failed.");
+            if (!token) return;
             const companyData = await fetchFromAdminAPI(token, 'getMembers', {});
             setCompanies(companyData);
         } catch (e: any) {
-            toast({ variant: 'destructive', title: 'Error Loading Data', description: e.message });
+            toast({ variant: 'destructive', title: 'Error', description: e.message });
         } finally {
             setIsLoadingData(false);
         }
     }, [toast]);
     
-    useEffect(() => {
-        loadData();
-    }, [loadData]);
-
-    const displayedBenefits = useMemo(() => (loyaltySettings?.benefits || []).slice(0, 2), [loyaltySettings]);
+    useEffect(() => { loadData(); }, [loadData]);
 
     const enrichedMembers = useMemo(() => {
         if (!companies || !loyaltySettings) return [];
@@ -83,33 +73,23 @@ export default function MemberLoyaltyStatus() {
             const nextTierPoints = loyaltySettings[`${nextTier}Points`];
             const progress = tier === 'gold' ? 100 : nextTierPoints > 0 ? (currentPoints / nextTierPoints) * 100 : 0;
             
-            const benefits: Record<string, string> = {};
-            displayedBenefits.forEach((benefit: any) => {
-                benefits[benefit.name] = benefit[`${tier}Value`] || 'N/A';
-            });
-
             return {
-                companyId: company.id,
-                ownerId: company.ownerId,
-                companyName: company.companyName,
-                ownerName: `${company.firstName || ''} ${company.lastName || ''}`.trim() || 'N/A',
-                email: company.email,
+                ...company,
                 loyaltyTier: tier,
                 rewardPoints: currentPoints,
-                benefits,
                 progressToNext: progress,
                 nextTierName: tier !== 'gold' ? nextTier : null,
             };
         }).sort((a,b) => b.rewardPoints - a.rewardPoints);
-    }, [companies, loyaltySettings, displayedBenefits]);
+    }, [companies, loyaltySettings]);
     
     const isLoading = isLoadingData || isSettingsLoading;
 
     return (
         <Card>
             <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Award/> Member Loyalty Overview</CardTitle>
-                <CardDescription>A live look at all member loyalty statuses, points, and earned benefits.</CardDescription>
+                <CardTitle className="flex items-center gap-2"><Award className="text-primary"/> Member Engagement & Loyalty</CardTitle>
+                <CardDescription>Monitoring member points and progression through the value tiers.</CardDescription>
             </CardHeader>
             <CardContent>
                 {isLoading ? (
@@ -120,51 +100,41 @@ export default function MemberLoyaltyStatus() {
                             <TableHeader>
                                 <TableRow>
                                     <TableHead>Member</TableHead>
-                                    <TableHead>Tier</TableHead>
-                                    <TableHead>Points</TableHead>
-                                    <TableHead>Progress to Next Tier</TableHead>
-                                    {displayedBenefits.map((b: any) => <TableHead key={b.name} className="text-center">{b.name}</TableHead>)}
-                                    <TableHead className="text-right">Actions</TableHead>
+                                    <TableHead>Current Tier</TableHead>
+                                    <TableHead>Total Points</TableHead>
+                                    <TableHead>Tier Progress</TableHead>
+                                    <TableHead className="text-right">Action</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                {enrichedMembers.length > 0 ? enrichedMembers.map(member => (
-                                <TableRow key={member.companyId}>
+                                <TableRow key={member.id}>
                                     <TableCell>
-                                        <p className="font-semibold">{member.ownerName}</p>
-                                        <p className="text-xs text-muted-foreground">{member.companyName}</p>
+                                        <p className="font-semibold">{member.companyName}</p>
+                                        <p className="text-xs text-muted-foreground">{member.firstName} {member.lastName}</p>
                                     </TableCell>
                                     <TableCell>
-                                        <Badge className={cn("capitalize", tierColors[member.loyaltyTier || 'bronze'])}>{member.loyaltyTier}</Badge>
+                                        <Badge className={cn("capitalize border-none", tierColors[member.loyaltyTier || 'bronze'])}>{member.loyaltyTier}</Badge>
                                     </TableCell>
-                                    <TableCell className="font-mono font-semibold">{member.rewardPoints.toLocaleString()}</TableCell>
-                                    <TableCell>
+                                    <TableCell className="font-mono font-bold text-primary">{member.rewardPoints.toLocaleString()}</TableCell>
+                                    <TableCell className="min-w-[150px]">
                                         {member.nextTierName ? (
-                                            <>
-                                                <Progress value={member.progressToNext} className="h-2 w-full" />
-                                                <p className="text-xs text-muted-foreground mt-1">To {member.nextTierName}</p>
-                                            </>
+                                            <div className="space-y-1">
+                                                <Progress value={member.progressToNext} className="h-1.5" />
+                                                <p className="text-[10px] text-muted-foreground uppercase font-bold">To {member.nextTierName}</p>
+                                            </div>
                                         ) : (
-                                            <span className="text-xs font-semibold text-primary">Max Tier Reached</span>
+                                            <Badge variant="outline" className="text-[10px] border-amber-200 bg-amber-50 text-amber-700 uppercase font-black">Gold (Max Tier)</Badge>
                                         )}
                                     </TableCell>
-                                    {displayedBenefits.map((b: any) => (
-                                        <TableCell key={b.name} className="text-center font-semibold text-primary">{member.benefits[b.name] || 'N/A'}</TableCell>
-                                    ))}
                                     <TableCell className="text-right">
-                                        <Button asChild variant="outline" size="sm">
-                                            <Link href={`/backend?view=wallet&memberId=${member.companyId}`}>
-                                                View Member
-                                            </Link>
+                                        <Button asChild variant="ghost" size="sm">
+                                            <Link href={`/backend?view=wallet&memberId=${member.id}`}><Zap className="mr-2 h-3.5 w-3.5"/>Manage</Link>
                                         </Button>
                                     </TableCell>
                                 </TableRow>
                                )) : (
-                                <TableRow>
-                                    <TableCell colSpan={displayedBenefits.length + 5} className="h-24 text-center">
-                                        No member data found.
-                                    </TableCell>
-                                </TableRow>
+                                <TableRow><TableCell colSpan={5} className="h-24 text-center">No member data found.</TableCell></TableRow>
                                )}
                             </TableBody>
                         </Table>

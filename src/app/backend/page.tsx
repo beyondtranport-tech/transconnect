@@ -17,6 +17,7 @@ import {
 import {
   LogOut,
   Loader2,
+  TrendingUp,
   User,
   LayoutDashboard,
   Settings,
@@ -33,28 +34,22 @@ import {
   Banknote,
   Handshake,
   DollarSign,
-  BookOpen,
-  UserCheck2,
-  Truck,
-  ShoppingCart,
-  Scale,
   MessageSquare,
   Gift,
-  Building,
-  Code2,
-  FileText,
+  Zap,
+  PieChart,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect, Suspense, useCallback } from 'react';
-import Link from 'next/link';
 
 import { useUser, useAuth } from '@/firebase';
 import { signOut } from 'firebase/auth';
+import dynamic from 'next/dynamic';
 import React from 'react';
 
-// Static Imports
+// --- Static Imports for Member Success Focus ---
 import AdminDashboardContent from '@/app/backend/dashboard-content';
 import MemberWallet from '@/app/backend/wallet/[memberId]/member-wallet';
 import WalletTransactionsList from '@/app/backend/wallet-transactions-list';
@@ -63,11 +58,13 @@ import ReconciliationPage from '@/app/backend/reconciliation/page';
 import ContributionsList from '@/app/backend/contributions-list';
 import ActivityFeed from '@/app/backend/activity-feed';
 import MembersList from '@/app/backend/members-list';
-import CommunicationsContent from '@/app/backend/communications-content';
 import SupportChatInbox from '@/app/backend/support-chat-inbox';
 import UsersList from '@/app/backend/users-list';
 import CommercialNegotiations from '@/app/backend/commercial-negotiations';
-import MarketingPage from '@/app/adminaccount/marketing/MarketingPage';
+import MemberLoyaltyStatus from '@/app/backend/member-loyalty-status';
+import MemberSuccessEngine from '@/app/backend/member-success-engine';
+
+// Platform Settings
 import PermissionsContent from '@/app/backend/permissions-content';
 import PricingManagement from '@/app/backend/revenue/pricing-management';
 import ConnectPlanPricing from '@/app/backend/revenue/connect-plan-pricing';
@@ -126,23 +123,24 @@ function BackendContent() {
   };
 
   const renderContent = useCallback(() => {
-    if (activeView.startsWith('marketing-')) {
-        const audience = activeView.split('-')[1] as "partners" | "isa" | "transporters" | "suppliers" | "investors" | "developers";
-        return <MarketingPage audience={audience} />;
-    }
     switch (activeView) {
       case 'dashboard': return <AdminDashboardContent />;
-      case 'commercial-negotiations': return <CommercialNegotiations />;
       case 'members': return <MembersList />;
       case 'users': return <UsersList />;
       case 'wallet': return memberId ? <MemberWallet memberId={memberId} /> : <WalletTransactionsList />;
       case 'wallet-transactions': return <WalletTransactionsList />;
-      case 'shops': return <ShopsList />;
-      case 'reconciliation': return <ReconciliationPage />;
-      case 'contributions': return <ContributionsList />;
       case 'activity': return <ActivityFeed />;
-      case 'communications': return <CommunicationsContent />;
       case 'support-inbox': return <SupportChatInbox />;
+      
+      // Member Success & Growth
+      case 'success-engine': return <MemberSuccessEngine />;
+      case 'loyalty-overview': return <MemberLoyaltyStatus />;
+      case 'contributions': return <ContributionsList />;
+      case 'shops': return <ShopsList />;
+      case 'commercial-negotiations': return <CommercialNegotiations />;
+      case 'reconciliation': return <ReconciliationPage />;
+      
+      // Platform Settings
       case 'permissions': return <PermissionsContent />;
       case 'action-plan': return <ActionPlanSettings />;
       case 'loyalty-plan': return <TierBenefits />;
@@ -165,17 +163,10 @@ function BackendContent() {
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
   };
 
-  if (isUserLoading || !user) {
-    return (
-        <div className="flex justify-center items-center py-20">
-            <Loader2 className="h-16 w-16 animate-spin text-primary" />
-        </div>
-    );
-  }
-
   const navigate = (view: string) => router.push(`/backend?view=${view}`, { scroll: false });
   
-  const isOperationsActive = ['members', 'users', 'wallet', 'wallet-transactions', 'shops', 'reconciliation', 'contributions', 'activity', 'communications', 'support-inbox', 'commercial-negotiations'].includes(activeView);
+  const isOperationsActive = ['dashboard', 'activity', 'members', 'users', 'wallet', 'wallet-transactions', 'reconciliation', 'support-inbox'].includes(activeView);
+  const isSuccessActive = ['success-engine', 'loyalty-overview', 'contributions', 'shops', 'commercial-negotiations'].includes(activeView);
   const isRevenueActive = [
     'pricing-memberships', 'pricing-connect', 'pricing-tech', 'pricing-marketplace',
     'commissions-malls', 'commissions-isa', 'incentives-sales'
@@ -183,7 +174,6 @@ function BackendContent() {
   const isPlatformSettingsActive = [
     'permissions', 'action-plan', 'loyalty-plan', 'rewards-plan', 'tasks', 'settings-bank'
   ].includes(activeView);
-  const isMarketingActive = activeView.startsWith('marketing-');
 
   return (
     <AdminAuthGuard>
@@ -193,7 +183,7 @@ function BackendContent() {
             <div className="flex items-center gap-2 p-2">
               <Shield className="h-6 w-6 text-primary" />
               <h2 className="text-lg font-semibold text-sidebar-foreground">
-                App Backend
+                Success & Growth
               </h2>
             </div>
           </SidebarHeader>
@@ -201,34 +191,29 @@ function BackendContent() {
             <SidebarGroup>
                 <SidebarMenuItem>
                     <SidebarMenuButton tooltip="Dashboard" isActive={activeView === 'dashboard'} onClick={() => navigate('dashboard')}>
-                        <LayoutDashboard /><span>Dashboard</span>
+                        <LayoutDashboard /><span>Overview</span>
                     </SidebarMenuButton>
                 </SidebarMenuItem>
+                
                 <SidebarMenuItem>
                   <SidebarMenuButton tooltip="Operations" isActive={isOperationsActive}><Wrench /><span>Operations</span></SidebarMenuButton>
                   <SidebarMenuSub>
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'activity'} onClick={() => navigate('activity')}><Activity />Activity Feed</SidebarMenuSubButton></SidebarMenuSubItem>
-                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'communications'} onClick={() => navigate('communications')}><MessageSquare />Agent Chats</SidebarMenuSubButton></SidebarMenuSubItem>
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'support-inbox'} onClick={() => navigate('support-inbox')}><MessageSquare />Support Inbox</SidebarMenuSubButton></SidebarMenuSubItem>
-                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'members'} onClick={() => navigate('members')}><Users />Members</SidebarMenuSubButton></SidebarMenuSubItem>
-                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'users'} onClick={() => navigate('users')}><Users />All Users</SidebarMenuSubButton></SidebarMenuSubItem>
-                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'wallet-transactions'} onClick={() => navigate('wallet-transactions')}><Wallet />Wallet Transactions</SidebarMenuSubButton></SidebarMenuSubItem>
-                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'contributions'} onClick={() => navigate('contributions')}><ListTodo />Contributions</SidebarMenuSubButton></SidebarMenuSubItem>
-                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'shops'} onClick={() => navigate('shops')}><Store />Shops</SidebarMenuSubButton></SidebarMenuSubItem>
+                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'members'} onClick={() => navigate('members')}><Users />Member Roster</SidebarMenuSubButton></SidebarMenuSubItem>
+                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'wallet-transactions'} onClick={() => navigate('wallet-transactions')}><Wallet />Wallet Ledger</SidebarMenuSubButton></SidebarMenuSubItem>
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'reconciliation'} onClick={() => navigate('reconciliation')}><Scale />Bank Reconciliation</SidebarMenuSubButton></SidebarMenuSubItem>
-                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'commercial-negotiations'} onClick={() => navigate('commercial-negotiations')}><Handshake />Commercials</SidebarMenuSubButton></SidebarMenuSubItem>
                   </SidebarMenuSub>
                 </SidebarMenuItem>
 
                 <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Marketing" isActive={isMarketingActive}><BookOpen /><span>Marketing</span></SidebarMenuButton>
+                    <SidebarMenuButton tooltip="Member Success" isActive={isSuccessActive}><TrendingUp /><span>Success Engine</span></SidebarMenuButton>
                     <SidebarMenuSub>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-partners'} onClick={() => navigate('marketing-partners')}><Handshake className="h-4 w-4 mr-2"/>Partners</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-isa'} onClick={() => navigate('marketing-isa')}><UserCheck2 className="h-4 w-4 mr-2"/>ISA Agents</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-suppliers'} onClick={() => navigate('marketing-suppliers')}><Building className="h-4 w-4 mr-2"/>Suppliers</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-transporters'} onClick={() => navigate('marketing-transporters')}><Truck className="h-4 w-4 mr-2"/>Transporters</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-investors'} onClick={() => navigate('marketing-investors')}><DollarSign className="h-4 w-4 mr-2"/>Investors</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-developers'} onClick={() => navigate('marketing-developers')}><Code2 className="h-4 w-4 mr-2"/>Developers</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'success-engine'} onClick={() => navigate('success-engine')}><PieChart />Conversion Engine</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'loyalty-overview'} onClick={() => navigate('loyalty-overview')}><Award />Loyalty & Tiers</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'contributions'} onClick={() => navigate('contributions')}><ListTodo />Data Contributions</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'shops'} onClick={() => navigate('shops')}><Store />Shop Management</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'commercial-negotiations'} onClick={() => navigate('commercial-negotiations')}><Handshake />Commercials</SidebarMenuSubButton></SidebarMenuSubItem>
                     </SidebarMenuSub>
                 </SidebarMenuItem>
 
@@ -244,15 +229,16 @@ function BackendContent() {
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'incentives-sales'} onClick={() => navigate('incentives-sales')}>Sales Incentives</SidebarMenuSubButton></SidebarMenuSubItem>
                     </SidebarMenuSub>
                 </SidebarMenuItem>
+                
                 <SidebarMenuItem>
                   <SidebarMenuButton tooltip="Platform Settings" isActive={isPlatformSettingsActive}><Settings /><span>Platform Settings</span></SidebarMenuButton>
                   <SidebarMenuSub>
-                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'permissions'} onClick={() => navigate('permissions')}><Lock className="h-4 w-4 mr-2"/>Permissions</SidebarMenuSubButton></SidebarMenuSubItem>
-                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'action-plan'} onClick={() => navigate('action-plan')}><Star className="h-4 w-4 mr-2"/>Action Plan</SidebarMenuSubButton></SidebarMenuSubItem>
-                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'loyalty-plan'} onClick={() => navigate('loyalty-plan')}><Award className="h-4 w-4 mr-2"/>Loyalty Plan</SidebarMenuSubButton></SidebarMenuSubItem>
-                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'rewards-plan'} onClick={() => navigate('rewards-plan')}><Gift className="h-4 w-4 mr-2"/>Rewards Plan</SidebarMenuSubButton></SidebarMenuSubItem>
-                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'settings-bank'} onClick={() => navigate('settings-bank')}><Banknote className="h-4 w-4 mr-2"/>Bank Details</SidebarMenuSubButton></SidebarMenuSubItem>
-                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'tasks'} onClick={() => navigate('tasks')}><Wrench className="h-4 w-4 mr-2"/>Platform Tasks</SidebarMenuSubButton></SidebarMenuSubItem>
+                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'permissions'} onClick={() => navigate('permissions')}><Lock />Permissions</SidebarMenuSubButton></SidebarMenuSubItem>
+                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'action-plan'} onClick={() => navigate('action-plan')}><Star />Action Plan</SidebarMenuSubButton></SidebarMenuSubItem>
+                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'loyalty-plan'} onClick={() => navigate('loyalty-plan')}><Award />Loyalty Plan</SidebarMenuSubButton></SidebarMenuSubItem>
+                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'rewards-plan'} onClick={() => navigate('rewards-plan')}><Gift />Rewards Plan</SidebarMenuSubButton></SidebarMenuSubItem>
+                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'settings-bank'} onClick={() => navigate('settings-bank')}><Banknote />Bank Details</SidebarMenuSubButton></SidebarMenuSubItem>
+                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'tasks'} onClick={() => navigate('tasks')}><Wrench />Platform Tasks</SidebarMenuSubButton></SidebarMenuSubItem>
                   </SidebarMenuSub>
                 </SidebarMenuItem>
             </SidebarGroup>

@@ -1,7 +1,7 @@
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Loader2, Store, Handshake, Send, Wallet, ArrowRight, TrendingUp, Zap, CheckCircle2, Clock } from 'lucide-react';
+import { Loader2, Store, Handshake, TrendingUp, Zap, CheckCircle2, Clock, Users, ArrowRight, PackageCheck, Star } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { getClientSideAuthToken, useUser } from '@/firebase';
@@ -27,7 +27,7 @@ async function fetchFromAdminAPI(token: string, action: string, payload?: any) {
     return result;
 }
 
-const StatCard = ({ title, value, icon, link, linkText }: { title: string, value: number, icon: React.ReactNode, link: string, linkText: string }) => (
+const StatCard = ({ title, value, icon, link, linkText, trend }: { title: string, value: string | number, icon: React.ReactNode, link: string, linkText: string, trend?: string }) => (
     <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">{title}</CardTitle>
@@ -35,6 +35,7 @@ const StatCard = ({ title, value, icon, link, linkText }: { title: string, value
         </CardHeader>
         <CardContent>
             <div className="text-2xl font-bold">{value}</div>
+            {trend && <p className="text-xs text-green-600 mt-1">{trend}</p>}
         </CardContent>
         <CardFooter>
              <Button asChild variant="outline" size="sm" className="w-full">
@@ -44,11 +45,10 @@ const StatCard = ({ title, value, icon, link, linkText }: { title: string, value
     </Card>
 );
 
-
-export default function DashboardContent() {
-    const [queues, setQueues] = useState({ pendingShops: 0, pendingAgreements: 0, pendingPayouts: 0, pendingPayments: 0 });
-    const [leads, setLeads] = useState<any[]>([]);
-    const [companies, setCompanies] = useState<any[]>([]);
+export default function AdminDashboardContent() {
+    const [members, setMembers] = useState<any[]>([]);
+    const [contributions, setContributions] = useState<any[]>([]);
+    const [shops, setShops] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const { toast } = useToast();
@@ -58,32 +58,21 @@ export default function DashboardContent() {
         setError(null);
         try {
             const token = await getClientSideAuthToken();
-            if (!token) throw new Error("Authentication failed: User token not found.");
+            if (!token) throw new Error("Authentication failed.");
 
-            const [queuesRes, payoutsRes, paymentsRes, leadsRes, membersRes] = await Promise.all([
-                fetchFromAdminAPI(token, 'getDashboardQueues').catch(e => ({ pendingShops: [], proposedAgreements: [] })),
-                fetchFromAdminAPI(token, 'getPendingPayouts').catch(e => ([])),
-                fetchFromAdminAPI(token, 'getWalletPayments').catch(e => ([])),
-                fetchFromAdminAPI(token, 'getPartnersByType', { type: 'transporter' }),
-                fetchFromAdminAPI(token, 'getMembers')
+            const [membersRes, contributionsRes, shopsRes] = await Promise.all([
+                fetchFromAdminAPI(token, 'getMembers'),
+                fetchFromAdminAPI(token, 'getContributions'),
+                fetchFromAdminAPI(token, 'getShops')
             ]);
             
-            setQueues({
-                pendingShops: queuesRes.pendingShops.length,
-                pendingAgreements: queuesRes.proposedAgreements.length,
-                pendingPayouts: payoutsRes.length,
-                pendingPayments: paymentsRes.filter((p:any) => p.status === 'pending').length
-            });
-            setLeads(leadsRes.data || []);
-            setCompanies(membersRes.data || []);
+            setMembers(membersRes.data || []);
+            setContributions(contributionsRes.data || []);
+            setShops(shopsRes.data || []);
 
         } catch (e: any) {
             setError(e.message);
-            toast({
-                variant: "destructive",
-                title: "Failed to load dashboard data",
-                description: e.message
-            });
+            toast({ variant: "destructive", title: "Dashboard Error", description: e.message });
         } finally {
             setIsLoading(false);
         }
@@ -93,93 +82,91 @@ export default function DashboardContent() {
         loadDashboardData();
     }, [loadDashboardData]);
 
-    const funnelData = useMemo(() => {
-        const total = leads.length;
-        const reached = leads.filter(l => ['contacted', 'invited', 'active'].includes(l.status)).length;
-        const converted = companies.filter(c => !!c.leadId).length;
-        const paying = companies.filter(c => !!c.leadId && c.membershipId !== 'free').length;
+    const stats = useMemo(() => {
+        const total = members.length;
+        const paid = members.filter(m => m.membershipId && m.membershipId !== 'free').length;
+        const contributors = new Set(contributions.map(c => c.companyId)).size;
+        const shopOwners = new Set(shops.filter(s => s.status === 'approved').map(s => s.companyId)).size;
 
-        return [
-            { stage: 'AI Leads Found', count: total, color: 'hsl(var(--muted))' },
-            { stage: 'Outreached', count: reached, color: 'hsl(var(--primary))', opacity: 0.6 },
-            { stage: 'Active Members', count: converted, color: 'hsl(var(--primary))', opacity: 0.8 },
-            { stage: 'Paying Members', count: paying, color: 'hsl(var(--primary))', opacity: 1 },
-        ];
-    }, [leads, companies]);
+        return {
+            total,
+            paid,
+            paidPercent: total > 0 ? ((paid / total) * 100).toFixed(1) : 0,
+            contributors,
+            contributorPercent: total > 0 ? ((contributors / total) * 100).toFixed(1) : 0,
+            shopOwners,
+            shopOwnerPercent: total > 0 ? ((shopOwners / total) * 100).toFixed(1) : 0
+        };
+    }, [members, contributions, shops]);
 
-    if (isLoading) {
-        return <div className="flex justify-center items-center py-20"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
-    }
+    const successFunnel = [
+        { stage: 'Total Members', count: stats.total, color: 'hsl(var(--muted))' },
+        { stage: 'Contributors', count: stats.contributors, color: 'hsl(var(--primary))', opacity: 0.6 },
+        { stage: 'Paid Members', count: stats.paid, color: 'hsl(var(--primary))', opacity: 0.8 },
+        { stage: 'Shop Owners', count: stats.shopOwners, color: 'hsl(var(--primary))', opacity: 1 },
+    ];
 
-    if (error) {
-        return (
-            <Card className="bg-destructive/10 border-destructive text-destructive-foreground">
-                <CardHeader><CardTitle>Error Loading Dashboard</CardTitle></CardHeader>
-                <CardContent>
-                    <p>{error}</p>
-                    <Button onClick={loadDashboardData} className="mt-4">Try Again</Button>
-                </CardContent>
-            </Card>
-        )
-    }
+    if (isLoading) return <div className="flex justify-center p-20"><Loader2 className="animate-spin h-10 w-10 text-primary" /></div>;
 
     return (
         <div className="space-y-8">
             <div className="flex justify-between items-end">
                 <div>
-                    <h1 className="text-2xl font-bold font-headline">Operations Dashboard</h1>
-                    <p className="text-muted-foreground">Monitoring your active queues and conversion funnel.</p>
+                    <h1 className="text-2xl font-bold font-headline">Member Success Dashboard</h1>
+                    <p className="text-muted-foreground">Monitoring member engagement, data contributions, and plan upgrades.</p>
                 </div>
                 <Button variant="outline" onClick={loadDashboardData} size="sm"><Clock className="mr-2 h-4 w-4"/> Refresh Metrics</Button>
             </div>
             
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <StatCard 
+                    title="Active Members"
+                    value={stats.total}
+                    icon={<Users className="h-4 w-4 text-muted-foreground" />}
+                    link="/backend?view=members"
+                    linkText="View Roster"
+               />
                <StatCard 
-                    title="Pending Shop Approvals"
-                    value={queues.pendingShops}
+                    title="Paid Conversion"
+                    value={`${stats.paidPercent}%`}
+                    trend={`${stats.paid} paid plans`}
+                    icon={<Star className="h-4 w-4 text-amber-500" />}
+                    link="/backend?view=success-engine"
+                    linkText="Drive Upgrades"
+               />
+                <StatCard 
+                    title="Data Contributors"
+                    value={`${stats.contributorPercent}%`}
+                    trend={`${stats.contributors} companies`}
+                    icon={<PackageCheck className="h-4 w-4 text-muted-foreground" />}
+                    link="/backend?view=contributions"
+                    linkText="Review Data"
+               />
+                <StatCard 
+                    title="Live Shops"
+                    value={stats.shopOwners}
                     icon={<Store className="h-4 w-4 text-muted-foreground" />}
                     link="/backend?view=shops"
                     linkText="Review Shops"
                />
-               <StatCard 
-                    title="Pending Commercials"
-                    value={queues.pendingAgreements}
-                    icon={<Handshake className="h-4 w-4 text-muted-foreground" />}
-                    link="/backend?view=commercial-negotiations"
-                    linkText="Review Negotiations"
-               />
-                <StatCard 
-                    title="Pending Payouts"
-                    value={queues.pendingPayouts}
-                    icon={<Send className="h-4 w-4 text-muted-foreground" />}
-                    link="/backend?view=wallet-transactions"
-                    linkText="Process Payouts"
-               />
-                <StatCard 
-                    title="Pending Top-ups"
-                    value={queues.pendingPayments}
-                    icon={<Wallet className="h-4 w-4 text-muted-foreground" />}
-                    link="/backend?view=wallet-transactions"
-                    linkText="Approve Top-ups"
-               />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <Card className="lg:col-span-2 shadow-sm">
+                <Card className="lg:col-span-2 shadow-sm border-primary/10">
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-xl"><TrendingUp className="h-5 w-5 text-primary"/> Acquisition Funnel Intelligence</CardTitle>
-                        <CardDescription>Visualizing the conversion path from AI leads to live platform members.</CardDescription>
+                        <CardTitle className="flex items-center gap-2 text-xl"><TrendingUp className="h-5 w-5 text-primary"/> Member Success Funnel</CardTitle>
+                        <CardDescription>Tracking how members move from free entry to engaged community participation.</CardDescription>
                     </CardHeader>
                     <CardContent className="h-80">
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={funnelData} layout="vertical" margin={{ left: 40, right: 40 }}>
+                            <BarChart data={successFunnel} layout="vertical" margin={{ left: 40, right: 40 }}>
                                 <CartesianGrid strokeDasharray="3 3" horizontal={false} />
                                 <XAxis type="number" hide />
                                 <YAxis dataKey="stage" type="category" width={150} tick={{ fontSize: 12, fontWeight: 'bold' }} />
                                 <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: '8px' }} />
                                 <Bar dataKey="count" radius={[0, 4, 4, 0]}>
-                                    {funnelData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={entry.color} fillOpacity={entry.opacity} />
+                                    {successFunnel.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={entry.color} fillOpacity={entry.opacity || 1} />
                                     ))}
                                 </Bar>
                             </BarChart>
@@ -187,40 +174,33 @@ export default function DashboardContent() {
                     </CardContent>
                 </Card>
 
-                <Card className="shadow-sm">
+                <Card className="shadow-sm border-primary/10">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2"><Zap className="h-5 w-5 text-amber-500"/> Conversion Insights</CardTitle>
-                        <CardDescription>Summary of your outreach efficiency.</CardDescription>
+                        <CardDescription>Members ready for a paid plan upgrade.</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-6">
-                            <div className="flex items-center justify-between">
-                                <div className="space-y-1">
-                                    <p className="text-sm font-bold">Total Conversions</p>
-                                    <p className="text-[10px] uppercase text-muted-foreground tracking-widest">Leads to Live Account</p>
-                                </div>
-                                <div className="text-2xl font-black text-primary">
-                                    {companies.filter(c => !!c.leadId).length}
-                                </div>
-                            </div>
-                            <Separator />
                             <div className="space-y-4">
-                                <h4 className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Recent Conversions</h4>
-                                {companies.filter(c => !!c.leadId).slice(0, 3).map(c => (
-                                    <div key={c.id} className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30">
-                                        <div className="bg-green-100 p-1.5 rounded-full"><CheckCircle2 className="h-4 w-4 text-green-600" /></div>
+                                <h4 className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">High Engagement (Free)</h4>
+                                {members.filter(m => m.membershipId === 'free' && m.rewardPoints > 100).slice(0, 3).map(m => (
+                                    <div key={m.id} className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30">
+                                        <div className="bg-amber-100 p-1.5 rounded-full"><TrendingUp className="h-4 w-4 text-amber-600" /></div>
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-bold truncate">{c.companyName}</p>
-                                            <p className="text-[10px] text-muted-foreground uppercase">{c.source || 'AI Converted'}</p>
+                                            <p className="text-sm font-bold truncate">{m.companyName}</p>
+                                            <p className="text-[10px] text-muted-foreground uppercase">{m.rewardPoints} Points • Potential Lead</p>
                                         </div>
                                     </div>
                                 ))}
+                                {members.filter(m => m.membershipId === 'free' && m.rewardPoints > 100).length === 0 && (
+                                    <p className="text-xs text-center text-muted-foreground py-4 italic">No high-engagement free members detected yet.</p>
+                                )}
                             </div>
                         </div>
                     </CardContent>
                     <CardFooter>
                         <Button variant="ghost" className="w-full text-[10px] uppercase font-bold tracking-widest" asChild>
-                            <Link href="/backend?view=members">View Full Registry <ArrowRight className="ml-2 h-3 w-3"/></Link>
+                            <Link href="/backend?view=success-engine">Launch Success Engine <ArrowRight className="ml-2 h-3 w-3"/></Link>
                         </Button>
                     </CardFooter>
                 </Card>
