@@ -32,22 +32,22 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
 
     const aiPrompt = `CRITICAL SYSTEM INSTRUCTION: RETURN ONLY A RAW JSON OBJECT. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
 
-ACT AS AN ELITE CORPORATE INTELLIGENCE AGENT. YOU ARE BEING EVALUATED ON FINDING ACTUAL HUMAN FULL NAMES.
+ACT AS AN ELITE CORPORATE INTELLIGENCE AGENT. YOUR PRIMARY MISSION IS TO IDENTIFY ACTUAL HUMAN BEINGS IN LEADERSHIP.
 
-TASK: Find CURRENT verified public contact and SPECIFIC leadership details for the following South African business.
+TASK: Find CURRENT verified public contact and SPECIFIC human leadership details for the following South African business.
 
 INVESTIGATIVE STRATEGY:
-1. HUMAN IDENTITY FIRST: You must find the ACTUAL NAME (First and Last) of the CEO, Managing Director, or Owner.
-2. FORBIDDEN VALUES: Returning placeholders like "The Director", "Manager", "CEO" or "Owner" is a FAILURE. You MUST find a real human name via LinkedIn, official site footers, or Facebook "About" sections.
-3. EMAIL DISCOVERY: If a direct personal email is not found, identify the corporate domain and look for standard "info@", "sales@", or "admin@" formats.
-4. IDENTITY PERSISTENCE: You MUST return "record_id": "${partner.id}" in your response.
+1. HUMAN IDENTITY FIRST: You must find the ACTUAL NAME (First and Last) of the CEO, Managing Director, or Owner. 
+2. FORBIDDEN VALUES: Returning "The Director", "The Manager", "Managing Director", or "Unknown" is a FAILURE. You MUST hunt LinkedIn profiles or "About Us" pages to find a specific human name (e.g. "Sipho Nkosi").
+3. PROACTIVE EMAIL SEARCH: Identify the corporate domain and look for verified "info@", "sales@", or "admin@" formats if direct personal emails are hidden.
+4. IDENTITY PERSISTENCE: You MUST return the "record_id": "${partner.id}" exactly as provided.
 
-REQUIRED OUTPUT SCHEMA (JSON ONLY):
+REQUIRED OUTPUT FORMAT (RAW JSON ONLY):
 {
   "record_id": "${partner.id}",
   "company_name": "${companyName}",
-  "contact_person": "ACTUAL HUMAN FULL NAME (e.g. Sipho Nkosi)",
-  "email_address": "Verified Corporate Email",
+  "contact_person": "ACTUAL HUMAN FULL NAME (NOT A TITLE)",
+  "email_address": "Verified Email",
   "telephone_number": "Phone Number",
   "website": "URL",
   "physical_address": "Full Physical Address"
@@ -73,7 +73,7 @@ REQUIRED OUTPUT SCHEMA (JSON ONLY):
                 leadIds: [partner.id] 
             });
 
-            toast({ title: "Status Updated", description: "Record is now in the 'Searching' queue." });
+            toast({ title: "Status Updated", description: "Record is now locked in the 'Searching' queue." });
             setIsOpen(false);
             onUpdate();
         } catch (e: any) {
@@ -109,9 +109,9 @@ REQUIRED OUTPUT SCHEMA (JSON ONLY):
                     <div className="space-y-4 py-4">
                         <Alert className="bg-primary/5 border-primary/20">
                             <Info className="h-4 w-4 text-primary" />
-                            <AlertTitle>Forensic Search Command</AlertTitle>
+                            <AlertTitle>Anti-Placeholder Command Active</AlertTitle>
                             <AlertDescription className="text-xs">
-                                This prompt strictly forbids placeholders and commands the AI to hunt for verified human leadership details and corporate contact paths.
+                                This prompt strictly forbids the AI from returning titles like "The Director" and commands it to hunt for verified human identities.
                             </AlertDescription>
                         </Alert>
 

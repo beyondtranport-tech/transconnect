@@ -1,8 +1,7 @@
-
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ShieldCheck, CheckCircle, Loader2, AlertCircle, Scale, FileText, Lock, Mail, Info } from 'lucide-react';
@@ -23,7 +22,7 @@ export default function OptInPage() {
     const [completed, setCompleted] = useState(false);
     const [showFullTerms, setShowFullTerms] = useState(false);
 
-    // Explicit Consent States
+    // Individual Consent States
     const [consentMarketing, setConsentMarketing] = useState(false);
     const [consentPopi, setConsentPopi] = useState(false);
     const [consentTerms, setConsentTerms] = useState(false);
@@ -35,6 +34,7 @@ export default function OptInPage() {
 
     const { data: partner, isLoading } = useDoc(partnerRef);
 
+    // Requirement: All boxes must be checked to establish the handshake
     const canAccept = useMemo(() => {
         return consentMarketing && consentPopi && consentTerms;
     }, [consentMarketing, consentPopi, consentTerms]);
@@ -116,13 +116,14 @@ export default function OptInPage() {
                     <div className="bg-primary/10 p-3 rounded-full w-fit mx-auto mb-4">
                         <ShieldCheck className="h-8 w-8 text-primary" />
                     </div>
-                    <CardTitle className="text-2xl font-headline font-bold">The Digital Handshake</CardTitle>
+                    <CardTitle className="text-2xl font-headline font-bold">Establish Your Handshake</CardTitle>
                     <CardDescription className="text-sm">
-                        Establishing a compliant partnership between <strong>Logistics Flow</strong> and <strong>{partner?.companyName || 'your business'}</strong>.
+                        Hi {partner?.firstName}, please review and accept our communication standards for <strong>{partner?.companyName || 'your business'}</strong>.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="py-8 space-y-8 bg-white">
                     <div className="space-y-6">
+                        {/* 1. Marketing Consent */}
                         <div className="flex items-start gap-4 p-4 border rounded-lg hover:bg-slate-50 transition-colors">
                             <Checkbox 
                                 id="marketing-check" 
@@ -135,11 +136,12 @@ export default function OptInPage() {
                                     <Mail className="h-4 w-4 text-primary"/> Marketing & Match Consent
                                 </Label>
                                 <p className="text-xs text-muted-foreground leading-relaxed">
-                                    I agree to receive electronic communications regarding matched freight loads, community-negotiated discounts, and platform updates for my business.
+                                    I agree to receive electronic communications regarding matched freight loads, community-negotiated discounts, and platform updates.
                                 </p>
                             </div>
                         </div>
 
+                        {/* 2. POPI Consent */}
                         <div className="flex items-start gap-4 p-4 border rounded-lg hover:bg-slate-50 transition-colors">
                             <Checkbox 
                                 id="popi-check" 
@@ -149,14 +151,15 @@ export default function OptInPage() {
                             />
                             <div className="flex-1 space-y-1">
                                 <Label htmlFor="popi-check" className="text-sm font-bold flex items-center gap-2 cursor-pointer">
-                                    <Lock className="h-4 w-4 text-primary"/> POPI & Privacy Compliance
+                                    <Lock className="h-4 w-4 text-primary"/> POPI & Privacy Act Compliance
                                 </Label>
                                 <p className="text-xs text-muted-foreground leading-relaxed">
-                                    I acknowledge that my personal and business information will be handled securely in accordance with the Protection of Personal Information Act (POPI).
+                                    I acknowledge that my personal information will be handled securely and in accordance with the Protection of Personal Information Act (POPI).
                                 </p>
                             </div>
                         </div>
 
+                        {/* 3. Platform Terms */}
                         <div className="flex items-start gap-4 p-4 border rounded-lg hover:bg-slate-50 transition-colors">
                             <Checkbox 
                                 id="terms-check" 
@@ -166,10 +169,10 @@ export default function OptInPage() {
                             />
                             <div className="flex-1 space-y-1">
                                 <Label htmlFor="terms-check" className="text-sm font-bold flex items-center gap-2 cursor-pointer">
-                                    <FileText className="h-4 w-4 text-primary"/> General Platform Terms
+                                    <FileText className="h-4 w-4 text-primary"/> Platform Terms
                                 </Label>
                                 <p className="text-xs text-muted-foreground leading-relaxed">
-                                    I have read and agree to the platform standards for network participants and strategic partners.
+                                    I have read and agree to the general platform terms and conditions for network participants.
                                 </p>
                             </div>
                         </div>
@@ -205,7 +208,7 @@ export default function OptInPage() {
                         disabled={isProcessing || !canAccept}
                     >
                         {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <CheckCircle className="mr-2 h-4 w-4" />}
-                        Accept & Establish Connection
+                        Establish Handshake & Opt-In
                     </Button>
                     <div className="flex items-center justify-between w-full">
                         <Button variant="ghost" className="text-xs text-muted-foreground hover:text-destructive" onClick={() => handleAction('declined')} disabled={isProcessing}>

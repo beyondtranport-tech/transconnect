@@ -1,17 +1,17 @@
-
 'use client';
 
 import React from "react";
 
 /**
  * Digital Handshake Content
- * Optimized for Email Copy-Paste. Uses absolute URLs and strict inline CSS for cross-client compatibility.
+ * Optimized for Email Copy-Paste. Uses standardized HTML tables for button rendering 
+ * to ensure 100% compatibility across all email clients.
  */
 export default function DigitalHandshake({ partner }: { partner?: any }) {
     const recipientName = partner?.firstName || 'Partner';
     const companyName = partner?.companyName || 'your business';
     
-    const baseUrl = 'https://studio--ecosystem-hub.us-central1.hosted.app';
+    const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://studio--ecosystem-hub.us-central1.hosted.app';
     const optInLink = `${baseUrl}/opt-in/${partner?.id || 'PROSPECT'}`;
 
     return (
@@ -71,7 +71,7 @@ export default function DigitalHandshake({ partner }: { partner?: any }) {
             <div style={{ textAlign: 'center', padding: '32px', backgroundColor: '#f1f5f9', borderRadius: '12px' }}>
                 <p style={{ fontSize: '16px', fontWeight: 'bold', color: '#0f172a', marginBottom: '24px' }}>Ready to establish the connection, {recipientName}?</p>
                 
-                {/* STANDARDIZED HTML BUTTON */}
+                {/* STANDARDIZED HTML BUTTON FOR EMAIL CLIENT COMPATIBILITY */}
                 <table role="presentation" border={0} cellPadding="0" cellSpacing="0" style={{ margin: '0 auto' }}>
                     <tr>
                         <td align="center" style={{ backgroundColor: '#228B22', borderRadius: '8px' }}>
@@ -91,7 +91,7 @@ export default function DigitalHandshake({ partner }: { partner?: any }) {
                                     border: '1px solid #228B22'
                                 }}
                             >
-                                Accept Handshake & Review Terms
+                                Accept Handshake & Opt-In
                             </a>
                         </td>
                     </tr>

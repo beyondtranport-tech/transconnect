@@ -48,6 +48,9 @@ export function Header() {
   const auth = useAuth();
   const { cartItems, isCartLoading } = useCart();
 
+  // Detect public landing page mode to hide private elements
+  const isPublicLandingPage = pathname.startsWith('/opt-in/');
+
   const handleSignOut = async () => {
     if (!auth) return;
     try {
@@ -98,115 +101,121 @@ export function Header() {
           </Link>
         </div>
 
-        <nav className="hidden sm:flex items-center gap-1 text-sm font-medium">
-            {navItems.map((item) => (
-                item.isDropdown ? (
-                    <DropdownMenu key={item.label}>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className={cn(
-                                "flex items-center gap-1 px-3 py-2 text-sm font-medium hover:text-primary data-[state=open]:text-primary",
-                                item.links.some(p => pathname.startsWith(p.href)) ? "text-primary font-semibold" : "text-muted-foreground"
-                            )}>
-                                {item.label}
-                                <ChevronDown className="h-4 w-4" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="start">
-                            {item.links.map(({ href, label }) => (
-                                <DropdownMenuItem key={href} asChild>
-                                    <Link href={href}>{label}</Link>
-                                </DropdownMenuItem>
-                            ))}
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                ) : (
-                    <Link key={item.href} href={item.href!} className={cn("transition-colors hover:text-primary px-3 py-2 rounded-md", pathname === item.href ? "text-primary font-semibold" : "text-muted-foreground")}>
-                        {item.label}
-                    </Link>
-                )
-            ))}
-        </nav>
+        {!isPublicLandingPage && (
+            <nav className="hidden sm:flex items-center gap-1 text-sm font-medium">
+                {navItems.map((item) => (
+                    item.isDropdown ? (
+                        <DropdownMenu key={item.label}>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" className={cn(
+                                    "flex items-center gap-1 px-3 py-2 text-sm font-medium hover:text-primary data-[state=open]:text-primary",
+                                    item.links.some(p => pathname.startsWith(p.href)) ? "text-primary font-semibold" : "text-muted-foreground"
+                                )}>
+                                    {item.label}
+                                    <ChevronDown className="h-4 w-4" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="start">
+                                {item.links.map(({ href, label }) => (
+                                    <DropdownMenuItem key={href} asChild>
+                                        <Link href={href}>{label}</Link>
+                                    </DropdownMenuItem>
+                                ))}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    ) : (
+                        <Link key={item.href} href={item.href!} className={cn("transition-colors hover:text-primary px-3 py-2 rounded-md", pathname === item.href ? "text-primary font-semibold" : "text-muted-foreground")}>
+                            {item.label}
+                        </Link>
+                    )
+                ))}
+            </nav>
+        )}
 
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-            <Button asChild variant="ghost" size="icon">
-                <Link href="/cart">
-                    <ShoppingCart className="h-5 w-5" />
-                    {!isCartLoading && cartItems.length > 0 && (
-                        <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 justify-center p-0">{cartItems.length}</Badge>
-                    )}
-                    <span className="sr-only">Shopping Cart</span>
-                </Link>
-            </Button>
-            
-            {isUserLoading ? (
-              <Skeleton className="h-8 w-8 rounded-full" />
-            ) : user ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                    <Avatar className="h-8 w-8">
-                        {user.photoURL && <AvatarImage src={user.photoURL} alt={user.displayName || 'User'} />}
-                        <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
-                    </Avatar>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56" align="end" forceMount>
-                  <DropdownMenuLabel className="font-normal">
-                    <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none">{user?.displayName}</p>
-                      <p className="text-xs leading-none text-muted-foreground">
-                        {user?.email}
-                      </p>
-                    </div>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                    
-                    <DropdownMenuItem asChild>
-                        <Link href="/account">My Account</Link>
-                    </DropdownMenuItem>
+            {!isPublicLandingPage && (
+              <>
+                <Button asChild variant="ghost" size="icon">
+                    <Link href="/cart">
+                        <ShoppingCart className="h-5 w-5" />
+                        {!isCartLoading && cartItems.length > 0 && (
+                            <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 justify-center p-0">{cartItems.length}</Badge>
+                        )}
+                        <span className="sr-only">Shopping Cart</span>
+                    </Link>
+                </Button>
+                
+                {isUserLoading ? (
+                  <Skeleton className="h-8 w-8 rounded-full" />
+                ) : user ? (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                        <Avatar className="h-8 w-8">
+                            {user.photoURL && <AvatarImage src={user.photoURL} alt={user.displayName || 'User'} />}
+                            <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
+                        </Avatar>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-56" align="end" forceMount>
+                      <DropdownMenuLabel className="font-normal">
+                        <div className="flex flex-col space-y-1">
+                          <p className="text-sm font-medium leading-none">{user?.displayName}</p>
+                          <p className="text-xs leading-none text-muted-foreground">
+                            {user?.email}
+                          </p>
+                        </div>
+                      </DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                        
+                        <DropdownMenuItem asChild>
+                            <Link href="/account">My Account</Link>
+                        </DropdownMenuItem>
 
-                    {(isAdmin || isWctaMember) && (
-                        <>
-                            <DropdownMenuItem asChild>
-                                <Link href="/supply-chain">Supply Chain Portal</Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem asChild>
-                                <Link href="/port-logistics">Port Logistics Portal</Link>
-                            </DropdownMenuItem>
-                        </>
-                    )}
-                    
-                    {isAdmin && (
-                        <>
-                            <DropdownMenuSeparator/>
-                            <DropdownMenuLabel>Admin</DropdownMenuLabel>
-                            <DropdownMenuItem asChild>
-                                <Link href="/adminaccount">Admin Account</Link>
-                            </DropdownMenuItem>
-                             <DropdownMenuItem asChild>
-                                <Link href="/backend">App Backend</Link>
-                            </DropdownMenuItem>
-                             <DropdownMenuItem asChild>
-                                <Link href="/lending">Lending Portal</Link>
-                            </DropdownMenuItem>
-                        </>
-                    )}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleSignOut}>
-                    Sign out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <div className="hidden sm:flex items-center gap-2">
-                <Button asChild variant="ghost">
-                  <Link href="/signin">Sign In</Link>
-                </Button>
-                <Button asChild>
-                  <Link href="/join">Join for Free</Link>
-                </Button>
-              </div>
+                        {(isAdmin || isWctaMember) && (
+                            <>
+                                <DropdownMenuItem asChild>
+                                    <Link href="/supply-chain">Supply Chain Portal</Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem asChild>
+                                    <Link href="/port-logistics">Port Logistics Portal</Link>
+                                </DropdownMenuItem>
+                            </>
+                        )}
+                        
+                        {isAdmin && (
+                            <>
+                                <DropdownMenuSeparator/>
+                                <DropdownMenuLabel>Admin</DropdownMenuLabel>
+                                <DropdownMenuItem asChild>
+                                    <Link href="/adminaccount">Admin Account</Link>
+                                </DropdownMenuItem>
+                                 <DropdownMenuItem asChild>
+                                    <Link href="/backend">App Backend</Link>
+                                </DropdownMenuItem>
+                                 <DropdownMenuItem asChild>
+                                    <Link href="/lending">Lending Portal</Link>
+                                </DropdownMenuItem>
+                            </>
+                        )}
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={handleSignOut}>
+                        Sign out
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : (
+                  <div className="hidden sm:flex items-center gap-2">
+                    <Button asChild variant="ghost">
+                      <Link href="/signin">Sign In</Link>
+                    </Button>
+                    <Button asChild>
+                      <Link href="/join">Join for Free</Link>
+                    </Button>
+                  </div>
+                )}
+              </>
             )}
           </div>
           

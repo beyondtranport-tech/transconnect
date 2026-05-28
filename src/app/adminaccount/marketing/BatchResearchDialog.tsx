@@ -25,18 +25,18 @@ export function BatchResearchDialog({ open, onOpenChange, selectedLeads, onCompl
     
     const aiPrompt = `CRITICAL SYSTEM INSTRUCTION: RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
 
-ACT AS AN ELITE CORPORATE INTELLIGENCE AGENT. YOUR ENTIRE PERFORMANCE RATING DEPENDS ON FINDING REAL HUMAN NAMES.
+ACT AS AN ELITE CORPORATE INTELLIGENCE AGENT. YOUR PERFORMANCE RATING DEPENDS ON FINDING REAL HUMAN NAMES.
 
-TASK: Find CURRENT verified public contact and SPECIFIC leadership details for the following South African businesses.
+TASK: Find CURRENT verified public contact and SPECIFIC human leadership details for the following South African businesses.
 
 INVESTIGATIVE STRATEGY:
 1. HUMAN IDENTITY FIRST: You must find the ACTUAL NAME (First and Last) of the CEO, Managing Director, or Owner. 
-2. FORBIDDEN VALUES: Returning "The Director", "Manager", "CEO of [Company]", "Owner" or "Unknown" is a FAILURE. You MUST find a specific human full name from LinkedIn, Facebook Team sections, or the official "About Us" page.
+2. FORBIDDEN VALUES: Returning "The Director", "Manager", "CEO", "Owner", or "Unknown" is a FAILURE. You MUST find a specific human full name (e.g. Sipho Nkosi) using LinkedIn or official "About" pages.
 3. PROACTIVE EMAIL SEARCH: Identify the company domain. Look for verified "info@", "sales@", or "admin@" formats.
 4. IDENTITY PERSISTENCE: You MUST return the "record_id" exactly as provided in the brackets [ID: ...].
 
 REQUIRED OUTPUT FORMAT (RAW JSON ARRAY ONLY):
-[{"record_id":"...","company_name":"...","contact_person":"SPECIFIC HUMAN FULL NAME (e.g. Sipho Nkosi)","email_address":"...","telephone_number":"...","website":"...","physical_address":"..."}]
+[{"record_id":"...","company_name":"...","contact_person":"SPECIFIC HUMAN FULL NAME (NOT A TITLE)","email_address":"...","telephone_number":"...","website":"...","physical_address":"..."}]
 
 COMPANIES TO RESEARCH:
 ${companyList}`;
@@ -101,7 +101,7 @@ ${companyList}`;
                         <Alert className="bg-amber-50 border-amber-200">
                             <AlertCircle className="h-4 w-4 text-amber-600" />
                             <AlertTitle>Step 1: Copy Forensic Prompt</AlertTitle>
-                            <AlertDescription className="text-xs">The AI is now strictly forbidden from returning "The Director" and must hunt for actual names on social platforms.</AlertDescription>
+                            <AlertDescription className="text-xs">The AI is now strictly forbidden from returning "The Director" and must hunt for actual names.</AlertDescription>
                         </Alert>
                     ) : (
                         <Alert className="bg-green-50 border-green-200 text-green-800">
