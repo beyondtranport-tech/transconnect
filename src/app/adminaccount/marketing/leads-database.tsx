@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect, Suspense } from 'react';
@@ -429,6 +430,19 @@ function LeadsDatabaseComponent() {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [dataFilter, setDataFilter] = useState('all');
 
+  const statusStats = useMemo(() => {
+    const stats = { new: 0, researching: 0, qualified: 0, invited: 0, active: 0 };
+    (leads || []).forEach(p => {
+        const s = p.status;
+        if (s === 'new') stats.new++;
+        else if (s === 'contacted') stats.researching++;
+        else if (s === 'qualified') stats.qualified++;
+        else if (s === 'invited') stats.invited++;
+        else if (s === 'active') stats.active++;
+    });
+    return stats;
+  }, [leads]);
+
   const newLeadDefaults = useMemo(() => {
     const companyName = searchParams.get('newCompanyName');
     if (companyName) {
@@ -747,8 +761,8 @@ function LeadsDatabaseComponent() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      <Card>
-        <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="space-y-6">
+        <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4 px-0 pt-0">
           <div className="space-y-1">
             <CardTitle className="flex items-center gap-2">
                 <Users /> Lead Database
@@ -776,62 +790,99 @@ function LeadsDatabaseComponent() {
             <Button onClick={() => setIsAddLeadOpen(true)}><PlusCircle className="mr-2 h-4 w-4" />Add Lead</Button>
           </div>
         </CardHeader>
-        <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg">
-                <div className="space-y-2">
-                    <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status</Label>
-                    <Select value={statusFilter} onValueChange={setStatusFilter}>
-                        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All Statuses</SelectItem>
-                            <SelectItem value="new">New</SelectItem>
-                            <SelectItem value="contacted">Researching</SelectItem>
-                            <SelectItem value="qualified">Qualified</SelectItem>
-                            <SelectItem value="invited">Invited</SelectItem>
-                            <SelectItem value="active">Member (Active)</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-                <div className="space-y-2">
-                    <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Tag className="h-3 w-3"/> Focus Category</Label>
-                    <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All Categories</SelectItem>
-                            <SelectItem value="Transport">Transport</SelectItem>
-                            <SelectItem value="Logistics">Logistics</SelectItem>
-                            <SelectItem value="Forwarder">Forwarder</SelectItem>
-                            <SelectItem value="Distribution">Distribution</SelectItem>
-                            <SelectItem value="Warehousing">Warehousing</SelectItem>
-                            {uniqueCategories.filter(c => !['Transport', 'Logistics', 'Forwarder', 'Distribution', 'Warehousing'].includes(c)).map(cat => (
-                                <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </div>
-                <div className="space-y-2">
-                    <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Search className="h-3 w-3"/> Data Filter</Label>
-                    <Select value={dataFilter} onValueChange={setDataFilter}>
-                        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All Records</SelectItem>
-                            <SelectItem value="has-email">Has Email</SelectItem>
-                            <SelectItem value="no-email">Missing Email</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-                <div className="flex items-end gap-2">
-                    <Button variant="outline" size="sm" onClick={handleExportCsv} className="h-8 text-xs flex-1">
-                        <Download className="mr-1 h-3 w-3" /> CSV
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={handleCopyBccList} className="h-8 text-xs flex-1">
-                        <Copy className="mr-1 h-3 w-3" /> BCC
-                    </Button>
-                </div>
-            </div>
-            {isLoading ? <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin" /></div> : <DataTable columns={columns} data={filteredLeads} onSelectionChange={setSelectedIds} />}
-        </CardContent>
-      </Card>
+
+        {/* Pipeline Statistics Bar */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <Card className="bg-slate-50 border-none shadow-none">
+                <CardContent className="p-4 text-center">
+                    <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">New</p>
+                    <p className="text-2xl font-black mt-1">{statusStats.new}</p>
+                </CardContent>
+            </Card>
+            <Card className="bg-amber-50 border-none shadow-none text-amber-700">
+                <CardContent className="p-4 text-center">
+                    <p className="text-[10px] font-black uppercase tracking-widest">Researching</p>
+                    <p className="text-2xl font-black mt-1">{statusStats.researching}</p>
+                </CardContent>
+            </Card>
+            <Card className="bg-blue-50 border-none shadow-none text-blue-700">
+                <CardContent className="p-4 text-center">
+                    <p className="text-[10px] font-black uppercase tracking-widest">Qualified</p>
+                    <p className="text-2xl font-black mt-1">{statusStats.qualified}</p>
+                </CardContent>
+            </Card>
+            <Card className="bg-purple-50 border-none shadow-none text-purple-700">
+                <CardContent className="p-4 text-center">
+                    <p className="text-[10px] font-black uppercase tracking-widest">Invited</p>
+                    <p className="text-2xl font-black mt-1">{statusStats.invited}</p>
+                </CardContent>
+            </Card>
+            <Card className="bg-green-600 border-none shadow-lg text-white">
+                <CardContent className="p-4 text-center">
+                    <p className="text-[10px] font-black uppercase tracking-widest opacity-80">Member (Active)</p>
+                    <p className="text-2xl font-black mt-1">{statusStats.active}</p>
+                </CardContent>
+            </Card>
+        </div>
+
+        <Card>
+          <CardContent className="pt-6">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg">
+                  <div className="space-y-2">
+                      <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status</Label>
+                      <Select value={statusFilter} onValueChange={setStatusFilter}>
+                          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                              <SelectItem value="all">All Statuses</SelectItem>
+                              <SelectItem value="new">New</SelectItem>
+                              <SelectItem value="contacted">Researching</SelectItem>
+                              <SelectItem value="qualified">Qualified</SelectItem>
+                              <SelectItem value="invited">Invited</SelectItem>
+                              <SelectItem value="active">Member (Active)</SelectItem>
+                          </SelectContent>
+                      </Select>
+                  </div>
+                  <div className="space-y-2">
+                      <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Tag className="h-3 w-3"/> Focus Category</Label>
+                      <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                              <SelectItem value="all">All Categories</SelectItem>
+                              <SelectItem value="Transport">Transport</SelectItem>
+                              <SelectItem value="Logistics">Logistics</SelectItem>
+                              <SelectItem value="Forwarder">Forwarder</SelectItem>
+                              <SelectItem value="Distribution">Distribution</SelectItem>
+                              <SelectItem value="Warehousing">Warehousing</SelectItem>
+                              {uniqueCategories.filter(c => !['Transport', 'Logistics', 'Forwarder', 'Distribution', 'Warehousing'].includes(c)).map(cat => (
+                                  <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                              ))}
+                          </SelectContent>
+                      </Select>
+                  </div>
+                  <div className="space-y-2">
+                      <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Search className="h-3 w-3"/> Data Filter</Label>
+                      <Select value={dataFilter} onValueChange={setDataFilter}>
+                          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                              <SelectItem value="all">All Records</SelectItem>
+                              <SelectItem value="has-email">Has Email</SelectItem>
+                              <SelectItem value="no-email">Missing Email</SelectItem>
+                          </SelectContent>
+                      </Select>
+                  </div>
+                  <div className="flex items-end gap-2">
+                      <Button variant="outline" size="sm" onClick={handleExportCsv} className="h-8 text-xs flex-1">
+                          <Download className="mr-1 h-3 w-3" /> CSV
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={handleCopyBccList} className="h-8 text-xs flex-1">
+                          <Copy className="mr-1 h-3 w-3" /> BCC
+                      </Button>
+                  </div>
+              </div>
+              {isLoading ? <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin" /></div> : <DataTable columns={columns} data={filteredLeads} onSelectionChange={setSelectedIds} />}
+          </CardContent>
+        </Card>
+      </div>
     </>
   );
 }
