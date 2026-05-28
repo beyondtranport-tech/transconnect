@@ -24,24 +24,6 @@ import { Badge } from "@/components/ui/badge";
 import { doc } from 'firebase/firestore';
 import { Skeleton } from "@/components/ui/skeleton";
 
-const mainNavLinks = [
-  { href: "/", label: "Home" },
-  { href: "/about", label: "About" },
-  { href: "/pricing", label: "Membership" },
-  { href: "/connect", label: "Connect" },
-  { href: "/incentives", label: "Incentives" },
-  { href: "/resources", label: "Resources" },
-  { href: "/contact", label: "Contact Us" },
-];
-
-const divisionLinks = [
-    { href: "/divisions", label: "All Divisions" },
-    { href: "/funding", label: "Funding" },
-    { href: "/mall", label: "Mall" },
-    { href: "/marketplace", label: "Marketplace" },
-    { href: "/tech", label: "Tech" },
-]
-
 export function Header() {
   const pathname = usePathname();
   const router = useRouter();
@@ -51,11 +33,7 @@ export function Header() {
   const { cartItems, isCartLoading } = useCart();
   const firestore = useFirestore();
 
-  const companyDocRef = useMemoFirebase(() => {
-    if (!firestore || !user?.companyId) return null;
-    return doc(firestore, 'companies', user.companyId);
-  }, [firestore, user?.companyId]);
-  const { data: companyData, isLoading: isCompanyLoading } = useDoc(companyDocRef);
+  const isPublicLandingPage = pathname.startsWith('/opt-in/');
 
   const handleSignOut = async () => {
     if (!auth) return;
@@ -73,9 +51,8 @@ export function Header() {
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
   };
 
-  const isDataLoading = isUserLoading || isCompanyLoading;
   const isAdmin = user && (user.email === 'beyondtransport@gmail.com' || user.email === 'mkoton100@gmail.com');
-  const isWctaMember = user?.claims?.wcta === true || companyData?.referrerId === 'WCTA';
+  const isWctaMember = user?.claims?.wcta === true || user?.companyData?.referrerId === 'WCTA';
 
   const navItems = [
     { href: "/", label: "Home" },
@@ -94,7 +71,6 @@ export function Header() {
     { href: "/pricing", label: "Membership" },
     { href: "/connect", label: "Connect" },
     { href: "/incentives", label: "Incentives" },
-    { href: "/resources", label: "Resources" },
     { href: "/contact", label: "Contact Us" },
   ];
   
@@ -139,86 +115,88 @@ export function Header() {
 
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-            <Button asChild variant="ghost" size="icon">
-                <Link href="/cart">
-                    <ShoppingCart className="h-5 w-5" />
-                    {!isCartLoading && cartItems.length > 0 && (
-                        <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 justify-center p-0">{cartItems.length}</Badge>
-                    )}
-                    <span className="sr-only">Shopping Cart</span>
-                </Link>
-            </Button>
-            
-            {isUserLoading ? (
-              <Skeleton className="h-8 w-8 rounded-full" />
-            ) : user ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                    <Avatar className="h-8 w-8">
-                        {user.photoURL && <AvatarImage src={user.photoURL} alt={user.displayName || 'User'} />}
-                        <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
-                    </Avatar>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56" align="end" forceMount>
-                  <DropdownMenuLabel className="font-normal">
-                    <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none">{user?.displayName}</p>
-                      <p className="text-xs leading-none text-muted-foreground">
-                        {user?.email}
-                      </p>
-                    </div>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                    
-                    <DropdownMenuItem asChild>
-                        <Link href="/account">My Account</Link>
-                    </DropdownMenuItem>
+            {!isPublicLandingPage && (
+              <>
+                <Button asChild variant="ghost" size="icon">
+                    <Link href="/cart">
+                        <ShoppingCart className="h-5 w-5" />
+                        {!isCartLoading && cartItems.length > 0 && (
+                            <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 justify-center p-0">{cartItems.length}</Badge>
+                        )}
+                        <span className="sr-only">Shopping Cart</span>
+                    </Link>
+                </Button>
+                
+                {isUserLoading ? (
+                  <Skeleton className="h-8 w-8 rounded-full" />
+                ) : user ? (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                        <Avatar className="h-8 w-8">
+                            {user.photoURL && <AvatarImage src={user.photoURL} alt={user.displayName || 'User'} />}
+                            <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
+                        </Avatar>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-56" align="end" forceMount>
+                      <DropdownMenuLabel className="font-normal">
+                        <div className="flex flex-col space-y-1">
+                          <p className="text-sm font-medium leading-none">{user?.displayName}</p>
+                          <p className="text-xs leading-none text-muted-foreground">
+                            {user?.email}
+                          </p>
+                        </div>
+                      </DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                        
+                        <DropdownMenuItem asChild>
+                            <Link href="/account">My Account</Link>
+                        </DropdownMenuItem>
 
-                    {isDataLoading ? (
-                        <DropdownMenuItem disabled><Skeleton className="h-4 w-32" /></DropdownMenuItem>
-                    ) : (isAdmin || isWctaMember) && (
-                        <>
-                            <DropdownMenuItem asChild>
-                                <Link href="/supply-chain">Supply Chain Portal</Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem asChild>
-                                <Link href="/port-logistics">Port Logistics Portal</Link>
-                            </DropdownMenuItem>
-                        </>
-                    )}
-                    
-                    {isAdmin && (
-                        <>
-                            <DropdownMenuSeparator/>
-                            <DropdownMenuLabel>Admin</DropdownMenuLabel>
-                            <DropdownMenuItem asChild>
-                                <Link href="/adminaccount">Admin Account</Link>
-                            </DropdownMenuItem>
-                             <DropdownMenuItem asChild>
-                                <Link href="/backend">App Backend</Link>
-                            </DropdownMenuItem>
-                             <DropdownMenuItem asChild>
-                                <Link href="/lending">Lending Portal</Link>
-                            </DropdownMenuItem>
-                        </>
-                    )}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleSignOut}>
-                    Sign out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <div className="hidden sm:flex items-center gap-2">
-                <Button asChild variant="ghost">
-                  <Link href="/signin">Sign In</Link>
-                </Button>
-                <Button asChild>
-                  <Link href="/join">Join for Free</Link>
-                </Button>
-              </div>
+                        {(isAdmin || isWctaMember) && (
+                            <>
+                                <DropdownMenuItem asChild>
+                                    <Link href="/supply-chain">Supply Chain Portal</Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem asChild>
+                                    <Link href="/port-logistics">Port Logistics Portal</Link>
+                                </DropdownMenuItem>
+                            </>
+                        )}
+                        
+                        {isAdmin && (
+                            <>
+                                <DropdownMenuSeparator/>
+                                <DropdownMenuLabel>Admin</DropdownMenuLabel>
+                                <DropdownMenuItem asChild>
+                                    <Link href="/adminaccount">Admin Account</Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem asChild>
+                                    <Link href="/backend">App Backend</Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem asChild>
+                                    <Link href="/lending">Lending Portal</Link>
+                                </DropdownMenuItem>
+                            </>
+                        )}
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={handleSignOut}>
+                        Sign out
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : (
+                  <div className="hidden sm:flex items-center gap-2">
+                    <Button asChild variant="ghost">
+                      <Link href="/signin">Sign In</Link>
+                    </Button>
+                    <Button asChild>
+                      <Link href="/join">Join for Free</Link>
+                    </Button>
+                  </div>
+                )}
+              </>
             )}
           </div>
           
@@ -253,37 +231,11 @@ export function Header() {
                             {label}
                             </Link>
                         ))}
-                        <Link
-                            href="/divisions"
-                            onClick={() => setIsSheetOpen(false)}
-                            className={cn(
-                                "text-lg transition-colors hover:text-primary",
-                                ["/divisions", "/marketplace", "/tech", "/funding", "/mall"].some(p => pathname.startsWith(p)) ? "text-primary" : "text-muted-foreground"
-                            )}
-                        >
-                            Divisions
-                        </Link>
-                        <div className="pl-4 border-l ml-2">
-                            {divisionLinks.map(({ href, label }) => (
-                            <Link
-                                key={href}
-                                href={href}
-                                onClick={() => setIsSheetOpen(false)}
-                                className={cn(
-                                "text-base transition-colors hover:text-primary block py-2",
-                                pathname === href ? "text-primary" : "text-muted-foreground"
-                                )}
-                            >
-                                {label}
-                            </Link>
-                            ))}
-                        </div>
                     </nav>
                 </div>
                 <SheetFooter className="p-4 border-t">
-                    {isDataLoading ? (
-                        <div className="h-10 w-full rounded-md bg-muted/50 animate-pulse" />
-                    ) : user ? (
+                    {!isPublicLandingPage && (
+                      user ? (
                         <div className='flex flex-col gap-2'>
                              {(isAdmin || isWctaMember) ? (
                                 <>
@@ -308,28 +260,6 @@ export function Header() {
                                     </Link>
                                 </Button>
                             )}
-                             {isAdmin && (
-                                <>
-                                    <Button asChild className="w-full justify-start" variant="secondary">
-                                        <Link href="/adminaccount" onClick={() => setIsSheetOpen(false)}>
-                                            <Building className="mr-2 h-5 w-5" />
-                                            Admin Account
-                                        </Link>
-                                    </Button>
-                                    <Button asChild className="w-full justify-start" variant="secondary">
-                                        <Link href="/lending" onClick={() => setIsSheetOpen(false)}>
-                                            <Landmark className="mr-2 h-5 w-5" />
-                                            Lending Portal
-                                        </Link>
-                                    </Button>
-                                     <Button asChild className="w-full justify-start" variant="secondary">
-                                        <Link href="/backend" onClick={() => setIsSheetOpen(false)}>
-                                            <ShieldCheck className="mr-2 h-5 w-5" />
-                                            App Backend
-                                        </Link>
-                                    </Button>
-                                </>
-                             )}
                              <Button onClick={handleSignOut} variant="outline" className="w-full justify-start">
                                 <LogOut className="mr-2 h-5 w-5" />
                                 Sign Out
@@ -344,6 +274,7 @@ export function Header() {
                                 <Link href="/join" onClick={() => setIsSheetOpen(false)}>Join for Free</Link>
                             </Button>
                         </div>
+                      )
                     )}
                 </SheetFooter>
             </SheetContent>

@@ -1,10 +1,11 @@
+
 'use client';
 
 import React, { useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ShieldCheck, CheckCircle, Loader2, AlertCircle, Scale, FileText, Lock, Eye, Mail, Info } from 'lucide-react';
+import { ShieldCheck, CheckCircle, Loader2, AlertCircle, Scale, FileText, Lock, Mail, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
@@ -22,7 +23,7 @@ export default function OptInPage() {
     const [completed, setCompleted] = useState(false);
     const [showFullTerms, setShowFullTerms] = useState(false);
 
-    // Consent States
+    // Explicit Consent States
     const [consentMarketing, setConsentMarketing] = useState(false);
     const [consentPopi, setConsentPopi] = useState(false);
     const [consentTerms, setConsentTerms] = useState(false);
@@ -35,7 +36,6 @@ export default function OptInPage() {
     const { data: partner, isLoading } = useDoc(partnerRef);
 
     const canAccept = useMemo(() => {
-        // We require all three for a full "Digital Handshake"
         return consentMarketing && consentPopi && consentTerms;
     }, [consentMarketing, consentPopi, consentTerms]);
 
@@ -123,16 +123,16 @@ export default function OptInPage() {
                 </CardHeader>
                 <CardContent className="py-8 space-y-8 bg-white">
                     <div className="space-y-6">
-                        <div className="flex items-start gap-4">
+                        <div className="flex items-start gap-4 p-4 border rounded-lg hover:bg-slate-50 transition-colors">
                             <Checkbox 
-                                id="marketing-consent" 
-                                className="mt-1"
+                                id="marketing-check" 
+                                className="mt-1 h-5 w-5"
                                 checked={consentMarketing}
                                 onCheckedChange={(val) => setConsentMarketing(!!val)}
                             />
                             <div className="flex-1 space-y-1">
-                                <Label htmlFor="marketing-consent" className="text-sm font-bold flex items-center gap-2 cursor-pointer">
-                                    <Mail className="h-3.5 w-3.5 text-primary"/> Marketing & Match Consent
+                                <Label htmlFor="marketing-check" className="text-sm font-bold flex items-center gap-2 cursor-pointer">
+                                    <Mail className="h-4 w-4 text-primary"/> Marketing & Match Consent
                                 </Label>
                                 <p className="text-xs text-muted-foreground leading-relaxed">
                                     I agree to receive electronic communications regarding matched freight loads, community-negotiated discounts, and platform updates for my business.
@@ -140,16 +140,16 @@ export default function OptInPage() {
                             </div>
                         </div>
 
-                        <div className="flex items-start gap-4">
+                        <div className="flex items-start gap-4 p-4 border rounded-lg hover:bg-slate-50 transition-colors">
                             <Checkbox 
-                                id="popi-consent" 
-                                className="mt-1"
+                                id="popi-check" 
+                                className="mt-1 h-5 w-5"
                                 checked={consentPopi}
                                 onCheckedChange={(val) => setConsentPopi(!!val)}
                             />
                             <div className="flex-1 space-y-1">
-                                <Label htmlFor="popi-consent" className="text-sm font-bold flex items-center gap-2 cursor-pointer">
-                                    <Lock className="h-3.5 w-3.5 text-primary"/> POPI & Privacy Compliance
+                                <Label htmlFor="popi-check" className="text-sm font-bold flex items-center gap-2 cursor-pointer">
+                                    <Lock className="h-4 w-4 text-primary"/> POPI & Privacy Compliance
                                 </Label>
                                 <p className="text-xs text-muted-foreground leading-relaxed">
                                     I acknowledge that my personal and business information will be handled securely in accordance with the Protection of Personal Information Act (POPI).
@@ -157,16 +157,16 @@ export default function OptInPage() {
                             </div>
                         </div>
 
-                        <div className="flex items-start gap-4">
+                        <div className="flex items-start gap-4 p-4 border rounded-lg hover:bg-slate-50 transition-colors">
                             <Checkbox 
-                                id="terms-consent" 
-                                className="mt-1"
+                                id="terms-check" 
+                                className="mt-1 h-5 w-5"
                                 checked={consentTerms}
                                 onCheckedChange={(val) => setConsentTerms(!!val)}
                             />
                             <div className="flex-1 space-y-1">
-                                <Label htmlFor="terms-consent" className="text-sm font-bold flex items-center gap-2 cursor-pointer">
-                                    <FileText className="h-3.5 w-3.5 text-primary"/> General Platform Terms
+                                <Label htmlFor="terms-check" className="text-sm font-bold flex items-center gap-2 cursor-pointer">
+                                    <FileText className="h-4 w-4 text-primary"/> General Platform Terms
                                 </Label>
                                 <p className="text-xs text-muted-foreground leading-relaxed">
                                     I have read and agree to the platform standards for network participants and strategic partners.
@@ -186,7 +186,7 @@ export default function OptInPage() {
                             </Button>
                         </div>
                         
-                        <ScrollArea className={cn("transition-all duration-300", showFullTerms ? "h-64" : "h-0")}>
+                        <ScrollArea className={cn("transition-all duration-300", showFullTerms ? "h-64" : "h-0 overflow-hidden")}>
                             <div className="text-xs space-y-4 text-muted-foreground leading-relaxed pr-4 pb-4">
                                 <p><strong>1. Data Purpose:</strong> Information is collected solely to facilitate commerce, unlock capital solutions, and negotiate group-based discounts with vetted suppliers.</p>
                                 <p><strong>2. Third-Party Access:</strong> Your individual identifiable data is never sold. It is only shared with financiers or suppliers upon your explicit request for a quote.</p>
@@ -215,9 +215,6 @@ export default function OptInPage() {
                             <Info className="h-3 w-3"/> Secure, encrypted session
                         </p>
                     </div>
-                    <p className="text-[10px] text-center text-muted-foreground italic px-4">
-                        By clicking "Accept", you provide your electronic signature of consent for the processing of business data as outlined in the checkboxes above.
-                    </p>
                 </CardFooter>
             </Card>
         </div>
