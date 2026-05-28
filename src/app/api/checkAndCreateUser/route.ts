@@ -46,12 +46,16 @@ export async function POST(req: NextRequest) {
     }
     
     // --- LEAD CONVERSION BRIDGE ---
-    // Check if this user was originally a lead
-    const leadsSnap = await db.collection('leads').where('email', '==', firebaseUser.email).limit(1).get();
+    // Search leads by email to attribute this registration
+    const leadsSnap = await db.collection('leads')
+        .where('email', '==', firebaseUser.email.toLowerCase())
+        .limit(1)
+        .get();
+        
     let leadData = null;
     if (!leadsSnap.empty) {
         leadData = leadsSnap.docs[0].data();
-        // Update lead status to 'registered'
+        // Close the loop: Mark lead as registered
         await leadsSnap.docs[0].ref.update({
             status: 'registered',
             convertedAt: FieldValue.serverTimestamp(),
@@ -63,6 +67,7 @@ export async function POST(req: NextRequest) {
     const companyRef = db.collection('companies').doc();
     
     const displayName = firebaseUser.displayName.trim();
+    // Use AI-researched name from lead if available, otherwise fallback
     const companyName = leadData?.companyName || (displayName ? `${displayName}'s Company` : 'My Company');
 
     const newCompanyData: any = {
@@ -76,7 +81,7 @@ export async function POST(req: NextRequest) {
         availableBalance: 0,
         loyaltyTier: 'bronze',
         status: 'active',
-        leadId: leadData?.id || null, // Create the hard-link
+        leadId: leadData?.id || null, // Create the hard-link for success tracking
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
     };
@@ -119,7 +124,7 @@ export async function POST(req: NextRequest) {
     
     await batch.commit();
 
-    return NextResponse.json({ success: true, message: 'User account created and lead linked.' });
+    return NextResponse.json({ success: true, message: 'User and Company records created. Lead attribution completed.' });
 
   } catch (error: any) {
     console.error(`Error in checkAndCreateUser:`, error);

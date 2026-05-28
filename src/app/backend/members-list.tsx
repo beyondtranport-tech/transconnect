@@ -3,7 +3,7 @@
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Users, PlusCircle } from 'lucide-react';
+import { Loader2, Users, PlusCircle, Sparkles, UserCheck } from 'lucide-react';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { Badge } from '@/components/ui/badge';
@@ -23,6 +23,7 @@ interface Member {
     status?: 'active' | 'suspended' | 'pending';
     createdAt?: string;
     email?: string;
+    leadId?: string;
 }
 
 const tierColors: { [key: string]: string } = {
@@ -100,6 +101,17 @@ export default function MembersList() {
           cell: ({ row }) => <div>{row.original.companyName}</div>,
         },
         {
+          accessorKey: 'leadId',
+          header: 'Source',
+          cell: ({ row }) => row.original.leadId ? (
+            <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+                <Sparkles className="mr-1 h-3 w-3" /> AI Lead
+            </Badge>
+          ) : (
+            <Badge variant="outline" className="text-muted-foreground">Organic</Badge>
+          )
+        },
+        {
           accessorKey: 'membershipId',
           header: 'Membership',
           cell: ({ row }) => (
@@ -143,7 +155,7 @@ export default function MembersList() {
                 <div>
                     <CardTitle className="flex items-center gap-2"><Users /> Member Roster</CardTitle>
                     <CardDescription>
-                        A list of all registered member companies on the TransConnect platform.
+                        Consolidated view of all members. Highlighting successful lead-to-member conversions.
                     </CardDescription>
                 </div>
                  <Button asChild>
