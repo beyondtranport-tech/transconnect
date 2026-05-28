@@ -6,14 +6,14 @@ import React from "react";
 
 /**
  * Tailored Transporter Offer
- * Dynamically adjusts its value proposition based on the business category.
+ * Dynamically adjusts based on the single-word industry tag.
  */
 export default function TransporterOffer({ partner }: { partner?: any }) {
     const companyName = partner?.companyName || 'your business';
-    const businessCategory = partner?.entryType || 'General Transport';
+    const industryTag = partner?.entryType || 'General';
     
-    const isForwarder = businessCategory === 'Freight Forwarder';
-    const isDistributor = businessCategory === 'Distribution Partner';
+    const isForwarder = industryTag === 'Forwarder';
+    const isDistribution = industryTag === 'Distribution';
 
     // 1. Logic for Freight Forwarders
     if (isForwarder) {

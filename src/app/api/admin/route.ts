@@ -23,6 +23,7 @@ function serializeTimestamps(docData: any): any {
 
 /**
  * Universal Data Normalization & Intelligent Categorization
+ * Simplified to single-word categories for better UI and targeted outreach.
  */
 function normalizePartnerData(data: any) {
     const result: any = {};
@@ -83,22 +84,22 @@ function normalizePartnerData(data: any) {
         result.lastName = parts.slice(1).join(' ') || '';
     }
 
-    // --- EXPANDED INTELLIGENT CATEGORIZATION ENGINE ---
+    // --- INTELLIGENT SINGLE-WORD CATEGORIZATION ---
     const name = (result.companyName || '').toLowerCase();
     if (name.includes('forward')) {
-        result.entryType = 'Freight Forwarder';
+        result.entryType = 'Forwarder';
     } else if (name.includes('distrib')) {
-        result.entryType = 'Distribution Partner';
+        result.entryType = 'Distribution';
     } else if (name.includes('logistics') || name.includes('supply')) {
-        result.entryType = 'Logistics Provider';
+        result.entryType = 'Logistics';
     } else if (name.includes('truck') || name.includes('transport') || name.includes('haul') || name.includes('carrier')) {
         result.entryType = 'Haulier';
     } else if (name.includes('courier') || name.includes('express')) {
-        result.entryType = 'Courier Service';
+        result.entryType = 'Courier';
     } else if (name.includes('shipping') || name.includes('maritime') || name.includes('port')) {
-        result.entryType = 'Port & Maritime';
+        result.entryType = 'Port';
     } else {
-        result.entryType = 'General Transport';
+        result.entryType = 'General';
     }
 
     return result;

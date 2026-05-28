@@ -1,22 +1,22 @@
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Gift, DollarSign, TrendingUp, ShoppingBasket, Presentation, Truck, Users, Ship } from 'lucide-react';
+import { Gift, DollarSign, TrendingUp, ShoppingBasket, Presentation, Truck, Ship } from 'lucide-react';
 import React, { useMemo } from 'react';
 import { useConfig } from '@/hooks/use-config';
 import { Loader2 } from 'lucide-react';
 
 /**
  * Dynamic Pitch Deck
- * Tailors the specific value proposition based on the partner category.
+ * Tailors the specific value proposition based on the simplified industry tag.
  */
 export default function PitchDeck({ partner }: { partner?: any }) {
     const recipientName = partner?.firstName || 'Partner';
     const companyName = partner?.companyName || 'your business';
-    const businessCategory = partner?.entryType || 'General Transport';
+    const industryTag = partner?.entryType || 'General';
 
-    const isForwarder = businessCategory === 'Freight Forwarder';
-    const isHaulier = businessCategory === 'Haulier';
+    const isForwarder = industryTag === 'Forwarder';
 
     const { data: isaConfig, isLoading } = useConfig<any>('isaPitch');
 

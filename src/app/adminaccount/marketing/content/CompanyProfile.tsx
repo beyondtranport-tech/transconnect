@@ -1,7 +1,7 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Building, Target, Lightbulb, CheckCircle, Handshake, Truck, Network, ShieldCheck, Zap, Ship } from "lucide-react";
+import { Target, Lightbulb, CheckCircle, Handshake, Truck, Network, Zap, Ship } from "lucide-react";
 import Image from 'next/image';
 import data from '@/lib/placeholder-images.json';
 import { useMemo } from "react";
@@ -28,14 +28,14 @@ const corePillars = [
 export default function CompanyProfile({ audience, partner }: { audience: string, partner?: any }) {
     const recipientName = partner?.firstName || 'Partner';
     const companyName = partner?.companyName || 'your business';
-    const businessCategory = partner?.entryType || 'General Transport';
+    const industryTag = partner?.entryType || 'General';
 
-    const isForwarder = businessCategory === 'Freight Forwarder';
-    const isLogistics = businessCategory === 'Logistics Provider';
-    const isDistributor = businessCategory === 'Distribution Partner';
+    const isForwarder = industryTag === 'Forwarder';
+    const isLogistics = industryTag === 'Logistics';
+    const isDistribution = industryTag === 'Distribution';
 
     const opportunityConfig = useMemo(() => {
-        if (audience === 'transporters') {
+        if (audience === 'transporters' || audience === 'partners' || audience === 'isa') {
             if (isForwarder) {
                 return {
                     title: `Strategic Value for ${companyName} (Forwarding)`,
@@ -65,7 +65,7 @@ export default function CompanyProfile({ audience, partner }: { audience: string
                 };
             }
 
-            if (isLogistics || isDistributor) {
+            if (isLogistics || isDistribution) {
                 return {
                     title: `Scale & Visibility for ${companyName}`,
                     content: (
@@ -152,7 +152,7 @@ export default function CompanyProfile({ audience, partner }: { audience: string
                 </p>
             )
         };
-    }, [audience, recipientName, companyName, isForwarder, isLogistics, isDistributor]);
+    }, [audience, recipientName, companyName, isForwarder, isLogistics, isDistribution]);
 
     return (
         <div className="space-y-12">

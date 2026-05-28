@@ -9,14 +9,14 @@ import { formatCurrency } from '@/lib/utils';
 
 /**
  * Tailored Revenue Model
- * Shows different monetization scenarios based on the business category.
+ * Shows different monetization scenarios based on the single-word industry tag.
  */
 export default function RevenueModel({ partner }: { partner?: any }) {
     const recipientName = partner?.firstName || 'Partner';
     const companyName = partner?.companyName || 'your business';
-    const businessCategory = partner?.entryType || 'General Transport';
+    const industryTag = partner?.entryType || 'General';
 
-    const isForwarder = businessCategory === 'Freight Forwarder';
+    const isForwarder = industryTag === 'Forwarder';
 
     const { data: isaConfig, isLoading } = useConfig<any>('isaPitch');
     const { data: mallCommissions } = useConfig<any>('mallCommissions');
