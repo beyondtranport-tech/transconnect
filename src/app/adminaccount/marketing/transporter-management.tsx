@@ -382,6 +382,10 @@ export default function TransporterManagement() {
     return stats;
   }, [partners]);
 
+  const selectedLeadsForBatch = useMemo(() => {
+      return (partners || []).filter(l => selectedIds.includes(l.id));
+  }, [partners, selectedIds]);
+
   const filteredTransporters = useMemo(() => {
     return partners.filter(p => {
         const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
@@ -678,7 +682,7 @@ export default function TransporterManagement() {
         <Card>
             <CardContent className="pt-6">
                 <div className="space-y-4 mb-6">
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 bg-muted/30 rounded-lg">
+                    <div className="grid grid-cols-1 md:grid-cols-[1fr_1.5fr_1fr_1fr] gap-4 p-4 bg-muted/30 rounded-lg">
                         <div className="space-y-2">
                             <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Pipeline Status</Label>
                             <Select value={statusFilter} onValueChange={setStatusFilter}>
