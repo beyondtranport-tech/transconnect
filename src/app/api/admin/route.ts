@@ -91,7 +91,7 @@ function normalizePartnerData(data: any) {
         result.entryType = 'Distribution';
     } else if (name.includes('logistics') || name.includes('supply')) {
         result.entryType = 'Logistics';
-    } else if (name.includes('truck') || name.includes('transport') || name.includes('haul') || name.includes('carrier')) {
+    } else if (name.includes('truck') || name.includes('transport') || name.includes('haul') || name.includes('carrier') || name.includes('vervoer')) {
         result.entryType = 'Transport';
     } else if (name.includes('courier') || name.includes('express')) {
         result.entryType = 'Courier';
