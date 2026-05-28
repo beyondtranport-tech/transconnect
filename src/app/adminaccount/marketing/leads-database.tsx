@@ -202,9 +202,8 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
                     </FormControl>
                     <SelectContent>
                       <SelectItem value="new">New</SelectItem>
-                      <SelectItem value="contacted">Contacted</SelectItem>
+                      <SelectItem value="contacted">Researching</SelectItem>
                       <SelectItem value="qualified">Qualified</SelectItem>
-                      <SelectItem value="unqualified">Unqualified</SelectItem>
                       <SelectItem value="invited">Invited</SelectItem>
                       <SelectItem value="registered">Registered</SelectItem>
                     </SelectContent>
@@ -686,7 +685,21 @@ function LeadsDatabaseComponent() {
             )
         }
     },
-    { accessorKey: 'status', header: 'Status', cell: ({ row }) => <Badge className="capitalize text-[10px]">{row.original.status}</Badge> },
+    {
+        accessorKey: 'status',
+        header: 'Status',
+        cell: ({ row }) => {
+            const statusMap: Record<string, { label: string, color: string }> = {
+                'new': { label: 'New', color: 'bg-slate-100 text-slate-700' },
+                'contacted': { label: 'Researching', color: 'bg-amber-100 text-amber-700' },
+                'qualified': { label: 'Qualified', color: 'bg-blue-100 text-blue-700' },
+                'invited': { label: 'Invited', color: 'bg-purple-100 text-purple-700' },
+                'registered': { label: 'Registered', color: 'bg-green-100 text-green-700' },
+            };
+            const config = statusMap[row.original.status] || { label: row.original.status, color: 'bg-muted' };
+            return <Badge className={cn("capitalize text-[10px]", config.color)} variant="outline">{config.label}</Badge>
+        }
+    },
     {
       id: 'actions',
       header: <div className="text-right">Actions</div>,
@@ -772,7 +785,7 @@ function LeadsDatabaseComponent() {
                         <SelectContent>
                             <SelectItem value="all">All Statuses</SelectItem>
                             <SelectItem value="new">New</SelectItem>
-                            <SelectItem value="contacted">Contacted</SelectItem>
+                            <SelectItem value="contacted">Researching</SelectItem>
                             <SelectItem value="qualified">Qualified</SelectItem>
                             <SelectItem value="invited">Invited</SelectItem>
                         </SelectContent>

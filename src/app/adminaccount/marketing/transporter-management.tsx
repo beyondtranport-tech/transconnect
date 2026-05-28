@@ -7,7 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
   Loader2, PlusCircle, Truck, Edit, Trash2, Send, CheckCircle, Users, Filter, Save, 
-  Search, Zap, RotateCcw, XCircle, Info, Sparkles, AlertCircle, Mail, Download, Copy, ShieldCheck, Tag
+  Search, Zap, RotateCcw, XCircle, Info, Sparkles, AlertCircle, Mail, Download, Copy, ShieldCheck, Tag, Clock
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
@@ -24,6 +24,7 @@ import * as z from 'zod';
 import { PartnerOversightDialog } from './PartnerOversightDialog';
 import { EngageDialog } from './EngageDialog';
 import { CommunicationLogDialog } from './CommunicationLogDialog';
+import { PartnerTasksDialog } from './PartnerTasksDialog';
 import { formatDateSafe, cn } from '@/lib/utils';
 import { EnrichPartnerButton, BulkEnrichButton } from './EnrichPartnerButton';
 import { Label } from '@/components/ui/label';
@@ -53,7 +54,7 @@ const partnerSchema = z.object({
   contactPerson: z.string().optional(),
   companyName: z.string().optional(),
   address: z.string().optional(),
-  status: z.enum(['active', 'inactive', 'contacted', 'new', 'qualified', 'registered']),
+  status: z.enum(['active', 'inactive', 'contacted', 'new', 'qualified', 'invited', 'registered']),
   type: z.enum(['partner', 'isa', 'investor', 'developer', 'supplier', 'transporter']),
 });
 type PartnerFormValues = z.infer<typeof partnerSchema>;
@@ -309,6 +310,7 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
                             <SelectItem value="inactive">Inactive</SelectItem>
                             <SelectItem value="contacted">Researching</SelectItem>
                             <SelectItem value="qualified">Qualified</SelectItem>
+                            <SelectItem value="invited">Invited</SelectItem>
                             <SelectItem value="registered">Registered</SelectItem>
                             <SelectItem value="new">New</SelectItem>
                         </SelectContent>
@@ -452,33 +454,26 @@ export default function TransporterManagement() {
     toast({ title: "Export Complete", description: "CSV downloaded." });
   };
 
-
   const handleEnhanceBatch = (size: number) => {
       if (isLoading) return;
-      
       const uniqueNames = new Set<string>();
       const targets: any[] = [];
-      
       for (const p of partners) {
           const name = (p.companyName || '').trim().toLowerCase();
           const email = (p.email || p.email_address || '').toString().toLowerCase().trim();
           const isInvalidEmail = !email || email === 'null' || email === 'n/a' || email === 'none';
-          
           const isSearching = p.researchStatus === 'researching';
           const isEnriched = p.researchStatus === 'completed' || !isInvalidEmail;
-          
           if (!isSearching && !isEnriched && name && !uniqueNames.has(name)) {
               targets.push(p);
               uniqueNames.add(name);
               if (targets.length >= size) break;
           }
       }
-      
       if (targets.length === 0) {
-          toast({ title: "No fresh candidates found", description: "All records are either already enriched or currently locked in another search." });
+          toast({ title: "No fresh candidates found" });
           return;
       }
-
       setSelectedIds(targets.map(t => t.id));
       setDialog({ type: 'batch-ai' });
   };
@@ -504,7 +499,7 @@ export default function TransporterManagement() {
           const token = await getClientSideAuthToken();
           if (!token) return;
           const result = await performAdminAction(token, 'bulkCategorizeLeads', {});
-          toast({ title: "Categorization Complete", description: `Auto-tagged ${result.count} transporters based on company keywords.` });
+          toast({ title: "Categorization Complete", description: `Auto-tagged ${result.count} transporters.` });
           forceRefresh();
       } catch (e: any) {
           toast({ variant: 'destructive', title: "Tagging Failed", description: e.message });
@@ -529,7 +524,7 @@ export default function TransporterManagement() {
   const columns: ColumnDef<any>[] = [
     { 
         accessorKey: 'companyName', 
-        header: 'Transporter Name', 
+        header: 'Company Name', 
         cell: ({ row }) => <div className="font-bold">{row.original.companyName || `${row.original.firstName} ${row.original.lastName}`}</div>
     },
     { 
@@ -559,7 +554,6 @@ export default function TransporterManagement() {
             const email = (row.original.email || row.original.email_address || '').toString().toLowerCase().trim();
             const isInvalidEmail = !email || email === 'null' || email === 'n/a' || email === 'none';
             const isCompleted = row.original.researchStatus === 'completed' || !isInvalidEmail;
-
             if (isResearching) return <Badge variant="outline" className="animate-pulse text-amber-600 border-amber-200 bg-amber-50 text-[10px]">Searching...</Badge>;
             if (isCompleted) return <Badge variant="default" className="bg-green-100 text-green-700 border-green-200 text-[10px]">Enriched</Badge>;
             return <span className="text-xs text-muted-foreground">-</span>;
@@ -578,12 +572,27 @@ export default function TransporterManagement() {
             )
         }
     },
-    { accessorKey: 'status', header: 'Status', cell: ({ row }) => <Badge className="capitalize text-[10px]">{row.original.status}</Badge> },
+    {
+        accessorKey: 'status',
+        header: 'Status',
+        cell: ({ row }) => {
+            const statusMap: Record<string, { label: string, color: string }> = {
+                'new': { label: 'New', color: 'bg-slate-100 text-slate-700' },
+                'contacted': { label: 'Researching', color: 'bg-amber-100 text-amber-700' },
+                'qualified': { label: 'Qualified', color: 'bg-blue-100 text-blue-700' },
+                'invited': { label: 'Invited', color: 'bg-purple-100 text-purple-700' },
+                'registered': { label: 'Registered', color: 'bg-green-100 text-green-700' },
+            };
+            const config = statusMap[row.original.status] || { label: row.original.status, color: 'bg-muted' };
+            return <Badge className={cn("capitalize text-[10px]", config.color)} variant="outline">{config.label}</Badge>
+        }
+    },
     { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
       <div className="flex justify-end gap-1">
         <EnrichPartnerButton partner={row.original} onUpdate={forceRefresh} />
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'engage', data: row.original })} title="Initiate Engagement"><Send className="h-4 w-4 text-primary" /></Button>
         <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.firstName} />
+        <PartnerTasksDialog partner={row.original} />
         <PartnerOversightDialog partner={row.original} onUpdate={forceRefresh} />
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'edit', data: row.original })}><Edit className="h-4 w-4" /></Button>
         <Button variant="ghost" size="icon" onClick={() => { setDialog({ type: 'delete', data: row.original }); }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
@@ -598,7 +607,7 @@ export default function TransporterManagement() {
       <TransporterDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={forceRefresh} />
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
         <AlertDialogContent>
-          <AlertDialogHeader><AlertDialogTitle>Delete Transporter?</AlertDialogTitle><AlertDialogDescription>Delete "{dialog.data?.companyName || 'this record'}"?</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Delete "{dialog.data?.companyName || 'this record'}"?</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter><AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -612,28 +621,22 @@ export default function TransporterManagement() {
             <CardDescription>Manage your transporter leads and pipeline.</CardDescription>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Button variant="outline" onClick={handleExportCsv} title="Export for Gmail Mail Merge">
-                <Download className="mr-2 h-4 w-4" /> Export CSV
-            </Button>
-            <Button variant="outline" onClick={handleCopyBccList} title="Copy addresses for Gmail BCC">
-                <Copy className="mr-2 h-4 w-4" /> Copy BCC List
-            </Button>
-             <Button variant="outline" size="sm" onClick={handleAutoCategorize} disabled={isCategorizing}>
+            <Button variant="outline" size="sm" onClick={handleAutoCategorize} disabled={isCategorizing}>
                 {isCategorizing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Tag className="mr-2 h-4 w-4" />}
                 Auto-Categorize
             </Button>
             <Button variant="outline" size="sm" onClick={handleResetQueue} disabled={isResetting}>
                 {isResetting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <RotateCcw className="mr-2 h-4 w-4" />}
-                Reset Stuck Research
+                Reset Stuck
             </Button>
             <BulkOutreachUpdateDialog onComplete={forceRefresh}>
-                <Button variant="outline"><Send className="mr-2 h-4 w-4" /> Bulk Update Status</Button>
+                <Button variant="outline"><Send className="mr-2 h-4 w-4" /> Bulk Outreach</Button>
             </BulkOutreachUpdateDialog>
             <Button variant="default" className="bg-amber-600 hover:bg-amber-700" onClick={() => handleEnhanceBatch(100)} disabled={isLoading}>
                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Zap className="mr-2 h-4 w-4" />}
                 Master Batch (100)
             </Button>
-            <BulkImportDialog type="transporter" onComplete={forceRefresh}><Button variant="outline">Bulk Import AI JSON</Button></BulkImportDialog>
+            <BulkImportDialog type="transporter" onComplete={forceRefresh}><Button variant="outline">Import JSON</Button></BulkImportDialog>
             <DuplicateCleaner onComplete={forceRefresh} />
             <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Record</Button>
           </div>
@@ -642,9 +645,11 @@ export default function TransporterManagement() {
             <div className="space-y-4 mb-6">
                 <Alert className="bg-primary/5 border-primary/20">
                     <Info className="h-4 w-4 text-primary" />
-                    <AlertTitle>Intelligent CRM Insight</AlertTitle>
+                    <AlertTitle>Intelligent CRM Funnel</AlertTitle>
                     <AlertDescription className="text-xs space-y-1 leading-relaxed">
-                        <p>We've automatically categorized your transporters based on naming conventions. <strong>Freight Forwarders</strong> are uniquely identified to receive appointment-focused messaging, while <strong>Hauliers</strong> are targeted for cost-reduction and load matching.</p>
+                        <p>• <strong>New/Researching:</strong> Initial phase. Use Forensic AI to find names.</p>
+                        <p>• <strong>Qualified:</strong> Contact details verified. Ready for the Digital Handshake.</p>
+                        <p>• <strong>Invited:</strong> Sign-up link sent. Monitor open rates in the Outreach column.</p>
                     </AlertDescription>
                 </Alert>
                 <div className="flex flex-col md:flex-row gap-4 p-4 bg-muted/30 rounded-lg">
@@ -654,12 +659,11 @@ export default function TransporterManagement() {
                             <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Statuses</SelectItem>
-                                <SelectItem value="active">Active</SelectItem>
-                                <SelectItem value="inactive">Inactive</SelectItem>
+                                <SelectItem value="new">New</SelectItem>
                                 <SelectItem value="contacted">Researching</SelectItem>
                                 <SelectItem value="qualified">Qualified</SelectItem>
+                                <SelectItem value="invited">Invited</SelectItem>
                                 <SelectItem value="registered">Registered</SelectItem>
-                                <SelectItem value="new">New</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>

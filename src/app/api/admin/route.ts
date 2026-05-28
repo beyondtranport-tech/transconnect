@@ -23,7 +23,6 @@ function serializeTimestamps(docData: any): any {
 
 /**
  * Universal Data Normalization & Intelligent Categorization
- * Simplified to single-word categories for better UI and targeted outreach.
  */
 function normalizePartnerData(data: any) {
     const result: any = {};
@@ -216,16 +215,27 @@ export async function POST(req: NextRequest) {
                     if (!targetId) continue;
                     const leadRef = db.collection('leads').doc(targetId);
                     const partnerRef = db.collection('partners').doc(targetId);
+                    
+                    const currentSnap = await leadRef.get();
+                    const currentData = currentSnap.data();
+
+                    // Determine the next logical status in the funnel
+                    let nextStatus = currentData?.status || 'new';
+                    if (!['active', 'registered'].includes(nextStatus)) {
+                        if (normalized.email && normalized.contactPerson) {
+                            nextStatus = 'qualified';
+                        } else {
+                            nextStatus = 'contacted'; // Mark as "Researching" in UI terms
+                        }
+                    }
+
                     const updateData: any = {
                         ...normalized,
+                        status: nextStatus,
                         researchStatus: 'completed',
                         updatedAt: FieldValue.serverTimestamp()
                     };
-                    const currentSnap = await leadRef.get();
-                    const currentData = currentSnap.data();
-                    if (!['active', 'qualified', 'registered'].includes(currentData?.status || '')) {
-                        updateData.status = normalized.email ? 'qualified' : 'contacted';
-                    }
+                    
                     batch.set(leadRef, updateData, { merge: true });
                     batch.set(partnerRef, { ...updateData, type: currentData?.type || type }, { merge: true });
                     updatedCount++;
@@ -299,6 +309,7 @@ export async function POST(req: NextRequest) {
                 for (const id of leadIds) {
                     const update = { 
                         researchStatus: 'researching',
+                        status: 'contacted', // Set status to 'contacted' (Researching in UI)
                         updatedAt: FieldValue.serverTimestamp() 
                     };
                     batch.set(db.collection('leads').doc(id), update, { merge: true });
@@ -353,7 +364,17 @@ export async function POST(req: NextRequest) {
                 const { partnerId, type, subject, notes } = payload;
                 const ref = db.collection('partners').doc(partnerId).collection('communications').doc();
                 await ref.set({ id: ref.id, type, subject, notes: notes || '', timestamp: FieldValue.serverTimestamp() });
-                const update = { lastOutreachSubject: subject, lastOutreachAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() };
+                
+                // If it's a handshake, we might want to mark as 'invited'
+                const newStatus = subject.toLowerCase().includes('handshake') ? 'invited' : 'contacted';
+                
+                const update = { 
+                    lastOutreachSubject: subject, 
+                    lastOutreachAt: FieldValue.serverTimestamp(), 
+                    status: newStatus,
+                    updatedAt: FieldValue.serverTimestamp() 
+                };
+                
                 await Promise.all([
                     db.collection('partners').doc(partnerId).set(update, { merge: true }),
                     db.collection('leads').doc(partnerId).set(update, { merge: true })
