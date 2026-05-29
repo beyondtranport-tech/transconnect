@@ -1,8 +1,9 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, TrendingUp, Star, Award, Zap, ArrowUpCircle, MessageSquare, Mail, Search, CheckCircle } from 'lucide-react';
+import { Loader2, TrendingUp, Zap, ArrowRight, MessageSquare } from 'lucide-react';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { Badge } from '@/components/ui/badge';
@@ -27,6 +28,14 @@ async function fetchFromAdminAPI(token: string, action: string, payload?: any) {
         throw new Error(result.error || `API Error for action: ${action}`);
     }
     return result.data;
+}
+
+function Progress({ value, className }: { value: number; className?: string }) {
+    return (
+        <div className={cn("w-full bg-muted rounded-full overflow-hidden", className)}>
+            <div className="bg-primary h-full transition-all" style={{ width: `${value}%` }} />
+        </div>
+    );
 }
 
 export default function MemberSuccessEngine() {
@@ -101,14 +110,14 @@ export default function MemberSuccessEngine() {
         },
         {
             id: 'actions',
-            header: <div className="text-right">Upsell Action</div>,
+            header: <div className="text-right">Manage Engagement</div>,
             cell: ({ row }) => (
                 <div className="flex justify-end gap-2">
-                    <Button variant="outline" size="sm" asChild>
-                        <Link href={`/backend?view=support-inbox&search=${row.original.id}`}><MessageSquare className="mr-2 h-3.5 w-3.5" /> Chat</Link>
+                    <Button variant="outline" size="sm" asChild title="Chat with Member">
+                        <Link href={`/backend?view=support-inbox&search=${row.original.id}`}><MessageSquare className="mr-2 h-3.5 w-3.5" /> Support</Link>
                     </Button>
-                    <Button size="sm" asChild>
-                        <Link href={`/backend?view=wallet&memberId=${row.original.id}`}><ArrowUpCircle className="mr-2 h-3.5 w-3.5" /> Upgrade Plan</Link>
+                    <Button size="sm" asChild variant="secondary">
+                        <Link href={`/backend?view=wallet&memberId=${row.original.id}`}><ArrowRight className="mr-2 h-3.5 w-3.5" /> View Member</Link>
                     </Button>
                 </div>
             )
@@ -121,8 +130,8 @@ export default function MemberSuccessEngine() {
                 <div className="flex items-center gap-4">
                     <Zap className="h-8 w-8 text-primary" />
                     <div>
-                        <CardTitle>Member Success & Conversion Engine</CardTitle>
-                        <CardDescription>Prioritizing Free tier members for upselling based on their platform engagement score.</CardDescription>
+                        <CardTitle>Member Success & Growth Engine</CardTitle>
+                        <CardDescription>Identifying high-engagement Free members. Use the support chat to invite them to a paid plan.</CardDescription>
                     </div>
                 </div>
             </CardHeader>
@@ -147,14 +156,6 @@ export default function MemberSuccessEngine() {
                     {isLoading ? <div className="flex justify-center p-12"><Loader2 className="animate-spin text-primary" /></div> : <DataTable columns={columns} data={candidates} />}
                 </CardContent>
             </Card>
-        </div>
-    );
-}
-
-function Progress({ value, className }: { value: number; className?: string }) {
-    return (
-        <div className={cn("w-full bg-muted rounded-full overflow-hidden", className)}>
-            <div className="bg-primary h-full transition-all" style={{ width: `${value}%` }} />
         </div>
     );
 }

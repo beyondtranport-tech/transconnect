@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -23,16 +24,13 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, Star } from 'lucide-react';
-import { getClientSideAuthToken, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { Loader2, Save } from 'lucide-react';
+import { getClientSideAuthToken } from '@/firebase';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { collection, query } from 'firebase/firestore';
 
 const memberFormSchema = z.object({
   companyName: z.string().min(1, 'Company name is required.'),
-  membershipId: z.string().min(1, 'Membership plan is required.'),
   status: z.enum(['pending', 'active', 'suspended']),
-  billingCycle: z.enum(['monthly', 'annual']).default('monthly'),
 });
 
 type MemberFormValues = z.infer<typeof memberFormSchema>;
@@ -47,10 +45,6 @@ interface EditMemberDialogProps {
 export function EditMemberDialog({ isOpen, setIsOpen, member, onUpdate }: EditMemberDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const firestore = useFirestore();
-
-  const membershipsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'memberships')) : null, [firestore]);
-  const { data: memberships, isLoading: areMembershipsLoading } = useCollection(membershipsQuery);
 
   const form = useForm<MemberFormValues>({
     resolver: zodResolver(memberFormSchema),
@@ -60,9 +54,7 @@ export function EditMemberDialog({ isOpen, setIsOpen, member, onUpdate }: EditMe
     if (member && isOpen) {
         form.reset({
             companyName: member.companyName || '',
-            membershipId: member.membershipId || 'free',
             status: member.status || 'pending',
-            billingCycle: member.billingCycle || 'monthly',
         });
     }
   }, [member, isOpen, form]);
@@ -74,31 +66,10 @@ export function EditMemberDialog({ isOpen, setIsOpen, member, onUpdate }: EditMe
       const token = await getClientSideAuthToken();
       if (!token) throw new Error("Authentication failed.");
       
-      const dataToUpdate: any = {
+      const dataToUpdate = {
         ...values,
         updatedAt: { _methodName: 'serverTimestamp' }
       };
-      
-      const isNowPaid = values.membershipId !== 'free';
-      const wasFree = ['free', '', null, undefined].includes(member.membershipId);
-
-      // CRITICAL: Manual Upgrade Logic
-      // Ensure the member is now marked as billable for the backend billing run
-      dataToUpdate.isBillable = isNowPaid;
-
-      if (isNowPaid && wasFree) {
-          // Initialize billing dates for the new subscription
-          const now = new Date();
-          dataToUpdate.membershipStartDate = now.toISOString();
-          
-          const nextBilling = new Date(now);
-          if (values.billingCycle === 'annual') {
-              nextBilling.setFullYear(nextBilling.getFullYear() + 1);
-          } else {
-              nextBilling.setMonth(nextBilling.getHeader() + 1);
-          }
-          dataToUpdate.nextBillingDate = nextBilling.toISOString();
-      }
 
       const response = await fetch('/api/updateUserDoc', {
         method: 'POST',
@@ -118,7 +89,7 @@ export function EditMemberDialog({ isOpen, setIsOpen, member, onUpdate }: EditMe
       }
 
       toast({
-        title: isNowPaid && wasFree ? 'Member Upgraded!' : 'Member Updated',
+        title: 'Member Updated',
         description: `${values.companyName}'s profile has been updated.`,
       });
 
@@ -141,7 +112,7 @@ export function EditMemberDialog({ isOpen, setIsOpen, member, onUpdate }: EditMe
         <DialogHeader>
           <DialogTitle>Member Management</DialogTitle>
           <DialogDescription>
-            Update core profile and subscription details for {member?.companyName}.
+            Update core profile and status for {member?.companyName}. Plan upgrades must be initiated by the member.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -157,49 +128,6 @@ export function EditMemberDialog({ isOpen, setIsOpen, member, onUpdate }: EditMe
                     </FormItem>
                 )}
             />
-             <div className="grid grid-cols-2 gap-4">
-                <FormField
-                    control={form.control}
-                    name="membershipId"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Membership Plan</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value} disabled={areMembershipsLoading}>
-                        <FormControl>
-                            <SelectTrigger>
-                                <SelectValue placeholder={areMembershipsLoading ? 'Loading...' : 'Select Plan'} />
-                            </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                            {(memberships || []).map(m => (
-                                <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
-                            ))}
-                        </SelectContent>
-                        </Select>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
-                 <FormField
-                    control={form.control}
-                    name="billingCycle"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Billing Cycle</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                            <SelectTrigger><SelectValue/></SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                            <SelectItem value="monthly">Monthly</SelectItem>
-                            <SelectItem value="annual">Annual</SelectItem>
-                        </SelectContent>
-                        </Select>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
-            </div>
             <FormField
                 control={form.control}
                 name="status"
@@ -220,10 +148,16 @@ export function EditMemberDialog({ isOpen, setIsOpen, member, onUpdate }: EditMe
                 </FormItem>
                 )}
             />
+            
+            <div className="p-3 bg-muted rounded-md text-xs text-muted-foreground">
+                Current Plan: <span className="font-bold text-foreground capitalize">{member?.membershipId || 'Free'}</span>
+                <p className="mt-1">Membership tiers can only be changed by the member in their account settings.</p>
+            </div>
+
             <DialogFooter className="pt-4">
               <Button type="submit" disabled={isLoading} className="w-full">
                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                {form.watch('membershipId') !== 'free' && member?.membershipId === 'free' ? 'Confirm Upgrade' : 'Save Changes'}
+                Save Changes
               </Button>
             </DialogFooter>
           </form>
