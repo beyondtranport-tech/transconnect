@@ -55,7 +55,8 @@ function normalizePartnerData(data: any) {
         email: ['email_address', 'emailAddress', 'mail', 'email', 'e_mail'],
         phone: ['telephone_number', 'telephone', 'phone_number', 'cell', 'mobile', 'contact_number', 'tel', 'phone'],
         address: ['physical_address', 'physicalAddress', 'location', 'address', 'street'],
-        website: ['url', 'site', 'website', 'website_url', 'web']
+        website: ['url', 'site', 'website', 'website_url', 'web'],
+        entryType: ['industrial_category', 'category', 'industrialCategory', 'entry_type', 'entryType']
     };
 
     Object.entries(maps).forEach(([standardKey, aiKeys]) => {
@@ -85,23 +86,26 @@ function normalizePartnerData(data: any) {
         result.lastName = parts.slice(1).join(' ') || '';
     }
 
-    const name = (result.companyName || '').toLowerCase();
-    if (name.includes('forward')) {
-        result.entryType = 'Forwarder';
-    } else if (name.includes('distrib')) {
-        result.entryType = 'Distribution';
-    } else if (name.includes('warehouse')) {
-        result.entryType = 'Warehousing';
-    } else if (name.includes('logistics') || name.includes('supply')) {
-        result.entryType = 'Logistics';
-    } else if (name.includes('truck') || name.includes('transport') || name.includes('haul') || name.includes('carrier') || name.includes('vervoer')) {
-        result.entryType = 'Transport';
-    } else if (name.includes('courier') || name.includes('express')) {
-        result.entryType = 'Courier';
-    } else if (name.includes('shipping') || name.includes('maritime') || name.includes('port')) {
-        result.entryType = 'Port';
-    } else {
-        result.entryType = 'General';
+    // Category Logic: Prioritize explicit category from AI, then fallback to keyword guessing
+    if (!result.entryType || result.entryType === 'General') {
+        const name = (result.companyName || '').toLowerCase();
+        if (name.includes('forward')) {
+            result.entryType = 'Forwarder';
+        } else if (name.includes('distrib')) {
+            result.entryType = 'Distribution';
+        } else if (name.includes('warehouse')) {
+            result.entryType = 'Warehousing';
+        } else if (name.includes('logistics') || name.includes('supply')) {
+            result.entryType = 'Logistics';
+        } else if (name.includes('truck') || name.includes('transport') || name.includes('haul') || name.includes('carrier') || name.includes('vervoer')) {
+            result.entryType = 'Transport';
+        } else if (name.includes('courier') || name.includes('express')) {
+            result.entryType = 'Courier';
+        } else if (name.includes('shipping') || name.includes('maritime') || name.includes('port')) {
+            result.entryType = 'Port';
+        } else {
+            result.entryType = result.entryType || 'General';
+        }
     }
 
     return result;

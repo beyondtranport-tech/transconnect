@@ -51,12 +51,14 @@ INVESTIGATIVE STRATEGY (HUMAN IDENTITY FOCUS):
 2. FORBIDDEN VALUES: Returning "The Director", "The Manager", "Managing Director", "CEO", "Owner", or "Unknown" is a failure. You MUST hunt LinkedIn profiles, CIPC records, or official "About" pages to find a specific human name (e.g., "Sipho Nkosi").
 3. PROACTIVE CONTACT SEARCH: Identify the corporate email domain. Prioritize "info@", "sales@", or "admin@" formats for the company, and provide a valid South African phone number.
 4. PHYSICAL VERIFICATION: Provide the full verifiable street address in South Africa.
+5. CATEGORY CLASSIFICATION: You MUST include the field "industrial_category" with the exact value "${category}" for every record.
 
 REQUIRED OUTPUT FORMAT (RAW JSON ARRAY ONLY):
 [
   {
     "record_id": "DISCOVERY_${category.toUpperCase().replace(/\s/g, '_')}_${Math.random().toString(36).substring(7)}",
     "company_name": "Exact Registered Name",
+    "industrial_category": "${category}",
     "contact_person": "ACTUAL HUMAN FULL NAME (MANDATORY)",
     "email_address": "Verified Email",
     "telephone_number": "South African Format Phone",
