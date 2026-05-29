@@ -2,7 +2,7 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { BookOpen, Loader2, ClipboardCopy, SearchCode, Target, Users, LayoutDashboard, Send } from 'lucide-react';
+import { BookOpen, Loader2, ClipboardCopy, SearchCode, Target, Users, LayoutDashboard, Send, Sparkles } from 'lucide-react';
 import { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -81,6 +81,7 @@ async function performAdminAction(token: string, action: string, payload: any) {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ action, payload }),
+        cache: 'no-store'
     });
     const result = await response.json();
     if (!response.ok || !result.success) {
@@ -251,6 +252,11 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
                 </div>
             </div>
             <div className="flex items-center gap-2">
+                {audience === 'suppliers' && (
+                    <Button variant="outline" onClick={() => handleTabChange('discovery')} className={cn(activeTab === 'discovery' && "bg-primary text-white hover:bg-primary/90")}>
+                        <Sparkles className="mr-2 h-4 w-4" /> Discovery Engine
+                    </Button>
+                )}
                 {isContentTab && (
                     <Button variant="outline" onClick={() => setIsLogDialogOpen(true)} disabled={isLoadingPartners || (partners.length === 0 && !!Management)}>
                         <ClipboardCopy className="mr-2 h-4 w-4" /> Log & Copy Content
@@ -262,7 +268,7 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
             <TabsList className="h-auto flex-wrap justify-start bg-muted p-1">
                 {Management && <TabsTrigger value="management">CRM & Pipeline</TabsTrigger>}
-                {Discovery && <TabsTrigger value="discovery">Discovery (AI)</TabsTrigger>}
+                {Discovery && <TabsTrigger value="discovery" className="gap-2"><Sparkles className="h-3.5 w-3.5"/>Discovery (AI)</TabsTrigger>}
                 {Pitch && <TabsTrigger value="pitch-generator">Pitch Library</TabsTrigger>}
                 <TabsTrigger value="company-profile">Profile</TabsTrigger>
                 <TabsTrigger value="tech-architecture">Tech</TabsTrigger>

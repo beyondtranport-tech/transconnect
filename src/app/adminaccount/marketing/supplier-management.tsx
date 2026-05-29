@@ -556,6 +556,18 @@ export default function SupplierManagement() {
             </div>
         </CardHeader>
 
+        {/* Discovery Help Alert */}
+        <Alert className="bg-primary/5 border-primary/20">
+            <Sparkles className="h-4 w-4 text-primary" />
+            <AlertTitle>Need more supplier leads?</AlertTitle>
+            <AlertDescription className="text-xs">
+                Use the <span className="font-bold text-primary">Discovery Engine</span> in the Marketing Library to find new suppliers across 20+ industrial categories. 
+                <Button variant="link" className="h-auto p-0 ml-1 text-xs font-bold" asChild>
+                    <Link href="/adminaccount?view=marketing-suppliers&subview=discovery">Go to Discovery Engine</Link>
+                </Button>
+            </AlertDescription>
+        </Alert>
+
         {/* Pipeline Statistics Bar */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             <Card className="bg-slate-50 border-none shadow-none"><CardContent className="p-4 text-center"><p className="text-[10px] font-black uppercase text-muted-foreground">New</p><p className="text-2xl font-black mt-1">{statusStats.new}</p></CardContent></Card>
