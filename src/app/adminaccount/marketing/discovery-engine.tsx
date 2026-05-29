@@ -44,28 +44,28 @@ function generateDiscoveryPrompt(category: string) {
 
 ACT AS AN ELITE MARKET INTELLIGENCE AGENT. 
 
-TASK: Discover and extract detailed verified records for 10 prominent businesses in SOUTH AFRICA that specialize in the industrial category: "${category}".
+TASK: Discover and extract detailed verified records for 30 prominent businesses in SOUTH AFRICA that specialize in the industrial category: "${category}".
 
-DATA REQUIREMENTS FOR EACH RECORD:
-1. HUMAN IDENTITY: Find the ACTUAL FULL NAME of the Owner, Managing Director, or CEO. Returning titles like "The Director" is a failure.
-2. VERIFIED CONTACTS: Find a corporate email address (info@, sales@, or direct) and a valid South African phone number.
-3. PHYSICAL LOCATION: Include the full verifiable street address in South Africa.
-4. WEB PRESENCE: Provide the primary website URL.
+INVESTIGATIVE STRATEGY (HUMAN IDENTITY FOCUS):
+1. HUMAN IDENTITY IS MANDATORY: Your primary mission is to find the ACTUAL FULL NAME (First and Last) of the CEO, Managing Director, or Owner for each business.
+2. FORBIDDEN VALUES: Returning "The Director", "The Manager", "Managing Director", "CEO", "Owner", or "Unknown" is a failure. You MUST hunt LinkedIn profiles, CIPC records, or official "About" pages to find a specific human name (e.g., "Sipho Nkosi").
+3. PROACTIVE CONTACT SEARCH: Identify the corporate email domain. Prioritize "info@", "sales@", or "admin@" formats for the company, and provide a valid South African phone number.
+4. PHYSICAL VERIFICATION: Provide the full verifiable street address in South Africa.
 
 REQUIRED OUTPUT FORMAT (RAW JSON ARRAY ONLY):
 [
   {
-    "record_id": "DISCOVERY_${category.toUpperCase().replace(/\s/g, '_')}_1",
-    "company_name": "...",
-    "contact_person": "ACTUAL HUMAN FULL NAME",
-    "email_address": "...",
-    "telephone_number": "...",
-    "website": "...",
-    "physical_address": "..."
+    "record_id": "DISCOVERY_${category.toUpperCase().replace(/\s/g, '_')}_${Math.random().toString(36).substring(7)}",
+    "company_name": "Exact Registered Name",
+    "contact_person": "ACTUAL HUMAN FULL NAME (MANDATORY)",
+    "email_address": "Verified Email",
+    "telephone_number": "South African Format Phone",
+    "website": "URL",
+    "physical_address": "Full Street Address, City, Province"
   }
 ]
 
-HUNTING GROUNDS: Use professional directories, social proofing, and official "About" pages to ensure these are active, real businesses in South Africa.`;
+HUNTING GROUNDS: Search top-tier South African business directories and social proofing platforms to ensure these are high-performing, active entities.`;
 }
 
 const DiscoveryTab = ({ category }: { category: string }) => {
@@ -77,7 +77,7 @@ const DiscoveryTab = ({ category }: { category: string }) => {
         try {
             await navigator.clipboard.writeText(prompt);
             setIsCopied(true);
-            toast({ title: "Discovery Prompt Copied!", description: "Paste this into Google AI Studio or Gemini." });
+            toast({ title: "Forensic Prompt Copied!", description: "Paste this into Google AI Studio to find 30 specialized leads." });
             setTimeout(() => setIsCopied(false), 3000);
         } catch (e) {
             toast({ variant: 'destructive', title: "Copy Failed" });
@@ -93,15 +93,15 @@ const DiscoveryTab = ({ category }: { category: string }) => {
                         Lead Discovery: {category}
                     </h2>
                     <p className="text-muted-foreground leading-relaxed text-sm">
-                        Use this forensic-tuned prompt to bypass gatekeepers and find the actual human leadership of top South African suppliers in the <strong>{category}</strong> sector.
+                        Use this forensic-tuned prompt to bypass generic titles and find the actual human leadership of 30 South African suppliers in the <strong>{category}</strong> sector.
                     </p>
                     
                     <Alert className="bg-primary/5 border-primary/20">
                         <Info className="h-4 w-4 text-primary" />
                         <AlertTitle>Discovery Workflow</AlertTitle>
                         <AlertDescription className="text-xs space-y-2">
-                            <p>1. Copy the tailored prompt below.</p>
-                            <p>2. Paste into <strong>Google AI Studio</strong>.</p>
+                            <p>1. Copy the 30-record forensic prompt below.</p>
+                            <p>2. Paste into <strong>Google AI Studio</strong> (Gemini 1.5 Pro recommended for names).</p>
                             <p>3. Use the <strong>Bulk Import</strong> tool in the Supplier Database to add the results.</p>
                         </AlertDescription>
                     </Alert>
@@ -122,7 +122,7 @@ const DiscoveryTab = ({ category }: { category: string }) => {
                 <div className="space-y-2">
                     <div className="flex items-center justify-between">
                          <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
-                            <Terminal className="h-3 w-3"/> AI Discovery Command
+                            <Terminal className="h-3 w-3"/> AI Discovery Command (30 Records)
                         </Label>
                         <Badge variant="outline" className="text-[10px] uppercase">{category}</Badge>
                     </div>
@@ -137,7 +137,7 @@ const DiscoveryTab = ({ category }: { category: string }) => {
             <div className="bg-muted/30 p-6 rounded-xl text-center space-y-4">
                  <h3 className="text-lg font-bold">Import Discovered Leads</h3>
                  <p className="text-sm text-muted-foreground max-w-xl mx-auto">
-                    Once the AI returns your list of {category} suppliers, head to the database to import them.
+                    Once the AI returns your list of 30 {category} suppliers, head to the database to import them.
                  </p>
                  <Button asChild variant="secondary">
                     <Link href="/adminaccount?view=marketing-suppliers&subview=management">
@@ -159,7 +159,7 @@ export default function DiscoveryEngine() {
                         AI Discovery Engine
                     </CardTitle>
                     <CardDescription>
-                        Generate tailored market intelligence prompts for discovery.
+                        Generate tailored market intelligence prompts to find up to 30 specialized leads per run.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="px-0">
