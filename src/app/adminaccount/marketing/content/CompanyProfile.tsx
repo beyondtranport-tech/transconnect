@@ -1,7 +1,7 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Target, Lightbulb, CheckCircle, Handshake, Truck, Network, Zap, Ship } from "lucide-react";
+import { Target, Lightbulb, CheckCircle, Handshake, Truck, Network, Zap, Ship, ExternalLink } from "lucide-react";
 import Image from 'next/image';
 import data from '@/lib/placeholder-images.json';
 import { useMemo } from "react";
@@ -220,6 +220,38 @@ export default function CompanyProfile({ audience, partner }: { audience: string
                     {opportunityConfig.title}
                 </h2>
                 {opportunityConfig.content}
+            </div>
+
+            {/* REINSTATED "VIEW APP" LINK */}
+            <div style={{ textAlign: 'center', marginTop: '32px', borderTop: '1px solid #f1f5f9', paddingTop: '24px' }}>
+                <p style={{ fontSize: '14px', fontWeight: 'bold', color: '#0f172a', marginBottom: '16px' }}>Experience the platform for yourself:</p>
+                <table role="presentation" border={0} cellPadding="0" cellSpacing="0" style={{ margin: '0 auto' }}>
+                    <tr>
+                        <td align="center" style={{ backgroundColor: '#228B22', borderRadius: '8px' }}>
+                            <a 
+                                href="https://studio--ecosystem-hub.us-central1.hosted.app"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{ 
+                                    backgroundColor: '#228B22', 
+                                    color: '#ffffff', 
+                                    padding: '12px 30px', 
+                                    borderRadius: '8px', 
+                                    textDecoration: 'none', 
+                                    fontWeight: 'bold', 
+                                    fontSize: '16px',
+                                    display: 'inline-block',
+                                    border: '1px solid #228B22'
+                                }}
+                            >
+                                View the App & Dashboard
+                            </a>
+                        </td>
+                    </tr>
+                </table>
+                <p style={{ fontSize: '11px', color: '#94a3b8', marginTop: '16px' }}>
+                    Explore our divisions, find matching loads, and see negotiated supplier discounts live.
+                </p>
             </div>
 
         </div>
