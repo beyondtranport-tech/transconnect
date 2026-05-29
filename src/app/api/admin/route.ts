@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -290,6 +291,23 @@ export async function POST(req: NextRequest) {
 
             case 'getPartnersByType': {
                 const { type } = payload;
+                
+                // If type is 'all', we fetch across both collections for Dashboard Funnel
+                if (type === 'all') {
+                    const [partnersSnap, leadsSnap] = await Promise.all([
+                        db.collection('partners').get(),
+                        db.collection('leads').get()
+                    ]);
+                    
+                    const mergedMap = new Map();
+                    [...partnersSnap.docs, ...leadsSnap.docs].forEach(doc => {
+                        const data = doc.data();
+                        mergedMap.set(doc.id, { id: doc.id, ...serializeTimestamps(data) });
+                    });
+                    
+                    return NextResponse.json({ success: true, data: Array.from(mergedMap.values()) });
+                }
+
                 const roleMapping: Record<string, string> = {
                     'transporter': 'Transporters',
                     'supplier': 'Vendors',
@@ -433,14 +451,8 @@ export async function POST(req: NextRequest) {
                     const currentSnap = await leadRef.get();
                     const currentData = currentSnap.data();
 
+                    // ALWAYS start as 'new' for newly discovered records to reflect in stats
                     let nextStatus = currentData?.status || 'new';
-                    if (!['active', 'registered'].includes(nextStatus)) {
-                        if (normalized.email && normalized.contactPerson) {
-                            nextStatus = 'qualified';
-                        } else {
-                            nextStatus = 'contacted'; 
-                        }
-                    }
 
                     const updateData: any = {
                         ...normalized,
