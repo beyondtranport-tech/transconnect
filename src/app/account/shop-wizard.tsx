@@ -12,7 +12,11 @@ import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser, useCollection, getClientSideAuthToken, useMemoFirebase } from '@/firebase';
 import { doc, collection, query, orderBy, serverTimestamp } from 'firebase/firestore';
-import { Loader2, Save, CheckCircle, PlusCircle, Edit, Trash2, Send, Truck, MapPin, DollarSign, ArrowRight, ArrowLeft, Info, AlertTriangle, Map, Warehouse, BookOpen, ShieldCheck, Home } from 'lucide-react';
+import { 
+    Loader2, Save, CheckCircle, PlusCircle, Edit, Trash2, Send, Truck, MapPin, 
+    DollarSign, ArrowRight, ArrowLeft, Info, Sparkles, ImageIcon, Wand2, 
+    Home, BookOpen, ShieldCheck, Map, UploadCloud, Download
+} from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -22,12 +26,11 @@ import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { DataTable } from '@/components/ui/data-table';
-import { type ColumnDef } from '@/hooks/use-data-table';
-import { usePermissions } from '@/hooks/use-permissions';
+import { Checkbox } from '@/components/ui/checkbox';
 import Link from 'next/link';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Checkbox } from '@/components/ui/checkbox';
+import { generateImage } from '@/ai/flows/image-generation-flow';
+import { imageEdit } from '@/ai/flows/image-edit-flow';
 
 // ====== SCHEMAS ======
 
@@ -41,6 +44,9 @@ const shopFormSchema = z.object({
   homeHeading: z.string().min(5, "Home heading must be at least 5 characters."),
   homeSubheading: z.string().optional(),
   aboutText: z.string().min(20, "About text must be a detailed summary."),
+  // Media fields
+  logoUrl: z.string().optional(),
+  heroBannerUrl: z.string().optional(),
   // Legal fields
   termsText: z.string().min(20, "Please provide terms and conditions."),
   privacyText: z.string().min(20, "Please provide a privacy policy."),
@@ -52,6 +58,7 @@ const productSchema = z.object({
   price: z.coerce.number().positive('Price must be a positive number'),
   sku: z.string().optional(),
   stock: z.coerce.number().min(0).optional(),
+  imageUrl: z.string().optional(),
 });
 
 const routeSchema = z.object({
@@ -61,7 +68,119 @@ const routeSchema = z.object({
     price: z.coerce.number().positive('Rate must be a positive number'),
     rateType: z.enum(['per-km', 'flat-rate']).default('per-km'),
     vehicleType: z.string().min(1, 'Vehicle type is required'),
+    imageUrl: z.string().optional(),
 });
+
+// ====== SHARED AI COMPONENTS ======
+
+function AIToolModal({ 
+    type, 
+    initialPrompt, 
+    onResult, 
+    targetField 
+}: { 
+    type: 'generate' | 'edit', 
+    initialPrompt: string, 
+    onResult: (url: string) => void,
+    targetField: string 
+}) {
+    const [isOpen, setIsOpen] = useState(false);
+    const [prompt, setPrompt] = useState(initialPrompt);
+    const [isLoading, setIsLoading] = useState(false);
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+    const { user } = useUser();
+    const { toast } = useToast();
+
+    const handleAction = async () => {
+        setIsLoading(true);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Auth failed.");
+
+            let result;
+            if (type === 'generate') {
+                result = await generateImage({ prompt });
+            } else {
+                // For edit, we'd need an source image. Simplified for now.
+                throw new Error("Enhancer requires a source image.");
+            }
+
+            if (!result.imageDataUri) throw new Error("AI failed to return image.");
+
+            // Upload the result to Firebase Storage for persistence
+            const folder = `user-assets/${user.uid}/shop-ai`;
+            const fileName = `ai_${targetField}_${Date.now()}.png`;
+            
+            const uploadRes = await fetch('/api/uploadImageAsset', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ fileDataUri: result.imageDataUri, folder, fileName })
+            });
+            const uploadData = await uploadRes.json();
+            if (!uploadRes.ok) throw new Error(uploadData.error);
+
+            // Log AI Usage for Loyalty/Limits
+            await fetch('/api/updateUserDoc', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    path: `auditLogs/ai_${Date.now()}`,
+                    data: { action: 'ai_image_gen', target: targetField, userId: user.uid, timestamp: { _methodName: 'serverTimestamp' } }
+                })
+            });
+
+            onResult(uploadData.url);
+            setIsOpen(false);
+            toast({ title: "AI Asset Ready!" });
+
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: "AI Error", description: e.message });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    return (
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-2">
+                    {type === 'generate' ? <Sparkles className="h-4 w-4" /> : <Wand2 className="h-4 w-4" />}
+                    {type === 'generate' ? `Generate with AI` : `Enhance with AI`}
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-xl">
+                <DialogHeader>
+                    <DialogTitle>AI Content Creator</DialogTitle>
+                    <DialogDescription>Describe exactly what you want the AI to create for your {targetField.replace('Url', '')}.</DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                    <Textarea 
+                        value={prompt} 
+                        onChange={e => setPrompt(e.target.value)} 
+                        placeholder="e.g. A minimalist logo for a transport company with green and grey tones..."
+                        rows={4}
+                    />
+                    <div className="bg-muted aspect-video rounded-md flex items-center justify-center border-2 border-dashed">
+                        {isLoading ? (
+                            <div className="text-center space-y-2">
+                                <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+                                <p className="text-xs text-muted-foreground font-medium">AI is thinking...</p>
+                            </div>
+                        ) : (
+                            <p className="text-xs text-muted-foreground italic">Your generated asset will appear here.</p>
+                        )}
+                    </div>
+                </div>
+                <DialogFooter>
+                    <Button onClick={handleAction} disabled={isLoading}>
+                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4" />}
+                        Generate Asset
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
 
 // ====== STEP COMPONENTS ======
 
@@ -104,6 +223,55 @@ function StepCoreIdentity({ canEdit }: { canEdit: boolean }) {
         </fieldset>
     </div>
   );
+}
+
+function StepMedia({ canEdit }: { canEdit: boolean }) {
+    const { control, setValue, watch } = useFormContext<z.infer<typeof shopFormSchema>>();
+    const logo = watch('logoUrl');
+    const banner = watch('heroBannerUrl');
+    const shopName = watch('shopName');
+
+    return (
+        <div className="space-y-10">
+            <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h3 className="text-lg font-semibold flex items-center gap-2"><ImageIcon className="h-5 w-5"/> Brand Identity</h3>
+                        <p className="text-xs text-muted-foreground">Upload or generate your company logo.</p>
+                    </div>
+                    <AIToolModal 
+                        type="generate" 
+                        targetField="logoUrl" 
+                        initialPrompt={`A minimalist, modern vector logo for a company called "${shopName}". Professional logistics theme.`}
+                        onResult={url => setValue('logoUrl', url)} 
+                    />
+                </div>
+                <div className="relative aspect-square w-32 border rounded-lg bg-muted overflow-hidden">
+                    {logo ? <Image src={logo} alt="Logo" fill className="object-contain" /> : <div className="flex items-center justify-center h-full"><ImageIcon className="opacity-20"/></div>}
+                </div>
+            </div>
+
+            <Separator />
+
+            <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h3 className="text-lg font-semibold flex items-center gap-2"><Sparkles className="h-5 w-5"/> Profile Banner</h3>
+                        <p className="text-xs text-muted-foreground">This is the first image customers see.</p>
+                    </div>
+                    <AIToolModal 
+                        type="generate" 
+                        targetField="heroBannerUrl" 
+                        initialPrompt={`A high-resolution professional hero banner for a logistics company dashboard. Cinematic lighting, trucks, or supply chain theme.`}
+                        onResult={url => setValue('heroBannerUrl', url)} 
+                    />
+                </div>
+                <div className="relative aspect-video w-full border rounded-xl bg-muted overflow-hidden">
+                    {banner ? <Image src={banner} alt="Banner" fill className="object-cover" /> : <div className="flex items-center justify-center h-full"><ImageIcon className="opacity-20 h-10 w-10"/></div>}
+                </div>
+            </div>
+        </div>
+    );
 }
 
 function StepContent({ canEdit }: { canEdit: boolean }) {
@@ -180,8 +348,8 @@ function ProductDialog({ shop, item, onComplete, children, canEdit }: { shop: an
   const form = useForm<any>({
     resolver: zodResolver(isTransporter ? routeSchema : productSchema),
     defaultValues: item || (isTransporter 
-        ? { name: '', destination: '', description: '', price: 0, rateType: 'per-km', vehicleType: '' } 
-        : { name: '', description: '', price: 0, sku: '', stock: 0 }),
+        ? { name: '', destination: '', description: '', price: 0, rateType: 'per-km', vehicleType: '', imageUrl: '' } 
+        : { name: '', description: '', price: 0, sku: '', stock: 0, imageUrl: '' }),
   });
   
   const onSubmit = async (values: any) => {
@@ -216,13 +384,29 @@ function ProductDialog({ shop, item, onComplete, children, canEdit }: { shop: an
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-             <div className={cn("grid gap-4", isTransporter ? "grid-cols-2" : "grid-cols-1")}>
-                <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>{isTransporter ? 'Origin (From)' : 'Product Name'}</FormLabel><FormControl><Input placeholder={isTransporter ? "e.g. Johannesburg" : ""} {...field} /></FormControl><FormMessage /></FormItem> )} />
-                {isTransporter && (
-                    <FormField control={form.control} name="destination" render={({ field }) => ( <FormItem><FormLabel>Destination (To)</FormLabel><FormControl><Input placeholder="e.g. Durban" {...field} /></FormControl><FormMessage /></FormItem> )} />
-                )}
+             <div className="flex gap-6 items-start">
+                <div className="relative h-32 w-32 border rounded-lg bg-muted shrink-0 overflow-hidden group">
+                    {form.watch('imageUrl') ? <Image src={form.watch('imageUrl')} alt="Preview" fill className="object-cover" /> : <div className="flex items-center justify-center h-full"><ImageIcon className="opacity-20"/></div>}
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <AIToolModal 
+                            type="generate" 
+                            targetField="productImage" 
+                            initialPrompt={isTransporter ? `A professional logistics photo of a truck driving from ${form.watch('name')} to ${form.watch('destination')}.` : `A clean studio photo of ${form.watch('name')}.`}
+                            onResult={url => form.setValue('imageUrl', url)} 
+                        />
+                    </div>
+                </div>
+                <div className="flex-1 space-y-4">
+                    <div className={cn("grid gap-4", isTransporter ? "grid-cols-2" : "grid-cols-1")}>
+                        <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>{isTransporter ? 'Origin (From)' : 'Product Name'}</FormLabel><FormControl><Input placeholder={isTransporter ? "e.g. Johannesburg" : ""} {...field} /></FormControl><FormMessage /></FormItem> )} />
+                        {isTransporter && (
+                            <FormField control={form.control} name="destination" render={({ field }) => ( <FormItem><FormLabel>Destination (To)</FormLabel><FormControl><Input placeholder="e.g. Durban" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                        )}
+                    </div>
+                    <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>{isTransporter ? 'Service Frequency/Details' : 'Description'}</FormLabel><FormControl><Textarea placeholder={isTransporter ? "e.g. Twice weekly departures..." : "Product specs..."} {...field} /></FormControl><FormMessage /></FormItem> )} />
+                </div>
              </div>
-             <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>{isTransporter ? 'Service Frequency/Details' : 'Description'}</FormLabel><FormControl><Textarea placeholder={isTransporter ? "e.g. Twice weekly departures..." : "Product specs..."} {...field} /></FormControl><FormMessage /></FormItem> )} />
+             
              <div className="grid grid-cols-2 gap-4">
                 <FormField control={form.control} name="price" render={({ field }) => ( <FormItem><FormLabel>{isTransporter ? 'Rate (R)' : 'Price (R)'}</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
                 {isTransporter ? (
@@ -484,6 +668,8 @@ export function ShopWizard({ shop, onUpdate }: { shop: any, onUpdate: () => void
             homeHeading: shop.homeHeading || '',
             homeSubheading: shop.homeSubheading || '',
             aboutText: shop.aboutText || '',
+            logoUrl: shop.logoUrl || '',
+            heroBannerUrl: shop.heroBannerUrl || '',
             termsText: shop.termsText || '',
             privacyText: shop.privacyText || '',
         }
@@ -515,6 +701,7 @@ export function ShopWizard({ shop, onUpdate }: { shop: any, onUpdate: () => void
     const wizardSteps = useMemo(() => {
         const base = [
             { id: 'details', name: 'Identity', component: <StepCoreIdentity canEdit={true} />, fields: ['shopName', 'category', 'contactEmail', 'contactPhone'] },
+            { id: 'media', name: 'Branding & AI', component: <StepMedia canEdit={true} />, fields: [] },
             { id: 'content', name: 'Home & About', component: <StepContent canEdit={true} />, fields: ['homeHeading', 'aboutText'] },
             { id: 'catalog', name: isTransporter ? 'Routes & Rates' : 'Product Catalog', component: <StepCatalog shop={shop} canEdit={true} />, fields: [] },
         ];
@@ -549,11 +736,11 @@ export function ShopWizard({ shop, onUpdate }: { shop: any, onUpdate: () => void
                                     key={step.id}
                                     type="button"
                                     variant={currentStep === index ? 'secondary' : 'ghost'}
-                                    className="justify-start gap-2"
+                                    className="justify-start gap-2 h-auto py-3 px-4"
                                     onClick={() => setCurrentStep(index)}
                                 >
-                                    <div className={cn("h-5 w-5 rounded-full flex items-center justify-center text-[10px] font-bold", currentStep >= index ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>{index + 1}</div>
-                                    {step.name}
+                                    <div className={cn("h-5 w-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0", currentStep >= index ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>{index + 1}</div>
+                                    <span className="truncate">{step.name}</span>
                                 </Button>
                             ))}
                         </nav>
@@ -607,12 +794,17 @@ function StepPublish({ shop, onSave }: { shop: any, onSave: () => void }) {
 
     return (
         <div className="text-center space-y-6 py-10">
-            <h3 className="text-2xl font-bold">Review & Publish</h3>
-            <p className="text-muted-foreground">Submit your commercial profile for admin verification. Once approved, it will be visible in the Mall.</p>
-            <Button onClick={handleSubmitForReview} disabled={isSubmitting || shop.status === 'pending_review'} size="lg">
-                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                {shop.status === 'approved' ? 'Request Re-verification' : 'Submit for Verification'}
-            </Button>
+            <h3 className="text-2xl font-bold font-headline">Review & Publish</h3>
+            <p className="text-muted-foreground max-w-md mx-auto">Submit your professional profile for admin verification. Once approved, it will be visible to the entire community Mall.</p>
+            <div className="pt-4">
+                 <Button onClick={handleSubmitForReview} disabled={isSubmitting || shop.status === 'pending_review'} size="lg">
+                    {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                    {shop.status === 'approved' ? 'Request Re-verification' : 'Submit for Verification'}
+                </Button>
+            </div>
+            {shop.status === 'pending_review' && (
+                <p className="text-xs text-amber-600 font-semibold italic">Your profile is currently under review by the platform team.</p>
+            )}
         </div>
     );
 }
