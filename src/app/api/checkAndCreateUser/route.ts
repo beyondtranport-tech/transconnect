@@ -68,7 +68,11 @@ export async function POST(req: NextRequest) {
     const displayName = firebaseUser.displayName.trim();
     const companyName = leadData?.companyName || (displayName ? `${displayName}'s Company` : 'My Company');
 
-    // Branch the shopType based on the declared position
+    /**
+     * Strategic Branching:
+     * Transporters use a 'service' profile structure.
+     * All others (Vendors, Partners, etc.) use the standard 'vendor' structure for now.
+     */
     const shopType = declaredPosition === 'transporter' ? 'transporter' : 'vendor';
 
     const newCompanyData: any = {
@@ -82,7 +86,8 @@ export async function POST(req: NextRequest) {
         availableBalance: 0,
         loyaltyTier: 'bronze',
         status: 'active',
-        shopType: shopType, // Branching initialized here
+        shopType: shopType, 
+        declaredRole: declaredPosition,
         leadId: leadData?.id || null,
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
@@ -127,7 +132,7 @@ export async function POST(req: NextRequest) {
     
     await batch.commit();
 
-    return NextResponse.json({ success: true, message: 'Member account created with position branching.' });
+    return NextResponse.json({ success: true, message: 'Member account created and branched by role.' });
 
   } catch (error: any) {
     console.error(`Error in checkAndCreateUser:`, error);

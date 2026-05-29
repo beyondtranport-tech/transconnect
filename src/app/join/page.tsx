@@ -33,9 +33,9 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Building2, User, Eye, EyeOff, Handshake, Lock, Truck, ShoppingCart, ArrowRight } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
+import { Loader2, Eye, EyeOff, Lock } from 'lucide-react';
+import { roles } from '@/lib/roles';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const formSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
@@ -159,36 +159,47 @@ function JoinFormComponent() {
 
   if (!selectedPosition) {
       return (
-          <Card className="w-full max-w-lg">
+          <Card className="w-full max-w-2xl">
             <CardHeader className="text-center">
                 <CardTitle className="text-3xl font-bold">Choose Your Position</CardTitle>
-                <CardDescription>Select the role that best describes your business goals.</CardDescription>
+                <CardDescription>Select the role that best describes your business goals within the ecosystem.</CardDescription>
             </CardHeader>
-            <CardContent className="grid gap-4">
-                <Button variant="outline" className="h-20 justify-start px-6 gap-4" onClick={() => setSelectedPosition('transporter')}>
-                    <div className="bg-primary/10 p-2 rounded-full"><Truck className="text-primary"/></div>
-                    <div className="text-left"><p className="font-bold">Transporter</p><p className="text-xs text-muted-foreground">Selling freight services and managing fleet.</p></div>
-                </Button>
-                <Button variant="outline" className="h-20 justify-start px-6 gap-4" onClick={() => setSelectedPosition('vendor')}>
-                    <div className="bg-primary/10 p-2 rounded-full"><ShoppingCart className="text-primary"/></div>
-                    <div className="text-left"><p className="font-bold">Vendor / Supplier</p><p className="text-xs text-muted-foreground">Selling parts, equipment, or consumables.</p></div>
-                </Button>
-                <Button variant="outline" className="h-20 justify-start px-6 gap-4" onClick={() => setSelectedPosition('driver')}>
-                    <div className="bg-primary/10 p-2 rounded-full"><User className="text-primary"/></div>
-                    <div className="text-left"><p className="font-bold">Individual / Driver</p><p className="text-xs text-muted-foreground">Accessing rewards and career tools.</p></div>
-                </Button>
+            <CardContent>
+                <ScrollArea className="h-[50vh] pr-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {roles.filter(r => r.id !== 'isa-agent').map((role) => {
+                            const Icon = role.icon;
+                            return (
+                                <Button 
+                                    key={role.id}
+                                    variant="outline" 
+                                    className="h-auto min-h-[100px] justify-start px-6 gap-4 border-2 hover:border-primary transition-all" 
+                                    onClick={() => setSelectedPosition(role.id)}
+                                >
+                                    <div className="bg-primary/10 p-2 rounded-full shrink-0"><Icon className="text-primary"/></div>
+                                    <div className="text-left py-2">
+                                        <p className="font-bold">{role.title}</p>
+                                        <p className="text-[10px] text-muted-foreground leading-tight mt-1">{role.description}</p>
+                                    </div>
+                                </Button>
+                            );
+                        })}
+                    </div>
+                </ScrollArea>
             </CardContent>
           </Card>
       )
   }
 
+  const selectedRoleData = roles.find(r => r.id === selectedPosition);
+
   return (
-    <Card className="w-full max-w-lg">
+    <Card className="w-full max-w-lg shadow-xl">
       <CardHeader className="text-center">
         <CardTitle className="text-3xl font-bold font-headline">Register Your Account</CardTitle>
-        <CardDescription>
-            Setting up your {selectedPosition} profile. 
-            <Button variant="link" size="sm" className="px-1 h-auto" onClick={() => setSelectedPosition(null)}>Change Position</Button>
+        <CardDescription className="flex items-center justify-center gap-2 mt-2">
+            Setting up your <Badge variant="secondary" className="capitalize">{selectedRoleData?.title || selectedPosition}</Badge> profile. 
+            <Button variant="link" size="sm" className="px-1 h-auto text-xs" onClick={() => setSelectedPosition(null)}>Change Role</Button>
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -206,13 +217,18 @@ function JoinFormComponent() {
                 <FormItem><div className="flex items-center justify-between"><FormLabel>Password</FormLabel><button type="button" onClick={handlePasswordReset} className="text-xs text-primary underline">Forgot?</button></div>
                 <FormControl><div className="relative"><Input type={showPassword ? "text" : "password"} {...field} /><Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0" onClick={() => setShowPassword(!showPassword)}>{showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</Button></div></FormControl><FormMessage /></FormItem>
             )} />
-            <Button type="submit" className="w-full py-6 text-lg font-bold" disabled={isLoading}>
+            <Button type="submit" className="w-full py-6 text-lg font-bold mt-6" disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Create My Account
             </Button>
           </form>
         </Form>
       </CardContent>
+      <CardFooter className="justify-center border-t py-4 bg-muted/20">
+        <p className="text-sm text-muted-foreground">
+            Already have an account? <Link href="/signin" className="text-primary font-bold hover:underline ml-1">Sign In</Link>
+        </p>
+      </CardFooter>
     </Card>
   )
 }
