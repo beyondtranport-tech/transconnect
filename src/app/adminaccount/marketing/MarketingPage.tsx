@@ -2,7 +2,7 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { BookOpen, Loader2, ClipboardCopy, SearchCode } from 'lucide-react';
+import { BookOpen, Loader2, ClipboardCopy, SearchCode, Target, Users, LayoutDashboard, Send } from 'lucide-react';
 import { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -29,7 +29,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Textarea } from '@/components/ui/textarea';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 
 // Content components
 import CompanyProfile from './content/CompanyProfile';
@@ -61,14 +61,15 @@ import SupplierManagement from './supplier-management';
 import TransporterManagement from './transporter-management';
 
 import SupplierPitch from '@/app/adminaccount/supplier-pitch';
+import DiscoveryEngine from './discovery-engine';
 
 const audienceConfig = {
-    partners: { title: 'Strategic Partners', Offer: PartnerOffer, Emails: PartnerEmails, Management: PartnerManagement },
-    isa: { title: 'ISA Agents', Offer: PartnerOffer, Emails: PartnerEmails, Management: ISAManagement },
-    suppliers: { title: 'Suppliers', Offer: SupplierOffer, Emails: SupplierEmails, Management: SupplierManagement },
-    transporters: { title: 'Transporters', Offer: TransporterOffer, Emails: TransporterEmails, Management: TransporterManagement },
-    investors: { title: 'Investors', Offer: InvestorOffer, Emails: InvestorEmails, Management: InvestorManagement },
-    developers: { title: 'Developers', Offer: DeveloperOffer, Emails: DeveloperEmails, Management: DeveloperManagement },
+    partners: { title: 'Strategic Partners', icon: Users, Offer: PartnerOffer, Emails: PartnerEmails, Management: PartnerManagement },
+    isa: { title: 'ISA Agents', icon: Target, Offer: PartnerOffer, Emails: PartnerEmails, Management: ISAManagement },
+    suppliers: { title: 'Suppliers', icon: SearchCode, Offer: SupplierOffer, Emails: SupplierEmails, Management: SupplierManagement, Pitch: SupplierPitch, Discovery: DiscoveryEngine },
+    transporters: { title: 'Transporters', icon: Send, Offer: TransporterOffer, Emails: TransporterEmails, Management: TransporterManagement },
+    investors: { title: 'Investors', icon: LayoutDashboard, Offer: InvestorOffer, Emails: InvestorEmails, Management: InvestorManagement },
+    developers: { title: 'Developers', icon: LayoutDashboard, Offer: DeveloperOffer, Emails: DeveloperEmails, Management: DeveloperManagement },
 };
 
 interface MarketingPageProps {
@@ -164,9 +165,12 @@ function LogAndCopyDialog({ open, onOpenChange, partners, isLoadingPartners, act
 
 function MarketingPageContent({ audience }: MarketingPageProps) {
   const config = audienceConfig[audience];
-  const { Offer, Emails, Management } = config;
+  const { Offer, Emails, Management, Pitch, Discovery } = config;
   const searchParams = useSearchParams();
-  const initialTab = searchParams.get('subview') === 'discovery' ? 'discovery' : (Management ? 'management' : 'company-profile');
+  const router = useRouter();
+  
+  const subview = searchParams.get('subview');
+  const initialTab = subview || (Management ? 'management' : 'company-profile');
   
   const [activeTab, setActiveTab] = useState(initialTab);
   const { toast } = useToast();
@@ -174,6 +178,20 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
   const [isLogDialogOpen, setIsLogDialogOpen] = useState(false);
   const [partners, setPartners] = useState<any[]>([]);
   const [isLoadingPartners, setIsLoadingPartners] = useState(true);
+
+  // Sync tab with URL
+  useEffect(() => {
+    if (subview && subview !== activeTab) {
+        setActiveTab(subview);
+    }
+  }, [subview, activeTab]);
+
+  const handleTabChange = (val: string) => {
+    setActiveTab(val);
+    const params = new URLSearchParams(searchParams);
+    params.set('subview', val);
+    router.replace(`${window.location.pathname}?${params.toString()}`, { scroll: false });
+  }
 
   const fetchPartners = useCallback(async () => {
     setIsLoadingPartners(true);
@@ -209,7 +227,6 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
             notes: logData.notes,
         });
 
-        // Use resilient copy utility
         const success = await copyHtmlToClipboard(contentElement.innerHTML);
         if (!success) throw new Error("Copy failed.");
 
@@ -220,33 +237,33 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
     }
   };
 
+  const isContentTab = ['company-profile', 'tech-architecture', 'revenue-model', 'offer', 'pitch', 'framework', 'emails'].includes(activeTab);
+
   return (
     <div className="space-y-6">
         <LogAndCopyDialog open={isLogDialogOpen} onOpenChange={setIsLogDialogOpen} partners={partners} isLoadingPartners={isLoadingPartners} activeTabLabel={activeTab} onLogAndCopy={handleLogAndCopy} audienceTitle={config.title} />
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div className="flex items-center gap-4">
-                <div className="bg-primary/10 p-3 rounded-lg"><BookOpen className="h-6 w-6 text-primary" /></div>
+                <div className="bg-primary/10 p-3 rounded-lg"><config.icon className="h-6 w-6 text-primary" /></div>
                 <div>
                     <h1 className="text-2xl font-bold">Marketing Library: {config.title}</h1>
                     <p className="text-muted-foreground">Manage leads and browse engagement materials.</p>
                 </div>
             </div>
             <div className="flex items-center gap-2">
-                 {audience === 'suppliers' && (
-                    <Button variant="outline" onClick={() => setActiveTab('discovery')} className={cn(activeTab === 'discovery' && "bg-muted")}>
-                        <SearchCode className="mr-2 h-4 w-4" /> Discovery Mode
+                {isContentTab && (
+                    <Button variant="outline" onClick={() => setIsLogDialogOpen(true)} disabled={isLoadingPartners || (partners.length === 0 && !!Management)}>
+                        <ClipboardCopy className="mr-2 h-4 w-4" /> Log & Copy Content
                     </Button>
-                 )}
-                <Button variant="outline" onClick={() => setIsLogDialogOpen(true)} disabled={isLoadingPartners || (partners.length === 0 && !!Management)}>
-                    <ClipboardCopy className="mr-2 h-4 w-4" /> Log & Copy Content
-                </Button>
+                )}
             </div>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
             <TabsList className="h-auto flex-wrap justify-start bg-muted p-1">
-                {Management && <TabsTrigger value="management">Management & CRM</TabsTrigger>}
-                {audience === 'suppliers' && <TabsTrigger value="discovery">AI Discovery Mode</TabsTrigger>}
+                {Management && <TabsTrigger value="management">CRM & Pipeline</TabsTrigger>}
+                {Discovery && <TabsTrigger value="discovery">Discovery (AI)</TabsTrigger>}
+                {Pitch && <TabsTrigger value="pitch-generator">Pitch Library</TabsTrigger>}
                 <TabsTrigger value="company-profile">Profile</TabsTrigger>
                 <TabsTrigger value="tech-architecture">Tech</TabsTrigger>
                 <TabsTrigger value="revenue-model">Revenue</TabsTrigger>
@@ -258,7 +275,8 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
 
             <div className="mt-6">
                 <TabsContent value="management"><div id="tab-content-management"><Management /></div></TabsContent>
-                <TabsContent value="discovery"><div id="tab-content-discovery"><SupplierPitch /></div></TabsContent>
+                {Discovery && <TabsContent value="discovery"><div id="tab-content-discovery"><Discovery /></div></TabsContent>}
+                {Pitch && <TabsContent value="pitch-generator"><div id="tab-content-pitch-generator"><Pitch /></div></TabsContent>}
                 <TabsContent value="company-profile"><div id="tab-content-company-profile"><CompanyProfile audience={audience} /></div></TabsContent>
                 <TabsContent value="tech-architecture"><div id="tab-content-tech-architecture"><TechArchitecture /></div></TabsContent>
                 <TabsContent value="revenue-model"><div id="tab-content-revenue-model"><RevenueModel /></div></TabsContent>

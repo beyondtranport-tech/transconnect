@@ -2,14 +2,10 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { ArrowRight, PlusCircle, Sparkles, Copy, ClipboardCheck, Info, Search, Terminal } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ArrowRight, PlusCircle, MessageSquare } from "lucide-react";
 import Link from "next/link";
 import * as React from "react";
-import { useState } from 'react';
-import { useToast } from "@/hooks/use-toast";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const supplierCategories = [
     "Accessories", 
@@ -28,7 +24,7 @@ const supplierCategories = [
     "Transport", 
     "Tarpaulins", 
     "Tow in", 
-    "Trailer repairs",
+    "Trailer repairs", 
     "Truck Accessories", 
     "Truck Parts", 
     "Truck repairs", 
@@ -36,140 +32,49 @@ const supplierCategories = [
     "Tyres"
 ];
 
-function generateDiscoveryPrompt(category: string) {
-    return `CRITICAL SYSTEM INSTRUCTION: RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION. NO EXPLANATORY TEXT.
-
-ACT AS AN ELITE MARKET INTELLIGENCE AGENT. 
-
-TASK: Discover and extract detailed verified records for 10 prominent businesses in SOUTH AFRICA that specialize in the industrial category: "${category}".
-
-DATA REQUIREMENTS FOR EACH RECORD:
-1. HUMAN IDENTITY: Find the ACTUAL FULL NAME of the Owner, Managing Director, or CEO. Returning titles like "The Director" is a failure.
-2. VERIFIED CONTACTS: Find a corporate email address (info@, sales@, or direct) and a valid South African phone number.
-3. PHYSICAL LOCATION: Include the full verifiable street address in South Africa.
-4. WEB PRESENCE: Provide the primary website URL.
-
-REQUIRED OUTPUT FORMAT (RAW JSON ARRAY ONLY):
-[
-  {
-    "record_id": "DISCOVERY_${category.toUpperCase().replace(/\s/g, '_')}_1",
-    "company_name": "...",
-    "contact_person": "ACTUAL HUMAN FULL NAME",
-    "email_address": "...",
-    "telephone_number": "...",
-    "website": "...",
-    "physical_address": "..."
-  }
-]
-
-HUNTING GROUNDS: Use professional directories, social proofing, and official "About" pages to ensure these are active, real businesses in South Africa.`;
-}
-
 const PitchComponent = ({ category }: { category: string }) => {
-    const { toast } = useToast();
-    const [isCopied, setIsCopied] = useState(false);
-    const prompt = generateDiscoveryPrompt(category);
-
-    const handleCopy = async () => {
-        try {
-            await navigator.clipboard.writeText(prompt);
-            setIsCopied(true);
-            toast({ title: "Forensic Discovery Prompt Copied!", description: "Paste this into Google AI Studio or Gemini to generate your lead list." });
-            setTimeout(() => setIsCopied(false), 3000);
-        } catch (e) {
-            toast({ variant: 'destructive', title: "Copy Failed" });
-        }
-    };
-
     return (
-        <div className="space-y-6">
-            <div className="grid md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                    <h2 className="text-2xl font-bold font-headline flex items-center gap-2">
-                        <Search className="h-6 w-6 text-primary" />
-                        Targeted Discovery: {category}
-                    </h2>
-                    <p className="text-muted-foreground leading-relaxed">
-                        To build your database for <strong>{category}</strong>, use the AI Discovery Prompt. This command is forensic-tuned to bypass gatekeepers and find the actual human leadership of top South African suppliers.
-                    </p>
-                    
-                    <Alert className="bg-primary/5 border-primary/20">
-                        <Info className="h-4 w-4 text-primary" />
-                        <AlertTitle>Workflow Guidance</AlertTitle>
-                        <AlertDescription className="text-xs space-y-2">
-                            <p>1. Copy the tailored prompt below.</p>
-                            <p>2. Paste into <strong>Google AI Studio</strong> (Gemini 1.5 Pro recommended).</p>
-                            <p>3. Take the JSON result and use the <strong>Bulk Import</strong> tool in your Supplier Dashboard.</p>
-                        </AlertDescription>
-                    </Alert>
-
-                    <div className="pt-4 flex flex-col gap-2">
-                        <Button onClick={handleCopy} size="lg" className="w-full gap-2">
-                            {isCopied ? <ClipboardCheck className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
-                            {isCopied ? "Prompt Copied to Clipboard" : "Copy Discovery Prompt"}
-                        </Button>
-                        <Button variant="outline" asChild className="w-full">
-                            <a href="https://aistudio.google.com/" target="_blank" rel="noopener noreferrer">
-                                Open Google AI Studio <ArrowRight className="ml-2 h-4 w-4" />
-                            </a>
-                        </Button>
-                    </div>
-                </div>
-
-                <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                         <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
-                            <Terminal className="h-3 w-3"/> AI Discovery Command
-                        </Label>
-                        <Badge variant="outline" className="text-[10px] uppercase">{category}</Badge>
-                    </div>
-                    <ScrollArea className="h-[350px] border rounded-lg bg-slate-900 p-4 shadow-inner">
-                        <pre className="text-[11px] text-slate-300 font-mono whitespace-pre-wrap leading-relaxed">
-                            {prompt}
-                        </pre>
-                    </ScrollArea>
-                </div>
-            </div>
-
-            <Separator />
-
-            <div className="bg-muted/30 p-6 rounded-xl text-center space-y-4">
-                 <h3 className="text-lg font-bold">Step 2: Rapid Data Import</h3>
-                 <p className="text-sm text-muted-foreground max-w-xl mx-auto">
-                    Once the AI returns your list of {category} suppliers, head back to the database and use the "Import JSON" button. Your database will be updated instantly with verified contacts.
-                 </p>
-                 <Button asChild variant="secondary">
-                    <Link href="/adminaccount?view=marketing-suppliers">
-                        Go to Supplier Database <ArrowRight className="ml-2 h-4 w-4" />
+        <div className="text-center py-10 space-y-4">
+            <h2 className="text-2xl font-bold font-headline">Engage with {category} Suppliers</h2>
+            <p className="max-w-xl mx-auto text-muted-foreground">
+                Pitch the value of a digital storefront and collective buying power to suppliers in the <strong>{category}</strong> sector.
+            </p>
+            <div className="pt-6 flex justify-center gap-4">
+                 <Button asChild>
+                    <Link href={`/adminaccount?view=marketing-suppliers&subview=management&action=add-member&newRole=Supplier&newNotes=Category:%20${category}`}>
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Add New Supplier
                     </Link>
-                 </Button>
+                </Button>
+                <Button asChild variant="outline">
+                    <Link href={`/adminaccount?view=marketing-suppliers&subview=emails&type=${encodeURIComponent(category)}`}>
+                        <MessageSquare className="mr-2 h-4 w-4 text-primary" />
+                        View Pitch Emails <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
+                </Button>
             </div>
         </div>
     );
 };
+
 
 export default function SupplierPitch() {
     return (
         <Card className="shadow-none border-none">
             <Tabs defaultValue="Accessories" className="w-full">
                 <CardHeader className="px-0 pt-0">
-                    <CardTitle className="flex items-center gap-2">
-                        <SearchCode className="h-6 w-6 text-primary" />
-                        AI Supplier Discovery Engine
-                    </CardTitle>
-                    <CardDescription>
-                        Generate tailored market intelligence prompts for 22 specialized industrial categories.
-                    </CardDescription>
+                    <CardTitle>Supplier Pitch Library</CardTitle>
+                    <CardDescription>Select a category to access tailored pitch notes and engagement tools.</CardDescription>
                 </CardHeader>
                 <CardContent className="px-0">
-                    <TabsList className="h-auto flex-wrap justify-start bg-muted/30 mb-8 p-1">
+                    <TabsList className="h-auto flex-wrap justify-start bg-muted/30 mb-6">
                         {supplierCategories.map(category => (
-                            <TabsTrigger key={category} value={category} className="text-xs px-4 py-2">{category}</TabsTrigger>
+                            <TabsTrigger key={category} value={category} className="text-xs">{category}</TabsTrigger>
                         ))}
                     </TabsList>
 
                     {supplierCategories.map(category => (
-                        <TabsContent key={category} value={category} className="mt-0">
+                        <TabsContent key={category} value={category}>
                             <PitchComponent category={category} />
                         </TabsContent>
                     ))}
@@ -178,5 +83,3 @@ export default function SupplierPitch() {
         </Card>
     );
 }
-
-const Separator = () => <div className="h-px w-full bg-slate-200 my-8" />;

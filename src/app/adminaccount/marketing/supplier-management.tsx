@@ -488,6 +488,21 @@ export default function SupplierManagement() {
       }
   };
 
+  const handleAutoCategorize = async () => {
+      setIsCategorizing(true);
+      try {
+          const token = await getClientSideAuthToken();
+          if (!token) return;
+          const result = await performAdminAction(token, 'bulkCategorizeLeads', {});
+          toast({ title: "Categorization Complete", description: `Auto-tagged ${result.count} suppliers.` });
+          forceRefresh();
+      } catch (e: any) {
+          toast({ variant: 'destructive', title: "Tagging Failed", description: e.message });
+      } finally {
+          setIsCategorizing(false);
+      }
+  };
+
   async function handleDelete() {
     try {
       const token = await getClientSideAuthToken();
@@ -500,72 +515,6 @@ export default function SupplierManagement() {
       toast({ variant: 'destructive', title: 'Error', description: e.message });
     }
   }
-
-  const columns: ColumnDef<any>[] = [
-    { 
-        accessorKey: 'companyName', 
-        header: 'Supplier Name', 
-        cell: ({ row }) => <div className="font-bold">{row.original.companyName || `${row.original.firstName} ${row.original.lastName}`}</div>
-    },
-    { 
-        accessorKey: 'entryType', 
-        header: 'Category',
-        cell: ({row}) => row.original.entryType ? <Badge variant="outline" className="text-[10px] uppercase font-bold">{row.original.entryType}</Badge> : <span className="text-muted-foreground italic text-xs">Uncategorized</span>
-    },
-    { 
-        accessorKey: 'contactPerson', 
-        header: 'Leadership',
-        cell: ({ row }) => <div>{row.original.contactPerson || 'N/A'}</div>
-    },
-    { 
-        accessorKey: 'email', 
-        header: 'Email',
-        cell: ({ row }) => {
-            const email = (row.original.email || row.original.email_address || '').toString().toLowerCase().trim();
-            const isInvalid = !email || email === 'null' || email === 'n/a' || email === 'none';
-            return <div className={cn(isInvalid ? "text-muted-foreground italic" : "")}>{isInvalid ? "Missing" : email}</div>
-        }
-    },
-    {
-        accessorKey: 'researchStatus',
-        header: 'Enhanced',
-        cell: ({row}) => {
-            const isResearching = row.original.researchStatus === 'researching';
-            const email = (row.original.email || row.original.email_address || '').toString().toLowerCase().trim();
-            const isInvalidEmail = !email || email === 'null' || email === 'n/a' || email === 'none';
-            const isCompleted = row.original.researchStatus === 'completed' || !isInvalidEmail;
-            if (isResearching) return <Badge variant="outline" className="animate-pulse text-amber-600 border-amber-200 bg-amber-50 text-[10px]">Searching...</Badge>;
-            if (isCompleted) return <Badge variant="default" className="bg-green-100 text-green-700 border-green-200 text-[10px]">Enriched</Badge>;
-            return <span className="text-xs text-muted-foreground">-</span>;
-        }
-    },
-    {
-        accessorKey: 'status',
-        header: 'Funnel Status',
-        cell: ({ row }) => {
-            const statusMap: Record<string, { label: string, color: string }> = {
-                'new': { label: 'New', color: 'bg-slate-100 text-slate-700' },
-                'contacted': { label: 'Researching', color: 'bg-amber-100 text-amber-700' },
-                'qualified': { label: 'Qualified', color: 'bg-blue-100 text-blue-700' },
-                'invited': { label: 'Invited', color: 'bg-purple-100 text-purple-700' },
-                'active': { label: 'Member (Active)', color: 'bg-green-600 text-white' },
-            };
-            const config = statusMap[row.original.status] || { label: row.original.status, color: 'bg-muted' };
-            return <Badge className={cn("capitalize text-[10px]", config.color)} variant="outline">{config.label}</Badge>
-        }
-    },
-    { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
-      <div className="flex justify-end gap-1">
-        <EnrichPartnerButton partner={row.original} onUpdate={forceRefresh} />
-        <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'engage', data: row.original })} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
-        <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.firstName} />
-        <PartnerTasksDialog partner={row.original} />
-        <PartnerOversightDialog partner={row.original} onUpdate={forceRefresh} />
-        <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'edit', data: row.original })}><Edit className="h-4 w-4" /></Button>
-        <Button variant="ghost" size="icon" onClick={() => { setDialog({ type: 'delete', data: row.original }); }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-      </div>
-    )},
-  ];
 
   return (
     <>
@@ -585,18 +534,18 @@ export default function SupplierManagement() {
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="space-y-1">
                 <CardTitle className="flex items-center gap-2">
-                    <Building /> Suppliers & Vendors
+                    <Building /> Supplier Database
                 </CardTitle>
-                <CardDescription>Targeted outreach library for building the supplier ecosystem.</CardDescription>
+                <CardDescription>Manage leads and convert them into community partners.</CardDescription>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-                <Button variant="outline" size="sm" asChild>
-                    <Link href="/adminaccount?view=marketing-suppliers&subview=discovery">
-                        <SearchCode className="mr-2 h-4 w-4" /> Discovery Mode
-                    </Link>
+                <Button variant="outline" size="sm" onClick={handleAutoCategorize} disabled={isCategorizing}>
+                    {isCategorizing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Tag className="mr-2 h-4 w-4" />}
+                    Auto-Categorize
                 </Button>
                 <Button variant="outline" size="sm" onClick={handleResetQueue} disabled={isResetting}>
-                    <RotateCcw className="mr-2 h-4 w-4" /> Reset Queue
+                    {isResetting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <RotateCcw className="mr-2 h-4 w-4" />}
+                    Reset Queue
                 </Button>
                 <Button variant="default" className="bg-amber-600 hover:bg-amber-700" onClick={() => handleEnhanceBatch(100)} disabled={isLoading}>
                     {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Zap className="mr-2 h-4 w-4" />} Master Batch (100)
@@ -620,7 +569,7 @@ export default function SupplierManagement() {
             <CardContent className="pt-6">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg">
                     <div className="space-y-2">
-                        <Label className="text-[10px] font-black uppercase text-muted-foreground">Funnel Status</Label>
+                        <Label className="text-[10px] font-black uppercase text-muted-foreground">Pipeline Status</Label>
                         <Select value={statusFilter} onValueChange={setStatusFilter}>
                             <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                             <SelectContent>
@@ -658,7 +607,51 @@ export default function SupplierManagement() {
                     </div>
                 </div>
                 {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
-                    <DataTable columns={columns} data={filteredSuppliers} onSelectionChange={setSelectedIds} />
+                    <DataTable 
+                      columns={[
+                        { accessorKey: 'companyName', header: 'Supplier Name', cell: ({ row }) => <div className="font-bold">{row.original.companyName || `${row.original.firstName} ${row.original.lastName}`}</div> },
+                        { accessorKey: 'entryType', header: 'Category', cell: ({row}) => row.original.entryType ? <Badge variant="outline" className="text-[10px] uppercase font-bold">{row.original.entryType}</Badge> : <span className="text-muted-foreground italic text-xs">Uncategorized</span> },
+                        { accessorKey: 'contactPerson', header: 'Leadership', cell: ({ row }) => <div>{row.original.contactPerson || 'N/A'}</div> },
+                        { accessorKey: 'email', header: 'Email', cell: ({ row }) => {
+                            const email = (row.original.email || row.original.email_address || '').toString().toLowerCase().trim();
+                            const isInvalid = !email || email === 'null' || email === 'n/a' || email === 'none';
+                            return <div className={cn(isInvalid ? "text-muted-foreground italic" : "")}>{isInvalid ? "Missing" : email}</div>
+                        }},
+                        { accessorKey: 'researchStatus', header: 'Enhanced', cell: ({row}) => {
+                            const isResearching = row.original.researchStatus === 'researching';
+                            const email = (row.original.email || row.original.email_address || '').toString().toLowerCase().trim();
+                            const isInvalidEmail = !email || email === 'null' || email === 'n/a' || email === 'none';
+                            const isCompleted = row.original.researchStatus === 'completed' || !isInvalidEmail;
+                            if (isResearching) return <Badge variant="outline" className="animate-pulse text-amber-600 border-amber-200 bg-amber-50 text-[10px]">Searching...</Badge>;
+                            if (isCompleted) return <Badge variant="default" className="bg-green-100 text-green-700 border-green-200 text-[10px]">Enriched</Badge>;
+                            return <span className="text-xs text-muted-foreground">-</span>;
+                        }},
+                        { accessorKey: 'status', header: 'Funnel Status', cell: ({ row }) => {
+                            const statusMap: Record<string, { label: string, color: string }> = {
+                                'new': { label: 'New', color: 'bg-slate-100 text-slate-700' },
+                                'contacted': { label: 'Researching', color: 'bg-amber-100 text-amber-700' },
+                                'qualified': { label: 'Qualified', color: 'bg-blue-100 text-blue-700' },
+                                'invited': { label: 'Invited', color: 'bg-purple-100 text-purple-700' },
+                                'active': { label: 'Member (Active)', color: 'bg-green-600 text-white' },
+                            };
+                            const config = statusMap[row.original.status] || { label: row.original.status, color: 'bg-muted' };
+                            return <Badge className={cn("capitalize text-[10px]", config.color)} variant="outline">{config.label}</Badge>
+                        }},
+                        { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
+                          <div className="flex justify-end gap-1">
+                            <EnrichPartnerButton partner={row.original} onUpdate={forceRefresh} />
+                            <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'engage', data: row.original })} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
+                            <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.firstName} />
+                            <PartnerTasksDialog partner={row.original} />
+                            <PartnerOversightDialog partner={row.original} onUpdate={forceRefresh} />
+                            <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'edit', data: row.original })}><Edit className="h-4 w-4" /></Button>
+                            <Button variant="ghost" size="icon" onClick={() => { setDialog({ type: 'delete', data: row.original }); }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                          </div>
+                        )},
+                      ]} 
+                      data={filteredSuppliers} 
+                      onSelectionChange={setSelectedIds} 
+                    />
                 )}
             </CardContent>
         </Card>
