@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, Suspense, useEffect } from 'react';
+import { useState, Suspense, useEffect, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
@@ -33,8 +33,9 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Building2, User, Eye, EyeOff, Handshake, Lock } from 'lucide-react';
+import { Loader2, Building2, User, Eye, EyeOff, Handshake, Lock, Truck, ShoppingCart, ArrowRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 const formSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
@@ -57,16 +58,16 @@ function JoinFormComponent() {
   const { user, isUserLoading, forceRefresh } = useUser();
   const redirectParam = searchParams.get('redirect');
 
-  // Attribution & Integrity Params
-  const userRole = searchParams.get('role');
-  const financierType = searchParams.get('type');
+  // URL Params
+  const initialRole = searchParams.get('role');
+  const [selectedPosition, setSelectedPosition] = useState<string | null>(initialRole);
+  
   const referrerId = searchParams.get('ref');
   const emailParam = searchParams.get('email');
   const firstNameParam = searchParams.get('firstName');
   const lastNameParam = searchParams.get('lastName');
   const phoneParam = searchParams.get('phone');
 
-  // This effect handles the final redirect after the user profile is confirmed to be loaded.
   useEffect(() => {
     if (authActionInitiated && !isUserLoading && user?.uid && user?.companyId) {
         setIsLoading(false);
@@ -102,9 +103,7 @@ function JoinFormComponent() {
       });
       return;
     }
-    
     if (!auth) return;
-    
     setIsLoading(true);
     try {
       await sendPasswordResetEmail(auth, email);
@@ -113,47 +112,36 @@ function JoinFormComponent() {
         description: `If an account exists for ${email}, a password reset link has been sent.`,
       });
     } catch (error: any) {
-       toast({ variant: 'destructive', title: 'Error sending reset email', description: 'Please try again later.' });
+       toast({ variant: 'destructive', title: 'Error sending reset email' });
     } finally {
         setIsLoading(false);
     }
   };
 
-
   const onSubmit = async (values: JoinFormValues) => {
+    if (!selectedPosition) {
+        toast({ variant: 'destructive', title: 'Position Required', description: 'Please declare your position first.' });
+        return;
+    }
     setIsLoading(true);
     if (!auth) {
-      toast({ variant: 'destructive', title: 'Initialization Error', description: 'Services are not ready. Please try again.' });
+      toast({ variant: 'destructive', title: 'Initialization Error' });
       setIsLoading(false);
       return;
     }
     try {
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        values.email,
-        values.password
-      );
+      const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
       const user = userCredential.user;
-
-      await updateProfile(user, {
-        displayName: `${values.firstName} ${values.lastName}`,
-      });
-      
+      await updateProfile(user, { displayName: `${values.firstName} ${values.lastName}` });
       const token = await getIdToken(user, true);
       
-      const checkAndCreateUserResponse = await fetch('/api/checkAndCreateUser', {
+      const response = await fetch('/api/checkAndCreateUser', {
           method: 'POST',
-          headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ referrerId }),
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ referrerId, role: selectedPosition }),
       });
       
-      if (!checkAndCreateUserResponse.ok) {
-          const result = await checkAndCreateUserResponse.json();
-          throw new Error(result.error || "Failed to create user profile.");
-      }
+      if (!response.ok) throw new Error((await response.json()).error || "Registration failed.");
       
       await fetch('/api/auth/session', {
         method: 'POST',
@@ -163,96 +151,67 @@ function JoinFormComponent() {
 
       setAuthActionInitiated(true);
       forceRefresh();
-      
-      toast({ title: 'Account Created!', description: "Finalizing your profile..." });
-
     } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Join Failed',
-        description: error.message,
-      });
+      toast({ variant: 'destructive', title: 'Join Failed', description: error.message });
       setIsLoading(false);
     }
   };
-  
-  const roleLabel = userRole?.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+
+  if (!selectedPosition) {
+      return (
+          <Card className="w-full max-w-lg">
+            <CardHeader className="text-center">
+                <CardTitle className="text-3xl font-bold">Choose Your Position</CardTitle>
+                <CardDescription>Select the role that best describes your business goals.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4">
+                <Button variant="outline" className="h-20 justify-start px-6 gap-4" onClick={() => setSelectedPosition('transporter')}>
+                    <div className="bg-primary/10 p-2 rounded-full"><Truck className="text-primary"/></div>
+                    <div className="text-left"><p className="font-bold">Transporter</p><p className="text-xs text-muted-foreground">Selling freight services and managing fleet.</p></div>
+                </Button>
+                <Button variant="outline" className="h-20 justify-start px-6 gap-4" onClick={() => setSelectedPosition('vendor')}>
+                    <div className="bg-primary/10 p-2 rounded-full"><ShoppingCart className="text-primary"/></div>
+                    <div className="text-left"><p className="font-bold">Vendor / Supplier</p><p className="text-xs text-muted-foreground">Selling parts, equipment, or consumables.</p></div>
+                </Button>
+                <Button variant="outline" className="h-20 justify-start px-6 gap-4" onClick={() => setSelectedPosition('driver')}>
+                    <div className="bg-primary/10 p-2 rounded-full"><User className="text-primary"/></div>
+                    <div className="text-left"><p className="font-bold">Individual / Driver</p><p className="text-xs text-muted-foreground">Accessing rewards and career tools.</p></div>
+                </Button>
+            </CardContent>
+          </Card>
+      )
+  }
 
   return (
     <Card className="w-full max-w-lg">
       <CardHeader className="text-center">
-        <CardTitle className="text-3xl font-bold font-headline">Join Logistics Flow</CardTitle>
-        <CardDescription>Create your secure account to access the ecosystem.</CardDescription>
+        <CardTitle className="text-3xl font-bold font-headline">Register Your Account</CardTitle>
+        <CardDescription>
+            Setting up your {selectedPosition} profile. 
+            <Button variant="link" size="sm" className="px-1 h-auto" onClick={() => setSelectedPosition(null)}>Change Position</Button>
+        </CardDescription>
       </CardHeader>
       <CardContent>
-        {roleLabel && (
-          <div className="mb-4">
-            <Badge variant="outline" className="w-full justify-center p-2 text-sm">
-                Registering as: {roleLabel}
-            </Badge>
-          </div>
-        )}
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            {emailParam && (
-                <div className="bg-primary/5 p-3 rounded-md border border-primary/20 flex items-center gap-3 mb-2">
-                    <Lock className="h-4 w-4 text-primary" />
-                    <p className="text-xs text-primary font-medium">Your registration email is locked to ensure lead attribution.</p>
-                </div>
-            )}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <FormField control={form.control} name="firstName" render={({ field }) => ( <FormItem><FormLabel>First Name</FormLabel><FormControl><Input placeholder="John" {...field} /></FormControl><FormMessage /></FormItem> )} />
               <FormField control={form.control} name="lastName" render={({ field }) => ( <FormItem><FormLabel>Last Name</FormLabel><FormControl><Input placeholder="Doe" {...field} /></FormControl><FormMessage /></FormItem> )} />
             </div>
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email Address</FormLabel>
-                  <FormControl>
-                    <div className="relative">
-                        <Input placeholder="you@example.com" {...field} disabled={!!emailParam} />
-                        {!!emailParam && <Lock className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />}
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-             <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel>Phone Number</FormLabel><FormControl><Input placeholder="(123) 456-7890" {...field} /></FormControl><FormMessage /></FormItem> )} />
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <div className="flex items-center justify-between">
-                      <FormLabel>Password</FormLabel>
-                      <button type="button" onClick={handlePasswordReset} className="text-sm font-medium text-primary hover:underline" disabled={isLoading}>
-                          Forgot password?
-                      </button>
-                  </div>
-                  <FormControl>
-                    <div className="relative">
-                        <Input type={showPassword ? "text" : "password"} className="pr-10" autoComplete="new-password" {...field} />
-                        <Button type="button" variant="ghost" size="icon" className="absolute inset-y-0 right-0 h-full px-3 text-muted-foreground hover:bg-transparent" onClick={() => setShowPassword((prev) => !prev)}>
-                            {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                        </Button>
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              {isLoading ? 'Creating Account...' : 'Create Free Account'}
+            <FormField control={form.control} name="email" render={({ field }) => (
+                <FormItem><FormLabel>Email Address</FormLabel><FormControl><div className="relative"><Input {...field} disabled={!!emailParam} />{!!emailParam && <Lock className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />}</div></FormControl><FormMessage /></FormItem>
+            )} />
+            <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel>Phone Number</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+            <FormField control={form.control} name="password" render={({ field }) => (
+                <FormItem><div className="flex items-center justify-between"><FormLabel>Password</FormLabel><button type="button" onClick={handlePasswordReset} className="text-xs text-primary underline">Forgot?</button></div>
+                <FormControl><div className="relative"><Input type={showPassword ? "text" : "password"} {...field} /><Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0" onClick={() => setShowPassword(!showPassword)}>{showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</Button></div></FormControl><FormMessage /></FormItem>
+            )} />
+            <Button type="submit" className="w-full py-6 text-lg font-bold" disabled={isLoading}>
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Create My Account
             </Button>
           </form>
         </Form>
-        <div className="mt-4 text-center text-sm">
-          Already have an account? <Link href="/signin" className="underline">Sign In</Link>
-        </div>
       </CardContent>
     </Card>
   )

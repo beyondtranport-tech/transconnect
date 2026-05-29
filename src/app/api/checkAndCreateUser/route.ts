@@ -8,13 +8,13 @@ export async function POST(req: NextRequest) {
   const { app, error: initError } = getAdminApp();
   if (initError || !app) {
     console.error("Admin SDK init error in checkAndCreateUser:", initError);
-    return NextResponse.json({ success: false, error: 'Internal Server Error: Could not connect to Firebase.' }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Internal Server Error' }, { status: 500 });
   }
 
   try {
     const authorization = req.headers.get('authorization');
     if (!authorization?.startsWith('Bearer ')) {
-      return NextResponse.json({ success: false, error: 'Unauthorized: No token provided.' }, { status: 401 });
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
     const idToken = authorization.split('Bearer ')[1];
     const adminAuth = getAuth(app);
@@ -32,9 +32,11 @@ export async function POST(req: NextRequest) {
     }
     
     let referrerId: string | null = null;
+    let declaredPosition: string | null = null;
     try {
       const body = await req.json();
       referrerId = body.referrerId;
+      declaredPosition = body.role; // Accept the declared position from the frontend
     } catch (e) {}
 
     const db = getFirestore(app);
@@ -42,11 +44,9 @@ export async function POST(req: NextRequest) {
     const userDocSnap = await userDocRef.get();
 
     if (userDocSnap.exists && userDocSnap.data()?.companyId) {
-      return NextResponse.json({ success: true, message: 'User document already exists.' });
+      return NextResponse.json({ success: true, message: 'User already exists.' });
     }
     
-    // --- LEAD CONVERSION BRIDGE ---
-    // Search leads by email to attribute this registration
     const leadsSnap = await db.collection('leads')
         .where('email', '==', firebaseUser.email.toLowerCase())
         .limit(1)
@@ -55,7 +55,6 @@ export async function POST(req: NextRequest) {
     let leadData = null;
     if (!leadsSnap.empty) {
         leadData = leadsSnap.docs[0].data();
-        // Close the loop: Mark lead as active member immediately
         await leadsSnap.docs[0].ref.update({
             status: 'active',
             convertedAt: FieldValue.serverTimestamp(),
@@ -67,8 +66,10 @@ export async function POST(req: NextRequest) {
     const companyRef = db.collection('companies').doc();
     
     const displayName = firebaseUser.displayName.trim();
-    // Use AI-researched name from lead if available, otherwise fallback
     const companyName = leadData?.companyName || (displayName ? `${displayName}'s Company` : 'My Company');
+
+    // Branch the shopType based on the declared position
+    const shopType = declaredPosition === 'transporter' ? 'transporter' : 'vendor';
 
     const newCompanyData: any = {
         id: companyRef.id,
@@ -80,8 +81,9 @@ export async function POST(req: NextRequest) {
         pendingBalance: 0,
         availableBalance: 0,
         loyaltyTier: 'bronze',
-        status: 'active', // Active immediately upon sign-up
-        leadId: leadData?.id || null, // Create the hard-link for success tracking
+        status: 'active',
+        shopType: shopType, // Branching initialized here
+        leadId: leadData?.id || null,
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
     };
@@ -99,6 +101,7 @@ export async function POST(req: NextRequest) {
         phone: leadData?.phone || userDocSnap.data()?.phone || firebaseUser.phoneNumber || '',
         companyId: companyRef.id,
         role: 'owner',
+        declaredPosition: declaredPosition,
         updatedAt: FieldValue.serverTimestamp(),
     };
     
@@ -115,7 +118,7 @@ export async function POST(req: NextRequest) {
                 batch.set(referrerCompanyRef, { rewardPoints: FieldValue.increment(partnerReferralPoints) }, { merge: true });
             }
         } catch (pointError) {
-            console.warn("Could not award sign-up points:", pointError);
+            console.warn("Could not award points:", pointError);
         }
     }
     
@@ -124,10 +127,10 @@ export async function POST(req: NextRequest) {
     
     await batch.commit();
 
-    return NextResponse.json({ success: true, message: 'User and Company records created and activated.' });
+    return NextResponse.json({ success: true, message: 'Member account created with position branching.' });
 
   } catch (error: any) {
     console.error(`Error in checkAndCreateUser:`, error);
-    return NextResponse.json({ success: false, error: `Internal Server Error: ${error.message}` }, { status: 500 });
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
