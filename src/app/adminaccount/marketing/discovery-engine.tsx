@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -52,11 +53,12 @@ INVESTIGATIVE STRATEGY (HUMAN IDENTITY FOCUS):
 3. PROACTIVE CONTACT SEARCH: Identify the corporate email domain. Prioritize "info@", "sales@", or "admin@" formats for the company, and provide a valid South African phone number.
 4. PHYSICAL VERIFICATION: Provide the full verifiable street address in South Africa.
 5. CATEGORY CLASSIFICATION: You MUST include the field "industrial_category" with the exact value "${category}" for every record.
+6. UNIQUE IDENTIFIERS: You MUST generate a unique, varied "record_id" for EVERY business. Do NOT use the same ID twice. Format: "DISCOVERY_${category.toUpperCase().replace(/\s/g, '_')}_[UNIQUE_RANDOM_STRING]".
 
 REQUIRED OUTPUT FORMAT (RAW JSON ARRAY ONLY):
 [
   {
-    "record_id": "DISCOVERY_${category.toUpperCase().replace(/\s/g, '_')}_${Math.random().toString(36).substring(7)}",
+    "record_id": "DISCOVERY_${category.toUpperCase().replace(/\s/g, '_')}_[MUST_BE_UNIQUE_FOR_EVERY_ITEM]",
     "company_name": "Exact Registered Name",
     "industrial_category": "${category}",
     "contact_person": "ACTUAL HUMAN FULL NAME (MANDATORY)",

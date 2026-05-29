@@ -38,14 +38,14 @@ function normalizePartnerData(data: any) {
             'member', 'candidate', 'null', 'n/a', 'none', 'undefined', 'n a', 'unknown', 
             'null@null.com', 'the director', 'the manager', 'director', 'manager', 
             'branch manager', 'managing director', 'ceo of', 'the owner', 'owner',
-            'ceo of company', 'owner of company', 'md of company'
+            'ceo of company', 'owner of company', 'md of company', '[must_be_unique_for_every_item]'
         ].includes(low) || low.length < 2;
     }
 
     const idKeys = ['record_id', 'recordId', 'id', 'record', 'uid', 'recordid'];
     for (const key of idKeys) {
         const val = data[key]?.toString().trim();
-        if (val && val.length > 5 && !['null', 'none'].includes(val.toLowerCase())) {
+        if (val && val.length > 5 && !isPlaceholder(val)) {
             result.record_id = val;
             break;
         }
@@ -442,8 +442,8 @@ export async function POST(req: NextRequest) {
                 const { partners, type } = payload;
                 const batch = db.batch();
                 let updatedCount = 0;
+                const processedIdsInBatch = new Set<string>();
 
-                // Sync with getPartnersByType roles
                 const roleMap: Record<string, string> = {
                     'supplier': 'Vendors',
                     'transporter': 'Transporters',
@@ -453,31 +453,34 @@ export async function POST(req: NextRequest) {
 
                 for (const p of partners) {
                     const normalized = normalizePartnerData(p);
-                    const targetId = normalized.record_id;
-                    if (!targetId) continue;
+                    
+                    // CRITICAL FIX: Ensure the ID is unique even if the AI repeats one.
+                    let targetId = normalized.record_id;
+                    const nameKey = (normalized.companyName || 'unknown').toLowerCase().replace(/[^a-z0-9]/g, '');
+                    
+                    if (!targetId || processedIdsInBatch.has(targetId)) {
+                        targetId = `DISCOVERY_${type.toUpperCase()}_${nameKey}_${Math.random().toString(36).substring(7)}`;
+                    }
+                    processedIdsInBatch.add(targetId);
+
                     const leadRef = db.collection('leads').doc(targetId);
                     const partnerRef = db.collection('partners').doc(targetId);
                     
-                    const currentSnap = await leadRef.get();
-                    const currentData = currentSnap.data();
-
-                    // ALWAYS start as 'new' for newly discovered records to reflect in stats
-                    let nextStatus = currentData?.status || 'new';
-
                     const updateData: any = {
                         ...normalized,
+                        id: targetId,
                         role: normalized.role || roleMap[type] || 'General',
-                        status: nextStatus,
+                        status: 'new', // FORCE NEW STATUS
                         researchStatus: 'completed',
                         updatedAt: FieldValue.serverTimestamp()
                     };
                     
                     batch.set(leadRef, updateData, { merge: true });
-                    batch.set(partnerRef, { ...updateData, type: currentData?.type || type }, { merge: true });
+                    batch.set(partnerRef, { ...updateData, type: type }, { merge: true });
                     updatedCount++;
                 }
                 await batch.commit();
-                return NextResponse.json({ success: true, message: `Import complete. ${updatedCount} records updated.`, updatedCount });
+                return NextResponse.json({ success: true, message: `Import complete. ${updatedCount} records processed.`, updatedCount });
             }
             case 'resetResearchQueue': {
                 const [leadsSnap, partnersSnap] = await Promise.all([
