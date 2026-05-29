@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -60,7 +59,7 @@ const PitchComponent = ({ category }: { category: string }) => {
 
 export default function SupplierPitch() {
     return (
-        <Tabs defaultValue="Tyres" className="w-full">
+        <Tabs defaultValue="Accessories" className="w-full">
             <CardHeader>
                 <CardTitle>Supplier Pitch Generator</CardTitle>
                 <CardDescription>Select a supplier category to view a tailored engagement pitch and add new leads.</CardDescription>

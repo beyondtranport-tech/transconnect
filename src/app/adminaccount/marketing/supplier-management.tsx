@@ -34,6 +34,31 @@ import { BulkOutreachUpdateDialog } from './BulkOutreachUpdateDialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
+const supplierCategories = [
+    "Accessories", 
+    "Anti-Theft Devices", 
+    "Auto Electrical", 
+    "Batteries", 
+    "Brakes", 
+    "Cleaning Products",
+    "Diesel", 
+    "Filters", 
+    "Injectors", 
+    "Lights", 
+    "Mechanical repairs",
+    "Oils & Lubricants", 
+    "Parts", 
+    "Transport", 
+    "Tarpaulins", 
+    "Tow in", 
+    "Trailer repairs",
+    "Truck Accessories", 
+    "Truck Parts", 
+    "Truck repairs", 
+    "Turbo", 
+    "Tyres"
+];
+
 async function performAdminAction(token: string, action: string, payload: any) {
   const response = await fetch('/api/admin', {
     method: 'POST',
@@ -54,6 +79,7 @@ const partnerSchema = z.object({
   contactPerson: z.string().optional(),
   companyName: z.string().optional(),
   address: z.string().optional(),
+  entryType: z.string().optional().describe('Industrial Category'),
   status: z.enum(['active', 'inactive', 'contacted', 'new', 'qualified', 'invited']),
   type: z.enum(['partner', 'isa', 'investor', 'developer', 'supplier', 'transporter']),
 });
@@ -208,13 +234,13 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
   const { toast } = useToast();
   const form = useForm<PartnerFormValues>({ 
       resolver: zodResolver(partnerSchema),
-      defaultValues: { type: 'supplier', status: 'active' }
+      defaultValues: { type: 'supplier', status: 'active', entryType: 'General' }
   });
 
   useEffect(() => {
     if (open) {
       if (partner) form.reset(partner);
-      else form.reset({ firstName: '', lastName: '', email: '', phone: '', contactPerson: '', companyName: '', address: '', status: 'active', type: 'supplier' });
+      else form.reset({ firstName: '', lastName: '', email: '', phone: '', contactPerson: '', companyName: '', address: '', status: 'active', type: 'supplier', entryType: 'General' });
     }
   }, [open, partner, form]);
 
@@ -255,32 +281,31 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
             <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Company Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="address" render={({ field }) => (<FormItem><FormLabel>Address</FormLabel><FormControl><Textarea placeholder="Enter physical address..." {...field} /></FormControl><FormMessage /></FormItem>)} />
             <div className="grid grid-cols-2 gap-4">
-              <FormField control={form.control} name="type" render={({ field }) => (
+              <FormField control={form.control} name="entryType" render={({ field }) => (
                 <FormItem>
-                    <FormLabel>Category</FormLabel>
+                    <FormLabel>Industrial Category</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl><SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger></FormControl>
+                        <FormControl><SelectTrigger><SelectValue placeholder="Select category..." /></SelectTrigger></FormControl>
                         <SelectContent>
-                            <SelectItem value="partner">Partner</SelectItem>
-                            <SelectItem value="isa">ISA</SelectItem>
-                            <SelectItem value="supplier">Supplier</SelectItem>
-                            <SelectItem value="transporter">Transporter</SelectItem>
+                            {supplierCategories.map(cat => (
+                                <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                            ))}
                         </SelectContent>
                     </Select>
                 </FormItem>
               )} />
               <FormField control={form.control} name="status" render={({ field }) => (
                 <FormItem>
-                    <FormLabel>Status</FormLabel>
+                    <FormLabel>Pipeline Status</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl><SelectTrigger><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
                         <SelectContent>
-                            <SelectItem value="active">Member (Active)</SelectItem>
-                            <SelectItem value="inactive">Inactive</SelectItem>
+                            <SelectItem value="new">New</SelectItem>
                             <SelectItem value="contacted">Researching</SelectItem>
                             <SelectItem value="qualified">Qualified</SelectItem>
                             <SelectItem value="invited">Invited</SelectItem>
-                            <SelectItem value="new">New</SelectItem>
+                            <SelectItem value="active">Member (Active)</SelectItem>
+                            <SelectItem value="inactive">Inactive</SelectItem>
                         </SelectContent>
                     </Select>
                 </FormItem>
@@ -288,7 +313,7 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
             </div>
             <DialogFooter className="pt-4 border-t">
               <Button type="submit" disabled={isLoading}>
-                {isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />} Save
+                {isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />} Save Supplier
               </Button>
             </DialogFooter>
           </form>
@@ -608,7 +633,9 @@ export default function SupplierManagement() {
                             <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Categories</SelectItem>
-                                {uniqueCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
+                                {supplierCategories.map(cat => (
+                                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                                ))}
                             </SelectContent>
                         </Select>
                     </div>
