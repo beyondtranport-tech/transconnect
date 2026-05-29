@@ -134,6 +134,29 @@ export async function POST(req: NextRequest) {
         }
 
         switch (action) {
+            case 'getAuditLogs': {
+                const logsSnap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(100).get();
+                const usersSnap = await db.collection('users').get();
+                const companiesSnap = await db.collection('companies').get();
+
+                const userMap = new Map();
+                usersSnap.docs.forEach(u => userMap.set(u.id, `${u.data().firstName} ${u.data().lastName}`));
+
+                const companyMap = new Map();
+                companiesSnap.docs.forEach(c => companyMap.set(c.id, c.data().companyName));
+
+                const logs = logsSnap.docs.map(doc => {
+                    const data = doc.data();
+                    return {
+                        id: doc.id,
+                        ...serializeTimestamps(data),
+                        userName: userMap.get(data.userId),
+                        companyName: companyMap.get(data.companyId)
+                    };
+                });
+                return NextResponse.json({ success: true, data: logs });
+            }
+
             case 'getMembers': {
                 const [companiesSnap, usersSnap, leadsSnap, partnersSnap] = await Promise.all([
                     db.collection('companies').get(),
@@ -205,16 +228,17 @@ export async function POST(req: NextRequest) {
                     return NextResponse.json({ success: true, data: Array.from(mergedMap.values()) });
                 }
 
-                const roleMapping: Record<string, string> = {
-                    'transporter': 'Transporters',
-                    'supplier': 'Vendors',
-                    'partner': 'Strategic Partners',
-                    'isa': 'ISA Agents (Elite)'
+                // IMPROVED: Use inclusive role strings to find leads previously saved with different labels
+                const inclusiveRoleMapping: Record<string, string[]> = {
+                    'transporter': ['Transporters', 'Transporter', 'Logistics', 'Transport'],
+                    'supplier': ['Vendors', 'Vendor', 'Supplier', 'Suppliers'],
+                    'partner': ['Strategic Partners', 'Partner', 'Strategic Partner'],
+                    'isa': ['ISA Agents (Elite)', 'ISA', 'ISA Agent'],
+                    'investor': ['Investors', 'Investor'],
+                    'developer': ['Developers', 'Developer']
                 };
-                const leadRole = roleMapping[type] || type;
-                const rolesToSearch = [leadRole];
-                if (leadRole.endsWith('s')) rolesToSearch.push(leadRole.slice(0, -1));
-                else rolesToSearch.push(leadRole + 's');
+
+                const rolesToSearch = inclusiveRoleMapping[type] || [type];
 
                 const [partnersSnap, leadsSnap, companiesSnap] = await Promise.all([
                     db.collection('partners').where('type', '==', type).get(),
@@ -268,7 +292,6 @@ export async function POST(req: NextRequest) {
                     'partner': 'Strategic Partners'
                 };
 
-                // Fetch existing IDs to prevent overwrite sessions
                 const existingLeadsSnap = await db.collection('leads').get();
                 const existingIds = new Set(existingLeadsSnap.docs.map(d => d.id));
 
@@ -278,7 +301,6 @@ export async function POST(req: NextRequest) {
                     let targetId = normalized.record_id;
                     const nameKey = (normalized.companyName || 'unknown').toLowerCase().replace(/[^a-z0-9]/g, '');
                     
-                    // If ID is missing, repeated in batch, or already exists for a DIFFERENT company in DB
                     const isMissingOrBatchDuplicate = !targetId || processedIdsInBatch.has(targetId);
                     const isExistingCollision = targetId && existingIds.has(targetId);
 
@@ -307,8 +329,161 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, message: `Import complete. ${updatedCount} records processed.`, updatedCount });
             }
 
-            // ... other cases remain unchanged ...
-            
+            case 'saveLead': {
+                const { lead } = payload;
+                const leadRef = db.collection('leads').doc(lead.id || db.collection('leads').doc().id);
+                await leadRef.set({
+                    ...lead,
+                    id: leadRef.id,
+                    updatedAt: FieldValue.serverTimestamp()
+                }, { merge: true });
+                return NextResponse.json({ success: true });
+            }
+
+            case 'deleteLead': {
+                const { leadId } = payload;
+                await db.collection('leads').doc(leadId).delete();
+                return NextResponse.json({ success: true });
+            }
+
+            case 'savePartner': {
+                const { partner } = payload;
+                const partnerRef = db.collection('partners').doc(partner.id || db.collection('partners').doc().id);
+                const leadRef = db.collection('leads').doc(partnerRef.id);
+                
+                const update = {
+                    ...partner,
+                    id: partnerRef.id,
+                    updatedAt: FieldValue.serverTimestamp()
+                };
+
+                await Promise.all([
+                    partnerRef.set(update, { merge: true }),
+                    leadRef.set(update, { merge: true })
+                ]);
+
+                return NextResponse.json({ success: true });
+            }
+
+            case 'logCommunication': {
+                const { partnerId, type, subject, notes } = payload;
+                const logRef = db.collection('partners').doc(partnerId).collection('communications').doc();
+                const logData = {
+                    type,
+                    subject,
+                    notes: notes || '',
+                    timestamp: FieldValue.serverTimestamp()
+                };
+
+                await Promise.all([
+                    logRef.set(logData),
+                    db.collection('partners').doc(partnerId).update({ 
+                        lastOutreachAt: FieldValue.serverTimestamp(),
+                        lastOutreachSubject: subject,
+                        status: 'contacted'
+                    }),
+                    db.collection('leads').doc(partnerId).update({
+                        lastOutreachAt: FieldValue.serverTimestamp(),
+                        lastOutreachSubject: subject,
+                        status: 'contacted'
+                    })
+                ]);
+                return NextResponse.json({ success: true });
+            }
+
+            case 'markLeadsAsResearching': {
+                const { leadIds } = payload;
+                const batch = db.batch();
+                leadIds.forEach((id: string) => {
+                    batch.set(db.collection('leads').doc(id), { researchStatus: 'researching', updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+                    batch.set(db.collection('partners').doc(id), { researchStatus: 'researching', updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+                });
+                await batch.commit();
+                return NextResponse.json({ success: true });
+            }
+
+            case 'getPlatformStaff': {
+                const staffSnap = await db.collection('platformStaff').get();
+                return NextResponse.json({ success: true, data: staffSnap.docs.map(d => ({ id: d.id, ...d.data() })) });
+            }
+
+            case 'findDuplicateLeads': {
+                const leadsSnap = await db.collection('leads').get();
+                const membersSnap = await db.collection('companies').get();
+                const memberOwnerIds = new Set(membersSnap.docs.map(d => d.data().ownerId));
+                
+                const groups: Record<string, any[]> = {};
+                leadsSnap.docs.forEach(doc => {
+                    const data = doc.data();
+                    const name = (data.companyName || '').toLowerCase().trim();
+                    if (!name) return;
+                    if (!groups[name]) groups[name] = [];
+                    groups[name].push({ ...data, id: doc.id, source: 'Lead' });
+                });
+
+                const duplicates = Object.values(groups).filter(group => group.length > 1);
+                return NextResponse.json({ success: true, data: duplicates });
+            }
+
+            case 'deleteLeads': {
+                const { leadIds } = payload;
+                const batch = db.batch();
+                leadIds.forEach((id: string) => {
+                    batch.delete(db.collection('leads').doc(id));
+                    batch.delete(db.collection('partners').doc(id));
+                });
+                await batch.commit();
+                return NextResponse.json({ success: true });
+            }
+
+            case 'resetResearchQueue': {
+                const { type } = payload;
+                const snap = await db.collection('leads').where('researchStatus', '==', 'researching').get();
+                const batch = db.batch();
+                snap.docs.forEach(doc => {
+                    batch.update(doc.ref, { researchStatus: 'new' });
+                    batch.update(db.collection('partners').doc(doc.id), { researchStatus: 'new' });
+                });
+                await batch.commit();
+                return NextResponse.json({ success: true, count: snap.size });
+            }
+
+            case 'bulkUpdateOutreach': {
+                const { entries, subject } = payload;
+                const batch = db.batch();
+                let count = 0;
+                for (const entry of entries) {
+                    const query = db.collection('leads').where('companyName', '==', entry);
+                    const snap = await query.get();
+                    snap.docs.forEach(doc => {
+                        batch.update(doc.ref, { status: 'contacted', lastOutreachAt: FieldValue.serverTimestamp(), lastOutreachSubject: subject });
+                        batch.update(db.collection('partners').doc(doc.id), { status: 'contacted', lastOutreachAt: FieldValue.serverTimestamp(), lastOutreachSubject: subject });
+                        count++;
+                    });
+                }
+                await batch.commit();
+                return NextResponse.json({ success: true, count });
+            }
+
+            case 'bulkCategorizeLeads': {
+                const leadsSnap = await db.collection('leads').get();
+                const batch = db.batch();
+                let count = 0;
+                leadsSnap.docs.forEach(doc => {
+                    const data = doc.data();
+                    if (!data.entryType || data.entryType === 'General') {
+                        const normalized = normalizePartnerData(data);
+                        if (normalized.entryType && normalized.entryType !== 'General') {
+                            batch.update(doc.ref, { entryType: normalized.entryType });
+                            batch.update(db.collection('partners').doc(doc.id), { entryType: normalized.entryType });
+                            count++;
+                        }
+                    }
+                });
+                await batch.commit();
+                return NextResponse.json({ success: true, count });
+            }
+
             default:
                 return NextResponse.json({ success: false, error: `Action "${action}" not implemented.` }, { status: 400 });
         }
