@@ -1,3 +1,4 @@
+
 'use server';
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -35,7 +36,7 @@ export async function POST(req: NextRequest) {
         const companyDoc = await companyRef.get();
         const companyData = companyDoc.data();
 
-        const isTransporter = companyData?.shopType === 'transporter';
+        const isTransporter = companyData?.shopType === 'transporter' || userData?.declaredPosition === 'transporter';
 
         // Fetch loyalty settings
         const loyaltyConfigDoc = await db.collection('configuration').doc('loyaltySettings').get();
@@ -53,7 +54,7 @@ export async function POST(req: NextRequest) {
           ownerId: uid,
           companyId: companyId,
           status: 'draft',
-          shopType: companyData?.shopType || 'vendor',
+          shopType: isTransporter ? 'transporter' : 'vendor',
           shopName: `${decodedToken.name || 'My'}'s New ${isTransporter ? 'Service Profile' : 'Shop'}`,
           category: '',
           createdAt: FieldValue.serverTimestamp(),
