@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -7,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
   Loader2, PlusCircle, Truck, Edit, Trash2, Send, CheckCircle, Users, Filter, Save, 
-  Search, Zap, RotateCcw, XCircle, Info, Sparkles, AlertCircle, Mail, Download, Copy, ShieldCheck, Tag, Clock, Ban
+  Search, Zap, RotateCcw, XCircle, Info, Sparkles, AlertCircle, Mail, Download, Copy, ShieldCheck, Tag, Clock, Ban, Database
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
@@ -58,181 +59,6 @@ const partnerSchema = z.object({
   type: z.enum(['partner', 'isa', 'investor', 'developer', 'supplier', 'transporter']),
 });
 type PartnerFormValues = z.infer<typeof partnerSchema>;
-
-function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [duplicates, setDuplicates] = useState<any[][]>([]);
-  const [selections, setSelections] = useState<Record<number, string>>({});
-  const { toast } = useToast();
-
-  async function findDuplicates() {
-    setIsLoading(true);
-    try {
-      const token = await getClientSideAuthToken();
-      if (!token) throw new Error("Auth failed.");
-      const response = await fetch('/api/admin', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'findDuplicateLeads' }),
-        cache: 'no-store'
-      });
-      const result = await response.json();
-      if (!result.success) throw new Error(result.error);
-      setDuplicates(result.data);
-      if (result.data.length === 0) {
-        toast({ title: "No duplicates found." });
-      } else {
-        const initialSelections: Record<number, string> = {};
-        result.data.forEach((group: any[], index: number) => {
-            const memberRecord = group.find(r => r.source === 'Member');
-            if (memberRecord) initialSelections[index] = memberRecord.id;
-            else initialSelections[index] = group[0].id;
-        });
-        setSelections(initialSelections);
-        setIsOpen(true);
-      }
-    } catch (e: any) {
-      toast({ variant: 'destructive', title: "Error finding duplicates", description: e.message });
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
-  async function handleClean() {
-    setIsLoading(true);
-    const idsToDelete = duplicates.flatMap((group, index) => {
-      const idToKeep = selections[index];
-      if (!idToKeep) return [];
-      return group.filter(lead => lead.id !== idToKeep).map(lead => lead.id);
-    });
-
-    if (idsToDelete.length === 0) {
-      toast({ title: "No duplicates selected for deletion." });
-      setIsLoading(false);
-      setIsOpen(false);
-      return;
-    }
-
-    try {
-      const token = await getClientSideAuthToken();
-      if (!token) throw new Error("Auth failed.");
-      const response = await fetch('/api/admin', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'deleteLeads', payload: { FridgeLeadIds: idsToDelete } }),
-        cache: 'no-store'
-      });
-      const result = await response.json();
-      if (!result.success) throw new Error(result.error);
-
-      toast({ title: "Duplicates Cleaned!", description: `${idsToDelete.length} duplicate records deleted.` });
-      onComplete();
-      setIsOpen(false);
-    } catch (e: any) {
-      toast({ variant: 'destructive', title: "Error cleaning duplicates", description: e.message });
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
-  return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" onClick={findDuplicates} disabled={isLoading}>
-          {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
-          Find & Clean Duplicates
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle>Duplicate Lead Cleaner</DialogTitle>
-          <DialogDescription>
-            Select the records you want to keep. All unselected records in the group will be deleted.
-          </DialogDescription>
-        </DialogHeader>
-        
-        <Alert className="bg-amber-50 border-amber-200">
-            <Info className="h-4 w-4 text-amber-600" />
-            <AlertTitle>Recommendation Guide</AlertTitle>
-            <AlertDescription className="text-xs">
-                Always keep <strong>Members</strong> (Active accounts) and delete <strong>Leads</strong> (Projections). 
-                Deleting a Member record will break their live account access.
-            </AlertDescription>
-        </Alert>
-
-        <div className="flex-1 overflow-y-auto p-4 space-y-6">
-          <div className="flex items-center justify-between mb-4 p-3 bg-muted rounded-md border border-dashed">
-            <div className="flex items-center gap-2">
-                <Checkbox 
-                    id="select-all-recommended-leads" 
-                    checked={Object.keys(selections).length === duplicates.length}
-                    onCheckedChange={(checked) => {
-                        if (checked) {
-                            const newSelections: Record<number, string> = {};
-                            duplicates.forEach((group, index) => {
-                                const member = group.find(r => r.source === 'Member');
-                                newSelections[index] = member ? member.id : group[0].id;
-                            });
-                            setSelections(newSelections);
-                        } else {
-                            setSelections({});
-                        }
-                    }}
-                />
-                <Label htmlFor="select-all-recommended-leads" className="text-xs font-bold cursor-pointer">Apply Recommended Selections to ALL Groups</Label>
-            </div>
-            <p className="text-[10px] text-muted-foreground uppercase font-bold">{duplicates.length} Duplicate Groups Found</p>
-          </div>
-
-          {duplicates.map((group, groupIndex) => {
-             const groupName = group.find(r => r.companyName)?.companyName || 'Unnamed Group';
-             return (
-                <Card key={groupIndex} className="shadow-none border">
-                <CardHeader className="py-3 bg-muted/30"><CardTitle className="text-sm font-bold">Group: {groupName}</CardTitle></CardHeader>
-                <CardContent className="p-0">
-                    {group.map(lead => {
-                        const isRecommended = lead.source === 'Member';
-                        return (
-                            <div key={lead.id} className={cn("flex items-start gap-4 p-4 border-b last:border-b-0", selections[groupIndex] === lead.id ? "bg-primary/5" : "")}>
-                                <Checkbox
-                                    id={`lead-${groupIndex}-${lead.id}`}
-                                    checked={selections[groupIndex] === lead.id}
-                                    onCheckedChange={() => handleSelection(groupIndex, lead.id)}
-                                />
-                                <label htmlFor={`lead-${groupIndex}-${lead.id}`} className="text-sm cursor-pointer w-full">
-                                    <div className="flex justify-between items-start">
-                                        <div>
-                                            <div className="flex items-center gap-2">
-                                                <p className="font-bold">{lead.companyName || 'No Company Name'}</p>
-                                                {isRecommended && <Badge variant="default" className="bg-green-100 text-green-700 text-[10px] uppercase">Recommended</Badge>}
-                                            </div>
-                                            <p className="text-xs text-muted-foreground">{lead.contactPerson || `${lead.firstName || ''} ${lead.lastName || ''}`.trim() || 'No Contact Name'}</p>
-                                            <p className="text-[10px] font-mono text-muted-foreground mt-1">{lead.id}</p>
-                                        </div>
-                                        <Badge variant={lead.source === 'Member' ? 'default' : 'outline'} className="text-[10px] uppercase font-extrabold">{lead.source}</Badge>
-                                    </div>
-                                    <p className="text-xs text-muted-foreground mt-2">{lead.email || 'No Email'} • {lead.phone || lead.telephone_number || 'No Phone'}</p>
-                                </label>
-                            </div>
-                        )
-                    })}
-                </CardContent>
-                </Card>
-             )
-          })}
-        </div>
-        <DialogFooter className="p-4 border-t">
-          <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
-          <Button onClick={handleClean} disabled={isLoading} className="bg-destructive hover:bg-destructive/90">
-             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
-             Delete Unselected & Clean
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
 
 function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: boolean; onOpenChange: (open: boolean) => void; partner?: any; onSave: () => void; }) {
   const [isLoading, setIsLoading] = useState(false);
@@ -369,7 +195,7 @@ export default function TransporterManagement() {
   const staffMap = useMemo(() => new Map(staff.map(s => [s.id, `${s.firstName} ${s.lastName}`])), [staff]);
 
   const statusStats = useMemo(() => {
-    const stats = { new: 0, researching: 0, qualified: 0, invited: 0, active: 0 };
+    const stats = { new: 0, researching: 0, qualified: 0, invited: 0, active: 0, other: 0 };
     partners.forEach(p => {
         const s = p.status;
         if (s === 'new') stats.new++;
@@ -377,6 +203,7 @@ export default function TransporterManagement() {
         else if (s === 'qualified') stats.qualified++;
         else if (s === 'invited') stats.invited++;
         else if (s === 'active') stats.active++;
+        else stats.other++;
     });
     return stats;
   }, [partners]);
@@ -451,7 +278,7 @@ export default function TransporterManagement() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    toast({ title: "Export Complete", description: "CSV downloaded." });
+    toast({ title: "Export Complete" });
   };
 
   const handleEnhanceBatch = (size: number) => {
@@ -521,85 +348,6 @@ export default function TransporterManagement() {
     }
   }
 
-  const columns: ColumnDef<any>[] = [
-    { 
-        accessorKey: 'companyName', 
-        header: 'Company Name', 
-        cell: ({ row }) => <div className="font-bold">{row.original.companyName || `${row.original.firstName} ${row.original.lastName}`}</div>
-    },
-    { 
-        accessorKey: 'entryType', 
-        header: 'Category',
-        cell: ({row}) => row.original.entryType ? <Badge variant="outline" className="text-[10px] uppercase font-bold">{row.original.entryType}</Badge> : <span className="text-muted-foreground italic text-xs">Uncategorized</span>
-    },
-    { 
-        accessorKey: 'contactPerson', 
-        header: 'Contact Name',
-        cell: ({ row }) => <div>{row.original.contactPerson || 'N/A'}</div>
-    },
-    { 
-        accessorKey: 'email', 
-        header: 'Email',
-        cell: ({ row }) => {
-            const email = (row.original.email || row.original.email_address || '').toString().toLowerCase().trim();
-            const isInvalid = !email || email === 'null' || email === 'n/a' || email === 'none';
-            return <div className={cn(isInvalid ? "text-muted-foreground italic" : "")}>{isInvalid ? "Missing" : email}</div>
-        }
-    },
-    {
-        accessorKey: 'researchStatus',
-        header: 'Enhanced',
-        cell: ({row}) => {
-            const isResearching = row.original.researchStatus === 'researching';
-            const email = (row.original.email || row.original.email_address || '').toString().toLowerCase().trim();
-            const isInvalidEmail = !email || email === 'null' || email === 'n/a' || email === 'none';
-            const isCompleted = row.original.researchStatus === 'completed' || !isInvalidEmail;
-            if (isResearching) return <Badge variant="outline" className="animate-pulse text-amber-600 border-amber-200 bg-amber-50 text-[10px]">Searching...</Badge>;
-            if (isCompleted) return <Badge variant="default" className="bg-green-100 text-green-700 border-green-200 text-[10px]">Enriched</Badge>;
-            return <span className="text-xs text-muted-foreground">-</span>;
-        }
-    },
-    {
-        accessorKey: 'lastOutreachAt',
-        header: 'Outreach',
-        cell: ({row}) => {
-            if (!row.original.lastOutreachAt) return <span className="text-[10px] text-muted-foreground uppercase font-bold">None</span>;
-            return (
-                <div className="flex flex-col">
-                    <span className="text-[10px] font-bold text-primary truncate max-w-[100px]">{row.original.lastOutreachSubject}</span>
-                    <span className="text-[10px] text-muted-foreground">{formatDateSafe(row.original.lastOutreachAt)}</span>
-                </div>
-            )
-        }
-    },
-    {
-        accessorKey: 'status',
-        header: 'Status',
-        cell: ({ row }) => {
-            const statusMap: Record<string, { label: string, color: string }> = {
-                'new': { label: 'New', color: 'bg-slate-100 text-slate-700' },
-                'contacted': { label: 'Researching', color: 'bg-amber-100 text-amber-700' },
-                'qualified': { label: 'Qualified', color: 'bg-blue-100 text-blue-700' },
-                'invited': { label: 'Invited', color: 'bg-purple-100 text-purple-700' },
-                'active': { label: 'Member (Active)', color: 'bg-green-600 text-white' },
-            };
-            const config = statusMap[row.original.status] || { label: row.original.status, color: 'bg-muted' };
-            return <Badge className={cn("capitalize text-[10px]", config.color)} variant="outline">{config.label}</Badge>
-        }
-    },
-    { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
-      <div className="flex justify-end gap-1">
-        <EnrichPartnerButton partner={row.original} onUpdate={forceRefresh} />
-        <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'engage', data: row.original })} title="Initiate Engagement"><Send className="h-4 w-4 text-primary" /></Button>
-        <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.firstName} />
-        <PartnerTasksDialog partner={row.original} />
-        <PartnerOversightDialog partner={row.original} onUpdate={forceRefresh} />
-        <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'edit', data: row.original })}><Edit className="h-4 w-4" /></Button>
-        <Button variant="ghost" size="icon" onClick={() => { setDialog({ type: 'delete', data: row.original }); }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-      </div>
-    )},
-  ];
-
   return (
     <>
       <BatchResearchDialog open={dialog.type === 'batch-ai'} onOpenChange={(o) => !o && setDialog({ type: null })} selectedLeads={selectedLeadsForBatch} onComplete={() => { setSelectedIds([]); forceRefresh(); }} />
@@ -619,6 +367,7 @@ export default function TransporterManagement() {
             <div className="space-y-1">
                 <CardTitle className="flex items-center gap-2">
                     <Truck /> Transporters & CRM
+                    <Badge variant="outline" className="ml-2 font-black border-primary text-primary">{partners.length} Total Records</Badge>
                 </CardTitle>
                 <CardDescription>Monitor your outreach pipeline and convert leads into active platform members.</CardDescription>
             </div>
@@ -645,7 +394,13 @@ export default function TransporterManagement() {
         </CardHeader>
 
         {/* Pipeline Statistics Bar */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+             <Card className="bg-slate-100 border-none shadow-none">
+                <CardContent className="p-4 text-center">
+                    <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Database</p>
+                    <p className="text-2xl font-black mt-1">{partners.length}</p>
+                </CardContent>
+            </Card>
             <Card className="bg-slate-50 border-none shadow-none">
                 <CardContent className="p-4 text-center">
                     <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">New</p>
@@ -731,6 +486,12 @@ export default function TransporterManagement() {
                                 </SelectContent>
                             </Select>
                         </div>
+                    </div>
+                </div>
+                <div className="mb-4 flex items-center justify-between text-xs text-muted-foreground px-2">
+                    <div className="flex items-center gap-1.5">
+                        <Database className="h-3 w-3" />
+                        Showing <strong>{filteredTransporters.length}</strong> records in table out of <strong>{partners.length}</strong> total in database.
                     </div>
                 </div>
                 {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (

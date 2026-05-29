@@ -57,7 +57,8 @@ function normalizePartnerData(data: any) {
         phone: ['telephone_number', 'telephone', 'phone_number', 'cell', 'mobile', 'contact_number', 'tel', 'phone'],
         address: ['physical_address', 'physicalAddress', 'location', 'address', 'street'],
         website: ['url', 'site', 'website', 'website_url', 'web'],
-        entryType: ['industrial_category', 'category', 'industrialCategory', 'entry_type', 'entryType']
+        entryType: ['industrial_category', 'category', 'industrialCategory', 'entry_type', 'entryType'],
+        role: ['role', 'position', 'type_label']
     };
 
     Object.entries(maps).forEach(([standardKey, aiKeys]) => {
@@ -441,6 +442,15 @@ export async function POST(req: NextRequest) {
                 const { partners, type } = payload;
                 const batch = db.batch();
                 let updatedCount = 0;
+
+                // Sync with getPartnersByType roles
+                const roleMap: Record<string, string> = {
+                    'supplier': 'Vendors',
+                    'transporter': 'Transporters',
+                    'isa': 'ISA Agents (Elite)',
+                    'partner': 'Strategic Partners'
+                };
+
                 for (const p of partners) {
                     const normalized = normalizePartnerData(p);
                     const targetId = normalized.record_id;
@@ -456,6 +466,7 @@ export async function POST(req: NextRequest) {
 
                     const updateData: any = {
                         ...normalized,
+                        role: normalized.role || roleMap[type] || 'General',
                         status: nextStatus,
                         researchStatus: 'completed',
                         updatedAt: FieldValue.serverTimestamp()

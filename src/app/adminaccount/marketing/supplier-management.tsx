@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -7,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
   Loader2, PlusCircle, Building, Edit, Trash2, Send, CheckCircle, Users, Mail, Filter, Save, 
-  Search, Zap, RotateCcw, XCircle, Info, Sparkles, AlertCircle, Download, Copy, ShieldCheck, Tag, Clock, SearchCode
+  Search, Zap, RotateCcw, XCircle, Info, Sparkles, AlertCircle, Download, Copy, ShieldCheck, Tag, Clock, SearchCode, Database
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
@@ -364,7 +365,7 @@ export default function SupplierManagement() {
   const staffMap = useMemo(() => new Map(staff.map(s => [s.id, `${s.firstName} ${s.lastName}`])), [staff]);
 
   const statusStats = useMemo(() => {
-    const stats = { new: 0, researching: 0, qualified: 0, invited: 0, active: 0 };
+    const stats = { new: 0, researching: 0, qualified: 0, invited: 0, active: 0, other: 0 };
     partners.forEach(p => {
         const s = p.status;
         if (s === 'new') stats.new++;
@@ -372,6 +373,7 @@ export default function SupplierManagement() {
         else if (s === 'qualified') stats.qualified++;
         else if (s === 'invited') stats.invited++;
         else if (s === 'active') stats.active++;
+        else stats.other++;
     });
     return stats;
   }, [partners]);
@@ -535,8 +537,9 @@ export default function SupplierManagement() {
             <div className="space-y-1">
                 <CardTitle className="flex items-center gap-2">
                     <Building /> Supplier Database
+                    <Badge variant="outline" className="ml-2 font-black border-primary text-primary">{partners.length} Total Records</Badge>
                 </CardTitle>
-                <CardDescription>Manage leads and convert them into community partners.</CardDescription>
+                <CardDescription>Manage leads and convert them into community partners. Current view reflects filtered results.</CardDescription>
             </div>
             <div className="flex flex-wrap items-center gap-2">
                 <Button variant="outline" size="sm" onClick={handleAutoCategorize} disabled={isCategorizing}>
@@ -569,12 +572,43 @@ export default function SupplierManagement() {
         </Alert>
 
         {/* Pipeline Statistics Bar */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            <Card className="bg-slate-50 border-none shadow-none"><CardContent className="p-4 text-center"><p className="text-[10px] font-black uppercase text-muted-foreground">New</p><p className="text-2xl font-black mt-1">{statusStats.new}</p></CardContent></Card>
-            <Card className="bg-amber-50 border-none shadow-none text-amber-700"><CardContent className="p-4 text-center"><p className="text-[10px] font-black uppercase">Researching</p><p className="text-2xl font-black mt-1">{statusStats.researching}</p></CardContent></Card>
-            <Card className="bg-blue-50 border-none shadow-none text-blue-700"><CardContent className="p-4 text-center"><p className="text-[10px] font-black uppercase">Qualified</p><p className="text-2xl font-black mt-1">{statusStats.qualified}</p></CardContent></Card>
-            <Card className="bg-purple-50 border-none shadow-none text-purple-700"><CardContent className="p-4 text-center"><p className="text-[10px] font-black uppercase">Invited</p><p className="text-2xl font-black mt-1">{statusStats.invited}</p></CardContent></Card>
-            <Card className="bg-green-600 border-none shadow-lg text-white"><CardContent className="p-4 text-center"><p className="text-[10px] font-black uppercase opacity-80">Members</p><p className="text-2xl font-black mt-1">{statusStats.active}</p></CardContent></Card>
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+            <Card className="bg-slate-100 border-none shadow-none">
+                <CardContent className="p-4 text-center">
+                    <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Database</p>
+                    <p className="text-2xl font-black mt-1">{partners.length}</p>
+                </CardContent>
+            </Card>
+            <Card className="bg-slate-50 border-none shadow-none">
+                <CardContent className="p-4 text-center">
+                    <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">New</p>
+                    <p className="text-2xl font-black mt-1">{statusStats.new}</p>
+                </CardContent>
+            </Card>
+            <Card className="bg-amber-50 border-none shadow-none text-amber-700">
+                <CardContent className="p-4 text-center">
+                    <p className="text-[10px] font-black uppercase tracking-widest">Researching</p>
+                    <p className="text-2xl font-black mt-1">{statusStats.researching}</p>
+                </CardContent>
+            </Card>
+            <Card className="bg-blue-50 border-none shadow-none text-blue-700">
+                <CardContent className="p-4 text-center">
+                    <p className="text-[10px] font-black uppercase tracking-widest">Qualified</p>
+                    <p className="text-2xl font-black mt-1">{statusStats.qualified}</p>
+                </CardContent>
+            </Card>
+            <Card className="bg-purple-50 border-none shadow-none text-purple-700">
+                <CardContent className="p-4 text-center">
+                    <p className="text-[10px] font-black uppercase tracking-widest">Invited</p>
+                    <p className="text-2xl font-black mt-1">{statusStats.invited}</p>
+                </CardContent>
+            </Card>
+            <Card className="bg-green-600 border-none shadow-lg text-white">
+                <CardContent className="p-4 text-center">
+                    <p className="text-[10px] font-black uppercase tracking-widest opacity-80">Members</p>
+                    <p className="text-2xl font-black mt-1">{statusStats.active}</p>
+                </CardContent>
+            </Card>
         </div>
 
         <Card>
@@ -616,6 +650,12 @@ export default function SupplierManagement() {
                     <div className="flex items-end gap-2">
                         <Button variant="outline" size="sm" onClick={handleExportCsv} className="h-8 text-xs flex-1"><Download className="mr-1 h-3 w-3" /> CSV</Button>
                         <Button variant="outline" size="sm" onClick={handleCopyBccList} className="h-8 text-xs flex-1"><Copy className="mr-1 h-3 w-3" /> BCC</Button>
+                    </div>
+                </div>
+                <div className="mb-4 flex items-center justify-between text-xs text-muted-foreground px-2">
+                    <div className="flex items-center gap-1.5">
+                        <Database className="h-3 w-3" />
+                        Showing <strong>{filteredSuppliers.length}</strong> records in table out of <strong>{partners.length}</strong> total in database.
                     </div>
                 </div>
                 {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
