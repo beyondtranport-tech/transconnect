@@ -45,7 +45,7 @@ const malls = [
     },
     {
         name: "Transporter Mall",
-        description: "Find opportunities and collaborate with peers.",
+        description: "Explore verified service lanes and book reliable transport capacity.",
         icon: Truck,
         href: "/mall/transporter",
         id: "transporter",
@@ -82,13 +82,6 @@ const malls = [
         href: "/mall/sa-auction",
         id: "sa-auction",
         image: saAuctionMallImage,
-    },
-    {
-        name: "WCTA Mall",
-        description: "An exclusive portal for members of the Western Cape Truckers Alliance.",
-        logo: "/wcta/wcta-logo.png",
-        href: "/mall/wcta",
-        id: "wcta",
     },
     {
         name: "Distribution Mall",
@@ -134,9 +127,9 @@ export default function MallPage() {
 
     const showIncentive = (href: string) => {
         setIncentiveStep({
-            title: "Become a Valued Supplier",
-            description: "By listing your products or services, you gain access to a targeted market and contribute to our community's data pool. This helps everyone get better deals. Proceed with our quick onboarding to get started.",
-            cta: "Continue Onboarding",
+            title: "Join the Marketplace Network",
+            description: "By creating your professional service profile, you gain access to a targeted market of shippers. Help us grow the community by contributing your fleet data during onboarding.",
+            cta: "Begin Profile Creation",
             action: () => {
                 setIsModalOpen(false);
                 setShowIncentiveStep(false);
@@ -163,78 +156,37 @@ export default function MallPage() {
         switch(mallId) {
             case 'finance':
                 config = {
-                    title: "What is your goal in the Finance Mall?",
-                    description: "Are you here to find funding for your business, or are you a financier looking to provide capital?",
+                    title: "Finance Mall Goal",
+                    description: "Are you seeking capital for your business, or are you a financier providing it?",
                     primary: { label: "I want to Borrow", description: "Apply for a loan or asset finance.", action: buyerAction },
-                    secondary: { label: "I want to Lend", description: "Join our network of financiers.", action: () => router.push('/for-financiers') }
-                };
-                break;
-            case 'loads':
-                config = {
-                    title: "What is your goal in the Loads Mall?",
-                    description: "Are you looking to post a load for transport, or are you a transporter looking for a load to carry?",
-                    primary: { label: "I am looking for a load", description: "Find available loads.", action: buyerAction },
-                    secondary: { label: "I have a load to post", description: "List your available freight.", action: sellerAction }
-                };
-                break;
-            case 'buy-sell':
-                 config = {
-                    title: "What brings you to the Buy & Sell Mall?",
-                    description: "Are you here to sell a vehicle or looking to purchase one?",
-                    primary: { label: "I am looking for a vehicle", description: "Browse vehicles for sale.", action: buyerAction },
-                    secondary: { label: "I have a vehicle to sell", description: "List your vehicle for sale.", action: sellerAction }
-                };
-                break;
-            case 'distribution':
-                 config = {
-                    title: "What is your role in the Distribution Mall?",
-                    description: "Are you looking for distribution partners or offering your network's services?",
-                    primary: { label: "I need distribution work", description: "Explore partnership opportunities.", action: buyerAction },
-                    secondary: { label: "I want to provide distribution", description: "List your network's capabilities.", action: sellerAction }
-                };
-                break;
-             case 'warehouse':
-                config = {
-                    title: "What are you looking for in the Warehouse Mall?",
-                    description: "Do you need to find storage space, or do you have warehouse space to offer?",
-                    primary: { label: "I am looking for storage", description: "Browse available storage.", action: buyerAction },
-                    secondary: { label: "I have space to offer", description: "Offer your warehouse to the network.", action: sellerAction }
-                };
-                break;
-            case 'repurpose':
-                config = {
-                    title: "What is your goal in the Repurpose Mall?",
-                    description: "Are you looking to find parts and assets, or do you have decommissioned items to list?",
-                    primary: { label: "I am looking for an available asset", description: "Find parts for refurbishment or salvage.", action: buyerAction },
-                    secondary: { label: "I have an available asset", description: "List your decommissioned assets.", action: sellerAction }
-                };
-                break;
-            case 'aftermarket':
-                config = {
-                    title: "What brings you to the Aftermarket Mall?",
-                    description: "Are you here to find performance parts and accessories, or to sell them?",
-                    primary: { label: "I am looking for a product", description: "Browse aftermarket products.", action: buyerAction },
-                    secondary: { label: "I want to post a product", description: "List your products for sale.", action: sellerAction }
+                    secondary: { label: "I want to Lend", description: "Join our financier network.", action: () => router.push('/for-financiers') }
                 };
                 break;
             case 'transporter':
                  config = {
-                    title: "What is your role?",
-                    description: "Are you looking to subcontract work, or are you offering your transport services?",
-                    primary: { label: "I need a Transporter", description: "Find a partner for a load.", action: buyerAction },
-                    secondary: { label: "I am a Transporter", description: "List your services.", action: sellerAction }
+                    title: "Transporter Mall Intent",
+                    description: "Are you looking to book a transporter, or are you a transporter listing your services?",
+                    primary: { label: "I need a Transporter", description: "Find capacity for your loads.", action: buyerAction },
+                    secondary: { label: "I am a Transporter", description: "Create your service profile.", action: sellerAction }
                 };
                 break;
-            default: // Default for Supplier Mall
+            case 'loads':
                 config = {
-                    title: "What brings you here today?",
-                    description: "Let us know if you're here to buy products/services or to sell your own. This helps us tailor your experience.",
-                    primary: { label: "I want to Buy", description: "Find parts, services, or loads.", action: buyerAction },
-                    secondary: { label: "I want to Sell", description: "List my products or services.", action: sellerAction }
+                    title: "Loads Mall Intent",
+                    description: "Are you searching for freight to carry, or posting a load to the network?",
+                    primary: { label: "I am looking for a load", description: "Find freight matches.", action: buyerAction },
+                    secondary: { label: "I have a load to post", description: "List your available freight.", action: sellerAction }
+                };
+                break;
+            default:
+                config = {
+                    title: "What is your goal today?",
+                    description: "Let us know if you're here to source products/services or to list your own capabilities.",
+                    primary: { label: "I want to Source", description: "Find parts, services, or capacity.", action: buyerAction },
+                    secondary: { label: "I want to List", description: "Create your professional profile.", action: sellerAction }
                 };
         }
 
-        // Add analytics and wrap the actions
         const wrapAction = (originalAction: () => void, intent: string) => () => {
             if (!process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID) {
                 originalAction();
@@ -287,33 +239,19 @@ export default function MallPage() {
                 )}
                 <div className="absolute inset-0 bg-black/60" />
                 <div className="relative h-full flex flex-col items-center justify-center text-center text-primary-foreground z-10 p-4">
-                    <h1 className="text-4xl md:text-5xl font-bold font-headline">Where Collective Buying Creates Savings Flow</h1>
-                    <p className="mt-4 text-lg md:text-xl max-w-3xl">Stop overpaying for parts, services, and assets. Our Mall ecosystem unites the buying power of the entire community, breaking the constraint of high operational costs and creating a continuous flow of savings directly to your bottom line.</p>
+                    <h1 className="text-4xl md:text-5xl font-bold font-headline">The Mall Ecosystem</h1>
+                    <p className="mt-4 text-lg md:text-xl max-w-3xl">Breaking industry constraints through collective buying power and specialized service networks.</p>
                 </div>
             </section>
              <section id="malls-grid" className="py-16 md:py-24 bg-background">
                 <div className="container mx-auto px-4">
-                     <div className="text-center max-w-3xl mx-auto mb-16">
-                        <h2 className="text-3xl md:text-4xl font-bold font-headline">Explore Our Malls</h2>
-                        <p className="mt-4 text-lg text-muted-foreground">
-                            Specialized marketplaces designed to meet every need of your transport business.
-                        </p>
-                    </div>
-                    <div className="space-y-16">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
                         {malls.map((mall, index) => {
                             const Icon = mall.icon;
                             return (
-                                <div key={mall.name} className="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
-                                    <div className={`relative aspect-video rounded-lg overflow-hidden shadow-lg bg-muted flex items-center justify-center p-4 ${index % 2 === 1 ? 'md:order-2' : ''}`}>
-                                        {mall.logo ? (
-                                            <Image
-                                                src={mall.logo}
-                                                alt={`${mall.name} logo`}
-                                                width={300}
-                                                height={120}
-                                                className="object-contain"
-                                            />
-                                        ) : mall.image ? (
+                                <div key={mall.name} className="grid md:grid-cols-2 gap-8 items-center border p-6 rounded-xl hover:shadow-lg transition-shadow bg-card">
+                                    <div className="relative aspect-video rounded-lg overflow-hidden bg-muted flex items-center justify-center">
+                                        {mall.image ? (
                                             <Image
                                                 src={mall.image.imageUrl}
                                                 alt={mall.name}
@@ -322,18 +260,18 @@ export default function MallPage() {
                                                 data-ai-hint={mall.image.imageHint}
                                             />
                                         ) : Icon ? (
-                                            <Icon className="h-24 w-24 text-muted-foreground/50" />
+                                            <Icon className="h-24 w-24 text-muted-foreground/30" />
                                         ) : null}
                                     </div>
-                                    <div className={index % 2 === 1 ? 'md:order-1' : ''}>
-                                        <div className="flex items-center gap-4">
-                                            {!mall.logo && Icon && React.createElement(Icon, { className: "h-10 w-10 text-primary" })}
-                                            <h3 className="text-3xl font-bold font-headline">{mall.name}</h3>
+                                    <div className="space-y-4">
+                                        <div className="flex items-center gap-3">
+                                            {Icon && <Icon className="h-8 w-8 text-primary" />}
+                                            <h3 className="text-2xl font-bold font-headline">{mall.name}</h3>
                                         </div>
-                                        <p className="mt-4 text-lg text-muted-foreground">
+                                        <p className="text-sm text-muted-foreground">
                                             {mall.description}
                                         </p>
-                                        <Button onClick={() => handleExploreClick(mall.id, mall.href)} className="mt-6">
+                                        <Button onClick={() => handleExploreClick(mall.id, mall.href)} className="w-full">
                                             Explore Mall <ArrowRight className="ml-2 h-4 w-4" />
                                         </Button>
                                     </div>
@@ -343,57 +281,6 @@ export default function MallPage() {
                     </div>
                 </div>
             </section>
-
-            <section id="featured-products" className="py-16 md:py-24 bg-card">
-                <div className="container mx-auto px-4">
-                    <div className="text-center max-w-3xl mx-auto mb-12">
-                        <h2 className="text-3xl md:text-4xl font-bold font-headline">Featured Products</h2>
-                        <p className="mt-4 text-lg text-muted-foreground">
-                            Hand-picked deals and essential items for your fleet, available at special prices for Logistics Flow members.
-                        </p>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                         {marketplaceItems.slice(0, 4).map(item => (
-                            <Card key={item.id} className="overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col">
-                                <CardHeader className="p-0">
-                                    <div className="relative aspect-4/3">
-                                        {item.image && (
-                                            <Image 
-                                                src={item.image.imageUrl}
-                                                alt={item.name}
-                                                fill
-                                                className="object-cover"
-                                                data-ai-hint={item.image.imageHint}
-                                            />
-                                        )}
-                                    </div>
-                                </CardHeader>
-                                <CardContent className="p-4 flex flex-col flex-grow">
-                                    <div className="flex-grow">
-                                        <Badge variant="secondary" className="mb-2">{item.category}</Badge>
-                                        <h3 className="font-bold text-lg">{item.name}</h3>
-                                        <p className="text-sm text-muted-foreground mt-1 h-10 truncate">{item.description}</p>
-                                    </div>
-                                    <div className="flex justify-between items-end mt-4">
-                                        <p className="text-xl font-bold text-primary">{formatPrice(item.price)}</p>
-                                        <Button size="sm">View Item</Button>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        ))}
-                    </div>
-                     <div className="text-center mt-12">
-                        <Button size="lg" asChild>
-                            <Link href="/marketplace">
-                                Explore All Products <ArrowRight className="ml-2 h-4 w-4" />
-                            </Link>
-                        </Button>
-                    </div>
-                </div>
-            </section>
         </div>
     )
 }
-
-    

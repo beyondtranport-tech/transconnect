@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, Star, UserPlus, Store, Package, Sparkles, Edit, Video, Search, Truck, Building, Users, Handshake, Briefcase, Bot, Code, ShieldCheck, Warehouse, PlusCircle, Gift, Trash2, MoreVertical, Eye, CheckCircle, XCircle, FileText } from 'lucide-react';
+import { Loader2, Save, Star, UserPlus, Store, Package, Sparkles, Edit, Video, Search, Truck, Building, Users, Handshake, Briefcase, Bot, Code, ShieldCheck, Warehouse, PlusCircle, Gift, Trash2, MoreVertical, Eye, CheckCircle, XCircle, FileText, Map } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { getClientSideAuthToken } from '@/firebase';
 import { useConfig } from '@/hooks/use-config';
@@ -37,7 +37,7 @@ import { type ColumnDef } from '@/hooks/use-data-table';
 
 
 const iconMap: { [key: string]: React.ElementType } = {
-    Star, UserPlus, Store, Package, Search, Sparkles, Edit, Video, Building, Truck, Users, Handshake, Briefcase, Bot, Code, ShieldCheck, Warehouse, Gift, FileText
+    Star, UserPlus, Store, Package, Search, Sparkles, Edit, Video, Building, Truck, Users, Handshake, Briefcase, Bot, Code, ShieldCheck, Warehouse, Gift, FileText, Map
 };
 
 const initialActionGroups = [
@@ -49,34 +49,22 @@ const initialActionGroups = [
         ]
     },
     {
-        groupTitle: 'Vendor Actions',
+        groupTitle: 'Vendor Actions (Products)',
         actions: [
             { id: 'shopCreationPoints', label: 'Create a Vendor Shop', icon: 'Store', isActive: true, roles: ['vendor'] },
             { id: 'productAddPoints', label: 'Add a Product to Shop', icon: 'Package', isActive: true, roles: ['vendor'] },
             { id: 'seoBoosterPoints', label: 'Use AI SEO Booster', icon: 'Search', isActive: true, roles: ['vendor'] },
             { id: 'aiImageGeneratorPoints', label: 'Use AI Image Generator', icon: 'Sparkles', isActive: true, roles: ['vendor'] },
-            { id: 'imageEnhancerPoints', label: 'Use AI Image Enhancer', icon: 'Edit', isActive: true, roles: ['vendor'] },
-            { id: 'supplierContributionPoints', label: 'Contribute Supplier Data', icon: 'Building', isActive: true, roles: ['vendor'] },
-            { id: 'aiVideoGeneratorPoints', label: 'Use AI Video Ad Generator', icon: 'Video', isActive: true, roles: ['vendor'] },
         ]
     },
      {
-        groupTitle: 'Transporter Actions',
+        groupTitle: 'Transporter Actions (Services)',
         actions: [
-            { id: 'loadBoardCreationPoints', label: 'Create a Load Board', icon: 'Truck', isActive: true, roles: ['transporter'] },
+            { id: 'serviceProfileCreationPoints', label: 'Create a Service Profile (Shop)', icon: 'Truck', isActive: true, roles: ['transporter'] },
+            { id: 'routeListingPoints', label: 'List a Service Route/Rate', icon: 'Map', isActive: true, roles: ['transporter'] },
+            { id: 'fleetGalleryPoints', label: 'Link Fleet Item to Profile', icon: 'Truck', isActive: true, roles: ['transporter'] },
             { id: 'truckContributionPoints', label: 'Contribute Truck Data', icon: 'Truck', isActive: true, roles: ['transporter'] },
             { id: 'trailerContributionPoints', label: 'Contribute Trailer Data', icon: 'Warehouse', isActive: true, roles: ['transporter'] },
-            { id: 'uploadRc1', label: 'Upload RC1 Certificate', icon: 'FileText', isActive: true, roles: ['transporter'] },
-            { id: 'debtorContributionPoints', label: 'Contribute Debtor Data', icon: 'Users', isActive: true, roles: ['transporter'] },
-        ]
-    },
-    {
-        groupTitle: 'Partner & Network Actions',
-        actions: [
-            { id: 'associateServiceListingPoints', label: 'Associate Lists a Service', icon: 'Briefcase', isActive: true, roles: ['associate'] },
-            { id: 'isaSaleCommissionPoints', label: 'ISA Completes a Sale', icon: 'Bot', isActive: true, roles: ['isa-agent'] },
-            { id: 'driverSafetyRecordPoints', label: 'Driver Uploads Safety Record', icon: 'ShieldCheck', isActive: true, roles: ['driver'] },
-            { id: 'developerApiIntegrationPoints', label: 'Developer Completes API Integration', icon: 'Code', isActive: true, roles: ['developer'] },
         ]
     }
 ];
@@ -93,7 +81,6 @@ const actionSchema = z.object({
 });
 type ActionFormValues = z.infer<typeof actionSchema>;
 
-// Zod schema for the points form
 const pointsSchema = z.object({
   points: z.record(z.string(), z.coerce.number().min(0, "Points must be non-negative.").optional()),
 });
@@ -295,15 +282,12 @@ export default function ActionPlanSettings() {
         setActionGroups(currentGroups => {
             const newGroups = JSON.parse(JSON.stringify(currentGroups));
             let found = false;
-            // Try to update existing action
             for (let group of newGroups) {
                 const actionIndex = group.actions.findIndex((a: any) => a.id === newActionData.id);
                 if (actionIndex !== -1) {
-                    // This is an edit
                     const existingAction = group.actions[actionIndex];
                     group.actions[actionIndex] = { ...existingAction, ...newActionData };
                     found = true;
-                    // If group changed, move it
                     if (existingAction.groupTitle !== newActionData.groupTitle) {
                         group.actions.splice(actionIndex, 1);
                         const newGroupIndex = newGroups.findIndex((g:any) => g.groupTitle === newActionData.groupTitle);
@@ -316,7 +300,6 @@ export default function ActionPlanSettings() {
                     break;
                 }
             }
-            // If not found, add it
             if (!found) {
                 const groupIndex = newGroups.findIndex((g: any) => g.groupTitle === newActionData.groupTitle);
                 const actionToAdd = { id: newActionData.id, label: newActionData.label, icon: newActionData.icon, isActive: newActionData.isActive, roles: newActionData.roles };
@@ -402,7 +385,6 @@ export default function ActionPlanSettings() {
     
     const isLoading = isDefLoading || isValuesLoading;
 
-    // Flatten the action groups for table rendering
     const allActions = useMemo(() => 
         actionGroups.flatMap(group => 
             group.actions.map(action => ({ ...action, groupTitle: group.groupTitle }))
@@ -515,5 +497,3 @@ export default function ActionPlanSettings() {
         </Card>
     );
 }
-
-    
