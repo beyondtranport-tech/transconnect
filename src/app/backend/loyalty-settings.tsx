@@ -1,8 +1,7 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -16,11 +15,10 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, Star, UserPlus, Store, Package, Sparkles, Edit, Video, Search, Truck, Building, Users, Handshake, Briefcase, Bot, Code, ShieldCheck, Warehouse, PlusCircle, Gift, Trash2, MoreVertical, Eye, CheckCircle, XCircle, FileText, Map } from 'lucide-react';
+import { Loader2, Save, Star, UserPlus, Store, Package, Sparkles, Edit, Video, Search, Truck, Building, Users, Handshake, Briefcase, Bot, Code, ShieldCheck, Warehouse, PlusCircle, Gift, Trash2, MoreVertical, CheckCircle, XCircle, FileText, Map } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { getClientSideAuthToken } from '@/firebase';
 import { useConfig } from '@/hooks/use-config';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
@@ -28,7 +26,6 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
 import { roles as availableRolesList } from '@/lib/roles';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DataTable } from '@/components/ui/data-table';
@@ -54,17 +51,24 @@ const initialActionGroups = [
             { id: 'shopCreationPoints', label: 'Create a Vendor Shop', icon: 'Store', isActive: true, roles: ['vendor'] },
             { id: 'productAddPoints', label: 'Add a Product to Shop', icon: 'Package', isActive: true, roles: ['vendor'] },
             { id: 'seoBoosterPoints', label: 'Use AI SEO Booster', icon: 'Search', isActive: true, roles: ['vendor'] },
-            { id: 'aiImageGeneratorPoints', label: 'Use AI Image Generator', icon: 'Sparkles', isActive: true, roles: ['vendor'] },
         ]
     },
      {
         groupTitle: 'Transporter Actions (Services)',
         actions: [
-            { id: 'serviceProfileCreationPoints', label: 'Create a Service Profile (Shop)', icon: 'Truck', isActive: true, roles: ['transporter'] },
+            { id: 'serviceProfileCreationPoints', label: 'Create a Service Profile', icon: 'Truck', isActive: true, roles: ['transporter'] },
             { id: 'routeListingPoints', label: 'List a Service Route/Rate', icon: 'Map', isActive: true, roles: ['transporter'] },
             { id: 'fleetGalleryPoints', label: 'Link Fleet Item to Profile', icon: 'Truck', isActive: true, roles: ['transporter'] },
             { id: 'truckContributionPoints', label: 'Contribute Truck Data', icon: 'Truck', isActive: true, roles: ['transporter'] },
             { id: 'trailerContributionPoints', label: 'Contribute Trailer Data', icon: 'Warehouse', isActive: true, roles: ['transporter'] },
+        ]
+    },
+    {
+        groupTitle: 'AI & Content Excellence',
+        actions: [
+            { id: 'aiImageGeneratorPoints', label: 'Use AI Image Generator', icon: 'Sparkles', isActive: true, roles: ['all'] },
+            { id: 'aiVideoGeneratorPoints', label: 'Use AI Video Generator', icon: 'Video', isActive: true, roles: ['all'] },
+            { id: 'aiUsagePoints', label: 'Any AI Toolkit Usage', icon: 'Bot', isActive: true, roles: ['all'] },
         ]
     }
 ];
@@ -156,12 +160,12 @@ function ActionDialog({ action, actionGroups, onSave, children, open, onOpenChan
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>{action ? 'Edit' : 'Add New'} Loyalty Action</DialogTitle>
-                    <DialogDescription>Define a new action that members can perform.</DialogDescription>
+                    <DialogDescription>Define a new action that members can perform to earn points.</DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(handleSave)} className="space-y-4 max-h-[70vh] overflow-y-auto pr-4">
                         <FormField control={form.control} name="label" render={({ field }) => ( <FormItem><FormLabel>Action Label</FormLabel><FormControl><Input {...field} placeholder="e.g., Review a Product" /></FormControl><FormMessage /></FormItem> )} />
-                         <FormField control={form.control} name="group" render={({ field }) => ( <FormItem><FormLabel>Group</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a group..." /></SelectTrigger></FormControl><SelectContent>{existingGroups.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )} />
+                         <FormField control={form.control} name="group" render={({ field }) => ( <FormItem><FormLabel>Group</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a group..." /></SelectTrigger></FormControl><SelectContent>{existingGroups.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}</Select><FormMessage /></FormItem> )} />
                          <FormField control={form.control} name="icon" render={({ field }) => ( <FormItem><FormLabel>Icon</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select an icon..." /></SelectTrigger></FormControl><SelectContent> {availableIcons.map(iconName => { const IconComponent = iconMap[iconName]; return ( <SelectItem key={iconName} value={iconName}><div className="flex items-center gap-2"><IconComponent className="h-4 w-4"/>{iconName}</div></SelectItem> ) })} </SelectContent></Select><FormMessage /></FormItem> )} />
                         <FormField control={form.control} name="isActive" render={({ field }) => ( <FormItem className="flex items-center space-x-2 pt-2"><FormControl><Switch checked={field.value} onCheckedChange={field.onChange}/></FormControl><FormLabel>Active</FormLabel></FormItem> )} />
                         <FormField

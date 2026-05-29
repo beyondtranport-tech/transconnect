@@ -1,4 +1,3 @@
-
 'use server';
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -36,9 +35,16 @@ export async function POST(req: NextRequest) {
         const companyDoc = await companyRef.get();
         const companyData = companyDoc.data();
 
-        // Fetch loyalty settings for shop creation points
+        const isTransporter = companyData?.shopType === 'transporter';
+
+        // Fetch loyalty settings
         const loyaltyConfigDoc = await db.collection('configuration').doc('loyaltySettings').get();
-        const shopCreationPoints = loyaltyConfigDoc.data()?.shopCreationPoints || 100;
+        const loyaltyConfig = loyaltyConfigDoc.data();
+        
+        // Differentiate points based on role
+        const pointsToAward = isTransporter 
+            ? (loyaltyConfig?.serviceProfileCreationPoints || 100)
+            : (loyaltyConfig?.shopCreationPoints || 100);
 
         const shopCollectionRef = companyRef.collection('shops');
         const newShopRef = shopCollectionRef.doc();
@@ -47,8 +53,8 @@ export async function POST(req: NextRequest) {
           ownerId: uid,
           companyId: companyId,
           status: 'draft',
-          shopType: companyData?.shopType || 'vendor', // Ensure shopType is carried over
-          shopName: `${decodedToken.name || 'My'}'s New Shop`,
+          shopType: companyData?.shopType || 'vendor',
+          shopName: `${decodedToken.name || 'My'}'s New ${isTransporter ? 'Service Profile' : 'Shop'}`,
           category: '',
           createdAt: FieldValue.serverTimestamp(),
           updatedAt: FieldValue.serverTimestamp(),
@@ -59,7 +65,8 @@ export async function POST(req: NextRequest) {
         batch.set(newShopRef, newShopData);
         batch.update(companyRef, { 
             shopId: newShopRef.id,
-            rewardPoints: FieldValue.increment(shopCreationPoints)
+            rewardPoints: FieldValue.increment(pointsToAward),
+            updatedAt: FieldValue.serverTimestamp(),
         });
         await batch.commit();
 

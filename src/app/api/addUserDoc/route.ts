@@ -1,4 +1,3 @@
-
 import { getFirestore, FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from 'firebase-admin/auth';
@@ -102,12 +101,23 @@ export async function POST(req: NextRequest) {
     
     batch.set(newDocRef, finalDataForDb);
     
-    // Check if a product is being added and award points if so
+    // Check if a product/route is being added and award points if so
     if (collectionPath.endsWith('/products')) {
         const loyaltyConfigDoc = await db.collection('configuration').doc('loyaltySettings').get();
-        const productAddPoints = loyaltyConfigDoc.data()?.productAddPoints || 5;
+        const loyaltyConfig = loyaltyConfigDoc.data();
+        
         const companyRef = db.doc(`companies/${pathSegments[1]}`);
-        batch.update(companyRef, { rewardPoints: FieldValue.increment(productAddPoints) });
+        const companyDoc = await companyRef.get();
+        const isTransporter = companyDoc.data()?.shopType === 'transporter';
+
+        // Award points based on whether it's a "Product" or a "Service Lane"
+        const pointsKey = isTransporter ? 'routeListingPoints' : 'productAddPoints';
+        const pointsToAdd = loyaltyConfig?.[pointsKey] || 10;
+        
+        batch.update(companyRef, { 
+            rewardPoints: FieldValue.increment(pointsToAdd),
+            updatedAt: FieldValue.serverTimestamp(),
+        });
     }
     
     // Add audit log entry
@@ -116,11 +126,11 @@ export async function POST(req: NextRequest) {
       collectionPath,
       documentId: newDocRef.id,
       userId: uid,
-      companyId: userCompanyId || pathSegments[1], // Use user's companyId if available
+      companyId: userCompanyId || pathSegments[1], 
       action: 'create',
       timestamp: FieldValue.serverTimestamp(),
       before: null,
-      after: serializeTimestamps(finalDataForDb) // Use the serialization helper
+      after: serializeTimestamps(finalDataForDb) 
     });
 
     await batch.commit();

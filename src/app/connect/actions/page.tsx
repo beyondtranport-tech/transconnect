@@ -49,14 +49,14 @@ export default function ActionsPlanPage() {
             cta: { label: 'Completed!', href: '#', disabled: true } 
         },
         { 
-            points: loyaltySettings?.shopCreationPoints || loyaltySettings?.serviceProfileCreationPoints, 
+            points: isTransporter ? loyaltySettings?.serviceProfileCreationPoints : loyaltySettings?.shopCreationPoints, 
             name: isTransporter ? 'Create a Service Profile' : 'Create a Vendor Shop', 
-            icon: Store, 
+            icon: isTransporter ? Truck : Store, 
             isCompleted: !!companyData?.shopId,
             cta: { label: isTransporter ? 'Create Profile' : 'Create Shop', href: '/account?view=shop' } 
         },
         { 
-            points: loyaltySettings?.productAddPoints || loyaltySettings?.routeListingPoints, 
+            points: isTransporter ? loyaltySettings?.routeListingPoints : loyaltySettings?.productAddPoints, 
             name: isTransporter ? 'List a Service Route/Rate' : 'Add a Product to your Shop', 
             icon: isTransporter ? Map : Package, 
             isCompleted: (products?.length || 0) > 0,
@@ -115,57 +115,61 @@ export default function ActionsPlanPage() {
 
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-2xl"><Zap /> Actions Plan</CardTitle>
-                <CardDescription>
-                    Complete these tasks to earn loyalty points, climb the loyalty tiers, and unlock rewards for your business.
-                </CardDescription>
-                <p className="text-sm text-muted-foreground pt-1">
-                    See your current points on your <Link href="/account?view=rewards" className="font-semibold text-primary hover:underline">rewards dashboard</Link>.
-                </p>
-            </CardHeader>
-            <CardContent>
-                {isLoading ? (
-                    <div className="flex justify-center items-center py-20">
-                        <Loader2 className="h-10 w-10 animate-spin text-primary" />
-                    </div>
-                ) : (
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Action</TableHead>
-                                <TableHead className="text-center">Points</TableHead>
-                                <TableHead className="text-right">Status / Link</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {earningActions.map((action) => {
-                                if (!action.points) return null; 
-                                const Icon = action.icon;
-                                return (
-                                    <TableRow key={action.name}>
-                                        <TableCell className="font-medium flex items-center gap-3"><Icon className="h-5 w-5 text-muted-foreground" /> {action.name}</TableCell>
-                                        <TableCell className="text-center font-bold text-primary">{action.points || 0}</TableCell>
-                                        <TableCell className="text-right">
-                                            {action.isCompleted ? (
-                                                <Button size="sm" variant="ghost" disabled className="text-green-600">
-                                                    <CheckCircle className="mr-2 h-4 w-4" />
-                                                    Completed
-                                                </Button>
-                                            ) : (
-                                                <Button asChild size="sm" variant="outline">
-                                                    <Link href={action.cta.href}>{action.cta.label}</Link>
-                                                </Button>
-                                            )}
-                                        </TableCell>
+        <div className="space-y-6">
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-2xl"><Zap /> Actions Plan</CardTitle>
+                    <CardDescription>
+                        Complete these tasks to earn loyalty points, climb the loyalty tiers, and unlock rewards for your business.
+                    </CardDescription>
+                    <p className="text-sm text-muted-foreground pt-1">
+                        See your current points on your <Link href="/account?view=rewards" className="font-semibold text-primary hover:underline">rewards dashboard</Link>.
+                    </p>
+                </CardHeader>
+                <CardContent>
+                    {isLoading ? (
+                        <div className="flex justify-center items-center py-20">
+                            <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                        </div>
+                    ) : (
+                        <div className="border rounded-lg overflow-x-auto">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Action</TableHead>
+                                        <TableHead className="text-center">Points</TableHead>
+                                        <TableHead className="text-right">Status / Link</TableHead>
                                     </TableRow>
-                                )
-                            })}
-                        </TableBody>
-                    </Table>
-                )}
-            </CardContent>
-        </Card>
+                                </TableHeader>
+                                <TableBody>
+                                    {earningActions.map((action) => {
+                                        if (!action.points) return null; 
+                                        const Icon = action.icon;
+                                        return (
+                                            <TableRow key={action.name}>
+                                                <TableCell className="font-medium flex items-center gap-3"><Icon className="h-5 w-5 text-muted-foreground" /> {action.name}</TableCell>
+                                                <TableCell className="text-center font-bold text-primary">{action.points || 0}</TableCell>
+                                                <TableCell className="text-right">
+                                                    {action.isCompleted ? (
+                                                        <Button size="sm" variant="ghost" disabled className="text-green-600">
+                                                            <CheckCircle className="mr-2 h-4 w-4" />
+                                                            Completed
+                                                        </Button>
+                                                    ) : (
+                                                        <Button asChild size="sm" variant="outline">
+                                                            <Link href={action.cta.href}>{action.cta.label}</Link>
+                                                        </Button>
+                                                    )}
+                                                </TableCell>
+                                            </TableRow>
+                                        )
+                                    })}
+                                </TableBody>
+                            </Table>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+        </div>
     );
 }
