@@ -22,29 +22,6 @@ const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | '
   rejected: 'destructive',
 };
 
-function ShopPublishedDialog({ shopId, onGoToDashboard, onGoToShop, shopType }: { shopId: string; onGoToDashboard: () => void; onGoToShop: () => void; shopType?: string; }) {
-  const isTransporter = shopType === 'transporter';
-  return (
-    <Card className="text-center py-10">
-      <CardHeader>
-        <div className="mx-auto bg-green-100 p-4 rounded-full w-fit">
-          <CheckCircle className="h-10 w-10 text-green-600" />
-        </div>
-        <CardTitle className="mt-4">{isTransporter ? 'Service Profile' : 'Shop'} Submitted Successfully!</CardTitle>
-        <CardDescription>
-          Your {isTransporter ? 'profile' : 'shop'} has been sent for admin review. You will be notified once it is approved and published.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="flex justify-center gap-4">
-        <Button variant="outline" onClick={onGoToDashboard}>
-          Back to Account Dashboard
-        </Button>
-      </CardContent>
-    </Card>
-  );
-}
-
-
 export default function ShopContent() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
@@ -52,7 +29,7 @@ export default function ShopContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [view, setView] = useState<'overview' | 'wizard' | 'success'>('overview');
+  const [view, setView] = useState<'overview' | 'wizard'>('overview');
   const [isCreating, setIsCreating] = useState(false);
   const { can, isLoading: arePermissionsLoading } = usePermissions();
 
@@ -81,11 +58,9 @@ export default function ShopContent() {
   }, [firestore, companyData?.shopId, userData?.companyId]);
   const { data: products } = useCollection(productsQuery);
   
-  // When 'created' param is in URL, switch to wizard immediately.
   useEffect(() => {
     if (searchParams.get('created') === 'true' && companyData?.shopId) {
         setView('wizard');
-        // Clean the URL
         router.replace('/account?view=shop', { scroll: false });
     }
   }, [searchParams, companyData, router]);
@@ -95,50 +70,35 @@ export default function ShopContent() {
   const forceRefreshAll = useCallback(() => {
     forceRefreshUser();
     forceRefreshCompany();
-    if (forceRefreshShop) {
-      forceRefreshShop();
-    }
+    if (forceRefreshShop) forceRefreshShop();
   }, [forceRefreshUser, forceRefreshCompany, forceRefreshShop]);
 
   const handleCreateShop = async () => {
     if (!user || !userData?.companyId) {
-      toast({ variant: 'destructive', title: 'User or company not found.' });
+      toast({ variant: 'destructive', title: 'Error', description: 'User or company not found.' });
       return;
     }
     setIsCreating(true);
 
     try {
       const token = await getClientSideAuthToken();
-      if (!token) {
-        throw new Error('Authentication token not found.');
-      }
+      if (!token) throw new Error('Authentication token not found.');
       
       const response = await fetch('/api/createShop', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
       });
 
       const result = await response.json();
-
       if (response.ok && result.success) {
-        toast({ title: 'Draft Created!', description: "Let's get started with the details." });
+        toast({ title: 'Profile Draft Created!' });
         await forceRefreshAll();
-        // Use a URL parameter to trigger the wizard view on reload
         router.push('/account?view=shop&created=true');
       } else {
         throw new Error(result.error || 'Failed to create shop.');
       }
-
     } catch (error: any) {
-      console.error("Error creating shop:", error);
-      toast({
-        variant: 'destructive',
-        title: 'Error Initializing Profile',
-        description: error.message || "An unexpected error occurred."
-      });
+      toast({ variant: 'destructive', title: 'Error Initializing Profile', description: error.message });
     } finally {
       setIsCreating(false);
     }
@@ -146,33 +106,21 @@ export default function ShopContent() {
 
   const canCreateShop = can('create', 'shop');
   const shopExists = !!companyData?.shopId;
-  const isTransporter = user.declaredPosition === 'transporter' || companyData?.shopType === 'transporter';
+  const isTransporter = user?.declaredPosition === 'transporter' || companyData?.shopType === 'transporter';
 
   const shopStatus = userShop?.status || 'draft';
 
   const renderContent = () => {
-    if (view === 'success' && userShop) {
-      return (
-        <ShopPublishedDialog
-          shopId={userShop.id}
-          shopType={companyData?.shopType}
-          onGoToDashboard={() => setView('overview')}
-          onGoToShop={() => window.open(`/shops/${userShop.id}`, '_blank')}
-        />
-      );
-    }
-
     if (view === 'wizard' && userShop) {
       return <ShopWizard shop={userShop} onUpdate={forceRefreshAll} />;
     }
 
-    // Default to 'overview'
     if (shopExists) {
         if (isShopLoading || !userShop) {
             return (
                  <div className="flex justify-center items-center py-20">
                     <Loader2 className="h-10 w-10 animate-spin text-primary" />
-                    <p className="ml-4">Loading your profile...</p>
+                    <p className="ml-4">Loading your commercial profile...</p>
                 </div>
             );
         }
@@ -182,7 +130,7 @@ export default function ShopContent() {
                     <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                         <div>
                             <h3 className="text-xl font-semibold">{userShop.shopName}</h3>
-                            <p className="text-muted-foreground">{userShop.category || 'Uncategorized'}</p>
+                            <p className="text-muted-foreground">{userShop.category || 'General'}</p>
                         </div>
                         <div className="flex items-center gap-2">
                             <span className="text-sm font-medium">Status:</span>
@@ -205,7 +153,7 @@ export default function ShopContent() {
                                 </Button>
                             )}
                             <Button onClick={() => setView('wizard')}>
-                                <Edit className="mr-2 h-4 w-4" /> Manage {isTransporter ? 'Service Profile' : 'Shop'}
+                                <Edit className="mr-2 h-4 w-4" /> Change Profile Details
                             </Button>
                         </div>
                     </div>
@@ -217,7 +165,7 @@ export default function ShopContent() {
      return (
           <div className="text-center py-20 border-2 border-dashed rounded-lg">
             <Store className="mx-auto h-12 w-12 text-muted-foreground" />
-            <h3 className="mt-4 text-xl font-semibold">You don't have a {isTransporter ? 'service profile' : 'shop'} yet.</h3>
+            <h3 className="mt-4 text-xl font-semibold">You don't have a commercial profile yet.</h3>
             <p className="mt-2 text-muted-foreground">Ready to start selling your {isTransporter ? 'freight services' : 'products'}? Create your profile to get started.</p>
             
             <TooltipProvider>
@@ -232,9 +180,7 @@ export default function ShopContent() {
                 </TooltipTrigger>
                 {!canCreateShop && (
                   <TooltipContent>
-                    <p className="flex items-center gap-2"><ShieldAlert className="h-4 w-4" /> 
-                        {arePermissionsLoading ? 'Loading permissions...' : `You don't have permission to create a ${isTransporter ? 'profile' : 'shop'}.`}
-                    </p>
+                    <p className="flex items-center gap-2"><ShieldAlert className="h-4 w-4" /> You don't have permission to create a shop.</p>
                   </TooltipContent>
                 )}
               </Tooltip>
@@ -242,11 +188,6 @@ export default function ShopContent() {
           </div>
         );
   };
-  
-  const handleBackToOverview = () => {
-    setView('overview');
-    forceRefreshAll();
-  }
 
   return (
     <Card>
@@ -257,14 +198,11 @@ export default function ShopContent() {
                     <Store /> {isTransporter ? 'My Service Profile' : 'My Shop'}
                 </CardTitle>
                 <CardDescription>
-                {shopExists
-                    ? `Manage your ${isTransporter ? 'service profile' : 'shop'}: ${userShop?.shopName || '...'}`
-                    : `Create and manage your public-facing ${isTransporter ? 'service profile' : 'shop'} on TransConnect.`
-                }
+                {shopExists ? `Manage your professional profile: ${userShop?.shopName || '...'}` : "Create and manage your public-facing profile."}
                 </CardDescription>
             </div>
             {view === 'wizard' && (
-                 <Button variant="outline" onClick={handleBackToOverview}>
+                 <Button variant="outline" onClick={() => setView('overview')}>
                     <ArrowLeft className="mr-2 h-4 w-4" /> Back to Overview
                 </Button>
             )}

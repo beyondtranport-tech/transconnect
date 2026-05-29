@@ -12,7 +12,7 @@ import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser, useCollection, getClientSideAuthToken, useMemoFirebase } from '@/firebase';
 import { doc, collection, query, orderBy, serverTimestamp } from 'firebase/firestore';
-import { Loader2, Save, CheckCircle, PlusCircle, Edit, Trash2, Send, Truck, MapPin, DollarSign, ArrowRight, ArrowLeft, Info, AlertTriangle, Map, Warehouse } from 'lucide-react';
+import { Loader2, Save, CheckCircle, PlusCircle, Edit, Trash2, Send, Truck, MapPin, DollarSign, ArrowRight, ArrowLeft, Info, AlertTriangle, Map, Warehouse, BookOpen, ShieldCheck, Home } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -31,13 +31,19 @@ import { Checkbox } from '@/components/ui/checkbox';
 
 // ====== SCHEMAS ======
 
-const shopStep1Schema = z.object({
-  shopName: z.string().min(1, "Name is required."),
-  shopDescription: z.string().min(1, "Please provide a description."),
+const shopFormSchema = z.object({
+  shopName: z.string().min(1, "Branding name is required."),
   category: z.string().min(1, "Please select a category."),
   websiteUrl: z.string().url("Must be a valid URL.").optional().or(z.literal('')),
   contactEmail: z.string().email("Please enter a valid email.").optional().or(z.literal('')),
   contactPhone: z.string().optional(),
+  // Content fields
+  homeHeading: z.string().min(5, "Home heading must be at least 5 characters."),
+  homeSubheading: z.string().optional(),
+  aboutText: z.string().min(20, "About text must be a detailed summary."),
+  // Legal fields
+  termsText: z.string().min(20, "Please provide terms and conditions."),
+  privacyText: z.string().min(20, "Please provide a privacy policy."),
 });
 
 const productSchema = z.object({
@@ -57,115 +63,113 @@ const routeSchema = z.object({
     vehicleType: z.string().min(1, 'Vehicle type is required'),
 });
 
-// ====== STEP 1: Core Identity ======
+// ====== STEP COMPONENTS ======
 
-function StepCoreIdentity({ shop, onSave, canEdit }: { shop: any, onSave: (newData: any) => void, canEdit: boolean }) {
-  const { user } = useUser();
-  const { toast } = useToast();
-  const [isSaving, setIsSaving] = useState(false);
-  const isTransporter = shop.shopType === 'transporter';
-
-  const form = useForm<z.infer<typeof shopStep1Schema>>({
-    resolver: zodResolver(shopStep1Schema),
-    defaultValues: {
-      shopName: shop.shopName || '',
-      shopDescription: shop.shopDescription || '',
-      category: shop.category || '',
-      websiteUrl: shop.websiteUrl || '',
-      contactEmail: shop.contactEmail || '',
-      contactPhone: shop.contactPhone || '',
-    }
-  });
-
-  const onSubmit = async (values: z.infer<typeof shopStep1Schema>) => {
-    if (!user || !shop.companyId) return;
-    setIsSaving(true);
-    
-    try {
-        const token = await getClientSideAuthToken();
-        if (!token) throw new Error("Authentication failed.");
-        
-        await fetch('/api/updateUserDoc', {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                path: `companies/${shop.companyId}/shops/${shop.id}`,
-                data: { ...values, updatedAt: { _methodName: 'serverTimestamp' } }
-            }),
-        });
-
-        toast({ title: 'Profile Updated!' });
-        onSave(values);
-    } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
-    } finally {
-        setIsSaving(false);
-    }
-  };
-
+function StepCoreIdentity({ canEdit }: { canEdit: boolean }) {
+  const { control } = useFormContext<z.infer<typeof shopFormSchema>>();
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+    <div className="space-y-6">
         <fieldset disabled={!canEdit} className="space-y-6">
-            <FormField control={form.control} name="shopName" render={({ field }) => (
+            <FormField control={control} name="shopName" render={({ field }) => (
                 <FormItem>
-                    <FormLabel>{isTransporter ? 'Company Branding Name' : 'Shop Name'}</FormLabel>
-                    <FormControl><Input placeholder={isTransporter ? "e.g. Swift Hauliers" : "e.g. Parts World"} {...field} /></FormControl>
+                    <FormLabel>Public Branding Name</FormLabel>
+                    <FormControl><Input placeholder="e.g. Swift Hauliers" {...field} /></FormControl>
                     <FormMessage />
                 </FormItem>
             )} />
-            <FormField control={form.control} name="shopDescription" render={({ field }) => (
+            <FormField control={control} name="category" render={({ field }) => (
                 <FormItem>
-                    <FormLabel>{isTransporter ? 'Professional Summary' : 'Shop Description'}</FormLabel>
-                    <FormControl><Textarea placeholder={isTransporter ? "Describe your service history and reliability..." : "Describe what your shop offers..."} {...field} /></FormControl>
-                    <FormMessage />
-                </FormItem>
-            )} />
-            <FormField control={form.control} name="category" render={({ field }) => (
-                <FormItem>
-                    <FormLabel>Primary Industry Category</FormLabel>
+                    <FormLabel>Industry Focus</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl><SelectTrigger><SelectValue placeholder="Select a category" /></SelectTrigger></FormControl>
                         <SelectContent>
-                            {isTransporter ? (
-                                <>
-                                    <SelectItem value="Long-Haul">Long-Haul</SelectItem>
-                                    <SelectItem value="Local-Distribution">Local Distribution</SelectItem>
-                                    <SelectItem value="Refrigerated">Refrigerated</SelectItem>
-                                    <SelectItem value="Abnormal-Load">Abnormal Load</SelectItem>
-                                </>
-                            ) : (
-                                <>
-                                    <SelectItem value="Parts">Parts</SelectItem>
-                                    <SelectItem value="Services">Services</SelectItem>
-                                    <SelectItem value="Tires">Tires</SelectItem>
-                                    <SelectItem value="Equipment">Equipment</SelectItem>
-                                </>
-                            )}
+                            <SelectItem value="Long-Haul">Long-Haul</SelectItem>
+                            <SelectItem value="Local-Distribution">Local Distribution</SelectItem>
+                            <SelectItem value="Refrigerated">Refrigerated</SelectItem>
+                            <SelectItem value="Parts">Parts & Equipment</SelectItem>
+                            <SelectItem value="Services">Services</SelectItem>
                         </SelectContent>
                     </Select>
                     <FormMessage />
                 </FormItem>
             )} />
              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField control={form.control} name="contactEmail" render={({ field }) => (
-                    <FormItem><FormLabel>Contact Email</FormLabel><FormControl><Input placeholder="contact@example.com" {...field} /></FormControl><FormMessage /></FormItem>
+                <FormField control={control} name="contactEmail" render={({ field }) => (
+                    <FormItem><FormLabel>Public Contact Email</FormLabel><FormControl><Input placeholder="contact@example.com" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
-                <FormField control={form.control} name="contactPhone" render={({ field }) => (
-                    <FormItem><FormLabel>Contact Phone</FormLabel><FormControl><Input placeholder="011 123 4567" {...field} /></FormControl><FormMessage /></FormItem>
+                <FormField control={control} name="contactPhone" render={({ field }) => (
+                    <FormItem><FormLabel>Public Contact Phone</FormLabel><FormControl><Input placeholder="011 123 4567" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
             </div>
         </fieldset>
-        <Button type="submit" disabled={isSaving || !canEdit}>
-          {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-          Save Details
-        </Button>
-      </form>
-    </Form>
+    </div>
   );
 }
 
-// ====== STEP 2: Catalog (Products or Routes) ======
+function StepContent({ canEdit }: { canEdit: boolean }) {
+    const { control } = useFormContext<z.infer<typeof shopFormSchema>>();
+    return (
+        <div className="space-y-6">
+            <fieldset disabled={!canEdit} className="space-y-6">
+                <div className="space-y-4">
+                    <h3 className="text-lg font-semibold flex items-center gap-2"><Home className="h-5 w-5"/> Home Page Wording</h3>
+                    <FormField control={control} name="homeHeading" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Welcome Headline</FormLabel>
+                            <FormControl><Input placeholder="e.g. Reliable Freight Solutions Across SA" {...field} /></FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )} />
+                    <FormField control={control} name="homeSubheading" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Subheading (Intro)</FormLabel>
+                            <FormControl><Textarea placeholder="A brief catch-phrase or introduction..." {...field} /></FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )} />
+                </div>
+                <Separator />
+                <div className="space-y-4">
+                    <h3 className="text-lg font-semibold flex items-center gap-2"><BookOpen className="h-5 w-5"/> About Us Wording</h3>
+                    <FormField control={control} name="aboutText" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Company Bio / Summary</FormLabel>
+                            <FormControl><Textarea placeholder="Describe your history, expertise, and why customers should trust you..." className="min-h-[150px]" {...field} /></FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )} />
+                </div>
+            </fieldset>
+        </div>
+    );
+}
+
+function StepLegal({ canEdit }: { canEdit: boolean }) {
+    const { control } = useFormContext<z.infer<typeof shopFormSchema>>();
+    return (
+        <div className="space-y-6">
+            <fieldset disabled={!canEdit} className="space-y-6">
+                <div className="space-y-4">
+                    <h3 className="text-lg font-semibold flex items-center gap-2"><ShieldCheck className="h-5 w-5"/> Legal Documents</h3>
+                    <FormField control={control} name="termsText" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Terms & Conditions</FormLabel>
+                            <FormControl><Textarea placeholder="Your service level agreement or standard terms..." className="min-h-[150px]" {...field} /></FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )} />
+                    <FormField control={control} name="privacyText" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Privacy Policy</FormLabel>
+                            <FormControl><Textarea placeholder="How you handle customer data..." className="min-h-[150px]" {...field} /></FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )} />
+                </div>
+            </fieldset>
+        </div>
+    );
+}
 
 function ProductDialog({ shop, item, onComplete, children, canEdit }: { shop: any, item?: any, onComplete: () => void, children: React.ReactNode, canEdit: boolean }) {
   const { toast } = useToast();
@@ -223,7 +227,13 @@ function ProductDialog({ shop, item, onComplete, children, canEdit }: { shop: an
                 <FormField control={form.control} name="price" render={({ field }) => ( <FormItem><FormLabel>{isTransporter ? 'Rate (R)' : 'Price (R)'}</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
                 {isTransporter ? (
                     <FormField control={form.control} name="rateType" render={({ field }) => (
-                        <FormItem><FormLabel>Pricing Model</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a type..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="per-km">Per Kilometer</SelectItem><SelectItem value="flat-rate">Flat Rate</SelectItem></SelectContent></Select></FormItem>
+                        <FormItem>
+                            <FormLabel>Pricing Model</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl><SelectTrigger><SelectValue placeholder="Select a type..." /></SelectTrigger></FormControl>
+                                <SelectContent><SelectItem value="per-km">Per Kilometer</SelectItem><SelectItem value="flat-rate">Flat Rate</SelectItem></SelectContent>
+                            </Select>
+                        </FormItem>
                     )} />
                 ) : (
                     <FormField control={form.control} name="stock" render={({ field }) => ( <FormItem><FormLabel>Units in Stock</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
@@ -241,8 +251,6 @@ function ProductDialog({ shop, item, onComplete, children, canEdit }: { shop: an
                                 <SelectItem value="Reefer">Reefer (Cold)</SelectItem>
                                 <SelectItem value="Superlink">Superlink</SelectItem>
                                 <SelectItem value="Tipper">Tipper</SelectItem>
-                                <SelectItem value="8-ton">8-ton</SelectItem>
-                                <SelectItem value="1-ton">1-ton Van</SelectItem>
                             </SelectContent>
                         </Select>
                     </FormItem>
@@ -328,15 +336,12 @@ function StepCatalog({ shop, canEdit }: { shop: any, canEdit: boolean }) {
   );
 }
 
-// ====== STEP 3: Fleet Gallery (Transporters Only) ======
-
-function StepFleetGallery({ shop, canEdit, onSave }: { shop: any, canEdit: boolean, onSave: () => void }) {
+function StepFleetGallery({ shop, canEdit }: { shop: any, canEdit: boolean }) {
     const firestore = useFirestore();
     const { toast } = useToast();
     const [isSaving, setIsSaving] = useState(false);
     const [selectedFleetIds, setSelectedFleetIds] = useState<string[]>(shop.showcaseFleetIds || []);
 
-    // Fetch all contributions (Trucks/Trailers) for this company
     const contributionsQuery = useMemoFirebase(() => {
         if (!firestore || !shop.companyId) return null;
         return query(collection(firestore, 'contributions'), orderBy('createdAt', 'desc'));
@@ -365,7 +370,6 @@ function StepFleetGallery({ shop, canEdit, onSave }: { shop: any, canEdit: boole
                 })
             });
             toast({ title: "Showcase Updated", description: `${selectedFleetIds.length} items linked to your profile.` });
-            onSave();
         } catch (e) {
             toast({ variant: 'destructive', title: "Error linking fleet" });
         } finally {
@@ -409,19 +413,13 @@ function StepFleetGallery({ shop, canEdit, onSave }: { shop: any, canEdit: boole
                 <div className="text-center py-12 border-2 border-dashed rounded-lg">
                     <Truck className="mx-auto h-12 w-12 text-muted-foreground opacity-20" />
                     <p className="mt-4 font-semibold">No verified fleet found.</p>
-                    <p className="text-sm text-muted-foreground">To showcase your fleet, you must first upload your RC1 details in the Contribution Hub.</p>
-                    <Button asChild className="mt-4" variant="default">
-                        <Link href="/contribute">
-                            <PlusCircle className="mr-2 h-4 w-4" /> Contribute Fleet Data
-                        </Link>
-                    </Button>
+                    <p className="text-sm text-muted-foreground">To showcase your fleet, you must first contribute your RC1 details.</p>
+                    <Button asChild className="mt-4" variant="default"><Link href="/contribute"><PlusCircle className="mr-2 h-4 w-4" /> Contribute Fleet Data</Link></Button>
                 </div>
             )}
         </div>
     );
 }
-
-// ====== STEP 4: Commercials ======
 
 function StepCommercials({ shop, canEdit }: { shop: any, canEdit: boolean }) {
     const { toast } = useToast();
@@ -451,36 +449,16 @@ function StepCommercials({ shop, canEdit }: { shop: any, canEdit: boolean }) {
 
     return (
         <div className="space-y-6">
-            <div>
-                <h3 className="text-xl font-semibold">Commercial Agreement</h3>
-                <p className="text-sm text-muted-foreground mt-1">Define the platform split for transactions processed through your profile.</p>
-            </div>
-            
             <Card className="bg-primary/5 border-primary/20">
-                <CardHeader>
-                    <CardTitle className="text-base flex items-center gap-2"><DollarSign className="h-5 w-5" />Platform Commission Rate</CardTitle>
-                </CardHeader>
+                <CardHeader><CardTitle className="text-base flex items-center gap-2"><DollarSign className="h-5 w-5" />Platform Commission Rate</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
                     <div className="flex items-center gap-4">
                         <Input type="number" step="0.1" value={rate} onChange={e => setRate(parseFloat(e.target.value))} className="w-24 text-lg font-bold" />
                         <span className="text-lg font-bold">%</span>
-                        <div className="flex-1">
-                             <Progress value={(rate / 5) * 100} className="h-2" />
-                             <p className="text-[10px] text-muted-foreground mt-1 font-bold uppercase">Industry Standard: 2.5%</p>
-                        </div>
                     </div>
-                    <Alert>
-                        <Info className="h-4 w-4" />
-                        <AlertTitle>Revenue Sharing</AlertTitle>
-                        <AlertDescription className="text-xs">This rate is applied to bookings/sales made through your profile. Higher rates can be negotiated for priority listing status.</AlertDescription>
-                    </Alert>
+                    <Alert><Info className="h-4 w-4" /><AlertTitle>Revenue Sharing</AlertTitle><AlertDescription className="text-xs">This rate is applied to bookings/sales made through your profile.</AlertDescription></Alert>
                 </CardContent>
-                <CardFooter>
-                    <Button onClick={handleSave} disabled={isSaving || !canEdit}>
-                        {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <CheckCircle className="mr-2 h-4 w-4" />}
-                        Accept & Register Commercials
-                    </Button>
-                </CardFooter>
+                <CardFooter><Button onClick={handleSave} disabled={isSaving || !canEdit}>{isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <CheckCircle className="mr-2 h-4 w-4" />} Accept & Register Commercials</Button></CardFooter>
             </Card>
         </div>
     );
@@ -489,47 +467,114 @@ function StepCommercials({ shop, canEdit }: { shop: any, canEdit: boolean }) {
 // ====== MAIN WIZARD ======
 
 export function ShopWizard({ shop, onUpdate }: { shop: any, onUpdate: () => void }) {
+    const { toast } = useToast();
     const [currentStep, setCurrentStep] = useState(0);
+    const [isSaving, setIsSaving] = useState(false);
     const isTransporter = shop.shopType === 'transporter';
+
+    const methods = useForm<z.infer<typeof shopFormSchema>>({
+        resolver: zodResolver(shopFormSchema),
+        mode: 'onChange',
+        defaultValues: {
+            shopName: shop.shopName || '',
+            category: shop.category || '',
+            websiteUrl: shop.websiteUrl || '',
+            contactEmail: shop.contactEmail || '',
+            contactPhone: shop.contactPhone || '',
+            homeHeading: shop.homeHeading || '',
+            homeSubheading: shop.homeSubheading || '',
+            aboutText: shop.aboutText || '',
+            termsText: shop.termsText || '',
+            privacyText: shop.privacyText || '',
+        }
+    });
+
+    const onSubmit = async (values: z.infer<typeof shopFormSchema>) => {
+        setIsSaving(true);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) return;
+            const response = await fetch('/api/updateUserDoc', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    path: `companies/${shop.companyId}/shops/${shop.id}`,
+                    data: { ...values, updatedAt: { _methodName: 'serverTimestamp' } }
+                }),
+            });
+            if (!response.ok) throw new Error("Update failed");
+            toast({ title: 'Profile Updated!' });
+            onUpdate();
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
+        } finally {
+            setIsSaving(false);
+        }
+    };
 
     const wizardSteps = useMemo(() => {
         const base = [
-            { id: 'details', name: 'Core Details', component: <StepCoreIdentity shop={shop} onSave={onUpdate} canEdit={true} /> },
-            { id: 'catalog', name: isTransporter ? 'Routes & Rates' : 'Product Catalog', component: <StepCatalog shop={shop} canEdit={true} /> },
+            { id: 'details', name: 'Identity', component: <StepCoreIdentity canEdit={true} />, fields: ['shopName', 'category', 'contactEmail', 'contactPhone'] },
+            { id: 'content', name: 'Home & About', component: <StepContent canEdit={true} />, fields: ['homeHeading', 'aboutText'] },
+            { id: 'catalog', name: isTransporter ? 'Routes & Rates' : 'Product Catalog', component: <StepCatalog shop={shop} canEdit={true} />, fields: [] },
         ];
         if (isTransporter) {
-            base.push({ id: 'fleet', name: 'Fleet Gallery', component: <StepFleetGallery shop={shop} canEdit={true} onSave={onUpdate} /> });
+            base.push({ id: 'fleet', name: 'Fleet Gallery', component: <StepFleetGallery shop={shop} canEdit={true} />, fields: [] });
         }
         base.push(
-            { id: 'commercials', name: 'Commercials', component: <StepCommercials shop={shop} canEdit={true} /> },
-            { id: 'publish', name: 'Publish', component: <StepPublish shop={shop} onSave={onUpdate} /> }
+            { id: 'legal', name: 'Legal Docs', component: <StepLegal canEdit={true} />, fields: ['termsText', 'privacyText'] },
+            { id: 'commercials', name: 'Commercials', component: <StepCommercials shop={shop} canEdit={true} />, fields: [] },
+            { id: 'publish', name: 'Publish', component: <StepPublish shop={shop} onSave={onUpdate} />, fields: [] }
         );
         return base;
     }, [shop, isTransporter, onUpdate]);
+
+    const handleNext = async () => {
+        const step = wizardSteps[currentStep];
+        const isValid = step.fields.length > 0 ? await methods.trigger(step.fields as any) : true;
+        if (isValid && currentStep < wizardSteps.length - 1) {
+            setCurrentStep(prev => prev + 1);
+        }
+    }
     
     return (
         <div className="space-y-6">
             <Progress value={((currentStep + 1) / wizardSteps.length) * 100} />
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-                <div className="md:col-span-1">
-                    <nav className="flex flex-col gap-2">
-                        {wizardSteps.map((step, index) => (
-                             <Button
-                                key={step.id}
-                                variant={currentStep === index ? 'secondary' : 'ghost'}
-                                className="justify-start gap-2"
-                                onClick={() => setCurrentStep(index)}
-                            >
-                                <div className={cn("h-5 w-5 rounded-full flex items-center justify-center text-[10px] font-bold", currentStep >= index ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>{index + 1}</div>
-                                {step.name}
-                            </Button>
-                        ))}
-                    </nav>
-                </div>
-                <div className="md:col-span-3">
-                    {wizardSteps[currentStep].component}
-                </div>
-            </div>
+            <FormProvider {...methods}>
+                <form onSubmit={methods.handleSubmit(onSubmit)} className="grid grid-cols-1 md:grid-cols-4 gap-8">
+                    <div className="md:col-span-1">
+                        <nav className="flex flex-col gap-2">
+                            {wizardSteps.map((step, index) => (
+                                <Button
+                                    key={step.id}
+                                    type="button"
+                                    variant={currentStep === index ? 'secondary' : 'ghost'}
+                                    className="justify-start gap-2"
+                                    onClick={() => setCurrentStep(index)}
+                                >
+                                    <div className={cn("h-5 w-5 rounded-full flex items-center justify-center text-[10px] font-bold", currentStep >= index ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>{index + 1}</div>
+                                    {step.name}
+                                </Button>
+                            ))}
+                        </nav>
+                    </div>
+                    <div className="md:col-span-3 space-y-6">
+                        {wizardSteps[currentStep].component}
+                        <Separator />
+                        <div className="flex justify-between">
+                            <Button type="button" variant="outline" onClick={() => setCurrentStep(prev => prev - 1)} disabled={currentStep === 0}>Back</Button>
+                            {currentStep < wizardSteps.length - 1 ? (
+                                <Button type="button" onClick={handleNext}>Next Step</Button>
+                            ) : (
+                                <Button type="submit" disabled={isSaving}>
+                                    {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />}
+                                    Final Save & Update
+                                </Button>
+                            )}
+                        </div>
+                    </div>
+                </form>
+            </FormProvider>
         </div>
     );
 }
@@ -549,7 +594,7 @@ function StepPublish({ shop, onSave }: { shop: any, onSave: () => void }) {
                 body: JSON.stringify({
                     path: `companies/${shop.companyId}/shops/${shop.id}`,
                     data: { status: 'pending_review', updatedAt: { _methodName: 'serverTimestamp' } }
-                })
+                }),
             });
             toast({ title: "Submitted!", description: "An admin will verify your profile shortly." });
             onSave();
@@ -563,10 +608,10 @@ function StepPublish({ shop, onSave }: { shop: any, onSave: () => void }) {
     return (
         <div className="text-center space-y-6 py-10">
             <h3 className="text-2xl font-bold">Review & Publish</h3>
-            <p className="text-muted-foreground">Submit your {shop.shopType === 'transporter' ? 'service profile' : 'shop'} for admin verification.</p>
+            <p className="text-muted-foreground">Submit your commercial profile for admin verification. Once approved, it will be visible in the Mall.</p>
             <Button onClick={handleSubmitForReview} disabled={isSubmitting || shop.status === 'pending_review'} size="lg">
                 {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                Submit for Verification
+                {shop.status === 'approved' ? 'Request Re-verification' : 'Submit for Verification'}
             </Button>
         </div>
     );
