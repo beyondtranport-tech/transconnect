@@ -44,7 +44,7 @@ function generateDiscoveryPrompt(category: string) {
 
 ACT AS AN ELITE MARKET INTELLIGENCE AGENT. 
 
-TASK: Discover and extract detailed verified records for 30 prominent businesses in SOUTH AFRICA that specialize in the industrial category: "${category}".
+TASK: Discover and extract detailed verified records for 100 prominent businesses in SOUTH AFRICA that specialize in the industrial category: "${category}".
 
 INVESTIGATIVE STRATEGY (HUMAN IDENTITY FOCUS):
 1. HUMAN IDENTITY IS MANDATORY: Your primary mission is to find the ACTUAL FULL NAME (First and Last) of the CEO, Managing Director, or Owner for each business.
@@ -79,7 +79,7 @@ const DiscoveryTab = ({ category }: { category: string }) => {
         try {
             await navigator.clipboard.writeText(prompt);
             setIsCopied(true);
-            toast({ title: "Forensic Prompt Copied!", description: "Paste this into Google AI Studio to find 30 specialized leads." });
+            toast({ title: "Forensic Prompt Copied!", description: "Paste this into Google AI Studio to find 100 specialized leads." });
             setTimeout(() => setIsCopied(false), 3000);
         } catch (e) {
             toast({ variant: 'destructive', title: "Copy Failed" });
@@ -95,14 +95,14 @@ const DiscoveryTab = ({ category }: { category: string }) => {
                         Lead Discovery: {category}
                     </h2>
                     <p className="text-muted-foreground leading-relaxed text-sm">
-                        Use this forensic-tuned prompt to bypass generic titles and find the actual human leadership of 30 South African suppliers in the <strong>{category}</strong> sector.
+                        Use this forensic-tuned prompt to bypass generic titles and find the actual human leadership of 100 South African suppliers in the <strong>{category}</strong> sector.
                     </p>
                     
                     <Alert className="bg-primary/5 border-primary/20">
                         <Info className="h-4 w-4 text-primary" />
                         <AlertTitle>Discovery Workflow</AlertTitle>
                         <AlertDescription className="text-xs space-y-2">
-                            <p>1. Copy the 30-record forensic prompt below.</p>
+                            <p>1. Copy the 100-record forensic prompt below.</p>
                             <p>2. Paste into <strong>Google AI Studio</strong> (Gemini 1.5 Pro recommended for names).</p>
                             <p>3. Use the <strong>Bulk Import</strong> tool in the Supplier Database to add the results.</p>
                         </AlertDescription>
@@ -124,7 +124,7 @@ const DiscoveryTab = ({ category }: { category: string }) => {
                 <div className="space-y-2">
                     <div className="flex items-center justify-between">
                          <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
-                            <Terminal className="h-3 w-3"/> AI Discovery Command (30 Records)
+                            <Terminal className="h-3 w-3"/> AI Discovery Command (100 Records)
                         </Label>
                         <Badge variant="outline" className="text-[10px] uppercase">{category}</Badge>
                     </div>
@@ -139,7 +139,7 @@ const DiscoveryTab = ({ category }: { category: string }) => {
             <div className="bg-muted/30 p-6 rounded-xl text-center space-y-4">
                  <h3 className="text-lg font-bold">Import Discovered Leads</h3>
                  <p className="text-sm text-muted-foreground max-w-xl mx-auto">
-                    Once the AI returns your list of 30 {category} suppliers, head to the database to import them.
+                    Once the AI returns your list of 100 {category} suppliers, head to the database to import them.
                  </p>
                  <Button asChild variant="secondary">
                     <Link href="/adminaccount?view=marketing-suppliers&subview=management">
@@ -161,7 +161,7 @@ export default function DiscoveryEngine() {
                         AI Discovery Engine
                     </CardTitle>
                     <CardDescription>
-                        Generate tailored market intelligence prompts to find up to 30 specialized leads per run.
+                        Generate tailored market intelligence prompts to find up to 100 specialized leads per run.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="px-0">
