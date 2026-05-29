@@ -9,10 +9,28 @@ import Link from "next/link";
 import * as React from "react";
 
 const supplierCategories = [
-    "Accessories", "Anti-Theft Devices", "Auto Electrical", "Batteries", "Brakes", "Cleaning Products",
-    "Dealer", "Diesel", "Filters", "Injectors", "Turbo", "Lights", "Mechanical Repairs",
-    "Oils & Lubricants", "Parts", "Transport", "Tarpaulins", "Tow In", "Trailer Repairs",
-    "Truck Parts", "Truck Repairs", "Tyres"
+    "Accessories", 
+    "Anti-Theft Devices", 
+    "Auto Electrical", 
+    "Batteries", 
+    "Brakes", 
+    "Cleaning Products",
+    "Diesel", 
+    "Filters", 
+    "Injectors", 
+    "Lights", 
+    "Mechanical repairs",
+    "Oils & Lubricants", 
+    "Parts", 
+    "Transport", 
+    "Tarpaulins", 
+    "Tow in", 
+    "Trailer repairs",
+    "Truck Accessories", 
+    "Truck Parts", 
+    "Truck repairs", 
+    "Turbo", 
+    "Tyres"
 ];
 
 const PitchComponent = ({ category }: { category: string }) => {
