@@ -234,9 +234,9 @@ function AccountPageContent() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
                <SidebarMenuItem>
-                <SidebarMenuButton tooltip="My Vehicles" isActive={activeView === 'vehicle-listings'} onClick={() => navigate('vehicle-listings')}>
+                <SidebarMenuButton tooltip={isTransporter ? "Vehicles for Sale" : "My Vehicles"} isActive={activeView === 'vehicle-listings'} onClick={() => navigate('vehicle-listings')}>
                   <Truck />
-                  <span>My Vehicles</span>
+                  <span>{isTransporter ? "Vehicles for Sale" : "My Vehicles"}</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>

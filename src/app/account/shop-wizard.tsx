@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -26,6 +27,7 @@ import { type ColumnDef } from '@/hooks/use-data-table';
 import { usePermissions } from '@/hooks/use-permissions';
 import Link from 'next/link';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Checkbox } from '@/components/ui/checkbox';
 
 // ====== SCHEMAS ======
 
@@ -215,7 +217,7 @@ function ProductDialog({ shop, item, onComplete, children, canEdit }: { shop: an
                 <FormField control={form.control} name="price" render={({ field }) => ( <FormItem><FormLabel>{isTransporter ? 'Base Rate (R)' : 'Price (R)'}</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
                 {isTransporter ? (
                     <FormField control={form.control} name="rateType" render={({ field }) => (
-                        <FormItem><FormLabel>Pricing Model</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="per-km">Per Kilometer</SelectItem><SelectItem value="flat-rate">Flat Rate</SelectItem></SelectContent></Select></FormItem>
+                        <FormItem><FormLabel>Pricing Model</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a type..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="per-km">Per Kilometer</SelectItem><SelectItem value="flat-rate">Flat Rate</SelectItem></SelectContent></Select></FormItem>
                     )} />
                 ) : (
                     <FormField control={form.control} name="stock" render={({ field }) => ( <FormItem><FormLabel>Units in Stock</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
@@ -223,7 +225,19 @@ function ProductDialog({ shop, item, onComplete, children, canEdit }: { shop: an
              </div>
              {isTransporter && (
                 <FormField control={form.control} name="vehicleType" render={({ field }) => (
-                    <FormItem><FormLabel>Required Vehicle Type</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select type..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="Tautliner">Tautliner</SelectItem><SelectItem value="Flatbed">Flatbed</SelectItem><SelectItem value="Reefer">Reefer (Cold)</SelectItem></SelectContent></Select></FormItem>
+                    <FormItem>
+                        <FormLabel>Required Vehicle Type</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl><SelectTrigger><SelectValue placeholder="Select type..." /></SelectTrigger></FormControl>
+                            <SelectContent>
+                                <SelectItem value="Tautliner">Tautliner</SelectItem>
+                                <SelectItem value="Flatbed">Flatbed</SelectItem>
+                                <SelectItem value="Reefer">Reefer (Cold)</SelectItem>
+                                <SelectItem value="Superlink">Superlink</SelectItem>
+                                <SelectItem value="Tipper">Tipper</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </FormItem>
                 )} />
              )}
              <DialogFooter className="pt-4 border-t">
@@ -297,9 +311,11 @@ function StepCatalog({ shop, canEdit }: { shop: any, canEdit: boolean }) {
 
 // ====== STEP 3: Fleet Gallery (Transporters Only) ======
 
-function StepFleetGallery({ shop, canEdit }: { shop: any, canEdit: boolean }) {
+function StepFleetGallery({ shop, canEdit, onSave }: { shop: any, canEdit: boolean, onSave: () => void }) {
     const firestore = useFirestore();
     const { toast } = useToast();
+    const [isSaving, setIsSaving] = useState(false);
+    const [selectedFleetIds, setSelectedFleetIds] = useState<string[]>(shop.showcaseFleetIds || []);
 
     // Fetch all contributions (Trucks/Trailers) for this company
     const contributionsQuery = useMemoFirebase(() => {
@@ -310,6 +326,34 @@ function StepFleetGallery({ shop, canEdit }: { shop: any, canEdit: boolean }) {
     const { data: allContributions, isLoading } = useCollection(contributionsQuery);
     const myFleet = useMemo(() => allContributions?.filter(c => c.companyId === shop.companyId) || [], [allContributions, shop.companyId]);
 
+    const handleToggleFleet = (id: string) => {
+        setSelectedFleetIds(prev => 
+            prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+        );
+    }
+
+    const handleSaveShowcase = async () => {
+        setIsSaving(true);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) return;
+            await fetch('/api/updateUserDoc', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    path: `companies/${shop.companyId}/shops/${shop.id}`,
+                    data: { showcaseFleetIds: selectedFleetIds, updatedAt: { _methodName: 'serverTimestamp' } }
+                })
+            });
+            toast({ title: "Showcase Updated", description: `${selectedFleetIds.length} items linked to your profile.` });
+            onSave();
+        } catch (e) {
+            toast({ variant: 'destructive', title: "Error linking fleet" });
+        } finally {
+            setIsSaving(false);
+        }
+    }
+
     return (
         <div className="space-y-6">
             <div>
@@ -318,23 +362,29 @@ function StepFleetGallery({ shop, canEdit }: { shop: any, canEdit: boolean }) {
             </div>
 
             {isLoading ? (
-                <div className="flex justify-center py-10"><Loader2 className="animate-spin" /></div>
+                <div className="flex justify-center py-10"><Loader2 className="animate-spin text-primary" /></div>
             ) : myFleet.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {myFleet.map(item => (
-                        <Card key={item.id} className="border shadow-none">
-                            <CardContent className="p-4 flex items-center justify-between">
-                                <div className="flex items-center gap-4">
-                                    <div className="bg-muted p-2 rounded-md"><Truck className="h-6 w-6 text-primary" /></div>
-                                    <div>
-                                        <p className="font-bold">{item.data?.year} {item.data?.make}</p>
-                                        <p className="text-xs text-muted-foreground uppercase">{item.type} • {item.data?.model}</p>
+                <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {myFleet.map(item => (
+                            <Card key={item.id} className={cn("border shadow-none transition-all cursor-pointer", selectedFleetIds.includes(item.id) ? "border-primary bg-primary/5 ring-1 ring-primary" : "")} onClick={() => handleToggleFleet(item.id)}>
+                                <CardContent className="p-4 flex items-center justify-between">
+                                    <div className="flex items-center gap-4">
+                                        <div className="bg-muted p-2 rounded-md"><Truck className="h-6 w-6 text-primary" /></div>
+                                        <div>
+                                            <p className="font-bold">{item.data?.year} {item.data?.make}</p>
+                                            <p className="text-xs text-muted-foreground uppercase">{item.type} • {item.data?.model}</p>
+                                        </div>
                                     </div>
-                                </div>
-                                <Button size="sm" variant="outline" onClick={() => toast({ title: "Coming Soon", description: "Verified gallery linking is in development." })}>Link to Profile</Button>
-                            </CardContent>
-                        </Card>
-                    ))}
+                                    <Checkbox checked={selectedFleetIds.includes(item.id)} onCheckedChange={() => handleToggleFleet(item.id)} />
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                    <Button onClick={handleSaveShowcase} disabled={isSaving || !canEdit}>
+                        {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />}
+                        Save Showcase Selections
+                    </Button>
                 </div>
             ) : (
                 <div className="text-center py-12 border-2 border-dashed rounded-lg">
@@ -427,7 +477,7 @@ export function ShopWizard({ shop, onUpdate }: { shop: any, onUpdate: () => void
             { id: 'catalog', name: isTransporter ? 'Routes & Rates' : 'Product Catalog', component: <StepCatalog shop={shop} canEdit={true} /> },
         ];
         if (isTransporter) {
-            base.push({ id: 'fleet', name: 'Fleet Gallery', component: <StepFleetGallery shop={shop} canEdit={true} /> });
+            base.push({ id: 'fleet', name: 'Fleet Gallery', component: <StepFleetGallery shop={shop} canEdit={true} onSave={onUpdate} /> });
         }
         base.push(
             { id: 'commercials', name: 'Commercials', component: <StepCommercials shop={shop} canEdit={true} /> },

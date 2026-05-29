@@ -1,7 +1,8 @@
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Loader2, Store, Handshake, TrendingUp, Zap, CheckCircle2, Clock, Users, ArrowRight, PackageCheck, Star } from 'lucide-react';
+import { Loader2, Store, Handshake, TrendingUp, Zap, CheckCircle2, Clock, Users, ArrowRight, PackageCheck, Star, PieChart } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { getClientSideAuthToken, useUser } from '@/firebase';
