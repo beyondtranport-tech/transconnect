@@ -49,8 +49,9 @@ const productSchema = z.object({
 });
 
 const routeSchema = z.object({
-    name: z.string().min(1, 'Route label is required (e.g. JHB to CPT)'),
-    description: z.string().min(1, 'Description is required'),
+    name: z.string().min(1, 'Origin (From) is required'),
+    destination: z.string().min(1, 'Destination (To) is required'),
+    description: z.string().min(1, 'Service details are required'),
     price: z.coerce.number().positive('Rate must be a positive number'),
     rateType: z.enum(['per-km', 'flat-rate']).default('per-km'),
     vehicleType: z.string().min(1, 'Vehicle type is required'),
@@ -175,7 +176,7 @@ function ProductDialog({ shop, item, onComplete, children, canEdit }: { shop: an
   const form = useForm<any>({
     resolver: zodResolver(isTransporter ? routeSchema : productSchema),
     defaultValues: item || (isTransporter 
-        ? { name: '', description: '', price: 0, rateType: 'per-km', vehicleType: '' } 
+        ? { name: '', destination: '', description: '', price: 0, rateType: 'per-km', vehicleType: '' } 
         : { name: '', description: '', price: 0, sku: '', stock: 0 }),
   });
   
@@ -207,14 +208,19 @@ function ProductDialog({ shop, item, onComplete, children, canEdit }: { shop: an
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>{item ? 'Edit' : 'Add New'} {isTransporter ? 'Service Lane' : 'Product'}</DialogTitle>
-          <DialogDescription>{isTransporter ? 'Define your routes and rates.' : 'List a product for sale.'}</DialogDescription>
+          <DialogDescription>{isTransporter ? 'Define your routes and rates for shippers to find you.' : 'List a product for sale.'}</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-             <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>{isTransporter ? 'Route (e.g. JHB to CPT)' : 'Product Name'}</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
-             <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>Details</FormLabel><FormControl><Textarea placeholder={isTransporter ? "Describe service frequency..." : "Product specs..."} {...field} /></FormControl><FormMessage /></FormItem> )} />
+             <div className={cn("grid gap-4", isTransporter ? "grid-cols-2" : "grid-cols-1")}>
+                <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>{isTransporter ? 'Origin (From)' : 'Product Name'}</FormLabel><FormControl><Input placeholder={isTransporter ? "e.g. Johannesburg" : ""} {...field} /></FormControl><FormMessage /></FormItem> )} />
+                {isTransporter && (
+                    <FormField control={form.control} name="destination" render={({ field }) => ( <FormItem><FormLabel>Destination (To)</FormLabel><FormControl><Input placeholder="e.g. Durban" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                )}
+             </div>
+             <FormField control={form.control} name="description" render={({ field }) => ( <FormItem><FormLabel>{isTransporter ? 'Service Frequency/Details' : 'Description'}</FormLabel><FormControl><Textarea placeholder={isTransporter ? "e.g. Twice weekly departures..." : "Product specs..."} {...field} /></FormControl><FormMessage /></FormItem> )} />
              <div className="grid grid-cols-2 gap-4">
-                <FormField control={form.control} name="price" render={({ field }) => ( <FormItem><FormLabel>{isTransporter ? 'Base Rate (R)' : 'Price (R)'}</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                <FormField control={form.control} name="price" render={({ field }) => ( <FormItem><FormLabel>{isTransporter ? 'Rate (R)' : 'Price (R)'}</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
                 {isTransporter ? (
                     <FormField control={form.control} name="rateType" render={({ field }) => (
                         <FormItem><FormLabel>Pricing Model</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a type..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="per-km">Per Kilometer</SelectItem><SelectItem value="flat-rate">Flat Rate</SelectItem></SelectContent></Select></FormItem>
@@ -235,6 +241,8 @@ function ProductDialog({ shop, item, onComplete, children, canEdit }: { shop: an
                                 <SelectItem value="Reefer">Reefer (Cold)</SelectItem>
                                 <SelectItem value="Superlink">Superlink</SelectItem>
                                 <SelectItem value="Tipper">Tipper</SelectItem>
+                                <SelectItem value="8-ton">8-ton</SelectItem>
+                                <SelectItem value="1-ton">1-ton Van</SelectItem>
                             </SelectContent>
                         </Select>
                     </FormItem>
@@ -243,7 +251,7 @@ function ProductDialog({ shop, item, onComplete, children, canEdit }: { shop: an
              <DialogFooter className="pt-4 border-t">
                  <Button type="submit" disabled={isSaving}>
                     {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Save {isTransporter ? 'Service' : 'Product'}
+                    Save {isTransporter ? 'Service Lane' : 'Product'}
                  </Button>
              </DialogFooter>
           </form>
@@ -267,9 +275,9 @@ function StepCatalog({ shop, canEdit }: { shop: any, canEdit: boolean }) {
   return (
     <div className="space-y-4">
         <div className="flex items-center justify-between">
-            <h3 className="text-xl font-semibold">{isTransporter ? 'Service Lanes & Routes' : 'Product Catalog'}</h3>
+            <h3 className="text-xl font-semibold">{isTransporter ? 'Service Lanes (Routes & Rates)' : 'Product Catalog'}</h3>
              <ProductDialog shop={shop} onComplete={forceRefresh} canEdit={canEdit}>
-                <Button disabled={!canEdit}><PlusCircle className="mr-2 h-4 w-4" /> Add {isTransporter ? 'Route' : 'Product'}</Button>
+                <Button disabled={!canEdit}><PlusCircle className="mr-2 h-4 w-4" /> Add {isTransporter ? 'Service Lane' : 'Product'}</Button>
             </ProductDialog>
         </div>
 
@@ -280,8 +288,9 @@ function StepCatalog({ shop, canEdit }: { shop: any, canEdit: boolean }) {
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>{isTransporter ? 'Route' : 'Name'}</TableHead>
-                            <TableHead>{isTransporter ? 'Vehicle' : 'Price'}</TableHead>
+                            <TableHead>{isTransporter ? 'From' : 'Name'}</TableHead>
+                            <TableHead>{isTransporter ? 'To' : 'Price'}</TableHead>
+                            <TableHead>{isTransporter ? 'Rate' : 'Stock'}</TableHead>
                             <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -289,7 +298,17 @@ function StepCatalog({ shop, canEdit }: { shop: any, canEdit: boolean }) {
                         {items.map((item) => (
                             <TableRow key={item.id}>
                                 <TableCell className="font-medium">{item.name}</TableCell>
-                                <TableCell>{isTransporter ? <Badge variant="outline">{item.vehicleType}</Badge> : `R ${item.price}`}</TableCell>
+                                <TableCell>{isTransporter ? item.destination : `R ${item.price}`}</TableCell>
+                                <TableCell>
+                                    {isTransporter ? (
+                                        <div className="flex flex-col">
+                                            <span className="font-bold">R {item.price}</span>
+                                            <span className="text-[10px] uppercase text-muted-foreground">{item.rateType?.replace('-', ' ')}</span>
+                                        </div>
+                                    ) : (
+                                        item.stock
+                                    )}
+                                </TableCell>
                                 <TableCell className="text-right">
                                     <div className="flex justify-end gap-2">
                                         <ProductDialog shop={shop} item={item} onComplete={forceRefresh} canEdit={canEdit}>
@@ -389,10 +408,12 @@ function StepFleetGallery({ shop, canEdit, onSave }: { shop: any, canEdit: boole
             ) : (
                 <div className="text-center py-12 border-2 border-dashed rounded-lg">
                     <Truck className="mx-auto h-12 w-12 text-muted-foreground opacity-20" />
-                    <p className="mt-4 font-semibold">No fleet data found.</p>
-                    <p className="text-sm text-muted-foreground">Contribute your truck/trailer data first to enable verification badges.</p>
-                    <Button asChild className="mt-4" variant="outline">
-                        <Link href="/contribute">Contribute Fleet Data</Link>
+                    <p className="mt-4 font-semibold">No verified fleet found.</p>
+                    <p className="text-sm text-muted-foreground">To showcase your fleet, you must first upload your RC1 details in the Contribution Hub.</p>
+                    <Button asChild className="mt-4" variant="default">
+                        <Link href="/contribute">
+                            <PlusCircle className="mr-2 h-4 w-4" /> Contribute Fleet Data
+                        </Link>
                     </Button>
                 </div>
             )}
