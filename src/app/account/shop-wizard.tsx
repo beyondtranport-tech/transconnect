@@ -1,7 +1,6 @@
-
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useForm, FormProvider, useFormContext } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -15,7 +14,7 @@ import { doc, collection, query, orderBy, serverTimestamp } from 'firebase/fires
 import { 
     Loader2, Save, CheckCircle, PlusCircle, Edit, Trash2, Send, Truck, MapPin, 
     DollarSign, ArrowRight, ArrowLeft, Info, Sparkles, ImageIcon, Wand2, 
-    Home, BookOpen, ShieldCheck, Map, UploadCloud, Download
+    Home, BookOpen, ShieldCheck, Map, UploadCloud, Download, Upload
 } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -28,6 +27,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { generateImage } from '@/ai/flows/image-generation-flow';
 import { imageEdit } from '@/ai/flows/image-edit-flow';
@@ -40,14 +40,11 @@ const shopFormSchema = z.object({
   websiteUrl: z.string().url("Must be a valid URL.").optional().or(z.literal('')),
   contactEmail: z.string().email("Please enter a valid email.").optional().or(z.literal('')),
   contactPhone: z.string().optional(),
-  // Content fields
   homeHeading: z.string().min(5, "Home heading must be at least 5 characters."),
   homeSubheading: z.string().optional(),
   aboutText: z.string().min(20, "About text must be a detailed summary."),
-  // Media fields
   logoUrl: z.string().optional(),
   heroBannerUrl: z.string().optional(),
-  // Legal fields
   termsText: z.string().min(20, "Please provide terms and conditions."),
   privacyText: z.string().min(20, "Please provide a privacy policy."),
 });
@@ -71,6 +68,15 @@ const routeSchema = z.object({
     imageUrl: z.string().optional(),
 });
 
+// ====== UTILS ======
+
+const fileToDataUri = (file: File) => new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = error => reject(error);
+    reader.readAsDataURL(file);
+});
+
 // ====== SHARED AI COMPONENTS ======
 
 function AIToolModal({ 
@@ -87,7 +93,6 @@ function AIToolModal({
     const [isOpen, setIsOpen] = useState(false);
     const [prompt, setPrompt] = useState(initialPrompt);
     const [isLoading, setIsLoading] = useState(false);
-    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const { user } = useUser();
     const { toast } = useToast();
 
@@ -101,13 +106,11 @@ function AIToolModal({
             if (type === 'generate') {
                 result = await generateImage({ prompt });
             } else {
-                // For edit, we'd need an source image. Simplified for now.
                 throw new Error("Enhancer requires a source image.");
             }
 
             if (!result.imageDataUri) throw new Error("AI failed to return image.");
 
-            // Upload the result to Firebase Storage for persistence
             const folder = `user-assets/${user.uid}/shop-ai`;
             const fileName = `ai_${targetField}_${Date.now()}.png`;
             
@@ -118,16 +121,6 @@ function AIToolModal({
             });
             const uploadData = await uploadRes.json();
             if (!uploadRes.ok) throw new Error(uploadData.error);
-
-            // Log AI Usage for Loyalty/Limits
-            await fetch('/api/updateUserDoc', {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    path: `auditLogs/ai_${Date.now()}`,
-                    data: { action: 'ai_image_gen', target: targetField, userId: user.uid, timestamp: { _methodName: 'serverTimestamp' } }
-                })
-            });
 
             onResult(uploadData.url);
             setIsOpen(false);
@@ -226,10 +219,44 @@ function StepCoreIdentity({ canEdit }: { canEdit: boolean }) {
 }
 
 function StepMedia({ canEdit }: { canEdit: boolean }) {
-    const { control, setValue, watch } = useFormContext<z.infer<typeof shopFormSchema>>();
+    const { setValue, watch } = useFormContext<z.infer<typeof shopFormSchema>>();
     const logo = watch('logoUrl');
     const banner = watch('heroBannerUrl');
     const shopName = watch('shopName');
+    const { user } = useUser();
+    const { toast } = useToast();
+    const [isUploading, setIsUploading] = useState<string | null>(null);
+
+    const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: 'logoUrl' | 'heroBannerUrl') => {
+        const file = e.target.files?.[0];
+        if (!file || !user) return;
+
+        setIsUploading(field);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Auth failed.");
+
+            const dataUri = await fileToDataUri(file);
+            const folder = `user-assets/${user.uid}/shop-branding`;
+            const fileName = `${field}_${Date.now()}_${file.name}`;
+
+            const res = await fetch('/api/uploadImageAsset', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ fileDataUri: dataUri, folder, fileName, contentType: file.type })
+            });
+
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error);
+
+            setValue(field, data.url, { shouldValidate: true });
+            toast({ title: "Image Uploaded" });
+        } catch (err: any) {
+            toast({ variant: 'destructive', title: "Upload Failed", description: err.message });
+        } finally {
+            setIsUploading(null);
+        }
+    };
 
     return (
         <div className="space-y-10">
@@ -239,12 +266,19 @@ function StepMedia({ canEdit }: { canEdit: boolean }) {
                         <h3 className="text-lg font-semibold flex items-center gap-2"><ImageIcon className="h-5 w-5"/> Brand Identity</h3>
                         <p className="text-xs text-muted-foreground">Upload or generate your company logo.</p>
                     </div>
-                    <AIToolModal 
-                        type="generate" 
-                        targetField="logoUrl" 
-                        initialPrompt={`A minimalist, modern vector logo for a company called "${shopName}". Professional logistics theme.`}
-                        onResult={url => setValue('logoUrl', url)} 
-                    />
+                    <div className="flex gap-2">
+                        <label className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), "cursor-pointer gap-2")}>
+                            {isUploading === 'logoUrl' ? <Loader2 className="h-4 w-4 animate-spin"/> : <Upload className="h-4 w-4" />}
+                            Upload
+                            <input type="file" className="hidden" accept="image/*" onChange={e => handleUpload(e, 'logoUrl')} disabled={!!isUploading || !canEdit} />
+                        </label>
+                        <AIToolModal 
+                            type="generate" 
+                            targetField="logoUrl" 
+                            initialPrompt={`A minimalist, modern vector logo for a company called "${shopName}". Professional logistics theme.`}
+                            onResult={url => setValue('logoUrl', url)} 
+                        />
+                    </div>
                 </div>
                 <div className="relative aspect-square w-32 border rounded-lg bg-muted overflow-hidden">
                     {logo ? <Image src={logo} alt="Logo" fill className="object-contain" /> : <div className="flex items-center justify-center h-full"><ImageIcon className="opacity-20"/></div>}
@@ -259,12 +293,19 @@ function StepMedia({ canEdit }: { canEdit: boolean }) {
                         <h3 className="text-lg font-semibold flex items-center gap-2"><Sparkles className="h-5 w-5"/> Profile Banner</h3>
                         <p className="text-xs text-muted-foreground">This is the first image customers see.</p>
                     </div>
-                    <AIToolModal 
-                        type="generate" 
-                        targetField="heroBannerUrl" 
-                        initialPrompt={`A high-resolution professional hero banner for a logistics company dashboard. Cinematic lighting, trucks, or supply chain theme.`}
-                        onResult={url => setValue('heroBannerUrl', url)} 
-                    />
+                    <div className="flex gap-2">
+                        <label className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), "cursor-pointer gap-2")}>
+                            {isUploading === 'heroBannerUrl' ? <Loader2 className="h-4 w-4 animate-spin"/> : <Upload className="h-4 w-4" />}
+                            Upload
+                            <input type="file" className="hidden" accept="image/*" onChange={e => handleUpload(e, 'heroBannerUrl')} disabled={!!isUploading || !canEdit} />
+                        </label>
+                        <AIToolModal 
+                            type="generate" 
+                            targetField="heroBannerUrl" 
+                            initialPrompt={`A high-resolution professional hero banner for a logistics company dashboard. Cinematic lighting, trucks, or supply chain theme.`}
+                            onResult={url => setValue('heroBannerUrl', url)} 
+                        />
+                    </div>
                 </div>
                 <div className="relative aspect-video w-full border rounded-xl bg-muted overflow-hidden">
                     {banner ? <Image src={banner} alt="Banner" fill className="object-cover" /> : <div className="flex items-center justify-center h-full"><ImageIcon className="opacity-20 h-10 w-10"/></div>}
@@ -343,7 +384,9 @@ function ProductDialog({ shop, item, onComplete, children, canEdit }: { shop: an
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const isTransporter = shop.shopType === 'transporter';
+  const { user } = useUser();
 
   const form = useForm<any>({
     resolver: zodResolver(isTransporter ? routeSchema : productSchema),
@@ -352,6 +395,37 @@ function ProductDialog({ shop, item, onComplete, children, canEdit }: { shop: an
         : { name: '', description: '', price: 0, sku: '', stock: 0, imageUrl: '' }),
   });
   
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    setIsUploading(true);
+    try {
+        const token = await getClientSideAuthToken();
+        if (!token) throw new Error("Auth failed.");
+
+        const dataUri = await fileToDataUri(file);
+        const folder = `user-assets/${user.uid}/shop-products`;
+        const fileName = `product_${Date.now()}_${file.name}`;
+
+        const res = await fetch('/api/uploadImageAsset', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fileDataUri: dataUri, folder, fileName, contentType: file.type })
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+
+        form.setValue('imageUrl', data.url, { shouldValidate: true });
+        toast({ title: "Photo Uploaded" });
+    } catch (err: any) {
+        toast({ variant: 'destructive', title: "Upload Failed", description: err.message });
+    } finally {
+        setIsUploading(false);
+    }
+  };
+
   const onSubmit = async (values: any) => {
     setIsSaving(true);
     try {
@@ -387,7 +461,11 @@ function ProductDialog({ shop, item, onComplete, children, canEdit }: { shop: an
              <div className="flex gap-6 items-start">
                 <div className="relative h-32 w-32 border rounded-lg bg-muted shrink-0 overflow-hidden group">
                     {form.watch('imageUrl') ? <Image src={form.watch('imageUrl')} alt="Preview" fill className="object-cover" /> : <div className="flex items-center justify-center h-full"><ImageIcon className="opacity-20"/></div>}
-                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity gap-2">
+                        <label className="cursor-pointer bg-white/20 hover:bg-white/40 p-1.5 rounded-full backdrop-blur-md">
+                            {isUploading ? <Loader2 className="h-4 w-4 animate-spin text-white"/> : <Upload className="h-4 w-4 text-white" />}
+                            <input type="file" className="hidden" accept="image/*" onChange={handleUpload} disabled={isUploading} />
+                        </label>
                         <AIToolModal 
                             type="generate" 
                             targetField="productImage" 
@@ -441,7 +519,7 @@ function ProductDialog({ shop, item, onComplete, children, canEdit }: { shop: an
                 )} />
              )}
              <DialogFooter className="pt-4 border-t">
-                 <Button type="submit" disabled={isSaving}>
+                 <Button type="submit" disabled={isSaving || isUploading}>
                     {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Save {isTransporter ? 'Service Lane' : 'Product'}
                  </Button>
