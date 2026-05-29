@@ -21,16 +21,17 @@ const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | '
   rejected: 'destructive',
 };
 
-function ShopPublishedDialog({ shopId, onGoToDashboard, onGoToShop }: { shopId: string; onGoToDashboard: () => void; onGoToShop: () => void; }) {
+function ShopPublishedDialog({ shopId, onGoToDashboard, onGoToShop, shopType }: { shopId: string; onGoToDashboard: () => void; onGoToShop: () => void; shopType?: string; }) {
+  const isTransporter = shopType === 'transporter';
   return (
     <Card className="text-center py-10">
       <CardHeader>
         <div className="mx-auto bg-green-100 p-4 rounded-full w-fit">
           <CheckCircle className="h-10 w-10 text-green-600" />
         </div>
-        <CardTitle className="mt-4">Shop Submitted Successfully!</CardTitle>
+        <CardTitle className="mt-4">{isTransporter ? 'Service Profile' : 'Shop'} Submitted Successfully!</CardTitle>
         <CardDescription>
-          Your shop has been sent for admin review. You will be notified once it is approved and published.
+          Your {isTransporter ? 'profile' : 'shop'} has been sent for admin review. You will be notified once it is approved and published.
         </CardDescription>
       </CardHeader>
       <CardContent className="flex justify-center gap-4">
@@ -122,7 +123,7 @@ export default function ShopContent() {
       const result = await response.json();
 
       if (response.ok && result.success) {
-        toast({ title: 'Shop Draft Created!', description: "Let's get started with the details." });
+        toast({ title: 'Draft Created!', description: "Let's get started with the details." });
         await forceRefreshAll();
         // Use a URL parameter to trigger the wizard view on reload
         router.push('/account?view=shop&created=true');
@@ -134,7 +135,7 @@ export default function ShopContent() {
       console.error("Error creating shop:", error);
       toast({
         variant: 'destructive',
-        title: 'Error Creating Shop',
+        title: 'Error Initializing Profile',
         description: error.message || "An unexpected error occurred."
       });
     } finally {
@@ -144,6 +145,7 @@ export default function ShopContent() {
 
   const canCreateShop = can('create', 'shop');
   const shopExists = !!companyData?.shopId;
+  const isTransporter = companyData?.shopType === 'transporter';
 
   const shopStatus = userShop?.status || 'draft';
 
@@ -152,6 +154,7 @@ export default function ShopContent() {
       return (
         <ShopPublishedDialog
           shopId={userShop.id}
+          shopType={companyData?.shopType}
           onGoToDashboard={() => setView('overview')}
           onGoToShop={() => window.open(`/shops/${userShop.id}`, '_blank')}
         />
@@ -168,7 +171,7 @@ export default function ShopContent() {
             return (
                  <div className="flex justify-center items-center py-20">
                     <Loader2 className="h-10 w-10 animate-spin text-primary" />
-                    <p className="ml-4">Loading your shop...</p>
+                    <p className="ml-4">Loading your profile...</p>
                 </div>
             );
         }
@@ -178,7 +181,7 @@ export default function ShopContent() {
                     <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                         <div>
                             <h3 className="text-xl font-semibold">{userShop.shopName}</h3>
-                            <p className="text-muted-foreground">{userShop.category}</p>
+                            <p className="text-muted-foreground">{userShop.category || 'Uncategorized'}</p>
                         </div>
                         <div className="flex items-center gap-2">
                             <span className="text-sm font-medium">Status:</span>
@@ -189,19 +192,19 @@ export default function ShopContent() {
                     </div>
                     <div className="flex flex-col sm:flex-row justify-between sm:items-end gap-4 mt-4 pt-4 border-t">
                         <div>
-                            <p className="text-sm font-medium">Products Listed</p>
+                            <p className="text-sm font-medium">{isTransporter ? 'Active Service Lanes' : 'Products Listed'}</p>
                             <p className="text-2xl font-bold">{products?.length || 0}</p>
                         </div>
                         <div className="flex gap-2">
                             {userShop.status === 'approved' && (
                                 <Button asChild variant="outline">
                                     <Link href={`/shops/${userShop.id}`} target="_blank">
-                                        <Eye className="mr-2 h-4 w-4" /> View Live Shop
+                                        <Eye className="mr-2 h-4 w-4" /> View Live Profile
                                     </Link>
                                 </Button>
                             )}
                             <Button onClick={() => setView('wizard')}>
-                                <Edit className="mr-2 h-4 w-4" /> Manage Shop
+                                <Edit className="mr-2 h-4 w-4" /> Manage {isTransporter ? 'Service Profile' : 'Shop'}
                             </Button>
                         </div>
                     </div>
@@ -213,8 +216,8 @@ export default function ShopContent() {
      return (
           <div className="text-center py-20 border-2 border-dashed rounded-lg">
             <Store className="mx-auto h-12 w-12 text-muted-foreground" />
-            <h3 className="mt-4 text-xl font-semibold">You don't have a shop yet.</h3>
-            <p className="mt-2 text-muted-foreground">Ready to start selling? Create your shop to get started.</p>
+            <h3 className="mt-4 text-xl font-semibold">You don't have a {isTransporter ? 'service profile' : 'shop'} yet.</h3>
+            <p className="mt-2 text-muted-foreground">Ready to start selling your {isTransporter ? 'freight services' : 'products'}? Create your profile to get started.</p>
             
             <TooltipProvider>
               <Tooltip>
@@ -222,14 +225,14 @@ export default function ShopContent() {
                   <div className="inline-block mt-4">
                     <Button onClick={handleCreateShop} disabled={isCreating || !canCreateShop || arePermissionsLoading}>
                       {isCreating || arePermissionsLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
-                      Create My Shop
+                      Create {isTransporter ? 'Service Profile' : 'My Shop'}
                     </Button>
                   </div>
                 </TooltipTrigger>
                 {!canCreateShop && (
                   <TooltipContent>
                     <p className="flex items-center gap-2"><ShieldAlert className="h-4 w-4" /> 
-                        {arePermissionsLoading ? 'Loading permissions...' : "You don't have permission to create a shop."}
+                        {arePermissionsLoading ? 'Loading permissions...' : `You don't have permission to create a ${isTransporter ? 'profile' : 'shop'}.`}
                     </p>
                   </TooltipContent>
                 )}
@@ -249,11 +252,13 @@ export default function ShopContent() {
       <CardHeader>
         <div className="flex justify-between items-start">
             <div>
-                <CardTitle className="flex items-center gap-2"><Store /> My Shop</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                    <Store /> {isTransporter ? 'My Service Profile' : 'My Shop'}
+                </CardTitle>
                 <CardDescription>
                 {shopExists
-                    ? `Manage your shop: ${userShop?.shopName || '...'}`
-                    : "Create and manage your public-facing shop on TransConnect."
+                    ? `Manage your ${isTransporter ? 'service profile' : 'shop'}: ${userShop?.shopName || '...'}`
+                    : `Create and manage your public-facing ${isTransporter ? 'service profile' : 'shop'} on TransConnect.`
                 }
                 </CardDescription>
             </div>

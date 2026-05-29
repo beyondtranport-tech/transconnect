@@ -172,6 +172,8 @@ function AccountPageContent() {
   
   const isSalesActive = ['network', 'performance', 'offer', 'emails'].includes(activeView);
   const isConnectActive = ['connect-loyalty', 'connect-rewards', 'connect-actions'].includes(activeView);
+  
+  const isTransporter = user.companyData?.shopType === 'transporter';
 
   return (
     <SidebarProvider>
@@ -214,9 +216,9 @@ function AccountPageContent() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="My Shop" isActive={activeView === 'shop'} onClick={() => navigate('shop')}>
+                <SidebarMenuButton tooltip={isTransporter ? "Service Profile" : "My Shop"} isActive={activeView === 'shop'} onClick={() => navigate('shop')}>
                   <Store />
-                  <span>My Shop</span>
+                  <span>{isTransporter ? "Service Profile" : "My Shop"}</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
                <SidebarMenuItem>

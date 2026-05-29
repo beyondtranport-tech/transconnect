@@ -1,10 +1,9 @@
-
 'use client';
 
 import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection } from '@/firebase';
 import { useConfig } from '@/hooks/use-config';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Star, Award, Gift, HeartHandshake, User, Store, Package, Search, Video, Building, Truck, Users, CheckCircle, Zap } from 'lucide-react';
+import { Loader2, Star, Award, Gift, HeartHandshake, User, Store, Package, Search, Video, Building, Truck, Users, CheckCircle, Zap, Map } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { doc, collection } from 'firebase/firestore';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -31,7 +30,6 @@ export default function ActionsPlanPage() {
 
     const { data: companyData, isLoading: isCompanyLoading } = useDoc(companyDocRef);
 
-    // Fetch products to check if at least one has been added
     const productsQuery = useMemoFirebase(() => {
         if (!firestore || !companyData?.shopId) return null;
         return collection(firestore, `companies/${companyData.id}/shops/${companyData.shopId}/products`);
@@ -40,27 +38,29 @@ export default function ActionsPlanPage() {
 
     const isLoading = isUserLoading || isUserDocLoading || isCompanyLoading || isSettingsLoading || areProductsLoading;
     
+    const isTransporter = companyData?.shopType === 'transporter';
+
     const earningActions = useMemo(() => [
         { 
             points: loyaltySettings?.userSignupPoints, 
             name: 'Sign up for an account', 
             icon: User, 
-            isCompleted: true, // Always completed if viewing this page
+            isCompleted: true,
             cta: { label: 'Completed!', href: '#', disabled: true } 
         },
         { 
-            points: loyaltySettings?.shopCreationPoints, 
-            name: 'Create a Vendor Shop', 
+            points: loyaltySettings?.shopCreationPoints || loyaltySettings?.serviceProfileCreationPoints, 
+            name: isTransporter ? 'Create a Service Profile' : 'Create a Vendor Shop', 
             icon: Store, 
             isCompleted: !!companyData?.shopId,
-            cta: { label: 'Create Shop', href: '/account?view=shop' } 
+            cta: { label: isTransporter ? 'Create Profile' : 'Create Shop', href: '/account?view=shop' } 
         },
         { 
-            points: loyaltySettings?.productAddPoints, 
-            name: 'Add a Product to your Shop', 
-            icon: Package, 
+            points: loyaltySettings?.productAddPoints || loyaltySettings?.routeListingPoints, 
+            name: isTransporter ? 'List a Service Route/Rate' : 'Add a Product to your Shop', 
+            icon: isTransporter ? Map : Package, 
             isCompleted: (products?.length || 0) > 0,
-            cta: { label: 'Add Product', href: '/account?view=shop' } 
+            cta: { label: isTransporter ? 'Add Route' : 'Add Product', href: '/account?view=shop' } 
         },
         { 
             points: loyaltySettings?.loadBoardCreationPoints,
@@ -73,7 +73,7 @@ export default function ActionsPlanPage() {
             points: loyaltySettings?.truckContributionPoints, 
             name: 'Contribute Truck/Trailer Data', 
             icon: Truck, 
-            isCompleted: false, // Cannot easily track this yet
+            isCompleted: false, 
             cta: { label: 'Contribute', href: '/contribute' } 
         },
         { 
@@ -111,7 +111,7 @@ export default function ActionsPlanPage() {
             isCompleted: false,
             cta: { label: 'Go to My Shop', href: '/account?view=shop' } 
         },
-    ], [loyaltySettings, companyData, products]);
+    ], [loyaltySettings, companyData, products, isTransporter]);
 
 
     return (
@@ -119,7 +119,7 @@ export default function ActionsPlanPage() {
             <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-2xl"><Zap /> Actions Plan</CardTitle>
                 <CardDescription>
-                    This is your action hub. Complete these tasks to earn loyalty points, climb the loyalty tiers, and unlock powerful rewards and benefits for your business.
+                    Complete these tasks to earn loyalty points, climb the loyalty tiers, and unlock rewards for your business.
                 </CardDescription>
                 <p className="text-sm text-muted-foreground pt-1">
                     See your current points on your <Link href="/account?view=rewards" className="font-semibold text-primary hover:underline">rewards dashboard</Link>.
@@ -141,7 +141,7 @@ export default function ActionsPlanPage() {
                         </TableHeader>
                         <TableBody>
                             {earningActions.map((action) => {
-                                if (!action.points) return null; // Don't render if points are 0 or not set
+                                if (!action.points) return null; 
                                 const Icon = action.icon;
                                 return (
                                     <TableRow key={action.name}>
