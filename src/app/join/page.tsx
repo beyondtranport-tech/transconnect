@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, Suspense, useEffect, useMemo } from 'react';
@@ -36,6 +35,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Eye, EyeOff, Lock } from 'lucide-react';
 import { roles } from '@/lib/roles';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
 
 const formSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
@@ -159,6 +159,7 @@ function JoinFormComponent() {
 
   if (!selectedPosition) {
       return (
+          <div className="container mx-auto flex min-h-[calc(100vh-8rem)] items-center justify-center px-4 py-16">
           <Card className="w-full max-w-2xl">
             <CardHeader className="text-center">
                 <CardTitle className="text-3xl font-bold">Choose Your Position</CardTitle>
@@ -166,8 +167,8 @@ function JoinFormComponent() {
             </CardHeader>
             <CardContent>
                 <ScrollArea className="h-[50vh] pr-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {roles.filter(r => r.id !== 'isa-agent').map((role) => {
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-4">
+                        {roles.map((role) => {
                             const Icon = role.icon;
                             return (
                                 <Button 
@@ -188,6 +189,7 @@ function JoinFormComponent() {
                 </ScrollArea>
             </CardContent>
           </Card>
+          </div>
       )
   }
 
