@@ -7,7 +7,7 @@ import { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
-import { copyHtmlToClipboard } from '@/lib/utils';
+import { copyHtmlToClipboard, cn } from '@/lib/utils';
 import {
   Dialog,
   DialogContent,
@@ -252,7 +252,7 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
                 <TabsTrigger value="revenue-model">Revenue</TabsTrigger>
                 <TabsTrigger value="offer">The Offer</TabsTrigger>
                 <TabsTrigger value="pitch">The Pitch</TabsTrigger>
-                <TabsTrigger value="framework">Framework</TabsTrigger>
+                <TabsTrigger value="framework">The Framework</TabsTrigger>
                 <TabsTrigger value="emails">Emails</TabsTrigger>
             </TabsList>
 
