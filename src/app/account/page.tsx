@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -173,7 +174,8 @@ function AccountPageContent() {
   const isSalesActive = ['network', 'performance', 'offer', 'emails'].includes(activeView);
   const isConnectActive = ['connect-loyalty', 'connect-rewards', 'connect-actions'].includes(activeView);
   
-  const isTransporter = user.companyData?.shopType === 'transporter';
+  // Robust check for transporter role
+  const isTransporter = user.declaredPosition === 'transporter' || user.companyData?.shopType === 'transporter';
 
   return (
     <SidebarProvider>
@@ -197,6 +199,15 @@ function AccountPageContent() {
                   <span>Dashboard</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
+              
+              {/* Commercial Profile Link: Dynamic Rebranding */}
+              <SidebarMenuItem>
+                <SidebarMenuButton tooltip={isTransporter ? "Service Profile (Shop)" : "My Shop"} isActive={activeView === 'shop'} onClick={() => navigate('shop')}>
+                  <Store />
+                  <span>{isTransporter ? "Service Profile (Shop)" : "My Shop"}</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
               <SidebarMenuItem>
                 <SidebarMenuButton tooltip="My Profile" isActive={activeView === 'profile'} onClick={() => navigate('profile')}>
                   <User />
@@ -215,12 +226,7 @@ function AccountPageContent() {
                   <span>Company Staff</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton tooltip={isTransporter ? "Service Profile" : "My Shop"} isActive={activeView === 'shop'} onClick={() => navigate('shop')}>
-                  <Store />
-                  <span>{isTransporter ? "Service Profile" : "My Shop"}</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+
                <SidebarMenuItem>
                 <SidebarMenuButton tooltip="My Load Board" isActive={activeView === 'load-board'} onClick={() => navigate('load-board')}>
                   <Truck />

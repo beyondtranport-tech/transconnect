@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
@@ -145,7 +146,7 @@ export default function ShopContent() {
 
   const canCreateShop = can('create', 'shop');
   const shopExists = !!companyData?.shopId;
-  const isTransporter = companyData?.shopType === 'transporter';
+  const isTransporter = user.declaredPosition === 'transporter' || companyData?.shopType === 'transporter';
 
   const shopStatus = userShop?.status || 'draft';
 
