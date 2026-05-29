@@ -7,7 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
   Loader2, PlusCircle, Building, Edit, Trash2, Send, CheckCircle, Users, Mail, Filter, Save, 
-  Search, Zap, RotateCcw, XCircle, Info, Sparkles, AlertCircle, Download, Copy, ShieldCheck, Tag, Clock
+  Search, Zap, RotateCcw, XCircle, Info, Sparkles, AlertCircle, Download, Copy, ShieldCheck, Tag, Clock, SearchCode
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
@@ -33,6 +33,7 @@ import { BulkImportDialog } from './BulkImportDialog';
 import { BulkOutreachUpdateDialog } from './BulkOutreachUpdateDialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import Link from 'next/link';
 
 const supplierCategories = [
     "Accessories", 
@@ -589,6 +590,11 @@ export default function SupplierManagement() {
                 <CardDescription>Targeted outreach library for building the supplier ecosystem.</CardDescription>
             </div>
             <div className="flex flex-wrap items-center gap-2">
+                <Button variant="outline" size="sm" asChild>
+                    <Link href="/adminaccount?view=marketing-suppliers&subview=discovery">
+                        <SearchCode className="mr-2 h-4 w-4" /> Discovery Mode
+                    </Link>
+                </Button>
                 <Button variant="outline" size="sm" onClick={handleResetQueue} disabled={isResetting}>
                     <RotateCcw className="mr-2 h-4 w-4" /> Reset Queue
                 </Button>

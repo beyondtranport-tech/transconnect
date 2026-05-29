@@ -2,8 +2,8 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { BookOpen, Loader2, ClipboardCopy } from 'lucide-react';
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { BookOpen, Loader2, ClipboardCopy, SearchCode } from 'lucide-react';
+import { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
@@ -29,6 +29,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Textarea } from '@/components/ui/textarea';
+import { useSearchParams } from 'next/navigation';
 
 // Content components
 import CompanyProfile from './content/CompanyProfile';
@@ -58,6 +59,8 @@ import InvestorManagement from './investor-management';
 import DeveloperManagement from './developer-management';
 import SupplierManagement from './supplier-management';
 import TransporterManagement from './transporter-management';
+
+import SupplierPitch from '@/app/adminaccount/supplier-pitch';
 
 const audienceConfig = {
     partners: { title: 'Strategic Partners', Offer: PartnerOffer, Emails: PartnerEmails, Management: PartnerManagement },
@@ -159,10 +162,13 @@ function LogAndCopyDialog({ open, onOpenChange, partners, isLoadingPartners, act
     )
 }
 
-export default function MarketingPage({ audience }: MarketingPageProps) {
+function MarketingPageContent({ audience }: MarketingPageProps) {
   const config = audienceConfig[audience];
   const { Offer, Emails, Management } = config;
-  const [activeTab, setActiveTab] = useState('company-profile');
+  const searchParams = useSearchParams();
+  const initialTab = searchParams.get('subview') === 'discovery' ? 'discovery' : (Management ? 'management' : 'company-profile');
+  
+  const [activeTab, setActiveTab] = useState(initialTab);
   const { toast } = useToast();
   
   const [isLogDialogOpen, setIsLogDialogOpen] = useState(false);
@@ -225,14 +231,22 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
                     <p className="text-muted-foreground">Manage leads and browse engagement materials.</p>
                 </div>
             </div>
-            <Button variant="outline" onClick={() => setIsLogDialogOpen(true)} disabled={isLoadingPartners || (partners.length === 0 && !!Management)}>
-                <ClipboardCopy className="mr-2 h-4 w-4" /> Log & Copy Content
-            </Button>
+            <div className="flex items-center gap-2">
+                 {audience === 'suppliers' && (
+                    <Button variant="outline" onClick={() => setActiveTab('discovery')} className={cn(activeTab === 'discovery' && "bg-muted")}>
+                        <SearchCode className="mr-2 h-4 w-4" /> Discovery Mode
+                    </Button>
+                 )}
+                <Button variant="outline" onClick={() => setIsLogDialogOpen(true)} disabled={isLoadingPartners || (partners.length === 0 && !!Management)}>
+                    <ClipboardCopy className="mr-2 h-4 w-4" /> Log & Copy Content
+                </Button>
+            </div>
         </div>
 
-        <Tabs defaultValue="company-profile" className="w-full" onValueChange={setActiveTab}>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="h-auto flex-wrap justify-start bg-muted p-1">
                 {Management && <TabsTrigger value="management">Management & CRM</TabsTrigger>}
+                {audience === 'suppliers' && <TabsTrigger value="discovery">AI Discovery Mode</TabsTrigger>}
                 <TabsTrigger value="company-profile">Profile</TabsTrigger>
                 <TabsTrigger value="tech-architecture">Tech</TabsTrigger>
                 <TabsTrigger value="revenue-model">Revenue</TabsTrigger>
@@ -244,6 +258,7 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
 
             <div className="mt-6">
                 <TabsContent value="management"><div id="tab-content-management"><Management /></div></TabsContent>
+                <TabsContent value="discovery"><div id="tab-content-discovery"><SupplierPitch /></div></TabsContent>
                 <TabsContent value="company-profile"><div id="tab-content-company-profile"><CompanyProfile audience={audience} /></div></TabsContent>
                 <TabsContent value="tech-architecture"><div id="tab-content-tech-architecture"><TechArchitecture /></div></TabsContent>
                 <TabsContent value="revenue-model"><div id="tab-content-revenue-model"><RevenueModel /></div></TabsContent>
@@ -255,4 +270,12 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
         </Tabs>
     </div>
   );
+}
+
+export default function MarketingPage({ audience }: MarketingPageProps) {
+    return (
+        <Suspense fallback={<Loader2 className="animate-spin h-10 w-10 text-primary mx-auto my-20"/>}>
+            <MarketingPageContent audience={audience} />
+        </Suspense>
+    )
 }
