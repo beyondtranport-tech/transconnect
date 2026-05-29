@@ -4,10 +4,10 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { ArrowRight, PlusCircle, Sparkles, Copy, ClipboardCheck, Info, Search, Terminal, SearchCode } from "lucide-react";
+import { ArrowRight, PlusCircle, Sparkles, Copy, ClipboardCheck, Info, Search, Terminal, SearchCode, MapPin } from "lucide-react";
 import Link from "next/link";
 import * as React from "react";
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -40,48 +40,66 @@ const supplierCategories = [
     "Tyres"
 ];
 
-function generateDiscoveryPrompt(category: string) {
+const industrialHubs = [
+    "Aeroton (GP)", "Airport Industria (WC)", "Alrode (GP)", "City Deep (GP)", "Epping (WC)", 
+    "Germiston (GP)", "Isando (GP)", "Jet Park (GP)", "Longmeadow (GP)", "Middelburg (MP)", 
+    "Midrand (GP)", "Mobeni (KZN)", "Montague Gardens (WC)", "New Germany (KZN)", "Paarden Eiland (WC)", 
+    "Pinetown (KZN)", "Prospecton (KZN)", "Robertville (GP)", "Spartan (GP)", "Stikland (WC)", 
+    "Struandale (EC)", "Sunderland Ridge (GP)", "Wadeville (GP)", "Westmead (KZN)"
+];
+
+function generateDiscoveryPrompt(category: string, focusHubs: string[]) {
     return `CRITICAL SYSTEM INSTRUCTION: RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION. NO EXPLANATORY TEXT.
 
 ACT AS AN ELITE MARKET INTELLIGENCE AGENT. 
 
-TASK: Discover and extract detailed verified records for 100 prominent businesses in SOUTH AFRICA that specialize in the industrial category: "${category}".
+TASK: Discover and extract detailed verified records for 100 DIFFERENT AND UNIQUE businesses in SOUTH AFRICA that specialize in the industrial category: "${category}".
 
-INVESTIGATIVE STRATEGY (HUMAN IDENTITY FOCUS):
-1. HUMAN IDENTITY IS MANDATORY: Your primary mission is to find the ACTUAL FULL NAME (First and Last) of the CEO, Managing Director, or Owner for each business.
-2. FORBIDDEN VALUES: Returning "The Director", "The Manager", "Managing Director", "CEO", "Owner", or "Unknown" is a failure. You MUST hunt LinkedIn profiles, CIPC records, or official "About" pages to find a specific human name (e.g., "Sipho Nkosi").
-3. PROACTIVE CONTACT SEARCH: Identify the corporate email domain. Prioritize "info@", "sales@", or "admin@" formats for the company, and provide a valid South African phone number.
-4. PHYSICAL VERIFICATION: Provide the full verifiable street address in South Africa.
-5. CATEGORY CLASSIFICATION: You MUST include the field "industrial_category" with the exact value "${category}" for every record.
-6. UNIQUE IDENTIFIERS: You MUST generate a unique, varied "record_id" for EVERY business. Do NOT use the same ID twice. Format: "DISCOVERY_${category.toUpperCase().replace(/\s/g, '_')}_[UNIQUE_RANDOM_STRING]".
+GEOGRAPHIC FOCUS: Your primary investigation area for this run is: ${focusHubs.join(', ')}.
+
+INVESTIGATIVE STRATEGY:
+1. VARIETY COMMAND: Do NOT return major national chains or franchises that dominate top-level search results. Focus on high-performing independent specialists, regional powerhouses, and heavy-duty industrial providers located in ${focusHubs[0]} and surrounding areas.
+2. HUMAN IDENTITY IS MANDATORY: Your primary mission is to find the ACTUAL FULL NAME (First and Last) of the CEO, Managing Director, or Owner for each business.
+3. FORBIDDEN VALUES: Returning "The Director", "The Manager", "Managing Director", "CEO", "Owner", or "Unknown" is a failure. You MUST hunt LinkedIn profiles, official "About" pages, or news releases to find a specific human name (e.g., "Sipho Nkosi").
+4. PROACTIVE CONTACT SEARCH: Identify the corporate email domain. Prioritize "info@", "sales@", or "admin@" formats for the company, and provide a valid South African phone number.
+5. PHYSICAL VERIFICATION: Provide the full verifiable street address in South Africa, ensuring it corresponds to the ${focusHubs[1]} or ${focusHubs[2]} regions where possible.
+6. CATEGORY CLASSIFICATION: You MUST include the field "industrial_category" with the exact value "${category}" for every record.
+7. UNIQUE IDENTIFIERS: You MUST generate a unique, randomized "record_id" for EVERY business. Format: "DISCOVERY_${category.toUpperCase().replace(/\s/g, '_')}_[RANDOM_5_CHAR_ALPHANUMERIC]".
 
 REQUIRED OUTPUT FORMAT (RAW JSON ARRAY ONLY):
 [
   {
-    "record_id": "DISCOVERY_${category.toUpperCase().replace(/\s/g, '_')}_[MUST_BE_UNIQUE_FOR_EVERY_ITEM]",
+    "record_id": "DISCOVERY_${category.toUpperCase().replace(/\s/g, '_')}_XJ92K",
     "company_name": "Exact Registered Name",
     "industrial_category": "${category}",
     "contact_person": "ACTUAL HUMAN FULL NAME (MANDATORY)",
     "email_address": "Verified Email",
     "telephone_number": "South African Format Phone",
     "website": "URL",
-    "physical_address": "Full Street Address, City, Province"
+    "physical_address": "Full Street Address, Suburb, City, Province"
   }
 ]
 
-HUNTING GROUNDS: Search top-tier South African business directories and social proofing platforms to ensure these are high-performing, active entities.`;
+HUNTING GROUNDS: Prioritize LinkedIn Company Pages, South African specialized business directories, and verified industry association lists.`;
 }
 
 const DiscoveryTab = ({ category }: { category: string }) => {
     const { toast } = useToast();
     const [isCopied, setIsCopied] = useState(false);
-    const prompt = generateDiscoveryPrompt(category);
+    
+    // Pick 3 random hubs to force variety in each category prompt
+    const randomHubs = useMemo(() => {
+        const shuffled = [...industrialHubs].sort(() => 0.5 - Math.random());
+        return shuffled.slice(0, 3);
+    }, [category]); // Re-calculate when category changes
+
+    const prompt = generateDiscoveryPrompt(category, randomHubs);
 
     const handleCopy = async () => {
         try {
             await navigator.clipboard.writeText(prompt);
             setIsCopied(true);
-            toast({ title: "Forensic Prompt Copied!", description: "Paste this into Google AI Studio to find 100 specialized leads." });
+            toast({ title: "Forensic Prompt Copied!", description: `Focusing on ${randomHubs.join(', ')}. Paste this into AI Studio.` });
             setTimeout(() => setIsCopied(false), 3000);
         } catch (e) {
             toast({ variant: 'destructive', title: "Copy Failed" });
@@ -100,13 +118,19 @@ const DiscoveryTab = ({ category }: { category: string }) => {
                         Use this forensic-tuned prompt to bypass generic titles and find the actual human leadership of 100 South African suppliers in the <strong>{category}</strong> sector.
                     </p>
                     
-                    <Alert className="bg-primary/5 border-primary/20">
+                    <div className="p-3 bg-primary/10 rounded-lg border border-primary/20 flex items-center gap-3">
+                        <MapPin className="h-5 w-5 text-primary shrink-0" />
+                        <div className="text-xs">
+                            <span className="font-bold text-primary uppercase">Current Geographic Focus:</span>
+                            <p className="font-semibold text-foreground mt-0.5">{randomHubs.join(' • ')}</p>
+                        </div>
+                    </div>
+
+                    <Alert className="bg-muted/50 border-muted">
                         <Info className="h-4 w-4 text-primary" />
-                        <AlertTitle>Discovery Workflow</AlertTitle>
+                        <AlertTitle>Preventing Duplicates</AlertTitle>
                         <AlertDescription className="text-xs space-y-2">
-                            <p>1. Copy the 100-record forensic prompt below.</p>
-                            <p>2. Paste into <strong>Google AI Studio</strong> (Gemini 1.5 Pro recommended for names).</p>
-                            <p>3. Use the <strong>Bulk Import</strong> tool in the Supplier Database to add the results.</p>
+                            <p>This prompt is randomized to focus on specific industrial suburbs. Every time you refresh this page, the focus areas change, ensuring the AI finds <strong>new</strong> businesses for your database.</p>
                         </AlertDescription>
                     </Alert>
 
@@ -163,7 +187,7 @@ export default function DiscoveryEngine() {
                         AI Discovery Engine
                     </CardTitle>
                     <CardDescription>
-                        Generate tailored market intelligence prompts to find up to 100 specialized leads per run.
+                        Generate tailored market intelligence prompts using <strong>Geographic Hub Rotation</strong> to find up to 100 unique specialized leads per run.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="px-0">
