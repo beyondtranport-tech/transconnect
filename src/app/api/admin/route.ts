@@ -130,7 +130,6 @@ export async function POST(req: NextRequest) {
 
         switch (action) {
             case 'getMembers': {
-                // FETCH: Companies (Live), Users (Identities), and engaged Leads (Funnel Successes)
                 const [companiesSnap, usersSnap, leadsSnap, partnersSnap] = await Promise.all([
                     db.collection('companies').get(),
                     db.collection('users').get(),
@@ -156,8 +155,6 @@ export async function POST(req: NextRequest) {
                     };
                 });
 
-                // PROVISIONAL MEMBERS: Leads that reached the success stage but haven't signed up yet
-                // Use a map to merge leads and partners uniquely by ID
                 const engagedMap = new Map();
                 [...leadsSnap.docs, ...partnersSnap.docs].forEach(doc => {
                     if (!companyLeadIds.has(doc.id)) {
@@ -166,23 +163,125 @@ export async function POST(req: NextRequest) {
                 });
 
                 const engagedLeads = Array.from(engagedMap.entries()).map(([id, rawLead]) => {
-                        const lead = normalizePartnerData(rawLead);
-                        return {
-                            id: id,
-                            ...serializeTimestamps(rawLead),
-                            companyName: lead.companyName || 'Provisional Co.',
-                            firstName: lead.firstName || 'Member',
-                            lastName: lead.lastName || '(Lead)',
-                            email: lead.email || 'N/A',
-                            membershipId: 'free',
-                            status: rawLead.status || 'new',
-                            source: 'AI Funnel Success',
-                            leadId: id,
-                            provisional: true
-                        };
-                    });
+                    const lead = normalizePartnerData(rawLead);
+                    return {
+                        id: id,
+                        ...serializeTimestamps(rawLead),
+                        companyName: lead.companyName || 'Provisional Co.',
+                        firstName: lead.firstName || 'Member',
+                        lastName: lead.lastName || '(Lead)',
+                        email: lead.email || 'N/A',
+                        membershipId: 'free',
+                        status: rawLead.status || 'new',
+                        source: 'AI Funnel Success',
+                        leadId: id,
+                        provisional: true
+                    };
+                });
 
                 return NextResponse.json({ success: true, data: [...liveMembers, ...engagedLeads] });
+            }
+
+            case 'getContributions': {
+                const snap = await db.collection('contributions').get();
+                return NextResponse.json({ 
+                    success: true, 
+                    data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) 
+                });
+            }
+
+            case 'getShops': {
+                const snap = await db.collectionGroup('shops').get();
+                return NextResponse.json({ 
+                    success: true, 
+                    data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) 
+                });
+            }
+
+            case 'getWalletTransactions': {
+                const snap = await db.collectionGroup('transactions').orderBy('date', 'desc').limit(200).get();
+                return NextResponse.json({ 
+                    success: true, 
+                    data: snap.docs.map(d => {
+                        const data = d.data();
+                        const pathSegments = d.ref.path.split('/');
+                        return { id: d.id, companyId: pathSegments[1], ...serializeTimestamps(data) };
+                    }) 
+                });
+            }
+
+            case 'getWalletPayments': {
+                const snap = await db.collectionGroup('walletPayments').orderBy('createdAt', 'desc').get();
+                return NextResponse.json({ 
+                    success: true, 
+                    data: snap.docs.map(d => {
+                        const data = d.data();
+                        const pathSegments = d.ref.path.split('/');
+                        return { id: d.id, companyId: pathSegments[1], ...serializeTimestamps(data) };
+                    }) 
+                });
+            }
+
+            case 'approveWalletPayment': {
+                const { companyId, paymentId, amount, description, reconciliationId } = payload;
+                const companyRef = db.collection('companies').doc(companyId);
+                const paymentRef = db.collection(`companies/${companyId}/walletPayments`).doc(paymentId);
+                
+                await db.runTransaction(async (transaction) => {
+                    transaction.update(companyRef, {
+                        walletBalance: FieldValue.increment(amount),
+                        availableBalance: FieldValue.increment(amount),
+                        updatedAt: FieldValue.serverTimestamp()
+                    });
+
+                    const txRef = db.collection(`companies/${companyId}/transactions`).doc();
+                    transaction.set(txRef, {
+                        transactionId: txRef.id,
+                        type: 'credit',
+                        amount,
+                        description,
+                        reconciliationId,
+                        date: FieldValue.serverTimestamp(),
+                        status: 'allocated',
+                        postedBy: decodedToken.uid
+                    });
+
+                    transaction.delete(paymentRef);
+                });
+                return NextResponse.json({ success: true });
+            }
+
+            case 'approvePayout': {
+                const { companyId, payoutId, amount } = payload;
+                const companyRef = db.collection('companies').doc(companyId);
+                const payoutRef = db.collection(`companies/${companyId}/payoutRequests`).doc(payoutId);
+                
+                await db.runTransaction(async (transaction) => {
+                    transaction.update(companyRef, {
+                        walletBalance: FieldValue.increment(-amount),
+                        availableBalance: FieldValue.increment(-amount),
+                        updatedAt: FieldValue.serverTimestamp()
+                    });
+                    transaction.update(payoutRef, { status: 'approved', processedAt: FieldValue.serverTimestamp() });
+                });
+                return NextResponse.json({ success: true });
+            }
+
+            case 'rejectPayout': {
+                const { companyId, payoutId } = payload;
+                await db.collection(`companies/${companyId}/payoutRequests`).doc(payoutId).update({ 
+                    status: 'rejected', 
+                    updatedAt: FieldValue.serverTimestamp() 
+                });
+                return NextResponse.json({ success: true });
+            }
+
+            case 'getPendingAgreements': {
+                const snap = await db.collectionGroup('agreements').where('status', '==', 'proposed').get();
+                return NextResponse.json({ 
+                    success: true, 
+                    data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) 
+                });
             }
 
             case 'getPartnersByType': {
