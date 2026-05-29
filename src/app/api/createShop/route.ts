@@ -33,20 +33,21 @@ export async function POST(req: NextRequest) {
         }
         const companyId = userData.companyId;
         const companyRef = db.collection('companies').doc(companyId);
-        
+        const companyDoc = await companyRef.get();
+        const companyData = companyDoc.data();
+
         // Fetch loyalty settings for shop creation points
         const loyaltyConfigDoc = await db.collection('configuration').doc('loyaltySettings').get();
-        const shopCreationPoints = loyaltyConfigDoc.data()?.shopCreationPoints || 100; // Default to 100
-
+        const shopCreationPoints = loyaltyConfigDoc.data()?.shopCreationPoints || 100;
 
         const shopCollectionRef = companyRef.collection('shops');
-        
         const newShopRef = shopCollectionRef.doc();
 
         const newShopData = {
           ownerId: uid,
           companyId: companyId,
           status: 'draft',
+          shopType: companyData?.shopType || 'vendor', // Ensure shopType is carried over
           shopName: `${decodedToken.name || 'My'}'s New Shop`,
           category: '',
           createdAt: FieldValue.serverTimestamp(),
@@ -58,7 +59,7 @@ export async function POST(req: NextRequest) {
         batch.set(newShopRef, newShopData);
         batch.update(companyRef, { 
             shopId: newShopRef.id,
-            rewardPoints: FieldValue.increment(shopCreationPoints) // Award points for creating a shop
+            rewardPoints: FieldValue.increment(shopCreationPoints)
         });
         await batch.commit();
 
