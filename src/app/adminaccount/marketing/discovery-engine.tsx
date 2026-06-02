@@ -51,20 +51,20 @@ const industrialHubs = [
 function generateDiscoveryPrompt(category: string, focusHubs: string[]) {
     return `CRITICAL SYSTEM INSTRUCTION: RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION. NO EXPLANATORY TEXT.
 
-ACT AS AN ELITE MARKET INTELLIGENCE AGENT. 
+ACT AS AN ELITE MARKET INTELLIGENCE AGENT IN SOUTH AFRICA. 
 
-TASK: Discover and extract detailed verified records for 100 DIFFERENT AND UNIQUE businesses in SOUTH AFRICA that specialize in the industrial category: "${category}".
+TASK: Discover and extract detailed verified records for 100 DIFFERENT AND UNIQUE businesses in SOUTH AFRICA that specialize in: "${category}".
 
-GEOGRAPHIC FOCUS: Your primary investigation area for this run is: ${focusHubs.join(', ')}.
+GEOGRAPHIC FOCUS: Your primary investigation area for this specific search run is: ${focusHubs.join(', ')}.
 
 INVESTIGATIVE STRATEGY:
-1. VARIETY COMMAND: Do NOT return major national chains or franchises that dominate top-level search results. Focus on high-performing independent specialists, regional powerhouses, and heavy-duty industrial providers located in ${focusHubs[0]} and surrounding areas.
-2. HUMAN IDENTITY IS MANDATORY: Your primary mission is to find the ACTUAL FULL NAME (First and Last) of the CEO, Managing Director, or Owner for each business.
-3. FORBIDDEN VALUES: Returning "The Director", "The Manager", "Managing Director", "CEO", "Owner", or "Unknown" is a failure. You MUST hunt LinkedIn profiles, official "About" pages, or news releases to find a specific human name (e.g., "Sipho Nkosi").
-4. PROACTIVE CONTACT SEARCH: Identify the corporate email domain. Prioritize "info@", "sales@", or "admin@" formats for the company, and provide a valid South African phone number.
-5. PHYSICAL VERIFICATION: Provide the full verifiable street address in South Africa, ensuring it corresponds to the ${focusHubs[1]} or ${focusHubs[2]} regions where possible.
-6. CATEGORY CLASSIFICATION: You MUST include the field "industrial_category" with the exact value "${category}" for every record.
-7. UNIQUE IDENTIFIERS: You MUST generate a unique, randomized "record_id" for EVERY business. Format: "DISCOVERY_${category.toUpperCase().replace(/\s/g, '_')}_[RANDOM_5_CHAR_ALPHANUMERIC]".
+1. VARIETY COMMAND: Do NOT return major national chains or franchises. We are hunting for regional powerhouses, heavy-duty specialists, and niche industrial providers located within the hubs of ${focusHubs[0]} and surrounding areas.
+2. HUMAN IDENTITY FORENSICS: Your primary mission is to identify a SPECIFIC HUMAN BEING in leadership. You MUST find the ACTUAL NAME (First and Last) of the CEO, Managing Director, or Owner. 
+3. FORBIDDEN VALUES: Returning "The Director", "Manager", "CEO", "Owner", or "Unknown" is a total failure. You MUST hunt LinkedIn profiles and official "About" pages to extract a real name (e.g. "Sipho Nkosi").
+4. PROACTIVE CONTACT SEARCH: Identify the corporate email domain. Prioritize "info@", "sales@", or "admin@" formats, and provide a valid local phone number.
+5. PHYSICAL VERIFICATION: Provide the full verifiable street address in South Africa, ensuring it corresponds to the ${focusHubs[1]} or ${focusHubs[2]} regions.
+6. CATEGORY MAPPING: You MUST include the field "industrial_category" with the exact value "${category}" for every record.
+7. UNIQUE IDENTIFIERS: You MUST generate a unique, randomized "record_id" for EVERY business to prevent database overwrites. Format: "DISCOVERY_${category.toUpperCase().replace(/\s/g, '_')}_[RANDOM_5_CHAR_ALPHANUMERIC]".
 
 REQUIRED OUTPUT FORMAT (RAW JSON ARRAY ONLY):
 [
@@ -74,24 +74,23 @@ REQUIRED OUTPUT FORMAT (RAW JSON ARRAY ONLY):
     "industrial_category": "${category}",
     "contact_person": "ACTUAL HUMAN FULL NAME (MANDATORY)",
     "email_address": "Verified Email",
-    "telephone_number": "South African Format Phone",
+    "telephone_number": "Phone Number",
     "website": "URL",
     "physical_address": "Full Street Address, Suburb, City, Province"
   }
 ]
 
-HUNTING GROUNDS: Prioritize LinkedIn Company Pages, South African specialized business directories, and verified industry association lists.`;
+HUNTING GROUNDS: Search LinkedIn Business Pages, Yellow Pages South Africa, Brabys, and local industrial zone registries.`;
 }
 
 const DiscoveryTab = ({ category }: { category: string }) => {
     const { toast } = useToast();
     const [isCopied, setIsCopied] = useState(false);
     
-    // Pick 3 random hubs to force variety in each category prompt
     const randomHubs = useMemo(() => {
         const shuffled = [...industrialHubs].sort(() => 0.5 - Math.random());
         return shuffled.slice(0, 3);
-    }, [category]); // Re-calculate when category changes
+    }, [category]);
 
     const prompt = generateDiscoveryPrompt(category, randomHubs);
 
@@ -99,7 +98,7 @@ const DiscoveryTab = ({ category }: { category: string }) => {
         try {
             await navigator.clipboard.writeText(prompt);
             setIsCopied(true);
-            toast({ title: "Forensic Prompt Copied!", description: `Focusing on ${randomHubs.join(', ')}. Paste this into AI Studio.` });
+            toast({ title: "Forensic Prompt Copied!", description: `Focused on ${randomHubs.join(', ')}. Paste this into AI Studio.` });
             setTimeout(() => setIsCopied(false), 3000);
         } catch (e) {
             toast({ variant: 'destructive', title: "Copy Failed" });
@@ -112,7 +111,7 @@ const DiscoveryTab = ({ category }: { category: string }) => {
                 <div className="space-y-4">
                     <h2 className="text-2xl font-bold font-headline flex items-center gap-2">
                         <Search className="h-6 w-6 text-primary" />
-                        Lead Discovery: {category}
+                        Discovery Hub: {category}
                     </h2>
                     <p className="text-muted-foreground leading-relaxed text-sm">
                         Use this forensic-tuned prompt to bypass generic titles and find the actual human leadership of 100 South African suppliers in the <strong>{category}</strong> sector.
@@ -121,16 +120,16 @@ const DiscoveryTab = ({ category }: { category: string }) => {
                     <div className="p-3 bg-primary/10 rounded-lg border border-primary/20 flex items-center gap-3">
                         <MapPin className="h-5 w-5 text-primary shrink-0" />
                         <div className="text-xs">
-                            <span className="font-bold text-primary uppercase">Current Geographic Focus:</span>
+                            <span className="font-bold text-primary uppercase">Geographic Rotation:</span>
                             <p className="font-semibold text-foreground mt-0.5">{randomHubs.join(' • ')}</p>
                         </div>
                     </div>
 
                     <Alert className="bg-muted/50 border-muted">
                         <Info className="h-4 w-4 text-primary" />
-                        <AlertTitle>Preventing Duplicates</AlertTitle>
+                        <AlertTitle>Unique Discovery Session</AlertTitle>
                         <AlertDescription className="text-xs space-y-2">
-                            <p>This prompt is randomized to focus on specific industrial suburbs. Every time you refresh this page, the focus areas change, ensuring the AI finds <strong>new</strong> businesses for your database.</p>
+                            <p>Every search run targets different industrial zones. This prevents the AI from repeating the same top-tier results and ensures your database reaches 1,000+ unique records efficiently.</p>
                         </AlertDescription>
                     </Alert>
 
@@ -150,11 +149,11 @@ const DiscoveryTab = ({ category }: { category: string }) => {
                 <div className="space-y-2">
                     <div className="flex items-center justify-between">
                          <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
-                            <Terminal className="h-3 w-3"/> AI Discovery Command (100 Records)
+                            <Terminal className="h-3 w-3"/> AI Forensic Command (100 Records)
                         </Label>
-                        <Badge variant="outline" className="text-[10px] uppercase">{category}</Badge>
+                        <Badge variant="outline" className="text-[10px] uppercase font-bold">{category}</Badge>
                     </div>
-                    <ScrollArea className="h-[300px] border rounded-lg bg-slate-900 p-4 shadow-inner">
+                    <ScrollArea className="h-[320px] border rounded-lg bg-slate-900 p-4 shadow-inner">
                         <pre className="text-[11px] text-slate-300 font-mono whitespace-pre-wrap leading-relaxed">
                             {prompt}
                         </pre>
@@ -163,13 +162,13 @@ const DiscoveryTab = ({ category }: { category: string }) => {
             </div>
 
             <div className="bg-muted/30 p-6 rounded-xl text-center space-y-4">
-                 <h3 className="text-lg font-bold">Import Discovered Leads</h3>
+                 <h3 className="text-lg font-bold">Import Extracted Leads</h3>
                  <p className="text-sm text-muted-foreground max-w-xl mx-auto">
-                    Once the AI returns your list of 100 {category} suppliers, head to the database to import them.
+                    Once the AI returns your JSON list, head to the Supplier Management tab to import them into your permanent registry.
                  </p>
                  <Button asChild variant="secondary">
                     <Link href="/adminaccount?view=marketing-suppliers&subview=management">
-                        Go to Supplier Database <ArrowRight className="ml-2 h-4 w-4" />
+                        Open Supplier Registry <ArrowRight className="ml-2 h-4 w-4" />
                     </Link>
                  </Button>
             </div>
@@ -184,10 +183,10 @@ export default function DiscoveryEngine() {
                 <CardHeader className="px-0 pt-0">
                     <CardTitle className="flex items-center gap-2">
                         <SearchCode className="h-6 w-6 text-primary" />
-                        AI Discovery Engine
+                        AI Market Discovery Engine
                     </CardTitle>
                     <CardDescription>
-                        Generate tailored market intelligence prompts using <strong>Geographic Hub Rotation</strong> to find up to 100 unique specialized leads per run.
+                        Generate tailored intelligence prompts with <strong>Geographic Hub Rotation</strong> to discover unique niche suppliers across South Africa.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="px-0">
