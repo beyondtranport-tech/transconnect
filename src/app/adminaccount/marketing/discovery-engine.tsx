@@ -4,7 +4,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { ArrowRight, PlusCircle, Sparkles, Copy, ClipboardCheck, Info, Search, Terminal, SearchCode, MapPin } from "lucide-react";
+import { ArrowRight, PlusCircle, Sparkles, Copy, ClipboardCheck, Info, Search, Terminal, SearchCode, MapPin, ListOrdered } from "lucide-react";
 import Link from "next/link";
 import * as React from "react";
 import { useState, useMemo } from 'react';
@@ -92,24 +92,26 @@ function generateDiscoveryPrompt(category: string, focusHubs: string[]) {
 
 ACT AS AN ELITE MARKET INTELLIGENCE AGENT SPECIALIZING IN THE SOUTH AFRICAN TRANSPORT ECOSYSTEM. 
 
-TASK: Discover and extract detailed verified records for 100 DIFFERENT AND UNIQUE businesses in SOUTH AFRICA that provide: "${category}".
+TASK: Discover and extract detailed verified records for exactly 100 DIFFERENT AND UNIQUE businesses in SOUTH AFRICA that provide: "${category}".
 
 INDUSTRY CONTEXT: These suppliers MUST serve the heavy commercial transport industry. Your search should specifically look for providers of ${technicalFocus}.
 
 GEOGRAPHIC FOCUS: Your primary investigation area for this specific search run is the N1 and N2 corridors, and the Northern industrial zones, specifically focusing on: ${focusHubs.join(', ')}.
 
 INVESTIGATIVE STRATEGY:
-1. VARIETY COMMAND: Do NOT return major national chains, franchises, or retail consumer-grade outlets. We are hunting for independent regional powerhouses, heavy-duty specialists, and niche industrial providers located within the hubs of ${focusHubs[0]} and surrounding transport corridors.
-2. HUMAN IDENTITY FORENSICS: Your primary mission is to identify a SPECIFIC HUMAN BEING in leadership. You MUST find the ACTUAL NAME (First and Last) of the CEO, Managing Director, or Owner. 
-3. FORBIDDEN VALUES: Returning "The Director", "Manager", "CEO", "Owner", or "Unknown" is a total failure. You MUST hunt LinkedIn profiles and official "About" pages to extract a real name (e.g. "Sipho Nkosi").
-4. PROACTIVE CONTACT SEARCH: Identify the corporate email domain. Prioritize "info@", "sales@", or "admin@" formats, and provide a valid local phone number.
-5. PHYSICAL VERIFICATION: Provide the full verifiable street address in South Africa, ensuring it corresponds to the ${focusHubs[1]} or ${focusHubs[2]} regions.
-6. CATEGORY MAPPING: You MUST include the field "industrial_category" with the exact value "${category}" for every record.
-7. UNIQUE IDENTIFIERS: You MUST generate a unique, randomized "record_id" for EVERY business to prevent database overwrites. Format: "DISCOVERY_${category.toUpperCase().replace(/\s/g, '_')}_[RANDOM_5_CHAR_ALPHANUMERIC]".
+1. QUANTITY COMMAND: You are commanded to return 100 records. Number every record in the "discovery_sequence" field from 1 to 100.
+2. VARIETY COMMAND: Do NOT return major national chains, franchises, or retail consumer-grade outlets. We are hunting for independent regional powerhouses, heavy-duty specialists, and niche industrial providers located within the hubs of ${focusHubs[0]} and surrounding transport corridors.
+3. HUMAN IDENTITY FORENSICS: Your primary mission is to identify a SPECIFIC HUMAN BEING in leadership. You MUST find the ACTUAL NAME (First and Last) of the CEO, Managing Director, or Owner. 
+4. FORBIDDEN VALUES: Returning "The Director", "Manager", "CEO", "Owner", or "Unknown" is a total failure. You MUST hunt LinkedIn profiles and official "About" pages to extract a real name (e.g. "Sipho Nkosi").
+5. PROACTIVE CONTACT SEARCH: Identify the corporate email domain. Prioritize "info@", "sales@", or "admin@" formats, and provide a valid local phone number.
+6. PHYSICAL VERIFICATION: Provide the full verifiable street address in South Africa, ensuring it corresponds to the ${focusHubs[1]} or ${focusHubs[2]} regions.
+7. CATEGORY MAPPING: You MUST include the field "industrial_category" with the exact value "${category}" for every record.
+8. UNIQUE IDENTIFIERS: You MUST generate a unique, randomized "record_id" for EVERY business to prevent database overwrites. Format: "DISCOVERY_${category.toUpperCase().replace(/\s/g, '_')}_[RANDOM_5_CHAR_ALPHANUMERIC]".
 
 REQUIRED OUTPUT FORMAT (RAW JSON ARRAY ONLY):
 [
   {
+    "discovery_sequence": 1,
     "record_id": "DISCOVERY_${category.toUpperCase().replace(/\s/g, '_')}_XJ92K",
     "company_name": "Exact Registered Name",
     "industrial_category": "${category}",
@@ -130,7 +132,7 @@ const DiscoveryTab = ({ category }: { category: string }) => {
     
     const randomHubs = useMemo(() => {
         const shuffled = [...industrialHubs].sort(() => 0.5 - Math.random());
-        return shuffled.slice(0, 4); // Increased to 4 for wider coverage
+        return shuffled.slice(0, 4);
     }, [category]);
 
     const prompt = generateDiscoveryPrompt(category, randomHubs);
@@ -166,11 +168,12 @@ const DiscoveryTab = ({ category }: { category: string }) => {
                         </div>
                     </div>
 
-                    <Alert className="bg-muted/50 border-muted shadow-sm">
-                        <Info className="h-4 w-4 text-primary" />
-                        <AlertTitle className="font-bold">Heavy Commercial Focus</AlertTitle>
+                    <Alert className="bg-amber-50 border-amber-200">
+                        <Info className="h-4 w-4 text-amber-600" />
+                        <AlertTitle className="font-bold">Handling Output Truncation</AlertTitle>
                         <AlertDescription className="text-xs space-y-2">
-                            <p>This prompt is dynamically tailored for <strong>{category}</strong> in the transport industry. It avoids generic retail stores and commands the AI to hunt for actual leadership names on LinkedIn.</p>
+                            <p>Large batches (100 records) often exceed LLM output limits. We have added <strong>sequence numbering</strong> to the prompt.</p>
+                            <p><strong>If the AI stops early:</strong> Simply type <code className="bg-amber-100 px-1 py-0.5 rounded font-bold">"continue from [last number] to 100"</code> in the AI Studio chat to get the remaining records.</p>
                         </AlertDescription>
                     </Alert>
 
@@ -192,7 +195,12 @@ const DiscoveryTab = ({ category }: { category: string }) => {
                          <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
                             <Terminal className="h-3 w-3"/> AI Forensic Command (100 Records)
                         </Label>
-                        <Badge variant="outline" className="text-[10px] uppercase font-bold text-primary border-primary/20">{category}</Badge>
+                        <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="text-[10px] uppercase font-bold text-primary border-primary/20">
+                                <ListOrdered className="h-3 w-3 mr-1"/> Sequence Active
+                            </Badge>
+                            <Badge variant="outline" className="text-[10px] uppercase font-bold text-primary border-primary/20">{category}</Badge>
+                        </div>
                     </div>
                     <ScrollArea className="h-[320px] border rounded-lg bg-slate-900 p-4 shadow-inner">
                         <pre className="text-[11px] text-slate-300 font-mono whitespace-pre-wrap leading-relaxed">
@@ -205,7 +213,7 @@ const DiscoveryTab = ({ category }: { category: string }) => {
             <div className="bg-muted/30 p-6 rounded-xl text-center border space-y-4">
                  <h3 className="text-lg font-bold">Import Extracted Leads</h3>
                  <p className="text-sm text-muted-foreground max-w-xl mx-auto">
-                    Once the AI returns your JSON list, head to the Supplier Management tab to import them into your permanent registry.
+                    Once the AI returns your complete JSON list, head to the Supplier Management tab to import them into your permanent registry.
                  </p>
                  <Button asChild variant="secondary" className="shadow-sm">
                     <Link href="/adminaccount?view=marketing-suppliers&subview=management">
@@ -227,7 +235,7 @@ export default function DiscoveryEngine() {
                         AI Market Discovery Engine
                     </CardTitle>
                     <CardDescription>
-                        Generate tailored intelligence prompts with <strong>N1/N2 Corridors & Northern Hub Rotation</strong> to discover unique heavy commercial suppliers.
+                        Generate tailored intelligence prompts with <strong>Sequence Numbering</strong> and <strong>N1/N2 Corridors Rotation</strong> to discover unique heavy commercial suppliers.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="px-0">
