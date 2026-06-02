@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState } from 'react';
@@ -8,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
-import { Loader2, Upload, FileJson, ClipboardPaste, Zap, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Loader2, Upload, ClipboardPaste, Zap, CheckCircle, ListOrdered } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -33,35 +32,28 @@ export function BulkImportDialog({ type, onComplete, children }: BulkImportDialo
     };
 
     /**
-     * Resilient Data Extractor
-     * Picks out JSON records even from messy conversational text or markdown blocks.
+     * Resilient Data Extractor with Sequence Detection
      */
     const extractItemsFromText = (rawText: string) => {
         let results: any[] = [];
         let text = rawText.trim();
 
-        // 1. Markdown Cleanup
         if (text.includes('```')) {
             text = text.replace(/```(?:json)?/g, '').replace(/```/g, '').trim();
         }
 
-        // 2. Direct Parse Attempt
         try {
             const parsed = JSON.parse(text);
-            return Array.isArray(parsed) ? parsed : [parsed];
+            results = Array.isArray(parsed) ? parsed : [parsed];
         } catch (e) {
-            // 3. Fragment Recovery (Regex Extraction for { ... } or [ ... ])
             const objectRegex = /\{(?:[^{}]|((?:\{[^{}]*\})))*\}/g;
             const matches = text.match(objectRegex);
-
             if (matches) {
                 matches.forEach(m => {
                     try {
                         const obj = JSON.parse(m);
                         if (obj && typeof obj === 'object') results.push(obj);
-                    } catch (innerError) {
-                        // Skip non-json noise
-                    }
+                    } catch (innerError) {}
                 });
             }
         }
@@ -83,6 +75,11 @@ export function BulkImportDialog({ type, onComplete, children }: BulkImportDialo
             if (!token) throw new Error("Authentication failed.");
 
             const rawPartners = extractItemsFromText(text);
+            
+            // Detect Sequence Progress
+            const sequences = rawPartners.map(p => p.discovery_sequence || p.seq).filter(s => typeof s === 'number');
+            const maxSeq = sequences.length > 0 ? Math.max(...sequences) : null;
+            const minSeq = sequences.length > 0 ? Math.min(...sequences) : null;
 
             const response = await fetch('/api/admin', {
                 method: 'POST',
@@ -94,13 +91,16 @@ export function BulkImportDialog({ type, onComplete, children }: BulkImportDialo
             });
 
             const result = await response.json();
-            if (!response.ok) {
-                throw new Error(result.error || "Import failed on server.");
+            if (!response.ok) throw new Error(result.error || "Import failed on server.");
+
+            let feedback = `Processed ${rawPartners.length} records.`;
+            if (maxSeq !== null) {
+                feedback = `Processed records ${minSeq} to ${maxSeq}. Total: ${rawPartners.length}.`;
             }
 
             toast({ 
                 title: "Import Successful", 
-                description: result.message || `Processed ${rawPartners.length} records.`
+                description: feedback
             });
             
             setIsOpen(false);
@@ -120,7 +120,7 @@ export function BulkImportDialog({ type, onComplete, children }: BulkImportDialo
             <DialogContent className="sm:max-w-2xl">
                 <DialogHeader>
                     <DialogTitle>Bulk Import {type}s</DialogTitle>
-                    <DialogDescription>Paste the raw response from the AI. Our parser will extract the relevant data automatically.</DialogDescription>
+                    <DialogDescription>Paste the AI output. The system will detect the sequence numbers automatically.</DialogDescription>
                 </DialogHeader>
                 
                 <Tabs defaultValue="paste" className="py-4">
@@ -132,21 +132,21 @@ export function BulkImportDialog({ type, onComplete, children }: BulkImportDialo
                     <TabsContent value="paste" className="space-y-4 pt-4">
                         <Alert className="bg-primary/5 border-primary/20">
                             <Zap className="h-4 w-4 text-primary" />
-                            <AlertTitle>Intelligent Parser Active</AlertTitle>
-                            <AlertDescription>You can paste the entire AI chat response here. We'll find the JSON records and map them to your existing IDs.</AlertDescription>
+                            <AlertTitle>Sequence Tracking Active</AlertTitle>
+                            <AlertDescription>Paste your results here. If the AI stopped early, the import summary will tell you which number to "continue" from.</AlertDescription>
                         </Alert>
                         <div className="space-y-2">
                             <Label>Paste AI Response</Label>
                             <Textarea 
-                                placeholder="Paste the response from AI here..." 
-                                className="min-h-[300px] font-mono text-xs" 
+                                placeholder="Paste the response from AI Studio here..." 
+                                className="min-h-[300px] font-mono text-[10px] leading-tight" 
                                 value={pasteData}
                                 onChange={(e) => setPasteData(e.target.value)}
                             />
                         </div>
                         <Button className="w-full" onClick={() => handleImport('paste')} disabled={isUploading || !pasteData.trim()}>
                             {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <CheckCircle className="mr-2 h-4 w-4" />}
-                            Extract and Import Data
+                            Import Batch
                         </Button>
                     </TabsContent>
 
