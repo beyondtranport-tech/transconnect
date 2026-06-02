@@ -9,6 +9,7 @@ import * as React from "react";
 
 const supplierCategories = [
     "Accessories", 
+    "Air",
     "Anti-Theft Devices", 
     "Auto Electrical", 
     "Batteries", 
@@ -21,10 +22,12 @@ const supplierCategories = [
     "Mechanical repairs",
     "Oils & Lubricants", 
     "Parts", 
+    "Second Hand Trailers",
+    "Second Hand Trucks",
     "Transport", 
     "Tarpaulins", 
     "Tow in", 
-    "Trailer repairs",
+    "Trailer repairs", 
     "Truck Accessories", 
     "Truck Parts", 
     "Truck repairs", 
@@ -48,6 +51,7 @@ const PitchComponent = ({ category }: { category: string }) => {
                 </Button>
                 <Button asChild variant="outline">
                     <Link href={`/adminaccount?view=marketing-suppliers&subview=emails&type=${encodeURIComponent(category)}`}>
+                        <MessageSquare className="mr-2 h-4 w-4 text-primary" />
                         View Email Sequence <ArrowRight className="ml-2 h-4 w-4" />
                     </Link>
                 </Button>

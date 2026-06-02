@@ -28,6 +28,8 @@ const supplierCategories = [
     "Mechanical repairs",
     "Oils & Lubricants", 
     "Parts", 
+    "Second Hand Trailers",
+    "Second Hand Trucks",
     "Transport", 
     "Tarpaulins", 
     "Tow in", 
@@ -53,6 +55,8 @@ const industrialHubs = [
 function getTechnicalFocus(category: string) {
     const lower = category.toLowerCase();
     if (lower === 'air') return "heavy commercial vehicle air systems, including air brakes, compressors, air dryers, valves, and pneumatic connections between horse and trailer";
+    if (lower.includes('second hand trailers')) return "retail and wholesale of pre-owned heavy-duty trailers (tautliners, flatbeds, tippers), focusing on chassis integrity, structural safety, and verified maintenance history";
+    if (lower.includes('second hand trucks')) return "retail and wholesale of used heavy commercial trucks (horses and rigids), including rigorous inspection standards, mileage verification, and pre-owned dealership networks";
     if (lower.includes('trailer')) return "heavy-duty trailer components (axles, suspension, air-brakes, chassis, electrical systems, and tarpaulins)";
     if (lower.includes('engine') || lower.includes('mechanical') || lower.includes('turbo') || lower.includes('injector')) return "heavy commercial truck drivelines, internal combustion engines (diesel), gearboxes, and fuel injection systems";
     if (lower.includes('tyre') || lower.includes('tire')) return "heavy commercial vehicle tyres, retreading services, and specialized fleet wheel alignment";

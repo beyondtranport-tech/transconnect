@@ -22,6 +22,8 @@ const supplierCategories = [
     "Mechanical repairs",
     "Oils & Lubricants", 
     "Parts", 
+    "Second Hand Trailers",
+    "Second Hand Trucks",
     "Transport", 
     "Tarpaulins", 
     "Tow in", 
