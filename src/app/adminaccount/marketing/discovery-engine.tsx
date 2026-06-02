@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 
 const supplierCategories = [
     "Accessories", 
+    "Air",
     "Anti-Theft Devices", 
     "Auto Electrical", 
     "Batteries", 
@@ -51,6 +52,7 @@ const industrialHubs = [
 
 function getTechnicalFocus(category: string) {
     const lower = category.toLowerCase();
+    if (lower === 'air') return "heavy commercial vehicle air systems, including air brakes, compressors, air dryers, valves, and pneumatic connections between horse and trailer";
     if (lower.includes('trailer')) return "heavy-duty trailer components (axles, suspension, air-brakes, chassis, electrical systems, and tarpaulins)";
     if (lower.includes('engine') || lower.includes('mechanical') || lower.includes('turbo') || lower.includes('injector')) return "heavy commercial truck drivelines, internal combustion engines (diesel), gearboxes, and fuel injection systems";
     if (lower.includes('tyre') || lower.includes('tire')) return "heavy commercial vehicle tyres, retreading services, and specialized fleet wheel alignment";
@@ -62,7 +64,7 @@ function getTechnicalFocus(category: string) {
 function generateDiscoveryPrompt(category: string, focusHubs: string[]) {
     const technicalFocus = getTechnicalFocus(category);
 
-    return `CRITICAL SYSTEM INSTRUCTION: RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CONVERSATION. NO EXPLANATORY TEXT.
+    return `CRITICAL SYSTEM INSTRUCTION: RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION. NO EXPLANATORY TEXT.
 
 ACT AS AN ELITE MARKET INTELLIGENCE AGENT SPECIALIZING IN THE SOUTH AFRICAN TRANSPORT ECOSYSTEM. 
 

@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -38,6 +37,7 @@ import Link from 'next/link';
 
 const supplierCategories = [
     "Accessories", 
+    "Air",
     "Anti-Theft Devices", 
     "Auto Electrical", 
     "Batteries", 

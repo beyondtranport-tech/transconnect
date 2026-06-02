@@ -9,6 +9,7 @@ import * as React from "react";
 
 const supplierCategories = [
     "Accessories", 
+    "Air",
     "Anti-Theft Devices", 
     "Auto Electrical", 
     "Batteries", 
