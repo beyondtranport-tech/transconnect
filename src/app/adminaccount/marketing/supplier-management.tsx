@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Button, buttonVariants } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
@@ -58,7 +58,7 @@ const supplierCategories = [
     "Transport", 
     "Tarpaulins", 
     "Tow in", 
-    "Trailer repairs",
+    "Trailer repairs", 
     "Truck Accessories", 
     "Truck Parts", 
     "Truck repairs", 
@@ -107,7 +107,7 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
       const response = await fetch('/api/admin', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'findDuplicateLeads' }),
+        body: JSON.stringify({ action: 'findDuplicateLeads', payload: {} }),
         cache: 'no-store'
       });
       const result = await response.json();
@@ -485,7 +485,13 @@ export default function SupplierManagement() {
       try {
           const token = await getClientSideAuthToken();
           if (!token) return;
-          const result = await performAdminAction(token, 'resetResearchQueue', { type: 'supplier' });
+          const response = await fetch('/api/admin', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'resetResearchQueue', payload: { type: 'supplier' } }),
+          });
+          const result = await response.json();
+          if (!response.ok) throw new Error(result.error);
           toast({ title: "Queue Reset", description: `${result.count} records set back to 'New'.` });
           forceRefresh();
       } catch (e: any) {
@@ -500,7 +506,13 @@ export default function SupplierManagement() {
       try {
           const token = await getClientSideAuthToken();
           if (!token) return;
-          const result = await performAdminAction(token, 'bulkCategorizeLeads', {});
+          const response = await fetch('/api/admin', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'bulkCategorizeLeads', payload: {} }),
+          });
+          const result = await response.json();
+          if (!response.ok) throw new Error(result.error);
           toast({ title: "Categorization Complete", description: `Auto-tagged ${result.count} suppliers.` });
           forceRefresh();
       } catch (e: any) {
@@ -607,6 +619,7 @@ export default function SupplierManagement() {
                     <p className="text-[10px] font-black uppercase tracking-widest">Invited</p>
                     <p className="text-2xl font-black mt-1">{statusStats.invited}</p>
                 </CardContent>
+            </Card>
             <Card className="bg-green-600 border-none shadow-lg text-white">
                 <CardContent className="p-4 text-center">
                     <p className="text-[10px] font-black uppercase tracking-widest opacity-80">Members</p>
