@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -14,6 +13,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { getClientSideAuthToken } from '@/firebase';
+import { cn } from "@/lib/utils";
 
 export const supplierCategories = [
     "Accessories", 
