@@ -44,12 +44,15 @@ const supplierCategories = [
     "Brakes", 
     "Cleaning Products",
     "Diesel", 
+    "Differential",
+    "Engine Refurbish",
     "Filters", 
     "Injectors", 
     "Lights", 
     "Mechanical repairs",
     "Oils & Lubricants", 
     "Parts", 
+    "Prop Shafts",
     "Second Hand Trailers",
     "Second Hand Trucks",
     "Transport", 
@@ -604,7 +607,6 @@ export default function SupplierManagement() {
                     <p className="text-[10px] font-black uppercase tracking-widest">Invited</p>
                     <p className="text-2xl font-black mt-1">{statusStats.invited}</p>
                 </CardContent>
-            </Card>
             <Card className="bg-green-600 border-none shadow-lg text-white">
                 <CardContent className="p-4 text-center">
                     <p className="text-[10px] font-black uppercase tracking-widest opacity-80">Members</p>

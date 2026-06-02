@@ -22,12 +22,15 @@ const supplierCategories = [
     "Brakes", 
     "Cleaning Products",
     "Diesel", 
+    "Differential",
+    "Engine Refurbish",
     "Filters", 
     "Injectors", 
     "Lights", 
     "Mechanical repairs",
     "Oils & Lubricants", 
     "Parts", 
+    "Prop Shafts",
     "Second Hand Trailers",
     "Second Hand Trucks",
     "Transport", 
@@ -58,7 +61,10 @@ function getTechnicalFocus(category: string) {
     if (lower.includes('second hand trailers')) return "retail and wholesale of pre-owned heavy-duty trailers (tautliners, flatbeds, tippers), focusing on chassis integrity, structural safety, and verified maintenance history";
     if (lower.includes('second hand trucks')) return "retail and wholesale of used heavy commercial trucks (horses and rigids), including rigorous inspection standards, mileage verification, and pre-owned dealership networks";
     if (lower.includes('trailer')) return "heavy-duty trailer components (axles, suspension, air-brakes, chassis, electrical systems, and tarpaulins)";
+    if (lower.includes('engine refurbish')) return "heavy commercial diesel engine reconditioning, including cylinder head refurbishing, block machining, crankshaft grinding, and complete engine overhauls to manufacturer standards";
     if (lower.includes('engine') || lower.includes('mechanical') || lower.includes('turbo') || lower.includes('injector')) return "heavy commercial truck drivelines, internal combustion engines (diesel), gearboxes, and fuel injection systems";
+    if (lower.includes('prop shaft')) return "heavy commercial vehicle drivetrain systems, specializing in prop shafts, universal joints (U-joints), center bearings, and shaft balancing";
+    if (lower.includes('differential')) return "heavy-duty commercial vehicle differentials, differential gears, final drive units, and drive axle components";
     if (lower.includes('tyre') || lower.includes('tire')) return "heavy commercial vehicle tyres, retreading services, and specialized fleet wheel alignment";
     if (lower.includes('diesel') || lower.includes('oil')) return "bulk fuel supply, fleet lubricants, and high-volume commercial dispensing systems for transport operators";
     if (lower.includes('tow') || lower.includes('recovery')) return "heavy vehicle recovery, low-bed towing, and commercial breakdown services";
