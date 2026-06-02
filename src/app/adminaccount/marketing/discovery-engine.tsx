@@ -1,19 +1,21 @@
+
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, Sparkles, Copy, ClipboardCheck, Info, Search, Terminal, MapPin, ListOrdered } from "lucide-react";
+import { ArrowRight, Sparkles, Copy, ClipboardCheck, Info, Search, Terminal, MapPin, ListOrdered, Loader2 } from "lucide-react";
 import Link from "next/link";
 import * as React from "react";
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { getClientSideAuthToken } from '@/firebase';
 
-const supplierCategories = [
+export const supplierCategories = [
     "Accessories", 
     "Air",
     "Anti-Theft Devices", 
@@ -36,7 +38,7 @@ const supplierCategories = [
     "Transport", 
     "Tarpaulins", 
     "Tow in", 
-    "Trailer repairs",
+    "Trailer repairs", 
     "Truck Accessories", 
     "Truck Parts", 
     "Truck repairs", 
@@ -54,6 +56,18 @@ const industrialHubs = [
     "Witbank/Emalahleni (MP - N4)", "Middelburg (MP - N11)", "Nelspruit/Mbombela (MP - N4)", "Secunda (MP)", "Ermelo (MP - N2)", "Barberton (MP)",
     "Rustenburg (NW)", "Potchefstroom (NW)", "Klerksdorp (NW)", "Brits (NW)", "Vryburg (NW)", "Mahikeng (NW)"
 ];
+
+async function performAdminAction(token: string, action: string, payload: any) {
+    const response = await fetch('/api/admin', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, payload }),
+        cache: 'no-store'
+    });
+    const result = await response.json();
+    if (!response.ok || !result.success) throw new Error(result.error || `API Error: ${action}`);
+    return result;
+}
 
 function getTechnicalFocus(category: string) {
     const lower = category.toLowerCase();
@@ -109,7 +123,7 @@ REQUIRED OUTPUT FORMAT (RAW JSON ARRAY ONLY):
 HUNTING GROUNDS: Search LinkedIn, Yellow Pages SA, and local industrial registries.`;
 }
 
-const DiscoveryTab = ({ category }: { category: string }) => {
+const DiscoveryTab = ({ category, currentCount }: { category: string, currentCount: number }) => {
     const { toast } = useToast();
     const [isCopied, setIsCopied] = useState(false);
     
@@ -135,10 +149,15 @@ const DiscoveryTab = ({ category }: { category: string }) => {
         <div className="space-y-6">
             <div className="grid md:grid-cols-2 gap-6">
                 <div className="space-y-4">
-                    <h2 className="text-2xl font-bold font-headline flex items-center gap-2">
-                        <Search className="h-6 w-6 text-primary" />
-                        Discovery Hub: {category}
-                    </h2>
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-2xl font-bold font-headline flex items-center gap-2">
+                            <Search className="h-6 w-6 text-primary" />
+                            Discovery Hub: {category}
+                        </h2>
+                        <Badge variant="outline" className="font-mono text-sm bg-muted/30">
+                            {currentCount} In Database
+                        </Badge>
+                    </div>
                     
                     <div className="p-3 bg-primary/10 rounded-lg border border-primary/20 flex items-center gap-3">
                         <MapPin className="h-5 w-5 text-primary shrink-0" />
@@ -192,6 +211,39 @@ const DiscoveryTab = ({ category }: { category: string }) => {
 };
 
 export default function DiscoveryEngine() {
+    const [counts, setCounts] = useState<Record<string, number>>({});
+    const [isLoading, setIsLoading] = useState(true);
+    const { toast } = useToast();
+
+    const fetchCounts = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) return;
+            const res = await performAdminAction(token, 'getPartnersByType', { type: 'supplier' });
+            const partners = res.data || [];
+            
+            const newCounts: Record<string, number> = {};
+            supplierCategories.forEach(cat => newCounts[cat] = 0);
+            
+            partners.forEach((p: any) => {
+                const cat = p.entryType || 'General';
+                if (newCounts[cat] !== undefined) {
+                    newCounts[cat]++;
+                }
+            });
+            setCounts(newCounts);
+        } catch (e: any) {
+            console.error("Discovery count fetch failed", e);
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        fetchCounts();
+    }, [fetchCounts]);
+
     return (
         <Card className="shadow-none border-none">
             <Tabs defaultValue="Accessories" className="w-full">
@@ -201,19 +253,27 @@ export default function DiscoveryEngine() {
                         AI Market Discovery Engine
                     </CardTitle>
                     <CardDescription>
-                        Generate tailored intelligence prompts to discover 100+ independent heavy commercial suppliers.
+                        Generate tailored intelligence prompts to discover 100+ independent heavy commercial suppliers. Numbers in brackets show current database density.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="px-0">
                     <TabsList className="h-auto flex-wrap justify-start bg-muted/30 mb-8 p-1">
                         {supplierCategories.map(category => (
-                            <TabsTrigger key={category} value={category} className="text-xs px-4 py-2">{category}</TabsTrigger>
+                            <TabsTrigger key={category} value={category} className="text-xs px-4 py-2 gap-1.5">
+                                {category}
+                                <span className={cn(
+                                    "px-1.5 rounded-full text-[10px] font-black",
+                                    (counts[category] || 0) > 0 ? "bg-primary/20 text-primary" : "bg-amber-100 text-amber-700"
+                                )}>
+                                    {isLoading ? '...' : (counts[category] || 0)}
+                                </span>
+                            </TabsTrigger>
                         ))}
                     </TabsList>
 
                     {supplierCategories.map(category => (
                         <TabsContent key={category} value={category} className="mt-0">
-                            <DiscoveryTab category={category} />
+                            <DiscoveryTab category={category} currentCount={counts[category] || 0} />
                         </TabsContent>
                     ))}
                 </CardContent>
