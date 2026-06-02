@@ -129,7 +129,7 @@ export async function POST(req: NextRequest) {
         const isAdmin = decodedToken.email === 'beyondtransport@gmail.com' || decodedToken.email === 'mkoton100@gmail.com';
 
         if (!isAdmin) {
-             const allowedUserActions = ['getAuditLogs', 'logCommunication', 'bulkSavePartners', 'getPartnersByType', 'markLeadsAsResearching', 'getPlatformStaff', 'findDuplicateLeads', 'deleteLeads', 'resetResearchQueue', 'bulkUpdateOutreach', 'bulkCategorizeLeads'];
+             const allowedUserActions = ['getAuditLogs', 'logCommunication', 'bulkSavePartners', 'getPartnersByType', 'markLeadsAsResearching', 'getPlatformStaff', 'findDuplicateLeads', 'deleteLeads', 'resetResearchQueue', 'bulkUpdateOutreach', 'bulkCategorizeLeads', 'getSupplierCategoryCounts'];
              if (!allowedUserActions.includes(action)) throw new Error("Forbidden.");
         }
 
@@ -277,6 +277,19 @@ export async function POST(req: NextRequest) {
                     });
                 });
                 return NextResponse.json({ success: true, data: Array.from(mergedMap.values()) });
+            }
+
+            case 'getSupplierCategoryCounts': {
+                const supplierRoles = ['Vendors', 'Vendor', 'Supplier', 'Suppliers'];
+                const leadsSnap = await db.collection('leads').where('role', 'in', supplierRoles).get();
+                
+                const counts: Record<string, number> = {};
+                leadsSnap.docs.forEach(doc => {
+                    const cat = doc.data().entryType || 'General';
+                    counts[cat] = (counts[cat] || 0) + 1;
+                });
+                
+                return NextResponse.json({ success: true, data: counts });
             }
 
             case 'bulkSavePartners': {

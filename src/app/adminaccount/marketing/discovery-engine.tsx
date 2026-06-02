@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -215,24 +216,14 @@ export default function DiscoveryEngine() {
     const [isLoading, setIsLoading] = useState(true);
     const { toast } = useToast();
 
+    // PERFORMANCE FIX: Use a specialized counting action to avoid downloading the entire leads array.
     const fetchCounts = useCallback(async () => {
         setIsLoading(true);
         try {
             const token = await getClientSideAuthToken();
             if (!token) return;
-            const res = await performAdminAction(token, 'getPartnersByType', { type: 'supplier' });
-            const partners = res.data || [];
-            
-            const newCounts: Record<string, number> = {};
-            supplierCategories.forEach(cat => newCounts[cat] = 0);
-            
-            partners.forEach((p: any) => {
-                const cat = p.entryType || 'General';
-                if (newCounts[cat] !== undefined) {
-                    newCounts[cat]++;
-                }
-            });
-            setCounts(newCounts);
+            const res = await performAdminAction(token, 'getSupplierCategoryCounts', {});
+            setCounts(res.data || {});
         } catch (e: any) {
             console.error("Discovery count fetch failed", e);
         } finally {
