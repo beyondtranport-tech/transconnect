@@ -4,7 +4,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, Sparkles, Copy, ClipboardCheck, Info, Search, Terminal, MapPin, ListOrdered, Loader2 } from "lucide-react";
+import { ArrowRight, Sparkles, Copy, ClipboardCheck, Info, Search, Terminal, MapPin, ListOrdered, Loader2, RefreshCcw, Database } from "lucide-react";
 import Link from "next/link";
 import * as React from "react";
 import { useState, useMemo, useEffect, useCallback } from 'react';
@@ -14,6 +14,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { getClientSideAuthToken } from '@/firebase';
+import { useConfig } from '@/hooks/use-config';
 import { cn } from "@/lib/utils";
 
 export const supplierCategories = [
@@ -212,40 +213,57 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
 };
 
 export default function DiscoveryEngine() {
-    const [counts, setCounts] = useState<Record<string, number>>({});
-    const [isLoading, setIsLoading] = useState(true);
     const { toast } = useToast();
+    const [isRefreshing, setIsRefreshing] = useState(false);
+    
+    // Fetch CACHED counts immediately (snappy)
+    const { data: statsData, isLoading: isStatsLoading, forceRefresh: refreshStats } = useConfig<any>('supplierDiscoveryStats');
+    const counts = statsData?.counts || {};
 
-    // PERFORMANCE FIX: Use a specialized counting action to avoid downloading the entire leads array.
-    const fetchCounts = useCallback(async () => {
-        setIsLoading(true);
+    const handleRefresh = async () => {
+        setIsRefreshing(true);
         try {
             const token = await getClientSideAuthToken();
             if (!token) return;
-            const res = await performAdminAction(token, 'getSupplierCategoryCounts', {});
-            setCounts(res.data || {});
+            await performAdminAction(token, 'refreshSupplierCategoryCounts', {});
+            toast({ title: "Database Tally Complete", description: "All category counts have been updated." });
+            refreshStats();
         } catch (e: any) {
-            console.error("Discovery count fetch failed", e);
+            toast({ variant: 'destructive', title: "Refresh Failed", description: e.message });
         } finally {
-            setIsLoading(false);
+            setIsRefreshing(false);
         }
-    }, []);
-
-    useEffect(() => {
-        fetchCounts();
-    }, [fetchCounts]);
+    };
 
     return (
         <Card className="shadow-none border-none">
             <Tabs defaultValue="Accessories" className="w-full">
-                <CardHeader className="px-0 pt-0">
-                    <CardTitle className="flex items-center gap-2">
-                        <Sparkles className="h-6 w-6 text-primary" />
-                        AI Market Discovery Engine
-                    </CardTitle>
-                    <CardDescription>
-                        Generate tailored intelligence prompts to discover 100+ independent heavy commercial suppliers. Numbers in brackets show current database density.
-                    </CardDescription>
+                <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="space-y-1">
+                        <CardTitle className="flex items-center gap-2">
+                            <Sparkles className="h-6 w-6 text-primary" />
+                            AI Market Discovery Engine
+                        </CardTitle>
+                        <CardDescription>
+                            Generate tailored intelligence prompts to discover 100+ independent heavy commercial suppliers.
+                        </CardDescription>
+                    </div>
+                    <div className="flex items-center gap-2">
+                         <div className="text-right mr-2 hidden md:block">
+                            <p className="text-[10px] font-black uppercase text-muted-foreground">Snapshot Taken</p>
+                            <p className="text-[10px] font-bold text-primary">{formatDateSafe(statsData?.lastUpdated, "dd MMM, HH:mm")}</p>
+                        </div>
+                        <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={handleRefresh} 
+                            disabled={isRefreshing}
+                            className="bg-primary/5 border-primary/20 hover:bg-primary/10"
+                        >
+                            {isRefreshing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <RefreshCcw className="mr-2 h-4 w-4" />}
+                            Update Database Counts
+                        </Button>
+                    </div>
                 </CardHeader>
                 <CardContent className="px-0">
                     <TabsList className="h-auto flex-wrap justify-start bg-muted/30 mb-8 p-1">
@@ -256,7 +274,7 @@ export default function DiscoveryEngine() {
                                     "px-1.5 rounded-full text-[10px] font-black",
                                     (counts[category] || 0) > 0 ? "bg-primary/20 text-primary" : "bg-amber-100 text-amber-700"
                                 )}>
-                                    {isLoading ? '...' : (counts[category] || 0)}
+                                    {isRefreshing ? '...' : (counts[category] || 0)}
                                 </span>
                             </TabsTrigger>
                         ))}

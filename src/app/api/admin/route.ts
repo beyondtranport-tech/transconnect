@@ -129,7 +129,7 @@ export async function POST(req: NextRequest) {
         const isAdmin = decodedToken.email === 'beyondtransport@gmail.com' || decodedToken.email === 'mkoton100@gmail.com';
 
         if (!isAdmin) {
-             const allowedUserActions = ['getAuditLogs', 'logCommunication', 'bulkSavePartners', 'getPartnersByType', 'markLeadsAsResearching', 'getPlatformStaff', 'findDuplicateLeads', 'deleteLeads', 'resetResearchQueue', 'bulkUpdateOutreach', 'bulkCategorizeLeads', 'getSupplierCategoryCounts'];
+             const allowedUserActions = ['getAuditLogs', 'logCommunication', 'bulkSavePartners', 'getPartnersByType', 'markLeadsAsResearching', 'getPlatformStaff', 'findDuplicateLeads', 'deleteLeads', 'resetResearchQueue', 'bulkUpdateOutreach', 'bulkCategorizeLeads', 'getSupplierCategoryCounts', 'refreshSupplierCategoryCounts'];
              if (!allowedUserActions.includes(action)) throw new Error("Forbidden.");
         }
 
@@ -280,6 +280,11 @@ export async function POST(req: NextRequest) {
             }
 
             case 'getSupplierCategoryCounts': {
+                const statsDoc = await db.collection('configuration').doc('supplierDiscoveryStats').get();
+                return NextResponse.json({ success: true, data: statsDoc.data()?.counts || {} });
+            }
+
+            case 'refreshSupplierCategoryCounts': {
                 const supplierRoles = ['Vendors', 'Vendor', 'Supplier', 'Suppliers'];
                 const leadsSnap = await db.collection('leads').where('role', 'in', supplierRoles).get();
                 
@@ -288,6 +293,11 @@ export async function POST(req: NextRequest) {
                     const cat = doc.data().entryType || 'General';
                     counts[cat] = (counts[cat] || 0) + 1;
                 });
+
+                await db.collection('configuration').doc('supplierDiscoveryStats').set({
+                    counts,
+                    lastUpdated: FieldValue.serverTimestamp()
+                }, { merge: true });
                 
                 return NextResponse.json({ success: true, data: counts });
             }
