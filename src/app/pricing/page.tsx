@@ -1,298 +1,118 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, Star, Minus, Info } from 'lucide-react';
+import { Check, Star, ShieldCheck, Zap } from 'lucide-react';
 import Link from 'next/link';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { cn } from '@/lib/utils';
-import { useState, useMemo, useEffect } from 'react';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useUser } from '@/firebase';
+import { cn, formatCurrency } from '@/lib/utils';
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import * as React from 'react';
-import { collection, query } from 'firebase/firestore';
-import { Loader2 } from 'lucide-react';
-import featuresData from '@/lib/features.json';
-import { formatCurrency, formatDateSafe } from '@/lib/utils';
-
-const { featureSections } = featuresData;
-
-const renderCheckmark = (isIncluded: boolean) => {
-    if (isIncluded) {
-        return <Check className="h-5 w-5 text-green-500 mx-auto" />;
-    }
-    return <Minus className="h-5 w-5 text-muted-foreground mx-auto" />;
-};
 
 export default function MembershipPage() {
   const { user } = useUser();
-  const firestore = useFirestore();
-  const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
-  const [offerStatuses, setOfferStatuses] = useState<Record<string, boolean>>({});
 
-  const membershipsQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
-    return collection(firestore, 'memberships');
-  }, [firestore]);
-  
-  const { data: tiers, isLoading, error } = useCollection(membershipsQuery);
-
-  // Sort tiers: free, basic, standard, premium, etc.
-  const sortedTiers = useMemo(() => {
-      if (!tiers) return [];
-      const order = ['free', 'basic', 'standard', 'professional', 'enterprise', 'premium'];
-      return [...tiers].sort((a, b) => {
-          const aIndex = order.indexOf(a.id);
-          const bIndex = order.indexOf(b.id);
-          
-          const aPrice = a.price || 0;
-          const bPrice = b.price || 0;
-
-          if (aIndex === -1 && bIndex === -1) return aPrice - bPrice;
-          if (aIndex === -1) return 1;
-          if (bIndex === -1) return -1;
-          return aIndex - bIndex;
-      });
-  }, [tiers]);
-  
-  // Client-side effect to determine if offers are active
-  useEffect(() => {
-    if (sortedTiers && sortedTiers.length > 0) {
-      const now = new Date();
-      const statuses: Record<string, boolean> = {};
-      sortedTiers.forEach(tier => {
-        const specialOfferDiscountPercent = tier.specialOfferDiscount || 0;
-        if (!specialOfferDiscountPercent || specialOfferDiscountPercent <= 0) {
-            statuses[tier.id] = false;
-            return;
-        }
-        const startDate = tier.specialOfferStartDate ? new Date(tier.specialOfferStartDate) : null;
-        const endDate = tier.specialOfferEndDate ? new Date(tier.specialOfferEndDate) : null;
-        let isActive = true;
-        if (startDate && now < startDate) isActive = false;
-        if (endDate && now > endDate) isActive = false;
-        statuses[tier.id] = isActive;
-      });
-      setOfferStatuses(statuses);
+  const plans = [
+    {
+        id: 'free',
+        name: 'Free Access',
+        price: 0,
+        description: 'Perfect for light browsing and exploration.',
+        features: [
+            "1 Search per day",
+            "View up to 10 records",
+            "Basic company details (Name, Location)",
+            "Access to the community mall",
+        ],
+        cta: "Start Searching for Free",
+        variant: "outline"
+    },
+    {
+        id: 'intelligence',
+        name: 'Intelligence Membership',
+        price: 100,
+        isPopular: true,
+        description: 'Complete access to the South African industrial map.',
+        features: [
+            "Unlimited Daily Searches",
+            "Unlimited Record Access",
+            "Full Human Contact Data (CEOs/MDs)",
+            "Direct E-mail & Mobile Numbers",
+            "Unlock Wallet & Transaction Tools",
+            "Create & Publish Your Shop",
+            "Request Funding via Platform",
+            "Priority Support & Compliance",
+        ],
+        cta: "Get Full Access",
+        variant: "default"
     }
-  }, [sortedTiers]);
-
-  const maxAnnualDiscount = useMemo(() => {
-      if (!sortedTiers || sortedTiers.length === 0) {
-          return 0;
-      }
-      return Math.max(...sortedTiers.map(tier => tier.annualDiscount || 0));
-  }, [sortedTiers]);
-
-  const allFeatures = useMemo(() => featureSections.flatMap(s => s.features), []);
+  ];
 
   return (
-    <div className="bg-background">
+    <div className="bg-background min-h-screen">
       <div className="container mx-auto px-4 py-16 md:py-24">
         <div className="text-center max-w-3xl mx-auto mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold font-headline">Choose Your Plan</h1>
+          <Badge className="mb-4 bg-primary/10 text-primary border-primary/20">SIMPLE PRICING</Badge>
+          <h1 className="text-4xl md:text-6xl font-black font-headline">Unlock Your Opportunity Flow</h1>
           <p className="mt-4 text-lg md:text-xl text-muted-foreground">
-            Select the perfect plan to build your online shop and grow your business. All paid plans include a 30-day money-back guarantee.
+            Switch to the Intelligence Membership to unlock thousands of verified leads and start transacting with the community.
           </p>
         </div>
 
-        <div className="flex justify-center items-center gap-4 mb-12">
-            <Label htmlFor="billing-switch">Monthly</Label>
-            <Switch
-                id="billing-switch"
-                checked={billingCycle === 'annual'}
-                onCheckedChange={(checked) => setBillingCycle(checked ? 'annual' : 'monthly')}
-            />
-            <Label htmlFor="billing-switch">
-                Annual
-                {maxAnnualDiscount > 0 && (
-                    <span className="text-primary font-semibold ml-1">(Save up to {maxAnnualDiscount}%)</span>
-                )}
-            </Label>
-        </div>
-
-        {isLoading ? (
-            <div className="flex justify-center py-20"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>
-        ) : error ? (
-          <div className="text-center py-20 text-destructive bg-destructive/10 rounded-lg">
-            <h3 className="text-xl font-semibold">Could not load Membership Plans</h3>
-            <p className="mt-2 text-sm">{error.message}</p>
-          </div>
-        ) : sortedTiers && sortedTiers.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-7xl mx-auto">
-              {sortedTiers.map((tier:any) => {
-                  const monthlyPrice = tier.price || 0;
-                  const annualDiscountPercent = tier.annualDiscount || 0;
-                  const specialOfferDiscountPercent = tier.specialOfferDiscount || 0;
-
-                  const isOfferActiveNow = offerStatuses[tier.id] || false;
-
-                  const monthlyBeforeOffer = monthlyPrice;
-                  const monthlyAfterOffer = isOfferActiveNow ? monthlyPrice * (1 - (specialOfferDiscountPercent / 100)) : monthlyPrice;
-                  
-                  const annualFullPrice = monthlyPrice * 12;
-                  const annualAfterStandardDiscount = annualFullPrice * (1 - (annualDiscountPercent / 100));
-                  const annualFinal = isOfferActiveNow ? annualAfterStandardDiscount * (1 - (specialOfferDiscountPercent / 100)) : annualAfterStandardDiscount;
-                  const annualSavingAmount = annualFullPrice - annualFinal;
-
-                  const stickerSavingAmount = billingCycle === 'annual' ? annualSavingAmount : monthlyBeforeOffer - monthlyAfterOffer;
-
-                  const formattedEndDate = formatDateSafe(tier.specialOfferEndDate, "dd MMMM yyyy");
-                  
-                  return (
-                    <Card key={tier.id} className={cn(
-                        "flex flex-col shadow-lg transition-transform duration-300 hover:scale-105 relative overflow-visible",
-                        tier.isPopular ? "border-primary border-2" : "border"
-                    )}>
-                        {isOfferActiveNow && stickerSavingAmount > 0 && (
-                            <div className="absolute top-8 -left-4 bg-destructive text-destructive-foreground px-4 py-1.5 text-sm font-bold rounded-r-full shadow-lg transform -rotate-15 z-10">
-                                SAVE {formatCurrency(stickerSavingAmount)}
-                            </div>
-                        )}
-                        {tier.isPopular && (
-                            <div className="absolute -top-4 right-4 bg-primary text-primary-foreground px-3 py-1 text-sm font-semibold rounded-full flex items-center gap-1 z-10">
-                                <Star className="h-4 w-4" />
-                                Most Popular
-                            </div>
-                        )}
-                      <CardHeader className="text-center pt-8">
-                        <CardTitle className="text-2xl font-bold">{tier.name}</CardTitle>
-                        <CardDescription className="mt-2 text-base h-12">
-                            {tier.id === 'free'
-                                ? "Get started by building your shop in draft mode. Upgrade to publish and start selling."
-                                : tier.description}
-                        </CardDescription>
-                        <div className="pt-4 min-h-[120px] flex flex-col justify-center">
-                           {tier.id === 'free' ? (
-                                <span className="text-4xl font-extrabold tracking-tight">Free</span>
-                           ) : billingCycle === 'monthly' ? (
-                                <>
-                                    {isOfferActiveNow && monthlyBeforeOffer > monthlyAfterOffer ? (
-                                        <div className="text-center space-y-1">
-                                            <p className="text-base text-muted-foreground">
-                                                Was <span className="line-through">{formatCurrency(monthlyBeforeOffer)}/month</span>
-                                            </p>
-                                            {(tier.specialOfferText || '').trim().length > 0 && <p className="text-lg font-semibold text-primary">{tier.specialOfferText}</p>}
-                                            <div className="flex items-baseline justify-center gap-2 pt-1">
-                                                <span className="text-4xl font-extrabold tracking-tight">{formatCurrency(monthlyAfterOffer)}</span>
-                                                <span className="text-muted-foreground self-end">/month</span>
-                                            </div>
-                                            {formattedEndDate && formattedEndDate !== 'Invalid Date' && <p className="text-xs text-muted-foreground">Valid until {formattedEndDate}</p>}
-                                        </div>
-                                    ) : (
-                                        <div className="flex items-baseline justify-center gap-2">
-                                            <span className="text-4xl font-extrabold tracking-tight">{formatCurrency(monthlyPrice)}</span>
-                                            <span className="text-muted-foreground self-end">/month</span>
-                                        </div>
-                                    )}
-                                </>
-                           ) : (
-                                // Annual Billing View
-                                <div className="text-center space-y-1">
-                                     {isOfferActiveNow && annualFullPrice > annualFinal && (
-                                        <p className="text-base text-muted-foreground">
-                                            Was <span className="line-through">{formatCurrency(annualFullPrice)}/year</span>
-                                        </p>
-                                    )}
-                                    {(tier.specialOfferText || '').trim().length > 0 && isOfferActiveNow && (
-                                      <p className="text-lg font-semibold text-primary">{tier.specialOfferText}</p>
-                                    )}
-                                    <div className="flex items-baseline justify-center gap-2 pt-1">
-                                        <span className="text-4xl font-extrabold tracking-tight">{formatCurrency(annualFinal)}</span>
-                                        <span className="text-muted-foreground self-end">/year</span>
-                                    </div>
-                                    <p className="text-sm text-muted-foreground">which is {formatCurrency(annualFinal / 12)}/month.</p>
-                                    {annualSavingAmount > 0 && <p className="text-sm font-semibold text-primary">You save {formatCurrency(annualSavingAmount)} per year!</p>}
-                                </div>
-                           )}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            {plans.map((plan) => (
+                <Card key={plan.id} className={cn(
+                    "flex flex-col shadow-xl transition-all duration-300 relative",
+                    plan.isPopular ? "border-primary border-2 scale-105" : "border"
+                )}>
+                    {plan.isPopular && (
+                        <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-4 py-1 text-xs font-black uppercase rounded-full flex items-center gap-1 z-10">
+                            <Star className="h-3 w-3 fill-current" />
+                            Most Popular Access
                         </div>
-                      </CardHeader>
-                      <CardContent className="flex-grow">
-                        <ul className="space-y-3">
-                          {(tier.features || []).slice(0, 5).map((featureKey: string) => {
-                            const feature = allFeatures.find(f => f.key === featureKey);
-                            return (
-                                <li key={featureKey} className="flex items-start">
-                                  <Check className="h-5 w-5 text-green-500 mr-3 flex-shrink-0 mt-0.5" />
-                                  <span className="text-muted-foreground">{feature?.name || featureKey}</span>
+                    )}
+                    <CardHeader className="text-center pb-2">
+                        <CardTitle className="text-2xl font-bold">{plan.name}</CardTitle>
+                        <CardDescription className="mt-2 text-sm h-12">{plan.description}</CardDescription>
+                        <div className="py-6">
+                            <div className="flex items-baseline justify-center gap-1">
+                                <span className="text-5xl font-black tracking-tight">{formatCurrency(plan.price)}</span>
+                                <span className="text-muted-foreground font-medium">/month</span>
+                            </div>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="flex-grow">
+                        <ul className="space-y-4">
+                            {plan.features.map((feature, i) => (
+                                <li key={i} className="flex items-start">
+                                    <Check className="h-5 w-5 text-green-500 mr-3 shrink-0" />
+                                    <span className="text-sm font-medium">{feature}</span>
                                 </li>
-                            )
-                          })}
-                        </ul>
-                      </CardContent>
-                      <CardFooter className="p-6">
-                        <Button asChild className="w-full" size="lg" variant={tier.isPopular ? 'default' : 'outline'}>
-                          <Link href={tier.id === 'free' ? (user ? '/account' : '/join') : `/checkout/${tier.id}?cycle=${billingCycle}`}>
-                            {tier.id === 'free' ? (user ? 'Go to Dashboard' : 'Create Free Shop') : `Choose ${tier.name}`}
-                          </Link>
-                        </Button>
-                      </CardFooter>
-                    </Card>
-                  )
-              })}
-            </div>
-        ) : (
-             <div className="text-center py-20 border-2 border-dashed rounded-lg">
-                <Info className="mx-auto h-12 w-12 text-muted-foreground" />
-                <h2 className="mt-6 text-2xl font-semibold">No Membership Plans Found</h2>
-                <p className="mt-2 text-muted-foreground">
-                    It looks like no membership plans have been configured for the platform yet.
-                </p>
-                <Button asChild className="mt-6">
-                    <Link href="/adminaccount?view=pricing-memberships">
-                        Go to Admin Backend to Create Plans
-                    </Link>
-                </Button>
-            </div>
-        )}
-      </div>
-      <section className="py-16 md:py-24 bg-card">
-        <div className="container mx-auto px-4">
-          <div className="text-center max-w-3xl mx-auto mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold font-headline">Compare Features</h2>
-            <p className="mt-4 text-lg text-muted-foreground">
-              Find the right set of tools to build your online shop and grow your business.
-            </p>
-          </div>
-          {sortedTiers && sortedTiers.length > 0 ? (
-              <div className="max-w-5xl mx-auto border rounded-lg overflow-hidden">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-2/5 font-bold text-lg">Features</TableHead>
-                      {sortedTiers?.map((tier:any) => (
-                        <TableHead key={tier.id} className="text-center font-bold text-lg">{tier.name}</TableHead>
-                      ))}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {featureSections.map((section) => (
-                        <React.Fragment key={section.name}>
-                            <TableRow className="bg-muted/50">
-                                <TableCell colSpan={((sortedTiers?.length) || 0) + 1} className="font-semibold text-primary">{section.name}</TableCell>
-                            </TableRow>
-                            {section.features.map((feature) => (
-                                <TableRow key={feature.key}>
-                                    <TableCell className="font-medium pl-8">{feature.name}</TableCell>
-                                    {sortedTiers?.map((tier: any) => (
-                                        <TableCell key={`${tier.id}-${feature.key}`} className="text-center">
-                                            {renderCheckmark((tier.features || []).includes(feature.key))}
-                                        </TableCell>
-                                    ))}
-                                </TableRow>
                             ))}
-                        </React.Fragment>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-          ) : (
-            <p className="text-center text-muted-foreground">Feature comparison will be available once plans are created.</p>
-          )}
+                        </ul>
+                    </CardContent>
+                    <CardFooter className="pt-6">
+                        <Button asChild className="w-full py-6 text-lg font-bold" variant={plan.variant as any}>
+                            <Link href={plan.id === 'free' ? (user ? '/account' : '/join') : `/checkout/intelligence`}>
+                                {plan.cta}
+                            </Link>
+                        </Button>
+                    </CardFooter>
+                </Card>
+            ))}
         </div>
-      </section>
+        
+        <div className="mt-20 max-w-3xl mx-auto">
+             <Alert className="bg-primary/5 border-primary/20 p-6">
+                <ShieldCheck className="h-6 w-6 text-primary" />
+                <AlertTitle className="text-lg font-bold ml-2">Why R100?</AlertTitle>
+                <AlertDescription className="mt-2 text-muted-foreground ml-2">
+                    We believe the biggest constraint to growth in the transport sector is the "Information Divide." By keeping the barrier to entry extremely low, we empower thousands of businesses to find the right partners, save on costs, and unlock capital. Your R100 supports the constant AI discovery of new verified leads for the entire community.
+                </AlertDescription>
+            </Alert>
+        </div>
+      </div>
     </div>
   );
 }

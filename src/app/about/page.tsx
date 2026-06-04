@@ -1,286 +1,128 @@
-
 'use client';
 
 import Image from "next/image";
 import data from "@/lib/placeholder-images.json";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { CheckCircle, ArrowRight, DollarSign, Handshake, Cpu, Shield, Lock, DatabaseZap, ShieldCheck, CreditCard, Building } from "lucide-react";
+import { CheckCircle, ArrowRight, DollarSign, Handshake, Cpu, Shield, Store, Rocket, Target, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import React from "react";
-import { roles } from "@/lib/roles";
+import { useUser } from "@/firebase";
 
 const { placeholderImages } = data;
-
 const aboutHeroImage = placeholderImages.find(p => p.id === 'about-hero');
 
-const values = [
-    {
-        title: "Cash Flow",
-        question: "Struggling to fund your business?",
-        answer: "We can help by either providing our in-house finance solutions or connecting you with a network of funders who understand your business.",
-        image: placeholderImages.find(p => p.id === 'funding-division'),
-        icon: DollarSign,
-        link: "/funding",
-    },
-    {
-        title: "Opportunity Flow",
-        question: "Need to generate more income?",
-        answer: "We provide the tools to open new sales channels. Create your own online shop to sell products and services, and activate Connect plans to earn recurring income from referrals.",
-        image: placeholderImages.find(p => p.id === 'incentives-hero'),
-        icon: Handshake,
-        link: "/connect",
-    },
-    {
-        title: "Information Flow",
-        question: "Looking for a tech advantage?",
-        answer: "We provide tech tools that streamline your operations, giving you data and insights to reduce empty miles and optimize your routes for maximum profitability.",
-        image: placeholderImages.find(p => p.id === 'tech-division'),
-        icon: Cpu,
-        link: "/tech",
-    },
-    {
-        title: "Savings Flow",
-        question: "Looking to cut costs?",
-        answer: "We unite our members to create collective buying power, negotiating significant discounts on parts, tires, and services you use every day.",
-        image: placeholderImages.find(p => p.id === 'mall-division'),
-        icon: Shield,
-        link: "/mall",
-    }
-];
-
-const partners = [
-  {
-    name: 'SA Auction Online',
-    description: 'Powering our auction mall with a vast inventory of vehicles and assets.',
-    logo: 'https://placehold.co/200x60/14532d/ffffff?text=SA+Auction+Online'
-  },
-  {
-    name: 'SATL',
-    description: 'Connecting our members to a national network of freight forwarders and shippers.',
-    logo: 'https://placehold.co/200x60/14532d/ffffff?text=SATL'
-  },
-  {
-    name: 'Ludic Financial Services',
-    description: 'Providing specialist insurance solutions for the transport sector.',
-    logo: 'https://placehold.co/200x60/14532d/ffffff?text=Ludic'
-  },
-  {
-    name: 'CTS Trailers',
-    description: 'A national trailer manufacturer offering quality assets to our members.',
-    logo: 'https://placehold.co/200x60/14532d/ffffff?text=CTS+Trailers'
-  }
-];
-
 export default function AboutPage() {
+  const { user } = useUser();
+  const ctaLink = user ? '/account?view=shop' : '/join?role=vendor';
+
   return (
-    <div>
-        <section className="relative w-full h-64 md:h-80 bg-card">
+    <div className="bg-background">
+        <section className="relative w-full h-64 md:h-80 bg-slate-900">
             {aboutHeroImage && (
                 <Image
                     src={aboutHeroImage.imageUrl}
                     alt={aboutHeroImage.description}
                     fill
-                    className="object-cover"
+                    className="object-cover opacity-50"
                     priority
-                    data-ai-hint={aboutHeroImage.imageHint}
+                    data-ai-hint="logistics dark"
                 />
             )}
-            <div className="absolute inset-0 bg-black/60" />
-            <div className="relative h-full flex flex-col items-center justify-center text-center text-primary-foreground z-10 p-4">
-                <h1 className="text-4xl md:text-5xl font-bold font-headline">About Logistics Flow</h1>
-                <p className="mt-4 text-lg md:text-xl max-w-3xl">We are improving the logistics sector by empowering businesses with digital tools to compete and grow.</p>
+            <div className="relative h-full flex flex-col items-center justify-center text-center text-white z-10 p-4">
+                <h1 className="text-4xl md:text-5xl font-black font-headline">Business Success Engine</h1>
+                <p className="mt-4 text-lg md:text-xl max-w-3xl">Beyond data: The infrastructure to scale your logistics operations.</p>
             </div>
         </section>
 
-        <section className="py-16 md:py-24 bg-background">
+        <section className="py-16 md:py-24">
             <div className="container mx-auto px-4">
-                <div className="text-center max-w-3xl mx-auto">
-                    <h2 className="text-3xl md:text-4xl font-bold font-headline">Your Digital Branch for the Logistics Economy</h2>
+                <div className="max-w-4xl mx-auto text-center mb-16">
+                    <h2 className="text-3xl md:text-4xl font-bold font-headline">From Discovery to Transaction</h2>
                     <p className="mt-4 text-lg text-muted-foreground">
-                       In today's digital world, every business needs a professional online presence. But for many in the logistics sector—from independent transporters to specialized suppliers—building and managing a digital storefront is complex and expensive. Logistics Flow was created to solve this. We provide the tools to build your own online shop, manage your sales, and connect with a network of buyers, sellers, and funders, all on one simple platform.
+                       Logistics Flow starts with intelligence, but it succeeds through trade. Once you've used our registry to find your next lead or supplier, we provide the digital tools to close the deal.
                     </p>
                 </div>
-            </div>
-        </section>
 
-        <section className="py-16 md:py-24 bg-card">
-            <div className="container mx-auto px-4">
-                 <div className="space-y-16">
-                    {values.map((value, index) => {
-                        const Icon = value.icon;
-                        return (
-                             <div key={value.title} className="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
-                                <div className={`relative aspect-video rounded-lg overflow-hidden shadow-lg ${index % 2 === 1 ? 'md:order-2' : ''}`}>
-                                     {value.image && (
-                                        <Image
-                                            src={value.image.imageUrl}
-                                            alt={value.title}
-                                            fill
-                                            className="object-cover"
-                                            data-ai-hint={value.image.imageHint}
-                                        />
-                                     )}
-                                </div>
-                                <div className={index % 2 === 1 ? 'md:order-1' : ''}>
-                                    <div className="flex items-center gap-4">
-                                         <Icon className="h-10 w-10 text-primary" />
-                                        <h3 className="text-3xl font-bold font-headline">{value.title}</h3>
-                                    </div>
-                                    <p className="mt-4 text-lg text-muted-foreground">
-                                        <span className="text-primary font-semibold">{value.question}</span> {value.answer}
-                                    </p>
-                                    <Button asChild variant="link" className="p-0 h-auto mt-4 text-lg">
-                                        <Link href={value.link}>
-                                            Find out how <ArrowRight className="ml-2 h-4 w-4" />
-                                        </Link>
-                                    </Button>
+                <div className="grid md:grid-cols-2 gap-12 items-center">
+                    <div className="space-y-6">
+                        <div className="bg-primary/10 p-4 rounded-2xl w-fit"><Store className="h-10 w-10 text-primary"/></div>
+                        <h3 className="text-3xl font-black font-headline">Your Digital Branch</h3>
+                        <p className="text-lg text-muted-foreground leading-relaxed">
+                            Creating a professional online presence shouldn't be a constraint. With an Intelligence Membership, you can create a complete digital twin of your business in minutes.
+                        </p>
+                        <div className="space-y-4">
+                            <div className="flex gap-4">
+                                <CheckCircle className="h-6 w-6 text-primary shrink-0" />
+                                <div>
+                                    <p className="font-bold">Automated Shop Wizard</p>
+                                    <p className="text-sm text-muted-foreground">Add products, service lanes, and routes with a simple form.</p>
                                 </div>
                             </div>
-                        )
-                    })}
-                 </div>
+                            <div className="flex gap-4">
+                                <CheckCircle className="h-6 w-6 text-primary shrink-0" />
+                                <div>
+                                    <p className="font-bold">Verified RC1 Registry</p>
+                                    <p className="text-sm text-muted-foreground">Contribute your fleet data to show customers you have verified capacity.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <Button asChild size="lg" className="mt-4">
+                            <Link href={ctaLink}>Create Your Digital Profile <ArrowRight className="ml-2 h-4 w-4" /></Link>
+                        </Button>
+                    </div>
+                    <div className="relative aspect-square rounded-3xl overflow-hidden shadow-2xl">
+                         <Image
+                            src="https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&q=80&w=1000"
+                            alt="Business Growth"
+                            fill
+                            className="object-cover"
+                            data-ai-hint="business growth"
+                        />
+                    </div>
+                </div>
             </div>
         </section>
 
-        <section className="py-16 md:py-24 bg-background">
+        <section className="py-16 md:py-24 bg-slate-900 text-white">
             <div className="container mx-auto px-4">
                 <div className="text-center max-w-3xl mx-auto mb-16">
-                    <h2 className="text-3xl md:text-4xl font-bold font-headline">Community-Based Financial Tools</h2>
-                    <p className="mt-4 text-lg text-muted-foreground">
-                        We offer new ways to approach financing in the transport sector, creating a more accessible and community-driven financial ecosystem.
+                    <h2 className="text-3xl md:text-4xl font-black font-headline text-primary">The Earning Pathway</h2>
+                    <p className="mt-4 text-lg text-slate-400">
+                        Our most successful members don't just use the data—they help build it and get paid in return.
                     </p>
                 </div>
-                <div className="grid md:grid-cols-2 gap-12 items-start max-w-5xl mx-auto">
-                    <Card className="h-full">
-                        <CardHeader className="flex-row items-start gap-4">
-                             <CreditCard className="h-10 w-10 text-primary flex-shrink-0 mt-1" />
-                             <div>
-                                <CardTitle>Embedded Finance</CardTitle>
-                                <CardDescription>Instant credit at point of sale.</CardDescription>
-                             </div>
+                <div className="grid md:grid-cols-3 gap-8">
+                    <Card className="bg-white/5 border-white/10 text-white">
+                        <CardHeader>
+                            <Users className="h-8 w-8 text-primary mb-2" />
+                            <CardTitle>Invite Your Network</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <p className="text-muted-foreground">
-                                Seamlessly finance your purchases directly within our marketplace. Our embedded finance solutions offer instant credit decisions at checkout, making it easier than ever to acquire the parts, products, and services you need without disrupting your cash flow.
-                            </p>
+                            <p className="text-sm text-slate-400">Invite your trusted transporters and suppliers to the registry. Each successful sign-up earns you recurring points and potential commission.</p>
                         </CardContent>
                     </Card>
-                     <Card className="h-full">
-                        <CardHeader className="flex-row items-start gap-4">
-                              <Building className="h-10 w-10 text-primary flex-shrink-0 mt-1" />
-                             <div>
-                                <CardTitle>Embedded Facilities</CardTitle>
-                                <CardDescription>Peer-to-peer credit for larger purchases.</CardDescription>
-                             </div>
+                    <Card className="bg-white/5 border-white/10 text-white">
+                        <CardHeader>
+                            <Rocket className="h-8 w-8 text-primary mb-2" />
+                            <CardTitle>ISA Partnership</CardTitle>
                         </CardHeader>
                         <CardContent>
-                             <p className="text-muted-foreground">
-                                Leverage the power of the community. Our platform enables established members to extend credit facilities to other trusted members for larger purchases, creating a peer-to-peer financing network built on industry relationships and real-world data.
-                            </p>
+                            <p className="text-sm text-slate-400">Top contributors can graduate to our Independent Sales Agent tier, unlocking a share of total ecosystem revenue generated by their network.</p>
+                        </CardContent>
+                    </Card>
+                    <Card className="bg-white/5 border-white/10 text-white">
+                        <CardHeader>
+                            <Handshake className="h-8 w-8 text-primary mb-2" />
+                            <CardTitle>Collective Power</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <p className="text-sm text-slate-400">By centralizing industrial intelligence, we negotiate bulk discounts on tires, fuel, and parts that were previously only available to giant fleets.</p>
                         </CardContent>
                     </Card>
                 </div>
             </div>
         </section>
-
-        <section className="py-16 md:py-24 bg-card">
-            <div className="container mx-auto px-4">
-                <div className="text-center max-w-3xl mx-auto mb-16">
-                    <h2 className="text-3xl md:text-4xl font-bold font-headline">Who is Logistics Flow for?</h2>
-                    <p className="mt-4 text-lg text-muted-foreground">
-                        Our ecosystem is designed for every participant in the transport industry. Find your place and start connecting.
-                    </p>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {roles.map((role) => {
-                        const Icon = role.icon;
-                        return (
-                            <Card key={role.title} className="flex flex-col text-center items-center p-6 h-full transition-all hover:border-primary hover:shadow-lg">
-                                <CardHeader className="p-0">
-                                    <div className="bg-primary/10 p-4 rounded-full mb-4 mx-auto">
-                                        <Icon className="h-8 w-8 text-primary" />
-                                    </div>
-                                    <CardTitle>{role.title}</CardTitle>
-                                </CardHeader>
-                                <CardContent className="flex-grow p-0 mt-2">
-                                    <p className="text-muted-foreground">{role.description}</p>
-                                </CardContent>
-                                <CardFooter className="flex justify-between w-full pt-6 p-0">
-                                    <Link href={`/faq#${role.id}`} className="text-sm font-semibold text-primary hover:underline">
-                                        FAQ
-                                    </Link>
-                                    <Link href={`/roles/${role.id}`} className="text-sm font-semibold text-primary hover:underline flex items-center gap-1">
-                                        Read More <ArrowRight className="h-4 w-4" />
-                                    </Link>
-                                </CardFooter>
-                            </Card>
-                        )
-                    })}
-                </div>
-            </div>
-        </section>
-
-        <section className="py-16 md:py-24 bg-background">
-            <div className="container mx-auto px-4">
-                <div className="text-center max-w-3xl mx-auto mb-16">
-                    <h2 className="text-3xl md:text-4xl font-bold font-headline">Our Valued Partners</h2>
-                    <p className="mt-4 text-lg text-muted-foreground">
-                        Collaboration is at the heart of our ecosystem. We're proud to work with industry leaders who share our vision.
-                    </p>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                    {partners.map((partner) => (
-                         <Card key={partner.name} className="flex flex-col items-center justify-center p-6 text-center">
-                            <Image src={partner.logo} alt={`${partner.name} logo`} width={150} height={50} className="object-contain mb-4" />
-                            <p className="text-muted-foreground text-sm flex-grow">{partner.description}</p>
-                        </Card>
-                    ))}
-                </div>
-                 <div className="text-center mt-12">
-                    <Button asChild>
-                        <Link href="/for-financiers">
-                            Become a Partner <ArrowRight className="ml-2 h-4 w-4" />
-                        </Link>
-                    </Button>
-                </div>
-            </div>
-        </section>
-
-        <section className="py-16 md:py-24 bg-card">
-            <div className="container mx-auto px-4">
-                <div className="text-center max-w-3xl mx-auto mb-16">
-                    <h2 className="text-3xl md:text-4xl font-bold font-headline">Your Security & Data Protection: Our Priority</h2>
-                    <p className="mt-4 text-lg text-muted-foreground">
-                        We understand that your business data is sensitive. We are committed to protecting your privacy and securing your information with robust, industry-standard practices.
-                    </p>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-                    <Card>
-                        <CardContent className="p-6 text-center">
-                            <Lock className="h-10 w-10 text-primary mx-auto mb-4" />
-                            <h3 className="text-xl font-semibold">Data Privacy</h3>
-                            <p className="mt-2 text-muted-foreground">Your personal and company data is never shared or sold. It is only used to power the services you choose to use within the platform.</p>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardContent className="p-6 text-center">
-                            <DatabaseZap className="h-10 w-10 text-primary mx-auto mb-4" />
-                            <h3 className="text-xl font-semibold">Anonymous Contributions</h3>
-                            <p className="mt-2 text-muted-foreground">Data you contribute to the community, like fleet details, is always anonymized and aggregated. It is only used to negotiate group discounts and will never be linked back to you.</p>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardContent className="p-6 text-center">
-                            <ShieldCheck className="h-10 w-10 text-primary mx-auto mb-4" />
-                            <h3 className="text-xl font-semibold">Secure Platform</h3>
-                            <p className="mt-2 text-muted-foreground">Our platform is built on secure, modern infrastructure to protect against unauthorized access and ensure your data remains safe.</p>
-                        </CardContent>
-                    </Card>
-                </div>
-            </div>
-        </section>
-
     </div>
   );
 }
