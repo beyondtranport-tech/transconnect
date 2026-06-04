@@ -124,6 +124,107 @@ export async function POST(req: NextRequest) {
         }
 
         switch (action) {
+            case 'findDuplicateLeads': {
+                const leadsSnap = await db.collection('leads').get();
+                const membersSnap = await db.collection('companies').get();
+                
+                const allRecords: any[] = [];
+                leadsSnap.docs.forEach(doc => allRecords.push({ ...doc.data(), id: doc.id, source: 'Lead' }));
+                membersSnap.docs.forEach(doc => allRecords.push({ ...doc.data(), id: doc.id, source: 'Member' }));
+
+                const groups = new Map<string, any[]>();
+                allRecords.forEach(record => {
+                    const name = (record.companyName || '').toString().toLowerCase().trim();
+                    if (name.length < 3) return;
+                    
+                    if (!groups.has(name)) groups.set(name, []);
+                    groups.get(name)!.push(record);
+                });
+
+                const duplicates = Array.from(groups.values()).filter(group => group.length > 1);
+                return NextResponse.json({ success: true, data: duplicates });
+            }
+
+            case 'deleteLeads': {
+                const { leadIds } = payload;
+                if (!Array.isArray(leadIds)) throw new Error("Invalid leadIds array.");
+                
+                const batch = db.batch();
+                leadIds.forEach(id => {
+                    batch.delete(db.collection('leads').doc(id));
+                    batch.delete(db.collection('partners').doc(id));
+                });
+                await batch.commit();
+                return NextResponse.json({ success: true });
+            }
+
+            case 'resetResearchQueue': {
+                const { type } = payload; // 'lead', 'supplier', etc.
+                const snap = await db.collection('leads')
+                    .where('researchStatus', '==', 'researching')
+                    .get();
+                
+                const batch = db.batch();
+                let count = 0;
+                snap.docs.forEach(doc => {
+                    batch.update(doc.ref, { researchStatus: 'pending', updatedAt: FieldValue.serverTimestamp() });
+                    batch.update(db.collection('partners').doc(doc.id), { researchStatus: 'pending', updatedAt: FieldValue.serverTimestamp() });
+                    count++;
+                });
+                await batch.commit();
+                return NextResponse.json({ success: true, count });
+            }
+
+            case 'bulkUpdateOutreach': {
+                const { entries, subject } = payload;
+                const batch = db.batch();
+                let count = 0;
+
+                // Simple check for email vs name
+                for (const entry of entries) {
+                    const isEmail = entry.includes('@');
+                    const field = isEmail ? 'email' : 'companyName';
+                    const snap = await db.collection('leads').where(field, '==', entry).limit(1).get();
+                    
+                    if (!snap.empty) {
+                        const docRef = snap.docs[0].ref;
+                        batch.update(docRef, {
+                            status: 'contacted',
+                            lastOutreachAt: FieldValue.serverTimestamp(),
+                            lastOutreachSubject: subject,
+                            updatedAt: FieldValue.serverTimestamp()
+                        });
+                        batch.update(db.collection('partners').doc(docRef.id), {
+                            status: 'contacted',
+                            lastOutreachAt: FieldValue.serverTimestamp(),
+                            lastOutreachSubject: subject,
+                            updatedAt: FieldValue.serverTimestamp()
+                        });
+                        count++;
+                    }
+                }
+                await batch.commit();
+                return NextResponse.json({ success: true, count });
+            }
+
+            case 'bulkCategorizeLeads': {
+                const snap = await db.collection('leads').get();
+                const batch = db.batch();
+                let count = 0;
+
+                snap.docs.forEach(doc => {
+                    const data = doc.data();
+                    const normalized = normalizePartnerData(data);
+                    if (normalized.entryType && normalized.entryType !== data.entryType) {
+                        batch.update(doc.ref, { entryType: normalized.entryType, updatedAt: FieldValue.serverTimestamp() });
+                        batch.update(db.collection('partners').doc(doc.id), { entryType: normalized.entryType, updatedAt: FieldValue.serverTimestamp() });
+                        count++;
+                    }
+                });
+                await batch.commit();
+                return NextResponse.json({ success: true, count });
+            }
+
             case 'getMembers': {
                 const companiesSnap = await db.collection('companies').get();
                 const members: any[] = [];
@@ -131,7 +232,6 @@ export async function POST(req: NextRequest) {
                     const companyData = companyDoc.data();
                     let userData = null;
                     
-                    // Defensive check for ownerId to prevent "documentPath" errors
                     if (companyData.ownerId && typeof companyData.ownerId === 'string') {
                         const userDoc = await db.collection('users').doc(companyData.ownerId).get();
                         userData = userDoc.data();
@@ -170,7 +270,6 @@ export async function POST(req: NextRequest) {
                     let userName = 'System';
                     let companyName = 'N/A';
 
-                    // Robust path validation for user doc
                     if (data.userId && typeof data.userId === 'string' && data.userId.length > 0) {
                         const userDoc = await db.collection('users').doc(data.userId).get();
                         const userData = userDoc.data();
@@ -179,7 +278,6 @@ export async function POST(req: NextRequest) {
                         }
                     }
 
-                    // Robust path validation for company doc
                     if (data.companyId && typeof data.companyId === 'string' && data.companyId.length > 0) {
                         const companyDoc = await db.collection('companies').doc(data.companyId).get();
                         const companyData = companyDoc.data();
