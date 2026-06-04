@@ -119,11 +119,102 @@ export async function POST(req: NextRequest) {
         const isAdmin = decodedToken.email === 'beyondtransport@gmail.com' || decodedToken.email === 'mkoton100@gmail.com';
 
         if (!isAdmin) {
-             const allowedUserActions = ['getAuditLogs', 'logCommunication', 'bulkSavePartners', 'getPartnersByType', 'markLeadsAsResearching', 'getPlatformStaff', 'findDuplicateLeads', 'deleteLeads', 'resetResearchQueue', 'bulkUpdateOutreach', 'bulkCategorizeLeads', 'getSupplierCategoryCounts', 'refreshSupplierCategoryCounts', 'refreshFinanceCategoryCounts'];
+             const allowedUserActions = ['getAuditLogs', 'logCommunication', 'bulkSavePartners', 'getPartnersByType', 'markLeadsAsResearching', 'getPlatformStaff', 'findDuplicateLeads', 'deleteLeads', 'resetResearchQueue', 'bulkUpdateOutreach', 'bulkCategorizeLeads', 'getSupplierCategoryCounts', 'refreshSupplierCategoryCounts', 'refreshFinanceCategoryCounts', 'getMembers', 'getShops', 'getContributions'];
              if (!allowedUserActions.includes(action)) throw new Error("Forbidden.");
         }
 
         switch (action) {
+            case 'getMembers': {
+                const companiesSnap = await db.collection('companies').get();
+                const members: any[] = [];
+                for (const companyDoc of companiesSnap.docs) {
+                    const companyData = companyDoc.data();
+                    const userDoc = await db.collection('users').doc(companyData.ownerId).get();
+                    const userData = userDoc.data();
+                    members.push({
+                        id: companyDoc.id,
+                        ...serializeTimestamps(companyData),
+                        firstName: userData?.firstName || 'Unknown',
+                        lastName: userData?.lastName || 'Member',
+                        email: userData?.email || 'N/A'
+                    });
+                }
+                return NextResponse.json({ success: true, data: members });
+            }
+
+            case 'getShops': {
+                const shopsSnap = await db.collectionGroup('shops').get();
+                const shops = shopsSnap.docs.map(doc => ({
+                    id: doc.id,
+                    ...serializeTimestamps(doc.data())
+                }));
+                return NextResponse.json({ success: true, data: shops });
+            }
+
+            case 'getContributions': {
+                const snap = await db.collection('contributions').get();
+                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
+            }
+
+            case 'getAuditLogs': {
+                const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(100).get();
+                const logs = await Promise.all(snap.docs.map(async d => {
+                    const data = d.data();
+                    const userDoc = await db.collection('users').doc(data.userId).get();
+                    const userData = userDoc.data();
+                    const companyDoc = await db.collection('companies').doc(data.companyId).get();
+                    const companyData = companyDoc.data();
+                    return {
+                        id: d.id,
+                        ...serializeTimestamps(data),
+                        userName: userData ? `${userData.firstName} ${userData.lastName}` : 'System',
+                        companyName: companyData?.companyName || 'N/A'
+                    };
+                }));
+                return NextResponse.json({ success: true, data: logs });
+            }
+
+            case 'listAllUsers': {
+                const usersResult = await adminAuth.listUsers();
+                const users = usersResult.users.map(u => ({
+                    uid: u.uid,
+                    email: u.email,
+                    displayName: u.displayName,
+                    disabled: u.disabled,
+                    metadata: u.metadata,
+                    creationTime: u.metadata.creationTime,
+                    lastSignInTime: u.metadata.lastSignInTime,
+                }));
+                return NextResponse.json({ success: true, data: users });
+            }
+
+            case 'approveShop': {
+                const { shopId, companyId } = payload;
+                const shopRef = db.doc(`companies/${companyId}/shops/${shopId}`);
+                await shopRef.update({ status: 'approved', updatedAt: FieldValue.serverTimestamp() });
+                
+                const shopDoc = await shopRef.get();
+                const shopData = shopDoc.data();
+                if (shopData) {
+                    await db.collection('shops').doc(shopId).set({
+                        ...shopData,
+                        status: 'approved',
+                        updatedAt: FieldValue.serverTimestamp()
+                    }, { merge: true });
+                }
+                return NextResponse.json({ success: true });
+            }
+
+            case 'rejectShop': {
+                const { shopId, companyId } = payload;
+                await db.doc(`companies/${companyId}/shops/${shopId}`).update({ 
+                    status: 'rejected', 
+                    updatedAt: FieldValue.serverTimestamp() 
+                });
+                await db.collection('shops').doc(shopId).delete();
+                return NextResponse.json({ success: true });
+            }
+
             case 'refreshSupplierCategoryCounts': {
                 const supplierRoles = ['Vendors', 'Vendor', 'Supplier', 'Suppliers'];
                 const leadsSnap = await db.collection('leads').where('role', 'in', supplierRoles).get();
