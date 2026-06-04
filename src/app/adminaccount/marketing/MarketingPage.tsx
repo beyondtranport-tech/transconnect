@@ -2,7 +2,7 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { BookOpen, Loader2, ClipboardCopy, SearchCode, Target, Users, LayoutDashboard, Send, Sparkles } from 'lucide-react';
+import { BookOpen, Loader2, ClipboardCopy, SearchCode, Target, Users, LayoutDashboard, Send, Sparkles, Landmark } from 'lucide-react';
 import { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -62,13 +62,14 @@ import TransporterManagement from './transporter-management';
 
 import SupplierPitch from '@/app/adminaccount/supplier-pitch';
 import DiscoveryEngine from './discovery-engine';
+import FinanceDiscoveryEngine from './finance-discovery';
 
 const audienceConfig = {
     partners: { title: 'Strategic Partners', icon: Users, Offer: PartnerOffer, Emails: PartnerEmails, Management: PartnerManagement },
     isa: { title: 'ISA Agents', icon: Target, Offer: PartnerOffer, Emails: PartnerEmails, Management: ISAManagement },
     suppliers: { title: 'Suppliers', icon: SearchCode, Offer: SupplierOffer, Emails: SupplierEmails, Management: SupplierManagement, Pitch: SupplierPitch, Discovery: DiscoveryEngine },
     transporters: { title: 'Transporters', icon: Send, Offer: TransporterOffer, Emails: TransporterEmails, Management: TransporterManagement },
-    investors: { title: 'Investors', icon: LayoutDashboard, Offer: InvestorOffer, Emails: InvestorEmails, Management: InvestorManagement },
+    investors: { title: 'Finance & Insurance', icon: Landmark, Offer: InvestorOffer, Emails: InvestorEmails, Management: InvestorManagement, Discovery: FinanceDiscoveryEngine },
     developers: { title: 'Developers', icon: LayoutDashboard, Offer: DeveloperOffer, Emails: DeveloperEmails, Management: DeveloperManagement },
 };
 
@@ -248,11 +249,11 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
                 <div className="bg-primary/10 p-3 rounded-lg"><config.icon className="h-6 w-6 text-primary" /></div>
                 <div>
                     <h1 className="text-2xl font-bold">Marketing Library: {config.title}</h1>
-                    <p className="text-muted-foreground">Manage leads and browse engagement materials.</p>
+                    <p className="text-muted-foreground">Manage forensic records and browse engagement materials.</p>
                 </div>
             </div>
             <div className="flex items-center gap-2">
-                {audience === 'suppliers' && (
+                {Discovery && (
                     <Button variant="outline" onClick={() => handleTabChange('discovery')} className={cn(activeTab === 'discovery' && "bg-primary text-white hover:bg-primary/90")}>
                         <Sparkles className="mr-2 h-4 w-4" /> Discovery Engine
                     </Button>

@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -6,7 +5,10 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, DollarSign, Edit, Trash2, Send, CheckCircle, Users, Filter, Save, Search } from 'lucide-react';
+import { 
+  Loader2, PlusCircle, Landmark, Edit, Trash2, Send, Users, Filter, Save, 
+  Search, Zap, RotateCcw, XCircle, Info, Tag, Database, Mail, ShieldCheck 
+} from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -19,18 +21,23 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { PartnerTasksDialog } from './PartnerTasksDialog';
-import { CommunicationLogDialog } from './CommunicationLogDialog';
+import { PartnerOversightDialog } from './PartnerOversightDialog';
 import { EngageDialog } from './EngageDialog';
-import { formatDateSafe } from '@/lib/utils';
-import { EnrichPartnerButton } from './EnrichPartnerButton';
+import { CommunicationLogDialog } from './CommunicationLogDialog';
+import { PartnerTasksDialog } from './PartnerTasksDialog';
+import { formatDateSafe, cn } from '@/lib/utils';
+import { EnrichPartnerButton, BulkEnrichButton } from './EnrichPartnerButton';
 import { Label } from '@/components/ui/label';
+import { BatchResearchDialog } from './BatchResearchDialog';
+import { BulkImportDialog } from './BulkImportDialog';
+import { financeCategories } from './finance-discovery';
 
 async function performAdminAction(token: string, action: string, payload: any) {
   const response = await fetch('/api/admin', {
     method: 'POST',
     headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({ action, payload }),
+    cache: 'no-store'
   });
   const result = await response.json();
   if (!response.ok || !result.success) throw new Error(result.error || `API Error: ${action}`);
@@ -45,7 +52,8 @@ const partnerSchema = z.object({
   contactPerson: z.string().optional(),
   companyName: z.string().optional(),
   address: z.string().optional(),
-  status: z.enum(['active', 'inactive']),
+  entryType: z.string().optional(),
+  status: z.enum(['active', 'inactive', 'contacted', 'new', 'qualified', 'invited']),
   type: z.enum(['partner', 'isa', 'investor', 'developer', 'supplier', 'transporter']),
 });
 type PartnerFormValues = z.infer<typeof partnerSchema>;
@@ -58,7 +66,7 @@ function InvestorDialog({ open, onOpenChange, partner, onSave }: { open: boolean
   useEffect(() => {
     if (open) {
       if (partner) form.reset(partner);
-      else form.reset({ firstName: '', lastName: '', email: '', phone: '', contactPerson: '', companyName: '', address: '', status: 'active', type: 'investor' });
+      else form.reset({ firstName: '', lastName: '', email: '', phone: '', contactPerson: '', companyName: '', address: '', status: 'active', type: 'investor', entryType: 'Asset Finance' });
     }
   }, [open, partner, form]);
 
@@ -68,7 +76,7 @@ function InvestorDialog({ open, onOpenChange, partner, onSave }: { open: boolean
       const token = await getClientSideAuthToken();
       if (!token) throw new Error("Authentication failed.");
       await performAdminAction(token, 'savePartner', { partner: { id: partner?.id, ...values } });
-      toast({ title: 'Investor Saved' });
+      toast({ title: 'Record Saved' });
       onSave();
       onOpenChange(false);
     } catch (e: any) {
@@ -82,8 +90,8 @@ function InvestorDialog({ open, onOpenChange, partner, onSave }: { open: boolean
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>{partner ? 'Edit' : 'Add'} Investor</DialogTitle>
-          <DialogDescription>Enter the investor details.</DialogDescription>
+          <DialogTitle>{partner ? 'Edit' : 'Add'} Finance Entity</DialogTitle>
+          <DialogDescription>Enter detailed verified record for the capital partner.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2">
@@ -95,22 +103,16 @@ function InvestorDialog({ open, onOpenChange, partner, onSave }: { open: boolean
               <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Phone</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
-            <FormField control={form.control} name="contactPerson" render={({ field }) => (<FormItem><FormLabel>Primary Contact Full Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-            <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Company Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-            <FormField control={form.control} name="address" render={({ field }) => (<FormItem><FormLabel>Address</FormLabel><FormControl><Textarea placeholder="Enter physical address..." {...field} /></FormControl><FormMessage /></FormItem>)} />
+            <FormField control={form.control} name="contactPerson" render={({ field }) => (<FormItem><FormLabel>Identity Verified Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+            <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Funder Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             <div className="grid grid-cols-2 gap-4">
-              <FormField control={form.control} name="type" render={({ field }) => (
+              <FormField control={form.control} name="entryType" render={({ field }) => (
                 <FormItem>
-                    <FormLabel>Partner Category</FormLabel>
+                    <FormLabel>Finance Category</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                         <SelectContent>
-                            <SelectItem value="partner">Strategic Partner</SelectItem>
-                            <SelectItem value="isa">ISA Agent</SelectItem>
-                            <SelectItem value="investor">Investor</SelectItem>
-                            <SelectItem value="developer">Developer</SelectItem>
-                            <SelectItem value="supplier">Supplier</SelectItem>
-                            <SelectItem value="transporter">Transporter</SelectItem>
+                            {financeCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
                         </SelectContent>
                     </Select>
                 </FormItem>
@@ -121,15 +123,17 @@ function InvestorDialog({ open, onOpenChange, partner, onSave }: { open: boolean
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                         <SelectContent>
-                            <SelectItem value="active">Active</SelectItem>
-                            <SelectItem value="inactive">Inactive</SelectItem>
+                            <SelectItem value="new">New</SelectItem>
+                            <SelectItem value="contacted">Researching</SelectItem>
+                            <SelectItem value="qualified">Qualified</SelectItem>
+                            <SelectItem value="active">Partner (Active)</SelectItem>
                         </SelectContent>
                     </Select>
                 </FormItem>
               )} />
             </div>
             <DialogFooter className="pt-4 border-t">
-              <Button type="submit" disabled={isLoading}>{isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />} Save Investor</Button>
+              <Button type="submit" disabled={isLoading}>{isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />} Save Record</Button>
             </DialogFooter>
           </form>
         </Form>
@@ -143,11 +147,12 @@ export default function InvestorManagement() {
   const [partners, setPartners] = useState<any[]>([]);
   const [staff, setStaff] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | null, data?: any }>({ type: null });
+  const [isResetting, setIsResetting] = useState(false);
+  const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | 'batch-ai' | null, data?: any }>({ type: null });
 
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState('all');
   const [assigneeFilter, setAssigneeFilter] = useState('all');
-  const [dataFilter, setDataFilter] = useState('all');
 
   const forceRefresh = useCallback(async () => {
     setIsLoading(true);
@@ -175,18 +180,23 @@ export default function InvestorManagement() {
     return partners.filter(p => {
         const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
         const matchesAssignee = assigneeFilter === 'all' || p.assigneeId === assigneeFilter;
-        
-        let matchesData = true;
-        if (dataFilter === 'no-email') matchesData = !p.email;
-        else if (dataFilter === 'no-phone') matchesData = !p.phone;
-        else if (dataFilter === 'no-website') matchesData = !p.website;
-        else if (dataFilter === 'has-email') matchesData = !!p.email;
-        else if (dataFilter === 'has-phone') matchesData = !!p.phone;
-        else if (dataFilter === 'has-website') matchesData = !!p.website;
-
-        return matchesStatus && matchesAssignee && matchesData;
+        return matchesStatus && matchesAssignee;
     });
-  }, [partners, statusFilter, assigneeFilter, dataFilter]);
+  }, [partners, statusFilter, assigneeFilter]);
+
+  const selectedLeadsForBatch = useMemo(() => {
+      return (partners || []).filter(l => selectedIds.includes(l.id));
+  }, [partners, selectedIds]);
+
+  const handleEnhanceBatch = (size: number) => {
+      const targets = partners.filter(p => !p.email && p.researchStatus !== 'researching').slice(0, size);
+      if (targets.length === 0) {
+          toast({ title: "No candidates found" });
+          return;
+      }
+      setSelectedIds(targets.map(t => t.id));
+      setDialog({ type: 'batch-ai' });
+  };
 
   async function handleDelete() {
     try {
@@ -202,24 +212,19 @@ export default function InvestorManagement() {
   }
 
   const columns: ColumnDef<any>[] = [
-    { accessorKey: 'firstName', header: 'Name', cell: ({ row }) => <div>{row.original.firstName} {row.original.lastName}</div> },
-    { 
-        accessorKey: 'contactPerson', 
-        header: 'Contact Name',
-        cell: ({ row }) => <div>{row.original.contactPerson || `${row.original.firstName || ''} ${row.original.lastName || ''}`.trim() || 'N/A'}</div>
-    },
-    { 
-        accessorKey: 'phone', 
-        header: 'Contact Number',
-        cell: ({ row }) => <div>{row.original.phone || row.original.telephone_number || 'N/A'}</div>
-    },
-    { accessorKey: 'companyName', header: 'Company' },
+    { accessorKey: 'companyName', header: 'Funder Name', cell: ({ row }) => <div className="font-bold">{row.original.companyName}</div> },
+    { accessorKey: 'entryType', header: 'Category', cell: ({row}) => <Badge variant="outline" className="text-[10px] uppercase font-bold">{row.original.entryType || 'Finance'}</Badge> },
+    { accessorKey: 'contactPerson', header: 'Identity Verified', cell: ({ row }) => <div>{row.original.contactPerson || 'N/A'}</div> },
+    { accessorKey: 'email', header: 'Email' },
+    { accessorKey: 'researchStatus', header: 'Enhanced', cell: ({row}) => {
+        if (row.original.researchStatus === 'researching') return <Badge variant="outline" className="animate-pulse text-amber-600">Searching...</Badge>;
+        if (row.original.email) return <Badge variant="default" className="bg-green-100 text-green-700">Enriched</Badge>;
+        return <span className="text-xs text-muted-foreground">-</span>;
+    }},
     { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
       <div className="flex justify-end gap-1">
         <EnrichPartnerButton partner={row.original} onUpdate={forceRefresh} />
-        <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'engage', data: row.original })} title="Initiate Engagement">
-          <Send className="h-4 w-4 text-primary" />
-        </Button>
+        <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'engage', data: row.original })} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
         <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.firstName} />
         <PartnerTasksDialog partner={row.original} />
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'edit', data: row.original })}><Edit className="h-4 w-4" /></Button>
@@ -230,70 +235,63 @@ export default function InvestorManagement() {
 
   return (
     <>
-      <EngageDialog 
-        open={dialog.type === 'engage'} 
-        onOpenChange={(o) => !o && setDialog({ type: null })} 
-        partner={dialog.data} 
-        audience="investors" 
-        onEngageSuccess={forceRefresh}
-      />
+      <BatchResearchDialog open={dialog.type === 'batch-ai'} onOpenChange={(o) => !o && setDialog({ type: null })} selectedLeads={selectedLeadsForBatch} onComplete={() => { setSelectedIds([]); forceRefresh(); }} />
+      <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.data} audience="investors" onEngageSuccess={forceRefresh} />
       <InvestorDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={forceRefresh} />
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
         <AlertDialogContent>
-          <AlertDialogHeader><AlertDialogTitle>Delete Investor?</AlertDialogTitle><AlertDialogDescription>Delete "{dialog.data?.firstName}"?</AlertDialogDescription></AlertDialogHeader>
-          <AlertDialogFooter><AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction></AlertDialogFooter>
+          <AlertDialogHeader><AlertDialogTitle>Delete Record?</AlertDialogTitle><AlertDialogDescription>Delete "{dialog.data?.companyName}"?</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div><CardTitle><DollarSign /> Investors</CardTitle></div>
-          <div className="flex gap-2">
-            <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Investor</Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-            <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg">
-                <div className="flex-1 space-y-2">
-                    <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status</Label>
-                    <Select value={statusFilter} onValueChange={setStatusFilter}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All Statuses</SelectItem>
-                            <SelectItem value="active">Active</SelectItem>
-                            <SelectItem value="inactive">Inactive</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-                <div className="flex-1 space-y-2">
-                    <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Users className="h-3 w-3"/> Assignee</Label>
-                    <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All Staff</SelectItem>
-                            <SelectItem value="none">Unallocated</SelectItem>
-                            {staff.map(s => <SelectItem key={s.id} value={s.id}>{s.firstName} {s.lastName}</SelectItem>)}
-                        </SelectContent>
-                    </Select>
-                </div>
-                <div className="flex-1 space-y-2">
-                    <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Search className="h-3 w-3"/> Data Integrity</Label>
-                    <Select value={dataFilter} onValueChange={setDataFilter}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All Records</SelectItem>
-                            <SelectItem value="has-email">Has Email</SelectItem>
-                            <SelectItem value="no-email">Missing Email</SelectItem>
-                            <SelectItem value="has-phone">Has Phone</SelectItem>
-                            <SelectItem value="no-phone">Missing Phone</SelectItem>
-                            <SelectItem value="has-website">Has WWW</SelectItem>
-                            <SelectItem value="no-website">Missing WWW</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
+      <div className="space-y-6">
+        <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="space-y-1">
+                <CardTitle className="flex items-center gap-2">
+                    <Landmark /> Capital Intelligence Registry
+                    <Badge variant="outline" className="ml-2 font-black border-amber-600 text-amber-600">{partners.length} Active Records</Badge>
+                </CardTitle>
+                <CardDescription>Forensic database of lenders, asset financiers, and insurers.</CardDescription>
             </div>
-            {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredInvestors} />}
-        </CardContent>
-      </Card>
+            <div className="flex flex-wrap items-center gap-2">
+                <Button variant="outline" size="sm" onClick={() => handleEnhanceBatch(20)}>
+                    <Zap className="mr-2 h-4 w-4" /> Batch Research
+                </Button>
+                <BulkImportDialog type="investor" onComplete={forceRefresh}><Button variant="outline">Import JSON</Button></BulkImportDialog>
+                <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Record</Button>
+            </div>
+        </CardHeader>
+
+        <Card>
+            <CardContent className="pt-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 p-4 bg-muted/30 rounded-lg">
+                    <div className="space-y-2">
+                        <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status</Label>
+                        <Select value={statusFilter} onValueChange={setStatusFilter}>
+                            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Statuses</SelectItem>
+                                <SelectItem value="new">New</SelectItem>
+                                <SelectItem value="contacted">Researching</SelectItem>
+                                <SelectItem value="active">Active</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="space-y-2">
+                        <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Users className="h-3 w-3"/> Assignee</Label>
+                        <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
+                            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                            <SelectContent><SelectItem value="all">All Staff</SelectItem><SelectItem value="none">Unallocated</SelectItem>{staff.map(s => <SelectItem key={s.id} value={s.id}>{s.firstName} {s.lastName}</SelectItem>)}</SelectContent>
+                        </Select>
+                    </div>
+                </div>
+                {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredInvestors} onSelectionChange={setSelectedIds} />}
+            </CardContent>
+        </Card>
+      </div>
     </>
   );
 }
