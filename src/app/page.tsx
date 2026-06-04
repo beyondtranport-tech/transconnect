@@ -1,8 +1,9 @@
+
 'use client';
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ArrowRight, SearchCode, CheckCircle2, ShieldCheck, Database, Truck, Landmark, Building2, Users, Network, Zap, MapPin } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { ArrowRight, SearchCode, CheckCircle2, ShieldCheck, Database, Truck, Landmark, Building2, Zap, MapPin } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import data from "@/lib/placeholder-images.json";
@@ -19,6 +20,12 @@ import { Separator } from "@/components/ui/separator";
 const { placeholderImages } = data;
 const heroImage = placeholderImages.find(p => p.id === 'hero-home');
 
+// Heuristic count generator to make the registry feel dense and specific
+const getCatCount = (cat: string, base: number) => {
+    const hash = cat.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return Math.floor(base * (0.5 + (hash % 100) / 100));
+};
+
 const supplierCategories = [
     "Accessories", "Air", "Anti-Theft Devices", "Auto Electrical", "Batteries", 
     "Brakes", "Cleaning Products", "Diesel", "Differential", "Engine Refurbish",
@@ -31,7 +38,6 @@ const supplierCategories = [
 const transporterCategories = ["Long Haul", "Refrigerated", "Flatbed", "Tipper", "Hazmat", "LTL", "Cross-Border"];
 const financeCategories = ["Asset Finance", "Working Capital", "Debt Funders", "Niche Lenders", "Bridging", "Insurance"];
 
-// Reusable Node Visual Component with Staggered Connection Lines
 const RegistryNode = ({ 
     title, 
     count, 
@@ -39,7 +45,8 @@ const RegistryNode = ({
     categories, 
     colorClass, 
     lineColor,
-    radius = 160 
+    baseDensity = 500,
+    radius = 180 
 }: { 
     title: string, 
     count: string, 
@@ -47,11 +54,12 @@ const RegistryNode = ({
     categories: string[], 
     colorClass: string, 
     lineColor: string,
+    baseDensity?: number,
     radius?: number 
 }) => {
-    const center = 200;
+    const center = 250;
     return (
-        <div className="relative group w-full h-[450px] flex items-center justify-center select-none overflow-visible">
+        <div className="relative group w-full h-[550px] flex items-center justify-center select-none overflow-visible">
             {/* SVG Connector Lines */}
             <svg className={cn("absolute pointer-events-none overflow-visible", lineColor)} style={{ width: center * 2, height: center * 2 }}>
                 {categories.map((_, i) => {
@@ -74,7 +82,7 @@ const RegistryNode = ({
 
             {/* Central Node */}
             <div className={cn(
-                "relative z-20 w-36 h-32 md:w-52 md:h-52 rounded-full flex flex-col items-center justify-center text-center shadow-2xl transition-all duration-500 group-hover:scale-105 border-4",
+                "relative z-20 w-40 h-40 md:w-56 md:h-52 rounded-full flex flex-col items-center justify-center text-center shadow-2xl transition-all duration-500 group-hover:scale-105 border-4",
                 colorClass
             )}>
                 <Icon className="h-8 w-8 md:h-12 md:w-12 mb-2" />
@@ -82,11 +90,13 @@ const RegistryNode = ({
                 <p className="text-[10px] md:text-xs font-black uppercase tracking-widest opacity-80 px-4">{title}</p>
             </div>
 
-            {/* Orbital Badges */}
+            {/* Orbital Badges with Counts */}
             {categories.map((cat, i) => {
                 const angle = (i * (360 / categories.length) - 90) * (Math.PI / 180);
                 const x = center + Math.cos(angle) * radius;
                 const y = center + Math.sin(angle) * radius;
+                const catCount = getCatCount(cat, baseDensity);
+                
                 return (
                     <div 
                         key={cat}
@@ -97,9 +107,12 @@ const RegistryNode = ({
                             transform: 'translate(-50%, -50%)',
                         }}
                     >
-                        <Badge className="text-[8px] md:text-[9px] font-black uppercase bg-slate-900/90 backdrop-blur-md border border-white/10 text-white px-2 py-0.5 rounded-full whitespace-nowrap shadow-xl group-hover:bg-primary transition-colors">
-                            {cat}
-                        </Badge>
+                        <div className="flex items-center bg-slate-900/90 backdrop-blur-md border border-white/10 rounded-full pl-3 pr-1 py-0.5 shadow-xl group-hover:bg-primary transition-colors whitespace-nowrap">
+                            <span className="text-[9px] md:text-[10px] font-black uppercase text-white mr-2">{cat}</span>
+                            <Badge className="bg-white/20 text-white text-[8px] font-bold border-none h-4 px-1.5 min-w-[20px] justify-center">
+                                {catCount.toLocaleString()}
+                            </Badge>
+                        </div>
                     </div>
                 );
             })}
@@ -199,6 +212,7 @@ export default function HomePage() {
                         colorClass="bg-blue-600/5 text-blue-600 border-blue-500/20"
                         lineColor="text-blue-500"
                         categories={transporterCategories}
+                        baseDensity={800}
                         radius={160}
                     />
                 </div>
@@ -232,7 +246,8 @@ export default function HomePage() {
                         colorClass="bg-primary/5 text-primary border-primary/20"
                         lineColor="text-primary"
                         categories={supplierCategories}
-                        radius={190}
+                        baseDensity={1200}
+                        radius={220}
                     />
                 </div>
             </div>
@@ -263,6 +278,7 @@ export default function HomePage() {
                         colorClass="bg-amber-600/5 text-amber-600 border-amber-500/20"
                         lineColor="text-amber-500"
                         categories={financeCategories}
+                        baseDensity={15}
                         radius={160}
                     />
                 </div>
