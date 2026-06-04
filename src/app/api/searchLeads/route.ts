@@ -8,6 +8,7 @@ export const dynamic = 'force-dynamic';
 /**
  * PUBLIC/LIMITED SEARCH API
  * Enforces the "1 search / 10 results" rule for free/unauthenticated users.
+ * Supports: supplier, transporter, finance
  */
 export async function POST(req: NextRequest) {
     try {
@@ -39,7 +40,6 @@ export async function POST(req: NextRequest) {
         }
 
         // 2. Build Query
-        // Note: For a database of 27k, we rely on Industrial Category first for density
         let leadsRef = db.collection('leads');
         let firestoreQuery: any = leadsRef;
 
@@ -49,6 +49,9 @@ export async function POST(req: NextRequest) {
         } else if (type === 'transporter') {
             const transporterRoles = ['Transporters', 'Transporter', 'Logistics', 'Transport'];
             firestoreQuery = firestoreQuery.where('role', 'in', transporterRoles);
+        } else if (type === 'finance') {
+            const financeRoles = ['Investors', 'Investor', 'Finance', 'Funder', 'Lender'];
+            firestoreQuery = firestoreQuery.where('role', 'in', financeRoles);
         }
 
         if (category) {
@@ -65,7 +68,7 @@ export async function POST(req: NextRequest) {
             const normalized = {
                 id: doc.id,
                 companyName: lead.companyName || 'Unknown Entity',
-                address: lead.address || lead.physicalAddress || 'Verified Member',
+                address: lead.address || lead.physicalAddress || 'South Africa',
                 entryType: lead.entryType || 'General',
                 researchStatus: lead.researchStatus,
             };
@@ -84,7 +87,7 @@ export async function POST(req: NextRequest) {
             return normalized;
         });
 
-        // Simple client-side text filtering for prototype search (Firestore doesn't support partial match well)
+        // Simple client-side text filtering
         if (searchTerm) {
             const lowSearch = searchTerm.toLowerCase();
             data = data.filter((item: any) => 
