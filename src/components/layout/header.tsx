@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -49,8 +48,6 @@ export function Header() {
   const auth = useAuth();
   const { cartItems, isCartLoading } = useCart();
 
-  // STRICTOR PRIVACY: Detect public landing page mode to hide private elements (Avatar, Nav, etc.)
-  // Hide all user-specific components on opt-in or registration paths
   const isPublicLandingPage = pathname?.startsWith('/opt-in/') || pathname === '/join' || pathname === '/signin';
 
   const handleSignOut = async () => {
@@ -72,27 +69,6 @@ export function Header() {
   const isAdmin = user && (user.email === 'beyondtransport@gmail.com' || user.email === 'mkoton100@gmail.com');
   const isWctaMember = user?.claims?.wcta === true || user?.companyData?.referrerId === 'WCTA';
 
-  const navItems = [
-    { href: "/", label: "Home" },
-    { href: "/about", label: "About" },
-    {
-      label: "Divisions",
-      isDropdown: true,
-      links: [
-        { href: "/divisions", label: "All Divisions" },
-        { href: "/funding", label: "Funding" },
-        { href: "/mall", label: "Mall" },
-        { href: "/marketplace", label: "Marketplace" },
-        { href: "/tech", label: "Tech" },
-      ]
-    },
-    { href: "/pricing", label: "Membership" },
-    { href: "/connect", label: "Connect" },
-    { href: "/incentives", label: "Incentives" },
-    { href: "/resources", label: "Resources" },
-    { href: "/contact", label: "Contact Us" },
-  ];
-  
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between">
@@ -103,41 +79,34 @@ export function Header() {
           </Link>
         </div>
 
-        {/* Hide Nav on public landing pages */}
         {!isPublicLandingPage && (
             <nav className="hidden sm:flex items-center gap-1 text-sm font-medium">
-                {navItems.map((item) => (
-                    item.isDropdown ? (
-                        <DropdownMenu key={item.label}>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" className={cn(
-                                    "flex items-center gap-1 px-3 py-2 text-sm font-medium hover:text-primary data-[state=open]:text-primary",
-                                    item.links.some(p => pathname.startsWith(p.href)) ? "text-primary font-semibold" : "text-muted-foreground"
-                                )}>
-                                    {item.label}
-                                    <ChevronDown className="h-4 w-4" />
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="start">
-                                {item.links.map(({ href, label }) => (
-                                    <DropdownMenuItem key={href} asChild>
-                                        <Link href={href}>{label}</Link>
-                                    </DropdownMenuItem>
-                                ))}
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                    ) : (
-                        <Link key={item.href} href={item.href!} className={cn("transition-colors hover:text-primary px-3 py-2 rounded-md", pathname === item.href ? "text-primary font-semibold" : "text-muted-foreground")}>
-                            {item.label}
-                        </Link>
-                    )
-                ))}
+                <Link href="/" className={cn("transition-colors hover:text-primary px-3 py-2 rounded-md", pathname === "/" ? "text-primary font-semibold" : "text-muted-foreground")}>Home</Link>
+                <Link href="/about" className={cn("transition-colors hover:text-primary px-3 py-2 rounded-md", pathname === "/about" ? "text-primary font-semibold" : "text-muted-foreground")}>About</Link>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="flex items-center gap-1 px-3 py-2 text-sm font-medium hover:text-primary">
+                            Divisions <ChevronDown className="h-4 w-4" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start">
+                        {divisionLinks.map(({ href, label }) => (
+                            <DropdownMenuItem key={href} asChild>
+                                <Link href={href}>{label}</Link>
+                            </DropdownMenuItem>
+                        ))}
+                    </DropdownMenuContent>
+                </DropdownMenu>
+                <Link href="/pricing" className={cn("transition-colors hover:text-primary px-3 py-2 rounded-md", pathname === "/pricing" ? "text-primary font-semibold" : "text-muted-foreground")}>Membership</Link>
+                <Link href="/connect" className={cn("transition-colors hover:text-primary px-3 py-2 rounded-md", pathname === "/connect" ? "text-primary font-semibold" : "text-muted-foreground")}>Connect</Link>
+                <Link href="/incentives" className={cn("transition-colors hover:text-primary px-3 py-2 rounded-md", pathname === "/incentives" ? "text-primary font-semibold" : "text-muted-foreground")}>Incentives</Link>
+                <Link href="/resources" className={cn("transition-colors hover:text-primary px-3 py-2 rounded-md", pathname === "/resources" ? "text-primary font-semibold" : "text-muted-foreground")}>Resources</Link>
+                <Link href="/contact" className={cn("transition-colors hover:text-primary px-3 py-2 rounded-md", pathname === "/contact" ? "text-primary font-semibold" : "text-muted-foreground")}>Contact Us</Link>
             </nav>
         )}
 
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-            {/* Hide Avatar and Cart on public landing pages to prevent admin identity leakage */}
             {!isPublicLandingPage && (
               <>
                 <Button asChild variant="ghost" size="icon">
@@ -146,7 +115,6 @@ export function Header() {
                         {!isCartLoading && cartItems.length > 0 && (
                             <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 justify-center p-0">{cartItems.length}</Badge>
                         )}
-                        <span className="sr-only">Shopping Cart</span>
                     </Link>
                 </Button>
                 
@@ -166,78 +134,53 @@ export function Header() {
                       <DropdownMenuLabel className="font-normal">
                         <div className="flex flex-col space-y-1">
                           <p className="text-sm font-medium leading-none">{user?.displayName}</p>
-                          <p className="text-xs leading-none text-muted-foreground">
-                            {user?.email}
-                          </p>
+                          <p className="text-xs leading-none text-muted-foreground">{user?.email}</p>
                         </div>
                       </DropdownMenuLabel>
                       <DropdownMenuSeparator />
-                        
-                        <DropdownMenuItem asChild>
-                            <Link href="/account">My Account</Link>
-                        </DropdownMenuItem>
-
+                        <DropdownMenuItem asChild><Link href="/account">My Account</Link></DropdownMenuItem>
                         {(isAdmin || isWctaMember) && (
                             <>
-                                <DropdownMenuItem asChild>
-                                    <Link href="/supply-chain">Supply Chain Portal</Link>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem asChild>
-                                    <Link href="/port-logistics">Port Logistics Portal</Link>
-                                </DropdownMenuItem>
+                                <DropdownMenuItem asChild><Link href="/supply-chain">Supply Chain Portal</Link></DropdownMenuItem>
+                                <DropdownMenuItem asChild><Link href="/port-logistics">Port Logistics Portal</Link></DropdownMenuItem>
                             </>
                         )}
-                        
                         {isAdmin && (
                             <>
                                 <DropdownMenuSeparator/>
-                                <DropdownMenuLabel>Admin</DropdownMenuLabel>
-                                <DropdownMenuItem asChild>
-                                    <Link href="/adminaccount">Admin Account</Link>
-                                </DropdownMenuItem>
-                                 <DropdownMenuItem asChild>
-                                    <Link href="/backend">App Backend</Link>
-                                </DropdownMenuItem>
-                                 <DropdownMenuItem asChild>
-                                    <Link href="/lending">Lending Portal</Link>
-                                </DropdownMenuItem>
+                                <DropdownMenuItem asChild><Link href="/adminaccount">Admin Account</Link></DropdownMenuItem>
+                                <DropdownMenuItem asChild><Link href="/backend">App Backend</Link></DropdownMenuItem>
+                                <DropdownMenuItem asChild><Link href="/lending">Lending Portal</Link></DropdownMenuItem>
                             </>
                         )}
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={handleSignOut}>
-                        Sign out
-                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={handleSignOut}>Sign out</DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 ) : (
                   <div className="hidden sm:flex items-center gap-2">
-                    <Button asChild variant="ghost">
-                      <Link href="/signin">Sign In</Link>
-                    </Button>
-                    <Button asChild>
-                      <Link href="/join">Join for Free</Link>
-                    </Button>
+                    <Button asChild variant="ghost"><Link href="/signin">Sign In</Link></Button>
+                    <Button asChild><Link href="/join">Join for Free</Link></Button>
                   </div>
                 )}
               </>
             )}
           </div>
           
-          {/* Hide Mobile Menu on public landing pages */}
           {!isPublicLandingPage && (
             <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
                 <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="sm:hidden">
-                    <Menu className="h-6 w-6" />
-                    <span className="sr-only">Toggle navigation menu</span>
-                </Button>
+                    <Button variant="ghost" size="icon" className="sm:hidden">
+                        <Menu className="h-6 w-6" />
+                        <span className="sr-only">Toggle navigation menu</span>
+                    </Button>
                 </SheetTrigger>
                 <SheetContent side="left" className="flex h-full flex-col p-0">
                     <SheetHeader className="p-6 pb-2 border-b">
                         <SheetTitle>
                             <Link href="/" className="flex items-center gap-2" onClick={() => setIsSheetOpen(false)}>
-                            <Truck className="h-6 w-6 text-primary" />
-                            <span className="font-bold text-lg">Logistics Flow</span>
+                                <Truck className="h-6 w-6 text-primary" />
+                                <span className="font-bold text-lg">Logistics Flow</span>
                             </Link>
                         </SheetTitle>
                     </SheetHeader>
@@ -245,107 +188,39 @@ export function Header() {
                         <nav className="flex flex-col gap-4">
                             {mainNavLinks.map(({ href, label }) => (
                                 <Link
-                                key={href}
-                                href={href}
-                                onClick={() => setIsSheetOpen(false)}
-                                className={cn(
-                                    "text-lg transition-colors hover:text-primary",
-                                    pathname === href ? "text-primary" : "text-muted-foreground"
-                                )}
-                                >
-                                {label}
-                                </Link>
-                            ))}
-                            <Link
-                                href="/divisions"
-                                onClick={() => setIsSheetOpen(false)}
-                                className={cn(
-                                    "text-lg transition-colors hover:text-primary",
-                                    ["/divisions", "/marketplace", "/tech", "/funding", "/mall"].some(p => pathname.startsWith(p)) ? "text-primary" : "text-muted-foreground"
-                                )}
-                            >
-                                Divisions
-                            </Link>
-                            <div className="pl-4 border-l ml-2">
-                                {divisionLinks.map(({ href, label }) => (
-                                <Link
                                     key={href}
                                     href={href}
                                     onClick={() => setIsSheetOpen(false)}
-                                    className={cn(
-                                    "text-base transition-colors hover:text-primary block py-2",
-                                    pathname === href ? "text-primary" : "text-muted-foreground"
-                                    )}
+                                    className={cn("text-lg transition-colors hover:text-primary", pathname === href ? "text-primary font-bold" : "text-muted-foreground")}
                                 >
                                     {label}
                                 </Link>
+                            ))}
+                            <div className="border-t pt-4 mt-2">
+                                <p className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-4">Divisions</p>
+                                {divisionLinks.map(({ href, label }) => (
+                                    <Link
+                                        key={href}
+                                        href={href}
+                                        onClick={() => setIsSheetOpen(false)}
+                                        className="text-base transition-colors hover:text-primary block py-2 text-muted-foreground"
+                                    >
+                                        {label}
+                                    </Link>
                                 ))}
                             </div>
                         </nav>
                     </div>
                     <SheetFooter className="p-4 border-t">
-                        {isUserLoading ? (
-                            <div className="h-10 w-full rounded-md bg-muted/50 animate-pulse" />
-                        ) : user ? (
-                            <div className='flex flex-col gap-2'>
-                                {(isAdmin || isWctaMember) ? (
-                                    <>
-                                        <Button asChild className="w-full justify-start">
-                                            <Link href="/supply-chain" onClick={() => setIsSheetOpen(false)}>
-                                                <Network className="mr-2 h-5 w-5" />
-                                                Supply Chain
-                                            </Link>
-                                        </Button>
-                                        <Button asChild className="w-full justify-start">
-                                            <Link href="/port-logistics" onClick={() => setIsSheetOpen(false)}>
-                                                <Ship className="mr-2 h-5 w-5" />
-                                                Port Logistics
-                                            </Link>
-                                        </Button>
-                                    </>
-                                ) : (
-                                    <Button asChild className="w-full justify-start">
-                                        <Link href="/account" onClick={() => setIsSheetOpen(false)}>
-                                            <User className="mr-2 h-5 w-5" />
-                                            My Account
-                                        </Link>
-                                    </Button>
-                                )}
-                                {isAdmin && (
-                                    <>
-                                        <Button asChild className="w-full justify-start" variant="secondary">
-                                            <Link href="/adminaccount" onClick={() => setIsSheetOpen(false)}>
-                                                <Building className="mr-2 h-5 w-5" />
-                                                Admin Account
-                                            </Link>
-                                        </Button>
-                                        <Button asChild className="w-full justify-start" variant="secondary">
-                                            <Link href="/lending" onClick={() => setIsSheetOpen(false)}>
-                                                <Landmark className="mr-2 h-5 w-5" />
-                                                Lending Portal
-                                            </Link>
-                                        </Button>
-                                        <Button asChild className="w-full justify-start" variant="secondary">
-                                            <Link href="/backend" onClick={() => setIsSheetOpen(false)}>
-                                                <ShieldCheck className="mr-2 h-5 w-5" />
-                                                App Backend
-                                            </Link>
-                                        </Button>
-                                    </>
-                                )}
-                                <Button onClick={handleSignOut} variant="outline" className="w-full justify-start">
-                                    <LogOut className="mr-2 h-5 w-5" />
-                                    Sign Out
-                                </Button>
+                        {user ? (
+                            <div className='flex flex-col gap-2 w-full'>
+                                <Button asChild className="w-full justify-start"><Link href="/account" onClick={() => setIsSheetOpen(false)}><User className="mr-2 h-5 w-5" /> My Account</Link></Button>
+                                <Button onClick={handleSignOut} variant="outline" className="w-full justify-start"><LogOut className="mr-2 h-5 w-5" /> Sign Out</Button>
                             </div>
                         ) : (
-                            <div className="flex flex-col gap-2">
-                                <Button asChild className="w-full justify-start" variant="outline">
-                                    <Link href="/signin" onClick={() => setIsSheetOpen(false)}>Sign In</Link>
-                                </Button>
-                                <Button asChild className="w-full justify-start">
-                                    <Link href="/join" onClick={() => setIsSheetOpen(false)}>Join for Free</Link>
-                                </Button>
+                            <div className="flex flex-col gap-2 w-full">
+                                <Button asChild className="w-full justify-start" variant="outline"><Link href="/signin" onClick={() => setIsSheetOpen(false)}>Sign In</Link></Button>
+                                <Button asChild className="w-full justify-start"><Link href="/join" onClick={() => setIsSheetOpen(false)}>Join for Free</Link></Button>
                             </div>
                         )}
                     </SheetFooter>

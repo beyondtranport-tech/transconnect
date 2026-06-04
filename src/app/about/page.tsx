@@ -2,8 +2,8 @@
 
 import Image from "next/image";
 import data from "@/lib/placeholder-images.json";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { CheckCircle, ArrowRight, DollarSign, Handshake, Cpu, Shield, Store, Rocket, Target, Users } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CheckCircle, ArrowRight, Store, Rocket, Handshake, Users, ShieldCheck, Database } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import React from "react";
@@ -30,45 +30,45 @@ export default function AboutPage() {
                 />
             )}
             <div className="relative h-full flex flex-col items-center justify-center text-center text-white z-10 p-4">
-                <h1 className="text-4xl md:text-5xl font-black font-headline">Business Success Engine</h1>
-                <p className="mt-4 text-lg md:text-xl max-w-3xl">Beyond data: The infrastructure to scale your logistics operations.</p>
+                <h1 className="text-4xl md:text-5xl font-black font-headline">Breaking the Information Constraint</h1>
+                <p className="mt-4 text-lg md:text-xl max-w-3xl">Logistics Flow is a Data-as-a-Service ecosystem built to map the South African transport industry.</p>
             </div>
         </section>
 
         <section className="py-16 md:py-24">
             <div className="container mx-auto px-4">
                 <div className="max-w-4xl mx-auto text-center mb-16">
-                    <h2 className="text-3xl md:text-4xl font-bold font-headline">From Discovery to Transaction</h2>
-                    <p className="mt-4 text-lg text-muted-foreground">
-                       Logistics Flow starts with intelligence, but it succeeds through trade. Once you've used our registry to find your next lead or supplier, we provide the digital tools to close the deal.
+                    <h2 className="text-3xl md:text-4xl font-bold font-headline">From Information to Transaction</h2>
+                    <p className="mt-4 text-lg text-muted-foreground leading-relaxed">
+                       The biggest barrier to growth is the lack of verified information. We provide the forensic intelligence to find your next partner, and the digital tools to close the deal. Once you've unlocked the registry, we provide the infrastructure to scale.
                     </p>
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-12 items-center">
                     <div className="space-y-6">
                         <div className="bg-primary/10 p-4 rounded-2xl w-fit"><Store className="h-10 w-10 text-primary"/></div>
-                        <h3 className="text-3xl font-black font-headline">Your Digital Branch</h3>
+                        <h3 className="text-3xl font-black font-headline text-foreground">Your Digital Branch</h3>
                         <p className="text-lg text-muted-foreground leading-relaxed">
-                            Creating a professional online presence shouldn't be a constraint. With an Intelligence Membership, you can create a complete digital twin of your business in minutes.
+                            Creating a professional online presence shouldn't be a hurdle. With an Intelligence Membership, you unlock the ability to create a complete digital twin of your business in minutes.
                         </p>
                         <div className="space-y-4">
                             <div className="flex gap-4">
                                 <CheckCircle className="h-6 w-6 text-primary shrink-0" />
                                 <div>
                                     <p className="font-bold">Automated Shop Wizard</p>
-                                    <p className="text-sm text-muted-foreground">Add products, service lanes, and routes with a simple form.</p>
+                                    <p className="text-sm text-muted-foreground">List products, service lanes, and routes with a simple forensic-ready interface.</p>
                                 </div>
                             </div>
                             <div className="flex gap-4">
                                 <CheckCircle className="h-6 w-6 text-primary shrink-0" />
                                 <div>
-                                    <p className="font-bold">Verified RC1 Registry</p>
-                                    <p className="text-sm text-muted-foreground">Contribute your fleet data to show customers you have verified capacity.</p>
+                                    <p className="font-bold">Verified Capacity Registry</p>
+                                    <p className="text-sm text-muted-foreground">Contribute your RC1 data to prove your fleet's standing to potential shippers.</p>
                                 </div>
                             </div>
                         </div>
-                        <Button asChild size="lg" className="mt-4">
-                            <Link href={ctaLink}>Create Your Digital Profile <ArrowRight className="ml-2 h-4 w-4" /></Link>
+                        <Button asChild size="lg" className="mt-4 font-bold">
+                            <Link href={ctaLink}>Setup Your Digital Storefront <ArrowRight className="ml-2 h-4 w-4" /></Link>
                         </Button>
                     </div>
                     <div className="relative aspect-square rounded-3xl overflow-hidden shadow-2xl">
@@ -89,17 +89,17 @@ export default function AboutPage() {
                 <div className="text-center max-w-3xl mx-auto mb-16">
                     <h2 className="text-3xl md:text-4xl font-black font-headline text-primary">The Earning Pathway</h2>
                     <p className="mt-4 text-lg text-slate-400">
-                        Our most successful members don't just use the data—they help build it and get paid in return.
+                        Our most successful members don't just use the data—they help build the registry and get paid in return.
                     </p>
                 </div>
                 <div className="grid md:grid-cols-3 gap-8">
                     <Card className="bg-white/5 border-white/10 text-white">
                         <CardHeader>
-                            <Users className="h-8 w-8 text-primary mb-2" />
-                            <CardTitle>Invite Your Network</CardTitle>
+                            <Database className="h-8 w-8 text-primary mb-2" />
+                            <CardTitle>Data as an Asset</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <p className="text-sm text-slate-400">Invite your trusted transporters and suppliers to the registry. Each successful sign-up earns you recurring points and potential commission.</p>
+                            <p className="text-sm text-slate-400">Contribute your supplier or fleet data to earn points. High-quality data de-risks your business for our finance partners.</p>
                         </CardContent>
                     </Card>
                     <Card className="bg-white/5 border-white/10 text-white">
@@ -108,16 +108,16 @@ export default function AboutPage() {
                             <CardTitle>ISA Partnership</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <p className="text-sm text-slate-400">Top contributors can graduate to our Independent Sales Agent tier, unlocking a share of total ecosystem revenue generated by their network.</p>
+                            <p className="text-sm text-slate-400">Top connectors can graduate to our Independent Sales Agent tier, unlocking a share of total ecosystem revenue.</p>
                         </CardContent>
                     </Card>
                     <Card className="bg-white/5 border-white/10 text-white">
                         <CardHeader>
-                            <Handshake className="h-8 w-8 text-primary mb-2" />
-                            <CardTitle>Collective Power</CardTitle>
+                            <ShieldCheck className="h-8 w-8 text-primary mb-2" />
+                            <CardTitle>Trusted Handshake</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <p className="text-sm text-slate-400">By centralizing industrial intelligence, we negotiate bulk discounts on tires, fuel, and parts that were previously only available to giant fleets.</p>
+                            <p className="text-sm text-slate-400">We verify identities to ensure you're transacting with real business owners, not brokers or middlemen.</p>
                         </CardContent>
                     </Card>
                 </div>

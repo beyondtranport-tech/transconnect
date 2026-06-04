@@ -9,9 +9,8 @@ import { Search, ArrowRight, Lock, ShieldCheck, MapPin, Loader2, Info } from "lu
 import Image from "next/image";
 import Link from "next/link";
 import * as gtag from '@/lib/gtag';
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { useUser, getClientSideAuthToken } from "@/firebase";
-import { useConfig } from "@/hooks/use-config";
 import { supplierCategories } from "@/app/adminaccount/marketing/discovery-engine";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -79,14 +78,14 @@ export default function SupplierMallPage() {
                     />
                 )}
                 <div className="relative h-full flex flex-col items-center justify-center text-center text-white z-10 p-4">
-                    <h1 className="text-4xl md:text-5xl font-black font-headline tracking-tight">Supplier Intelligence</h1>
+                    <h1 className="text-4xl md:text-5xl font-black font-headline tracking-tight text-white">Supplier Intelligence</h1>
                     <p className="mt-2 text-lg text-slate-300">Access verified spares and service suppliers.</p>
                 </div>
             </section>
             
             <section className="py-12 bg-background sticky top-16 z-20 shadow-sm border-b">
                 <div className="container mx-auto px-4">
-                     <div className="max-w-5xl mx-auto flex flex-col md:flex-row gap-4 items-end">
+                     <div className="max-w-5xl mx-auto flex flex-col md:flex-row gap-4 items-end text-foreground">
                         <div className="flex-1 w-full space-y-2">
                             <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Company or Keyword</Label>
                             <Input 
@@ -203,7 +202,7 @@ export default function SupplierMallPage() {
                                 <div className="mt-16 text-center p-12 bg-white rounded-3xl shadow-xl border-2 border-primary/20 max-w-2xl mx-auto">
                                     <div className="bg-primary/10 p-4 rounded-full w-fit mx-auto mb-6"><Lock className="h-8 w-8 text-primary" /></div>
                                     <h3 className="text-3xl font-black font-headline">End of Results</h3>
-                                    <p className="mt-4 text-lg text-muted-foreground">You are viewing a limited number of records. Upgrade to the Intelligence Membership to unlock every record and direct human contacts.</p>
+                                    <p className="mt-4 text-lg text-muted-foreground text-foreground">You are viewing a limited number of records. Upgrade to the Intelligence Membership to unlock every record and direct human contacts.</p>
                                     <Button asChild size="lg" className="mt-8 h-14 px-12 text-lg font-black uppercase tracking-tight">
                                         <Link href="/pricing">Get Unlimited Access <ArrowRight className="ml-2 h-5 w-5"/></Link>
                                     </Button>

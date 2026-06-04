@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, Star, ShieldCheck, Zap } from 'lucide-react';
+import { Check, Star, ShieldCheck, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { useUser } from '@/firebase';
 import { cn, formatCurrency } from '@/lib/utils';
@@ -16,36 +16,36 @@ export default function MembershipPage() {
   const plans = [
     {
         id: 'free',
-        name: 'Free Access',
+        name: 'Free Observer',
         price: 0,
-        description: 'Perfect for light browsing and exploration.',
+        description: 'Basic visibility into the community mall and registry.',
         features: [
             "1 Search per day",
             "View up to 10 records",
-            "Basic company details (Name, Location)",
-            "Access to the community mall",
+            "Basic company details only",
+            "Public Mall access",
         ],
-        cta: "Start Searching for Free",
-        variant: "outline"
+        cta: "Start Free",
+        variant: "outline" as const
     },
     {
         id: 'intelligence',
-        name: 'Intelligence Membership',
+        name: 'Intelligence Access',
         price: 100,
         isPopular: true,
-        description: 'Complete access to the South African industrial map.',
+        description: 'Full forensic data and industrial intelligence tools.',
         features: [
             "Unlimited Daily Searches",
             "Unlimited Record Access",
-            "Full Human Contact Data (CEOs/MDs)",
-            "Direct E-mail & Mobile Numbers",
-            "Unlock Wallet & Transaction Tools",
+            "Full Forensic Data (CEO/MD Names)",
+            "Direct E-mails & Mobile Numbers",
             "Create & Publish Your Shop",
-            "Request Funding via Platform",
+            "Unlock Wallet & Billing Tools",
+            "Apply for Business Funding",
             "Priority Support & Compliance",
         ],
         cta: "Get Full Access",
-        variant: "default"
+        variant: "default" as const
     }
   ];
 
@@ -53,10 +53,10 @@ export default function MembershipPage() {
     <div className="bg-background min-h-screen">
       <div className="container mx-auto px-4 py-16 md:py-24">
         <div className="text-center max-w-3xl mx-auto mb-12">
-          <Badge className="mb-4 bg-primary/10 text-primary border-primary/20">SIMPLE PRICING</Badge>
-          <h1 className="text-4xl md:text-6xl font-black font-headline">Unlock Your Opportunity Flow</h1>
+          <Badge className="mb-4 bg-primary/10 text-primary border-primary/20 font-bold uppercase tracking-widest">Pricing Strategy</Badge>
+          <h1 className="text-4xl md:text-6xl font-black font-headline tracking-tight">One Price. Total Intelligence.</h1>
           <p className="mt-4 text-lg md:text-xl text-muted-foreground">
-            Switch to the Intelligence Membership to unlock thousands of verified leads and start transacting with the community.
+            Upgrade to the Intelligence Access tier to unlock the direct contacts of decision-makers across the industry.
           </p>
         </div>
 
@@ -69,7 +69,7 @@ export default function MembershipPage() {
                     {plan.isPopular && (
                         <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-4 py-1 text-xs font-black uppercase rounded-full flex items-center gap-1 z-10">
                             <Star className="h-3 w-3 fill-current" />
-                            Most Popular Access
+                            Recommended Access
                         </div>
                     )}
                     <CardHeader className="text-center pb-2">
@@ -85,15 +85,15 @@ export default function MembershipPage() {
                     <CardContent className="flex-grow">
                         <ul className="space-y-4">
                             {plan.features.map((feature, i) => (
-                                <li key={i} className="flex items-start">
-                                    <Check className="h-5 w-5 text-green-500 mr-3 shrink-0" />
-                                    <span className="text-sm font-medium">{feature}</span>
+                                <li key={i} className="flex items-start text-sm">
+                                    <Check className="h-4 w-4 text-green-500 mr-3 shrink-0 mt-0.5" />
+                                    <span className="font-medium">{feature}</span>
                                 </li>
                             ))}
                         </ul>
                     </CardContent>
                     <CardFooter className="pt-6">
-                        <Button asChild className="w-full py-6 text-lg font-bold" variant={plan.variant as any}>
+                        <Button asChild className="w-full py-6 text-lg font-bold" variant={plan.variant}>
                             <Link href={plan.id === 'free' ? (user ? '/account' : '/join') : `/checkout/intelligence`}>
                                 {plan.cta}
                             </Link>
@@ -108,7 +108,7 @@ export default function MembershipPage() {
                 <ShieldCheck className="h-6 w-6 text-primary" />
                 <AlertTitle className="text-lg font-bold ml-2">Why R100?</AlertTitle>
                 <AlertDescription className="mt-2 text-muted-foreground ml-2">
-                    We believe the biggest constraint to growth in the transport sector is the "Information Divide." By keeping the barrier to entry extremely low, we empower thousands of businesses to find the right partners, save on costs, and unlock capital. Your R100 supports the constant AI discovery of new verified leads for the entire community.
+                    Our mission is to break the constraint of the "Information Divide." By offering high-quality forensic data for just R100, we enable small and medium enterprises to compete on the same level as industrial giants. Your subscription funds the continuous AI discovery of new verified leads for the whole community.
                 </AlertDescription>
             </Alert>
         </div>
