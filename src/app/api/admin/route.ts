@@ -129,8 +129,14 @@ export async function POST(req: NextRequest) {
                 const members: any[] = [];
                 for (const companyDoc of companiesSnap.docs) {
                     const companyData = companyDoc.data();
-                    const userDoc = await db.collection('users').doc(companyData.ownerId).get();
-                    const userData = userDoc.data();
+                    let userData = null;
+                    
+                    // Defensive check for ownerId to prevent "documentPath" errors
+                    if (companyData.ownerId && typeof companyData.ownerId === 'string') {
+                        const userDoc = await db.collection('users').doc(companyData.ownerId).get();
+                        userData = userDoc.data();
+                    }
+                    
                     members.push({
                         id: companyDoc.id,
                         ...serializeTimestamps(companyData),
@@ -160,15 +166,33 @@ export async function POST(req: NextRequest) {
                 const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(100).get();
                 const logs = await Promise.all(snap.docs.map(async d => {
                     const data = d.data();
-                    const userDoc = await db.collection('users').doc(data.userId).get();
-                    const userData = userDoc.data();
-                    const companyDoc = await db.collection('companies').doc(data.companyId).get();
-                    const companyData = companyDoc.data();
+                    
+                    let userName = 'System';
+                    let companyName = 'N/A';
+
+                    // Robust path validation for user doc
+                    if (data.userId && typeof data.userId === 'string' && data.userId.length > 0) {
+                        const userDoc = await db.collection('users').doc(data.userId).get();
+                        const userData = userDoc.data();
+                        if (userData) {
+                            userName = `${userData.firstName || ''} ${userData.lastName || ''}`.trim();
+                        }
+                    }
+
+                    // Robust path validation for company doc
+                    if (data.companyId && typeof data.companyId === 'string' && data.companyId.length > 0) {
+                        const companyDoc = await db.collection('companies').doc(data.companyId).get();
+                        const companyData = companyDoc.data();
+                        if (companyData) {
+                            companyName = companyData.companyName || 'N/A';
+                        }
+                    }
+
                     return {
                         id: d.id,
                         ...serializeTimestamps(data),
-                        userName: userData ? `${userData.firstName} ${userData.lastName}` : 'System',
-                        companyName: companyData?.companyName || 'N/A'
+                        userName,
+                        companyName
                     };
                 }));
                 return NextResponse.json({ success: true, data: logs });
@@ -190,6 +214,8 @@ export async function POST(req: NextRequest) {
 
             case 'approveShop': {
                 const { shopId, companyId } = payload;
+                if (!shopId || !companyId) throw new Error("Missing shopId or companyId");
+                
                 const shopRef = db.doc(`companies/${companyId}/shops/${shopId}`);
                 await shopRef.update({ status: 'approved', updatedAt: FieldValue.serverTimestamp() });
                 
@@ -207,6 +233,8 @@ export async function POST(req: NextRequest) {
 
             case 'rejectShop': {
                 const { shopId, companyId } = payload;
+                if (!shopId || !companyId) throw new Error("Missing shopId or companyId");
+                
                 await db.doc(`companies/${companyId}/shops/${shopId}`).update({ 
                     status: 'rejected', 
                     updatedAt: FieldValue.serverTimestamp() 
@@ -315,6 +343,7 @@ export async function POST(req: NextRequest) {
 
             case 'deletePartner': {
                 const { partnerId } = payload;
+                if (!partnerId) throw new Error("Missing partnerId");
                 await Promise.all([
                     db.collection('partners').doc(partnerId).delete(),
                     db.collection('leads').doc(partnerId).delete()
@@ -324,6 +353,7 @@ export async function POST(req: NextRequest) {
 
             case 'logCommunication': {
                 const { partnerId, type, subject, notes } = payload;
+                if (!partnerId) throw new Error("Missing partnerId");
                 const logRef = db.collection('partners').doc(partnerId).collection('communications').doc();
                 await Promise.all([
                     logRef.set({ type, subject, notes: notes || '', timestamp: FieldValue.serverTimestamp() }),
@@ -342,8 +372,10 @@ export async function POST(req: NextRequest) {
                 const { leadIds } = payload;
                 const batch = db.batch();
                 leadIds.forEach((id: string) => {
-                    batch.set(db.collection('leads').doc(id), { researchStatus: 'researching', updatedAt: FieldValue.serverTimestamp() }, { merge: true });
-                    batch.set(db.collection('partners').doc(id), { researchStatus: 'researching', updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+                    if (id && typeof id === 'string') {
+                        batch.set(db.collection('leads').doc(id), { researchStatus: 'researching', updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+                        batch.set(db.collection('partners').doc(id), { researchStatus: 'researching', updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+                    }
                 });
                 await batch.commit();
                 return NextResponse.json({ success: true });
