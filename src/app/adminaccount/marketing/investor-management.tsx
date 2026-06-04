@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -213,7 +212,7 @@ function InvestorDialog({ open, onOpenChange, partner, onSave }: { open: boolean
   useEffect(() => {
     if (open) {
       if (partner) form.reset(partner);
-      else form.reset({ firstName: '', lastName: '', email: '', phone: '', contactPerson: '', companyName: '', address: '', status: 'active', type: 'investor', entryType: 'Asset Finance' });
+      else form.reset({ firstName: '', lastName: '', email: '', phone: '', contactPerson: '', companyName: '', address: '', status: 'active', type: 'investor', entryType: 'Banks' });
     }
   }, [open, partner, form]);
 
@@ -251,7 +250,7 @@ function InvestorDialog({ open, onOpenChange, partner, onSave }: { open: boolean
               <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Phone</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
             <FormField control={form.control} name="contactPerson" render={({ field }) => (<FormItem><FormLabel>Identity Verified Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-            <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Funder Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+            <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Entity Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             <div className="grid grid-cols-2 gap-4">
               <FormField control={form.control} name="entryType" render={({ field }) => (
                 <FormItem>
@@ -301,6 +300,7 @@ export default function InvestorManagement() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState('all');
   const [assigneeFilter, setAssigneeFilter] = useState('all');
+  const [categoryFilter, setCategoryFilter] = useState('all');
   const [dataFilter, setDataFilter] = useState('all');
 
   const forceRefresh = useCallback(async () => {
@@ -323,12 +323,11 @@ export default function InvestorManagement() {
 
   useEffect(() => { forceRefresh(); }, [forceRefresh]);
 
-  const staffMap = useMemo(() => new Map(staff.map(s => [s.id, `${s.firstName} ${s.lastName}`])), [staff]);
-
   const filteredInvestors = useMemo(() => {
     return partners.filter(p => {
         const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
         const matchesAssignee = assigneeFilter === 'all' || p.assigneeId === assigneeFilter;
+        const matchesCategory = categoryFilter === 'all' || p.entryType === categoryFilter;
         
         let matchesData = true;
         if (dataFilter === 'no-email') matchesData = !p.email;
@@ -336,9 +335,9 @@ export default function InvestorManagement() {
         else if (dataFilter === 'has-email') matchesData = !!p.email;
         else if (dataFilter === 'has-phone') matchesData = !!p.phone;
 
-        return matchesStatus && matchesAssignee && matchesData;
+        return matchesStatus && matchesAssignee && matchesCategory && matchesData;
     });
-  }, [partners, statusFilter, assigneeFilter, dataFilter]);
+  }, [partners, statusFilter, assigneeFilter, categoryFilter, dataFilter]);
 
   const selectedLeadsForBatch = useMemo(() => {
       return (partners || []).filter(l => selectedIds.includes(l.id));
@@ -375,27 +374,6 @@ export default function InvestorManagement() {
       }
   };
 
-  const handleAutoCategorize = async () => {
-      setIsCategorizing(true);
-      try {
-          const token = await getClientSideAuthToken();
-          if (!token) return;
-          const response = await fetch('/api/admin', {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'bulkCategorizeLeads', payload: {} }),
-          });
-          const result = await response.json();
-          if (!response.ok) throw new Error(result.error);
-          toast({ title: "Categorization Complete", description: `Auto-tagged ${result.count} funders.` });
-          forceRefresh();
-      } catch (e: any) {
-          toast({ variant: 'destructive', title: "Tagging Failed", description: e.message });
-      } finally {
-          setIsCategorizing(false);
-      }
-  };
-
   async function handleDelete() {
     try {
       const token = await getClientSideAuthToken();
@@ -410,9 +388,9 @@ export default function InvestorManagement() {
   }
 
   const columns: ColumnDef<any>[] = [
-    { accessorKey: 'companyName', header: 'Funder Name', cell: ({ row }) => <div className="font-bold">{row.original.companyName}</div> },
+    { accessorKey: 'companyName', header: 'Entity Name', cell: ({ row }) => <div className="font-bold">{row.original.companyName}</div> },
     { accessorKey: 'entryType', header: 'Category', cell: ({row}) => <Badge variant="outline" className="text-[10px] uppercase font-bold">{row.original.entryType || 'Finance'}</Badge> },
-    { accessorKey: 'contactPerson', header: 'Identity Verified', cell: ({ row }) => <div>{row.original.contactPerson || 'N/A'}</div> },
+    { accessorKey: 'contactPerson', header: 'Decision Maker', cell: ({ row }) => <div>{row.original.contactPerson || 'N/A'}</div> },
     { accessorKey: 'email', header: 'Email' },
     { accessorKey: 'researchStatus', header: 'Enhanced', cell: ({row}) => {
         if (row.original.researchStatus === 'researching') return <Badge variant="outline" className="animate-pulse text-amber-600 border-amber-200 bg-amber-50">Searching...</Badge>;
@@ -427,7 +405,7 @@ export default function InvestorManagement() {
         <PartnerTasksDialog partner={row.original} />
         <PartnerOversightDialog partner={row.original} onUpdate={forceRefresh} />
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'edit', data: row.original })}><Edit className="h-4 w-4" /></Button>
-        <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'delete', data: row.original })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+        <Button variant="ghost" size="icon" onClick={() => { setDialog({ type: 'delete', data: row.original }); }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
       </div>
     )},
   ];
@@ -453,19 +431,15 @@ export default function InvestorManagement() {
                     <Landmark /> Capital Intelligence Registry
                     <Badge variant="outline" className="ml-2 font-black border-amber-600 text-amber-600">{partners.length} Records</Badge>
                 </CardTitle>
-                <CardDescription>Forensic database of lenders, asset financiers, and insurers.</CardDescription>
+                <CardDescription>Forensic database of Banks, Government Funders, AEO Partners, and Niche Lenders.</CardDescription>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-                <Button variant="outline" size="sm" onClick={handleAutoCategorize} disabled={isCategorizing}>
-                    {isCategorizing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Tag className="mr-2 h-4 w-4" />}
-                    Auto-Categorize
-                </Button>
                 <Button variant="outline" size="sm" onClick={handleResetQueue} disabled={isResetting}>
-                    {isResetting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <RotateCcw className="mr-2 h-4 w-4" />}
+                    <RotateCcw className="mr-2 h-4 w-4" />
                     Reset Queue
                 </Button>
-                <Button variant="default" className="bg-amber-600 hover:bg-amber-700" onClick={() => handleEnhanceBatch(100)} disabled={isLoading}>
-                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Zap className="mr-2 h-4 w-4" />} Batch (100)
+                <Button variant="default" className="bg-amber-600 hover:bg-amber-700" onClick={() => handleEnhanceBatch(50)} disabled={isLoading}>
+                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Zap className="mr-2 h-4 w-4" />} Batch (50)
                 </Button>
                 <BulkImportDialog type="investor" onComplete={forceRefresh}><Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Import JSON</Button></BulkImportDialog>
                 <DuplicateCleaner onComplete={forceRefresh} />
@@ -489,6 +463,16 @@ export default function InvestorManagement() {
                         </Select>
                     </div>
                     <div className="space-y-2">
+                        <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Tag className="h-3 w-3"/> Category</Label>
+                        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Categories</SelectItem>
+                                {financeCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="space-y-2">
                         <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Users className="h-3 w-3"/> Assignee</Label>
                         <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
                             <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
@@ -496,7 +480,7 @@ export default function InvestorManagement() {
                         </Select>
                     </div>
                     <div className="space-y-2">
-                        <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Search className="h-3 w-3"/> Data Filter</Label>
+                        <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Search className="h-3 w-3"/> Data Integrity</Label>
                         <Select value={dataFilter} onValueChange={setDataFilter}>
                             <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                             <SelectContent>
@@ -505,12 +489,6 @@ export default function InvestorManagement() {
                                 <SelectItem value="no-email">Missing Email</SelectItem>
                             </SelectContent>
                         </Select>
-                    </div>
-                    <div className="flex items-end">
-                         <div className="text-[10px] text-muted-foreground flex items-center gap-1.5 mb-2">
-                            <Database className="h-3 w-3" />
-                            Registry: <strong>{filteredInvestors.length}</strong> / {partners.length}
-                        </div>
                     </div>
                 </div>
                 {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredInvestors} onSelectionChange={setSelectedIds} />}
