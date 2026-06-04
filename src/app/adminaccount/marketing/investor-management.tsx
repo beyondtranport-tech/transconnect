@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -7,13 +8,13 @@ import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
   Loader2, PlusCircle, Landmark, Edit, Trash2, Send, Users, Filter, Save, 
-  Search, Zap, RotateCcw, XCircle, Info, Tag, Database, Mail, ShieldCheck 
+  Search, Zap, RotateCcw, XCircle, Info, Tag, Database, Mail, ShieldCheck, Upload
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -26,11 +27,13 @@ import { EngageDialog } from './EngageDialog';
 import { CommunicationLogDialog } from './CommunicationLogDialog';
 import { PartnerTasksDialog } from './PartnerTasksDialog';
 import { formatDateSafe, cn } from '@/lib/utils';
-import { EnrichPartnerButton, BulkEnrichButton } from './EnrichPartnerButton';
+import { EnrichPartnerButton } from './EnrichPartnerButton';
 import { Label } from '@/components/ui/label';
 import { BatchResearchDialog } from './BatchResearchDialog';
 import { BulkImportDialog } from './BulkImportDialog';
 import { financeCategories } from './finance-discovery';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 async function performAdminAction(token: string, action: string, payload: any) {
   const response = await fetch('/api/admin', {
@@ -57,6 +60,150 @@ const partnerSchema = z.object({
   type: z.enum(['partner', 'isa', 'investor', 'developer', 'supplier', 'transporter']),
 });
 type PartnerFormValues = z.infer<typeof partnerSchema>;
+
+function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [duplicates, setDuplicates] = useState<any[][]>([]);
+  const [selections, setSelections] = useState<Record<number, string>>({});
+  const { toast } = useToast();
+
+  async function findDuplicates() {
+    setIsLoading(true);
+    try {
+      const token = await getClientSideAuthToken();
+      if (!token) throw new Error("Auth failed.");
+      const response = await fetch('/api/admin', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'findDuplicateLeads' }),
+        cache: 'no-store'
+      });
+      const result = await response.json();
+      if (!result.success) throw new Error(result.error);
+      setDuplicates(result.data);
+      if (result.data.length === 0) {
+        toast({ title: "No duplicates found." });
+      } else {
+        const initialSelections: Record<number, string> = {};
+        result.data.forEach((group: any[], index: number) => {
+            const memberRecord = group.find(r => r.source === 'Member');
+            if (memberRecord) initialSelections[index] = memberRecord.id;
+            else initialSelections[index] = group[0].id;
+        });
+        setSelections(initialSelections);
+        setIsOpen(true);
+      }
+    } catch (e: any) {
+      toast({ variant: 'destructive', title: "Error finding duplicates", description: e.message });
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  async function handleClean() {
+    setIsLoading(true);
+    const idsToDelete = duplicates.flatMap((group, index) => {
+      const idToKeep = selections[index];
+      if (!idToKeep) return [];
+      return group.filter(lead => lead.id !== idToKeep).map(lead => lead.id);
+    });
+
+    if (idsToDelete.length === 0) {
+      toast({ title: "No duplicates selected for deletion." });
+      setIsLoading(false);
+      setIsOpen(false);
+      return;
+    }
+
+    try {
+      const token = await getClientSideAuthToken();
+      if (!token) throw new Error("Auth failed.");
+      const response = await fetch('/api/admin', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'deleteLeads', payload: { leadIds: idsToDelete } }),
+        cache: 'no-store'
+      });
+      const result = await response.json();
+      if (!result.success) throw new Error(result.error);
+
+      toast({ title: "Duplicates Cleaned!", description: `${idsToDelete.length} duplicate records deleted.` });
+      onComplete();
+      setIsOpen(false);
+    } catch (e: any) {
+      toast({ variant: 'destructive', title: "Error cleaning duplicates", description: e.message });
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" onClick={findDuplicates} disabled={isLoading}>
+          {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
+          Find & Clean Duplicates
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
+        <DialogHeader>
+          <DialogTitle>Duplicate Funder Cleaner</DialogTitle>
+          <DialogDescription>
+            Select the records you want to keep. All unselected records in the group will be deleted.
+          </DialogDescription>
+        </DialogHeader>
+        
+        <Alert className="bg-amber-50 border-amber-200">
+            <Info className="h-4 w-4 text-amber-600" />
+            <AlertTitle>Identity Protection</AlertTitle>
+            <AlertDescription className="text-xs">
+                Always keep <strong>Members</strong> (Active accounts) and delete <strong>Leads</strong> (Projections).
+            </AlertDescription>
+        </Alert>
+
+        <div className="flex-1 overflow-y-auto p-4 space-y-6">
+          {duplicates.map((group, groupIndex) => {
+             const groupName = group.find(r => r.companyName)?.companyName || 'Unnamed Group';
+             return (
+                <Card key={groupIndex} className="shadow-none border">
+                <CardHeader className="py-3 bg-muted/30"><CardTitle className="text-sm font-bold">Group: {groupName}</CardTitle></CardHeader>
+                <CardContent className="p-0">
+                    {group.map(lead => (
+                        <div key={lead.id} className={cn("flex items-start gap-4 p-4 border-b last:border-b-0", selections[groupIndex] === lead.id ? "bg-primary/5" : "")}>
+                            <Checkbox
+                                id={`funder-${groupIndex}-${lead.id}`}
+                                checked={selections[groupIndex] === lead.id}
+                                onCheckedChange={() => setSelections(prev => ({ ...prev, [groupIndex]: lead.id }))}
+                            />
+                            <label htmlFor={`funder-${groupIndex}-${lead.id}`} className="text-sm cursor-pointer w-full">
+                                <div className="flex justify-between items-start">
+                                    <div className="flex items-center gap-2">
+                                        <p className="font-bold">{lead.companyName || 'N/A'}</p>
+                                        {lead.source === 'Member' && <Badge className="bg-green-100 text-green-700 text-[10px]">Active Member</Badge>}
+                                    </div>
+                                    <Badge variant="outline" className="text-[10px] uppercase">{lead.source}</Badge>
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-2">{lead.email || 'No Email'} • {lead.phone || 'No Phone'}</p>
+                            </label>
+                        </div>
+                    ))}
+                </CardContent>
+                </Card>
+             )
+          })}
+        </div>
+        <DialogFooter className="p-4 border-t">
+          <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
+          <Button onClick={handleClean} disabled={isLoading} className="bg-destructive hover:bg-destructive/90">
+             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+             Delete Unselected
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 function InvestorDialog({ open, onOpenChange, partner, onSave }: { open: boolean; onOpenChange: (open: boolean) => void; partner?: any; onSave: () => void; }) {
   const [isLoading, setIsLoading] = useState(false);
@@ -148,11 +295,13 @@ export default function InvestorManagement() {
   const [staff, setStaff] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isResetting, setIsResetting] = useState(false);
+  const [isCategorizing, setIsCategorizing] = useState(false);
   const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | 'batch-ai' | null, data?: any }>({ type: null });
 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState('all');
   const [assigneeFilter, setAssigneeFilter] = useState('all');
+  const [dataFilter, setDataFilter] = useState('all');
 
   const forceRefresh = useCallback(async () => {
     setIsLoading(true);
@@ -180,9 +329,16 @@ export default function InvestorManagement() {
     return partners.filter(p => {
         const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
         const matchesAssignee = assigneeFilter === 'all' || p.assigneeId === assigneeFilter;
-        return matchesStatus && matchesAssignee;
+        
+        let matchesData = true;
+        if (dataFilter === 'no-email') matchesData = !p.email;
+        else if (dataFilter === 'no-phone') matchesData = !p.phone;
+        else if (dataFilter === 'has-email') matchesData = !!p.email;
+        else if (dataFilter === 'has-phone') matchesData = !!p.phone;
+
+        return matchesStatus && matchesAssignee && matchesData;
     });
-  }, [partners, statusFilter, assigneeFilter]);
+  }, [partners, statusFilter, assigneeFilter, dataFilter]);
 
   const selectedLeadsForBatch = useMemo(() => {
       return (partners || []).filter(l => selectedIds.includes(l.id));
@@ -196,6 +352,48 @@ export default function InvestorManagement() {
       }
       setSelectedIds(targets.map(t => t.id));
       setDialog({ type: 'batch-ai' });
+  };
+
+  const handleResetQueue = async () => {
+      setIsResetting(true);
+      try {
+          const token = await getClientSideAuthToken();
+          if (!token) return;
+          const response = await fetch('/api/admin', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'resetResearchQueue', payload: { type: 'investor' } }),
+          });
+          const result = await response.json();
+          if (!response.ok) throw new Error(result.error);
+          toast({ title: "Queue Reset", description: `${result.count} records set back to 'New'.` });
+          forceRefresh();
+      } catch (e: any) {
+          toast({ variant: 'destructive', title: "Reset Failed", description: e.message });
+      } finally {
+          setIsResetting(false);
+      }
+  };
+
+  const handleAutoCategorize = async () => {
+      setIsCategorizing(true);
+      try {
+          const token = await getClientSideAuthToken();
+          if (!token) return;
+          const response = await fetch('/api/admin', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'bulkCategorizeLeads', payload: {} }),
+          });
+          const result = await response.json();
+          if (!response.ok) throw new Error(result.error);
+          toast({ title: "Categorization Complete", description: `Auto-tagged ${result.count} funders.` });
+          forceRefresh();
+      } catch (e: any) {
+          toast({ variant: 'destructive', title: "Tagging Failed", description: e.message });
+      } finally {
+          setIsCategorizing(false);
+      }
   };
 
   async function handleDelete() {
@@ -217,8 +415,8 @@ export default function InvestorManagement() {
     { accessorKey: 'contactPerson', header: 'Identity Verified', cell: ({ row }) => <div>{row.original.contactPerson || 'N/A'}</div> },
     { accessorKey: 'email', header: 'Email' },
     { accessorKey: 'researchStatus', header: 'Enhanced', cell: ({row}) => {
-        if (row.original.researchStatus === 'researching') return <Badge variant="outline" className="animate-pulse text-amber-600">Searching...</Badge>;
-        if (row.original.email) return <Badge variant="default" className="bg-green-100 text-green-700">Enriched</Badge>;
+        if (row.original.researchStatus === 'researching') return <Badge variant="outline" className="animate-pulse text-amber-600 border-amber-200 bg-amber-50">Searching...</Badge>;
+        if (row.original.email) return <Badge variant="default" className="bg-green-100 text-green-700 border-green-200">Enriched</Badge>;
         return <span className="text-xs text-muted-foreground">-</span>;
     }},
     { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
@@ -227,6 +425,7 @@ export default function InvestorManagement() {
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'engage', data: row.original })} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
         <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.firstName} />
         <PartnerTasksDialog partner={row.original} />
+        <PartnerOversightDialog partner={row.original} onUpdate={forceRefresh} />
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'edit', data: row.original })}><Edit className="h-4 w-4" /></Button>
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'delete', data: row.original })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
       </div>
@@ -252,22 +451,31 @@ export default function InvestorManagement() {
             <div className="space-y-1">
                 <CardTitle className="flex items-center gap-2">
                     <Landmark /> Capital Intelligence Registry
-                    <Badge variant="outline" className="ml-2 font-black border-amber-600 text-amber-600">{partners.length} Active Records</Badge>
+                    <Badge variant="outline" className="ml-2 font-black border-amber-600 text-amber-600">{partners.length} Records</Badge>
                 </CardTitle>
                 <CardDescription>Forensic database of lenders, asset financiers, and insurers.</CardDescription>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-                <Button variant="outline" size="sm" onClick={() => handleEnhanceBatch(20)}>
-                    <Zap className="mr-2 h-4 w-4" /> Batch Research
+                <Button variant="outline" size="sm" onClick={handleAutoCategorize} disabled={isCategorizing}>
+                    {isCategorizing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Tag className="mr-2 h-4 w-4" />}
+                    Auto-Categorize
                 </Button>
-                <BulkImportDialog type="investor" onComplete={forceRefresh}><Button variant="outline">Import JSON</Button></BulkImportDialog>
+                <Button variant="outline" size="sm" onClick={handleResetQueue} disabled={isResetting}>
+                    {isResetting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <RotateCcw className="mr-2 h-4 w-4" />}
+                    Reset Queue
+                </Button>
+                <Button variant="default" className="bg-amber-600 hover:bg-amber-700" onClick={() => handleEnhanceBatch(100)} disabled={isLoading}>
+                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Zap className="mr-2 h-4 w-4" />} Batch (100)
+                </Button>
+                <BulkImportDialog type="investor" onComplete={forceRefresh}><Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Import JSON</Button></BulkImportDialog>
+                <DuplicateCleaner onComplete={forceRefresh} />
                 <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Record</Button>
             </div>
         </CardHeader>
 
         <Card>
             <CardContent className="pt-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 p-4 bg-muted/30 rounded-lg">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg">
                     <div className="space-y-2">
                         <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status</Label>
                         <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -286,6 +494,23 @@ export default function InvestorManagement() {
                             <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                             <SelectContent><SelectItem value="all">All Staff</SelectItem><SelectItem value="none">Unallocated</SelectItem>{staff.map(s => <SelectItem key={s.id} value={s.id}>{s.firstName} {s.lastName}</SelectItem>)}</SelectContent>
                         </Select>
+                    </div>
+                    <div className="space-y-2">
+                        <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Search className="h-3 w-3"/> Data Filter</Label>
+                        <Select value={dataFilter} onValueChange={setDataFilter}>
+                            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Records</SelectItem>
+                                <SelectItem value="has-email">Has Email</SelectItem>
+                                <SelectItem value="no-email">Missing Email</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="flex items-end">
+                         <div className="text-[10px] text-muted-foreground flex items-center gap-1.5 mb-2">
+                            <Database className="h-3 w-3" />
+                            Registry: <strong>{filteredInvestors.length}</strong> / {partners.length}
+                        </div>
                     </div>
                 </div>
                 {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredInvestors} onSelectionChange={setSelectedIds} />}
