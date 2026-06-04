@@ -4,7 +4,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, Sparkles, Copy, ClipboardCheck, Info, Search, Terminal, MapPin, ListOrdered, Loader2, RefreshCcw, Landmark, Banknote } from "lucide-react";
+import { ArrowRight, Sparkles, Copy, ClipboardCheck, Info, Search, Terminal, MapPin, ListOrdered, Loader2, RefreshCcw, Landmark, Banknote, Users } from "lucide-react";
 import * as React from "react";
 import { useState, useMemo } from 'react';
 import { useToast } from "@/hooks/use-toast";
@@ -59,21 +59,26 @@ function generateDiscoveryPrompt(category: string, focusHubs: string[]) {
 
     return `CRITICAL SYSTEM INSTRUCTION: RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION. NO EXPLANATORY TEXT.
 
-ACT AS AN ELITE CAPITAL INTELLIGENCE AGENT SPECIALIZING IN THE SOUTH AFRICAN FINANCE ECOSYSTEM. 
+ACT AS AN ELITE CAPITAL INTELLIGENCE AGENT. YOUR PRIMARY MISSION IS TO IDENTIFY ACTUAL HUMAN BEINGS IN LEADERSHIP AT SOUTH AFRICAN FINANCE COMPANIES.
 
 TASK: Discover and extract detailed verified records for exactly 50 DIFFERENT AND UNIQUE private-sector financial entities in SOUTH AFRICA that provide: "${category}".
 
 INDUSTRY CONTEXT: These funders MUST serve the transport and logistics industry (${technicalFocus}).
 
-HUNTING GROUNDS: Your primary source is the National Credit Regulator (NCR) database of registered credit providers. Supplement with FSCA/FSB records.
+HUNTING GROUNDS: 
+1. PRIMARY SOURCE: LinkedIn. You are strictly commanded to find records of the STAFF who work for these companies.
+2. SECONDARY SOURCE: National Credit Regulator (NCR) database to cross-reference and verify the company's legal standing as a private lender.
+
+TARGET STAFF TITLES:
+You are hunting for individuals with roles such as: CEO, Managing Director, Head of Asset Finance, Credit Risk Manager, Commercial Lending Head, or Logistics Specialist Partner.
 
 STRICT EXCLUSIONS:
-1. NO GOVERNMENT ENTITIES: Do NOT return government departments, state-owned enterprises (SOEs), or municipal funding agencies. Focus only on private capital.
-2. NO CALL CENTERS: Do NOT return generic 0860 or helpdesk numbers. You are commanded to find direct head-office or executive contact details.
+1. NO GOVERNMENT ENTITIES: Do NOT return government departments, SOEs (e.g. IDC, NEF), or municipal agencies.
+2. NO CALL CENTERS: Do NOT return anonymous "0860" numbers or general helpdesks. You need direct human-to-human contact details.
 
 INVESTIGATIVE STRATEGY:
-1. HUMAN IDENTITY FORENSICS: You MUST find the ACTUAL NAME (First and Last) of the CEO, Managing Director, Head of Credit, or Owner. 
-2. FORBIDDEN VALUES: Returning "The Director", "Manager", "CEO", or "Unknown" is a absolute failure. You MUST hunt LinkedIn or "About Us" pages for a specific human identity (e.g. Sipho Nkosi).
+1. HUMAN IDENTITY FIRST: You must find the ACTUAL NAME (First and Last) of a specific decision-maker via LinkedIn or official corporate "About Us" leadership pages.
+2. FORBIDDEN VALUES: Returning titles like "The Director", "Branch Manager", or "Managing Director" without a name is a failure. You MUST find a specific human identity (e.g. "Sipho Nkosi").
 3. IDENTITY PERSISTENCE: Generate unique "record_id" starting with "FIN_${category.toUpperCase().replace(/\s/g, '_')}_".
 
 REQUIRED OUTPUT FORMAT (RAW JSON ARRAY ONLY):
@@ -83,9 +88,9 @@ REQUIRED OUTPUT FORMAT (RAW JSON ARRAY ONLY):
     "record_id": "FIN_${category.toUpperCase().replace(/\s/g, '_')}_[RAND_ID]",
     "company_name": "...",
     "industrial_category": "${category}",
-    "contact_person": "ACTUAL HUMAN FULL NAME (E.G. PIET RETIEF)",
-    "email_address": "Direct Email",
-    "telephone_number": "Direct Work/Office Number",
+    "contact_person": "VERIFIED HUMAN FULL NAME FROM LINKEDIN",
+    "email_address": "Direct Executive or Professional Email",
+    "telephone_number": "Direct Office or Work Mobile Number",
     "website": "URL",
     "physical_address": "..."
   }
@@ -107,7 +112,7 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
         try {
             await navigator.clipboard.writeText(prompt);
             setIsCopied(true);
-            toast({ title: "Forensic Finance Prompt Copied!", description: `Paste into Gemini 1.5 Pro to search NCR data.` });
+            toast({ title: "Staff Forensic Prompt Copied!", description: `Paste into Gemini to hunt for human contacts.` });
             setTimeout(() => setIsCopied(false), 3000);
         } catch (e) {
             toast({ variant: 'destructive', title: "Copy Failed" });
@@ -120,8 +125,8 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                 <div className="space-y-4">
                     <div className="flex items-center justify-between">
                         <h2 className="text-2xl font-bold font-headline flex items-center gap-2">
-                            <Banknote className="h-6 w-6 text-amber-600" />
-                            Capital Discovery: {category}
+                            <Users className="h-6 w-6 text-amber-600" />
+                            Staff Discovery: {category}
                         </h2>
                         <Badge variant="outline" className="font-mono text-sm bg-muted/30">
                             {currentCount} In Database
@@ -138,16 +143,16 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
 
                     <Alert className="bg-primary/5 border-primary/20 border-l-4 border-l-primary">
                         <Info className="h-4 w-4 text-primary" />
-                        <AlertTitle className="font-bold">NCR Enforcement Active</AlertTitle>
+                        <AlertTitle className="font-bold text-sm">LinkedIn Priority Mode</AlertTitle>
                         <AlertDescription className="text-xs space-y-2">
-                            <p>This prompt is optimized to filter out government SOEs and call centers. It focuses the AI on <strong>NCR-registered</strong> private lenders and human credit leadership.</p>
+                            <p>This prompt is optimized to bypass call centers. It commands the AI to use <strong>LinkedIn</strong> to find the specific names of decision-makers and cross-reference them with the <strong>NCR registry</strong>.</p>
                         </AlertDescription>
                     </Alert>
 
                     <div className="pt-4 flex flex-col gap-2">
                         <Button onClick={handleCopy} size="lg" className="w-full gap-2 shadow-md bg-amber-600 hover:bg-amber-700">
                             {isCopied ? <ClipboardCheck className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
-                            {isCopied ? "NCR Prompt Copied" : "Copy NCR Discovery Prompt"}
+                            {isCopied ? "Prompt Copied" : "Copy Staff Forensic Prompt"}
                         </Button>
                         <Button variant="outline" asChild className="w-full">
                             <a href="https://aistudio.google.com/" target="_blank" rel="noopener noreferrer">
@@ -160,10 +165,10 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                 <div className="space-y-2">
                     <div className="flex items-center justify-between">
                          <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
-                            <Terminal className="h-3 w-3"/> NCR Forensic Command
+                            <Terminal className="h-3 w-3"/> LinkedIn Forensic Command
                         </Label>
                         <Badge variant="outline" className="text-[10px] uppercase font-bold text-amber-600 border-amber-200">
-                            Zero GOV Policy
+                            Identity Centric
                         </Badge>
                     </div>
                     <ScrollArea className="h-[320px] border rounded-lg bg-slate-900 p-4 shadow-inner">
@@ -209,7 +214,7 @@ export default function FinanceDiscoveryEngine() {
                             AI Capital Discovery Engine
                         </CardTitle>
                         <CardDescription>
-                            Generate forensic prompts to discover private-sector financiers from the National Credit Regulator (NCR).
+                            Generate forensic prompts to discover human contacts and decision-makers at NCR-registered lenders.
                         </CardDescription>
                     </div>
                     <div className="flex items-center gap-2">
