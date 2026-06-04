@@ -18,28 +18,59 @@ import { cn } from "@/lib/utils";
 const { placeholderImages } = data;
 const heroImage = placeholderImages.find(p => p.id === 'hero-home');
 
+const supplierCategories = [
+    "Accessories", 
+    "Air",
+    "Anti-Theft Devices", 
+    "Auto Electrical", 
+    "Batteries", 
+    "Brakes", 
+    "Cleaning Products",
+    "Diesel", 
+    "Differential",
+    "Engine Refurbish",
+    "Filters", 
+    "Injectors", 
+    "Lights", 
+    "Mechanical repairs",
+    "Oils & Lubricants", 
+    "Parts", 
+    "Prop Shafts",
+    "Second Hand Trailers",
+    "Second Hand Trucks",
+    "Transport", 
+    "Tarpaulins", 
+    "Tow in", 
+    "Trailer repairs", 
+    "Truck Accessories", 
+    "Truck Parts", 
+    "Truck repairs", 
+    "Turbo", 
+    "Tyres"
+];
+
 // Node Component with SVG Lines and Orbital Badges
-const RegistryNode = ({ title, count, icon: Icon, categories, colorClass, borderClass, lineClass }: { title: string, count: string, icon: any, categories: string[], colorClass: string, borderClass: string, lineClass: string }) => {
-    const radius = 130;
-    const center = 160;
+const RegistryNode = ({ title, count, icon: Icon, categories, colorClass, borderClass, lineClass, customRadius = 140 }: { title: string, count: string, icon: any, categories: string[], colorClass: string, borderClass: string, lineClass: string, customRadius?: number }) => {
+    const center = 180;
+    const nodeSize = 180; // Total canvas size for the node
 
     return (
-        <div className="relative group p-4 flex flex-col items-center">
+        <div className="relative group p-4 flex flex-col items-center select-none">
             {/* SVG Connector Lines Layer */}
-            <svg className={cn("absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[320px] h-[320px] pointer-events-none overflow-visible", lineClass)}>
+            <svg className={cn("absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none overflow-visible transition-all duration-700", lineClass)} style={{ width: center * 2, height: center * 2 }}>
                 {categories.map((_, i) => {
                     const angle = (i * (360 / categories.length) - 90) * (Math.PI / 180);
-                    const x2 = center + Math.cos(angle) * radius;
-                    const y2 = center + Math.sin(angle) * radius;
+                    const x2 = center + Math.cos(angle) * customRadius;
+                    const y2 = center + Math.sin(angle) * customRadius;
                     return (
                         <line 
                             key={i} 
                             x1={center} y1={center} 
                             x2={x2} y2={y2} 
                             stroke="currentColor" 
-                            strokeWidth="1.5" 
-                            strokeDasharray="4 4"
-                            className="opacity-30"
+                            strokeWidth="1" 
+                            strokeDasharray="3 3"
+                            className="opacity-20 group-hover:opacity-60 transition-opacity duration-500"
                         />
                     );
                 })}
@@ -47,21 +78,21 @@ const RegistryNode = ({ title, count, icon: Icon, categories, colorClass, border
 
             {/* Central Node */}
             <div className={cn(
-                "relative z-20 w-36 h-36 md:w-44 md:h-44 rounded-full flex flex-col items-center justify-center text-center shadow-2xl transition-all duration-500 group-hover:scale-110 border-4",
+                "relative z-20 w-32 h-32 md:w-40 md:h-44 rounded-full flex flex-col items-center justify-center text-center shadow-2xl transition-all duration-500 group-hover:scale-110 border-4",
                 colorClass,
                 borderClass
             )}>
-                <Icon className="h-8 w-8 mb-1" />
-                <p className="text-xl md:text-2xl font-black">{count}</p>
-                <p className="text-[9px] font-black uppercase tracking-tighter opacity-80">{title}</p>
+                <Icon className="h-6 w-6 md:h-8 md:w-8 mb-1" />
+                <p className="text-xl md:text-2xl font-black tracking-tighter">{count}</p>
+                <p className="text-[8px] md:text-[9px] font-black uppercase tracking-tighter opacity-80 px-2">{title}</p>
             </div>
 
             {/* Orbital Category Badges */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[320px] h-[320px] pointer-events-none">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none" style={{ width: center * 2, height: center * 2 }}>
                 {categories.map((cat, i) => {
                     const angle = (i * (360 / categories.length) - 90) * (Math.PI / 180);
-                    const x = center + Math.cos(angle) * radius;
-                    const y = center + Math.sin(angle) * radius;
+                    const x = center + Math.cos(angle) * customRadius;
+                    const y = center + Math.sin(angle) * customRadius;
                     return (
                         <div 
                             key={cat}
@@ -72,7 +103,7 @@ const RegistryNode = ({ title, count, icon: Icon, categories, colorClass, border
                                 transform: 'translate(-50%, -50%)',
                             }}
                         >
-                            <Badge className="text-[8px] md:text-[9px] font-black uppercase bg-slate-900/80 backdrop-blur-md border border-white/20 text-white px-2 py-0.5 rounded-full whitespace-nowrap shadow-lg animate-in fade-in zoom-in duration-500">
+                            <Badge className="text-[7px] md:text-[8px] font-black uppercase bg-slate-900/80 backdrop-blur-md border border-white/10 text-white px-1.5 py-0.5 rounded-full whitespace-nowrap shadow-lg animate-in fade-in zoom-in duration-500 group-hover:bg-primary group-hover:text-white transition-colors">
                                 {cat}
                             </Badge>
                         </div>
@@ -116,7 +147,7 @@ export default function HomePage() {
       <HomeIntentModal isOpen={isModalOpen} onOpenChange={setIsModalOpen} />
       
       {/* Hero Section: Staggered Triangle Node Formation */}
-      <section className="relative w-full min-h-screen flex flex-col items-center justify-center overflow-hidden bg-slate-950 text-white py-20">
+      <section className="relative w-full min-h-screen flex flex-col items-center justify-center overflow-hidden bg-slate-950 text-white py-12 md:py-20">
         <div className="absolute inset-0 z-0 opacity-10">
            {heroImage && (
             <Image
@@ -131,12 +162,12 @@ export default function HomePage() {
         </div>
 
         <div className="container relative z-10 mx-auto px-4 flex flex-col items-center">
-            <Badge className="mb-12 bg-primary text-white border-none py-1.5 px-6 text-xs font-black uppercase tracking-[0.2em] shadow-lg shadow-primary/20">
+            <Badge className="mb-8 md:mb-12 bg-primary text-white border-none py-1.5 px-6 text-xs font-black uppercase tracking-[0.2em] shadow-lg shadow-primary/20">
                 The Industry's Master Registry
             </Badge>
 
             {/* Triangle Formation */}
-            <div className="relative w-full max-w-5xl h-[600px] md:h-[700px] mb-12">
+            <div className="relative w-full max-w-5xl h-[650px] md:h-[800px] mb-8 md:mb-12">
                 {/* Top Node: Transporters */}
                 <div className="absolute top-0 left-1/2 -translate-x-1/2">
                     <RegistryNode 
@@ -146,12 +177,13 @@ export default function HomePage() {
                         colorClass="bg-blue-600/10 text-blue-100"
                         borderClass="border-blue-500/40"
                         lineClass="text-blue-500"
-                        categories={["Long Haul", "Refrigerated", "Flatbed", "Tipper", "LTL"]}
+                        categories={["Long Haul", "Refrigerated", "Flatbed", "Tipper", "Hazmat", "LTL"]}
+                        customRadius={130}
                     />
                 </div>
 
-                {/* Bottom Left Node: Suppliers */}
-                <div className="absolute bottom-0 left-0 md:left-[10%]">
+                {/* Bottom Left Node: Suppliers - DISPLAY ALL CATEGORIES */}
+                <div className="absolute bottom-0 left-0 md:left-[5%]">
                     <RegistryNode 
                         title="Spares & Service Suppliers"
                         count={`${Number(supplierCount).toLocaleString()}+`}
@@ -159,12 +191,13 @@ export default function HomePage() {
                         colorClass="bg-primary/10 text-primary-foreground"
                         borderClass="border-primary/40"
                         lineClass="text-primary"
-                        categories={["Engine parts", "Tyres", "Differential", "Prop Shafts", "Air Systems"]}
+                        categories={supplierCategories}
+                        customRadius={160}
                     />
                 </div>
 
                 {/* Bottom Right Node: Finance */}
-                <div className="absolute bottom-0 right-0 md:right-[10%]">
+                <div className="absolute bottom-0 right-0 md:right-[5%]">
                     <RegistryNode 
                         title="Finance Partners"
                         count="85"
@@ -172,25 +205,26 @@ export default function HomePage() {
                         colorClass="bg-amber-600/10 text-amber-100"
                         borderClass="border-amber-500/40"
                         lineClass="text-amber-500"
-                        categories={["Asset Finance", "Working Capital", "Debt Funders", "Niche Lenders"]}
+                        categories={["Asset Finance", "Working Capital", "Debt Funders", "Niche Lenders", "Bridging"]}
+                        customRadius={130}
                     />
                 </div>
             </div>
 
             <div className="max-w-4xl text-center space-y-6">
-                <h1 className="text-4xl md:text-6xl font-black font-headline leading-tight">
+                <h1 className="text-3xl md:text-6xl font-black font-headline leading-tight">
                     Information to <span className="text-primary underline decoration-primary/30">Action</span>
                 </h1>
-                <p className="text-lg md:text-2xl text-slate-400 max-w-2xl mx-auto">
+                <p className="text-base md:text-2xl text-slate-400 max-w-2xl mx-auto px-4">
                     Access {totalRecords.toLocaleString()}+ verified records and forensic human contact data for R100/month.
                 </p>
-                <div className="flex flex-col sm:flex-row justify-center gap-6 pt-4">
-                    <Button asChild size="lg" className="h-16 px-12 text-xl font-black uppercase tracking-tight shadow-2xl shadow-primary/40" onClick={handleJoinClick}>
+                <div className="flex flex-col sm:flex-row justify-center gap-4 md:gap-6 pt-4 px-4 w-full">
+                    <Button asChild size="lg" className="h-14 md:h-16 px-8 md:px-12 text-lg md:text-xl font-black uppercase tracking-tight shadow-2xl shadow-primary/40" onClick={handleJoinClick}>
                         <Link href={ctaLink}>
                             Start for Free <ArrowRight className="ml-2 h-6 w-6" />
                         </Link>
                     </Button>
-                    <Button asChild size="lg" variant="outline" className="h-16 px-12 text-xl font-black uppercase tracking-tight border-white/20 bg-white/5 backdrop-blur-md hover:bg-white/10">
+                    <Button asChild size="lg" variant="outline" className="h-14 md:h-16 px-8 md:px-12 text-lg md:text-xl font-black uppercase tracking-tight border-white/20 bg-white/5 backdrop-blur-md hover:bg-white/10">
                         <Link href="/mall">Browse Registry</Link>
                     </Button>
                 </div>
@@ -204,7 +238,7 @@ export default function HomePage() {
       {/* Forensic Intelligence Section */}
       <section className="py-16 md:py-24 border-y bg-white">
         <div className="container mx-auto px-4">
-            <div className="grid lg:grid-cols-2 gap-16 items-center">
+            <div className="grid lg:grid-cols-2 gap-12 md:gap-16 items-center">
                 <div className="space-y-6">
                     <div className="bg-primary/10 p-3 rounded-xl w-fit"><SearchCode className="h-8 w-8 text-primary" /></div>
                     <h2 className="text-3xl md:text-5xl font-black font-headline">Forensic Business Intelligence</h2>
@@ -228,7 +262,7 @@ export default function HomePage() {
                         <Link href="/pricing">View Access Tiers</Link>
                     </Button>
                 </div>
-                <div className="relative">
+                <div className="relative mt-8 lg:mt-0">
                     <Card className="shadow-2xl border-none overflow-hidden bg-slate-900 text-white rotate-1 lg:rotate-3 scale-95 hover:rotate-0 transition-transform duration-500">
                         <CardHeader className="bg-slate-800 p-6 border-b border-white/5">
                             <CardTitle className="flex items-center gap-2 text-lg italic"><ShieldCheck className="text-primary h-5 w-5"/> Registry Access Shield</CardTitle>
@@ -236,14 +270,14 @@ export default function HomePage() {
                         <CardContent className="p-8 space-y-6 font-mono text-xs">
                             <div className="flex justify-between items-center p-3 bg-white/5 rounded border border-white/10">
                                 <div className="space-y-1">
-                                    <p className="font-bold text-slate-400">MD IDENTITY</p>
+                                    <p className="font-bold text-slate-400 uppercase tracking-tighter">Director Identity</p>
                                     <p className="text-white text-sm">SIPHO NKOSI [VERIFIED]</p>
                                 </div>
                                 <CheckCircle2 className="h-6 w-6 text-green-500" />
                             </div>
                             <div className="flex justify-between items-center p-3 bg-white/5 rounded border border-white/10 opacity-50">
                                 <div className="space-y-1">
-                                    <p className="font-bold text-slate-400">DIRECT MOBILE</p>
+                                    <p className="font-bold text-slate-400 uppercase tracking-tighter">Direct Mobile</p>
                                     <p className="text-white text-sm">082 *** **** [LOCKED]</p>
                                 </div>
                                 <Database className="h-5 w-5 text-slate-500" />
