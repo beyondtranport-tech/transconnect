@@ -8,7 +8,7 @@ import Link from "next/link";
 import data from "@/lib/placeholder-images.json";
 import { useUser } from "@/firebase";
 import * as React from "react";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import * as gtag from '@/lib/gtag';
 import { HomeIntentModal } from "./home-intent-modal";
 import { useConfig } from "@/hooks/use-config";
@@ -18,53 +18,83 @@ import { cn } from "@/lib/utils";
 const { placeholderImages } = data;
 const heroImage = placeholderImages.find(p => p.id === 'hero-home');
 
-// Node Component for the orbital visual
-const RegistryNode = ({ title, count, icon: Icon, categories, colorClass }: { title: string, count: string, icon: any, categories: string[], colorClass: string }) => (
-    <div className="relative group p-4 flex flex-col items-center">
-        {/* Central Node */}
-        <div className={cn(
-            "relative z-10 w-40 h-40 md:w-48 md:h-48 rounded-full flex flex-col items-center justify-center text-center shadow-2xl transition-transform group-hover:scale-105 border-4",
-            colorClass
-        )}>
-            <Icon className="h-10 w-10 mb-2" />
-            <p className="text-2xl md:text-3xl font-black">{count}</p>
-            <p className="text-[10px] font-bold uppercase tracking-widest opacity-80">{title}</p>
-        </div>
+// Node Component with SVG Lines and Orbital Badges
+const RegistryNode = ({ title, count, icon: Icon, categories, colorClass, borderClass, lineClass }: { title: string, count: string, icon: any, categories: string[], colorClass: string, borderClass: string, lineClass: string }) => {
+    const radius = 130;
+    const center = 160;
 
-        {/* Orbital Categories */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[280px] h-[280px] md:w-[320px] md:h-[320px] pointer-events-none hidden sm:block">
-            {categories.map((cat, i) => {
-                const angle = (i * (360 / categories.length)) * (Math.PI / 180);
-                const radius = 130; 
-                const x = Math.cos(angle) * radius;
-                const y = Math.sin(angle) * radius;
-                return (
-                    <div 
-                        key={cat}
-                        className="absolute text-[9px] font-black uppercase bg-white/10 backdrop-blur-md border border-white/20 text-white px-2 py-1 rounded-full whitespace-nowrap shadow-lg animate-pulse"
-                        style={{ 
-                            left: `calc(50% + ${x}px)`, 
-                            top: `calc(50% + ${y}px)`,
-                            transform: 'translate(-50%, -50%)',
-                            animationDelay: `${i * 0.5}s`
-                        }}
-                    >
-                        {cat}
-                    </div>
-                );
-            })}
+    return (
+        <div className="relative group p-4 flex flex-col items-center">
+            {/* SVG Connector Lines Layer */}
+            <svg className={cn("absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[320px] h-[320px] pointer-events-none overflow-visible", lineClass)}>
+                {categories.map((_, i) => {
+                    const angle = (i * (360 / categories.length) - 90) * (Math.PI / 180);
+                    const x2 = center + Math.cos(angle) * radius;
+                    const y2 = center + Math.sin(angle) * radius;
+                    return (
+                        <line 
+                            key={i} 
+                            x1={center} y1={center} 
+                            x2={x2} y2={y2} 
+                            stroke="currentColor" 
+                            strokeWidth="1.5" 
+                            strokeDasharray="4 4"
+                            className="opacity-30"
+                        />
+                    );
+                })}
+            </svg>
+
+            {/* Central Node */}
+            <div className={cn(
+                "relative z-20 w-36 h-36 md:w-44 md:h-44 rounded-full flex flex-col items-center justify-center text-center shadow-2xl transition-all duration-500 group-hover:scale-110 border-4",
+                colorClass,
+                borderClass
+            )}>
+                <Icon className="h-8 w-8 mb-1" />
+                <p className="text-xl md:text-2xl font-black">{count}</p>
+                <p className="text-[9px] font-black uppercase tracking-tighter opacity-80">{title}</p>
+            </div>
+
+            {/* Orbital Category Badges */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[320px] h-[320px] pointer-events-none">
+                {categories.map((cat, i) => {
+                    const angle = (i * (360 / categories.length) - 90) * (Math.PI / 180);
+                    const x = center + Math.cos(angle) * radius;
+                    const y = center + Math.sin(angle) * radius;
+                    return (
+                        <div 
+                            key={cat}
+                            className="absolute z-30"
+                            style={{ 
+                                left: `${x}px`, 
+                                top: `${y}px`,
+                                transform: 'translate(-50%, -50%)',
+                            }}
+                        >
+                            <Badge className="text-[8px] md:text-[9px] font-black uppercase bg-slate-900/80 backdrop-blur-md border border-white/20 text-white px-2 py-0.5 rounded-full whitespace-nowrap shadow-lg animate-in fade-in zoom-in duration-500">
+                                {cat}
+                            </Badge>
+                        </div>
+                    );
+                })}
+            </div>
         </div>
-    </div>
-);
+    );
+};
 
 export default function HomePage() {
   const { user } = useUser();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { data: statsData } = useConfig<any>('supplierDiscoveryStats');
 
-  const supplierCount = statsData?.counts ? Object.values(statsData.counts).reduce((a: any, b: any) => a + (Number(b) || 0), 0) : 22140;
+  const supplierCount = useMemo(() => {
+      if (!statsData?.counts) return 22140;
+      return Object.values(statsData.counts).reduce((a: any, b: any) => a + (Number(b) || 0), 0);
+  }, [statsData]);
+
   const transporterCount = 5420; 
-  const totalRecords = (Number(supplierCount) || 0) + transporterCount;
+  const totalRecords = Number(supplierCount) + transporterCount;
 
   const handleJoinClick = (event: React.MouseEvent<HTMLElement>) => {
     event.preventDefault();
@@ -85,9 +115,9 @@ export default function HomePage() {
     <div className="bg-background">
       <HomeIntentModal isOpen={isModalOpen} onOpenChange={setIsModalOpen} />
       
-      {/* Hero Section: Dynamic Orbital Visual */}
-      <section className="relative w-full min-h-[90vh] flex flex-col items-center justify-center overflow-hidden bg-slate-950 text-white">
-        <div className="absolute inset-0 z-0 opacity-20">
+      {/* Hero Section: Staggered Triangle Node Formation */}
+      <section className="relative w-full min-h-screen flex flex-col items-center justify-center overflow-hidden bg-slate-950 text-white py-20">
+        <div className="absolute inset-0 z-0 opacity-10">
            {heroImage && (
             <Image
               src={heroImage.imageUrl}
@@ -101,32 +131,50 @@ export default function HomePage() {
         </div>
 
         <div className="container relative z-10 mx-auto px-4 flex flex-col items-center">
-            <Badge className="mb-8 bg-primary text-white border-none py-1.5 px-6 text-xs font-black uppercase tracking-[0.2em] shadow-lg shadow-primary/20">
+            <Badge className="mb-12 bg-primary text-white border-none py-1.5 px-6 text-xs font-black uppercase tracking-[0.2em] shadow-lg shadow-primary/20">
                 The Industry's Master Registry
             </Badge>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-24 lg:gap-12 mb-20 items-center justify-center">
-                <RegistryNode 
-                    title="Verified Transporters"
-                    count="5,420"
-                    icon={Truck}
-                    colorClass="bg-blue-600/20 border-blue-500/50 text-blue-100"
-                    categories={["Long Haul", "Refrigerated", "Flatbed", "Tipper", "Distribution"]}
-                />
-                <RegistryNode 
-                    title="Spares & Service Suppliers"
-                    count={`${(Number(supplierCount) || 22140).toLocaleString()}+`}
-                    icon={Building2}
-                    colorClass="bg-primary/20 border-primary/50 text-primary-foreground"
-                    categories={["Engine parts", "Tyres", "Differential", "Prop Shafts", "Air Systems", "Mechanical"]}
-                />
-                <RegistryNode 
-                    title="Finance Partners"
-                    count="85"
-                    icon={Landmark}
-                    colorClass="bg-amber-600/20 border-amber-500/50 text-amber-100"
-                    categories={["Asset Finance", "Working Capital", "Debt Funders", "Niche Lenders"]}
-                />
+            {/* Triangle Formation */}
+            <div className="relative w-full max-w-5xl h-[600px] md:h-[700px] mb-12">
+                {/* Top Node: Transporters */}
+                <div className="absolute top-0 left-1/2 -translate-x-1/2">
+                    <RegistryNode 
+                        title="Verified Transporters"
+                        count={transporterCount.toLocaleString()}
+                        icon={Truck}
+                        colorClass="bg-blue-600/10 text-blue-100"
+                        borderClass="border-blue-500/40"
+                        lineClass="text-blue-500"
+                        categories={["Long Haul", "Refrigerated", "Flatbed", "Tipper", "LTL"]}
+                    />
+                </div>
+
+                {/* Bottom Left Node: Suppliers */}
+                <div className="absolute bottom-0 left-0 md:left-[10%]">
+                    <RegistryNode 
+                        title="Spares & Service Suppliers"
+                        count={`${Number(supplierCount).toLocaleString()}+`}
+                        icon={Building2}
+                        colorClass="bg-primary/10 text-primary-foreground"
+                        borderClass="border-primary/40"
+                        lineClass="text-primary"
+                        categories={["Engine parts", "Tyres", "Differential", "Prop Shafts", "Air Systems"]}
+                    />
+                </div>
+
+                {/* Bottom Right Node: Finance */}
+                <div className="absolute bottom-0 right-0 md:right-[10%]">
+                    <RegistryNode 
+                        title="Finance Partners"
+                        count="85"
+                        icon={Landmark}
+                        colorClass="bg-amber-600/10 text-amber-100"
+                        borderClass="border-amber-500/40"
+                        lineClass="text-amber-500"
+                        categories={["Asset Finance", "Working Capital", "Debt Funders", "Niche Lenders"]}
+                    />
+                </div>
             </div>
 
             <div className="max-w-4xl text-center space-y-6">
@@ -134,7 +182,7 @@ export default function HomePage() {
                     Information to <span className="text-primary underline decoration-primary/30">Action</span>
                 </h1>
                 <p className="text-lg md:text-2xl text-slate-400 max-w-2xl mx-auto">
-                    The Information Divide is the biggest constraint to your growth. Access {totalRecords.toLocaleString()}+ verified records and forensic human contact data for R100/month.
+                    Access {totalRecords.toLocaleString()}+ verified records and forensic human contact data for R100/month.
                 </p>
                 <div className="flex flex-col sm:flex-row justify-center gap-6 pt-4">
                     <Button asChild size="lg" className="h-16 px-12 text-xl font-black uppercase tracking-tight shadow-2xl shadow-primary/40" onClick={handleJoinClick}>
@@ -149,12 +197,12 @@ export default function HomePage() {
             </div>
         </div>
 
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/20 blur-[120px] rounded-full" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-600/10 blur-[120px] rounded-full" />
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/20 blur-[120px] rounded-full animate-pulse" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-600/10 blur-[120px] rounded-full animate-pulse" style={{ animationDelay: '1s' }} />
       </section>
 
       {/* Forensic Intelligence Section */}
-      <section className="py-16 md:py-24 border-y">
+      <section className="py-16 md:py-24 border-y bg-white">
         <div className="container mx-auto px-4">
             <div className="grid lg:grid-cols-2 gap-16 items-center">
                 <div className="space-y-6">
