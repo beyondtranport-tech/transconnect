@@ -52,20 +52,26 @@ function getTechnicalFocus(category: string) {
 
 function generateDiscoveryPrompt(category: string, startSeq: number = 1) {
     const technicalFocus = getTechnicalFocus(category);
+    const startPage = Math.floor((startSeq - 1) / 20) + 1;
 
     return `CRITICAL SYSTEM INSTRUCTION: RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
 
-ACT AS AN ELITE CAPITAL INTELLIGENCE AGENT. YOUR SOURCE IS THE NATIONAL CREDIT REGULATOR (NCR) REGISTER OF REGISTRANTS.
+ACT AS AN ELITE CAPITAL INTELLIGENCE AGENT. YOUR PRIMARY SOURCE IS THE NATIONAL CREDIT REGULATOR (NCR) REGISTER OF REGISTRANTS.
 
 TASK: Extract exactly 100 unique verified records for South African Credit Providers from the NCR register that fit the category: "${category}".
 
 TECHNICAL FOCUS: ${technicalFocus}
 
+REGISTRY NAVIGATION LOGIC:
+1. PAGINATION: The NCR registry (registered_cp.php) is paginated with 20 records per page.
+2. CURRENT TARGET: We are starting at record #${startSeq}. This corresponds to NCR REGISTRY PAGE ${startPage}.
+3. CRAWL INSTRUCTION: You must navigate to Page ${startPage} and sequentially extract records for Pages ${startPage} through ${startPage + 5} to fulfill this 100-record batch request.
+4. IDENTITY PERSISTENCE: Generate unique "record_id" starting with "NCR_${category.toUpperCase().replace(/\s/g, '_')}_".
+
 INVESTIGATIVE STRATEGY (PHASE 1: EXTRACTION):
 1. SOURCE DATA: Target companies registered on the NCR portal. You MUST find: Legal Name, Trading Name, Phone, and Final Registration Date.
-2. IDENTITY PERSISTENCE: Generate unique "record_id" starting with "NCR_${category.toUpperCase().replace(/\s/g, '_')}_".
-3. SEQUENCE TRACKING: Use field "seq" for the record number, starting from ${startSeq} to ${startSeq + 99}.
-4. NO PLACEHOLDERS: If a field is empty, return "null". Do NOT return generic "Director" strings.
+2. SEQUENCE TRACKING: Use field "seq" for the record number, starting from ${startSeq} to ${startSeq + 99}.
+3. NO PLACEHOLDERS: If a field is empty, return "null". Do NOT return generic "Director" strings.
 
 REQUIRED OUTPUT FORMAT (RAW JSON ARRAY ONLY):
 [
@@ -81,7 +87,7 @@ REQUIRED OUTPUT FORMAT (RAW JSON ARRAY ONLY):
   }
 ]
 
-NOTE: This is Phase 1. Do not search for websites or staff yet. Focus on accurate NCR extraction.`;
+NOTE: Focus on accurate NCR extraction. Phase 2 (Staff/Websites) will follow import.`;
 }
 
 const DiscoveryTab = ({ category, currentCount }: { category: string, currentCount: number }) => {
@@ -94,7 +100,7 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
         try {
             await navigator.clipboard.writeText(prompt);
             setIsCopied(true);
-            toast({ title: "NCR Extraction Prompt Copied!", description: `Paste into Gemini 1.5 Pro to hunt for ${category}.` });
+            toast({ title: "NCR Extraction Prompt Copied!", description: `Targeting records starting from Page ${Math.floor(currentCount / 20) + 1}.` });
             setTimeout(() => setIsCopied(false), 3000);
         } catch (e) {
             toast({ variant: 'destructive', title: "Copy Failed" });
@@ -117,17 +123,17 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                     
                     <Alert className="bg-primary/5 border-primary/20 border-l-4 border-l-primary">
                         <Info className="h-4 w-4 text-primary" />
-                        <AlertTitle className="font-bold text-sm">Two-Phase Strategy Active</AlertTitle>
+                        <AlertTitle className="font-bold text-sm">Pagination Sync Active</AlertTitle>
                         <AlertDescription className="text-xs space-y-2">
-                            <p><strong>Step 1:</strong> Use this prompt to extract raw data from the NCR register.</p>
-                            <p><strong>Step 2:</strong> Once imported, use the "Enrich" button in the CRM to find websites, agreement types, and human decision-makers.</p>
+                            <p>This prompt is synchronized with your current database. It tells the AI exactly which <strong>NCR Page</strong> to start on to avoid duplicates.</p>
+                            <p><strong>Current Start Page:</strong> {Math.floor(currentCount / 20) + 1}</p>
                         </AlertDescription>
                     </Alert>
 
                     <div className="pt-4 flex flex-col gap-2">
                         <Button onClick={handleCopy} size="lg" className="w-full gap-2 shadow-md bg-amber-600 hover:bg-amber-700">
                             {isCopied ? <ClipboardCheck className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
-                            {isCopied ? "Prompt Copied" : `Copy NCR Extraction Prompt`}
+                            {isCopied ? "Prompt Copied" : `Copy Page ${Math.floor(currentCount / 20) + 1} Prompt`}
                         </Button>
                         <Button variant="outline" asChild className="w-full">
                             <a href="https://aistudio.google.com/" target="_blank" rel="noopener noreferrer">
@@ -140,10 +146,10 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                 <div className="space-y-2">
                     <div className="flex items-center justify-between">
                          <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
-                            <Terminal className="h-3 w-3"/> Phase 1 Command
+                            <Terminal className="h-3 w-3"/> Paginated Command
                         </Label>
                         <Badge variant="outline" className="text-[10px] uppercase font-bold text-amber-600 border-amber-200">
-                            NCR Optimized
+                            Sequence Validated
                         </Badge>
                     </div>
                     <ScrollArea className="h-[320px] border rounded-lg bg-slate-900 p-4 shadow-inner">
@@ -234,4 +240,3 @@ export default function FinanceDiscoveryEngine() {
         </Card>
     );
 }
-
