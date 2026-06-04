@@ -1,9 +1,10 @@
+
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, Sparkles, Copy, ClipboardCheck, Info, Search, Terminal, MapPin, ListOrdered, Loader2, RefreshCcw, Landmark, Banknote, Users } from "lucide-react";
+import { ArrowRight, Sparkles, Copy, ClipboardCheck, Info, Search, Terminal, MapPin, ListOrdered, Loader2, RefreshCcw, Landmark, Banknote, Users, Database, ShieldCheck } from "lucide-react";
 import * as React from "react";
 import { useState, useMemo } from 'react';
 import { useToast } from "@/hooks/use-toast";
@@ -42,69 +43,58 @@ async function performAdminAction(token: string, action: string, payload: any) {
 
 function getTechnicalFocus(category: string) {
     const lower = category.toLowerCase();
-    if (lower === 'banks') return "commercial banking institutions, specifically focusing on their vehicle and asset finance (VAF) divisions, business banking, and corporate lending for the transport sector";
-    if (lower === 'government') return "state-owned enterprises (SOEs), development finance institutions (DFIs) like the IDC, NEF, and SEFA, as well as provincial government funding agencies providing grants or low-interest loans to transporters";
-    if (lower === 'aeo') return "Authorised Economic Operators (AEO) and related trade facilitation entities. These include customs clearing agents, bonded warehouse operators, and logistics providers officially registered with SARS as AEO-compliant";
-    if (lower === 'niche lenders') return "private sector finance companies, boutique lenders, specialized crowdfunding platforms, and peer-to-peer (P2P) lending networks that focus specifically on bridging finance, fuel advances, and capital for transport SMMES";
-    return "capital providers and financial services specifically targeting the South African transport and logistics sector";
+    if (lower === 'banks') return "commercial banking institutions registered with the NCR, focusing on Vehicle and Asset Finance (VAF) and business lending.";
+    if (lower === 'government') return "State-owned enterprises and DFIs (IDC, NEF, SEFA) providing developmental credit and industrial funding.";
+    if (lower === 'aeo') return "SARS-registered Authorised Economic Operators and trade finance specialists facilitating cross-border logistics capital.";
+    if (lower === 'niche lenders') return "Private credit providers, specialized P2P networks, and crowdfunding platforms registered with the NCR for commercial bridging and asset finance.";
+    return "registered credit providers and financial intermediaries in South Africa.";
 }
 
-function generateDiscoveryPrompt(category: string, focusHubs: string[]) {
+function generateDiscoveryPrompt(category: string, startSeq: number = 1) {
     const technicalFocus = getTechnicalFocus(category);
 
-    return `CRITICAL SYSTEM INSTRUCTION: RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION. NO EXPLANATORY TEXT.
+    return `CRITICAL SYSTEM INSTRUCTION: RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
 
-ACT AS AN ELITE CAPITAL INTELLIGENCE AGENT. YOUR PRIMARY MISSION IS TO IDENTIFY ACTUAL HUMAN BEINGS IN LEADERSHIP AT SOUTH AFRICAN ENTITIES IN THE "${category.toUpperCase()}" SECTOR.
+ACT AS AN ELITE CAPITAL INTELLIGENCE AGENT. YOUR SOURCE IS THE NATIONAL CREDIT REGULATOR (NCR) REGISTER OF REGISTRANTS.
 
-TASK: Discover and extract detailed verified records for exactly 50 DIFFERENT AND UNIQUE entities in SOUTH AFRICA that provide: "${category}".
+TASK: Extract exactly 100 unique verified records for South African Credit Providers from the NCR register that fit the category: "${category}".
 
-INDUSTRY CONTEXT: These entities MUST serve or regulate the transport and logistics industry (${technicalFocus}).
+TECHNICAL FOCUS: ${technicalFocus}
 
-HUNTING GROUNDS: 
-1. PRIMARY SOURCE: LinkedIn. You are strictly commanded to find records of the STAFF who work for these entities.
-2. SECONDARY SOURCE: Official registries (NCR for lenders, SARS for AEO, Government gazettes for DFIs) to cross-reference and verify standing.
-
-TARGET STAFF TITLES:
-You are hunting for individuals with roles such as: CEO, Managing Director, Head of Asset Finance, Credit Risk Manager, Commercial Lending Head, Customs Compliance Officer, or Program Manager.
-
-INVESTIGATIVE STRATEGY:
-1. HUMAN IDENTITY FIRST: You must find the ACTUAL NAME (First and Last) of a specific decision-maker via LinkedIn or official corporate/departmental "About Us" leadership pages.
-2. FORBIDDEN VALUES: Returning titles like "The Director", "Branch Manager", or "Managing Director" without a name is a failure. You MUST find a specific human identity (e.g. "Sipho Nkosi").
-3. IDENTITY PERSISTENCE: Generate unique "record_id" starting with "FIN_${category.toUpperCase().replace(/\s/g, '_')}_".
-4. SEQUENCE TRACKING: Use field "seq" for the record number (1 to 50).
+INVESTIGATIVE STRATEGY (PHASE 1: EXTRACTION):
+1. SOURCE DATA: Target companies registered on the NCR portal. You MUST find: Legal Name, Trading Name, Phone, and Final Registration Date.
+2. IDENTITY PERSISTENCE: Generate unique "record_id" starting with "NCR_${category.toUpperCase().replace(/\s/g, '_')}_".
+3. SEQUENCE TRACKING: Use field "seq" for the record number, starting from ${startSeq} to ${startSeq + 99}.
+4. NO PLACEHOLDERS: If a field is empty, return "null". Do NOT return generic "Director" strings.
 
 REQUIRED OUTPUT FORMAT (RAW JSON ARRAY ONLY):
 [
   {
-    "seq": 1,
-    "record_id": "FIN_${category.toUpperCase().replace(/\s/g, '_')}_[RAND_ID]",
-    "company_name": "...",
+    "seq": ${startSeq},
+    "record_id": "NCR_${category.toUpperCase().replace(/\s/g, '_')}_[UNIQUE_ID]",
+    "company_name": "LEGAL REGISTERED NAME",
+    "trading_name": "TRADING NAME (IF ANY)",
     "industrial_category": "${category}",
-    "contact_person": "VERIFIED HUMAN FULL NAME",
-    "email_address": "Direct Professional Email",
-    "telephone_number": "Direct Office or Mobile Number",
-    "website": "URL",
-    "physical_address": "..."
+    "telephone_number": "NCR REGISTERED PHONE",
+    "registration_date": "FINAL REGISTRATION DATE",
+    "research_status": "pending_enrichment"
   }
-]`;
+]
+
+NOTE: This is Phase 1. Do not search for websites or staff yet. Focus on accurate NCR extraction.`;
 }
 
 const DiscoveryTab = ({ category, currentCount }: { category: string, currentCount: number }) => {
     const { toast } = useToast();
     const [isCopied, setIsCopied] = useState(false);
     
-    const randomHubs = useMemo(() => {
-        const shuffled = [...financialHubs].sort(() => 0.5 - Math.random());
-        return shuffled.slice(0, 4);
-    }, [category]);
-
-    const prompt = generateDiscoveryPrompt(category, randomHubs);
+    const prompt = generateDiscoveryPrompt(category, currentCount + 1);
 
     const handleCopy = async () => {
         try {
             await navigator.clipboard.writeText(prompt);
             setIsCopied(true);
-            toast({ title: "Forensic Prompt Copied!", description: `Paste into Gemini to hunt for ${category} human contacts.` });
+            toast({ title: "NCR Extraction Prompt Copied!", description: `Paste into Gemini 1.5 Pro to hunt for ${category}.` });
             setTimeout(() => setIsCopied(false), 3000);
         } catch (e) {
             toast({ variant: 'destructive', title: "Copy Failed" });
@@ -117,34 +107,27 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                 <div className="space-y-4">
                     <div className="flex items-center justify-between">
                         <h2 className="text-2xl font-bold font-headline flex items-center gap-2">
-                            <Users className="h-6 w-6 text-amber-600" />
-                            {category} Discovery
+                            <Database className="h-6 w-6 text-amber-600" />
+                            NCR Discovery: {category}
                         </h2>
                         <Badge variant="outline" className="font-mono text-sm bg-muted/30">
-                            {currentCount} In Database
+                            {currentCount} / 9682
                         </Badge>
                     </div>
                     
-                    <div className="p-3 bg-amber-50 rounded-lg border border-amber-200 flex items-center gap-3">
-                        <MapPin className="h-5 w-5 text-amber-600 shrink-0" />
-                        <div className="text-xs text-amber-900">
-                            <span className="font-bold uppercase">Targeted Hub Focus:</span>
-                            <p className="font-semibold mt-0.5">{randomHubs.join(' • ')}</p>
-                        </div>
-                    </div>
-
                     <Alert className="bg-primary/5 border-primary/20 border-l-4 border-l-primary">
                         <Info className="h-4 w-4 text-primary" />
-                        <AlertTitle className="font-bold text-sm">Staff Forensics Active</AlertTitle>
+                        <AlertTitle className="font-bold text-sm">Two-Phase Strategy Active</AlertTitle>
                         <AlertDescription className="text-xs space-y-2">
-                            <p>The AI is commanded to ignore general company info and find specific **human names** from LinkedIn and official registries.</p>
+                            <p><strong>Step 1:</strong> Use this prompt to extract raw data from the NCR register.</p>
+                            <p><strong>Step 2:</strong> Once imported, use the "Enrich" button in the CRM to find websites, agreement types, and human decision-makers.</p>
                         </AlertDescription>
                     </Alert>
 
                     <div className="pt-4 flex flex-col gap-2">
                         <Button onClick={handleCopy} size="lg" className="w-full gap-2 shadow-md bg-amber-600 hover:bg-amber-700">
                             {isCopied ? <ClipboardCheck className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
-                            {isCopied ? "Prompt Copied" : `Copy ${category} Prompt`}
+                            {isCopied ? "Prompt Copied" : `Copy NCR Extraction Prompt`}
                         </Button>
                         <Button variant="outline" asChild className="w-full">
                             <a href="https://aistudio.google.com/" target="_blank" rel="noopener noreferrer">
@@ -157,10 +140,10 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                 <div className="space-y-2">
                     <div className="flex items-center justify-between">
                          <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
-                            <Terminal className="h-3 w-3"/> AI Forensic Command
+                            <Terminal className="h-3 w-3"/> Phase 1 Command
                         </Label>
                         <Badge variant="outline" className="text-[10px] uppercase font-bold text-amber-600 border-amber-200">
-                            Staff Centric
+                            NCR Optimized
                         </Badge>
                     </div>
                     <ScrollArea className="h-[320px] border rounded-lg bg-slate-900 p-4 shadow-inner">
@@ -206,12 +189,12 @@ export default function FinanceDiscoveryEngine() {
                             Capital Intelligence Discovery
                         </CardTitle>
                         <CardDescription>
-                            Generate targeted prompts for Banks, DFIs, AEO Partners, and Niche Lenders.
+                            Targeted NCR register extraction for Banks, DFIs, AEO Partners, and Niche Lenders.
                         </CardDescription>
                     </div>
                     <div className="flex items-center gap-2">
                          <div className="text-right mr-2 hidden md:block">
-                            <p className="text-[10px] font-black uppercase text-muted-foreground">Snapshot Taken</p>
+                            <p className="text-[10px] font-black uppercase text-muted-foreground">Registry Snapshot</p>
                             <p className="text-[10px] font-bold text-amber-600">{formatDateSafe(statsData?.lastUpdated, "dd MMM, HH:mm")}</p>
                         </div>
                         <Button 
@@ -251,3 +234,4 @@ export default function FinanceDiscoveryEngine() {
         </Card>
     );
 }
+

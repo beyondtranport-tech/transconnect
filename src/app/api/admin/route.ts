@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -25,6 +26,7 @@ function serializeTimestamps(docData: any): any {
 
 /**
  * Universal Data Normalization & Intelligent Categorization
+ * Enhanced for NCR and Finance forensics.
  */
 function normalizePartnerData(data: any) {
     const result: any = {};
@@ -51,13 +53,15 @@ function normalizePartnerData(data: any) {
     }
 
     const maps = {
-        companyName: ['company_name', 'companyName', 'company', 'name', 'business_name', 'business'],
+        companyName: ['company_name', 'companyName', 'company', 'name', 'business_name', 'business', 'legal_name'],
+        trading_name: ['trading_name', 'tradingName', 'trade_name'],
         email: ['email_address', 'emailAddress', 'mail', 'email', 'e_mail'],
         phone: ['telephone_number', 'telephone', 'phone_number', 'cell', 'mobile', 'contact_number', 'tel', 'phone'],
         address: ['physical_address', 'physicalAddress', 'location', 'address', 'street'],
         website: ['url', 'site', 'website', 'website_url', 'web'],
         entryType: ['industrial_category', 'category', 'industrialCategory', 'entry_type', 'entryType'],
-        role: ['role', 'position', 'type_label']
+        role: ['role', 'position', 'type_label'],
+        registration_date: ['registration_date', 'final_registration_date', 'reg_date']
     };
 
     Object.entries(maps).forEach(([standardKey, aiKeys]) => {
@@ -89,12 +93,15 @@ function normalizePartnerData(data: any) {
 
     if (!result.entryType || result.entryType === 'General') {
         const name = (result.companyName || '').toLowerCase();
-        if (name.includes('forward')) result.entryType = 'Forwarder';
+        const activity = (data.business_activity || '').toLowerCase();
+        
+        if (name.includes('bank')) result.entryType = 'Banks';
+        else if (name.includes('forward') || activity.includes('customs')) result.entryType = 'AEO';
         else if (name.includes('distrib')) result.entryType = 'Distribution';
         else if (name.includes('warehouse')) result.entryType = 'Warehousing';
         else if (name.includes('logistics')) result.entryType = 'Logistics';
         else if (name.includes('truck') || name.includes('transport')) result.entryType = 'Transport';
-        else if (name.includes('bank') || name.includes('finance')) result.entryType = 'Asset Finance';
+        else if (name.includes('finance') || activity.includes('lending')) result.entryType = 'Niche Lenders';
         else if (name.includes('insur')) result.entryType = 'Insurance';
         else result.entryType = result.entryType || 'General';
     }
@@ -159,7 +166,7 @@ export async function POST(req: NextRequest) {
             }
 
             case 'resetResearchQueue': {
-                const { type } = payload; // 'lead', 'supplier', etc.
+                const { type } = payload; 
                 const snap = await db.collection('leads')
                     .where('researchStatus', '==', 'researching')
                     .get();
@@ -180,7 +187,6 @@ export async function POST(req: NextRequest) {
                 const batch = db.batch();
                 let count = 0;
 
-                // Simple check for email vs name
                 for (const entry of entries) {
                     const isEmail = entry.includes('@');
                     const field = isEmail ? 'email' : 'companyName';

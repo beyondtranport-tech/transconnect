@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -28,9 +29,38 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
     const [isCopied, setIsCopied] = useState(false);
     const { toast } = useToast();
 
-    const companyName = partner.companyName || `${partner.firstName} ${partner.lastName}`;
+    const companyName = partner.companyName || partner.trading_name || `${partner.firstName} ${partner.lastName}`;
+    const isNCR = partner.record_id?.startsWith('NCR_') || !!partner.registration_date;
 
-    const aiPrompt = `CRITICAL SYSTEM INSTRUCTION: RETURN ONLY A RAW JSON OBJECT. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
+    const aiPrompt = isNCR ? `CRITICAL SYSTEM INSTRUCTION: RETURN ONLY A RAW JSON OBJECT. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
+
+ACT AS AN ELITE CORPORATE INTELLIGENCE AGENT. THIS ENTITY IS REGISTERED WITH THE NATIONAL CREDIT REGULATOR (NCR).
+
+TASK: Perform Phase 2 Enrichment for the following NCR-registered business.
+
+TARGET ENTITY: 
+- Legal Name: ${partner.companyName}
+- Trading Name: ${partner.trading_name || 'N/A'}
+- NCR Reg Date: ${partner.registration_date || 'N/A'}
+
+INVESTIGATIVE STRATEGY (PHASE 2: ACTIVITY & LEADERSHIP):
+1. OFFICIAL FOOTPRINT: Find this company's official website and LinkedIn page.
+2. HUMAN IDENTITY: Identify the ACTUAL NAME (First and Last) of the CEO, Managing Director, or Head of Credit. 
+3. PRODUCT INTELLIGENCE: Analyze their business activities and identify which agreement types they offer: [Loans, Installment Sale, Lease, Factoring].
+4. CATEGORIZATION: Based on their activity, assign them to: [Banks, Government, AEO, Niche Lenders].
+5. IDENTITY PERSISTENCE: You MUST return "record_id": "${partner.id}".
+
+REQUIRED OUTPUT FORMAT (RAW JSON ONLY):
+{
+  "record_id": "${partner.id}",
+  "website": "URL",
+  "contact_person": "ACTUAL HUMAN FULL NAME",
+  "email_address": "Verified Direct Email",
+  "business_activity": "Detailed Summary of Services",
+  "agreement_types": ["List of types found"],
+  "entryType": "Refined Category from list above",
+  "research_status": "completed"
+}` : `CRITICAL SYSTEM INSTRUCTION: RETURN ONLY A RAW JSON OBJECT. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
 
 ACT AS AN ELITE CORPORATE INTELLIGENCE AGENT. YOUR PRIMARY MISSION IS TO IDENTIFY ACTUAL HUMAN BEINGS IN LEADERSHIP.
 
@@ -57,7 +87,7 @@ REQUIRED OUTPUT FORMAT (RAW JSON ONLY):
         try {
             await navigator.clipboard.writeText(aiPrompt);
             setIsCopied(true);
-            toast({ title: "Forensic Prompt Copied!", description: "The AI is now commanded to find actual human names." });
+            toast({ title: "Forensic Prompt Copied!", description: isNCR ? "AI will now hunt for activity and leadership." : "AI will now hunt for human names." });
         } catch (e) {
             toast({ variant: 'destructive', title: "Copy Failed" });
         }
@@ -99,19 +129,23 @@ REQUIRED OUTPUT FORMAT (RAW JSON ONLY):
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
                             <Sparkles className="h-5 w-5 text-primary" />
-                            Forensic Individual AI Research
+                            {isNCR ? 'Phase 2: Forensic Enrichment' : 'Forensic Individual AI Research'}
                         </DialogTitle>
                         <DialogDescription>
-                            Generate a deep-search prompt optimized to find actual human leadership names for <strong>{companyName}</strong>.
+                            {isNCR 
+                                ? `Determine the business activity and leadership for NCR record: ${companyName}`
+                                : `Generate a deep-search prompt optimized to find actual human leadership names for ${companyName}.`}
                         </DialogDescription>
                     </DialogHeader>
 
                     <div className="space-y-4 py-4">
                         <Alert className="bg-primary/5 border-primary/20">
                             <Info className="h-4 w-4 text-primary" />
-                            <AlertTitle>Anti-Placeholder Command Active</AlertTitle>
+                            <AlertTitle>{isNCR ? 'ActivityPass Active' : 'Anti-Placeholder Command Active'}</AlertTitle>
                             <AlertDescription className="text-xs">
-                                This prompt strictly forbids the AI from returning titles like "The Director" and commands it to hunt for verified human identities.
+                                {isNCR 
+                                    ? "The AI is instructed to find agreement types (Loan, Lease, etc.) and identify the specific human credit decision-maker."
+                                    : "This prompt strictly forbids the AI from returning titles like \"The Director\" and commands it to hunt for verified human identities."}
                             </AlertDescription>
                         </Alert>
 
