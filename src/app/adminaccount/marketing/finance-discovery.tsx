@@ -45,12 +45,13 @@ function getTechnicalFocus(category: string) {
     return "registered credit providers and financial intermediaries in South Africa.";
 }
 
-function generateDiscoveryPrompt(category: string, startSeq: number = 1) {
+function generateDiscoveryPrompt(category: string, startPage: number) {
     const technicalFocus = getTechnicalFocus(category);
-    // Calculate the start page based on 20 records per page
-    const startPage = Math.floor((startSeq - 1) / 20) + 1;
+    // 20 records per page. 100 records = 5 pages.
+    const endPage = startPage + 4;
+    const startSeq = (startPage - 1) * 20 + 1;
 
-    return `CRITICAL SYSTEM INSTRUCTION: RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
+    return `CRITICAL SYSTEM INSTRUCTION: RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION. NO EXPLANATORY TEXT.
 
 ACT AS AN ELITE CAPITAL INTELLIGENCE AGENT. YOUR PRIMARY SOURCE IS LINKEDIN AND THE NATIONAL CREDIT REGULATOR (NCR) REGISTER.
 
@@ -59,10 +60,11 @@ TASK: Extract exactly 100 unique verified records for South African Credit Provi
 TECHNICAL FOCUS: ${technicalFocus}
 
 REGISTRY NAVIGATION LOGIC:
-1. PAGINATION: The NCR registry has 20 records per page. We are currently starting at record #${startSeq} (NCR PAGE ${startPage}).
-2. LINKEDIN SEARCH: Prioritize finding individual professional profiles on LinkedIn for staff in "Asset Finance", "Credit Risk", or "Commercial Lending" at these firms.
-3. FORBIDDEN VALUES: Returning "The Director", "Manager", or "Unknown" is a failure. You MUST find a specific human full name.
-4. IDENTITY PERSISTENCE: Generate unique "record_id" starting with "NCR_${category.toUpperCase().replace(/\s/g, '_')}_".
+1. PAGINATION: The NCR registry has 20 records per page. We are currently starting at record #${startSeq} which corresponds to NCR PAGE ${startPage}.
+2. SCOPE: You are commanded to extract 100 records covering Pages ${startPage} through ${endPage} of the registry.
+3. LINKEDIN SEARCH: Prioritize finding individual professional profiles on LinkedIn for staff in "Asset Finance", "Credit Risk", or "Commercial Lending" at these firms.
+4. FORBIDDEN VALUES: Returning "The Director", "Manager", or "Unknown" is a failure. You MUST find a specific human full name.
+5. IDENTITY PERSISTENCE: Generate unique "record_id" starting with "NCR_${category.toUpperCase().replace(/\s/g, '_')}_".
 
 REQUIRED OUTPUT FORMAT (RAW JSON ARRAY ONLY):
 [
@@ -85,20 +87,20 @@ HUNTING GROUNDS: Deep-search LinkedIn, NCR registry, and company "Leadership" pa
 const DiscoveryTab = ({ category, currentCount }: { category: string, currentCount: number }) => {
     const { toast } = useToast();
     const [isCopied, setIsCopied] = useState(false);
-    const [seqOverride, setSeqOverride] = useState<number | ''>('');
+    const [pageOverride, setPageOverride] = useState<number | ''>('');
     
-    // Calculate sequence and page reactively
-    const startSeq = useMemo(() => (seqOverride !== '' ? Number(seqOverride) : currentCount + 1), [seqOverride, currentCount]);
-    const startPage = useMemo(() => Math.floor((startSeq - 1) / 20) + 1, [startSeq]);
+    // Calculate suggested page based on 20 records per page
+    const suggestedPage = Math.floor(currentCount / 20) + 1;
+    const startPage = pageOverride !== '' ? Number(pageOverride) : suggestedPage;
+    const endPage = startPage + 4;
 
-    // Generate prompt reactively based on calculations above
-    const prompt = useMemo(() => generateDiscoveryPrompt(category, startSeq), [category, startSeq]);
+    const prompt = useMemo(() => generateDiscoveryPrompt(category, startPage), [category, startPage]);
 
     const handleCopy = async () => {
         try {
             await navigator.clipboard.writeText(prompt);
             setIsCopied(true);
-            toast({ title: "Extraction Prompt Copied!", description: `Prompt targeting NCR Page ${startPage} is ready.` });
+            toast({ title: "Extraction Prompt Copied!", description: `Prompt targeting NCR Pages ${startPage} to ${endPage} is ready.` });
             setTimeout(() => setIsCopied(false), 3000);
         } catch (e) {
             toast({ variant: 'destructive', title: "Copy Failed" });
@@ -121,35 +123,35 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                     
                     <div className="p-4 bg-primary/5 border rounded-xl space-y-4">
                         <div className="flex items-center justify-between">
-                            <Label className="text-[10px] font-black uppercase tracking-widest text-primary">Pagination & Sequence Control</Label>
-                            <Badge variant="default" className="bg-primary/20 text-primary border-none text-[10px] font-black uppercase">Start At: Page {startPage}</Badge>
+                            <Label className="text-[10px] font-black uppercase tracking-widest text-primary">Pagination Control</Label>
+                            <Badge variant="default" className="bg-primary/20 text-primary border-none text-[10px] font-black uppercase">Suggested: Page {suggestedPage}</Badge>
                         </div>
                         <div className="flex items-center gap-3">
                             <div className="flex-1 space-y-1.5">
-                                <Label className="text-xs font-bold">Start Sequence #</Label>
+                                <Label className="text-xs font-bold">Start from NCR Page #</Label>
                                 <Input 
                                     type="number" 
-                                    placeholder={String(currentCount + 1)}
-                                    value={seqOverride}
-                                    onChange={(e) => setSeqOverride(e.target.value === '' ? '' : Number(e.target.value))}
+                                    placeholder={String(suggestedPage)}
+                                    value={pageOverride}
+                                    onChange={(e) => setPageOverride(e.target.value === '' ? '' : Number(e.target.value))}
                                     className="h-10 font-mono font-bold text-lg"
                                 />
                             </div>
                             <div className="pt-6">
-                                <Button variant="ghost" size="sm" className="text-[10px] uppercase font-bold" onClick={() => setSeqOverride('')}>
+                                <Button variant="ghost" size="sm" className="text-[10px] uppercase font-bold" onClick={() => setPageOverride('')}>
                                     <RefreshCcw className="mr-1 h-3 w-3" /> Auto
                                 </Button>
                             </div>
                         </div>
                         <p className="text-[10px] text-muted-foreground leading-tight italic">
-                            Syncing with NCR Registry: 20 records per page. Your current sequence maps to <strong>Page {startPage}</strong>.
+                            The AI will be instructed to extract 100 records (approx. 5 pages) starting from <strong>Page {startPage}</strong>.
                         </p>
                     </div>
 
                     <div className="pt-2 flex flex-col gap-2">
                         <Button onClick={handleCopy} size="lg" className="w-full gap-2 shadow-md bg-amber-600 hover:bg-amber-700">
                             {isCopied ? <ClipboardCheck className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
-                            {isCopied ? "Prompt Copied" : `Copy Page ${startPage} Prompt`}
+                            {isCopied ? "Prompt Copied" : `Copy Prompt (Pages ${startPage} - ${endPage})`}
                         </Button>
                         <Button variant="outline" asChild className="w-full">
                             <a href="https://aistudio.google.com/" target="_blank" rel="noopener noreferrer">
@@ -165,7 +167,7 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                             <Terminal className="h-3 w-3"/> AI Forensic Command
                         </Label>
                         <Badge variant="outline" className="text-[10px] uppercase font-bold text-amber-600 border-amber-200">
-                            Page {startPage} Active
+                            Pages {startPage}-{endPage} Active
                         </Badge>
                     </div>
                     <ScrollArea className="h-[340px] border rounded-lg bg-slate-900 p-4 shadow-inner">
