@@ -313,7 +313,8 @@ export default function FinanceManagement() {
       if (!token) return;
       const [res, staffRes] = await Promise.all([
         performAdminAction(token, 'getPartnersByType', { type: 'finance' }),
-        performAdminAction(token, 'getPlatformStaff', {})
+        performAdminAction(token, 'getPlatformStaff', {}),
+        performAdminAction(token, 'refreshFinanceCategoryCounts', {}) // Ensure global tallies are fresh
       ]);
       setPartners(res.data || []);
       setStaff(staffRes.data || []);

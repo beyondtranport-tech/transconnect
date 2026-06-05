@@ -109,6 +109,36 @@ function normalizePartnerData(data: any) {
     return result;
 }
 
+/**
+ * Shared logic to refresh category counts for discovery
+ */
+async function refreshCategoryStats(db: FirebaseFirestore.Firestore, type: 'supplier' | 'finance') {
+    const snap = await db.collection('leads').get();
+    const counts: Record<string, number> = {};
+    
+    const supplierRoles = ['Vendors', 'Vendor', 'Supplier', 'Suppliers'];
+    const financeRoles = ['Investors', 'Investor', 'Finance', 'Funder', 'Lender', 'Banks', 'Government', 'AEO', 'Niche Lenders', 'Finance Companies'];
+
+    snap.docs.forEach(doc => {
+        const data = doc.data();
+        const role = data.role || '';
+        const isMatch = type === 'supplier' ? supplierRoles.includes(role) : financeRoles.includes(role);
+        
+        if (isMatch) {
+            const cat = data.entryType || 'General';
+            counts[cat] = (counts[cat] || 0) + 1;
+        }
+    });
+
+    const configId = type === 'supplier' ? 'supplierDiscoveryStats' : 'financeDiscoveryStats';
+    await db.collection('configuration').doc(configId).set({ 
+        counts, 
+        lastUpdated: FieldValue.serverTimestamp() 
+    }, { merge: true });
+    
+    return counts;
+}
+
 export async function POST(req: NextRequest) {
     try {
         const { app, error: initError } = getAdminApp();
@@ -166,8 +196,6 @@ export async function POST(req: NextRequest) {
             }
 
             case 'resetResearchQueue': {
-                const { type } = payload; 
-                // Filter by specific type if provided via metadata in Partner/Lead docs
                 const snap = await db.collection('leads')
                     .where('researchStatus', '==', 'researching')
                     .get();
@@ -336,47 +364,13 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true });
             }
 
-            case 'rejectShop': {
-                const { shopId, companyId } = payload;
-                if (!shopId || !companyId) throw new Error("Missing shopId or companyId");
-                
-                await db.doc(`companies/${companyId}/shops/${shopId}`).update({ 
-                    status: 'rejected', 
-                    updatedAt: FieldValue.serverTimestamp() 
-                });
-                await db.collection('shops').doc(shopId).delete();
-                return NextResponse.json({ success: true });
-            }
-
             case 'refreshSupplierCategoryCounts': {
-                const snap = await db.collection('leads').get();
-                const counts: Record<string, number> = {};
-                snap.docs.forEach(doc => {
-                    const data = doc.data();
-                    const cat = data.entryType || 'General';
-                    // Match supplier roles inclusive of plural variations
-                    const isSupplier = ['Vendors', 'Vendor', 'Supplier', 'Suppliers'].includes(data.role);
-                    if (isSupplier) {
-                        counts[cat] = (counts[cat] || 0) + 1;
-                    }
-                });
-                await db.collection('configuration').doc('supplierDiscoveryStats').set({ counts, lastUpdated: FieldValue.serverTimestamp() }, { merge: true });
+                const counts = await refreshCategoryStats(db, 'supplier');
                 return NextResponse.json({ success: true, data: counts });
             }
 
             case 'refreshFinanceCategoryCounts': {
-                const snap = await db.collection('leads').get();
-                const counts: Record<string, number> = {};
-                snap.docs.forEach(doc => {
-                    const data = doc.data();
-                    const cat = data.entryType || 'General';
-                    // Identify finance roles
-                    const isFinance = ['Investors', 'Investor', 'Finance', 'Funder', 'Lender', 'Banks', 'Government', 'AEO', 'Niche Lenders'].includes(data.role);
-                    if (isFinance) {
-                        counts[cat] = (counts[cat] || 0) + 1;
-                    }
-                });
-                await db.collection('configuration').doc('financeDiscoveryStats').set({ counts, lastUpdated: FieldValue.serverTimestamp() }, { merge: true });
+                const counts = await refreshCategoryStats(db, 'finance');
                 return NextResponse.json({ success: true, data: counts });
             }
 
@@ -394,7 +388,7 @@ export async function POST(req: NextRequest) {
                     'supplier': ['Vendors', 'Vendor', 'Supplier', 'Suppliers'],
                     'partner': ['Strategic Partners', 'Partner'],
                     'isa': ['ISA Agents (Elite)', 'ISA'],
-                    'finance': ['Banks', 'Government', 'AEO', 'Niche Lenders', 'Finance', 'Funder', 'Lender'],
+                    'finance': ['Banks', 'Government', 'AEO', 'Niche Lenders', 'Finance', 'Funder', 'Lender', 'Finance Companies'],
                     'investor': ['Investors', 'Investor', 'VC', 'Seed Fund', 'Angel'],
                     'developer': ['Developers', 'Developer']
                 };
@@ -442,6 +436,12 @@ export async function POST(req: NextRequest) {
                     updatedCount++;
                 }
                 await batch.commit();
+                
+                // Automatically refresh categorical tallies to ensure pagination stays in sync
+                if (type === 'supplier' || type === 'finance') {
+                    await refreshCategoryStats(db, type);
+                }
+
                 return NextResponse.json({ success: true, updatedCount });
             }
 

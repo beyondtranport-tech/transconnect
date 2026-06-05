@@ -89,7 +89,7 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
     const [isCopied, setIsCopied] = useState(false);
     const [pageOverride, setPageOverride] = useState<number | ''>('');
     
-    // Calculate suggested page based on 20 records per page
+    // Persistent suggested page calculation (20 records per page)
     const suggestedPage = Math.floor(currentCount / 20) + 1;
     const startPage = pageOverride !== '' ? Number(pageOverride) : suggestedPage;
     const endPage = startPage + 4;
@@ -185,6 +185,7 @@ export default function FinanceDiscoveryEngine() {
     const { toast } = useToast();
     const [isRefreshing, setIsRefreshing] = useState(false);
     
+    // Fetch categorical counts for persistent pagination suggestions
     const { data: statsData, forceRefresh: refreshStats } = useConfig<any>('financeDiscoveryStats');
     const counts = statsData?.counts || {};
 
@@ -213,7 +214,7 @@ export default function FinanceDiscoveryEngine() {
                             Capital Intelligence Discovery
                         </CardTitle>
                         <CardDescription>
-                            Targeted extraction from the NCR Register (20 records/page).
+                            Targeted extraction from the NCR Register (20 records/page). Suggested page updates automatically after import.
                         </CardDescription>
                     </div>
                     <Button 
