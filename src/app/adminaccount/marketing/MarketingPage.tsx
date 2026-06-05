@@ -3,7 +3,7 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { BookOpen, Loader2, ClipboardCopy, SearchCode, Target, Users, LayoutDashboard, Send, Sparkles, Landmark } from 'lucide-react';
+import { BookOpen, Loader2, ClipboardCopy, SearchCode, Target, Users, LayoutDashboard, Send, Sparkles, Landmark, DollarSign } from 'lucide-react';
 import { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -60,17 +60,20 @@ import InvestorManagement from './investor-management';
 import DeveloperManagement from './developer-management';
 import SupplierManagement from './supplier-management';
 import TransporterManagement from './transporter-management';
+import FinanceManagement from './finance-management';
 
 import SupplierPitch from '@/app/adminaccount/supplier-pitch';
 import DiscoveryEngine from './discovery-engine';
 import FinanceDiscoveryEngine from './finance-discovery';
+import InvestorDiscoveryEngine from './investor-discovery';
 
 const audienceConfig = {
     partners: { title: 'Strategic Partners', icon: Users, Offer: PartnerOffer, Emails: PartnerEmails, Management: PartnerManagement },
     isa: { title: 'ISA Agents', icon: Target, Offer: PartnerOffer, Emails: PartnerEmails, Management: ISAManagement },
     suppliers: { title: 'Suppliers', icon: SearchCode, Offer: SupplierOffer, Emails: SupplierEmails, Management: SupplierManagement, Pitch: SupplierPitch, Discovery: DiscoveryEngine },
     transporters: { title: 'Transporters', icon: Send, Offer: TransporterOffer, Emails: TransporterEmails, Management: TransporterManagement },
-    investors: { title: 'Finance Companies', icon: Landmark, Offer: InvestorOffer, Emails: InvestorEmails, Management: InvestorManagement, Discovery: FinanceDiscoveryEngine },
+    finance: { title: 'Finance Companies', icon: Landmark, Offer: InvestorOffer, Emails: InvestorEmails, Management: FinanceManagement, Discovery: FinanceDiscoveryEngine },
+    investors: { title: 'App Launch Investors', icon: DollarSign, Offer: InvestorOffer, Emails: InvestorEmails, Management: InvestorManagement, Discovery: InvestorDiscoveryEngine },
     developers: { title: 'Developers', icon: LayoutDashboard, Offer: DeveloperOffer, Emails: DeveloperEmails, Management: DeveloperManagement },
 };
 
@@ -240,7 +243,7 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
     }
   };
 
-  const isContentTab = ['company-profile', 'tech-architecture', 'revenue-model', 'offer', 'pitch', 'framework', 'emails'].includes(activeTab);
+  const isContentTab = ['company-profile', 'tech-architecture', 'revenue-model', 'offer', 'pitch', 'framework', 'emails'].includes(activeView);
 
   return (
     <div className="space-y-6">

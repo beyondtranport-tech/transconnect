@@ -42,7 +42,7 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Partner",
       "type": "object",
-      "description": "Represents a strategic partner, ISA, Investor, Developer, Supplier or Transporter in the system.",
+      "description": "Represents a strategic partner, ISA, Investor, Developer, Supplier, Finance Co or Transporter in the system.",
       "properties": {
         "id": { "type": "string" },
         "firstName": { "type": "string" },
@@ -50,13 +50,13 @@
         "email": { "type": "string", "format": "email" },
         "phone": { "type": "string" },
         "companyName": { "type": "string" },
-        "status": { "type": "string", "enum": ["active", "inactive"], "description": "The operational status of the partnership." },
+        "status": { "type": "string", "enum": ["active", "inactive", "contacted", "new", "qualified", "invited"], "description": "The operational status of the partnership." },
         "invitationStatus": { "type": "string", "enum": ["pending", "invited", "registered"], "description": "The status of their invitation to join the platform." },
         "consentStatus": { "type": "string", "enum": ["pending", "accepted", "declined"], "description": "POPI and Marketing consent status." },
         "consentDate": { "type": "object", "description": "Timestamp when consent was recorded." },
         "lastOpenedAt": { "type": "object", "description": "Timestamp of the last email open tracked via pixel." },
         "assigneeId": { "type": "string", "description": "The UID of the staff member allocated to this lead." },
-        "type": { "type": "string", "enum": ["partner", "isa", "investor", "developer", "supplier", "transporter"], "description": "The type of partner entity." },
+        "type": { "type": "string", "enum": ["partner", "isa", "investor", "developer", "supplier", "transporter", "finance"], "description": "The type of partner entity." },
         "notes": { "type": "string" },
         "address": { "type": "string" },
         "website": { "type": "string" },
@@ -156,6 +156,6 @@
         }
       }
     ],
-    "reasoning": "Updated Partner entity to include assigneeId for staff allocation and oversight."
+    "reasoning": "Added 'finance' to Partner type enum to separate industrial capital providers from app-launch investors."
   }
 }

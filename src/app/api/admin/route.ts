@@ -167,6 +167,7 @@ export async function POST(req: NextRequest) {
 
             case 'resetResearchQueue': {
                 const { type } = payload; 
+                // Filter by specific type if provided via metadata in Partner/Lead docs
                 const snap = await db.collection('leads')
                     .where('researchStatus', '==', 'researching')
                     .get();
@@ -238,7 +239,7 @@ export async function POST(req: NextRequest) {
                     const companyData = companyDoc.data();
                     let userData = null;
                     
-                    if (companyData.ownerId && typeof companyData.ownerId === 'string') {
+                    if (companyData.ownerId && typeof companyData.ownerId === 'string' && companyData.ownerId.length > 0) {
                         const userDoc = await db.collection('users').doc(companyData.ownerId).get();
                         userData = userDoc.data();
                     }
@@ -360,7 +361,7 @@ export async function POST(req: NextRequest) {
             }
 
             case 'refreshFinanceCategoryCounts': {
-                const financeRoles = ['Investors', 'Investor', 'Finance', 'Funder', 'Lender'];
+                const financeRoles = ['Investors', 'Investor', 'Finance', 'Funder', 'Lender', 'Banks', 'Government', 'AEO', 'Niche Lenders'];
                 const leadsSnap = await db.collection('leads').where('role', 'in', financeRoles).get();
                 const counts: Record<string, number> = {};
                 leadsSnap.docs.forEach(doc => {
@@ -385,7 +386,8 @@ export async function POST(req: NextRequest) {
                     'supplier': ['Vendors', 'Vendor', 'Supplier', 'Suppliers'],
                     'partner': ['Strategic Partners', 'Partner'],
                     'isa': ['ISA Agents (Elite)', 'ISA'],
-                    'investor': ['Investors', 'Investor', 'Finance', 'Funder', 'Lender'],
+                    'finance': ['Banks', 'Government', 'AEO', 'Niche Lenders', 'Finance', 'Funder', 'Lender'],
+                    'investor': ['Investors', 'Investor', 'VC', 'Seed Fund', 'Angel'],
                     'developer': ['Developers', 'Developer']
                 };
 
@@ -412,6 +414,7 @@ export async function POST(req: NextRequest) {
                     'transporter': 'Transporters',
                     'isa': 'ISA Agents (Elite)',
                     'partner': 'Strategic Partners',
+                    'finance': 'Finance Companies',
                     'investor': 'Investors'
                 };
 
