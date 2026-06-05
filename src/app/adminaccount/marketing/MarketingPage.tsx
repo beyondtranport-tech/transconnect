@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -204,7 +203,7 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
     try {
         const token = await getClientSideAuthToken();
         if (!token) return;
-        const result = await performAdminAction(token, 'getPartnersByType', { type: audience === 'isa' ? 'isa' : audience.slice(0, -1) });
+        const result = await performAdminAction(token, 'getPartnersByType', { type: audience === 'isa' ? 'isa' : (audience === 'finance' ? 'finance' : audience.slice(0, -1)) });
         setPartners(result.data || []);
     } catch (e: any) {
         toast({ variant: 'destructive', title: `Could not load partners`, description: e.message });
@@ -243,7 +242,7 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
     }
   };
 
-  const isContentTab = ['company-profile', 'tech-architecture', 'revenue-model', 'offer', 'pitch', 'framework', 'emails'].includes(activeView);
+  const isContentTab = ['company-profile', 'tech-architecture', 'revenue-model', 'offer', 'pitch', 'framework', 'emails'].includes(activeTab);
 
   return (
     <div className="space-y-6">
