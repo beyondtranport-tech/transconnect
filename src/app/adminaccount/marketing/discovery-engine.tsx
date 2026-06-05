@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -15,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { getClientSideAuthToken } from '@/firebase';
 import { useConfig } from '@/hooks/use-config';
 import { cn, formatDateSafe } from "@/lib/utils";
+import { Input } from "@/components/ui/input";
 
 export const supplierCategories = [
     "Accessories", 
@@ -86,7 +88,7 @@ function getTechnicalFocus(category: string) {
     return "heavy commercial fleet support, logistics-grade parts, and industrial-scale transport services";
 }
 
-function generateDiscoveryPrompt(category: string, focusHubs: string[]) {
+function generateDiscoveryPrompt(category: string, focusHubs: string[], startSeq: number = 1) {
     const technicalFocus = getTechnicalFocus(category);
 
     return `CRITICAL SYSTEM INSTRUCTION: RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION. NO EXPLANATORY TEXT.
@@ -100,16 +102,17 @@ INDUSTRY CONTEXT: These suppliers MUST serve the heavy commercial transport indu
 GEOGRAPHIC FOCUS: Primary investigation hubs: ${focusHubs.join(', ')}.
 
 INVESTIGATIVE STRATEGY:
-1. QUANTITY & DENSITY: You are commanded to return 100 records. Keep JSON object fields short to fit maximum records. Use field "seq" for the sequence number.
-2. HUMAN IDENTITY FORENSICS: You MUST find the ACTUAL NAME (First and Last) of the CEO, Managing Director, or Owner. 
-3. FORBIDDEN VALUES: Returning "The Director", "Manager", "CEO", or "Unknown" is a failure. Search LinkedIn/About pages for a human name.
-4. PROACTIVE CONTACT SEARCH: Identify corporate domain. Prioritize "info@", "sales@", or "admin@" and local phone number.
-5. IDENTITY PERSISTENCE: Generate unique "record_id" starting with "DISC_${category.toUpperCase().replace(/\s/g, '_')}_".
+1. QUANTITY & DENSITY: You are commanded to return 100 records. Keep JSON object fields short to fit maximum records. 
+2. SEQUENCE TRACKING: Use field "seq" for the record number, starting from ${startSeq} to ${startSeq + 99}.
+3. HUMAN IDENTITY FORENSICS: You MUST find the ACTUAL NAME (First and Last) of the CEO, Managing Director, or Owner. 
+4. FORBIDDEN VALUES: Returning "The Director", "Manager", "CEO", or "Unknown" is a failure. Search LinkedIn/About pages for a human name.
+5. PROACTIVE CONTACT SEARCH: Identify corporate domain. Prioritize "info@", "sales@", or "admin@" and local phone number.
+6. IDENTITY PERSISTENCE: Generate unique "record_id" starting with "DISC_${category.toUpperCase().replace(/\s/g, '_')}_".
 
 REQUIRED OUTPUT FORMAT (RAW JSON ARRAY ONLY):
 [
   {
-    "seq": 1,
+    "seq": ${startSeq},
     "record_id": "DISC_${category.toUpperCase().replace(/\s/g, '_')}_[RAND_ID]",
     "company_name": "...",
     "industrial_category": "${category}",
@@ -127,19 +130,22 @@ HUNTING GROUNDS: Search LinkedIn, Yellow Pages SA, and local industrial registri
 const DiscoveryTab = ({ category, currentCount }: { category: string, currentCount: number }) => {
     const { toast } = useToast();
     const [isCopied, setIsCopied] = useState(false);
+    const [seqOverride, setSeqOverride] = useState<number | ''>('');
     
+    const startSeq = useMemo(() => (seqOverride !== '' ? Number(seqOverride) : currentCount + 1), [seqOverride, currentCount]);
+
     const randomHubs = useMemo(() => {
         const shuffled = [...industrialHubs].sort(() => 0.5 - Math.random());
         return shuffled.slice(0, 4);
     }, [category]);
 
-    const prompt = generateDiscoveryPrompt(category, randomHubs);
+    const prompt = generateDiscoveryPrompt(category, randomHubs, startSeq);
 
     const handleCopy = async () => {
         try {
             await navigator.clipboard.writeText(prompt);
             setIsCopied(true);
-            toast({ title: "Forensic Prompt Copied!", description: `Paste into Gemini 1.5 Pro.` });
+            toast({ title: "Forensic Prompt Copied!", description: `Starting from sequence #${startSeq}.` });
             setTimeout(() => setIsCopied(false), 3000);
         } catch (e) {
             toast({ variant: 'destructive', title: "Copy Failed" });
@@ -160,23 +166,37 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                         </Badge>
                     </div>
                     
-                    <div className="p-3 bg-primary/10 rounded-lg border border-primary/20 flex items-center gap-3">
-                        <MapPin className="h-5 w-5 text-primary shrink-0" />
-                        <div className="text-xs">
-                            <span className="font-bold text-primary uppercase">Current Target Area:</span>
-                            <p className="font-semibold text-foreground mt-0.5">{randomHubs.join(' • ')}</p>
+                    <div className="p-4 bg-primary/5 border rounded-xl space-y-4">
+                        <div className="flex items-center justify-between">
+                            <Label className="text-[10px] font-black uppercase tracking-widest text-primary">Sequence & Pagination Control</Label>
+                            <Badge variant="outline" className="bg-white border-primary/20 text-primary text-[10px] font-black">Sync Target: #{startSeq}</Badge>
                         </div>
+                        <div className="flex items-center gap-3">
+                            <div className="flex-1 space-y-1.5">
+                                <Label className="text-xs font-bold">Start Sequence #</Label>
+                                <Input 
+                                    type="number" 
+                                    placeholder={String(currentCount + 1)}
+                                    value={seqOverride}
+                                    onChange={(e) => setSeqOverride(e.target.value === '' ? '' : Number(e.target.value))}
+                                    className="h-10 font-mono font-bold text-lg"
+                                />
+                            </div>
+                             <div className="pt-6">
+                                <Button variant="ghost" size="sm" className="text-[10px] uppercase font-bold" onClick={() => setSeqOverride('')}>
+                                    <RefreshCcw className="mr-1 h-3 w-3" /> Auto
+                                </Button>
+                            </div>
+                        </div>
+                        <Alert className="bg-amber-50 border-amber-200 py-2">
+                            <Info className="h-4 w-4 text-amber-600" />
+                            <AlertDescription className="text-[10px] leading-tight text-amber-800">
+                                AI stopped early? Set this to the last successful number (e.g. 45) to continue the exact same search.
+                            </AlertDescription>
+                        </Alert>
                     </div>
 
-                    <Alert className="bg-amber-50 border-amber-200">
-                        <Info className="h-4 w-4 text-amber-600" />
-                        <AlertTitle className="font-bold">Important Workflow Tip</AlertTitle>
-                        <AlertDescription className="text-xs space-y-2">
-                            <p>To get all 100 records, the AI might stop around #40 or #50. Simply type <strong>"continue from [number] to 100"</strong> in the chat to get the rest.</p>
-                        </AlertDescription>
-                    </Alert>
-
-                    <div className="pt-4 flex flex-col gap-2">
+                    <div className="pt-2 flex flex-col gap-2">
                         <Button onClick={handleCopy} size="lg" className="w-full gap-2 shadow-md">
                             {isCopied ? <ClipboardCheck className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
                             {isCopied ? "Prompt Copied" : "Copy Discovery Prompt"}
@@ -200,7 +220,7 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                             </Badge>
                         </div>
                     </div>
-                    <ScrollArea className="h-[320px] border rounded-lg bg-slate-900 p-4 shadow-inner">
+                    <ScrollArea className="h-[360px] border rounded-lg bg-slate-900 p-4 shadow-inner">
                         <pre className="text-[10px] text-slate-300 font-mono whitespace-pre-wrap leading-tight">
                             {prompt}
                         </pre>

@@ -349,24 +349,32 @@ export async function POST(req: NextRequest) {
             }
 
             case 'refreshSupplierCategoryCounts': {
-                const supplierRoles = ['Vendors', 'Vendor', 'Supplier', 'Suppliers'];
-                const leadsSnap = await db.collection('leads').where('role', 'in', supplierRoles).get();
+                const snap = await db.collection('leads').get();
                 const counts: Record<string, number> = {};
-                leadsSnap.docs.forEach(doc => {
-                    const cat = doc.data().entryType || 'General';
-                    counts[cat] = (counts[cat] || 0) + 1;
+                snap.docs.forEach(doc => {
+                    const data = doc.data();
+                    const cat = data.entryType || 'General';
+                    // Match supplier roles inclusive of plural variations
+                    const isSupplier = ['Vendors', 'Vendor', 'Supplier', 'Suppliers'].includes(data.role);
+                    if (isSupplier) {
+                        counts[cat] = (counts[cat] || 0) + 1;
+                    }
                 });
                 await db.collection('configuration').doc('supplierDiscoveryStats').set({ counts, lastUpdated: FieldValue.serverTimestamp() }, { merge: true });
                 return NextResponse.json({ success: true, data: counts });
             }
 
             case 'refreshFinanceCategoryCounts': {
-                const financeRoles = ['Investors', 'Investor', 'Finance', 'Funder', 'Lender', 'Banks', 'Government', 'AEO', 'Niche Lenders'];
-                const leadsSnap = await db.collection('leads').where('role', 'in', financeRoles).get();
+                const snap = await db.collection('leads').get();
                 const counts: Record<string, number> = {};
-                leadsSnap.docs.forEach(doc => {
-                    const cat = doc.data().entryType || 'General';
-                    counts[cat] = (counts[cat] || 0) + 1;
+                snap.docs.forEach(doc => {
+                    const data = doc.data();
+                    const cat = data.entryType || 'General';
+                    // Identify finance roles
+                    const isFinance = ['Investors', 'Investor', 'Finance', 'Funder', 'Lender', 'Banks', 'Government', 'AEO', 'Niche Lenders'].includes(data.role);
+                    if (isFinance) {
+                        counts[cat] = (counts[cat] || 0) + 1;
+                    }
                 });
                 await db.collection('configuration').doc('financeDiscoveryStats').set({ counts, lastUpdated: FieldValue.serverTimestamp() }, { merge: true });
                 return NextResponse.json({ success: true, data: counts });

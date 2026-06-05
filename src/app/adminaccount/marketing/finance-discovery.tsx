@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { getClientSideAuthToken } from '@/firebase';
 import { useConfig } from '@/hooks/use-config';
 import { cn, formatDateSafe } from "@/lib/utils";
+import { Input } from "@/components/ui/input";
 
 export const financeCategories = [
     "Banks", 
@@ -93,14 +94,17 @@ NOTE: Focus on accurate NCR extraction. Phase 2 (Staff/Websites) will follow imp
 const DiscoveryTab = ({ category, currentCount }: { category: string, currentCount: number }) => {
     const { toast } = useToast();
     const [isCopied, setIsCopied] = useState(false);
+    const [seqOverride, setSeqOverride] = useState<number | ''>('');
     
-    const prompt = generateDiscoveryPrompt(category, currentCount + 1);
+    const startSeq = useMemo(() => (seqOverride !== '' ? Number(seqOverride) : currentCount + 1), [seqOverride, currentCount]);
+    const startPage = Math.floor((startSeq - 1) / 20) + 1;
+    const prompt = generateDiscoveryPrompt(category, startSeq);
 
     const handleCopy = async () => {
         try {
             await navigator.clipboard.writeText(prompt);
             setIsCopied(true);
-            toast({ title: "NCR Extraction Prompt Copied!", description: `Targeting records starting from Page ${Math.floor(currentCount / 20) + 1}.` });
+            toast({ title: "Extraction Prompt Copied!", description: `Targeting records starting from Page ${startPage}.` });
             setTimeout(() => setIsCopied(false), 3000);
         } catch (e) {
             toast({ variant: 'destructive', title: "Copy Failed" });
@@ -117,23 +121,41 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                             NCR Discovery: {category}
                         </h2>
                         <Badge variant="outline" className="font-mono text-sm bg-muted/30">
-                            {currentCount} / 9682
+                            {currentCount} Found
                         </Badge>
                     </div>
                     
-                    <Alert className="bg-primary/5 border-primary/20 border-l-4 border-l-primary">
-                        <Info className="h-4 w-4 text-primary" />
-                        <AlertTitle className="font-bold text-sm">Pagination Sync Active</AlertTitle>
-                        <AlertDescription className="text-xs space-y-2">
-                            <p>This prompt is synchronized with your current database. It tells the AI exactly which <strong>NCR Page</strong> to start on to avoid duplicates.</p>
-                            <p><strong>Current Start Page:</strong> {Math.floor(currentCount / 20) + 1}</p>
-                        </AlertDescription>
-                    </Alert>
+                    <div className="p-4 bg-primary/5 border rounded-xl space-y-4">
+                        <div className="flex items-center justify-between">
+                            <Label className="text-[10px] font-black uppercase tracking-widest text-primary">Ingestion Progress Control</Label>
+                            <Badge variant="default" className="bg-primary/20 text-primary border-none text-[10px] font-black uppercase">Sync Page {startPage}</Badge>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <div className="flex-1 space-y-1.5">
+                                <Label className="text-xs font-bold">Starting Sequence #</Label>
+                                <Input 
+                                    type="number" 
+                                    placeholder={String(currentCount + 1)}
+                                    value={seqOverride}
+                                    onChange={(e) => setSeqOverride(e.target.value === '' ? '' : Number(e.target.value))}
+                                    className="h-10 font-mono font-bold text-lg"
+                                />
+                            </div>
+                            <div className="pt-6">
+                                <Button variant="ghost" size="sm" className="text-[10px] uppercase font-bold" onClick={() => setSeqOverride('')}>
+                                    <RefreshCcw className="mr-1 h-3 w-3" /> Auto
+                                </Button>
+                            </div>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground leading-tight italic">
+                            By default, the AI starts on sequence #{currentCount + 1} (NCR Page {startPage}). Manually adjust this if you need to skip or repeat specific pages.
+                        </p>
+                    </div>
 
-                    <div className="pt-4 flex flex-col gap-2">
+                    <div className="pt-2 flex flex-col gap-2">
                         <Button onClick={handleCopy} size="lg" className="w-full gap-2 shadow-md bg-amber-600 hover:bg-amber-700">
                             {isCopied ? <ClipboardCheck className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
-                            {isCopied ? "Prompt Copied" : `Copy Page ${Math.floor(currentCount / 20) + 1} Prompt`}
+                            {isCopied ? "Prompt Copied" : `Copy Page ${startPage} Prompt`}
                         </Button>
                         <Button variant="outline" asChild className="w-full">
                             <a href="https://aistudio.google.com/" target="_blank" rel="noopener noreferrer">
@@ -152,7 +174,7 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                             Sequence Validated
                         </Badge>
                     </div>
-                    <ScrollArea className="h-[320px] border rounded-lg bg-slate-900 p-4 shadow-inner">
+                    <ScrollArea className="h-[340px] border rounded-lg bg-slate-900 p-4 shadow-inner">
                         <pre className="text-[10px] text-slate-300 font-mono whitespace-pre-wrap leading-tight">
                             {prompt}
                         </pre>
@@ -195,7 +217,7 @@ export default function FinanceDiscoveryEngine() {
                             Capital Intelligence Discovery
                         </CardTitle>
                         <CardDescription>
-                            Targeted NCR register extraction for Banks, DFIs, AEO Partners, and Niche Lenders.
+                            Targeted NCR register extraction. Manage pagination using the sequence controls below.
                         </CardDescription>
                     </div>
                     <div className="flex items-center gap-2">
