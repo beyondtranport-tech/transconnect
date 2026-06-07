@@ -3,7 +3,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowRight, SearchCode, CheckCircle2, ShieldCheck, Database, Truck, Landmark, Building2, Zap, MapPin } from "lucide-react";
+import { ArrowRight, SearchCode, CheckCircle2, ShieldCheck, Database, Truck, Landmark, Building2, Zap, MapPin, Users, Briefcase, UserPlus } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import data from "@/lib/placeholder-images.json";
@@ -37,6 +37,7 @@ const supplierCategories = [
 
 const transporterCategories = ["Long Haul", "Refrigerated", "Flatbed", "Tipper", "Hazmat", "LTL", "Cross-Border"];
 const financeCategories = ["Asset Finance", "Working Capital", "Debt Funders", "Niche Lenders", "Bridging", "Insurance"];
+const humanCapitalCategories = ["Code 14 Drivers", "Diesel Mechanics", "Logistics Managers", "Operations Leads", "Fleet Controllers", "Warehouse Ops"];
 
 const RegistryNode = ({ 
     title, 
@@ -280,6 +281,50 @@ export default function HomePage() {
                         categories={financeCategories}
                         baseDensity={15}
                         radius={160}
+                    />
+                </div>
+            </div>
+        </div>
+      </section>
+
+      {/* HUB SECTION 4: Human Capital (The Recruitment Hub) */}
+      <section className="py-24 bg-slate-900 border-b overflow-hidden text-white">
+        <div className="container mx-auto px-4">
+            <div className="grid lg:grid-cols-2 gap-16 items-center">
+                <div className="lg:order-2 space-y-6">
+                    <div className="bg-primary/20 p-3 rounded-xl w-fit"><Users className="h-8 w-8 text-primary" /></div>
+                    <h2 className="text-3xl md:text-5xl font-black font-headline">Human Capital Registry</h2>
+                    <p className="text-lg text-slate-300 leading-relaxed">
+                        Breaking the recruitment constraint. Connect with verified talent across the South African logistics landscape. Our soon-to-launch jobs board will source roles directly from our community member base.
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                         <Card className="bg-white/5 border-white/10 shadow-none">
+                            <CardContent className="p-4">
+                                <p className="text-xs font-black mb-1 flex items-center gap-2 text-primary uppercase"><Briefcase className="h-3 w-3"/> For Applicants</p>
+                                <p className="text-[10px] text-slate-400 leading-relaxed italic">Access the premium jobs board and verified employer database for R100/month.</p>
+                            </CardContent>
+                        </Card>
+                         <Card className="bg-white/5 border-white/10 shadow-none">
+                            <CardContent className="p-4">
+                                <p className="text-xs font-black mb-1 flex items-center gap-2 text-primary uppercase"><UserPlus className="h-3 w-3"/> For Employers</p>
+                                <p className="text-[10px] text-slate-400 leading-relaxed italic">Create vacancies from your dashboard. Fill roles via our vetted talent pool. (Success commission applies).</p>
+                            </CardContent>
+                        </Card>
+                    </div>
+                    <Button asChild size="lg" className="mt-4 h-14 px-10 text-lg font-black uppercase tracking-tight" onClick={handleJoinClick}>
+                        <Link href={ctaLink}>Register for Early Access <ArrowRight className="ml-2 h-4 w-4"/></Link>
+                    </Button>
+                </div>
+                <div className="lg:order-1 relative">
+                    <RegistryNode 
+                        title="Active Talent Pool"
+                        count="12 850+"
+                        icon={Users}
+                        colorClass="bg-primary/10 text-white border-primary/40"
+                        lineColor="text-primary"
+                        categories={humanCapitalCategories}
+                        baseDensity={2000}
+                        radius={200}
                     />
                 </div>
             </div>
