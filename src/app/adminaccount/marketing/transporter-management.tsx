@@ -73,7 +73,14 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
     try {
       const token = await getClientSideAuthToken();
       if (!token) throw new Error("Auth failed.");
-      const result = await performAdminAction(token, 'findDuplicateLeads', {});
+      const response = await fetch('/api/admin', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'findDuplicateLeads', payload: {} }),
+        cache: 'no-store'
+      });
+      const result = await response.json();
+      if (!result.success) throw new Error(result.error);
       setDuplicates(result.data || []);
       if (result.data.length === 0) {
         toast({ title: "No duplicates found." });

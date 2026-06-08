@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -14,7 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -46,20 +45,6 @@ async function performAdminAction(token: string, action: string, payload: any) {
   if (!response.ok || !result.success) throw new Error(result.error || `API Error: ${action}`);
   return result;
 }
-
-const partnerSchema = z.object({
-  firstName: z.string().min(1, 'First name is required'),
-  lastName: z.string().min(1, 'Last name is required'),
-  email: z.string().email('Invalid email address').optional().or(z.literal('')),
-  phone: z.string().optional(),
-  contactPerson: z.string().optional(),
-  companyName: z.string().optional(),
-  address: z.string().optional(),
-  entryType: z.string().optional(),
-  status: z.enum(['active', 'inactive', 'contacted', 'new', 'qualified', 'invited']),
-  type: z.literal('driver'),
-});
-type PartnerFormValues = z.infer<typeof partnerSchema>;
 
 function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -500,4 +485,3 @@ export default function DriverManagement() {
     </>
   );
 }
-

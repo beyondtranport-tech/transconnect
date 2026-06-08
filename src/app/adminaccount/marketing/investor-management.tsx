@@ -78,7 +78,7 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
       });
       const result = await response.json();
       if (!result.success) throw new Error(result.error);
-      setDuplicates(result.data);
+      setDuplicates(result.data || []);
       if (result.data.length === 0) {
         toast({ title: "No duplicates found." });
       } else {
@@ -116,14 +116,7 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
     try {
       const token = await getClientSideAuthToken();
       if (!token) throw new Error("Auth failed.");
-      const response = await fetch('/api/admin', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'deleteLeads', payload: { leadIds: idsToDelete } }),
-        cache: 'no-store'
-      });
-      const result = await response.json();
-      if (!result.success) throw new Error(result.error);
+      await performAdminAction(token, 'deleteLeads', { leadIds: idsToDelete });
 
       toast({ title: "Duplicates Cleaned!", description: `${idsToDelete.length} duplicate records deleted.` });
       onComplete();
