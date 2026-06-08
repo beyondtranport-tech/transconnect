@@ -1,9 +1,10 @@
+
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, Copy, ClipboardCheck, Info, Search, Terminal, ListOrdered, Loader2, RefreshCcw, Database } from "lucide-react";
+import { ArrowRight, Copy, ClipboardCheck, Info, Search, Terminal, ListOrdered, Loader2, RefreshCcw, Database, Zap, AlertTriangle } from "lucide-react";
 import * as React from "react";
 import { useState, useMemo } from 'react';
 import { useToast } from "@/hooks/use-toast";
@@ -15,6 +16,7 @@ import { getClientSideAuthToken } from '@/firebase';
 import { useConfig } from '@/hooks/use-config';
 import { cn, formatDateSafe } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
+import Link from 'next/link';
 
 export const supplierCategories = [
     "Accessories", 
@@ -128,7 +130,9 @@ HUNTING GROUNDS: Search LinkedIn, Yellow Pages SA, and local industrial registri
 const DiscoveryTab = ({ category, currentCount }: { category: string, currentCount: number }) => {
     const { toast } = useToast();
     const [isCopied, setIsCopied] = useState(false);
+    const [isAutoDiscovering, setIsAutoDiscovering] = useState(false);
     const [seqOverride, setSeqOverride] = useState<number | ''>('');
+    const [configError, setConfigError] = useState<string | null>(null);
     
     const startSeq = useMemo(() => (seqOverride !== '' ? Number(seqOverride) : currentCount + 1), [seqOverride, currentCount]);
 
@@ -150,8 +154,56 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
         }
     };
 
+    const handleAutoDiscover = async () => {
+        setIsAutoDiscovering(true);
+        setConfigError(null);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication failed.");
+
+            const response = await fetch('/api/admin', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'runAutomatedDiscovery',
+                    payload: { category, type: 'supplier', startPage: Math.floor(startSeq / 100) + 1 }
+                }),
+            });
+
+            const result = await response.json();
+            
+            if (!response.ok) {
+                const errMessage = result.error || "Automation failed.";
+                if (errMessage.includes('dunning') || errMessage.includes('403') || errMessage.includes('denied')) {
+                    setConfigError(errMessage);
+                }
+                throw new Error(errMessage);
+            }
+
+            toast({ title: "Discovery Successful", description: `Identified and imported ${result.count} suppliers.` });
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: "Automation Failed", description: e.message });
+        } finally {
+            setIsAutoDiscovering(false);
+        }
+    };
+
     return (
         <div className="space-y-6">
+            {configError && (
+                <Alert variant="destructive">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertTitle>Cloud API Error</AlertTitle>
+                    <AlertDescription className="space-y-3">
+                        <p className="font-mono text-[10px] bg-black/10 p-2 rounded">{configError}</p>
+                        <p className="text-xs">This usually indicates the Generative Language API is disabled or there is a billing issue in your Google Cloud Project.</p>
+                        <Button variant="outline" size="sm" asChild className="text-destructive-foreground border-destructive/20 hover:bg-destructive/10">
+                            <Link href="/docs/enable-gemini-api.md" target="_blank">AI Setup Guide</Link>
+                        </Button>
+                    </AlertDescription>
+                </Alert>
+            )}
+
             <div className="grid md:grid-cols-2 gap-6">
                 <div className="space-y-4">
                     <div className="flex items-center justify-between">
@@ -186,16 +238,20 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                                 </Button>
                             </div>
                         </div>
-                        <Alert className="bg-amber-50 border-amber-200 py-2">
-                            <Info className="h-4 w-4 text-amber-600" />
-                            <AlertDescription className="text-[10px] leading-tight text-amber-800">
-                                AI stopped early? Set this to the last successful number (e.g. 45) to continue the exact same search.
-                            </AlertDescription>
-                        </Alert>
                     </div>
 
                     <div className="pt-2 flex flex-col gap-2">
-                        <Button onClick={handleCopy} size="lg" className="w-full gap-2 shadow-md">
+                        <Button 
+                            variant="default" 
+                            size="lg" 
+                            className="w-full gap-2 shadow-lg bg-primary hover:bg-primary/90" 
+                            onClick={handleAutoDiscover} 
+                            disabled={isAutoDiscovering}
+                        >
+                            {isAutoDiscovering ? <Loader2 className="h-5 w-5 animate-spin"/> : <Zap className="h-5 w-5" />}
+                            {isAutoDiscovering ? 'Running Discovery...' : "Run AI Discovery (Batch of 100)"}
+                        </Button>
+                        <Button onClick={handleCopy} variant="outline" size="lg" className="w-full gap-2 shadow-sm" disabled={isAutoDiscovering}>
                             {isCopied ? <ClipboardCheck className="h-5 w-5 text-green-600" /> : <Copy className="h-5 w-5" />}
                             {isCopied ? "Prompt Copied" : "Copy Manual Prompt"}
                         </Button>
@@ -212,11 +268,6 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                          <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
                             <Terminal className="h-3 w-3"/> Compact Forensic Command
                         </Label>
-                        <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="text-[10px] uppercase font-bold text-primary border-primary/20">
-                                <ListOrdered className="h-3 w-3 mr-1"/> Token Optimized
-                            </Badge>
-                        </div>
                     </div>
                     <ScrollArea className="h-[400px] border rounded-lg bg-slate-900 p-4 shadow-inner">
                         <pre className="text-[10px] text-slate-400 font-mono whitespace-pre-wrap leading-tight">

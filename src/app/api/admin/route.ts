@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase-admin';
+import { runDiscovery } from '@/ai/flows/discovery-flow';
 
 export const dynamic = 'force-dynamic';
 
@@ -91,7 +92,7 @@ function normalizePartnerData(data: any) {
         result.lastName = parts.slice(1).join(' ') || '';
     }
 
-    // Handle separate first/last name fields often found in driver/individual scrapes
+    // Handle separate first/last name fields
     if (!result.firstName && data.firstName) result.firstName = data.firstName;
     if (!result.lastName && data.lastName) result.lastName = data.lastName;
 
@@ -176,11 +177,57 @@ export async function POST(req: NextRequest) {
         const isAdmin = decodedToken.email === 'beyondtransport@gmail.com' || decodedToken.email === 'mkoton100@gmail.com';
 
         if (!isAdmin) {
-             const allowedUserActions = ['getAuditLogs', 'logCommunication', 'bulkSavePartners', 'getPartnersByType', 'markLeadsAsResearching', 'getPlatformStaff', 'findDuplicateLeads', 'deleteLeads', 'resetResearchQueue', 'bulkUpdateOutreach', 'bulkCategorizeLeads', 'getSupplierCategoryCounts', 'refreshSupplierCategoryCounts', 'refreshFinanceCategoryCounts', 'refreshTransporterCategoryCounts', 'refreshDriverCategoryCounts', 'getMembers', 'getShops', 'getContributions'];
+             const allowedUserActions = ['getAuditLogs', 'logCommunication', 'bulkSavePartners', 'getPartnersByType', 'markLeadsAsResearching', 'getPlatformStaff', 'findDuplicateLeads', 'deleteLeads', 'resetResearchQueue', 'bulkUpdateOutreach', 'bulkCategorizeLeads', 'getSupplierCategoryCounts', 'refreshSupplierCategoryCounts', 'refreshFinanceCategoryCounts', 'refreshTransporterCategoryCounts', 'refreshDriverCategoryCounts', 'getMembers', 'getShops', 'getContributions', 'runAutomatedDiscovery'];
              if (!allowedUserActions.includes(action)) throw new Error("Forbidden.");
         }
 
         switch (action) {
+            case 'runAutomatedDiscovery': {
+                const { category, type, startPage } = payload;
+                const result = await runDiscovery({ category, type, startPage, batchSize: 100 });
+                
+                if (!result || !result.results) {
+                    throw new Error("AI Discovery failed to return results.");
+                }
+
+                const roleMap: Record<string, string> = {
+                    'supplier': 'Vendors',
+                    'transporter': 'Transporters',
+                    'finance': 'Finance Companies',
+                    'driver': 'Drivers'
+                };
+
+                const partners = result.results;
+                const CHUNK_SIZE = 100;
+                let count = 0;
+
+                // Process in chunks to respect Firestore transaction limits
+                for (let i = 0; i < partners.length; i += CHUNK_SIZE) {
+                    const chunk = partners.slice(i, i + CHUNK_SIZE);
+                    const batch = db.batch();
+                    chunk.forEach((p: any) => {
+                        const normalized = normalizePartnerData(p);
+                        const targetId = normalized.record_id || `AUTO_${type.toUpperCase()}_${Math.random().toString(36).substring(7)}`;
+                        const updateData = {
+                            ...normalized,
+                            id: targetId,
+                            role: roleMap[type] || 'General',
+                            status: 'new',
+                            researchStatus: 'completed',
+                            updatedAt: FieldValue.serverTimestamp()
+                        };
+                        batch.set(db.collection('leads').doc(targetId), updateData, { merge: true });
+                        batch.set(db.collection('partners').doc(targetId), { ...updateData, type }, { merge: true });
+                        count++;
+                    });
+                    await batch.commit();
+                }
+
+                await refreshCategoryStats(db, type as any);
+
+                return NextResponse.json({ success: true, count });
+            }
+
             case 'findDuplicateLeads': {
                 const leadsSnap = await db.collection('leads').get();
                 const membersSnap = await db.collection('companies').get();
