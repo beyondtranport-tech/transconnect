@@ -170,25 +170,19 @@ export async function POST(req: NextRequest) {
                 membersSnap.docs.forEach(doc => allRecords.push({ ...doc.data(), id: doc.id, source: 'Member' }));
 
                 const groups = new Map<string, any[]>();
-                
-                // Unified normalization for forensic comparison
                 const norm = (val: any) => (val || '').toString().toLowerCase().trim();
 
                 allRecords.forEach(record => {
                     const company = norm(record.companyName);
-                    // Match Decision Maker (Contact Person) specifically
                     const contact = norm(record.contactPerson || record.firstName || '');
-                    
-                    // User requirement: Match BOTH entity name AND decision maker
                     const compositeKey = `${company}|${contact}`;
 
-                    if (company.length < 3) return; // Skip very short/empty names
+                    if (company.length < 3) return; 
                     
                     if (!groups.has(compositeKey)) groups.set(compositeKey, []);
                     groups.get(compositeKey)!.push(record);
                 });
 
-                // Only return groups where the EXACT (Company + Contact) pair appears more than once
                 const duplicates = Array.from(groups.values()).filter(group => group.length > 1);
                 return NextResponse.json({ success: true, data: duplicates });
             }
@@ -197,12 +191,18 @@ export async function POST(req: NextRequest) {
                 const { leadIds } = payload;
                 if (!Array.isArray(leadIds)) throw new Error("Invalid leadIds array.");
                 
-                const batch = db.batch();
-                leadIds.forEach(id => {
-                    batch.delete(db.collection('leads').doc(id));
-                    batch.delete(db.collection('partners').doc(id));
-                });
-                await batch.commit();
+                // Chunk size: 200 IDs = 400 operations (2 collections per ID), under the 500 limit.
+                const CHUNK_SIZE = 200;
+                for (let i = 0; i < leadIds.length; i += CHUNK_SIZE) {
+                    const chunk = leadIds.slice(i, i + CHUNK_SIZE);
+                    const batch = db.batch();
+                    chunk.forEach(id => {
+                        batch.delete(db.collection('leads').doc(id));
+                        batch.delete(db.collection('partners').doc(id));
+                    });
+                    await batch.commit();
+                }
+                
                 return NextResponse.json({ success: true });
             }
 
@@ -212,63 +212,86 @@ export async function POST(req: NextRequest) {
                     .where('researchStatus', '==', 'researching')
                     .get();
                 
-                const batch = db.batch();
-                let count = 0;
-                snap.docs.forEach(doc => {
-                    batch.update(doc.ref, { researchStatus: 'pending', updatedAt: FieldValue.serverTimestamp() });
-                    batch.update(db.collection('partners').doc(doc.id), { researchStatus: 'pending', updatedAt: FieldValue.serverTimestamp() });
-                    count++;
-                });
-                await batch.commit();
-                return NextResponse.json({ success: true, count });
+                const CHUNK_SIZE = 200; // 2 updates per lead
+                const docs = snap.docs;
+                
+                for (let i = 0; i < docs.length; i += CHUNK_SIZE) {
+                    const chunk = docs.slice(i, i + CHUNK_SIZE);
+                    const batch = db.batch();
+                    chunk.forEach(doc => {
+                        batch.update(doc.ref, { researchStatus: 'pending', updatedAt: FieldValue.serverTimestamp() });
+                        batch.update(db.collection('partners').doc(doc.id), { researchStatus: 'pending', updatedAt: FieldValue.serverTimestamp() });
+                    });
+                    await batch.commit();
+                }
+                
+                return NextResponse.json({ success: true, count: docs.length });
             }
 
             case 'bulkUpdateOutreach': {
                 const { entries, subject } = payload;
-                const batch = db.batch();
                 let count = 0;
+                const CHUNK_SIZE = 200; // Under 500 ops (2 per matched doc)
 
-                for (const entry of entries) {
-                    const isEmail = entry.includes('@');
-                    const field = isEmail ? 'email' : 'companyName';
-                    const snap = await db.collection('leads').where(field, '==', entry).limit(1).get();
+                for (let i = 0; i < entries.length; i += CHUNK_SIZE) {
+                    const chunk = entries.slice(i, i + CHUNK_SIZE);
+                    const batch = db.batch();
                     
-                    if (!snap.empty) {
-                        const docRef = snap.docs[0].ref;
-                        batch.update(docRef, {
-                            status: 'contacted',
-                            lastOutreachAt: FieldValue.serverTimestamp(),
-                            lastOutreachSubject: subject,
-                            updatedAt: FieldValue.serverTimestamp()
-                        });
-                        batch.update(db.collection('partners').doc(docRef.id), {
-                            status: 'contacted',
-                            lastOutreachAt: FieldValue.serverTimestamp(),
-                            lastOutreachSubject: subject,
-                            updatedAt: FieldValue.serverTimestamp()
-                        });
-                        count++;
-                    }
+                    const promises = chunk.map(async (entry: string) => {
+                        const isEmail = entry.includes('@');
+                        const field = isEmail ? 'email' : 'companyName';
+                        const snap = await db.collection('leads').where(field, '==', entry).limit(1).get();
+                        
+                        if (!snap.empty) {
+                            const docRef = snap.docs[0].ref;
+                            batch.update(docRef, {
+                                status: 'contacted',
+                                lastOutreachAt: FieldValue.serverTimestamp(),
+                                lastOutreachSubject: subject,
+                                updatedAt: FieldValue.serverTimestamp()
+                            });
+                            batch.update(db.collection('partners').doc(docRef.id), {
+                                status: 'contacted',
+                                lastOutreachAt: FieldValue.serverTimestamp(),
+                                lastOutreachSubject: subject,
+                                updatedAt: FieldValue.serverTimestamp()
+                            });
+                            count++;
+                        }
+                    });
+                    
+                    await Promise.all(promises);
+                    await batch.commit();
                 }
-                await batch.commit();
+
                 return NextResponse.json({ success: true, count });
             }
 
             case 'bulkCategorizeLeads': {
                 const snap = await db.collection('leads').get();
-                const batch = db.batch();
+                const CHUNK_SIZE = 200; // 2 updates per hit
+                const docs = snap.docs;
                 let count = 0;
 
-                snap.docs.forEach(doc => {
-                    const data = doc.data();
-                    const normalized = normalizePartnerData(data);
-                    if (normalized.entryType && normalized.entryType !== data.entryType) {
-                        batch.update(doc.ref, { entryType: normalized.entryType, updatedAt: FieldValue.serverTimestamp() });
-                        batch.update(db.collection('partners').doc(doc.id), { entryType: normalized.entryType, updatedAt: FieldValue.serverTimestamp() });
-                        count++;
-                    }
-                });
-                await batch.commit();
+                for (let i = 0; i < docs.length; i += CHUNK_SIZE) {
+                    const chunk = docs.slice(i, i + CHUNK_SIZE);
+                    const batch = db.batch();
+                    let batchHasWork = false;
+
+                    chunk.forEach(doc => {
+                        const data = doc.data();
+                        const normalized = normalizePartnerData(data);
+                        if (normalized.entryType && normalized.entryType !== data.entryType) {
+                            batch.update(doc.ref, { entryType: normalized.entryType, updatedAt: FieldValue.serverTimestamp() });
+                            batch.update(db.collection('partners').doc(doc.id), { entryType: normalized.entryType, updatedAt: FieldValue.serverTimestamp() });
+                            count++;
+                            batchHasWork = true;
+                        }
+                    });
+                    
+                    if (batchHasWork) await batch.commit();
+                }
+
                 return NextResponse.json({ success: true, count });
             }
 
@@ -426,8 +449,9 @@ export async function POST(req: NextRequest) {
 
             case 'bulkSavePartners': {
                 const { partners, type } = payload;
-                const batch = db.batch();
+                const CHUNK_SIZE = 200; // 2 writes per partner
                 let updatedCount = 0;
+                
                 const roleMap: Record<string, string> = {
                     'supplier': 'Vendors',
                     'transporter': 'Transporters',
@@ -437,24 +461,28 @@ export async function POST(req: NextRequest) {
                     'investor': 'Investors'
                 };
 
-                for (const p of partners) {
-                    const normalized = normalizePartnerData(p);
-                    const targetId = normalized.record_id || `IMP_${type.toUpperCase()}_${Math.random().toString(36).substring(7)}`;
-                    const updateData = {
-                        ...normalized,
-                        id: targetId,
-                        role: normalized.role || roleMap[type] || 'General',
-                        status: 'new',
-                        researchStatus: 'completed',
-                        updatedAt: FieldValue.serverTimestamp()
-                    };
-                    batch.set(db.collection('leads').doc(targetId), updateData, { merge: true });
-                    batch.set(db.collection('partners').doc(targetId), { ...updateData, type }, { merge: true });
-                    updatedCount++;
+                for (let i = 0; i < partners.length; i += CHUNK_SIZE) {
+                    const chunk = partners.slice(i, i + CHUNK_SIZE);
+                    const batch = db.batch();
+                    
+                    for (const p of chunk) {
+                        const normalized = normalizePartnerData(p);
+                        const targetId = normalized.record_id || `IMP_${type.toUpperCase()}_${Math.random().toString(36).substring(7)}`;
+                        const updateData = {
+                            ...normalized,
+                            id: targetId,
+                            role: normalized.role || roleMap[type] || 'General',
+                            status: 'new',
+                            researchStatus: 'completed',
+                            updatedAt: FieldValue.serverTimestamp()
+                        };
+                        batch.set(db.collection('leads').doc(targetId), updateData, { merge: true });
+                        batch.set(db.collection('partners').doc(targetId), { ...updateData, type }, { merge: true });
+                        updatedCount++;
+                    }
+                    await batch.commit();
                 }
-                await batch.commit();
                 
-                // Automatically refresh categorical tallies
                 if (type === 'supplier' || type === 'finance' || type === 'transporter') {
                     await refreshCategoryStats(db, type as any);
                 }
@@ -502,14 +530,19 @@ export async function POST(req: NextRequest) {
 
             case 'markLeadsAsResearching': {
                 const { leadIds } = payload;
-                const batch = db.batch();
-                leadIds.forEach((id: string) => {
-                    if (id && typeof id === 'string') {
-                        batch.set(db.collection('leads').doc(id), { researchStatus: 'researching', updatedAt: FieldValue.serverTimestamp() }, { merge: true });
-                        batch.set(db.collection('partners').doc(id), { researchStatus: 'researching', updatedAt: FieldValue.serverTimestamp() }, { merge: true });
-                    }
-                });
-                await batch.commit();
+                const CHUNK_SIZE = 250; // 2 writes per lead
+                
+                for (let i = 0; i < leadIds.length; i += CHUNK_SIZE) {
+                    const chunk = leadIds.slice(i, i + CHUNK_SIZE);
+                    const batch = db.batch();
+                    chunk.forEach((id: string) => {
+                        if (id && typeof id === 'string') {
+                            batch.set(db.collection('leads').doc(id), { researchStatus: 'researching', updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+                            batch.set(db.collection('partners').doc(id), { researchStatus: 'researching', updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+                        }
+                    });
+                    await batch.commit();
+                }
                 return NextResponse.json({ success: true });
             }
 
