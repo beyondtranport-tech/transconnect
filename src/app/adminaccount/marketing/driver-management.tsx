@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -7,7 +8,8 @@ import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
   Loader2, PlusCircle, Users, Edit, Trash2, Send, CheckCircle, Mail, Filter, Save, 
-  Search, Zap, RotateCcw, XCircle, Info, Tag, Database, ShieldCheck, Upload
+  Search, Zap, RotateCcw, XCircle, Info, Tag, Database, ShieldCheck, Upload,
+  AlertTriangle, Phone, Globe
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
@@ -34,7 +36,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { driverCategories } from './driver-discovery';
 
-// Define schema at the top level to avoid ReferenceErrors
+// Schema at the top level
 const partnerSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
@@ -324,6 +326,16 @@ export default function DriverManagement() {
 
   useEffect(() => { forceRefresh(); }, [forceRefresh]);
 
+  const auditStats = useMemo(() => {
+      const stats = { missingEmail: 0, missingPhone: 0, missingLocation: 0 };
+      partners.forEach(p => {
+          if (!p.email || p.email === 'null' || p.email === 'n/a') stats.missingEmail++;
+          if (!p.phone || p.phone === 'null' || p.phone === 'n/a') stats.missingPhone++;
+          if (!p.address || p.address === 'null') stats.missingLocation++;
+      });
+      return stats;
+  }, [partners]);
+
   const filteredDrivers = useMemo(() => {
     return partners.filter(p => {
         const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
@@ -447,6 +459,37 @@ export default function DriverManagement() {
                 <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Record</Button>
             </div>
         </CardHeader>
+
+        {/* Data Integrity Audit Bar */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+             <Card className="bg-muted/30 border-none shadow-none">
+                <CardContent className="p-4 flex items-center gap-3">
+                    <div className="bg-amber-100 p-2 rounded-lg"><Mail className="h-4 w-4 text-amber-600"/></div>
+                    <div>
+                        <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest leading-none">Missing Email</p>
+                        <p className="text-xl font-black mt-1">{auditStats.missingEmail}</p>
+                    </div>
+                </CardContent>
+            </Card>
+            <Card className="bg-muted/30 border-none shadow-none">
+                <CardContent className="p-4 flex items-center gap-3">
+                    <div className="bg-amber-100 p-2 rounded-lg"><Phone className="h-4 w-4 text-amber-600"/></div>
+                    <div>
+                        <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest leading-none">Missing Phone</p>
+                        <p className="text-xl font-black mt-1">{auditStats.missingPhone}</p>
+                    </div>
+                </CardContent>
+            </Card>
+            <Card className="bg-muted/30 border-none shadow-none">
+                <CardContent className="p-4 flex items-center gap-3">
+                    <div className="bg-amber-100 p-2 rounded-lg"><Globe className="h-4 w-4 text-amber-600"/></div>
+                    <div>
+                        <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest leading-none">Missing Location</p>
+                        <p className="text-xl font-black mt-1">{auditStats.missingLocation}</p>
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
 
         <Card>
             <CardContent className="pt-6">

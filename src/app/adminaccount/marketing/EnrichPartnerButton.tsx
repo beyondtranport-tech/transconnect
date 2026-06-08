@@ -31,8 +31,41 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
 
     const companyName = partner.companyName || partner.trading_name || `${partner.firstName} ${partner.lastName}`;
     const isNCR = partner.record_id?.startsWith('NCR_') || !!partner.registration_date;
+    const isDriver = partner.type === 'driver' || partner.role === 'Drivers';
 
-    const aiPrompt = isNCR ? `CRITICAL SYSTEM INSTRUCTION: RETURN ONLY A RAW JSON OBJECT. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
+    const getPrompt = () => {
+        if (isDriver) {
+            return `CRITICAL SYSTEM INSTRUCTION: RETURN ONLY A RAW JSON OBJECT. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
+
+ACT AS AN ELITE WORKFORCE INTELLIGENCE AGENT. YOUR MISSION IS TO VERIFY THE PROFESSIONAL STANDING OF A HEAVY VEHICLE OPERATOR.
+
+TARGET ENTITY: 
+- Service Handle: ${partner.service_handle || `${partner.firstName} ${partner.lastName}`}
+- Role Category: ${partner.entryType || 'Code 14 Heavy'}
+- Listed Registry Line: ${partner.phone || partner.registry_line || 'N/A'}
+
+INVESTIGATIVE STRATEGY (DRIVER VERIFICATION):
+1. SOCIAL FOOTPRINT: Find this driver's professional profile on LinkedIn or Facebook Logistics Groups.
+2. IDENTITY AUDIT: Determine their current employment status and verifiable years of experience.
+3. CONTACT FORENSICS: Find a verified direct email address and a secondary mobile number.
+4. CERTIFICATION SIGNALS: Search for mentions of PrDP, Hazmat, or specific vehicle make expertise (e.g. Scania, Volvo).
+5. IDENTITY PERSISTENCE: You MUST return "record_id": "${partner.id}".
+
+REQUIRED OUTPUT FORMAT (RAW JSON ONLY):
+{
+  "record_id": "${partner.id}",
+  "firstName": "...",
+  "lastName": "...",
+  "email": "Verified Direct Email",
+  "phone": "Verified Mobile",
+  "notes": "Detailed summary of experience and certifications found",
+  "address": "Primary operational region",
+  "research_status": "completed"
+}`;
+        }
+
+        if (isNCR) {
+            return `CRITICAL SYSTEM INSTRUCTION: RETURN ONLY A RAW JSON OBJECT. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
 
 ACT AS AN ELITE CORPORATE INTELLIGENCE AGENT. THIS ENTITY IS REGISTERED WITH THE NATIONAL CREDIT REGULATOR (NCR).
 
@@ -60,7 +93,10 @@ REQUIRED OUTPUT FORMAT (RAW JSON ONLY):
   "agreement_types": ["List of types found"],
   "entryType": "Refined Category from list above",
   "research_status": "completed"
-}` : `CRITICAL SYSTEM INSTRUCTION: RETURN ONLY A RAW JSON OBJECT. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
+}`;
+        }
+
+        return `CRITICAL SYSTEM INSTRUCTION: RETURN ONLY A RAW JSON OBJECT. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION. NO EXPLANATORY TEXT.
 
 ACT AS AN ELITE CORPORATE INTELLIGENCE AGENT. YOUR PRIMARY MISSION IS TO IDENTIFY ACTUAL HUMAN BEINGS IN LEADERSHIP.
 
@@ -82,12 +118,15 @@ REQUIRED OUTPUT FORMAT (RAW JSON ONLY):
   "website": "URL",
   "physical_address": "Full Physical Address"
 }`;
+    };
+
+    const aiPrompt = getPrompt();
 
     const handleCopy = async () => {
         try {
             await navigator.clipboard.writeText(aiPrompt);
             setIsCopied(true);
-            toast({ title: "Forensic Prompt Copied!", description: isNCR ? "AI will now hunt for activity and leadership." : "AI will now hunt for human names." });
+            toast({ title: "Forensic Prompt Copied!", description: isDriver ? "AI will now hunt for driver experience and contacts." : "AI will now hunt for leadership identities." });
         } catch (e) {
             toast({ variant: 'destructive', title: "Copy Failed" });
         }
@@ -129,23 +168,27 @@ REQUIRED OUTPUT FORMAT (RAW JSON ONLY):
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
                             <Sparkles className="h-5 w-5 text-primary" />
-                            {isNCR ? 'Phase 2: Forensic Enrichment' : 'Forensic Individual AI Research'}
+                            {isDriver ? 'Workforce Forensics' : (isNCR ? 'Phase 2: Forensic Enrichment' : 'Forensic Individual AI Research')}
                         </DialogTitle>
                         <DialogDescription>
-                            {isNCR 
-                                ? `Determine the business activity and leadership for NCR record: ${companyName}`
-                                : `Generate a deep-search prompt optimized to find actual human leadership names for ${companyName}.`}
+                            {isDriver 
+                                ? `Generate a deep-search prompt to verify experience and find contacts for: ${partner.service_handle || partner.firstName}`
+                                : (isNCR 
+                                    ? `Determine the business activity and leadership for NCR record: ${companyName}`
+                                    : `Generate a deep-search prompt optimized to find actual human leadership names for ${companyName}.`)}
                         </DialogDescription>
                     </DialogHeader>
 
                     <div className="space-y-4 py-4">
                         <Alert className="bg-primary/5 border-primary/20">
                             <Info className="h-4 w-4 text-primary" />
-                            <AlertTitle>{isNCR ? 'ActivityPass Active' : 'Anti-Placeholder Command Active'}</AlertTitle>
-                            <AlertDescription className="text-xs">
-                                {isNCR 
-                                    ? "The AI is instructed to find agreement types (Loan, Lease, etc.) and identify the specific human credit decision-maker."
-                                    : "This prompt strictly forbids the AI from returning titles like \"The Director\" and commands it to hunt for verified human identities."}
+                            <AlertTitle>{isDriver ? 'Driver Verification Active' : (isNCR ? 'ActivityPass Active' : 'Anti-Placeholder Command Active')}</AlertTitle>
+                            <AlertDescription className="text-xs text-muted-foreground">
+                                {isDriver 
+                                    ? "The AI is instructed to cross-reference logistics groups and professional resumes to find direct contacts and specific make/model expertise."
+                                    : (isNCR 
+                                        ? "The AI is instructed to find agreement types (Loan, Lease, etc.) and identify the specific human credit decision-maker."
+                                        : "This prompt strictly forbids the AI from returning titles like \"The Director\" and commands it to hunt for verified human identities.")}
                             </AlertDescription>
                         </Alert>
 
@@ -176,7 +219,7 @@ REQUIRED OUTPUT FORMAT (RAW JSON ONLY):
 export function BulkEnrichButton({ partners, onComplete }: { partners: any[], onComplete: () => void }) {
     const [open, setOpen] = useState(false);
     const selectedPartners = useMemo(() => {
-        return partners.filter(p => !p.email || p.researchStatus === 'researching').slice(0, 10);
+        return partners.filter(p => (!p.email || p.email === 'null') || p.researchStatus === 'researching').slice(0, 10);
     }, [partners]);
 
     return (
