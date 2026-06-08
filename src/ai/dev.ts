@@ -15,3 +15,4 @@ import '@/ai/flows/social-link-generator-flow';
 import '@/ai/flows/support-flow';
 import '@/ai/flows/negotiation-flow';
 import '@/ai/flows/enrich-partner-flow';
+import '@/ai/flows/discovery-flow';

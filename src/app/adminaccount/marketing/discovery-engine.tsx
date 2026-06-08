@@ -1,10 +1,9 @@
-
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, Sparkles, Copy, ClipboardCheck, Info, Search, Terminal, MapPin, ListOrdered, Loader2, RefreshCcw, Database } from "lucide-react";
+import { ArrowRight, Sparkles, Copy, ClipboardCheck, Info, Search, Terminal, MapPin, ListOrdered, Loader2, RefreshCcw, Database, Zap } from "lucide-react";
 import Link from "next/link";
 import * as React from "react";
 import { useState, useMemo, useEffect, useCallback } from 'react';
@@ -127,12 +126,14 @@ REQUIRED OUTPUT FORMAT (RAW JSON ARRAY ONLY):
 HUNTING GROUNDS: Search LinkedIn, Yellow Pages SA, and local industrial registries.`;
 }
 
-const DiscoveryTab = ({ category, currentCount }: { category: string, currentCount: number }) => {
+const DiscoveryTab = ({ category, currentCount, onRefresh }: { category: string, currentCount: number, onRefresh: () => void }) => {
     const { toast } = useToast();
     const [isCopied, setIsCopied] = useState(false);
+    const [isAutoDiscovering, setIsAutoDiscovering] = useState(false);
     const [seqOverride, setSeqOverride] = useState<number | ''>('');
     
     const startSeq = useMemo(() => (seqOverride !== '' ? Number(seqOverride) : currentCount + 1), [seqOverride, currentCount]);
+    const suggestedPage = Math.floor(currentCount / 20) + 1;
 
     const randomHubs = useMemo(() => {
         const shuffled = [...industrialHubs].sort(() => 0.5 - Math.random());
@@ -149,6 +150,27 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
             setTimeout(() => setIsCopied(false), 3000);
         } catch (e) {
             toast({ variant: 'destructive', title: "Copy Failed" });
+        }
+    };
+
+    const handleAutoDiscover = async () => {
+        setIsAutoDiscovering(true);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Auth failed.");
+
+            const res = await performAdminAction(token, 'autoDiscover', {
+                category,
+                type: 'supplier',
+                startPage: suggestedPage
+            });
+
+            toast({ title: "Discovery Complete", description: res.message });
+            onRefresh();
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: "Automation Failed", description: e.message });
+        } finally {
+            setIsAutoDiscovering(false);
         }
     };
 
@@ -197,13 +219,18 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                     </div>
 
                     <div className="pt-2 flex flex-col gap-2">
-                        <Button onClick={handleCopy} size="lg" className="w-full gap-2 shadow-md">
-                            {isCopied ? <ClipboardCheck className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
-                            {isCopied ? "Prompt Copied" : "Copy Discovery Prompt"}
+                         <Button onClick={handleAutoDiscover} disabled={isAutoDiscovering} size="lg" className="w-full gap-2 bg-amber-600 hover:bg-amber-700 shadow-lg group">
+                            {isAutoDiscovering ? <Loader2 className="h-5 w-5 animate-spin"/> : <Zap className="h-5 w-5 fill-amber-300 text-amber-300 group-hover:scale-125 transition-transform" />}
+                            Run Automated Discovery (Batch of 20)
                         </Button>
-                        <Button variant="outline" asChild className="w-full">
+                        <Separator className="my-2" />
+                        <Button onClick={handleCopy} size="lg" variant="outline" className="w-full gap-2 shadow-sm">
+                            {isCopied ? <ClipboardCheck className="h-5 w-5 text-green-600" /> : <Copy className="h-5 w-5" />}
+                            {isCopied ? "Prompt Copied" : "Copy Manual Prompt"}
+                        </Button>
+                        <Button variant="ghost" asChild className="w-full text-xs opacity-70">
                             <a href="https://aistudio.google.com/" target="_blank" rel="noopener noreferrer">
-                                Open Google AI Studio <ArrowRight className="ml-2 h-4 w-4" />
+                                External AI Studio <ArrowRight className="ml-1 h-3 w-3" />
                             </a>
                         </Button>
                     </div>
@@ -220,8 +247,8 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                             </Badge>
                         </div>
                     </div>
-                    <ScrollArea className="h-[360px] border rounded-lg bg-slate-900 p-4 shadow-inner">
-                        <pre className="text-[10px] text-slate-300 font-mono whitespace-pre-wrap leading-tight">
+                    <ScrollArea className="h-[400px] border rounded-lg bg-slate-900 p-4 shadow-inner">
+                        <pre className="text-[10px] text-slate-400 font-mono whitespace-pre-wrap leading-tight">
                             {prompt}
                         </pre>
                     </ScrollArea>
@@ -264,7 +291,7 @@ export default function DiscoveryEngine() {
                             AI Market Discovery Engine
                         </CardTitle>
                         <CardDescription>
-                            Generate tailored intelligence prompts to discover 100+ independent heavy commercial suppliers.
+                            Automate the discovery of heavy commercial suppliers using internal AI tools or manual prompts.
                         </CardDescription>
                     </div>
                     <div className="flex items-center gap-2">
@@ -280,7 +307,7 @@ export default function DiscoveryEngine() {
                             className="bg-primary/5 border-primary/20 hover:bg-primary/10"
                         >
                             {isRefreshing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <RefreshCcw className="mr-2 h-4 w-4" />}
-                            Update Database Counts
+                            Refresh Tally
                         </Button>
                     </div>
                 </CardHeader>
@@ -301,7 +328,7 @@ export default function DiscoveryEngine() {
 
                     {supplierCategories.map(category => (
                         <TabsContent key={category} value={category} className="mt-0">
-                            <DiscoveryTab category={category} currentCount={counts[category] || 0} />
+                            <DiscoveryTab category={category} currentCount={counts[category] || 0} onRefresh={handleRefresh} />
                         </TabsContent>
                     ))}
                 </CardContent>

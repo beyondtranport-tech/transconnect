@@ -1,8 +1,8 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase-admin';
+import { runDiscovery } from '@/ai/flows/discovery-flow';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,7 +26,6 @@ function serializeTimestamps(docData: any): any {
 
 /**
  * Universal Data Normalization & Intelligent Categorization
- * Enhanced for NCR and Finance forensics.
  */
 function normalizePartnerData(data: any) {
     const result: any = {};
@@ -43,10 +42,10 @@ function normalizePartnerData(data: any) {
         ].includes(low) || low.length < 2;
     }
 
-    const idKeys = ['record_id', 'recordId', 'id', 'record', 'uid', 'recordid'];
+    const idKeys = ['record_id', 'recordId', 'id', 'record', 'uid', 'recordid', 'seq'];
     for (const key of idKeys) {
         const val = data[key]?.toString().trim();
-        if (val && val.length > 5 && !isPlaceholder(val)) {
+        if (val && val.length >= 1 && !isPlaceholder(val)) {
             result.record_id = val;
             break;
         }
@@ -109,9 +108,6 @@ function normalizePartnerData(data: any) {
     return result;
 }
 
-/**
- * Shared logic to refresh category counts for discovery
- */
 async function refreshCategoryStats(db: FirebaseFirestore.Firestore, type: 'supplier' | 'finance') {
     const snap = await db.collection('leads').get();
     const counts: Record<string, number> = {};
@@ -156,11 +152,48 @@ export async function POST(req: NextRequest) {
         const isAdmin = decodedToken.email === 'beyondtransport@gmail.com' || decodedToken.email === 'mkoton100@gmail.com';
 
         if (!isAdmin) {
-             const allowedUserActions = ['getAuditLogs', 'logCommunication', 'bulkSavePartners', 'getPartnersByType', 'markLeadsAsResearching', 'getPlatformStaff', 'findDuplicateLeads', 'deleteLeads', 'resetResearchQueue', 'bulkUpdateOutreach', 'bulkCategorizeLeads', 'getSupplierCategoryCounts', 'refreshSupplierCategoryCounts', 'refreshFinanceCategoryCounts', 'getMembers', 'getShops', 'getContributions'];
+             const allowedUserActions = ['getAuditLogs', 'logCommunication', 'bulkSavePartners', 'getPartnersByType', 'markLeadsAsResearching', 'getPlatformStaff', 'findDuplicateLeads', 'deleteLeads', 'resetResearchQueue', 'bulkUpdateOutreach', 'bulkCategorizeLeads', 'getSupplierCategoryCounts', 'refreshSupplierCategoryCounts', 'refreshFinanceCategoryCounts', 'autoDiscover', 'getMembers', 'getShops', 'getContributions'];
              if (!allowedUserActions.includes(action)) throw new Error("Forbidden.");
         }
 
         switch (action) {
+            case 'autoDiscover': {
+                const { category, type, startPage } = payload;
+                if (!category || !type) throw new Error("Missing parameters for discovery.");
+
+                const { results } = await runDiscovery({ category, type, startPage });
+                
+                if (!results || results.length === 0) {
+                    return NextResponse.json({ success: true, count: 0, message: "No new records found by AI." });
+                }
+
+                const batch = db.batch();
+                const roleMap: Record<string, string> = {
+                    'supplier': 'Vendors',
+                    'finance': 'Finance Companies'
+                };
+
+                results.forEach(p => {
+                    const normalized = normalizePartnerData(p);
+                    const targetId = normalized.record_id || `AUTO_${type.toUpperCase()}_${Math.random().toString(36).substring(7)}`;
+                    const updateData = {
+                        ...normalized,
+                        id: targetId,
+                        role: roleMap[type] || 'General',
+                        status: 'new',
+                        researchStatus: 'completed',
+                        updatedAt: FieldValue.serverTimestamp()
+                    };
+                    batch.set(db.collection('leads').doc(targetId), updateData, { merge: true });
+                    batch.set(db.collection('partners').doc(targetId), { ...updateData, type }, { merge: true });
+                });
+
+                await batch.commit();
+                await refreshCategoryStats(db, type);
+
+                return NextResponse.json({ success: true, count: results.length, message: `Discovered and imported ${results.length} records.` });
+            }
+
             case 'findDuplicateLeads': {
                 const leadsSnap = await db.collection('leads').get();
                 const membersSnap = await db.collection('companies').get();

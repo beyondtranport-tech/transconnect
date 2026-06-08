@@ -1,10 +1,9 @@
-
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, Sparkles, Copy, ClipboardCheck, Info, Search, Terminal, MapPin, ListOrdered, Loader2, RefreshCcw, Landmark, Banknote, Users, Database, ShieldCheck } from "lucide-react";
+import { ArrowRight, Sparkles, Copy, ClipboardCheck, Info, Search, Terminal, MapPin, ListOrdered, Loader2, RefreshCcw, Landmark, Banknote, Users, Database, ShieldCheck, Zap } from "lucide-react";
 import * as React from "react";
 import { useState, useMemo } from 'react';
 import { useToast } from "@/hooks/use-toast";
@@ -16,6 +15,7 @@ import { getClientSideAuthToken } from '@/firebase';
 import { useConfig } from '@/hooks/use-config';
 import { cn, formatDateSafe } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
 
 export const financeCategories = [
     "Banks", 
@@ -84,9 +84,10 @@ REQUIRED OUTPUT FORMAT (RAW JSON ARRAY ONLY):
 HUNTING GROUNDS: Deep-search LinkedIn, NCR registry, and company "Leadership" pages.`;
 }
 
-const DiscoveryTab = ({ category, currentCount }: { category: string, currentCount: number }) => {
+const DiscoveryTab = ({ category, currentCount, onRefresh }: { category: string, currentCount: number, onRefresh: () => void }) => {
     const { toast } = useToast();
     const [isCopied, setIsCopied] = useState(false);
+    const [isAutoDiscovering, setIsAutoDiscovering] = useState(false);
     const [pageOverride, setPageOverride] = useState<number | ''>('');
     
     // Persistent suggested page calculation (20 records per page)
@@ -104,6 +105,27 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
             setTimeout(() => setIsCopied(false), 3000);
         } catch (e) {
             toast({ variant: 'destructive', title: "Copy Failed" });
+        }
+    };
+
+    const handleAutoDiscover = async () => {
+        setIsAutoDiscovering(true);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Auth failed.");
+
+            const res = await performAdminAction(token, 'autoDiscover', {
+                category,
+                type: 'finance',
+                startPage: startPage
+            });
+
+            toast({ title: "Discovery Complete", description: res.message });
+            onRefresh();
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: "Automation Failed", description: e.message });
+        } finally {
+            setIsAutoDiscovering(false);
         }
     };
 
@@ -144,18 +166,23 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                             </div>
                         </div>
                         <p className="text-[10px] text-muted-foreground leading-tight italic">
-                            The AI will be instructed to extract 100 records (approx. 5 pages) starting from <strong>Page {startPage}</strong>.
+                            System targets 20 records per run (1 page) starting from <strong>Page {startPage}</strong>.
                         </p>
                     </div>
 
                     <div className="pt-2 flex flex-col gap-2">
-                        <Button onClick={handleCopy} size="lg" className="w-full gap-2 shadow-md bg-amber-600 hover:bg-amber-700">
-                            {isCopied ? <ClipboardCheck className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
-                            {isCopied ? "Prompt Copied" : `Copy Prompt (Pages ${startPage} - ${endPage})`}
+                         <Button onClick={handleAutoDiscover} disabled={isAutoDiscovering} size="lg" className="w-full gap-2 bg-amber-600 hover:bg-amber-700 shadow-lg group">
+                            {isAutoDiscovering ? <Loader2 className="h-5 w-5 animate-spin"/> : <Zap className="h-5 w-5 fill-amber-300 text-amber-300 group-hover:scale-125 transition-transform" />}
+                            Run Automated Discovery (Batch of 20)
                         </Button>
-                        <Button variant="outline" asChild className="w-full">
+                        <Separator className="my-2" />
+                        <Button onClick={handleCopy} size="lg" variant="outline" className="w-full gap-2 shadow-sm border-amber-200 text-amber-700 hover:bg-amber-50">
+                            {isCopied ? <ClipboardCheck className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
+                            {isCopied ? "Prompt Copied" : `Copy Manual Prompt`}
+                        </Button>
+                        <Button variant="ghost" asChild className="w-full text-xs opacity-70">
                             <a href="https://aistudio.google.com/" target="_blank" rel="noopener noreferrer">
-                                Open Google AI Studio <ArrowRight className="ml-2 h-4 w-4" />
+                                External AI Studio <ArrowRight className="ml-1 h-3 w-3" />
                             </a>
                         </Button>
                     </div>
@@ -167,11 +194,11 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                             <Terminal className="h-3 w-3"/> AI Forensic Command
                         </Label>
                         <Badge variant="outline" className="text-[10px] uppercase font-bold text-amber-600 border-amber-200">
-                            Pages {startPage}-{endPage} Active
+                            Targeting Page {startPage}
                         </Badge>
                     </div>
-                    <ScrollArea className="h-[340px] border rounded-lg bg-slate-900 p-4 shadow-inner">
-                        <pre className="text-[10px] text-slate-300 font-mono whitespace-pre-wrap leading-tight">
+                    <ScrollArea className="h-[400px] border rounded-lg bg-slate-900 p-4 shadow-inner">
+                        <pre className="text-[10px] text-slate-400 font-mono whitespace-pre-wrap leading-tight">
                             {prompt}
                         </pre>
                     </ScrollArea>
@@ -245,7 +272,7 @@ export default function FinanceDiscoveryEngine() {
 
                     {financeCategories.map(category => (
                         <TabsContent key={category} value={category} className="mt-0">
-                            <DiscoveryTab category={category} currentCount={counts[category] || 0} />
+                            <DiscoveryTab category={category} currentCount={counts[category] || 0} onRefresh={handleRefresh} />
                         </TabsContent>
                     ))}
                 </CardContent>
