@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -7,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
   Loader2, PlusCircle, Building, Edit, Trash2, Send, CheckCircle, Users, Mail, Filter, Save, 
-  Search, Zap, RotateCcw, XCircle, Info, Sparkles, AlertCircle, Download, Copy, ShieldCheck, Tag, Clock, SearchCode, Database
+  Search, Zap, RotateCcw, XCircle, Info, Sparkles, AlertCircle, Download, Copy, ShieldCheck, Tag, Clock, Ban, Database, Navigation
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
@@ -43,8 +44,14 @@ async function performAdminAction(token: string, action: string, payload: any) {
     body: JSON.stringify({ action, payload }),
     cache: 'no-store'
   });
+  
+  if (!response.ok) {
+      const text = await response.text();
+      throw new Error(text.includes('<html>') ? "Server Error (Gateway Timeout). Your database is large; operations are still processing in the background. Please refresh in 30 seconds." : text);
+  }
+
   const result = await response.json();
-  if (!response.ok || !result.success) throw new Error(result.error || `API Error: ${action}`);
+  if (!result.success) throw new Error(result.error || `API Error: ${action}`);
   return result;
 }
 
@@ -120,14 +127,7 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
     try {
       const token = await getClientSideAuthToken();
       if (!token) throw new Error("Auth failed.");
-      const response = await fetch('/api/admin', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'deleteLeads', payload: { leadIds: idsToDelete } }),
-        cache: 'no-store'
-      });
-      const result = await response.json();
-      if (!result.success) throw new Error(result.error);
+      await performAdminAction(token, 'deleteLeads', { leadIds: idsToDelete });
 
       toast({ title: "Duplicates Cleaned!", description: `${idsToDelete.length} duplicate records deleted.` });
       onComplete();
@@ -461,13 +461,7 @@ export default function SupplierManagement() {
       try {
           const token = await getClientSideAuthToken();
           if (!token) return;
-          const response = await fetch('/api/admin', {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'resetResearchQueue', payload: { type: 'supplier' } }),
-          });
-          const result = await response.json();
-          if (!response.ok) throw new Error(result.error);
+          const result = await performAdminAction(token, 'resetResearchQueue', { type: 'supplier' });
           toast({ title: "Queue Reset", description: `${result.count} records set back to 'New'.` });
           forceRefresh();
       } catch (e: any) {
@@ -482,13 +476,7 @@ export default function SupplierManagement() {
       try {
           const token = await getClientSideAuthToken();
           if (!token) return;
-          const response = await fetch('/api/admin', {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'bulkCategorizeLeads', payload: {} }),
-          });
-          const result = await response.json();
-          if (!response.ok) throw new Error(result.error);
+          const result = await performAdminAction(token, 'bulkCategorizeLeads', {});
           toast({ title: "Categorization Complete", description: `Auto-tagged ${result.count} suppliers.` });
           forceRefresh();
       } catch (e: any) {

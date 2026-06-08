@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -193,14 +194,25 @@ export async function POST(req: NextRequest) {
                 
                 // Chunk size: 200 IDs = 400 operations (2 collections per ID), under the 500 limit.
                 const CHUNK_SIZE = 200;
+                const chunks = [];
                 for (let i = 0; i < leadIds.length; i += CHUNK_SIZE) {
-                    const chunk = leadIds.slice(i, i + CHUNK_SIZE);
-                    const batch = db.batch();
-                    chunk.forEach(id => {
-                        batch.delete(db.collection('leads').doc(id));
-                        batch.delete(db.collection('partners').doc(id));
-                    });
-                    await batch.commit();
+                    chunks.push(leadIds.slice(i, i + CHUNK_SIZE));
+                }
+
+                // Process chunks in parallel with a safe limit to prevent timeouts
+                const CONCURRENCY = 5;
+                for (let i = 0; i < chunks.length; i += CONCURRENCY) {
+                    const currentBatch = chunks.slice(i, i + CONCURRENCY);
+                    await Promise.all(currentBatch.map(async (chunk) => {
+                        const batch = db.batch();
+                        chunk.forEach(id => {
+                            if (id && typeof id === 'string') {
+                                batch.delete(db.collection('leads').doc(id));
+                                batch.delete(db.collection('partners').doc(id));
+                            }
+                        });
+                        return batch.commit();
+                    }));
                 }
                 
                 return NextResponse.json({ success: true });
@@ -212,17 +224,24 @@ export async function POST(req: NextRequest) {
                     .where('researchStatus', '==', 'researching')
                     .get();
                 
-                const CHUNK_SIZE = 200; // 2 updates per lead
                 const docs = snap.docs;
-                
+                const CHUNK_SIZE = 200; 
+                const chunks = [];
                 for (let i = 0; i < docs.length; i += CHUNK_SIZE) {
-                    const chunk = docs.slice(i, i + CHUNK_SIZE);
-                    const batch = db.batch();
-                    chunk.forEach(doc => {
-                        batch.update(doc.ref, { researchStatus: 'pending', updatedAt: FieldValue.serverTimestamp() });
-                        batch.update(db.collection('partners').doc(doc.id), { researchStatus: 'pending', updatedAt: FieldValue.serverTimestamp() });
-                    });
-                    await batch.commit();
+                    chunks.push(docs.slice(i, i + CHUNK_SIZE));
+                }
+
+                const CONCURRENCY = 5;
+                for (let i = 0; i < chunks.length; i += CONCURRENCY) {
+                    const currentBatch = chunks.slice(i, i + CONCURRENCY);
+                    await Promise.all(currentBatch.map(async (chunk) => {
+                        const batch = db.batch();
+                        chunk.forEach(doc => {
+                            batch.update(doc.ref, { researchStatus: 'pending', updatedAt: FieldValue.serverTimestamp() });
+                            batch.update(db.collection('partners').doc(doc.id), { researchStatus: 'pending', updatedAt: FieldValue.serverTimestamp() });
+                        });
+                        return batch.commit();
+                    }));
                 }
                 
                 return NextResponse.json({ success: true, count: docs.length });
@@ -231,13 +250,14 @@ export async function POST(req: NextRequest) {
             case 'bulkUpdateOutreach': {
                 const { entries, subject } = payload;
                 let count = 0;
-                const CHUNK_SIZE = 200; // Under 500 ops (2 per matched doc)
-
+                const CHUNK_SIZE = 100;
+                
+                // We do this serially because we need to search first
                 for (let i = 0; i < entries.length; i += CHUNK_SIZE) {
                     const chunk = entries.slice(i, i + CHUNK_SIZE);
                     const batch = db.batch();
                     
-                    const promises = chunk.map(async (entry: string) => {
+                    await Promise.all(chunk.map(async (entry: string) => {
                         const isEmail = entry.includes('@');
                         const field = isEmail ? 'email' : 'companyName';
                         const snap = await db.collection('leads').where(field, '==', entry).limit(1).get();
@@ -258,9 +278,8 @@ export async function POST(req: NextRequest) {
                             });
                             count++;
                         }
-                    });
+                    }));
                     
-                    await Promise.all(promises);
                     await batch.commit();
                 }
 
@@ -269,27 +288,34 @@ export async function POST(req: NextRequest) {
 
             case 'bulkCategorizeLeads': {
                 const snap = await db.collection('leads').get();
-                const CHUNK_SIZE = 200; // 2 updates per hit
                 const docs = snap.docs;
+                const CHUNK_SIZE = 200;
                 let count = 0;
 
+                const chunks = [];
                 for (let i = 0; i < docs.length; i += CHUNK_SIZE) {
-                    const chunk = docs.slice(i, i + CHUNK_SIZE);
-                    const batch = db.batch();
-                    let batchHasWork = false;
+                    chunks.push(docs.slice(i, i + CHUNK_SIZE));
+                }
 
-                    chunk.forEach(doc => {
-                        const data = doc.data();
-                        const normalized = normalizePartnerData(data);
-                        if (normalized.entryType && normalized.entryType !== data.entryType) {
-                            batch.update(doc.ref, { entryType: normalized.entryType, updatedAt: FieldValue.serverTimestamp() });
-                            batch.update(db.collection('partners').doc(doc.id), { entryType: normalized.entryType, updatedAt: FieldValue.serverTimestamp() });
-                            count++;
-                            batchHasWork = true;
-                        }
-                    });
-                    
-                    if (batchHasWork) await batch.commit();
+                const CONCURRENCY = 5;
+                for (let i = 0; i < chunks.length; i += CONCURRENCY) {
+                    const currentBatch = chunks.slice(i, i + CONCURRENCY);
+                    await Promise.all(currentBatch.map(async (chunk) => {
+                        const batch = db.batch();
+                        let batchHasWork = false;
+                        chunk.forEach(doc => {
+                            const data = doc.data();
+                            const normalized = normalizePartnerData(data);
+                            if (normalized.entryType && normalized.entryType !== data.entryType) {
+                                batch.update(doc.ref, { entryType: normalized.entryType, updatedAt: FieldValue.serverTimestamp() });
+                                batch.update(db.collection('partners').doc(doc.id), { entryType: normalized.entryType, updatedAt: FieldValue.serverTimestamp() });
+                                count++;
+                                batchHasWork = true;
+                            }
+                        });
+                        if (batchHasWork) return batch.commit();
+                        return Promise.resolve();
+                    }));
                 }
 
                 return NextResponse.json({ success: true, count });
@@ -449,7 +475,7 @@ export async function POST(req: NextRequest) {
 
             case 'bulkSavePartners': {
                 const { partners, type } = payload;
-                const CHUNK_SIZE = 200; // 2 writes per partner
+                const CHUNK_SIZE = 100; 
                 let updatedCount = 0;
                 
                 const roleMap: Record<string, string> = {
@@ -461,26 +487,33 @@ export async function POST(req: NextRequest) {
                     'investor': 'Investors'
                 };
 
+                const chunks = [];
                 for (let i = 0; i < partners.length; i += CHUNK_SIZE) {
-                    const chunk = partners.slice(i, i + CHUNK_SIZE);
-                    const batch = db.batch();
-                    
-                    for (const p of chunk) {
-                        const normalized = normalizePartnerData(p);
-                        const targetId = normalized.record_id || `IMP_${type.toUpperCase()}_${Math.random().toString(36).substring(7)}`;
-                        const updateData = {
-                            ...normalized,
-                            id: targetId,
-                            role: normalized.role || roleMap[type] || 'General',
-                            status: 'new',
-                            researchStatus: 'completed',
-                            updatedAt: FieldValue.serverTimestamp()
-                        };
-                        batch.set(db.collection('leads').doc(targetId), updateData, { merge: true });
-                        batch.set(db.collection('partners').doc(targetId), { ...updateData, type }, { merge: true });
-                        updatedCount++;
-                    }
-                    await batch.commit();
+                    chunks.push(partners.slice(i, i + CHUNK_SIZE));
+                }
+
+                const CONCURRENCY = 3;
+                for (let i = 0; i < chunks.length; i += CONCURRENCY) {
+                    const currentBatch = chunks.slice(i, i + CONCURRENCY);
+                    await Promise.all(currentBatch.map(async (chunk) => {
+                        const batch = db.batch();
+                        chunk.forEach((p: any) => {
+                            const normalized = normalizePartnerData(p);
+                            const targetId = normalized.record_id || `IMP_${type.toUpperCase()}_${Math.random().toString(36).substring(7)}`;
+                            const updateData = {
+                                ...normalized,
+                                id: targetId,
+                                role: normalized.role || roleMap[type] || 'General',
+                                status: 'new',
+                                researchStatus: 'completed',
+                                updatedAt: FieldValue.serverTimestamp()
+                            };
+                            batch.set(db.collection('leads').doc(targetId), updateData, { merge: true });
+                            batch.set(db.collection('partners').doc(targetId), { ...updateData, type }, { merge: true });
+                            updatedCount++;
+                        });
+                        return batch.commit();
+                    }));
                 }
                 
                 if (type === 'supplier' || type === 'finance' || type === 'transporter') {
