@@ -52,7 +52,7 @@ const discoveryFlow = ai.defineFlow(
         let systemPrompt = "";
 
         if (type === 'driver') {
-            searchContext = `Focus on public professional profiles on LinkedIn and established South African Trucking Groups on Facebook. Discover and map exactly ${batchSize} unique professional drivers specializing in: ${category}.`;
+            searchContext = `Focus on public professional profiles on LinkedIn and established South African Trucking Groups on Facebook. Perform professional market mapping of exactement ${batchSize} unique professional drivers specializing in: ${category}.`;
             systemPrompt = `You are an elite recruitment intelligence agent.
             Your goal is to PERFORM PROFESSIONAL MARKET MAPPING of public professional profiles for: "${category} Drivers".
             
@@ -60,9 +60,9 @@ const discoveryFlow = ai.defineFlow(
 
             STRICT RESEARCH RULES:
             1. PUBLIC DATA ONLY: Focus on identifying individuals who have published their professional availability on public networking platforms.
-            2. FORENSIC IDENTITY: You MUST identify the ACTUAL FULL NAME of the professional.
+            2. FORENSIC IDENTITY: You MUST identify the ACTUAL FULL NAME of the professional from their public profile.
             3. CERTIFICATIONS: Prioritize profiles showing valid commercial licenses (Code 14, Hazmat, etc.).
-            4. FORBIDDEN: Returning "The Driver" or "Anonymous" is a FAILURE.
+            4. FORBIDDEN: Returning "The Driver", "Anonymous", or "Unknown" is a FAILURE. You MUST find actual human names.
             5. ID: Generate a unique ID starting with 'AUTO_DRIVER_'.`;
         } else if (type === 'finance') {
             searchContext = `Focus on the National Credit Regulator (NCR) South Africa. Target registry pages starting at Page ${startPage}. Discover and extract exactly ${batchSize} unique ${category} providers.`;
