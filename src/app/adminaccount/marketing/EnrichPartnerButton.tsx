@@ -37,19 +37,19 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
         if (isDriver) {
             return `CRITICAL SYSTEM INSTRUCTION: RETURN ONLY A RAW JSON OBJECT. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
 
-ACT AS AN ELITE WORKFORCE INTELLIGENCE AGENT. YOUR MISSION IS TO VERIFY THE PROFESSIONAL STANDING OF A HEAVY VEHICLE OPERATOR.
+ACT AS AN ELITE WORKFORCE INTELLIGENCE AGENT. YOUR MISSION IS TO LOCATE DIRECT DIGITAL CONTACT CHANNELS FOR A HEAVY VEHICLE OPERATOR.
 
 TARGET ENTITY: 
-- Service Handle: ${partner.service_handle || `${partner.firstName} ${partner.lastName}`}
-- Role Category: ${partner.entryType || 'Code 14 Heavy'}
-- Listed Registry Line: ${partner.phone || partner.registry_line || 'N/A'}
+- Name/Handle: ${partner.service_handle || `${partner.firstName} ${partner.lastName}`}
+- Category: ${partner.entryType || partner.service_classification || 'Code 14 Heavy'}
+- Known Registry Line: ${partner.phone || partner.registry_line || 'N/A'} (Note: This may be a landline/switchboard).
+- Experience Profile: ${partner.notes || partner.capability_profile || 'N/A'}
 
-INVESTIGATIVE STRATEGY (DRIVER VERIFICATION):
-1. SOCIAL FOOTPRINT: Find this driver's professional profile on LinkedIn or Facebook Logistics Groups.
-2. IDENTITY AUDIT: Determine their current employment status and verifiable years of experience.
-3. CONTACT FORENSICS: Find a verified direct email address and a secondary mobile number.
-4. CERTIFICATION SIGNALS: Search for mentions of PrDP, Hazmat, or specific vehicle make expertise (e.g. Scania, Volvo).
-5. IDENTITY PERSISTENCE: You MUST return "record_id": "${partner.id}".
+INVESTIGATIVE STRATEGY (DIRECT CONTACT ENRICHMENT):
+1. SOCIAL CLUSTER SEARCH: Cross-reference this driver's name and hub (${partner.address || partner.operational_hub}) in LinkedIn and Facebook South African Trucking groups.
+2. MOBILE IDENTIFICATION: Locate a verified direct mobile/cell number. A landline is unacceptable for final output.
+3. EMAIL DISCOVERY: Find a personal or professional email address (e.g. Gmail, Outlook, or Company domain). 
+4. IDENTITY PERSISTENCE: You MUST return "record_id": "${partner.id}".
 
 REQUIRED OUTPUT FORMAT (RAW JSON ONLY):
 {
@@ -57,9 +57,9 @@ REQUIRED OUTPUT FORMAT (RAW JSON ONLY):
   "firstName": "...",
   "lastName": "...",
   "email": "Verified Direct Email",
-  "phone": "Verified Mobile",
-  "notes": "Detailed summary of experience and certifications found",
-  "address": "Primary operational region",
+  "phone": "Verified MOBILE Number (e.g. +27 72...)",
+  "notes": "Consolidated profile including verified certs (PrDP, Hazmat) and years of experience",
+  "address": "Primary Hub/Region",
   "research_status": "completed"
 }`;
         }
@@ -126,7 +126,7 @@ REQUIRED OUTPUT FORMAT (RAW JSON ONLY):
         try {
             await navigator.clipboard.writeText(aiPrompt);
             setIsCopied(true);
-            toast({ title: "Forensic Prompt Copied!", description: isDriver ? "AI will now hunt for driver experience and contacts." : "AI will now hunt for leadership identities." });
+            toast({ title: "Forensic Prompt Copied!", description: isDriver ? "AI will now hunt for direct mobile and email contacts." : "AI will now hunt for leadership identities." });
         } catch (e) {
             toast({ variant: 'destructive', title: "Copy Failed" });
         }
@@ -168,11 +168,11 @@ REQUIRED OUTPUT FORMAT (RAW JSON ONLY):
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
                             <Sparkles className="h-5 w-5 text-primary" />
-                            {isDriver ? 'Workforce Forensics' : (isNCR ? 'Phase 2: Forensic Enrichment' : 'Forensic Individual AI Research')}
+                            {isDriver ? 'Workforce Direct-Contact Forensics' : (isNCR ? 'Phase 2: Forensic Enrichment' : 'Forensic Individual AI Research')}
                         </DialogTitle>
                         <DialogDescription>
                             {isDriver 
-                                ? `Generate a deep-search prompt to verify experience and find contacts for: ${partner.service_handle || partner.firstName}`
+                                ? `Identify direct digital contact channels (Mobile & Email) for: ${partner.service_handle || partner.firstName}`
                                 : (isNCR 
                                     ? `Determine the business activity and leadership for NCR record: ${companyName}`
                                     : `Generate a deep-search prompt optimized to find actual human leadership names for ${companyName}.`)}
@@ -182,10 +182,10 @@ REQUIRED OUTPUT FORMAT (RAW JSON ONLY):
                     <div className="space-y-4 py-4">
                         <Alert className="bg-primary/5 border-primary/20">
                             <Info className="h-4 w-4 text-primary" />
-                            <AlertTitle>{isDriver ? 'Driver Verification Active' : (isNCR ? 'ActivityPass Active' : 'Anti-Placeholder Command Active')}</AlertTitle>
+                            <AlertTitle>{isDriver ? 'Mobile Discovery Active' : (isNCR ? 'ActivityPass Active' : 'Anti-Placeholder Command Active')}</AlertTitle>
                             <AlertDescription className="text-xs text-muted-foreground">
                                 {isDriver 
-                                    ? "The AI is instructed to cross-reference logistics groups and professional resumes to find direct contacts and specific make/model expertise."
+                                    ? "The AI is strictly commanded to find a direct mobile number (+27 7... or +27 8...) and a personal/professional email, bypassing the provided landline."
                                     : (isNCR 
                                         ? "The AI is instructed to find agreement types (Loan, Lease, etc.) and identify the specific human credit decision-maker."
                                         : "This prompt strictly forbids the AI from returning titles like \"The Director\" and commands it to hunt for verified human identities.")}

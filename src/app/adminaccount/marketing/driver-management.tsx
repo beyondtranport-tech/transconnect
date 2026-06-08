@@ -9,7 +9,7 @@ import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
   Loader2, PlusCircle, Users, Edit, Trash2, Send, CheckCircle, Mail, Filter, Save, 
   Search, Zap, RotateCcw, XCircle, Info, Tag, Database, ShieldCheck, Upload,
-  AlertTriangle, Phone, Globe
+  AlertTriangle, Phone, Globe, UserCheck
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
@@ -160,7 +160,7 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
 
         <div className="flex-1 overflow-y-auto p-4 space-y-6">
           {duplicates.map((group, groupIndex) => {
-             const contactPerson = group.find(r => r.contactPerson || (r.firstName && r.lastName))?.contactPerson || 'N/A';
+             const contactPerson = group.find(r => r.contactPerson || (r.firstName && r.lastName) || r.service_handle)?.contactPerson || group.find(r => r.service_handle)?.service_handle || 'N/A';
              return (
                 <Card key={groupIndex} className="shadow-none border">
                 <CardHeader className="py-3 bg-muted/30 flex flex-row justify-between items-center">
@@ -179,12 +179,12 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
                             <label htmlFor={`driver-${groupIndex}-${lead.id}`} className="text-sm cursor-pointer w-full">
                                 <div className="flex justify-between items-start">
                                     <div className="flex items-center gap-2">
-                                        <p className="font-bold">{lead.firstName} {lead.lastName}</p>
+                                        <p className="font-bold">{lead.firstName || ''} {lead.lastName || ''} {lead.service_handle || ''}</p>
                                         {lead.source === 'Member' && <Badge className="bg-green-100 text-green-700 text-[10px]">Active Member</Badge>}
                                     </div>
                                     <Badge variant="outline" className="text-[10px] uppercase">{lead.source}</Badge>
                                 </div>
-                                <p className="text-xs text-muted-foreground mt-2">{lead.email || 'No Email'} • {lead.phone || 'No Phone'}</p>
+                                <p className="text-xs text-muted-foreground mt-2">{lead.email || 'No Email'} • {lead.phone || lead.registry_line || 'No Phone'}</p>
                             </label>
                         </div>
                     ))}
@@ -329,9 +329,15 @@ export default function DriverManagement() {
   const auditStats = useMemo(() => {
       const stats = { missingEmail: 0, missingPhone: 0, missingLocation: 0 };
       partners.forEach(p => {
-          if (!p.email || p.email === 'null' || p.email === 'n/a') stats.missingEmail++;
-          if (!p.phone || p.phone === 'null' || p.phone === 'n/a') stats.missingPhone++;
-          if (!p.address || p.address === 'null') stats.missingLocation++;
+          const email = (p.email || '').toString().toLowerCase().trim();
+          const isInvalidEmail = !email || email === 'null' || email === 'n/a';
+          if (isInvalidEmail) stats.missingEmail++;
+          
+          const phone = (p.phone || p.registry_line || '').toString().trim();
+          const isMobile = phone.startsWith('07') || phone.startsWith('06') || phone.startsWith('08') || phone.startsWith('+277') || phone.startsWith('+276') || phone.startsWith('+278');
+          if (!isMobile) stats.missingPhone++;
+          
+          if (!p.address && !p.operational_hub) stats.missingLocation++;
       });
       return stats;
   }, [partners]);
@@ -343,10 +349,19 @@ export default function DriverManagement() {
         const matchesCategory = categoryFilter === 'all' || p.entryType === categoryFilter;
         
         let matchesData = true;
-        if (dataFilter === 'no-email') matchesData = !p.email;
-        else if (dataFilter === 'no-phone') matchesData = !p.phone;
-        else if (dataFilter === 'has-email') matchesData = !!p.email;
-        else if (dataFilter === 'has-phone') matchesData = !!p.phone;
+        const email = (p.email || '').toString().toLowerCase().trim();
+        const isInvalidEmail = !email || email === 'null' || email === 'n/a';
+
+        if (dataFilter === 'no-email') matchesData = isInvalidEmail;
+        else if (dataFilter === 'no-phone') {
+            const phone = (p.phone || p.registry_line || '').toString().trim();
+            matchesData = !(phone.startsWith('07') || phone.startsWith('06') || phone.startsWith('08') || phone.startsWith('+277') || phone.startsWith('+276') || phone.startsWith('+278'));
+        }
+        else if (dataFilter === 'has-email') matchesData = !isInvalidEmail;
+        else if (dataFilter === 'has-phone') {
+             const phone = (p.phone || p.registry_line || '').toString().trim();
+             matchesData = phone.startsWith('07') || phone.startsWith('06') || phone.startsWith('08') || phone.startsWith('+277') || phone.startsWith('+276') || phone.startsWith('+278');
+        }
 
         return matchesStatus && matchesAssignee && matchesCategory && matchesData;
     });
@@ -357,7 +372,7 @@ export default function DriverManagement() {
   }, [partners, selectedIds]);
 
   const handleEnhanceBatch = (size: number) => {
-      const targets = partners.filter(p => !p.email && p.researchStatus !== 'researching').slice(0, size);
+      const targets = partners.filter(p => (!p.email || p.email === 'null') && p.researchStatus !== 'researching').slice(0, size);
       if (targets.length === 0) {
           toast({ title: "No candidates found" });
           return;
@@ -401,13 +416,36 @@ export default function DriverManagement() {
   }
 
   const columns: ColumnDef<any>[] = [
-    { header: 'Name', cell: ({ row }) => <div className="font-bold">{row.original.firstName} {row.original.lastName}</div> },
-    { accessorKey: 'entryType', header: 'License', cell: ({row}) => <Badge variant="outline" className="text-[10px] uppercase font-bold">{row.original.entryType || 'General'}</Badge> },
-    { accessorKey: 'email', header: 'Email' },
-    { accessorKey: 'phone', header: 'Phone' },
+    { 
+        header: 'Professional Handle', 
+        cell: ({ row }) => (
+            <div className="flex flex-col">
+                <span className="font-bold">{row.original.service_handle || `${row.original.firstName} ${row.original.lastName}`}</span>
+                <span className="text-[10px] text-muted-foreground uppercase font-black">{row.original.operational_hub || row.original.address || 'SA Region'}</span>
+            </div>
+        )
+    },
+    { accessorKey: 'entryType', header: 'License', cell: ({row}) => <Badge variant="outline" className="text-[10px] uppercase font-bold">{row.original.entryType || row.original.service_classification || 'General'}</Badge> },
+    { 
+        header: 'Contact Intel', 
+        cell: ({row}) => (
+            <div className="text-xs">
+                <div className="flex items-center gap-1">
+                    <Mail className="h-3 w-3 opacity-50"/>
+                    <span className={cn(!row.original.email || row.original.email === 'null' ? "italic text-muted-foreground" : "font-medium")}>
+                        {(!row.original.email || row.original.email === 'null') ? 'Missing Email' : row.original.email}
+                    </span>
+                </div>
+                <div className="flex items-center gap-1 mt-0.5">
+                    <Phone className="h-3 w-3 opacity-50"/>
+                    <span className="font-mono">{row.original.phone || row.original.registry_line || 'No Line'}</span>
+                </div>
+            </div>
+        )
+    },
     { accessorKey: 'researchStatus', header: 'Enriched', cell: ({row}) => {
         if (row.original.researchStatus === 'researching') return <Badge variant="outline" className="animate-pulse text-amber-600 border-amber-200 bg-amber-50 text-[10px]">Searching...</Badge>;
-        if (row.original.email) return <Badge variant="default" className="bg-green-100 text-green-700 border-green-200 text-[10px]">Enriched</Badge>;
+        if (row.original.email && row.original.email !== 'null') return <Badge variant="default" className="bg-green-100 text-green-700 border-green-200 text-[10px]">Enriched</Badge>;
         return <span className="text-xs text-muted-foreground">-</span>;
     }},
     { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
@@ -444,7 +482,7 @@ export default function DriverManagement() {
                     <Users /> Driver Talent Registry
                     <Badge variant="outline" className="ml-2 font-black border-primary text-primary">{partners.length} Records</Badge>
                 </CardTitle>
-                <CardDescription>Professional database of Code 14, Code 10, and specialized heavy vehicle drivers.</CardDescription>
+                <CardDescription>Industrial database of Code 14, Code 10, and specialized heavy vehicle operators.</CardDescription>
             </div>
             <div className="flex flex-wrap items-center gap-2">
                 <Button variant="outline" size="sm" onClick={handleResetQueue} disabled={isResetting}>
@@ -475,7 +513,7 @@ export default function DriverManagement() {
                 <CardContent className="p-4 flex items-center gap-3">
                     <div className="bg-amber-100 p-2 rounded-lg"><Phone className="h-4 w-4 text-amber-600"/></div>
                     <div>
-                        <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest leading-none">Missing Phone</p>
+                        <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest leading-none">Non-Mobile Line</p>
                         <p className="text-xl font-black mt-1">{auditStats.missingPhone}</p>
                     </div>
                 </CardContent>
@@ -484,7 +522,7 @@ export default function DriverManagement() {
                 <CardContent className="p-4 flex items-center gap-3">
                     <div className="bg-amber-100 p-2 rounded-lg"><Globe className="h-4 w-4 text-amber-600"/></div>
                     <div>
-                        <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest leading-none">Missing Location</p>
+                        <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest leading-none">Hub Unspecified</p>
                         <p className="text-xl font-black mt-1">{auditStats.missingLocation}</p>
                     </div>
                 </CardContent>
@@ -497,7 +535,7 @@ export default function DriverManagement() {
                     <div className="space-y-2">
                         <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status</Label>
                         <Select value={statusFilter} onValueChange={setStatusFilter}>
-                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Statuses</SelectItem>
                                 <SelectItem value="new">New</SelectItem>
@@ -525,13 +563,15 @@ export default function DriverManagement() {
                         </Select>
                     </div>
                     <div className="space-y-2">
-                        <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Search className="h-3 w-3"/> Data Integrity</Label>
+                        <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Search className="h-3 w-3"/> Data Filter</Label>
                         <Select value={dataFilter} onValueChange={setDataFilter}>
                             <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Records</SelectItem>
                                 <SelectItem value="has-email">Has Email</SelectItem>
                                 <SelectItem value="no-email">Missing Email</SelectItem>
+                                <SelectItem value="has-phone">Verified Mobile</SelectItem>
+                                <SelectItem value="no-phone">Non-Mobile Line</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
@@ -543,3 +583,4 @@ export default function DriverManagement() {
     </>
   );
 }
+

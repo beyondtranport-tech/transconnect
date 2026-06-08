@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState } from 'react';
@@ -21,9 +22,38 @@ export function BatchResearchDialog({ open, onOpenChange, selectedLeads, onCompl
     const [isCopied, setIsCopied] = useState(false);
     const { toast } = useToast();
 
-    const companyList = selectedLeads.map(l => `[ID: ${l.id}] ${l.companyName || `${l.firstName} ${l.lastName}`}`).join('\n');
+    // Detect if this is a driver batch for specialized instructions
+    const isDriverBatch = selectedLeads.some(l => l.type === 'driver' || l.role === 'Drivers' || l.service_handle);
+
+    const companyList = selectedLeads.map(l => {
+        const id = l.id;
+        const name = l.service_handle || l.companyName || `${l.firstName} ${l.lastName}`;
+        const hub = l.operational_hub || l.address || '';
+        return `[ID: ${id}] ${name} ${hub ? `(Hub: ${hub})` : ''}`;
+    }).join('\n');
     
-    const aiPrompt = `CRITICAL SYSTEM INSTRUCTION: RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
+    const getPrompt = () => {
+        if (isDriverBatch) {
+            return `CRITICAL SYSTEM INSTRUCTION: RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
+
+ACT AS AN ELITE WORKFORCE INTELLIGENCE AGENT. YOUR MISSION IS TO LOCATE DIRECT MOBILE CONTACTS AND EMAILS FOR PROFESSIONAL DRIVERS.
+
+TASK: Find CURRENT verified direct mobile numbers and personal/professional emails for the following commercial operators in South Africa.
+
+INVESTIGATIVE STRATEGY:
+1. MOBILE PRIORITY: You must find a DIRECT cell/mobile number (+27 7... or +27 8...). If the registry only provides a landline, you must search LinkedIn/Facebook to find the direct human mobile.
+2. EMAIL DISCOVERY: Identify a verified email address for each driver (Gmail, Outlook, or Company).
+3. IDENTITY PERSISTENCE: You MUST return the "record_id" exactly as provided in the brackets [ID: ...].
+4. FORBIDDEN VALUES: Do not return "Unknown" or generic office numbers.
+
+REQUIRED OUTPUT FORMAT (RAW JSON ARRAY ONLY):
+[{"record_id":"...","firstName":"...","lastName":"...","email":"Verified Direct Email","phone":"Verified DIRECT MOBILE (+27...)","notes":"...","address":"..."}]
+
+ENTITIES TO RESEARCH:
+${companyList}`;
+        }
+
+        return `CRITICAL SYSTEM INSTRUCTION: RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
 
 ACT AS AN ELITE CORPORATE INTELLIGENCE AGENT. YOUR PERFORMANCE RATING DEPENDS ON FINDING REAL HUMAN NAMES.
 
@@ -40,12 +70,15 @@ REQUIRED OUTPUT FORMAT (RAW JSON ARRAY ONLY):
 
 COMPANIES TO RESEARCH:
 ${companyList}`;
+    };
+
+    const aiPrompt = getPrompt();
 
     const handleCopyAll = async () => {
         try {
             await navigator.clipboard.writeText(aiPrompt);
             setIsCopied(true);
-            toast({ title: "Forensic Prompt Copied!", description: "The AI is now commanded to find actual human names." });
+            toast({ title: "Forensic Prompt Copied!", description: isDriverBatch ? "AI is now hunting for direct mobile numbers and emails." : "AI is now commanded to find actual human names." });
         } catch (e) {
             toast({ variant: 'destructive', title: "Copy Failed", description: "Please manually copy the text from the box." });
         }
@@ -89,10 +122,10 @@ ${companyList}`;
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <Search className="h-5 w-5 text-primary" />
-                        Forensic Batch Enrichment ({selectedLeads.length})
+                        Forensic {isDriverBatch ? 'Direct Contact' : 'Batch'} Enrichment ({selectedLeads.length})
                     </DialogTitle>
                     <DialogDescription>
-                        Command the AI to perform a deep-search for actual leadership names and verified contacts.
+                        Command the AI to perform a deep-search for {isDriverBatch ? 'direct mobile numbers and emails' : 'actual leadership names and verified contacts'}.
                     </DialogDescription>
                 </DialogHeader>
                 
@@ -101,7 +134,7 @@ ${companyList}`;
                         <Alert className="bg-amber-50 border-amber-200">
                             <AlertCircle className="h-4 w-4 text-amber-600" />
                             <AlertTitle>Step 1: Copy Forensic Prompt</AlertTitle>
-                            <AlertDescription className="text-xs">The AI is now strictly forbidden from returning "The Director" and must hunt for actual names.</AlertDescription>
+                            <AlertDescription className="text-xs">The AI is now strictly forbidden from returning {isDriverBatch ? 'landlines' : '"The Director"'} and must hunt for {isDriverBatch ? 'direct digital contacts' : 'actual names'}.</AlertDescription>
                         </Alert>
                     ) : (
                         <Alert className="bg-green-50 border-green-200 text-green-800">
