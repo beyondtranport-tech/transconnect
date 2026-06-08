@@ -2,6 +2,7 @@
 /**
  * @fileOverview Automated industrial discovery agent.
  * Performs deep-search and extraction of company records directly from the app.
+ * Scaled to handle high-density 100-record batches.
  */
 
 import { ai, geminiModel } from '@/ai/genkit';
@@ -12,7 +13,7 @@ const DiscoveryInputSchema = z.object({
   category: z.string(),
   type: z.enum(['supplier', 'finance']),
   startPage: z.number().optional().default(1),
-  batchSize: z.number().optional().default(20),
+  batchSize: z.number().optional().default(100),
 });
 export type DiscoveryInput = z.infer<typeof DiscoveryInputSchema>;
 
@@ -46,9 +47,9 @@ const discoveryFlow = ai.defineFlow(
         
         let searchContext = "";
         if (type === 'finance') {
-            searchContext = `Focus on the National Credit Regulator (NCR) South Africa. Target registry pages starting at Page ${startPage}. Find 20 unique ${category} providers.`;
+            searchContext = `Focus on the National Credit Regulator (NCR) South Africa. Target registry pages starting at Page ${startPage}. Discover and extract exactly ${batchSize} unique ${category} providers.`;
         } else {
-            searchContext = `Focus on industrial hubs in South Africa for ${category}. Find 20 unique independent suppliers.`;
+            searchContext = `Focus on industrial hubs in South Africa for ${category}. Discover and extract exactly ${batchSize} unique independent suppliers.`;
         }
 
         const systemPrompt = `You are an elite market intelligence agent.
@@ -67,7 +68,7 @@ const discoveryFlow = ai.defineFlow(
             model: geminiModel,
             tools: [googleSearchTool],
             system: systemPrompt,
-            prompt: `Find ${batchSize} records for ${category} in South Africa.`,
+            prompt: `Find ${batchSize} records for ${category} in South Africa. Start search from the context provided.`,
             output: {
                 schema: DiscoveryOutputSchema
             }

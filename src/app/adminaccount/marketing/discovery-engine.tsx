@@ -16,6 +16,7 @@ import { getClientSideAuthToken } from '@/firebase';
 import { useConfig } from '@/hooks/use-config';
 import { cn, formatDateSafe } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
 
 export const supplierCategories = [
     "Accessories", 
@@ -221,7 +222,7 @@ const DiscoveryTab = ({ category, currentCount, onRefresh }: { category: string,
                     <div className="pt-2 flex flex-col gap-2">
                          <Button onClick={handleAutoDiscover} disabled={isAutoDiscovering} size="lg" className="w-full gap-2 bg-amber-600 hover:bg-amber-700 shadow-lg group">
                             {isAutoDiscovering ? <Loader2 className="h-5 w-5 animate-spin"/> : <Zap className="h-5 w-5 fill-amber-300 text-amber-300 group-hover:scale-125 transition-transform" />}
-                            Run Automated Discovery (Batch of 20)
+                            Run Automated Discovery (Batch of 100)
                         </Button>
                         <Separator className="my-2" />
                         <Button onClick={handleCopy} size="lg" variant="outline" className="w-full gap-2 shadow-sm">

@@ -166,14 +166,14 @@ const DiscoveryTab = ({ category, currentCount, onRefresh }: { category: string,
                             </div>
                         </div>
                         <p className="text-[10px] text-muted-foreground leading-tight italic">
-                            System targets 20 records per run (1 page) starting from <strong>Page {startPage}</strong>.
+                            System targets 100 records per run (5 pages) starting from <strong>Page {startPage}</strong>.
                         </p>
                     </div>
 
                     <div className="pt-2 flex flex-col gap-2">
                          <Button onClick={handleAutoDiscover} disabled={isAutoDiscovering} size="lg" className="w-full gap-2 bg-amber-600 hover:bg-amber-700 shadow-lg group">
                             {isAutoDiscovering ? <Loader2 className="h-5 w-5 animate-spin"/> : <Zap className="h-5 w-5 fill-amber-300 text-amber-300 group-hover:scale-125 transition-transform" />}
-                            Run Automated Discovery (Batch of 20)
+                            Run Automated Discovery (Batch of 100)
                         </Button>
                         <Separator className="my-2" />
                         <Button onClick={handleCopy} size="lg" variant="outline" className="w-full gap-2 shadow-sm border-amber-200 text-amber-700 hover:bg-amber-50">
