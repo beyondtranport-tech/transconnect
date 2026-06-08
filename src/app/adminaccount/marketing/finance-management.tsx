@@ -41,8 +41,17 @@ async function performAdminAction(token: string, action: string, payload: any) {
     body: JSON.stringify({ action, payload }),
     cache: 'no-store'
   });
+  
+  if (!response.ok) {
+    const text = await response.text();
+    if (text.includes('<html>')) {
+        throw new Error("Server Timeout: The database operation is taking longer than expected due to high volume. Please try again in 30 seconds.");
+    }
+    throw new Error(text || `API Error: ${action}`);
+  }
+
   const result = await response.json();
-  if (!response.ok || !result.success) throw new Error(result.error || `API Error: ${action}`);
+  if (!result.success) throw new Error(result.error || `API Error: ${action}`);
   return result;
 }
 
@@ -75,12 +84,18 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
       const response = await fetch('/api/admin', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'findDuplicateLeads' }),
+        body: JSON.stringify({ action: 'findDuplicateLeads', payload: {} }),
         cache: 'no-store'
       });
+      
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text.includes('<html>') ? "Server Timeout: Scanning large database took too long. Please try again." : text);
+      }
+
       const result = await response.json();
       if (!result.success) throw new Error(result.error);
-      setDuplicates(result.data);
+      setDuplicates(result.data || []);
       if (result.data.length === 0) {
         toast({ title: "No duplicates found." });
       } else {
@@ -118,14 +133,7 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
     try {
       const token = await getClientSideAuthToken();
       if (!token) throw new Error("Auth failed.");
-      const response = await fetch('/api/admin', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'deleteLeads', payload: { leadIds: idsToDelete } }),
-        cache: 'no-store'
-      });
-      const result = await response.json();
-      if (!result.success) throw new Error(result.error);
+      await performAdminAction(token, 'deleteLeads', { leadIds: idsToDelete });
 
       toast({ title: "Duplicates Cleaned!", description: `${idsToDelete.length} duplicate records deleted.` });
       onComplete();
@@ -372,8 +380,14 @@ export default function FinanceManagement() {
             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'resetResearchQueue', payload: { type: 'finance' } }),
           });
+          
+          if (!response.ok) {
+              const text = await response.text();
+              throw new Error(text.includes('<html>') ? "Server Timeout: Resetting queue is taking longer than expected." : text);
+          }
+
           const result = await response.json();
-          if (!response.ok) throw new Error(result.error);
+          if (!result.success) throw new Error(result.error);
           toast({ title: "Queue Reset", description: `${result.count} records set back to 'New'.` });
           forceRefresh();
       } catch (e: any) {

@@ -46,7 +46,10 @@ async function performAdminAction(token: string, action: string, payload: any) {
   
   if (!response.ok) {
       const text = await response.text();
-      throw new Error(text.includes('<html>') ? "Server Error (Gateway Timeout). Your database is large; operations are still processing in the background. Please refresh in 30 seconds." : text);
+      if (text.includes('<html>')) {
+          throw new Error("Server Timeout: The database operation is taking longer than expected due to high volume. Please try again in 30 seconds.");
+      }
+      throw new Error(text || `API Error: ${action}`);
   }
 
   const result = await response.json();
@@ -86,6 +89,12 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
         body: JSON.stringify({ action: 'findDuplicateLeads', payload: {} }),
         cache: 'no-store'
       });
+      
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text.includes('<html>') ? "Server Timeout: Scanning large database took too long. Please try again." : text);
+      }
+
       const result = await response.json();
       if (!result.success) throw new Error(result.error);
       setDuplicates(result.data);
@@ -639,7 +648,7 @@ export default function SupplierManagement() {
                     <div className="space-y-2">
                         <Label className="text-[10px] font-black uppercase text-muted-foreground">Pipeline Status</Label>
                         <Select value={statusFilter} onValueChange={setStatusFilter}>
-                            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Statuses</SelectItem>
                                 <SelectItem value="new">New</SelectItem>
@@ -653,7 +662,7 @@ export default function SupplierManagement() {
                     <div className="space-y-2">
                         <Label className="text-[10px] font-black uppercase text-muted-foreground">Industry Category</Label>
                         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Categories</SelectItem>
                                 {supplierCategories.map(cat => (
@@ -665,7 +674,7 @@ export default function SupplierManagement() {
                     <div className="space-y-2">
                         <Label className="text-[10px] font-black uppercase text-muted-foreground">Assignee</Label>
                         <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-                            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
                             <SelectContent><SelectItem value="all">All Staff</SelectItem><SelectItem value="none">Unallocated</SelectItem>{staff.map(s => <SelectItem key={s.id} value={s.id}>{s.firstName} {s.lastName}</SelectItem>)}</SelectContent>
                         </Select>
                     </div>

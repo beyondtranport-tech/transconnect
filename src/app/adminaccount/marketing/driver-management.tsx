@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -36,7 +35,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { driverCategories } from './driver-discovery';
 
-// Schema at the top level
+// Schema at the top level to prevent ReferenceErrors
 const partnerSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
@@ -59,8 +58,17 @@ async function performAdminAction(token: string, action: string, payload: any) {
     body: JSON.stringify({ action, payload }),
     cache: 'no-store'
   });
+  
+  if (!response.ok) {
+      const text = await response.text();
+      if (text.includes('<html>')) {
+          throw new Error("Server Timeout: This operation is taking longer than expected due to the large volume of records. It may still be processing in the background.");
+      }
+      throw new Error(text || `API Error: ${action}`);
+  }
+
   const result = await response.json();
-  if (!response.ok || !result.success) throw new Error(result.error || `API Error: ${action}`);
+  if (!result.success) throw new Error(result.error || `API Error: ${action}`);
   return result;
 }
 
@@ -82,6 +90,12 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
         body: JSON.stringify({ action: 'findDuplicateLeads' }),
         cache: 'no-store'
       });
+
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text.includes('<html>') ? "Server Timeout: Scanning 9,000+ records took too long. Please try again." : text);
+      }
+
       const result = await response.json();
       if (!result.success) throw new Error(result.error);
       setDuplicates(result.data);
@@ -583,4 +597,3 @@ export default function DriverManagement() {
     </>
   );
 }
-

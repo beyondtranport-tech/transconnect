@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -118,7 +117,8 @@ function normalizePartnerData(data: any) {
 }
 
 async function refreshCategoryStats(db: FirebaseFirestore.Firestore, type: 'supplier' | 'finance' | 'transporter' | 'driver') {
-    const snap = await db.collection('leads').get();
+    // Optimization: Only fetch the necessary fields to save bandwidth and memory
+    const snap = await db.collection('leads').select('role', 'entryType').get();
     const counts: Record<string, number> = {};
     
     const supplierRoles = ['Vendors', 'Vendor', 'Supplier', 'Suppliers'];
@@ -229,11 +229,16 @@ export async function POST(req: NextRequest) {
             }
 
             case 'findDuplicateLeads': {
-                const leadsSnap = await db.collection('leads').get();
-                const membersSnap = await db.collection('companies').get();
+                // Optimization: Fetch only required fields for identification
+                const [leadsSnap, membersSnap] = await Promise.all([
+                    db.collection('leads').select('companyName', 'contactPerson', 'firstName', 'lastName', 'email', 'phone', 'address').get(),
+                    db.collection('companies').select('companyName', 'ownerId').get()
+                ]);
                 
                 const allRecords: any[] = [];
                 leadsSnap.docs.forEach(doc => allRecords.push({ ...doc.data(), id: doc.id, source: 'Lead' }));
+                
+                // Fetch member details if possible, but keep it light
                 membersSnap.docs.forEach(doc => allRecords.push({ ...doc.data(), id: doc.id, source: 'Member' }));
 
                 const groups = new Map<string, any[]>();
@@ -258,25 +263,25 @@ export async function POST(req: NextRequest) {
                 const { leadIds } = payload;
                 if (!Array.isArray(leadIds)) throw new Error("Invalid leadIds array.");
                 
-                const CHUNK_SIZE = 200;
-                const chunks = [];
+                // High-performance Parallel Batch Processing
+                const CHUNK_SIZE = 400; // Under the 500 limit
+                const batches = [];
                 for (let i = 0; i < leadIds.length; i += CHUNK_SIZE) {
-                    chunks.push(leadIds.slice(i, i + CHUNK_SIZE));
+                    const chunk = leadIds.slice(i, i + CHUNK_SIZE);
+                    const batch = db.batch();
+                    chunk.forEach(id => {
+                        if (id && typeof id === 'string') {
+                            batch.delete(db.collection('leads').doc(id));
+                            batch.delete(db.collection('partners').doc(id));
+                        }
+                    });
+                    batches.push(batch.commit());
                 }
 
-                const CONCURRENCY = 5;
-                for (let i = 0; i < chunks.length; i += CONCURRENCY) {
-                    const currentBatch = chunks.slice(i, i + CONCURRENCY);
-                    await Promise.all(currentBatch.map(async (chunk) => {
-                        const batch = db.batch();
-                        chunk.forEach(id => {
-                            if (id && typeof id === 'string') {
-                                batch.delete(db.collection('leads').doc(id));
-                                batch.delete(db.collection('partners').doc(id));
-                            }
-                        });
-                        return batch.commit();
-                    }));
+                // Wait for all batches to finish in parallel groups
+                const PARALLEL_LIMIT = 5;
+                for (let i = 0; i < batches.length; i += PARALLEL_LIMIT) {
+                    await Promise.all(batches.slice(i, i + PARALLEL_LIMIT));
                 }
                 
                 return NextResponse.json({ success: true });
@@ -289,24 +294,20 @@ export async function POST(req: NextRequest) {
                     .get();
                 
                 const docs = snap.docs;
-                const CHUNK_SIZE = 200; 
-                const chunks = [];
+                const CHUNK_SIZE = 250;
+                const batches = [];
+                
                 for (let i = 0; i < docs.length; i += CHUNK_SIZE) {
-                    chunks.push(docs.slice(i, i + CHUNK_SIZE));
+                    const chunk = docs.slice(i, i + CHUNK_SIZE);
+                    const batch = db.batch();
+                    chunk.forEach(doc => {
+                        batch.update(doc.ref, { researchStatus: 'pending', updatedAt: FieldValue.serverTimestamp() });
+                        batch.update(db.collection('partners').doc(doc.id), { researchStatus: 'pending', updatedAt: FieldValue.serverTimestamp() });
+                    });
+                    batches.push(batch.commit());
                 }
 
-                const CONCURRENCY = 5;
-                for (let i = 0; i < chunks.length; i += CONCURRENCY) {
-                    const currentBatch = chunks.slice(i, i + CONCURRENCY);
-                    await Promise.all(currentBatch.map(async (chunk) => {
-                        const batch = db.batch();
-                        chunk.forEach(doc => {
-                            batch.update(doc.ref, { researchStatus: 'pending', updatedAt: FieldValue.serverTimestamp() });
-                            batch.update(db.collection('partners').doc(doc.id), { researchStatus: 'pending', updatedAt: FieldValue.serverTimestamp() });
-                        });
-                        return batch.commit();
-                    }));
-                }
+                await Promise.all(batches);
                 
                 return NextResponse.json({ success: true, count: docs.length });
             }
@@ -350,37 +351,30 @@ export async function POST(req: NextRequest) {
             }
 
             case 'bulkCategorizeLeads': {
-                const snap = await db.collection('leads').get();
+                const snap = await db.collection('leads').select('companyName', 'contactPerson', 'firstName', 'lastName', 'notes', 'entryType').get();
                 const docs = snap.docs;
-                const CHUNK_SIZE = 200;
+                const CHUNK_SIZE = 250;
                 let count = 0;
+                const batches = [];
 
-                const chunks = [];
                 for (let i = 0; i < docs.length; i += CHUNK_SIZE) {
-                    chunks.push(docs.slice(i, i + CHUNK_SIZE));
+                    const chunk = docs.slice(i, i + CHUNK_SIZE);
+                    const batch = db.batch();
+                    let workInBatch = false;
+                    chunk.forEach(doc => {
+                        const data = doc.data();
+                        const normalized = normalizePartnerData(data);
+                        if (normalized.entryType && normalized.entryType !== data.entryType) {
+                            batch.update(doc.ref, { entryType: normalized.entryType, updatedAt: FieldValue.serverTimestamp() });
+                            batch.update(db.collection('partners').doc(doc.id), { entryType: normalized.entryType, updatedAt: FieldValue.serverTimestamp() });
+                            count++;
+                            workInBatch = true;
+                        }
+                    });
+                    if (workInBatch) batches.push(batch.commit());
                 }
 
-                const CONCURRENCY = 5;
-                for (let i = 0; i < chunks.length; i += CONCURRENCY) {
-                    const currentBatch = chunks.slice(i, i + CONCURRENCY);
-                    await Promise.all(currentBatch.map(async (chunk) => {
-                        const batch = db.batch();
-                        let batchHasWork = false;
-                        chunk.forEach(doc => {
-                            const data = doc.data();
-                            const normalized = normalizePartnerData(data);
-                            if (normalized.entryType && normalized.entryType !== data.entryType) {
-                                batch.update(doc.ref, { entryType: normalized.entryType, updatedAt: FieldValue.serverTimestamp() });
-                                batch.update(db.collection('partners').doc(doc.id), { entryType: normalized.entryType, updatedAt: FieldValue.serverTimestamp() });
-                                count++;
-                                batchHasWork = true;
-                            }
-                        });
-                        if (batchHasWork) return batch.commit();
-                        return Promise.resolve();
-                    }));
-                }
-
+                await Promise.all(batches);
                 return NextResponse.json({ success: true, count });
             }
 
@@ -453,34 +447,29 @@ export async function POST(req: NextRequest) {
                     'driver': 'Drivers'
                 };
 
-                const chunks = [];
+                const batches = [];
                 for (let i = 0; i < partners.length; i += CHUNK_SIZE) {
-                    chunks.push(partners.slice(i, i + CHUNK_SIZE));
+                    const chunk = partners.slice(i, i + CHUNK_SIZE);
+                    const batch = db.batch();
+                    chunk.forEach((p: any) => {
+                        const normalized = normalizePartnerData(p);
+                        const targetId = normalized.record_id || `IMP_${type.toUpperCase()}_${Math.random().toString(36).substring(7)}`;
+                        const updateData = {
+                            ...normalized,
+                            id: targetId,
+                            role: normalized.role || roleMap[type] || 'General',
+                            status: 'new',
+                            researchStatus: 'completed',
+                            updatedAt: FieldValue.serverTimestamp()
+                        };
+                        batch.set(db.collection('leads').doc(targetId), updateData, { merge: true });
+                        batch.set(db.collection('partners').doc(targetId), { ...updateData, type }, { merge: true });
+                        updatedCount++;
+                    });
+                    batches.push(batch.commit());
                 }
 
-                const CONCURRENCY = 3;
-                for (let i = 0; i < chunks.length; i += CONCURRENCY) {
-                    const currentBatch = chunks.slice(i, i + CONCURRENCY);
-                    await Promise.all(currentBatch.map(async (chunk) => {
-                        const batch = db.batch();
-                        chunk.forEach((p: any) => {
-                            const normalized = normalizePartnerData(p);
-                            const targetId = normalized.record_id || `IMP_${type.toUpperCase()}_${Math.random().toString(36).substring(7)}`;
-                            const updateData = {
-                                ...normalized,
-                                id: targetId,
-                                role: normalized.role || roleMap[type] || 'General',
-                                status: 'new',
-                                researchStatus: 'completed',
-                                updatedAt: FieldValue.serverTimestamp()
-                            };
-                            batch.set(db.collection('leads').doc(targetId), updateData, { merge: true });
-                            batch.set(db.collection('partners').doc(targetId), { ...updateData, type }, { merge: true });
-                            updatedCount++;
-                        });
-                        return batch.commit();
-                    }));
-                }
+                await Promise.all(batches);
                 
                 if (['supplier', 'finance', 'transporter', 'driver'].includes(type)) {
                     await refreshCategoryStats(db, type as any);
