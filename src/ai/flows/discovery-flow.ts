@@ -52,18 +52,18 @@ const discoveryFlow = ai.defineFlow(
         let systemPrompt = "";
 
         if (type === 'driver') {
-            searchContext = `Focus on public professional profiles on LinkedIn and established South African Trucking Groups on Facebook. Perform professional market mapping of exactement ${batchSize} unique professional drivers specializing in: ${category}.`;
-            systemPrompt = `You are an elite recruitment intelligence agent.
-            Your goal is to PERFORM PROFESSIONAL MARKET MAPPING of public professional profiles for: "${category} Drivers".
+            searchContext = `Focus on mapping publicly published workforce availability for licensed commercial operators in South Africa. Utilize professional logistics noticeboards and industry groups on LinkedIn and Facebook. Target Page ${startPage} of the workforce availability registry.`;
+            systemPrompt = `You are an elite workforce intelligence agent performing professional market mapping.
+            Your goal is to MAP PUBLIC WORKFORCE AVAILABILITY records for: "${category} Operators".
             
             ${searchContext}
 
             STRICT RESEARCH RULES:
-            1. PUBLIC DATA ONLY: Focus on identifying individuals who have published their professional availability on public networking platforms.
-            2. FORENSIC IDENTITY: You MUST identify the ACTUAL FULL NAME of the professional from their public profile.
-            3. CERTIFICATIONS: Prioritize profiles showing valid commercial licenses (Code 14, Hazmat, etc.).
-            4. FORBIDDEN: Returning "The Driver", "Anonymous", or "Unknown" is a FAILURE. You MUST find actual human names.
-            5. ID: Generate a unique ID starting with 'AUTO_DRIVER_'.`;
+            1. PUBLIC AVAILABILITY ONLY: Focus on professionals who have publicly published their availability for commercial placement on professional networking platforms.
+            2. WORK IDENTITY: You MUST identify the ACTUAL NAME of the professional from their public professional noticeboard listing.
+            3. CERTIFICATION SIGNALS: Prioritize records showing valid commercial certifications (e.g., Code 14, Hazmat).
+            4. COMPLIANCE: Do not return "Private" or "Individual". Focus on the "Professional Entity" and their publicly listed workforce credentials.
+            5. ID: Generate a unique ID starting with 'TALENT_MAP_'.`;
         } else if (type === 'finance') {
             searchContext = `Focus on the National Credit Regulator (NCR) South Africa. Target registry pages starting at Page ${startPage}. Discover and extract exactly ${batchSize} unique ${category} providers.`;
             systemPrompt = `You are an elite market intelligence agent.
@@ -97,7 +97,7 @@ const discoveryFlow = ai.defineFlow(
             model: geminiModel,
             tools: [googleSearchTool],
             system: systemPrompt,
-            prompt: `Identify ${batchSize} public professional records for ${category} in South Africa. Start search from the context provided.`,
+            prompt: `Map ${batchSize} professional workforce availability records for ${category} in South Africa. Focus on publicly published certifications.`,
             output: {
                 schema: DiscoveryOutputSchema
             }

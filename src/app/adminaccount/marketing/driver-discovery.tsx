@@ -42,36 +42,34 @@ function generateDiscoveryPrompt(category: string, startPage: number) {
 
     return `CRITICAL SYSTEM INSTRUCTION: RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION. NO EXPLANATORY TEXT.
 
-ACT AS AN ELITE RECRUITMENT INTELLIGENCE AGENT PERFORMING PROFESSIONAL MARKET MAPPING.
+ACT AS AN ELITE WORKFORCE INTELLIGENCE AGENT PERFORMING INDUSTRIAL TALENT MAPPING. 
 
-TASK: Identify and map 100 PUBLIC PROFESSIONAL PROFILES of individuals in SOUTH AFRICA who are: "${category} Truck Drivers".
+TASK: Map 100 PUBLICLY PUBLISHED professional workforce availability records for licensed commercial operators in SOUTH AFRICA specializing in: "${category}".
 
-SOURCE FOCUS: Extract data from public professional listings on LinkedIn, professional driver networks, and verified industry talent registries.
+SOURCE CONTEXT: Extract data from professional logistics networks, industry-specific recruitment groups on Facebook (e.g., "SA Truckers Jobs"), and public professional directories.
 
 INVESTIGATIVE STRATEGY:
-1. QUANTITY: You are commanded to return 100 records. 
-2. SEQUENCE TRACKING: Use field "seq" for the record number, starting from ${startSeq}.
-3. IDENTITY FORENSICS: You MUST identify the ACTUAL FULL NAME of the professional from their public profile. 
-4. FORBIDDEN VALUES: Returning "The Driver", "Anonymous", or "Unknown" is a failure. You MUST hunt for actual human identities.
-5. CONTACT CHANNELS: Identify publicly listed professional contact details, mobile numbers, or associated transport company references.
-6. IDENTITY PERSISTENCE: Generate unique "record_id" starting with "DISC_DRIVER_${category.toUpperCase().replace(/\s/g, '_')}_".
+1. TARGET: Identify licensed professionals who have PUBLICLY PUBLISHED their availability for commercial placement.
+2. IDENTITY FORENSICS: Extract the "Work Identity" (Legal Full Name) as listed on their professional public posting.
+3. FORBIDDEN VALUES: Do not return "Anonymous" or "Driver". You MUST extract specific verified human identities from the public noticeboard.
+4. QUANTITY: Return exactly 100 entries. Keep strings short.
+5. SEQUENCE: Use field "seq", starting from ${startSeq}.
+6. DATA PERSISTENCE: Generate a unique "record_id" starting with "TALENT_MAP_${category.toUpperCase().replace(/\s/g, '_')}_".
 
 REQUIRED OUTPUT FORMAT (RAW JSON ARRAY ONLY):
 [
   {
     "seq": ${startSeq},
-    "record_id": "DISC_DRIVER_${category.toUpperCase().replace(/\s/g, '_')}_[RAND_ID]",
-    "firstName": "...",
-    "lastName": "...",
-    "industrial_category": "${category}",
-    "email_address": "...",
-    "telephone_number": "...",
-    "address": "Region/City (South Africa)",
-    "notes": "Verified certifications and professional background"
+    "record_id": "TALENT_MAP_${category.toUpperCase().replace(/\s/g, '_')}_[RAND_HEX]",
+    "work_identity": "VERIFIED FULL NAME",
+    "license_category": "${category}",
+    "professional_contact": "Publicly Listed Mobile/Email",
+    "geographic_region": "Primary Operating City/Province",
+    "certification_notes": "Summary of years experience and specific endorsements (e.g., Dangerous Goods, Code 14)"
   }
 ]
 
-HUNTING GROUNDS: Search LinkedIn, public Facebook professional groups (e.g. "SA Truckers Community"), and South African logistics talent registries.`;
+HUNTING GROUNDS: Map availability data from LinkedIn "Looking for work" signals, SA Trucking Community public noticeboards, and verified logistics talent registries.`;
 }
 
 const DiscoveryTab = ({ category, currentCount }: { category: string, currentCount: number }) => {
@@ -90,7 +88,7 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
         try {
             await navigator.clipboard.writeText(prompt);
             setIsCopied(true);
-            toast({ title: "Forensic Prompt Copied!", description: `Targeting driver profiles starting from Page ${startPage}.` });
+            toast({ title: "Talent Map Prompt Copied!", description: `Targeting Page ${startPage} of the workforce registry.` });
             setTimeout(() => setIsCopied(false), 3000);
         } catch (e) {
             toast({ variant: 'destructive', title: "Copy Failed" });
@@ -123,10 +121,9 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                 throw new Error(errMessage);
             }
 
-            toast({ title: "Discovery Successful", description: `Identified and imported ${result.count} drivers.` });
-            // Stats refresh handled in parent
+            toast({ title: "Registry Updated", description: `Successfully mapped and imported ${result.count} workforce records.` });
         } catch (e: any) {
-            toast({ variant: 'destructive', title: "Automation Failed", description: e.message });
+            toast({ variant: 'destructive', title: "Discovery Failed", description: e.message });
         } finally {
             setIsAutoDiscovering(false);
         }
@@ -137,10 +134,10 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
             {configError && (
                 <Alert variant="destructive">
                     <AlertTriangle className="h-4 w-4" />
-                    <AlertTitle>Cloud API Error</AlertTitle>
+                    <AlertTitle>Workforce Intelligence API Error</AlertTitle>
                     <AlertDescription className="space-y-3">
                         <p className="font-mono text-[10px] bg-black/10 p-2 rounded">{configError}</p>
-                        <p className="text-xs">This usually indicates the Generative Language API is disabled or there is a billing issue in your Google Cloud Project.</p>
+                        <p className="text-xs">The automated intelligence flow is encountering a configuration issue in your Google Cloud environment.</p>
                         <Button variant="outline" size="sm" asChild className="text-destructive-foreground border-destructive/20 hover:bg-destructive/10">
                             <Link href="/docs/enable-gemini-api.md" target="_blank">AI Setup Guide</Link>
                         </Button>
@@ -152,8 +149,8 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                 <div className="space-y-4">
                     <div className="flex items-center justify-between">
                         <h2 className="text-2xl font-bold font-headline flex items-center gap-2">
-                            <Search className="h-6 w-6 text-primary" />
-                            Talent Discovery: {category}
+                            <Users className="h-6 w-6 text-primary" />
+                            Talent Mapper: {category}
                         </h2>
                         <Badge variant="outline" className="font-mono text-sm bg-muted/30">
                             {currentCount} In Database
@@ -162,12 +159,12 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                     
                     <div className="p-4 bg-primary/5 border rounded-xl space-y-4">
                         <div className="flex items-center justify-between">
-                            <Label className="text-[10px] font-black uppercase tracking-widest text-primary">Sequence & Pagination</Label>
+                            <Label className="text-[10px] font-black uppercase tracking-widest text-primary">Pagination & Sequence</Label>
                             <Badge variant="outline" className="bg-white border-primary/20 text-primary text-[10px] font-black uppercase">SYNC TARGET: PAGE {startPage}</Badge>
                         </div>
                         <div className="flex items-center gap-3">
                             <div className="flex-1 space-y-1.5">
-                                <Label className="text-xs font-bold">Start from Page #</Label>
+                                <Label className="text-xs font-bold">Start Mapping from Page #</Label>
                                 <Input 
                                     type="number" 
                                     placeholder={String(suggestedPage)}
@@ -193,18 +190,18 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                             disabled={isAutoDiscovering}
                         >
                             {isAutoDiscovering ? <Loader2 className="h-5 w-5 animate-spin"/> : <Zap className="h-5 w-5" />}
-                            {isAutoDiscovering ? 'Running Discovery...' : "Run AI Discovery (Batch of 100)"}
+                            {isAutoDiscovering ? 'Mapping Workforce...' : "Run AI Mapping (Batch of 100)"}
                         </Button>
                         <Button onClick={handleCopy} variant="outline" size="lg" className="w-full gap-2 shadow-sm" disabled={isAutoDiscovering}>
                             {isCopied ? <ClipboardCheck className="h-5 w-5 text-green-600" /> : <Copy className="h-5 w-5" />}
-                            {isCopied ? "Prompt Copied" : "Copy Manual Prompt"}
+                            {isCopied ? "Prompt Copied" : "Copy Manual Talent Prompt"}
                         </Button>
                     </div>
                 </div>
 
                 <div className="space-y-2">
                     <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
-                        <Terminal className="h-3 w-3"/> Forensic Talent Command
+                        <Terminal className="h-3 w-3"/> Industrial Talent Command
                     </Label>
                     <ScrollArea className="h-[400px] border rounded-lg bg-slate-900 p-4 shadow-inner">
                         <pre className="text-[10px] text-slate-400 font-mono whitespace-pre-wrap leading-tight">
@@ -229,7 +226,7 @@ export default function DriverDiscoveryEngine() {
             const token = await getClientSideAuthToken();
             if (!token) return;
             await performAdminAction(token, 'refreshDriverCategoryCounts', {});
-            toast({ title: "Registry Tally Complete" });
+            toast({ title: "Talent Registry Tally Complete" });
             refreshStats();
         } catch (e: any) {
             toast({ variant: 'destructive', title: "Refresh Failed", description: e.message });
@@ -245,10 +242,10 @@ export default function DriverDiscoveryEngine() {
                     <div className="space-y-1">
                         <CardTitle className="flex items-center gap-2">
                             <Database className="h-6 w-6 text-primary" />
-                            Driver Talent Discovery
+                            Industrial Workforce Discovery
                         </CardTitle>
                         <CardDescription>
-                            Identify and extract verified professional drivers from Facebook and LinkedIn.
+                            Identify and map verified professional drivers using advanced forensic talent prompts.
                         </CardDescription>
                     </div>
                     <Button 
