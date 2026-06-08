@@ -108,17 +108,22 @@ function normalizePartnerData(data: any) {
     return result;
 }
 
-async function refreshCategoryStats(db: FirebaseFirestore.Firestore, type: 'supplier' | 'finance') {
+async function refreshCategoryStats(db: FirebaseFirestore.Firestore, type: 'supplier' | 'finance' | 'transporter') {
     const snap = await db.collection('leads').get();
     const counts: Record<string, number> = {};
     
     const supplierRoles = ['Vendors', 'Vendor', 'Supplier', 'Suppliers'];
     const financeRoles = ['Investors', 'Investor', 'Finance', 'Funder', 'Lender', 'Banks', 'Government', 'AEO', 'Niche Lenders', 'Finance Companies'];
+    const transporterRoles = ['Transporters', 'Transporter', 'Logistics', 'Transport'];
 
     snap.docs.forEach(doc => {
         const data = doc.data();
         const role = data.role || '';
-        const isMatch = type === 'supplier' ? supplierRoles.includes(role) : financeRoles.includes(role);
+        let isMatch = false;
+        
+        if (type === 'supplier') isMatch = supplierRoles.includes(role);
+        else if (type === 'finance') isMatch = financeRoles.includes(role);
+        else if (type === 'transporter') isMatch = transporterRoles.includes(role);
         
         if (isMatch) {
             const cat = data.entryType || 'General';
@@ -126,7 +131,7 @@ async function refreshCategoryStats(db: FirebaseFirestore.Firestore, type: 'supp
         }
     });
 
-    const configId = type === 'supplier' ? 'supplierDiscoveryStats' : 'financeDiscoveryStats';
+    const configId = type === 'supplier' ? 'supplierDiscoveryStats' : (type === 'finance' ? 'financeDiscoveryStats' : 'transporterDiscoveryStats');
     await db.collection('configuration').doc(configId).set({ 
         counts, 
         lastUpdated: FieldValue.serverTimestamp() 
@@ -152,7 +157,7 @@ export async function POST(req: NextRequest) {
         const isAdmin = decodedToken.email === 'beyondtransport@gmail.com' || decodedToken.email === 'mkoton100@gmail.com';
 
         if (!isAdmin) {
-             const allowedUserActions = ['getAuditLogs', 'logCommunication', 'bulkSavePartners', 'getPartnersByType', 'markLeadsAsResearching', 'getPlatformStaff', 'findDuplicateLeads', 'deleteLeads', 'resetResearchQueue', 'bulkUpdateOutreach', 'bulkCategorizeLeads', 'getSupplierCategoryCounts', 'refreshSupplierCategoryCounts', 'refreshFinanceCategoryCounts', 'autoDiscover', 'getMembers', 'getShops', 'getContributions'];
+             const allowedUserActions = ['getAuditLogs', 'logCommunication', 'bulkSavePartners', 'getPartnersByType', 'markLeadsAsResearching', 'getPlatformStaff', 'findDuplicateLeads', 'deleteLeads', 'resetResearchQueue', 'bulkUpdateOutreach', 'bulkCategorizeLeads', 'getSupplierCategoryCounts', 'refreshSupplierCategoryCounts', 'refreshFinanceCategoryCounts', 'refreshTransporterCategoryCounts', 'autoDiscover', 'getMembers', 'getShops', 'getContributions'];
              if (!allowedUserActions.includes(action)) throw new Error("Forbidden.");
         }
 
@@ -170,7 +175,8 @@ export async function POST(req: NextRequest) {
                 const batch = db.batch();
                 const roleMap: Record<string, string> = {
                     'supplier': 'Vendors',
-                    'finance': 'Finance Companies'
+                    'finance': 'Finance Companies',
+                    'transporter': 'Transporters'
                 };
 
                 results.forEach(p => {
@@ -229,6 +235,7 @@ export async function POST(req: NextRequest) {
             }
 
             case 'resetResearchQueue': {
+                const { type: queueType } = payload;
                 const snap = await db.collection('leads')
                     .where('researchStatus', '==', 'researching')
                     .get();
@@ -406,6 +413,11 @@ export async function POST(req: NextRequest) {
                 const counts = await refreshCategoryStats(db, 'finance');
                 return NextResponse.json({ success: true, data: counts });
             }
+            
+            case 'refreshTransporterCategoryCounts': {
+                const counts = await refreshCategoryStats(db, 'transporter');
+                return NextResponse.json({ success: true, data: counts });
+            }
 
             case 'getPartnersByType': {
                 const { type } = payload;
@@ -470,9 +482,9 @@ export async function POST(req: NextRequest) {
                 }
                 await batch.commit();
                 
-                // Automatically refresh categorical tallies to ensure pagination stays in sync
-                if (type === 'supplier' || type === 'finance') {
-                    await refreshCategoryStats(db, type);
+                // Automatically refresh categorical tallies
+                if (type === 'supplier' || type === 'finance' || type === 'transporter') {
+                    await refreshCategoryStats(db, type as any);
                 }
 
                 return NextResponse.json({ success: true, updatedCount });

@@ -11,7 +11,7 @@ import { googleSearchTool } from '../tools/google-search';
 
 const DiscoveryInputSchema = z.object({
   category: z.string(),
-  type: z.enum(['supplier', 'finance']),
+  type: z.enum(['supplier', 'finance', 'transporter']),
   startPage: z.number().optional().default(1),
   batchSize: z.number().optional().default(100),
 });
@@ -48,6 +48,8 @@ const discoveryFlow = ai.defineFlow(
         let searchContext = "";
         if (type === 'finance') {
             searchContext = `Focus on the National Credit Regulator (NCR) South Africa. Target registry pages starting at Page ${startPage}. Discover and extract exactly ${batchSize} unique ${category} providers.`;
+        } else if (type === 'transporter') {
+            searchContext = `Focus on South African logistics hubs and industrial zones. Discover and extract exactly ${batchSize} unique professional ${category} transport companies. Look for RC1 compliance signals and direct human contacts.`;
         } else {
             searchContext = `Focus on industrial hubs in South Africa for ${category}. Discover and extract exactly ${batchSize} unique independent suppliers.`;
         }
@@ -61,7 +63,7 @@ const discoveryFlow = ai.defineFlow(
         1. HUMAN IDENTITY FIRST: You MUST find the ACTUAL NAME of the CEO, MD, or Owner.
         2. FORBIDDEN: Returning "The Director" or "Manager" is a FAILURE.
         3. CONTACTS: Prioritize verified professional emails and direct lines. No call centers (0860).
-        4. SOURCE: Use LinkedIn and the official NCR register for verification.
+        4. SOURCE: Use LinkedIn and the official industrial registers for verification.
         5. ID: Generate a unique ID starting with 'AUTO_${type.toUpperCase()}_'.`;
 
         const response = await ai.generate({
