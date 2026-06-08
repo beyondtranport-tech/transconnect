@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -34,6 +33,7 @@ import { BulkImportDialog } from './BulkImportDialog';
 import { BulkOutreachUpdateDialog } from './BulkOutreachUpdateDialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import Link from 'next/link';
 
 async function performAdminAction(token: string, action: string, payload: any) {
   const response = await fetch('/api/admin', {
@@ -55,8 +55,9 @@ const partnerSchema = z.object({
   contactPerson: z.string().optional(),
   companyName: z.string().optional(),
   address: z.string().optional(),
+  entryType: z.string().optional(),
   status: z.enum(['active', 'inactive', 'contacted', 'new', 'qualified', 'invited']),
-  type: z.enum(['partner', 'isa', 'investor', 'developer', 'supplier', 'transporter']),
+  type: z.literal('transporter'),
 });
 type PartnerFormValues = z.infer<typeof partnerSchema>;
 
@@ -256,20 +257,6 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
             <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Company Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="address" render={({ field }) => (<FormItem><FormLabel>Address</FormLabel><FormControl><Textarea placeholder="Enter physical address..." {...field} /></FormControl><FormMessage /></FormItem>)} />
             <div className="grid grid-cols-2 gap-4">
-              <FormField control={form.control} name="type" render={({ field }) => (
-                <FormItem>
-                    <FormLabel>Category</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl><SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger></FormControl>
-                        <SelectContent>
-                            <SelectItem value="partner">Partner</SelectItem>
-                            <SelectItem value="isa">ISA</SelectItem>
-                            <SelectItem value="supplier">Supplier</SelectItem>
-                            <SelectItem value="transporter">Transporter</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </FormItem>
-              )} />
               <FormField control={form.control} name="status" render={({ field }) => (
                 <FormItem>
                     <FormLabel>Status</FormLabel>
@@ -491,6 +478,48 @@ export default function TransporterManagement() {
       toast({ variant: 'destructive', title: 'Error', description: e.message });
     }
   }
+
+  const columns: ColumnDef<any>[] = useMemo(() => [
+    { accessorKey: 'companyName', header: 'Transporter Name', cell: ({ row }) => <div className="font-bold">{row.original.companyName || `${row.original.firstName} ${row.original.lastName}`}</div> },
+    { accessorKey: 'entryType', header: 'Category', cell: ({row}) => row.original.entryType ? <Badge variant="outline" className="text-[10px] uppercase font-bold">{row.original.entryType}</Badge> : <span className="text-muted-foreground italic text-xs">Uncategorized</span> },
+    { accessorKey: 'contactPerson', header: 'Leadership', cell: ({ row }) => <div>{row.original.contactPerson || 'N/A'}</div> },
+    { accessorKey: 'email', header: 'Email', cell: ({ row }) => {
+        const email = (row.original.email || row.original.email_address || '').toString().toLowerCase().trim();
+        const isInvalid = !email || email === 'null' || email === 'n/a' || email === 'none';
+        return <div className={cn(isInvalid ? "text-muted-foreground italic" : "")}>{isInvalid ? "Missing" : email}</div>
+    }},
+    { accessorKey: 'researchStatus', header: 'Enhanced', cell: ({row}) => {
+        const isResearching = row.original.researchStatus === 'researching';
+        const email = (row.original.email || row.original.email_address || '').toString().toLowerCase().trim();
+        const isInvalidEmail = !email || email === 'null' || email === 'n/a' || email === 'none';
+        const isCompleted = row.original.researchStatus === 'completed' || !isInvalidEmail;
+        if (isResearching) return <Badge variant="outline" className="animate-pulse text-amber-600 border-amber-200 bg-amber-50 text-[10px]">Searching...</Badge>;
+        if (isCompleted) return <Badge variant="default" className="bg-green-100 text-green-700 border-green-200 text-[10px]">Enriched</Badge>;
+        return <span className="text-xs text-muted-foreground">-</span>;
+    }},
+    { accessorKey: 'status', header: 'Funnel Status', cell: ({ row }) => {
+        const statusMap: Record<string, { label: string, color: string }> = {
+            'new': { label: 'New', color: 'bg-slate-100 text-slate-700' },
+            'contacted': { label: 'Researching', color: 'bg-amber-100 text-amber-700' },
+            'qualified': { label: 'Qualified', color: 'bg-blue-100 text-blue-700' },
+            'invited': { label: 'Invited', color: 'bg-purple-100 text-purple-700' },
+            'active': { label: 'Member (Active)', color: 'bg-green-600 text-white' },
+        };
+        const config = statusMap[row.original.status] || { label: row.original.status, color: 'bg-muted' };
+        return <Badge className={cn("capitalize text-[10px]", config.color)} variant="outline">{config.label}</Badge>
+    }},
+    { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
+      <div className="flex justify-end gap-1">
+        <EnrichPartnerButton partner={row.original} onUpdate={forceRefresh} />
+        <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'engage', data: row.original })} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
+        <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.firstName} />
+        <PartnerTasksDialog partner={row.original} />
+        <PartnerOversightDialog partner={row.original} onUpdate={forceRefresh} />
+        <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'edit', data: row.original })}><Edit className="h-4 w-4" /></Button>
+        <Button variant="ghost" size="icon" onClick={() => { setDialog({ type: 'delete', data: row.original }); }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+      </div>
+    )},
+  ], [forceRefresh]);
 
   return (
     <>
