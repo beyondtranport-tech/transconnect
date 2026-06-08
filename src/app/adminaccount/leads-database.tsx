@@ -321,7 +321,7 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
         <DialogHeader>
           <DialogTitle>Duplicate Lead Cleaner</DialogTitle>
           <DialogDescription>
-            Select the records you want to keep. All unselected records in the group will be deleted.
+            Select the records you want to keep. This tool now uses <strong>Forensic Matching</strong>: a duplicate is only flagged if <strong>BOTH</strong> the Company Name and Decision Maker match exactly.
           </DialogDescription>
         </DialogHeader>
         
@@ -355,14 +355,20 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
                 />
                 <Label htmlFor="select-all-recommended-leads" className="text-xs font-bold cursor-pointer">Apply Recommended Selections to ALL Groups</Label>
             </div>
-            <p className="text-[10px] text-muted-foreground uppercase font-bold">{duplicates.length} Duplicate Groups Found</p>
+            <p className="text-[10px] text-muted-foreground uppercase font-bold">{duplicates.length} Forensic Pairs Found</p>
           </div>
 
           {duplicates.map((group, groupIndex) => {
-             const groupName = group.find(r => r.companyName)?.companyName || 'Unnamed Group';
+             const companyName = group.find(r => r.companyName)?.companyName || 'Unnamed Group';
+             const contactPerson = group.find(r => r.contactPerson)?.contactPerson || 'N/A';
              return (
                 <Card key={groupIndex} className="shadow-none border">
-                <CardHeader className="py-3 bg-muted/30"><CardTitle className="text-sm font-bold">Group: {groupName}</CardTitle></CardHeader>
+                <CardHeader className="py-3 bg-muted/30 flex flex-row justify-between items-center">
+                    <div>
+                        <CardTitle className="text-sm font-bold">Group: {companyName}</CardTitle>
+                        <CardDescription className="text-[10px] uppercase font-black text-primary">Matched Contact: {contactPerson}</CardDescription>
+                    </div>
+                </CardHeader>
                 <CardContent className="p-0">
                     {group.map(lead => {
                         const isRecommended = lead.source === 'Member';
@@ -754,7 +760,7 @@ function LeadsDatabaseComponent() {
       {editLead && <LeadDialog open={isEditLeadOpen} onOpenChange={setIsEditLeadOpen} lead={editLead} onSave={forceRefresh} />}
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
         <AlertDialogContent>
-          <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This action will permanently delete the lead for {deleteLead?.companyName}.</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This action will permanently delete the lead for {selectedLead?.companyName}.</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setDeleteLead(null)}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction>

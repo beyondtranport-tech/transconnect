@@ -209,14 +209,25 @@ export async function POST(req: NextRequest) {
                 membersSnap.docs.forEach(doc => allRecords.push({ ...doc.data(), id: doc.id, source: 'Member' }));
 
                 const groups = new Map<string, any[]>();
+                
+                // Unified normalization for forensic comparison
+                const norm = (val: any) => (val || '').toString().toLowerCase().trim();
+
                 allRecords.forEach(record => {
-                    const name = (record.companyName || '').toString().toLowerCase().trim();
-                    if (name.length < 3) return;
+                    const company = norm(record.companyName);
+                    // Match Decision Maker (Contact Person) specifically
+                    const contact = norm(record.contactPerson || record.firstName || '');
                     
-                    if (!groups.has(name)) groups.set(name, []);
-                    groups.get(name)!.push(record);
+                    // User requirement: Match BOTH entity name AND decision maker
+                    const compositeKey = `${company}|${contact}`;
+
+                    if (company.length < 3) return; // Skip very short/empty names
+                    
+                    if (!groups.has(compositeKey)) groups.set(compositeKey, []);
+                    groups.get(compositeKey)!.push(record);
                 });
 
+                // Only return groups where the EXACT (Company + Contact) pair appears more than once
                 const duplicates = Array.from(groups.values()).filter(group => group.length > 1);
                 return NextResponse.json({ success: true, data: duplicates });
             }

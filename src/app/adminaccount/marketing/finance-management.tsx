@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -150,7 +149,7 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
         <DialogHeader>
           <DialogTitle>Duplicate Funder Cleaner</DialogTitle>
           <DialogDescription>
-            Select the records you want to keep. All unselected records in the group will be deleted.
+            Select the records you want to keep. Using <strong>Forensic Matching</strong>: duplicates are only identified if <strong>BOTH</strong> the Entity Name and Decision Maker match.
           </DialogDescription>
         </DialogHeader>
         
@@ -164,10 +163,16 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
 
         <div className="flex-1 overflow-y-auto p-4 space-y-6">
           {duplicates.map((group, groupIndex) => {
-             const groupName = group.find(r => r.companyName)?.companyName || 'Unnamed Group';
+             const companyName = group.find(r => r.companyName)?.companyName || 'Unnamed Group';
+             const contactPerson = group.find(r => r.contactPerson)?.contactPerson || 'N/A';
              return (
                 <Card key={groupIndex} className="shadow-none border">
-                <CardHeader className="py-3 bg-muted/30"><CardTitle className="text-sm font-bold">Group: {groupName}</CardTitle></CardHeader>
+                <CardHeader className="py-3 bg-muted/30 flex flex-row justify-between items-center">
+                    <div>
+                        <CardTitle className="text-sm font-bold">Group: {companyName}</CardTitle>
+                        <CardDescription className="text-[10px] uppercase font-black text-amber-600">Decision Maker Match: {contactPerson}</CardDescription>
+                    </div>
+                </CardHeader>
                 <CardContent className="p-0">
                     {group.map(lead => (
                         <div key={lead.id} className={cn("flex items-start gap-4 p-4 border-b last:border-b-0", selections[groupIndex] === lead.id ? "bg-primary/5" : "")}>
