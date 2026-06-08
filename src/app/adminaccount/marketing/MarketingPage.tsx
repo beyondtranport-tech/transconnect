@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -29,7 +30,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Textarea } from '@/components/ui/textarea';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 
 // Content components
 import CompanyProfile from './content/CompanyProfile';
@@ -174,6 +175,7 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
   const { Offer, Emails, Management, Pitch, Discovery } = config;
   const searchParams = useSearchParams();
   const router = useRouter();
+  const pathname = usePathname();
   
   const subview = searchParams.get('subview');
   const initialTab = subview || (Management ? 'management' : 'company-profile');
@@ -190,13 +192,14 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
     if (subview && subview !== activeTab) {
         setActiveTab(subview);
     }
-  }, [subview, activeTab]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [subview]); // Remove activeTab from deps to prevent sync loops
 
   const handleTabChange = (val: string) => {
     setActiveTab(val);
-    const params = new URLSearchParams(searchParams);
+    const params = new URLSearchParams(searchParams.toString());
     params.set('subview', val);
-    router.replace(`${window.location.pathname}?${params.toString()}`, { scroll: false });
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   }
 
   const fetchPartners = useCallback(async () => {
