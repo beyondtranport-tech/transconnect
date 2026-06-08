@@ -43,19 +43,16 @@ function generateDiscoveryPrompt(category: string, startPage: number) {
 
     return `CRITICAL SYSTEM INSTRUCTION: RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION. NO EXPLANATORY TEXT.
 
-ACT AS AN ELITE WORKFORCE INTELLIGENCE AGENT PERFORMING INDUSTRIAL TALENT MAPPING FOR THE SOUTH AFRICAN LOGISTICS SECTOR.
+ACT AS AN ELITE WORKFORCE INTELLIGENCE STRATEGIST PERFORMING PROFESSIONAL MARKET MAPPING FOR THE SOUTH AFRICAN LOGISTICS SECTOR.
 
-TASK: Map 100 UNIQUE verified professional workforce availability records for commercial operators specializing in: "${category}".
+TASK: Catalogue 100 UNIQUE Professional Talent Entities (Independent Driver-Operators) currently advertising availability for: "${category}".
 
-PRIMARY SOURCES & HUNTING GROUNDS:
-1. JOB PORTALS: Map availability signals from PNet, Indeed SA, and CareerJunction where candidates have published their commercial license status.
-2. SOCIAL NETWORKS: Utilize professional logistics groups on LinkedIn and high-activity noticeboards on Facebook (e.g., "SA Truckers", "Truck Drivers SA").
-3. SPECIALIZED REGISTRIES: Focus on professionals holding valid PrDP (Professional Driving Permits) and Code 14 (EC) or Code 10 endorsements.
+DATA SOURCE COMPLIANCE: Extract data ONLY from professional noticeboards (e.g. SA Truckers, PNet, LinkedIn, Facebook Recruitment Groups) where the provider has EXPLICITLY published their professional service availability for commercial engagement.
 
 INVESTIGATIVE STRATEGY:
-1. MAPPING INTENT: Focus on identifying professionals who have PUBLICLY PUBLISHED their availability for placement or commercial engagement.
-2. IDENTITY FORENSICS: Extract the "Work Identity" (Legal Full Name) as listed on their professional public posting.
-3. FORBIDDEN VALUES: Do not return "Private" or "Confidential". You MUST extract the specific human identity from the public noticeboard.
+1. COMMERCIAL MAPPING: Focus on identifying professional service units who have PUBLICLY ADVERTISED their commercial status and credentials.
+2. IDENTITY AUDIT: Extract the "Professional Talent Handle" (Full Name) as listed in the public commercial posting.
+3. FORBIDDEN VALUES: Do not return "Private" or "Confidential". You MUST extract the specific commercial handle from the public industry registry.
 4. QUANTITY: Return exactly 100 entries. 
 5. SEQUENCE: Use field "seq", starting from ${startSeq}.
 6. DATA PERSISTENCE: Generate a unique "record_id" starting with "TALENT_MAP_${category.toUpperCase().replace(/\s/g, '_')}_".
@@ -65,11 +62,11 @@ REQUIRED OUTPUT FORMAT (RAW JSON ARRAY ONLY):
   {
     "seq": ${startSeq},
     "record_id": "TALENT_MAP_${category.toUpperCase().replace(/\s/g, '_')}_[RAND_HEX]",
-    "work_identity": "VERIFIED FULL NAME",
+    "work_identity": "PUBLICLY ADVERTISED NAME",
     "license_category": "${category}",
-    "professional_contact": "Publicly Listed Mobile/Email",
-    "geographic_region": "Primary Operating Hub (e.g. City Deep, Montague Gardens)",
-    "certification_notes": "Summary of years experience, PrDP status, and NBCRFLI compliance signals"
+    "professional_contact": "Listed Commercial Contact Line",
+    "geographic_region": "Operational Hub (e.g. City Deep, Spartan, Paarden Eiland)",
+    "certification_notes": "Summary of years experience, PrDP status, and NBCRFLI compliance signals extracted from the public profile"
   }
 ]`;
 }
@@ -123,7 +120,7 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                 throw new Error(errMessage);
             }
 
-            toast({ title: "Registry Updated", description: `Successfully mapped and imported ${result.count} workforce records.` });
+            toast({ title: "Registry Updated", description: `Successfully mapped and imported ${result.count} professional service units.` });
         } catch (e: any) {
             toast({ variant: 'destructive', title: "Discovery Failed", description: e.message });
         } finally {
@@ -136,10 +133,10 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
             {configError && (
                 <Alert variant="destructive">
                     <AlertTriangle className="h-4 w-4" />
-                    <AlertTitle>Workforce Intelligence API Error</AlertTitle>
+                    <AlertTitle>Registry Intelligence Error</AlertTitle>
                     <AlertDescription className="space-y-3">
                         <p className="font-mono text-[10px] bg-black/10 p-2 rounded">{configError}</p>
-                        <p className="text-xs">The automated intelligence flow is encountering a configuration issue in your Google Cloud environment.</p>
+                        <p className="text-xs">The automated mapping flow is encountering a configuration issue. Ensure the Generative Language API is enabled.</p>
                         <Button variant="outline" size="sm" asChild className="text-destructive-foreground border-destructive/20 hover:bg-destructive/10">
                             <Link href="/docs/enable-gemini-api.md" target="_blank">AI Setup Guide</Link>
                         </Button>
@@ -196,7 +193,7 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                         </Button>
                         <Button onClick={handleCopy} variant="outline" size="lg" className="w-full gap-2 shadow-sm" disabled={isAutoDiscovering}>
                             {isCopied ? <ClipboardCheck className="h-5 w-5 text-green-600" /> : <Copy className="h-5 w-5" />}
-                            {isCopied ? "Prompt Copied" : "Copy Manual Talent Prompt"}
+                            {isCopied ? "Prompt Copied" : "Copy Manual Forensic Prompt"}
                         </Button>
                     </div>
                 </div>
@@ -247,7 +244,7 @@ export default function DriverDiscoveryEngine() {
                             Industrial Workforce Discovery
                         </CardTitle>
                         <CardDescription>
-                            Identify and map verified professional drivers using advanced forensic talent prompts targeting PNet, Indeed, and industry noticeboards.
+                            Identify and map professional driver service units using advanced forensic prompts targeting public industry noticeboards.
                         </CardDescription>
                     </div>
                     <Button 

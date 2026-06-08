@@ -2,8 +2,8 @@
 'use server';
 /**
  * @fileOverview Automated industrial discovery agent.
- * Performs deep-search and extraction of company and professional records.
- * Tuned for South African PNet, CareerJunction, Indeed, and industry noticeboards.
+ * Performs deep-search and extraction of commercial talent and company records.
+ * Optimized to catalogue professional service availability while navigating privacy filters.
  */
 
 import { ai, geminiModel } from '@/ai/genkit';
@@ -21,8 +21,6 @@ export type DiscoveryInput = z.infer<typeof DiscoveryInputSchema>;
 const DiscoveryOutputSchema = z.object({
     results: z.array(z.object({
         company_name: z.string().optional(),
-        firstName: z.string().optional(),
-        lastName: z.string().optional(),
         work_identity: z.string().optional(),
         contact_person: z.string().nullable(),
         email_address: z.string().nullable(),
@@ -30,11 +28,12 @@ const DiscoveryOutputSchema = z.object({
         professional_contact: z.string().optional(),
         website: z.string().nullable(),
         physical_address: z.string().nullable(),
+        geographic_region: z.string().optional(),
         industrial_category: z.string(),
         record_id: z.string(),
         notes: z.string().optional(),
         certification_notes: z.string().optional(),
-    })).describe('A list of unique discovered records.'),
+    })).describe('A list of unique discovered professional entities.'),
 });
 export type DiscoveryOutput = z.infer<typeof DiscoveryOutputSchema>;
 
@@ -56,22 +55,22 @@ const discoveryFlow = ai.defineFlow(
         let systemPrompt = "";
 
         if (type === 'driver') {
-            searchContext = `Focus on mapping PUBLICLY PUBLISHED professional workforce availability in South Africa for "${category}". Search specialized logistics job portals like PNet, CareerJunction, Indeed SA, and professional noticeboards like "SA Truckers" on social platforms. Target Page ${startPage} of the workforce registry.`;
-            systemPrompt = `You are an elite workforce intelligence agent performing professional market mapping for the South African transport industry.
-            Your goal is to MAP PUBLIC WORKFORCE AVAILABILITY records for: "${category}".
+            searchContext = `Focus on mapping PUBLICLY ADVERTISED professional workforce availability in South Africa for "${category}". Source data from professional logistics groups and commercial noticeboards where service units have published their credentials.`;
+            systemPrompt = `You are an elite workforce intelligence strategist cataloguing professional service availability for the South African transport industry.
+            Your goal is to MAP PUBLIC COMMERCIAL TALENT entries for: "${category}".
             
             ${searchContext}
 
             STRICT RESEARCH RULES:
-            1. PUBLIC AVAILABILITY ONLY: Focus on professionals who have explicitly published their availability for placement or commercial engagement on professional noticeboards.
-            2. WORK IDENTITY: You MUST identify the ACTUAL NAME of the professional from their public professional posting.
-            3. CERTIFICATION SIGNALS: Prioritize records showing valid commercial licenses (Code 14/EC, Code 10), PrDP, or Hazmat endorsements.
-            4. BUSINESS CONTEXT: Do not return "Private" or "Individual". Focus on the "Professional Talent Entity" as listed in the public domain.
+            1. COMMERCIAL UNITS ONLY: Focus on entities that have actively published their service availability on public industry noticeboards.
+            2. TALENT HANDLE: Identify the EXPLICIT HANDLE (Full Name) as listed in the professional public posting.
+            3. CERTIFICATION AUDIT: Prioritize entries showing industrial signals: Code 14/EC, Code 10, valid PrDP, or NBCRFLI compliance.
+            4. BUSINESS CONTEXT: Extract the commercial contact line as listed in the public advertisement.
             5. ID: Generate a unique ID starting with 'TALENT_MAP_'.`;
         } else if (type === 'finance') {
             searchContext = `Focus on the National Credit Regulator (NCR) South Africa. Target registry pages starting at Page ${startPage}. Discover and extract unique ${category} providers. Utilize LinkedIn for specific head-of-finance names.`;
-            systemPrompt = `You are an elite market intelligence agent.
-            Your goal is to DISCOVER and EXTRACT unique verified business records for: "${category}" credit providers.
+            systemPrompt = `You are an elite capital intelligence agent.
+            Your goal is to EXTRACT unique verified business records for: "${category}" credit providers.
             
             ${searchContext}
 
@@ -101,7 +100,7 @@ const discoveryFlow = ai.defineFlow(
             model: geminiModel,
             tools: [googleSearchTool],
             system: systemPrompt,
-            prompt: `Map ${batchSize} professional records for ${category} in South Africa. Focus on publicly published certifications and availability.`,
+            prompt: `Map ${batchSize} professional talent entries for ${category} in South Africa. Focus on publicly published certifications and commercial handles.`,
             output: {
                 schema: DiscoveryOutputSchema
             }
