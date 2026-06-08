@@ -16,6 +16,7 @@ import { useConfig } from '@/hooks/use-config';
 import { cn, formatDateSafe } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import Link from "next/link";
 
 export const financeCategories = [
     "Banks", 
@@ -123,7 +124,26 @@ const DiscoveryTab = ({ category, currentCount, onRefresh }: { category: string,
             toast({ title: "Discovery Complete", description: res.message });
             onRefresh();
         } catch (e: any) {
-            toast({ variant: 'destructive', title: "Automation Failed", description: e.message });
+            console.error("Discovery Error:", e);
+            let description: React.ReactNode = e.message;
+            
+            // Check for specific Google Cloud billing/dunning errors
+            if (e.message?.includes('dunning') || e.message?.includes('403 Forbidden')) {
+                description = (
+                    <div className="space-y-2">
+                        <p>AI service is blocked by your Google Cloud project's billing status (Error 403: Dunning Denied).</p>
+                        <Button asChild variant="link" className="p-0 h-auto text-xs text-destructive-foreground underline decoration-white">
+                            <Link href="/docs/enable-gemini-api.md" target="_blank">Fix Billing / Setup Guide</Link>
+                        </Button>
+                    </div>
+                );
+            }
+            
+            toast({ 
+                variant: 'destructive', 
+                title: "Automation Failed", 
+                description 
+            });
         } finally {
             setIsAutoDiscovering(false);
         }
