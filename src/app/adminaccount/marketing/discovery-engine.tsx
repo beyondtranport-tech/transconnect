@@ -3,10 +3,9 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, Sparkles, Copy, ClipboardCheck, Info, Search, Terminal, MapPin, ListOrdered, Loader2, RefreshCcw, Database, Zap, AlertTriangle } from "lucide-react";
-import Link from "next/link";
+import { ArrowRight, Copy, ClipboardCheck, Info, Search, Terminal, ListOrdered, Loader2, RefreshCcw, Database } from "lucide-react";
 import * as React from "react";
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -16,7 +15,6 @@ import { getClientSideAuthToken } from '@/firebase';
 import { useConfig } from '@/hooks/use-config';
 import { cn, formatDateSafe } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
 
 export const supplierCategories = [
     "Accessories", 
@@ -127,14 +125,12 @@ REQUIRED OUTPUT FORMAT (RAW JSON ARRAY ONLY):
 HUNTING GROUNDS: Search LinkedIn, Yellow Pages SA, and local industrial registries.`;
 }
 
-const DiscoveryTab = ({ category, currentCount, onRefresh }: { category: string, currentCount: number, onRefresh: () => void }) => {
+const DiscoveryTab = ({ category, currentCount }: { category: string, currentCount: number }) => {
     const { toast } = useToast();
     const [isCopied, setIsCopied] = useState(false);
-    const [isAutoDiscovering, setIsAutoDiscovering] = useState(false);
     const [seqOverride, setSeqOverride] = useState<number | ''>('');
     
     const startSeq = useMemo(() => (seqOverride !== '' ? Number(seqOverride) : currentCount + 1), [seqOverride, currentCount]);
-    const suggestedPage = Math.floor(currentCount / 20) + 1;
 
     const randomHubs = useMemo(() => {
         const shuffled = [...industrialHubs].sort(() => 0.5 - Math.random());
@@ -151,46 +147,6 @@ const DiscoveryTab = ({ category, currentCount, onRefresh }: { category: string,
             setTimeout(() => setIsCopied(false), 3000);
         } catch (e) {
             toast({ variant: 'destructive', title: "Copy Failed" });
-        }
-    };
-
-    const handleAutoDiscover = async () => {
-        setIsAutoDiscovering(true);
-        try {
-            const token = await getClientSideAuthToken();
-            if (!token) throw new Error("Auth failed.");
-
-            const res = await performAdminAction(token, 'autoDiscover', {
-                category,
-                type: 'supplier',
-                startPage: suggestedPage
-            });
-
-            toast({ title: "Discovery Complete", description: res.message });
-            onRefresh();
-        } catch (e: any) {
-            console.error("Discovery Error:", e);
-            let description: React.ReactNode = e.message;
-            
-            // Check for specific Google Cloud billing/dunning errors
-            if (e.message?.includes('dunning') || e.message?.includes('403 Forbidden')) {
-                description = (
-                    <div className="space-y-2">
-                        <p>AI service is blocked by your Google Cloud project's billing status (Error 403: Dunning Denied).</p>
-                        <Button asChild variant="link" className="p-0 h-auto text-xs text-destructive-foreground underline decoration-white">
-                            <Link href="/docs/enable-gemini-api.md" target="_blank">Fix Billing / Setup Guide</Link>
-                        </Button>
-                    </div>
-                );
-            }
-            
-            toast({ 
-                variant: 'destructive', 
-                title: "Automation Failed", 
-                description 
-            });
-        } finally {
-            setIsAutoDiscovering(false);
         }
     };
 
@@ -239,12 +195,7 @@ const DiscoveryTab = ({ category, currentCount, onRefresh }: { category: string,
                     </div>
 
                     <div className="pt-2 flex flex-col gap-2">
-                         <Button onClick={handleAutoDiscover} disabled={isAutoDiscovering} size="lg" className="w-full gap-2 bg-amber-600 hover:bg-amber-700 shadow-lg group">
-                            {isAutoDiscovering ? <Loader2 className="h-5 w-5 animate-spin"/> : <Zap className="h-5 w-5 fill-amber-300 text-amber-300 group-hover:scale-125 transition-transform" />}
-                            Run Automated Discovery (Batch of 100)
-                        </Button>
-                        <Separator className="my-2" />
-                        <Button onClick={handleCopy} size="lg" variant="outline" className="w-full gap-2 shadow-sm">
+                        <Button onClick={handleCopy} size="lg" className="w-full gap-2 shadow-md">
                             {isCopied ? <ClipboardCheck className="h-5 w-5 text-green-600" /> : <Copy className="h-5 w-5" />}
                             {isCopied ? "Prompt Copied" : "Copy Manual Prompt"}
                         </Button>
@@ -283,7 +234,7 @@ export default function DiscoveryEngine() {
     const [isRefreshing, setIsRefreshing] = useState(false);
     
     // Fetch CACHED counts immediately (snappy)
-    const { data: statsData, isLoading: isStatsLoading, forceRefresh: refreshStats } = useConfig<any>('supplierDiscoveryStats');
+    const { data: statsData, forceRefresh: refreshStats } = useConfig<any>('supplierDiscoveryStats');
     const counts = statsData?.counts || {};
 
     const handleRefresh = async () => {
@@ -307,11 +258,11 @@ export default function DiscoveryEngine() {
                 <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="space-y-1">
                         <CardTitle className="flex items-center gap-2">
-                            <Sparkles className="h-6 w-6 text-primary" />
+                            <Database className="h-6 w-6 text-primary" />
                             AI Market Discovery Engine
                         </CardTitle>
                         <CardDescription>
-                            Automate the discovery of heavy commercial suppliers using internal AI tools or manual prompts.
+                            Generate forensic prompts to identify heavy commercial suppliers across 20+ industrial categories.
                         </CardDescription>
                     </div>
                     <div className="flex items-center gap-2">
@@ -348,7 +299,7 @@ export default function DiscoveryEngine() {
 
                     {supplierCategories.map(category => (
                         <TabsContent key={category} value={category} className="mt-0">
-                            <DiscoveryTab category={category} currentCount={counts[category] || 0} onRefresh={handleRefresh} />
+                            <DiscoveryTab category={category} currentCount={counts[category] || 0} />
                         </TabsContent>
                     ))}
                 </CardContent>

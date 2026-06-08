@@ -3,20 +3,17 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, Sparkles, Copy, ClipboardCheck, Info, Search, Terminal, ListOrdered, Loader2, RefreshCcw, Database, Zap } from "lucide-react";
+import { ArrowRight, Copy, ClipboardCheck, Info, Search, Terminal, RefreshCcw, Database } from "lucide-react";
 import * as React from "react";
 import { useState, useMemo } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { getClientSideAuthToken } from '@/firebase';
 import { useConfig } from '@/hooks/use-config';
 import { cn, formatDateSafe } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
-import Link from "next/link";
 
 export const transporterCategories = [
     "Long Haul",
@@ -85,10 +82,9 @@ REQUIRED OUTPUT FORMAT (RAW JSON ARRAY ONLY):
 HUNTING GROUNDS: Search LinkedIn, Google Maps, local logistics directories, and industrial zoning registries.`;
 }
 
-const DiscoveryTab = ({ category, currentCount, onRefresh }: { category: string, currentCount: number, onRefresh: () => void }) => {
+const DiscoveryTab = ({ category, currentCount }: { category: string, currentCount: number }) => {
     const { toast } = useToast();
     const [isCopied, setIsCopied] = useState(false);
-    const [isAutoDiscovering, setIsAutoDiscovering] = useState(false);
     const [pageOverride, setPageOverride] = useState<number | ''>('');
     
     const suggestedPage = Math.floor(currentCount / 20) + 1;
@@ -104,39 +100,6 @@ const DiscoveryTab = ({ category, currentCount, onRefresh }: { category: string,
             setTimeout(() => setIsCopied(false), 3000);
         } catch (e) {
             toast({ variant: 'destructive', title: "Copy Failed" });
-        }
-    };
-
-    const handleAutoDiscover = async () => {
-        setIsAutoDiscovering(true);
-        try {
-            const token = await getClientSideAuthToken();
-            if (!token) throw new Error("Auth failed.");
-
-            const res = await performAdminAction(token, 'autoDiscover', {
-                category,
-                type: 'transporter',
-                startPage: startPage
-            });
-
-            toast({ title: "Discovery Complete", description: res.message });
-            onRefresh();
-        } catch (e: any) {
-            console.error("Discovery Error:", e);
-            let description: React.ReactNode = e.message;
-            if (e.message?.includes('dunning') || e.message?.includes('403 Forbidden')) {
-                description = (
-                    <div className="space-y-2">
-                        <p>AI service is blocked by your Google Cloud project's billing status.</p>
-                        <Button asChild variant="link" className="p-0 h-auto text-xs text-destructive-foreground underline decoration-white">
-                            <Link href="/docs/enable-gemini-api.md" target="_blank">Fix Billing / Setup Guide</Link>
-                        </Button>
-                    </div>
-                );
-            }
-            toast({ variant: 'destructive', title: "Automation Failed", description });
-        } finally {
-            setIsAutoDiscovering(false);
         }
     };
 
@@ -179,12 +142,7 @@ const DiscoveryTab = ({ category, currentCount, onRefresh }: { category: string,
                     </div>
 
                     <div className="pt-2 flex flex-col gap-2">
-                         <Button onClick={handleAutoDiscover} disabled={isAutoDiscovering} size="lg" className="w-full gap-2 bg-amber-600 hover:bg-amber-700 shadow-lg group">
-                            {isAutoDiscovering ? <Loader2 className="h-5 w-5 animate-spin"/> : <Zap className="h-5 w-5 fill-amber-300 text-amber-300 group-hover:scale-125 transition-transform" />}
-                            Run Automated Discovery (Batch of 100)
-                        </Button>
-                        <Separator className="my-2" />
-                        <Button onClick={handleCopy} size="lg" variant="outline" className="w-full gap-2 shadow-sm">
+                        <Button onClick={handleCopy} size="lg" className="w-full gap-2 shadow-sm">
                             {isCopied ? <ClipboardCheck className="h-5 w-5 text-green-600" /> : <Copy className="h-5 w-5" />}
                             {isCopied ? "Prompt Copied" : "Copy Manual Prompt"}
                         </Button>
@@ -233,11 +191,11 @@ export default function TransporterDiscoveryEngine() {
                 <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="space-y-1">
                         <CardTitle className="flex items-center gap-2">
-                            <Sparkles className="h-6 w-6 text-primary" />
+                            <Database className="h-6 w-6 text-primary" />
                             Haulier Discovery Engine
                         </CardTitle>
                         <CardDescription>
-                            Locate and extract high-capacity transport partners using industrial category targeting.
+                            Locate and extract high-capacity transport partners using manual forensic prompts.
                         </CardDescription>
                     </div>
                     <Button 
@@ -268,7 +226,7 @@ export default function TransporterDiscoveryEngine() {
 
                     {transporterCategories.map(category => (
                         <TabsContent key={category} value={category} className="mt-0">
-                            <DiscoveryTab category={category} currentCount={counts[category] || 0} onRefresh={handleRefresh} />
+                            <DiscoveryTab category={category} currentCount={counts[category] || 0} />
                         </TabsContent>
                     ))}
                 </CardContent>

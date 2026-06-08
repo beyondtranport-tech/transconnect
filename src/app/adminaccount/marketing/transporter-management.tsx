@@ -7,7 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
   Loader2, PlusCircle, Truck, Edit, Trash2, Send, CheckCircle, Users, Filter, Save, 
-  Search, Zap, RotateCcw, XCircle, Info, Sparkles, AlertCircle, Mail, Download, Copy, ShieldCheck, Tag, Clock, Ban, Database
+  Search, Zap, RotateCcw, XCircle, Info, Sparkles, AlertCircle, Mail, Download, Copy, ShieldCheck, Tag, Clock, Ban, Database, Navigation
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
@@ -26,7 +26,7 @@ import { EngageDialog } from './EngageDialog';
 import { CommunicationLogDialog } from './CommunicationLogDialog';
 import { PartnerTasksDialog } from './PartnerTasksDialog';
 import { formatDateSafe, cn } from '@/lib/utils';
-import { EnrichPartnerButton, BulkEnrichButton } from './EnrichPartnerButton';
+import { EnrichPartnerButton } from './EnrichPartnerButton';
 import { Label } from '@/components/ui/label';
 import { BatchResearchDialog } from './BatchResearchDialog';
 import { BulkImportDialog } from './BulkImportDialog';
@@ -56,7 +56,7 @@ const partnerSchema = z.object({
   companyName: z.string().optional(),
   address: z.string().optional(),
   entryType: z.string().optional(),
-  status: z.enum(['active', 'inactive', 'contacted', 'new', 'qualified', 'invited']),
+  status: z.enum(['active', 'inactive', 'contacted', 'new', 'qualified', 'invited', 'registered']),
   type: z.literal('transporter'),
 });
 type PartnerFormValues = z.infer<typeof partnerSchema>;
@@ -73,15 +73,8 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
     try {
       const token = await getClientSideAuthToken();
       if (!token) throw new Error("Auth failed.");
-      const response = await fetch('/api/admin', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'findDuplicateLeads', payload: {} }),
-        cache: 'no-store'
-      });
-      const result = await response.json();
-      if (!result.success) throw new Error(result.error);
-      setDuplicates(result.data);
+      const result = await performAdminAction(token, 'findDuplicateLeads', {});
+      setDuplicates(result.data || []);
       if (result.data.length === 0) {
         toast({ title: "No duplicates found." });
       } else {
@@ -119,15 +112,7 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
     try {
       const token = await getClientSideAuthToken();
       if (!token) throw new Error("Auth failed.");
-      const response = await fetch('/api/admin', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'deleteLeads', payload: { leadIds: idsToDelete } }),
-        cache: 'no-store'
-      });
-      const result = await response.json();
-      if (!result.success) throw new Error(result.error);
-
+      await performAdminAction(token, 'deleteLeads', { leadIds: idsToDelete });
       toast({ title: "Duplicates Cleaned!", description: `${idsToDelete.length} duplicate records deleted.` });
       onComplete();
       setIsOpen(false);
@@ -150,13 +135,13 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
         <DialogHeader>
           <DialogTitle>Duplicate Transporter Cleaner</DialogTitle>
           <DialogDescription>
-            Select the records you want to keep. This tool now uses <strong>Forensic Matching</strong>: a duplicate is only flagged if <strong>BOTH</strong> the Entity Name and Decision Maker match exactly.
+            Select the records you want to keep. This tool uses <strong>Forensic Pair Matching</strong>: a duplicate is only flagged if <strong>BOTH</strong> the Entity Name and Decision Maker match exactly.
           </DialogDescription>
         </DialogHeader>
         
         <Alert className="bg-amber-50 border-amber-200">
             <Info className="h-4 w-4 text-amber-600" />
-            <AlertTitle>Recommendation Guide</AlertTitle>
+            <AlertTitle>Protection Recommendation</AlertTitle>
             <AlertDescription className="text-xs">
                 Always keep <strong>Members</strong> (Active accounts) and delete <strong>Leads</strong> (Projections).
             </AlertDescription>
@@ -275,6 +260,7 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
                             <SelectItem value="qualified">Qualified</SelectItem>
                             <SelectItem value="invited">Invited</SelectItem>
                             <SelectItem value="new">New</SelectItem>
+                            <SelectItem value="registered">Registered</SelectItem>
                         </SelectContent>
                     </Select>
                 </FormItem>
@@ -339,7 +325,7 @@ export default function TransporterManagement() {
         else if (s === 'contacted') stats.researching++;
         else if (s === 'qualified') stats.qualified++;
         else if (s === 'invited') stats.invited++;
-        else if (s === 'active') stats.active++;
+        else if (s === 'active' || s === 'registered') stats.active++;
         else stats.other++;
     });
     return stats;
@@ -462,13 +448,7 @@ export default function TransporterManagement() {
       try {
           const token = await getClientSideAuthToken();
           if (!token) return;
-          const response = await fetch('/api/admin', {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'bulkCategorizeLeads', {} }),
-          });
-          const result = await response.json();
-          if (!response.ok) throw new Error(result.error);
+          const result = await performAdminAction(token, 'bulkCategorizeLeads', {});
           toast({ title: "Categorization Complete", description: `Auto-tagged ${result.count} transporters.` });
           forceRefresh();
       } catch (e: any) {
@@ -516,6 +496,7 @@ export default function TransporterManagement() {
             'qualified': { label: 'Qualified', color: 'bg-blue-100 text-blue-700' },
             'invited': { label: 'Invited', color: 'bg-purple-100 text-purple-700' },
             'active': { label: 'Member (Active)', color: 'bg-green-600 text-white' },
+            'registered': { label: 'Member (Active)', color: 'bg-green-600 text-white' },
         };
         const config = statusMap[row.original.status] || { label: row.original.status, color: 'bg-muted' };
         return <Badge className={cn("capitalize text-[10px]", config.color)} variant="outline">{config.label}</Badge>
@@ -578,7 +559,6 @@ export default function TransporterManagement() {
             </div>
         </CardHeader>
 
-        {/* Pipeline Statistics Bar */}
         <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
              <Card className="bg-slate-100 border-none shadow-none">
                 <CardContent className="p-4 text-center">
