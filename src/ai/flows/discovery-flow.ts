@@ -1,8 +1,9 @@
+
 'use server';
 /**
  * @fileOverview Automated industrial discovery agent.
  * Performs deep-search and extraction of company and professional records.
- * Scaled to handle high-density 100-record batches.
+ * Tuned for South African PNet, CareerJunction, Indeed, and industry noticeboards.
  */
 
 import { ai, geminiModel } from '@/ai/genkit';
@@ -22,14 +23,17 @@ const DiscoveryOutputSchema = z.object({
         company_name: z.string().optional(),
         firstName: z.string().optional(),
         lastName: z.string().optional(),
+        work_identity: z.string().optional(),
         contact_person: z.string().nullable(),
         email_address: z.string().nullable(),
         telephone_number: z.string().nullable(),
+        professional_contact: z.string().optional(),
         website: z.string().nullable(),
         physical_address: z.string().nullable(),
         industrial_category: z.string(),
         record_id: z.string(),
         notes: z.string().optional(),
+        certification_notes: z.string().optional(),
     })).describe('A list of unique discovered records.'),
 });
 export type DiscoveryOutput = z.infer<typeof DiscoveryOutputSchema>;
@@ -52,22 +56,22 @@ const discoveryFlow = ai.defineFlow(
         let systemPrompt = "";
 
         if (type === 'driver') {
-            searchContext = `Focus on mapping publicly published workforce availability for licensed commercial operators in South Africa. Utilize professional logistics noticeboards and industry groups on LinkedIn and Facebook. Target Page ${startPage} of the workforce availability registry.`;
-            systemPrompt = `You are an elite workforce intelligence agent performing professional market mapping.
-            Your goal is to MAP PUBLIC WORKFORCE AVAILABILITY records for: "${category} Operators".
+            searchContext = `Focus on mapping PUBLICLY PUBLISHED professional workforce availability in South Africa for "${category}". Search specialized logistics job portals like PNet, CareerJunction, Indeed SA, and professional noticeboards like "SA Truckers" on social platforms. Target Page ${startPage} of the workforce registry.`;
+            systemPrompt = `You are an elite workforce intelligence agent performing professional market mapping for the South African transport industry.
+            Your goal is to MAP PUBLIC WORKFORCE AVAILABILITY records for: "${category}".
             
             ${searchContext}
 
             STRICT RESEARCH RULES:
-            1. PUBLIC AVAILABILITY ONLY: Focus on professionals who have publicly published their availability for commercial placement on professional networking platforms.
-            2. WORK IDENTITY: You MUST identify the ACTUAL NAME of the professional from their public professional noticeboard listing.
-            3. CERTIFICATION SIGNALS: Prioritize records showing valid commercial certifications (e.g., Code 14, Hazmat).
-            4. COMPLIANCE: Do not return "Private" or "Individual". Focus on the "Professional Entity" and their publicly listed workforce credentials.
+            1. PUBLIC AVAILABILITY ONLY: Focus on professionals who have explicitly published their availability for placement or commercial engagement on professional noticeboards.
+            2. WORK IDENTITY: You MUST identify the ACTUAL NAME of the professional from their public professional posting.
+            3. CERTIFICATION SIGNALS: Prioritize records showing valid commercial licenses (Code 14/EC, Code 10), PrDP, or Hazmat endorsements.
+            4. BUSINESS CONTEXT: Do not return "Private" or "Individual". Focus on the "Professional Talent Entity" as listed in the public domain.
             5. ID: Generate a unique ID starting with 'TALENT_MAP_'.`;
         } else if (type === 'finance') {
-            searchContext = `Focus on the National Credit Regulator (NCR) South Africa. Target registry pages starting at Page ${startPage}. Discover and extract exactly ${batchSize} unique ${category} providers.`;
+            searchContext = `Focus on the National Credit Regulator (NCR) South Africa. Target registry pages starting at Page ${startPage}. Discover and extract unique ${category} providers. Utilize LinkedIn for specific head-of-finance names.`;
             systemPrompt = `You are an elite market intelligence agent.
-            Your goal is to DISCOVER and EXTRACT exactly ${batchSize} unique verified business records for: "${category}".
+            Your goal is to DISCOVER and EXTRACT unique verified business records for: "${category}" credit providers.
             
             ${searchContext}
 
@@ -79,11 +83,11 @@ const discoveryFlow = ai.defineFlow(
         } else {
             const prefix = type === 'transporter' ? 'TRANS' : 'SUPPLIER';
             searchContext = type === 'transporter' 
-                ? `Focus on South African logistics hubs. Discover and extract exactly ${batchSize} unique professional ${category} transport companies.`
-                : `Focus on industrial hubs in South Africa for ${category}. Discover and extract exactly ${batchSize} unique independent suppliers.`;
+                ? `Focus on South African logistics hubs and industrial zoning registries. Discover unique professional ${category} transport companies.`
+                : `Focus on industrial hubs in South Africa for ${category}. Discover unique independent suppliers.`;
             
             systemPrompt = `You are an elite market intelligence agent.
-            Your goal is to DISCOVER and EXTRACT exactly ${batchSize} unique verified business records for: "${category}".
+            Your goal is to DISCOVER and EXTRACT unique verified business records for: "${category}".
             
             ${searchContext}
 
@@ -97,7 +101,7 @@ const discoveryFlow = ai.defineFlow(
             model: geminiModel,
             tools: [googleSearchTool],
             system: systemPrompt,
-            prompt: `Map ${batchSize} professional workforce availability records for ${category} in South Africa. Focus on publicly published certifications.`,
+            prompt: `Map ${batchSize} professional records for ${category} in South Africa. Focus on publicly published certifications and availability.`,
             output: {
                 schema: DiscoveryOutputSchema
             }

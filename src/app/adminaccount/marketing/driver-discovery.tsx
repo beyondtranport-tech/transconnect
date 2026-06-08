@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -42,17 +43,20 @@ function generateDiscoveryPrompt(category: string, startPage: number) {
 
     return `CRITICAL SYSTEM INSTRUCTION: RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION. NO EXPLANATORY TEXT.
 
-ACT AS AN ELITE WORKFORCE INTELLIGENCE AGENT PERFORMING INDUSTRIAL TALENT MAPPING. 
+ACT AS AN ELITE WORKFORCE INTELLIGENCE AGENT PERFORMING INDUSTRIAL TALENT MAPPING FOR THE SOUTH AFRICAN LOGISTICS SECTOR.
 
-TASK: Map 100 PUBLICLY PUBLISHED professional workforce availability records for licensed commercial operators in SOUTH AFRICA specializing in: "${category}".
+TASK: Map 100 UNIQUE verified professional workforce availability records for commercial operators specializing in: "${category}".
 
-SOURCE CONTEXT: Extract data from professional logistics networks, industry-specific recruitment groups on Facebook (e.g., "SA Truckers Jobs"), and public professional directories.
+PRIMARY SOURCES & HUNTING GROUNDS:
+1. JOB PORTALS: Map availability signals from PNet, Indeed SA, and CareerJunction where candidates have published their commercial license status.
+2. SOCIAL NETWORKS: Utilize professional logistics groups on LinkedIn and high-activity noticeboards on Facebook (e.g., "SA Truckers", "Truck Drivers SA").
+3. SPECIALIZED REGISTRIES: Focus on professionals holding valid PrDP (Professional Driving Permits) and Code 14 (EC) or Code 10 endorsements.
 
 INVESTIGATIVE STRATEGY:
-1. TARGET: Identify licensed professionals who have PUBLICLY PUBLISHED their availability for commercial placement.
+1. MAPPING INTENT: Focus on identifying professionals who have PUBLICLY PUBLISHED their availability for placement or commercial engagement.
 2. IDENTITY FORENSICS: Extract the "Work Identity" (Legal Full Name) as listed on their professional public posting.
-3. FORBIDDEN VALUES: Do not return "Anonymous" or "Driver". You MUST extract specific verified human identities from the public noticeboard.
-4. QUANTITY: Return exactly 100 entries. Keep strings short.
+3. FORBIDDEN VALUES: Do not return "Private" or "Confidential". You MUST extract the specific human identity from the public noticeboard.
+4. QUANTITY: Return exactly 100 entries. 
 5. SEQUENCE: Use field "seq", starting from ${startSeq}.
 6. DATA PERSISTENCE: Generate a unique "record_id" starting with "TALENT_MAP_${category.toUpperCase().replace(/\s/g, '_')}_".
 
@@ -64,12 +68,10 @@ REQUIRED OUTPUT FORMAT (RAW JSON ARRAY ONLY):
     "work_identity": "VERIFIED FULL NAME",
     "license_category": "${category}",
     "professional_contact": "Publicly Listed Mobile/Email",
-    "geographic_region": "Primary Operating City/Province",
-    "certification_notes": "Summary of years experience and specific endorsements (e.g., Dangerous Goods, Code 14)"
+    "geographic_region": "Primary Operating Hub (e.g. City Deep, Montague Gardens)",
+    "certification_notes": "Summary of years experience, PrDP status, and NBCRFLI compliance signals"
   }
-]
-
-HUNTING GROUNDS: Map availability data from LinkedIn "Looking for work" signals, SA Trucking Community public noticeboards, and verified logistics talent registries.`;
+]`;
 }
 
 const DiscoveryTab = ({ category, currentCount }: { category: string, currentCount: number }) => {
@@ -245,7 +247,7 @@ export default function DriverDiscoveryEngine() {
                             Industrial Workforce Discovery
                         </CardTitle>
                         <CardDescription>
-                            Identify and map verified professional drivers using advanced forensic talent prompts.
+                            Identify and map verified professional drivers using advanced forensic talent prompts targeting PNet, Indeed, and industry noticeboards.
                         </CardDescription>
                     </div>
                     <Button 
