@@ -34,6 +34,22 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { driverCategories } from './driver-discovery';
 
+// Define schema at the top level to avoid ReferenceErrors
+const partnerSchema = z.object({
+  firstName: z.string().min(1, 'First name is required'),
+  lastName: z.string().min(1, 'Last name is required'),
+  email: z.string().email('Invalid email address').optional().or(z.literal('')),
+  phone: z.string().optional(),
+  contactPerson: z.string().optional(),
+  companyName: z.string().optional(),
+  address: z.string().optional(),
+  entryType: z.string().optional(),
+  status: z.enum(['active', 'inactive', 'contacted', 'new', 'qualified', 'invited', 'registered']),
+  type: z.literal('driver'),
+});
+
+type PartnerFormValues = z.infer<typeof partnerSchema>;
+
 async function performAdminAction(token: string, action: string, payload: any) {
   const response = await fetch('/api/admin', {
     method: 'POST',
@@ -142,8 +158,7 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
 
         <div className="flex-1 overflow-y-auto p-4 space-y-6">
           {duplicates.map((group, groupIndex) => {
-             const companyName = group.find(r => r.companyName)?.companyName || 'Unnamed Group';
-             const contactPerson = group.find(r => r.contactPerson)?.contactPerson || 'N/A';
+             const contactPerson = group.find(r => r.contactPerson || (r.firstName && r.lastName))?.contactPerson || 'N/A';
              return (
                 <Card key={groupIndex} className="shadow-none border">
                 <CardHeader className="py-3 bg-muted/30 flex flex-row justify-between items-center">
@@ -238,7 +253,7 @@ function DriverDialog({ open, onOpenChange, partner, onSave }: { open: boolean; 
                 <FormItem>
                     <FormLabel>License Category</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                        <FormControl><SelectTrigger><SelectValue placeholder="Select category..." /></SelectTrigger></FormControl>
                         <SelectContent>
                             {driverCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
                         </SelectContent>
@@ -379,8 +394,8 @@ export default function DriverManagement() {
     { accessorKey: 'email', header: 'Email' },
     { accessorKey: 'phone', header: 'Phone' },
     { accessorKey: 'researchStatus', header: 'Enriched', cell: ({row}) => {
-        if (row.original.researchStatus === 'researching') return <Badge variant="outline" className="animate-pulse text-amber-600 border-amber-200 bg-amber-50">Searching...</Badge>;
-        if (row.original.email) return <Badge variant="default" className="bg-green-100 text-green-700 border-green-200">Enriched</Badge>;
+        if (row.original.researchStatus === 'researching') return <Badge variant="outline" className="animate-pulse text-amber-600 border-amber-200 bg-amber-50 text-[10px]">Searching...</Badge>;
+        if (row.original.email) return <Badge variant="default" className="bg-green-100 text-green-700 border-green-200 text-[10px]">Enriched</Badge>;
         return <span className="text-xs text-muted-foreground">-</span>;
     }},
     { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
@@ -439,7 +454,7 @@ export default function DriverManagement() {
                     <div className="space-y-2">
                         <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status</Label>
                         <Select value={statusFilter} onValueChange={setStatusFilter}>
-                            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Statuses</SelectItem>
                                 <SelectItem value="new">New</SelectItem>
