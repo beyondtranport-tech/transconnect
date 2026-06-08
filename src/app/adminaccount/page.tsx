@@ -133,7 +133,7 @@ function AdminAccountContent() {
 
   const renderContent = useCallback(() => {
     if (activeView.startsWith('marketing-')) {
-        const audience = activeView.split('-')[1] as "partners" | "isa" | "transporters" | "suppliers" | "finance" | "investors" | "developers";
+        const audience = activeView.split('-')[1] as "partners" | "isa" | "transporters" | "suppliers" | "finance" | "investors" | "developers" | "drivers";
         return <MarketingPage audience={audience} />;
     }
     switch (activeView) {
@@ -216,6 +216,7 @@ function AdminAccountContent() {
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-suppliers'} onClick={() => navigate('marketing-suppliers')}><Building className="h-4 w-4 mr-2"/>Suppliers</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-transporters'} onClick={() => navigate('marketing-transporters')}><Truck className="h-4 w-4 mr-2"/>Transporters</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-finance'} onClick={() => navigate('marketing-finance')}><Landmark className="h-4 w-4 mr-2"/>Finance Companies</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-drivers'} onClick={() => navigate('marketing-drivers')}><Users className="h-4 w-4 mr-2"/>Drivers</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-investors'} onClick={() => navigate('marketing-investors')}><DollarSign className="h-4 w-4 mr-2"/>Investors</SidebarMenuSubButton></SidebarMenuSubItem>
                     </SidebarMenuSub>
                 </SidebarMenuItem>

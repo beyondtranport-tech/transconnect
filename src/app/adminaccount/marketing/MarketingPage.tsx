@@ -45,6 +45,7 @@ import InvestorOffer from './offers/InvestorOffer';
 import DeveloperOffer from './offers/DeveloperOffer';
 import SupplierOffer from './offers/SupplierOffer';
 import TransporterOffer from './offers/TransporterOffer';
+import DriverOffer from './offers/DriverOffer';
 
 // Emails
 import PartnerEmails from './emails/PartnerEmails';
@@ -52,6 +53,7 @@ import SupplierEmails from './emails/SupplierEmails';
 import TransporterEmails from './emails/TransporterEmails';
 import InvestorEmails from './emails/InvestorEmails';
 import DeveloperEmails from './emails/DeveloperEmails';
+import DriverEmails from './emails/DriverEmails';
 
 // Management
 import PartnerManagement from './partner-management';
@@ -61,12 +63,14 @@ import DeveloperManagement from './developer-management';
 import SupplierManagement from './supplier-management';
 import TransporterManagement from './transporter-management';
 import FinanceManagement from './finance-management';
+import DriverManagement from './driver-management';
 
 import SupplierPitch from '@/app/adminaccount/supplier-pitch';
 import DiscoveryEngine from './discovery-engine';
 import FinanceDiscoveryEngine from './finance-discovery';
 import InvestorDiscoveryEngine from './investor-discovery';
 import TransporterDiscoveryEngine from './transporter-discovery';
+import DriverDiscoveryEngine from './driver-discovery';
 
 const audienceConfig = {
     partners: { title: 'Strategic Partners', icon: Users, Offer: PartnerOffer, Emails: PartnerEmails, Management: PartnerManagement },
@@ -74,6 +78,7 @@ const audienceConfig = {
     suppliers: { title: 'Suppliers', icon: SearchCode, Offer: SupplierOffer, Emails: SupplierEmails, Management: SupplierManagement, Pitch: SupplierPitch, Discovery: DiscoveryEngine },
     transporters: { title: 'Transporters', icon: Send, Offer: TransporterOffer, Emails: TransporterEmails, Management: TransporterManagement, Discovery: TransporterDiscoveryEngine },
     finance: { title: 'Finance Companies', icon: Landmark, Offer: InvestorOffer, Emails: InvestorEmails, Management: FinanceManagement, Discovery: FinanceDiscoveryEngine },
+    drivers: { title: 'Drivers', icon: Users, Offer: DriverOffer, Emails: DriverEmails, Management: DriverManagement, Discovery: DriverDiscoveryEngine },
     investors: { title: 'App Launch Investors', icon: DollarSign, Offer: InvestorOffer, Emails: InvestorEmails, Management: InvestorManagement, Discovery: InvestorDiscoveryEngine },
     developers: { title: 'Developers', icon: LayoutDashboard, Offer: DeveloperOffer, Emails: DeveloperEmails, Management: DeveloperManagement },
 };
@@ -207,7 +212,7 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
     try {
         const token = await getClientSideAuthToken();
         if (!token) return;
-        const result = await performAdminAction(token, 'getPartnersByType', { type: audience === 'isa' ? 'isa' : (audience === 'finance' ? 'finance' : audience.slice(0, -1)) });
+        const result = await performAdminAction(token, 'getPartnersByType', { type: audience === 'isa' ? 'isa' : (audience === 'finance' ? 'finance' : (audience === 'drivers' ? 'driver' : audience.slice(0, -1))) });
         setPartners(result.data || []);
     } catch (e: any) {
         toast({ variant: 'destructive', title: `Could not load partners`, description: e.message });
