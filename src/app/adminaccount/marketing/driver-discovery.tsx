@@ -43,30 +43,30 @@ function generateDiscoveryPrompt(category: string, startPage: number) {
 
     return `CRITICAL SYSTEM INSTRUCTION: RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION. NO EXPLANATORY TEXT.
 
-ACT AS AN ELITE WORKFORCE INTELLIGENCE STRATEGIST PERFORMING PROFESSIONAL MARKET MAPPING FOR THE SOUTH AFRICAN LOGISTICS SECTOR.
+ACT AS AN ELITE MARKET INTELLIGENCE STRATEGIST PERFORMING COMMERCIAL SERVICE MAPPING FOR THE SOUTH AFRICAN LOGISTICS SECTOR.
 
-TASK: Catalogue 100 UNIQUE Professional Talent Entities (Independent Driver-Operators) currently advertising availability for: "${category}".
+TASK: Catalogue 100 UNIQUE Industrial Service Units (Independent Logistics Contractors) currently advertising professional availability for: "${category}".
 
-DATA SOURCE COMPLIANCE: Extract data ONLY from professional noticeboards (e.g. SA Truckers, PNet, LinkedIn, Facebook Recruitment Groups) where the provider has EXPLICITLY published their professional service availability for commercial engagement.
+DATA SOURCE CONTEXT: Analyze publicly published commercial service notices and professional industrial registers (e.g. SA Trucking Noticeboards, Commercial Job Portals, Industry Hubs). Focus ONLY on providers who have EXPLICITLY invited public commercial engagement.
 
 INVESTIGATIVE STRATEGY:
-1. COMMERCIAL MAPPING: Focus on identifying professional service units who have PUBLICLY ADVERTISED their commercial status and credentials.
-2. IDENTITY AUDIT: Extract the "Professional Talent Handle" (Full Name) as listed in the public commercial posting.
-3. FORBIDDEN VALUES: Do not return "Private" or "Confidential". You MUST extract the specific commercial handle from the public industry registry.
-4. QUANTITY: Return exactly 100 entries. 
+1. COMMERCIAL UNIT MAPPING: Identify professional service units that have PUBLICLY DECLARED their commercial standing and credentials.
+2. SERVICE HANDLE: Extract the "Public Service Identity" (Full Professional Name) as listed in the commercial advertisement.
+3. FORBIDDEN VALUES: Do not return "Private" or "Confidential". You MUST extract the specific identity handle from the public industrial register.
+4. QUANTITY & DENSITY: Return exactly 100 entries. 
 5. SEQUENCE: Use field "seq", starting from ${startSeq}.
-6. DATA PERSISTENCE: Generate a unique "record_id" starting with "TALENT_MAP_${category.toUpperCase().replace(/\s/g, '_')}_".
+6. DATA PERSISTENCE: Generate a unique "record_id" starting with "LOG_NODE_${category.toUpperCase().replace(/\s/g, '_')}_".
 
 REQUIRED OUTPUT FORMAT (RAW JSON ARRAY ONLY):
 [
   {
     "seq": ${startSeq},
-    "record_id": "TALENT_MAP_${category.toUpperCase().replace(/\s/g, '_')}_[RAND_HEX]",
-    "work_identity": "PUBLICLY ADVERTISED NAME",
-    "license_category": "${category}",
-    "professional_contact": "Listed Commercial Contact Line",
-    "geographic_region": "Operational Hub (e.g. City Deep, Spartan, Paarden Eiland)",
-    "certification_notes": "Summary of years experience, PrDP status, and NBCRFLI compliance signals extracted from the public profile"
+    "record_id": "LOG_NODE_${category.toUpperCase().replace(/\s/g, '_')}_[RAND_HEX]",
+    "service_handle": "PUBLICLY ADVERTISED IDENTITY",
+    "service_classification": "${category}",
+    "registry_line": "Listed Public Contact Line",
+    "operational_hub": "Industrial Region (e.g. City Deep, Spartan, Paarden Eiland)",
+    "capability_profile": "Summary of industrial qualifications, license status, and compliance signals extracted from the public service listing"
   }
 ]`;
 }
@@ -87,7 +87,7 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
         try {
             await navigator.clipboard.writeText(prompt);
             setIsCopied(true);
-            toast({ title: "Talent Map Prompt Copied!", description: `Targeting Page ${startPage} of the workforce registry.` });
+            toast({ title: "Forensic Map Prompt Copied!", description: `Targeting Page ${startPage} of the commercial registry.` });
             setTimeout(() => setIsCopied(false), 3000);
         } catch (e) {
             toast({ variant: 'destructive', title: "Copy Failed" });
@@ -120,7 +120,7 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                 throw new Error(errMessage);
             }
 
-            toast({ title: "Registry Updated", description: `Successfully mapped and imported ${result.count} professional service units.` });
+            toast({ title: "Registry Updated", description: `Successfully mapped and imported ${result.count} commercial service nodes.` });
         } catch (e: any) {
             toast({ variant: 'destructive', title: "Discovery Failed", description: e.message });
         } finally {
@@ -200,7 +200,7 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
 
                 <div className="space-y-2">
                     <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
-                        <Terminal className="h-3 w-3"/> Industrial Talent Command
+                        <Terminal className="h-3 w-3"/> Industrial Service Command
                     </Label>
                     <ScrollArea className="h-[400px] border rounded-lg bg-slate-900 p-4 shadow-inner">
                         <pre className="text-[10px] text-slate-400 font-mono whitespace-pre-wrap leading-tight">
@@ -244,7 +244,7 @@ export default function DriverDiscoveryEngine() {
                             Industrial Workforce Discovery
                         </CardTitle>
                         <CardDescription>
-                            Identify and map professional driver service units using advanced forensic prompts targeting public industry noticeboards.
+                            Identify and map professional logistics service units using forensic prompts targeting public commercial noticeboards.
                         </CardDescription>
                     </div>
                     <Button 

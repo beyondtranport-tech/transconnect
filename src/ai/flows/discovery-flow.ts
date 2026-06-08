@@ -22,16 +22,20 @@ const DiscoveryOutputSchema = z.object({
     results: z.array(z.object({
         company_name: z.string().optional(),
         work_identity: z.string().optional(),
+        service_handle: z.string().optional(),
         contact_person: z.string().nullable(),
         email_address: z.string().nullable(),
         telephone_number: z.string().nullable(),
+        registry_line: z.string().optional(),
         professional_contact: z.string().optional(),
         website: z.string().nullable(),
         physical_address: z.string().nullable(),
         geographic_region: z.string().optional(),
+        operational_hub: z.string().optional(),
         industrial_category: z.string(),
         record_id: z.string(),
         notes: z.string().optional(),
+        capability_profile: z.string().optional(),
         certification_notes: z.string().optional(),
     })).describe('A list of unique discovered professional entities.'),
 });
@@ -55,18 +59,18 @@ const discoveryFlow = ai.defineFlow(
         let systemPrompt = "";
 
         if (type === 'driver') {
-            searchContext = `Focus on mapping PUBLICLY ADVERTISED professional workforce availability in South Africa for "${category}". Source data from professional logistics groups and commercial noticeboards where service units have published their credentials.`;
-            systemPrompt = `You are an elite workforce intelligence strategist cataloguing professional service availability for the South African transport industry.
-            Your goal is to MAP PUBLIC COMMERCIAL TALENT entries for: "${category}".
+            searchContext = `Focus on mapping PUBLICLY ADVERTISED commercial service availability in South Africa for "${category}". Source data from industrial logistics noticeboards and professional recruitment registers where service units have published their commercial credentials.`;
+            systemPrompt = `You are an elite workforce intelligence strategist cataloguing commercial service availability for the South African transport industry.
+            Your goal is to MAP PUBLIC COMMERCIAL SERVICE NODES for: "${category}".
             
             ${searchContext}
 
             STRICT RESEARCH RULES:
-            1. COMMERCIAL UNITS ONLY: Focus on entities that have actively published their service availability on public industry noticeboards.
-            2. TALENT HANDLE: Identify the EXPLICIT HANDLE (Full Name) as listed in the professional public posting.
+            1. COMMERCIAL UNITS ONLY: Focus on entities (Independent Contractors) that have actively published their service availability on public industry noticeboards.
+            2. SERVICE HANDLE: Identify the EXPLICIT IDENTITY (Full Professional Name) as listed in the professional public notice.
             3. CERTIFICATION AUDIT: Prioritize entries showing industrial signals: Code 14/EC, Code 10, valid PrDP, or NBCRFLI compliance.
-            4. BUSINESS CONTEXT: Extract the commercial contact line as listed in the public advertisement.
-            5. ID: Generate a unique ID starting with 'TALENT_MAP_'.`;
+            4. REGISTRY LINE: Extract the public commercial contact line as listed in the advertisement.
+            5. ID: Generate a unique ID starting with 'LOG_NODE_'.`;
         } else if (type === 'finance') {
             searchContext = `Focus on the National Credit Regulator (NCR) South Africa. Target registry pages starting at Page ${startPage}. Discover and extract unique ${category} providers. Utilize LinkedIn for specific head-of-finance names.`;
             systemPrompt = `You are an elite capital intelligence agent.
@@ -100,7 +104,7 @@ const discoveryFlow = ai.defineFlow(
             model: geminiModel,
             tools: [googleSearchTool],
             system: systemPrompt,
-            prompt: `Map ${batchSize} professional talent entries for ${category} in South Africa. Focus on publicly published certifications and commercial handles.`,
+            prompt: `Map ${batchSize} professional service nodes for ${category} in South Africa. Focus on publicly published certifications and commercial handles.`,
             output: {
                 schema: DiscoveryOutputSchema
             }

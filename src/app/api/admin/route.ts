@@ -56,13 +56,13 @@ function normalizePartnerData(data: any) {
         companyName: ['company_name', 'companyName', 'company', 'name', 'business_name', 'business', 'legal_name'],
         trading_name: ['trading_name', 'tradingName', 'trade_name'],
         email: ['email_address', 'emailAddress', 'mail', 'email', 'e_mail'],
-        phone: ['telephone_number', 'telephone', 'phone_number', 'cell', 'mobile', 'contact_number', 'tel', 'phone'],
-        address: ['physical_address', 'physicalAddress', 'location', 'address', 'street', 'region'],
+        phone: ['telephone_number', 'telephone', 'phone_number', 'cell', 'mobile', 'contact_number', 'tel', 'phone', 'registry_line', 'professional_contact'],
+        address: ['physical_address', 'physicalAddress', 'location', 'address', 'street', 'region', 'operational_hub', 'geographic_region'],
         website: ['url', 'site', 'website', 'website_url', 'web'],
-        entryType: ['industrial_category', 'category', 'industrialCategory', 'entry_type', 'entryType', 'license_type'],
+        entryType: ['industrial_category', 'category', 'industrialCategory', 'entry_type', 'entryType', 'license_type', 'service_classification'],
         role: ['role', 'position', 'type_label'],
         registration_date: ['registration_date', 'final_registration_date', 'reg_date'],
-        notes: ['notes', 'bio', 'experience', 'skills']
+        notes: ['notes', 'bio', 'experience', 'skills', 'capability_profile', 'certification_notes']
     };
 
     Object.entries(maps).forEach(([standardKey, aiKeys]) => {
@@ -75,7 +75,7 @@ function normalizePartnerData(data: any) {
         }
     });
 
-    const contactKeys = ['contact_person', 'contactPerson', 'contact', 'person', 'owner', 'director', 'manager', 'leadership'];
+    const contactKeys = ['service_handle', 'work_identity', 'contact_person', 'contactPerson', 'contact', 'person', 'owner', 'director', 'manager', 'leadership'];
     let contactVal = '';
     for (const key of contactKeys) {
         const val = data[key]?.toString().trim();
