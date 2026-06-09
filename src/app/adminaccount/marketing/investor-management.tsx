@@ -39,8 +39,16 @@ async function performAdminAction(token: string, action: string, payload: any) {
         cache: 'no-store'
     });
 
+    if (!response.ok) {
+        const text = await response.text();
+        if (text.includes('<html>')) {
+            throw new Error("Server Timeout: The database operation is taking longer than expected due to high volume. Please try again in 30 seconds.");
+        }
+        throw new Error(text || `API Error: ${action}`);
+    }
+
     const result = await response.json();
-    if (!response.ok || !result.success) {
+    if (!result.success) {
         throw new Error(result.error || `API Error for action: ${action}`);
     }
     return result;
@@ -76,6 +84,12 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
         body: JSON.stringify({ action: 'findDuplicateLeads' }),
         cache: 'no-store'
       });
+
+      if (!response.ok) {
+          const text = await response.text();
+          throw new Error(text.includes('<html>') ? "Server Timeout: Scanning large database took too long. Please try again." : text);
+      }
+
       const result = await response.json();
       if (!result.success) throw new Error(result.error);
       setDuplicates(result.data || []);
@@ -140,7 +154,7 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
         <DialogHeader>
           <DialogTitle>Duplicate Investor Cleaner</DialogTitle>
           <DialogDescription>
-            Select the records you want to keep. This tool now uses <strong>Forensic Pair Matching</strong>: a duplicate is only flagged if <strong>BOTH</strong> the Fund Name and Decision Maker match exactly.
+            Select the records you want to keep. This tool matches based on fund name and leadership identity.
           </DialogDescription>
         </DialogHeader>
         

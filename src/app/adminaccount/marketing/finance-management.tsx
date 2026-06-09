@@ -270,7 +270,7 @@ function FinanceDialog({ open, onOpenChange, partner, onSave }: { open: boolean;
                 <FormItem>
                     <FormLabel>Finance Category</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                        <FormControl><SelectTrigger><SelectValue placeholder="Select category..." /></SelectTrigger></FormControl>
                         <SelectContent>
                             {financeCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
                         </SelectContent>

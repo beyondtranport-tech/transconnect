@@ -35,7 +35,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { driverCategories } from './driver-discovery';
 
-// Schema at the top level to prevent ReferenceErrors
+// Schema at top level to ensure availability for types and resolver
 const partnerSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
@@ -93,7 +93,7 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
 
       if (!response.ok) {
         const text = await response.text();
-        throw new Error(text.includes('<html>') ? "Server Timeout: Scanning 9,000+ records took too long. Please try again." : text);
+        throw new Error(text.includes('<html>') ? "Server Timeout: Scanning large registry took too long. Please try again." : text);
       }
 
       const result = await response.json();
@@ -160,7 +160,7 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
         <DialogHeader>
           <DialogTitle>Duplicate Driver Cleaner</DialogTitle>
           <DialogDescription>
-            Select the records you want to keep. Duplicate identification matches Name and Phone/Email.
+            Select the records you want to keep. This tool matches by identity handle and contact details.
           </DialogDescription>
         </DialogHeader>
         
@@ -549,7 +549,7 @@ export default function DriverManagement() {
                     <div className="space-y-2">
                         <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status</Label>
                         <Select value={statusFilter} onValueChange={setStatusFilter}>
-                            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Statuses</SelectItem>
                                 <SelectItem value="new">New</SelectItem>
@@ -562,7 +562,7 @@ export default function DriverManagement() {
                     <div className="space-y-2">
                         <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Tag className="h-3 w-3"/> License Type</Label>
                         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Categories</SelectItem>
                                 {driverCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
@@ -572,14 +572,14 @@ export default function DriverManagement() {
                     <div className="space-y-2">
                         <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Users className="h-3 w-3"/> Assignee</Label>
                         <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-                            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
                             <SelectContent><SelectItem value="all">All Staff</SelectItem><SelectItem value="none">Unallocated</SelectItem>{staff.map(s => <SelectItem key={s.id} value={s.id}>{s.firstName} {s.lastName}</SelectItem>)}</SelectContent>
                         </Select>
                     </div>
                     <div className="space-y-2">
                         <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Search className="h-3 w-3"/> Data Filter</Label>
                         <Select value={dataFilter} onValueChange={setDataFilter}>
-                            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Records</SelectItem>
                                 <SelectItem value="has-email">Has Email</SelectItem>
