@@ -1,5 +1,6 @@
+
 import { NextRequest, NextResponse } from 'next/server';
-import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
+import { getFirestore, Timestamp, FieldValue, FieldPath } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase-admin';
 import { runDiscovery } from '@/ai/flows/discovery-flow';
@@ -25,7 +26,7 @@ function serializeTimestamps(docData: any): any {
 }
 
 /**
- * Universal Data Normalization & Intelligent Categorization
+ * Universal Data Normalization
  */
 function normalizePartnerData(data: any) {
     const result: any = {};
@@ -33,35 +34,21 @@ function normalizePartnerData(data: any) {
     const isPlaceholder = (val: any) => {
         if (!val) return true;
         const low = val.toString().toLowerCase().trim();
-        if (low.startsWith('the director of') || low.startsWith('the manager of') || low.startsWith('the owner of')) return true;
         return [
-            'member', 'candidate', 'null', 'n/a', 'none', 'undefined', 'n a', 'unknown', 
+            'member', 'candidate', 'null', 'n/a', 'none', 'undefined', 'unknown', 
             'null@null.com', 'the director', 'the manager', 'director', 'manager', 
-            'branch manager', 'managing director', 'ceo of', 'the owner', 'owner',
-            'ceo of company', 'owner of company', 'md of company', '[must_be_unique_for_every_item]'
+            'managing director', 'ceo of company', 'owner of company'
         ].includes(low) || low.length < 2;
     }
 
-    const idKeys = ['record_id', 'recordId', 'id', 'record', 'uid', 'recordid', 'seq'];
-    for (const key of idKeys) {
-        const val = data[key]?.toString().trim();
-        if (val && val.length >= 1 && !isPlaceholder(val)) {
-            result.record_id = val;
-            break;
-        }
-    }
-
     const maps = {
-        companyName: ['company_name', 'companyName', 'company', 'name', 'business_name', 'business', 'legal_name'],
-        trading_name: ['trading_name', 'tradingName', 'trade_name'],
+        companyName: ['company_name', 'companyName', 'company', 'name', 'business_name'],
         email: ['email_address', 'emailAddress', 'mail', 'email', 'e_mail'],
-        phone: ['telephone_number', 'telephone', 'phone_number', 'cell', 'mobile', 'contact_number', 'tel', 'phone', 'registry_line', 'professional_contact'],
-        address: ['physical_address', 'physicalAddress', 'location', 'address', 'street', 'region', 'operational_hub', 'geographic_region'],
-        website: ['url', 'site', 'website', 'website_url', 'web'],
-        entryType: ['industrial_category', 'category', 'industrialCategory', 'entry_type', 'entryType', 'license_type', 'service_classification'],
-        role: ['role', 'position', 'type_label'],
-        registration_date: ['registration_date', 'final_registration_date', 'reg_date'],
-        notes: ['notes', 'bio', 'experience', 'skills', 'capability_profile', 'certification_notes']
+        phone: ['telephone_number', 'phone_number', 'cell', 'mobile', 'registry_line'],
+        address: ['physical_address', 'location', 'address', 'operational_hub'],
+        website: ['url', 'site', 'website'],
+        entryType: ['industrial_category', 'category', 'service_classification'],
+        notes: ['notes', 'bio', 'capability_profile']
     };
 
     Object.entries(maps).forEach(([standardKey, aiKeys]) => {
@@ -74,96 +61,21 @@ function normalizePartnerData(data: any) {
         }
     });
 
-    const contactKeys = ['service_handle', 'work_identity', 'contact_person', 'contactPerson', 'contact', 'person', 'owner', 'director', 'manager', 'leadership'];
-    let contactVal = '';
-    for (const key of contactKeys) {
-        const val = data[key]?.toString().trim();
-        if (val && !isPlaceholder(val)) {
-            contactVal = val;
-            break;
-        }
-    }
-
+    const contactVal = data.contact_person || data.service_handle || data.firstName || '';
     if (contactVal) {
         result.contactPerson = contactVal;
-        const parts = contactVal.split(' ');
+        const parts = contactVal.toString().split(' ');
         result.firstName = parts[0];
         result.lastName = parts.slice(1).join(' ') || '';
-    }
-
-    // Handle separate first/last name fields
-    if (!result.firstName && data.firstName) result.firstName = data.firstName;
-    if (!result.lastName && data.lastName) result.lastName = data.lastName;
-
-    if (!result.entryType || result.entryType === 'General') {
-        const name = (result.companyName || '').toLowerCase();
-        const activity = (data.business_activity || '').toLowerCase();
-        const notes = (result.notes || '').toLowerCase();
-        
-        if (name.includes('bank')) result.entryType = 'Banks';
-        else if (name.includes('forward') || activity.includes('customs')) result.entryType = 'AEO';
-        else if (name.includes('distrib')) result.entryType = 'Distribution';
-        else if (name.includes('warehouse')) result.entryType = 'Warehousing';
-        else if (name.includes('logistics')) result.entryType = 'Logistics';
-        else if (name.includes('truck') || name.includes('transport')) result.entryType = 'Transport';
-        else if (name.includes('finance') || activity.includes('lending')) result.entryType = 'Niche Lenders';
-        else if (name.includes('insur')) result.entryType = 'Insurance';
-        else if (notes.includes('code 14') || notes.includes('heavy vehicle')) result.entryType = 'Code 14 Heavy';
-        else if (notes.includes('hazmat') || notes.includes('dangerous goods')) result.entryType = 'Hazmat Certified';
-        else result.entryType = result.entryType || 'General';
     }
 
     return result;
 }
 
-async function refreshCategoryStats(db: FirebaseFirestore.Firestore, type: 'supplier' | 'finance' | 'transporter' | 'driver') {
-    // Optimization: Only fetch the necessary fields to save bandwidth and memory
-    const snap = await db.collection('leads').select('role', 'entryType').get();
-    const counts: Record<string, number> = {};
-    
-    const supplierRoles = ['Vendors', 'Vendor', 'Supplier', 'Suppliers'];
-    const financeRoles = ['Investors', 'Investor', 'Finance', 'Funder', 'Lender', 'Banks', 'Government', 'AEO', 'Niche Lenders', 'Finance Companies'];
-    const transporterRoles = ['Transporters', 'Transporter', 'Logistics', 'Transport'];
-    const driverRoles = ['Drivers', 'Driver', 'Truck Driver'];
-
-    snap.docs.forEach(doc => {
-        const data = doc.data();
-        const role = data.role || '';
-        let isMatch = false;
-        
-        if (type === 'supplier') isMatch = supplierRoles.includes(role);
-        else if (type === 'finance') isMatch = financeRoles.includes(role);
-        else if (type === 'transporter') isMatch = transporterRoles.includes(role);
-        else if (type === 'driver') isMatch = driverRoles.includes(role);
-        
-        if (isMatch) {
-            const cat = data.entryType || 'General';
-            counts[cat] = (counts[cat] || 0) + 1;
-        }
-    });
-
-    const configMap: Record<string, string> = {
-        supplier: 'supplierDiscoveryStats',
-        finance: 'financeDiscoveryStats',
-        transporter: 'transporterDiscoveryStats',
-        driver: 'driverDiscoveryStats'
-    };
-
-    const configId = configMap[type];
-    if (configId) {
-        await db.collection('configuration').doc(configId).set({ 
-            counts, 
-            lastUpdated: FieldValue.serverTimestamp() 
-        }, { merge: true });
-    }
-    
-    return counts;
-}
-
 export async function POST(req: NextRequest) {
     try {
         const { app, error: initError } = getAdminApp();
-        if (initError || !app) throw new Error(`Admin SDK not initialized: ${initError}`);
+        if (initError || !app) throw new Error(`Admin SDK failed: ${initError}`);
 
         const authorization = req.headers.get('authorization');
         if (!authorization?.startsWith('Bearer ')) throw new Error('Unauthorized.');
@@ -176,237 +88,123 @@ export async function POST(req: NextRequest) {
         const db = getFirestore(app);
         const isAdmin = decodedToken.email === 'beyondtransport@gmail.com' || decodedToken.email === 'mkoton100@gmail.com';
 
-        if (!isAdmin) {
-             const allowedUserActions = ['getAuditLogs', 'logCommunication', 'bulkSavePartners', 'getPartnersByType', 'markLeadsAsResearching', 'getPlatformStaff', 'findDuplicateLeads', 'deleteLeads', 'resetResearchQueue', 'bulkUpdateOutreach', 'bulkCategorizeLeads', 'getSupplierCategoryCounts', 'refreshSupplierCategoryCounts', 'refreshFinanceCategoryCounts', 'refreshTransporterCategoryCounts', 'refreshDriverCategoryCounts', 'getMembers', 'getShops', 'getContributions', 'runAutomatedDiscovery'];
-             if (!allowedUserActions.includes(action)) throw new Error("Forbidden.");
-        }
-
         switch (action) {
-            case 'runAutomatedDiscovery': {
-                const { category, type, startPage } = payload;
-                const result = await runDiscovery({ category, type, startPage, batchSize: 100 });
-                
-                if (!result || !result.results) {
-                    throw new Error("AI Discovery failed to return results.");
-                }
-
-                const roleMap: Record<string, string> = {
-                    'supplier': 'Vendors',
-                    'transporter': 'Transporters',
-                    'finance': 'Finance Companies',
-                    'driver': 'Drivers'
-                };
-
-                const partners = result.results;
-                const CHUNK_SIZE = 100;
-                let count = 0;
-
-                // Process in chunks to respect Firestore transaction limits
-                for (let i = 0; i < partners.length; i += CHUNK_SIZE) {
-                    const chunk = partners.slice(i, i + CHUNK_SIZE);
-                    const batch = db.batch();
-                    chunk.forEach((p: any) => {
-                        const normalized = normalizePartnerData(p);
-                        const targetId = normalized.record_id || `AUTO_${type.toUpperCase()}_${Math.random().toString(36).substring(7)}`;
-                        const updateData = {
-                            ...normalized,
-                            id: targetId,
-                            role: roleMap[type] || 'General',
-                            status: 'new',
-                            researchStatus: 'completed',
-                            updatedAt: FieldValue.serverTimestamp()
-                        };
-                        batch.set(db.collection('leads').doc(targetId), updateData, { merge: true });
-                        batch.set(db.collection('partners').doc(targetId), { ...updateData, type }, { merge: true });
-                        count++;
-                    });
-                    await batch.commit();
-                }
-
-                await refreshCategoryStats(db, type as any);
-
-                return NextResponse.json({ success: true, count });
+            case 'getPlatformStaff': {
+                const snap = await db.collection('platformStaff').get();
+                const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
+                return NextResponse.json({ success: true, data });
             }
 
-            case 'findDuplicateLeads': {
-                // Optimization: Fetch only required fields for identification
-                const [leadsSnap, membersSnap] = await Promise.all([
-                    db.collection('leads').select('companyName', 'contactPerson', 'firstName', 'lastName', 'email', 'phone', 'address').get(),
-                    db.collection('companies').select('companyName', 'ownerId').get()
-                ]);
-                
-                const allRecords: any[] = [];
-                leadsSnap.docs.forEach(doc => allRecords.push({ ...doc.data(), id: doc.id, source: 'Lead' }));
-                
-                // Fetch member details if possible, but keep it light
-                membersSnap.docs.forEach(doc => allRecords.push({ ...doc.data(), id: doc.id, source: 'Member' }));
-
-                const groups = new Map<string, any[]>();
-                const norm = (val: any) => (val || '').toString().toLowerCase().trim();
-
-                allRecords.forEach(record => {
-                    const company = norm(record.companyName);
-                    const contact = norm(record.contactPerson || record.firstName || '');
-                    const compositeKey = `${company}|${contact}`;
-
-                    if (company.length < 3 && contact.length < 3) return; 
-                    
-                    if (!groups.has(compositeKey)) groups.set(compositeKey, []);
-                    groups.get(compositeKey)!.push(record);
-                });
-
-                const duplicates = Array.from(groups.values()).filter(group => group.length > 1);
-                return NextResponse.json({ success: true, data: duplicates });
+            case 'savePlatformStaff': {
+                const { staff } = payload;
+                const ref = staff.id ? db.collection('platformStaff').doc(staff.id) : db.collection('platformStaff').doc();
+                const data = { ...staff, id: ref.id, updatedAt: FieldValue.serverTimestamp() };
+                await ref.set(data, { merge: true });
+                return NextResponse.json({ success: true, id: ref.id });
             }
 
-            case 'deleteLeads': {
-                const { leadIds } = payload;
-                if (!Array.isArray(leadIds)) throw new Error("Invalid leadIds array.");
-                
-                // High-performance Parallel Batch Processing
-                const CHUNK_SIZE = 400; // Under the 500 limit
-                const batches = [];
-                for (let i = 0; i < leadIds.length; i += CHUNK_SIZE) {
-                    const chunk = leadIds.slice(i, i + CHUNK_SIZE);
-                    const batch = db.batch();
-                    chunk.forEach(id => {
-                        if (id && typeof id === 'string') {
-                            batch.delete(db.collection('leads').doc(id));
-                            batch.delete(db.collection('partners').doc(id));
-                        }
-                    });
-                    batches.push(batch.commit());
-                }
-
-                // Wait for all batches to finish in parallel groups
-                const PARALLEL_LIMIT = 5;
-                for (let i = 0; i < batches.length; i += PARALLEL_LIMIT) {
-                    await Promise.all(batches.slice(i, i + PARALLEL_LIMIT));
-                }
-                
+            case 'deletePlatformStaff': {
+                const { staffId } = payload;
+                await db.collection('platformStaff').doc(staffId).delete();
                 return NextResponse.json({ success: true });
             }
 
-            case 'resetResearchQueue': {
-                const { type: queueType } = payload;
-                const snap = await db.collection('leads')
-                    .where('researchStatus', '==', 'researching')
-                    .get();
+            case 'getMembers': {
+                const snap = await db.collection('companies').get();
+                const data = await Promise.all(snap.docs.map(async (d) => {
+                    const cData = d.data();
+                    const userSnap = await db.collection('users').doc(cData.ownerId).get();
+                    const uData = userSnap.exists ? userSnap.data() : {};
+                    return { 
+                        ...serializeTimestamps(cData), 
+                        id: d.id,
+                        firstName: uData?.firstName || 'N/A',
+                        lastName: uData?.lastName || '',
+                        email: uData?.email || 'N/A'
+                    };
+                }));
+                return NextResponse.json({ success: true, data });
+            }
+
+            case 'getShops': {
+                const snap = await db.collectionGroup('shops').get();
+                const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
+                return NextResponse.json({ success: true, data });
+            }
+
+            case 'getContributions': {
+                const snap = await db.collection('contributions').orderBy('createdAt', 'desc').get();
+                const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
+                return NextResponse.json({ success: true, data });
+            }
+
+            case 'getAuditLogs': {
+                const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(100).get();
+                const data = await Promise.all(snap.docs.map(async (d) => {
+                    const lData = d.data();
+                    const userSnap = await db.collection('users').doc(lData.userId).get();
+                    const companySnap = await db.collection('companies').doc(lData.companyId || '').get();
+                    return {
+                        ...serializeTimestamps(lData),
+                        id: d.id,
+                        userName: userSnap.exists ? `${userSnap.data()?.firstName} ${userSnap.data()?.lastName}` : 'System',
+                        companyName: companySnap.exists ? companySnap.data()?.companyName : 'N/A'
+                    };
+                }));
+                return NextResponse.json({ success: true, data });
+            }
+
+            case 'logCommunication': {
+                const { partnerId, type, subject, notes } = payload;
+                const ref = db.collection('partners').doc(partnerId).collection('communications').doc();
+                await ref.set({
+                    id: ref.id, type, subject, notes,
+                    timestamp: FieldValue.serverTimestamp()
+                });
                 
-                const docs = snap.docs;
-                const CHUNK_SIZE = 250;
-                const batches = [];
+                // Update last outreach on primary record
+                await db.collection('partners').doc(partnerId).update({
+                    lastOutreachAt: FieldValue.serverTimestamp(),
+                    lastOutreachSubject: subject,
+                    status: 'contacted'
+                });
+                await db.collection('leads').doc(partnerId).set({
+                    lastOutreachAt: FieldValue.serverTimestamp(),
+                    lastOutreachSubject: subject,
+                    status: 'contacted'
+                }, { merge: true });
+
+                return NextResponse.json({ success: true });
+            }
+
+            case 'saveLead':
+            case 'savePartner': {
+                const { lead, partner } = payload;
+                const data = lead || partner;
+                const id = data.id || `PRT_${Math.random().toString(36).substring(7).toUpperCase()}`;
+                const finalData = { ...data, id, updatedAt: FieldValue.serverTimestamp() };
                 
-                for (let i = 0; i < docs.length; i += CHUNK_SIZE) {
-                    const chunk = docs.slice(i, i + CHUNK_SIZE);
-                    const batch = db.batch();
-                    chunk.forEach(doc => {
-                        batch.update(doc.ref, { researchStatus: 'pending', updatedAt: FieldValue.serverTimestamp() });
-                        batch.update(db.collection('partners').doc(doc.id), { researchStatus: 'pending', updatedAt: FieldValue.serverTimestamp() });
-                    });
-                    batches.push(batch.commit());
-                }
-
-                await Promise.all(batches);
+                const batch = db.batch();
+                batch.set(db.collection('leads').doc(id), finalData, { merge: true });
+                batch.set(db.collection('partners').doc(id), finalData, { merge: true });
+                await batch.commit();
                 
-                return NextResponse.json({ success: true, count: docs.length });
+                return NextResponse.json({ success: true, id });
             }
 
-            case 'bulkUpdateOutreach': {
-                const { entries, subject } = payload;
-                let count = 0;
-                const CHUNK_SIZE = 100;
-                
-                for (let i = 0; i < entries.length; i += CHUNK_SIZE) {
-                    const chunk = entries.slice(i, i + CHUNK_SIZE);
-                    const batch = db.batch();
-                    
-                    await Promise.all(chunk.map(async (entry: string) => {
-                        const isEmail = entry.includes('@');
-                        const field = isEmail ? 'email' : 'companyName';
-                        const snap = await db.collection('leads').where(field, '==', entry).limit(1).get();
-                        
-                        if (!snap.empty) {
-                            const docRef = snap.docs[0].ref;
-                            batch.update(docRef, {
-                                status: 'contacted',
-                                lastOutreachAt: FieldValue.serverTimestamp(),
-                                lastOutreachSubject: subject,
-                                updatedAt: FieldValue.serverTimestamp()
-                            });
-                            batch.update(db.collection('partners').doc(docRef.id), {
-                                status: 'contacted',
-                                lastOutreachAt: FieldValue.serverTimestamp(),
-                                lastOutreachSubject: subject,
-                                updatedAt: FieldValue.serverTimestamp()
-                            });
-                            count++;
-                        }
-                    }));
-                    
-                    await batch.commit();
-                }
-
-                return NextResponse.json({ success: true, count });
-            }
-
-            case 'bulkCategorizeLeads': {
-                const snap = await db.collection('leads').select('companyName', 'contactPerson', 'firstName', 'lastName', 'notes', 'entryType').get();
-                const docs = snap.docs;
-                const CHUNK_SIZE = 250;
-                let count = 0;
-                const batches = [];
-
-                for (let i = 0; i < docs.length; i += CHUNK_SIZE) {
-                    const chunk = docs.slice(i, i + CHUNK_SIZE);
-                    const batch = db.batch();
-                    let workInBatch = false;
-                    chunk.forEach(doc => {
-                        const data = doc.data();
-                        const normalized = normalizePartnerData(data);
-                        if (normalized.entryType && normalized.entryType !== data.entryType) {
-                            batch.update(doc.ref, { entryType: normalized.entryType, updatedAt: FieldValue.serverTimestamp() });
-                            batch.update(db.collection('partners').doc(doc.id), { entryType: normalized.entryType, updatedAt: FieldValue.serverTimestamp() });
-                            count++;
-                            workInBatch = true;
-                        }
-                    });
-                    if (workInBatch) batches.push(batch.commit());
-                }
-
-                await Promise.all(batches);
-                return NextResponse.json({ success: true, count });
-            }
-
-            case 'refreshSupplierCategoryCounts': {
-                const counts = await refreshCategoryStats(db, 'supplier');
-                return NextResponse.json({ success: true, data: counts });
-            }
-
-            case 'refreshFinanceCategoryCounts': {
-                const counts = await refreshCategoryStats(db, 'finance');
-                return NextResponse.json({ success: true, data: counts });
-            }
-            
-            case 'refreshTransporterCategoryCounts': {
-                const counts = await refreshCategoryStats(db, 'transporter');
-                return NextResponse.json({ success: true, data: counts });
-            }
-
-            case 'refreshDriverCategoryCounts': {
-                const counts = await refreshCategoryStats(db, 'driver');
-                return NextResponse.json({ success: true, data: counts });
+            case 'deleteLead':
+            case 'deletePartner': {
+                const { leadId, partnerId } = payload;
+                const id = leadId || partnerId;
+                const batch = db.batch();
+                batch.delete(db.collection('leads').doc(id));
+                batch.delete(db.collection('partners').doc(id));
+                await batch.commit();
+                return NextResponse.json({ success: true });
             }
 
             case 'getPartnersByType': {
                 const { type } = payload;
-                if (type === 'all') {
-                    const [pSnap, lSnap] = await Promise.all([db.collection('partners').get(), db.collection('leads').get()]);
-                    const mergedMap = new Map();
-                    [...pSnap.docs, ...lSnap.docs].forEach(doc => mergedMap.set(doc.id, { id: doc.id, ...serializeTimestamps(doc.data()) }));
-                    return NextResponse.json({ success: true, data: Array.from(mergedMap.values()) });
-                }
-
                 const inclusiveRoleMapping: Record<string, string[]> = {
                     'transporter': ['Transporters', 'Transporter', 'Logistics', 'Transport'],
                     'supplier': ['Vendors', 'Vendor', 'Supplier', 'Suppliers'],
@@ -418,64 +216,83 @@ export async function POST(req: NextRequest) {
                     'driver': ['Drivers', 'Driver', 'Truck Driver']
                 };
 
-                const rolesToSearch = inclusiveRoleMapping[type] || [type];
-                const [pSnap, lSnap] = await Promise.all([
-                    db.collection('partners').where('type', '==', type).get(),
-                    db.collection('leads').where('role', 'in', rolesToSearch).get()
-                ]);
-
-                const mergedMap = new Map();
-                [...pSnap.docs, ...lSnap.docs].forEach(doc => {
-                    const existing = mergedMap.get(doc.id);
-                    mergedMap.set(doc.id, { ...(existing || {}), ...serializeTimestamps(doc.data()), id: doc.id });
-                });
-                return NextResponse.json({ success: true, data: Array.from(mergedMap.values()) });
+                let snap;
+                if (type === 'all') {
+                    snap = await db.collection('partners').get();
+                } else {
+                    snap = await db.collection('partners').where('type', '==', type).get();
+                }
+                
+                const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
+                return NextResponse.json({ success: true, data });
             }
 
-            case 'bulkSavePartners': {
-                const { partners, type } = payload;
-                const CHUNK_SIZE = 100; 
-                let updatedCount = 0;
-                
-                const roleMap: Record<string, string> = {
-                    'supplier': 'Vendors',
-                    'transporter': 'Transporters',
-                    'isa': 'ISA Agents (Elite)',
-                    'partner': 'Strategic Partners',
-                    'finance': 'Finance Companies',
-                    'investor': 'Investors',
-                    'driver': 'Drivers'
-                };
+            case 'markLeadsAsResearching': {
+                const { leadIds } = payload;
+                const batch = db.batch();
+                leadIds.forEach((id: string) => {
+                    batch.update(db.collection('leads').doc(id), { researchStatus: 'researching', updatedAt: FieldValue.serverTimestamp() });
+                    batch.update(db.collection('partners').doc(id), { researchStatus: 'researching', updatedAt: FieldValue.serverTimestamp() });
+                });
+                await batch.commit();
+                return NextResponse.json({ success: true });
+            }
 
-                const batches = [];
-                for (let i = 0; i < partners.length; i += CHUNK_SIZE) {
-                    const chunk = partners.slice(i, i + CHUNK_SIZE);
-                    const batch = db.batch();
-                    chunk.forEach((p: any) => {
-                        const normalized = normalizePartnerData(p);
-                        const targetId = normalized.record_id || `IMP_${type.toUpperCase()}_${Math.random().toString(36).substring(7)}`;
-                        const updateData = {
-                            ...normalized,
-                            id: targetId,
-                            role: normalized.role || roleMap[type] || 'General',
-                            status: 'new',
-                            researchStatus: 'completed',
-                            updatedAt: FieldValue.serverTimestamp()
-                        };
-                        batch.set(db.collection('leads').doc(targetId), updateData, { merge: true });
-                        batch.set(db.collection('partners').doc(targetId), { ...updateData, type }, { merge: true });
-                        updatedCount++;
+            case 'getLendingData': {
+                const { collectionName } = payload;
+                const snap = await db.collection(collectionName).get();
+                const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
+                return NextResponse.json({ success: true, data });
+            }
+
+            case 'approveWalletPayment': {
+                const { companyId, paymentId, amount, description, reconciliationId } = payload;
+                const companyRef = db.collection('companies').doc(companyId);
+                const paymentRef = companyRef.collection('walletPayments').doc(paymentId);
+                const transactionRef = companyRef.collection('transactions').doc();
+
+                await db.runTransaction(async (t) => {
+                    t.update(companyRef, {
+                        walletBalance: FieldValue.increment(amount),
+                        availableBalance: FieldValue.increment(amount),
+                        updatedAt: FieldValue.serverTimestamp()
                     });
-                    batches.push(batch.commit());
-                }
+                    t.set(transactionRef, {
+                        id: transactionRef.id, type: 'credit', amount, description,
+                        reconciliationId, date: FieldValue.serverTimestamp(), status: 'allocated'
+                    });
+                    t.delete(paymentRef);
+                });
+                return NextResponse.json({ success: true });
+            }
 
-                await Promise.all(batches);
-                
-                if (['supplier', 'finance', 'transporter', 'driver'].includes(type)) {
-                    await refreshCategoryStats(db, type as any);
-                }
+            case 'approvePayout': {
+                const { companyId, payoutId, amount } = payload;
+                const companyRef = db.collection('companies').doc(companyId);
+                const payoutRef = companyRef.collection('payoutRequests').doc(payoutId);
+                const transactionRef = companyRef.collection('transactions').doc();
 
-                return NextResponse.json({ success: true, updatedCount });
+                await db.runTransaction(async (t) => {
+                    t.update(companyRef, {
+                        walletBalance: FieldValue.increment(-amount),
+                        availableBalance: FieldValue.increment(-amount),
+                        updatedAt: FieldValue.serverTimestamp()
+                    });
+                    t.set(transactionRef, {
+                        id: transactionRef.id, type: 'debit', amount, description: 'Payout Approved',
+                        date: FieldValue.serverTimestamp(), status: 'allocated'
+                    });
+                    t.update(payoutRef, { status: 'approved', processedAt: FieldValue.serverTimestamp() });
+                });
+                return NextResponse.json({ success: true });
+            }
+
+            case 'rejectPayout': {
+                const { companyId, payoutId } = payload;
+                await db.doc(`companies/${companyId}/payoutRequests/${payoutId}`).update({
+                    status: 'rejected', updatedAt: FieldValue.serverTimestamp()
+                });
+                return NextResponse.json({ success: true });
             }
 
             default:
