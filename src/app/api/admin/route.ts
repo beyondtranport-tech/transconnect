@@ -88,11 +88,11 @@ export async function POST(req: NextRequest) {
             }
 
             case 'logAudit': {
-                const { action, details, metadata } = payload;
+                const { action: logAction, details, metadata } = payload;
                 await db.collection('auditLogs').add({
                     userId: decodedToken.uid,
                     userName: decodedToken.name || decodedToken.email,
-                    action,
+                    action: logAction,
                     details,
                     metadata,
                     timestamp: FieldValue.serverTimestamp(),

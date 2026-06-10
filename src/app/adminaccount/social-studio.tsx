@@ -19,25 +19,33 @@ import Link from 'next/link';
 
 /**
  * SOCIAL ENGAGEMENT WIZARD
- * Patterned after the Partner EngageDialog to provide a consistent admin workflow.
+ * Handles the finalization, tracking, and launching of social media posts.
  */
 function SocialEngageDialog({ open, onOpenChange, post, campaignName }: { open: boolean, onOpenChange: (o: boolean) => void, post: any, campaignName: string }) {
     const [activeTab, setActiveTab] = useState('copy');
     const [isLogging, setIsLogging] = useState(false);
     const { toast } = useToast();
 
-    // Derived values with robust guard to prevent null access errors
+    // CRITICAL FIX: Safe data derivation with robust null checks to prevent TypeError
     const derived = useMemo(() => {
-        if (!post) return { trackingLink: '', fullPostBody: '' };
-        const baseUrl = 'https://studio--ecosystem-hub.us-central1.hosted.app';
-        const trackingLink = `${baseUrl}/join?ref=FB_${campaignName.replace(/\s/g, '_').toUpperCase() || 'GENERAL'}`;
-        const fullPostBody = `${post.body}\n\nJoin here: ${trackingLink}\n\n${(post.hashtags || []).join(' ')}`;
-        return { trackingLink, fullPostBody };
+        if (!post || !post.body) return { trackingLink: '', fullPostBody: '', sanitizedRef: '' };
+        
+        // Extract group name if a URL was pasted, otherwise sanitize the name
+        const sanitizedRef = campaignName.includes('facebook.com') 
+            ? campaignName.split('/').filter(Boolean).pop()?.toUpperCase() || 'FB_CAMPAIGN'
+            : campaignName.replace(/\s/g, '_').toUpperCase() || 'GENERAL';
+
+        const baseUrl = window.location.origin;
+        const trackingLink = `${baseUrl}/join?ref=FB_${sanitizedRef}`;
+        const fullPostBody = `${post.body}\n\nJoin the community here: ${trackingLink}\n\n${(post.hashtags || []).join(' ')}`;
+        
+        return { trackingLink, fullPostBody, sanitizedRef };
     }, [post, campaignName]);
 
+    // Guard against rendering without a post object
     if (!post) return null;
 
-    const { trackingLink, fullPostBody } = derived;
+    const { trackingLink, fullPostBody, sanitizedRef } = derived;
 
     const copyToClipboard = (text: string, label: string) => {
         navigator.clipboard.writeText(text);
@@ -48,9 +56,9 @@ function SocialEngageDialog({ open, onOpenChange, post, campaignName }: { open: 
         setIsLogging(true);
         try {
             const token = await getClientSideAuthToken();
-            if (!token) throw new Error("Auth failed.");
+            if (!token) throw new Error("Authentication failed.");
 
-            // Log the campaign launch event
+            // Log the launch to the audit trail
             await fetch('/api/admin', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -58,20 +66,21 @@ function SocialEngageDialog({ open, onOpenChange, post, campaignName }: { open: 
                     action: 'logAudit', 
                     payload: { 
                         action: 'social_campaign_launch', 
-                        details: `Launched "${post.headline}" to Facebook Group: ${campaignName}`,
-                        metadata: { campaignName, trackingLink }
+                        details: `Launched post "${post.headline}" to group: ${campaignName}`,
+                        metadata: { campaignName, trackingRef: `FB_${sanitizedRef}`, trackingLink }
                     } 
                 }),
             });
 
             await navigator.clipboard.writeText(fullPostBody);
-            toast({ title: "Content Logged & Copied", description: "You are being redirected to Facebook." });
+            toast({ title: "Copy & Log Success", description: "Opening Facebook now. Paste your content to post." });
             
-            // Launch Facebook in new tab
-            window.open('https://www.facebook.com/groups/feed/', '_blank');
+            // Open the group URL if it was provided, otherwise open general groups feed
+            const launchUrl = campaignName.startsWith('http') ? campaignName : 'https://www.facebook.com/groups/feed/';
+            window.open(launchUrl, '_blank');
             onOpenChange(false);
         } catch (e: any) {
-            toast({ variant: 'destructive', title: "Log Failed", description: e.message });
+            toast({ variant: 'destructive', title: "Launch Error", description: e.message });
         } finally {
             setIsLogging(false);
         }
@@ -79,111 +88,100 @@ function SocialEngageDialog({ open, onOpenChange, post, campaignName }: { open: 
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-4xl h-[80vh] flex flex-col p-0">
+            <DialogContent className="max-w-4xl h-[85vh] flex flex-col p-0 overflow-hidden">
                 <DialogHeader className="p-6 border-b bg-muted/30">
                     <div className="flex justify-between items-start">
                         <div className="space-y-1">
-                            <DialogTitle className="text-2xl font-bold flex items-center gap-2">
-                                <Facebook className="h-6 w-6 text-blue-600" />
-                                Launch Social Campaign
+                            <DialogTitle className="text-2xl font-black font-headline flex items-center gap-2">
+                                <Facebook className="h-7 w-7 text-blue-600" />
+                                Social Launch Wizard
                             </DialogTitle>
-                            <DialogDescription>Targeting: {campaignName || 'General Outreach'}</DialogDescription>
+                            <DialogDescription className="font-mono text-xs uppercase tracking-widest text-primary">
+                                Tracking ID: FB_{sanitizedRef}
+                            </DialogDescription>
                         </div>
-                        <Button size="lg" className="bg-blue-600 hover:bg-blue-700 gap-2 shadow-lg" onClick={handleLogAndLaunch} disabled={isLogging}>
-                            {isLogging ? <Loader2 className="h-4 w-4 animate-spin"/> : <ExternalLink className="h-4 w-4" />}
+                        <Button size="lg" className="bg-blue-600 hover:bg-blue-700 gap-2 shadow-xl h-12 px-8 font-black uppercase tracking-tight" onClick={handleLogAndLaunch} disabled={isLogging}>
+                            {isLogging ? <Loader2 className="h-5 w-5 animate-spin"/> : <ExternalLink className="h-5 w-5" />}
                             Log & Post to Facebook
                         </Button>
                     </div>
                 </DialogHeader>
 
                 <div className="flex-1 flex overflow-hidden">
-                    {/* Navigation Sidebar */}
-                    <div className="w-56 border-r bg-muted/10 p-4 space-y-1">
-                        <Button 
-                            variant={activeTab === 'copy' ? "secondary" : "ghost"} 
-                            className="w-full justify-start gap-2 text-xs font-bold uppercase tracking-wider"
-                            onClick={() => setActiveTab('copy')}
-                        >
-                            <Share2 className="h-4 w-4" /> 1. Ad Copy
+                    <div className="w-56 border-r bg-muted/10 p-4 space-y-1 shrink-0">
+                        <Button variant={activeTab === 'copy' ? "secondary" : "ghost"} className="w-full justify-start gap-3 h-11" onClick={() => setActiveTab('copy')}>
+                            <Share2 className="h-4 w-4" /> Finalize Copy
                         </Button>
-                        <Button 
-                            variant={activeTab === 'asset' ? "secondary" : "ghost"} 
-                            className="w-full justify-start gap-2 text-xs font-bold uppercase tracking-wider"
-                            onClick={() => setActiveTab('asset')}
-                        >
-                            <ImageIcon className="h-4 w-4" /> 2. Visual Prompt
+                        <Button variant={activeTab === 'asset' ? "secondary" : "ghost"} className="w-full justify-start gap-3 h-11" onClick={() => setActiveTab('asset')}>
+                            <ImageIcon className="h-4 w-4" /> Visual Identity
                         </Button>
-                        <Button 
-                            variant={activeTab === 'history' ? "secondary" : "ghost"} 
-                            className="w-full justify-start gap-2 text-xs font-bold uppercase tracking-wider"
-                            onClick={() => setActiveTab('history')}
-                        >
-                            <History className="h-4 w-4" /> 3. Link Status
+                        <Button variant={activeTab === 'analytics' ? "secondary" : "ghost"} className="w-full justify-start gap-3 h-11" onClick={() => setActiveTab('analytics')}>
+                            <LinkIcon className="h-4 w-4" /> Tracking URL
                         </Button>
                     </div>
 
-                    {/* Content Area */}
                     <div className="flex-1 overflow-y-auto bg-slate-50 p-8">
-                        <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-200 max-w-[700px] mx-auto">
+                        <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 max-w-[700px] mx-auto">
                             {activeTab === 'copy' && (
                                 <div className="space-y-6">
-                                    <div className="space-y-2">
-                                        <Label className="text-[10px] font-black uppercase text-muted-foreground">Post Headline</Label>
-                                        <h3 className="text-xl font-bold text-foreground">{post.headline}</h3>
+                                    <div className="space-y-1">
+                                        <Label className="text-[10px] font-black uppercase text-muted-foreground">Ad Headline</Label>
+                                        <h3 className="text-2xl font-black font-headline text-foreground">{post.headline}</h3>
                                     </div>
-                                    <div className="space-y-2">
-                                        <Label className="text-[10px] font-black uppercase text-muted-foreground">Body Content</Label>
-                                        <div className="p-4 bg-muted/30 rounded-lg text-sm leading-relaxed whitespace-pre-wrap border">
+                                    <div className="space-y-1">
+                                        <Label className="text-[10px] font-black uppercase text-muted-foreground">Post Body (Pasted to Facebook)</Label>
+                                        <div className="p-6 bg-slate-50 rounded-xl text-sm leading-relaxed whitespace-pre-wrap border border-dashed font-sans">
                                             {post.body}
-                                            <p className="mt-4 text-blue-600 font-bold">{trackingLink}</p>
+                                            <p className="mt-4 text-blue-600 font-bold underline">{trackingLink}</p>
                                             <p className="mt-2 text-muted-foreground">{(post.hashtags || []).join(' ')}</p>
                                         </div>
                                     </div>
-                                    <Button variant="outline" className="w-full" onClick={() => copyToClipboard(fullPostBody, 'Full Post')}>
-                                        <Copy className="mr-2 h-4 w-4" /> Copy Full Text for Facebook
+                                    <Button variant="outline" className="w-full h-12 gap-2" onClick={() => copyToClipboard(fullPostBody, 'Full Post')}>
+                                        <Copy className="h-4 w-4" /> Copy Full Payload
                                     </Button>
                                 </div>
                             )}
 
                             {activeTab === 'asset' && (
                                 <div className="space-y-6">
-                                    <div className="p-4 bg-slate-900 text-slate-100 rounded-xl border-l-4 border-l-primary">
+                                    <div className="p-6 bg-slate-900 text-slate-100 rounded-2xl border-l-4 border-l-primary shadow-lg">
                                         <div className="flex items-center gap-2 mb-4">
                                             <Sparkles className="h-5 w-5 text-primary" />
-                                            <h4 className="font-bold">Visual Production Command</h4>
+                                            <h4 className="font-black uppercase tracking-widest text-xs">AI Visual Generator Prompt</h4>
                                         </div>
-                                        <p className="text-sm italic font-mono leading-relaxed opacity-90 mb-6">{post.imagePrompt}</p>
-                                        <div className="flex gap-2">
-                                            <Button variant="secondary" size="sm" className="bg-white/10 hover:bg-white/20 text-white border-white/10" onClick={() => copyToClipboard(post.imagePrompt, 'Prompt')}>
-                                                <Copy className="mr-2 h-3.5 w-3.5"/> Copy Prompt
+                                        <p className="text-sm italic font-mono leading-relaxed opacity-90 mb-8 border-l border-white/20 pl-4">{post.imagePrompt}</p>
+                                        <div className="flex flex-col sm:flex-row gap-3">
+                                            <Button variant="secondary" className="bg-white/10 hover:bg-white/20 text-white border-white/10 flex-1" onClick={() => copyToClipboard(post.imagePrompt, 'AI Prompt')}>
+                                                <Copy className="mr-2 h-4 w-4"/> Copy AI Prompt
                                             </Button>
-                                            <Button size="sm" className="bg-primary hover:bg-primary/90" asChild>
-                                                <Link href="/adminaccount?view=branding-studio">Launch Image Generator</Link>
+                                            <Button className="bg-primary hover:bg-primary/90 flex-1" asChild>
+                                                <Link href="/adminaccount?view=branding-studio">Launch Studio <ArrowRight className="ml-2 h-4 w-4"/></Link>
                                             </Button>
                                         </div>
                                     </div>
-                                    <div className="flex items-start gap-4 p-4 border rounded-lg bg-amber-50">
-                                        <Info className="h-5 w-5 text-amber-600 mt-0.5" />
+                                    <div className="flex items-start gap-4 p-4 border rounded-xl bg-amber-50">
+                                        <Info className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
                                         <div className="space-y-1">
-                                            <p className="text-sm font-bold text-amber-900">Production Tip</p>
-                                            <p className="text-xs text-amber-800">Generate your image first in the Branding Studio, then return here to launch your post.</p>
+                                            <p className="text-sm font-bold text-amber-900">Workflow Note</p>
+                                            <p className="text-xs text-amber-800 leading-relaxed">Generate your high-res visual in the Branding Studio first, then return here to copy the post text and launch to the group.</p>
                                         </div>
                                     </div>
                                 </div>
                             )}
 
-                            {activeTab === 'history' && (
+                            {activeTab === 'analytics' && (
                                 <div className="text-center py-12 space-y-4">
-                                    <div className="bg-primary/10 p-4 rounded-full w-fit mx-auto">
+                                    <div className="bg-primary/10 p-5 rounded-full w-fit mx-auto mb-4">
                                         <LinkIcon className="h-10 w-10 text-primary" />
                                     </div>
-                                    <h4 className="font-bold">Campaign Tracking Active</h4>
-                                    <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-                                        The link <code className="text-primary font-bold">FB_{campaignName.toUpperCase()}</code> is ready. Every member who signs up via this link will be tracked in your master registry.
+                                    <h4 className="text-2xl font-black font-headline">Persistence Monitoring</h4>
+                                    <p className="text-sm text-muted-foreground max-w-sm mx-auto leading-relaxed">
+                                        The tracking link for <span className="font-bold text-foreground">{campaignName}</span> is active. 
+                                        Any user signing up via this link will be automatically credited to this campaign in your Leads Database.
                                     </p>
-                                    <div className="pt-4">
-                                        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 py-1 px-4">
-                                            Monitoring Status: READY
+                                    <div className="pt-6">
+                                        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 py-2 px-6 font-black uppercase tracking-widest text-[10px]">
+                                            <ShieldCheck className="h-3 w-3 mr-2" /> Campaign Logic: ACTIVE
                                         </Badge>
                                     </div>
                                 </div>
@@ -210,11 +208,15 @@ export default function SocialStudio() {
     });
 
     const handleGenerate = async () => {
+        if (!campaignName.trim()) {
+            toast({ variant: 'destructive', title: "Group Name Required", description: "Please enter the Facebook group name or URL to enable tracking." });
+            return;
+        }
         setIsLoading(true);
         try {
             const result = await generateSocialCopy(params);
             setResults(result);
-            toast({ title: "Social Variations Generated" });
+            toast({ title: "Copy Variations Ready", description: "Three high-intent posts have been drafted." });
         } catch (e: any) {
             toast({ variant: 'destructive', title: "Generation Failed", description: e.message });
         } finally {
@@ -233,104 +235,108 @@ export default function SocialStudio() {
 
             <CardHeader className="px-0">
                 <div className="flex items-center gap-4">
-                    <div className="bg-blue-100 p-3 rounded-xl"><Facebook className="h-8 w-8 text-blue-600" /></div>
+                    <div className="bg-blue-100 p-3 rounded-xl shadow-sm"><Facebook className="h-8 w-8 text-blue-600" /></div>
                     <div>
                         <CardTitle className="text-3xl font-black font-headline">Facebook Growth Studio</CardTitle>
-                        <CardDescription>Generate and track high-conversion posts for industry groups.</CardDescription>
+                        <CardDescription>Generate and track hyper-targeted content for large industry groups.</CardDescription>
                     </div>
                 </div>
             </CardHeader>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Control Panel */}
+                {/* 1. CONFIG PANEL */}
                 <div className="lg:col-span-1 space-y-6">
-                    <Card className="shadow-lg border-primary/10">
-                        <CardHeader className="bg-muted/30 border-b py-4">
+                    <Card className="shadow-lg border-primary/10 overflow-hidden">
+                        <div className="bg-muted/30 border-b py-4 px-6">
                             <CardTitle className="text-xs font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                                <Zap className="h-3 w-3 text-primary fill-primary"/> 1. Define Campaign
+                                <Zap className="h-3.5 w-3.5 text-primary fill-primary"/> Ad Campaign Parameters
                             </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4 pt-6">
+                        </div>
+                        <CardContent className="space-y-5 pt-6">
                             <div className="space-y-2">
-                                <Label className="text-xs font-bold">Facebook Group / Campaign Name</Label>
+                                <Label className="text-xs font-bold flex items-center justify-between">
+                                    Target Facebook Group / URL
+                                    <span className="text-[10px] text-muted-foreground font-normal">Enables Tracking</span>
+                                </Label>
                                 <Input 
-                                    placeholder="e.g. SA Truckers Hub" 
+                                    placeholder="e.g. SA Truckers or paste URL..." 
                                     value={campaignName} 
                                     onChange={e => setCampaignName(e.target.value)}
+                                    className="h-11"
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label className="text-xs font-bold">Target Group Audience</Label>
+                                <Label className="text-xs font-bold">Primary Audience</Label>
                                 <Select value={params.audience} onValueChange={(v: any) => setParams({...params, audience: v})}>
-                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="transporters">Fleet Owners / Transporters</SelectItem>
                                         <SelectItem value="drivers">Professional Drivers</SelectItem>
-                                        <SelectItem value="suppliers">Spare Parts Suppliers</SelectItem>
+                                        <SelectItem value="suppliers">Independent Suppliers</SelectItem>
                                         <SelectItem value="investors">Venture Capital / Investors</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
                             <div className="space-y-2">
-                                <Label className="text-xs font-bold">Core Message Hook</Label>
+                                <Label className="text-xs font-bold">Strategic Hook</Label>
                                 <Select value={params.topic} onValueChange={(v: any) => setParams({...params, topic: v})}>
-                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="empty_miles">Empty Miles & Load Matching</SelectItem>
+                                        <SelectItem value="empty_miles">Empty Miles (Efficiency)</SelectItem>
                                         <SelectItem value="parts_discounts">High Cost of Spares</SelectItem>
-                                        <SelectItem value="capital">Access to Asset Finance</SelectItem>
-                                        <SelectItem value="community_growth">Building the Industry Grid</SelectItem>
+                                        <SelectItem value="capital">Access to Funding</SelectItem>
+                                        <SelectItem value="community_growth">Ecosystem Growth</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <Button className="w-full mt-4 h-12 font-black uppercase tracking-tight" onClick={handleGenerate} disabled={isLoading}>
+                            <Button className="w-full mt-2 h-12 font-black uppercase tracking-tight shadow-md" onClick={handleGenerate} disabled={isLoading}>
                                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4" />}
-                                Generate Ad Variations
+                                Generate Ad Copy
                             </Button>
                         </CardContent>
                     </Card>
 
                     <div className="p-6 bg-slate-950 rounded-2xl text-white shadow-2xl relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                            <LinkIcon className="h-24 w-24" />
+                        <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                            <LinkIcon className="h-32 w-32" />
                         </div>
-                        <h4 className="font-black uppercase tracking-widest text-[10px] text-primary mb-2">Tracking Technology</h4>
-                        <p className="text-xl font-bold leading-tight">Every variation includes a unique tracking ID.</p>
-                        <p className="text-xs text-slate-400 mt-2 leading-relaxed">When you launch a post via the wizard, we automatically monitor signups and attribute them to your specific campaign.</p>
+                        <h4 className="font-black uppercase tracking-widest text-[9px] text-primary mb-2">Automated Attribution</h4>
+                        <p className="text-xl font-bold leading-tight">Every signup is tracked by source.</p>
+                        <p className="text-xs text-slate-400 mt-2 leading-relaxed font-medium">When you use the wizard to post, we attribute every new member back to the specific Facebook group to calculate your growth ROI.</p>
                     </div>
                 </div>
 
-                {/* Variations Feed */}
+                {/* 2. RESULTS FEED */}
                 <div className="lg:col-span-2 space-y-6">
                     {results ? results.posts.map((post, i) => (
                         <Card key={i} className="border-none shadow-xl group overflow-hidden hover:ring-2 hover:ring-primary/20 transition-all">
-                            <div className="bg-muted/50 p-4 border-b flex justify-between items-center">
-                                <Badge variant="secondary" className="font-black uppercase text-[10px]">Variation #{i+1}</Badge>
+                            <div className="bg-muted/50 px-6 py-3 border-b flex justify-between items-center">
+                                <Badge variant="secondary" className="font-black uppercase text-[10px] h-5">Ad Variation #{i+1}</Badge>
                                 <div className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase">
-                                    <ShieldCheck className="h-3 w-3 text-green-500" /> Quota Protected
+                                    <ShieldCheck className="h-3 w-3 text-green-500" /> Platform Optimized
                                 </div>
                             </div>
-                            <CardHeader>
+                            <CardHeader className="px-6 pt-6">
                                 <CardTitle className="text-2xl font-black font-headline tracking-tight group-hover:text-primary transition-colors">{post.headline}</CardTitle>
                             </CardHeader>
-                            <CardContent className="space-y-4">
-                                <div className="p-6 bg-slate-50 rounded-xl text-sm leading-relaxed border italic">
-                                    "{post.body.slice(0, 200)}..."
+                            <CardContent className="px-6 pb-6">
+                                <div className="p-6 bg-slate-50 rounded-xl text-sm leading-relaxed border italic text-muted-foreground">
+                                    "{post.body.slice(0, 220)}..."
                                 </div>
                             </CardContent>
-                            <CardFooter className="bg-muted/10 border-t p-4 flex justify-end">
-                                <Button className="h-12 px-8 font-black uppercase tracking-tight gap-2" onClick={() => setSelectedPost(post)}>
+                            <CardFooter className="bg-muted/10 border-t p-4 flex justify-end px-6">
+                                <Button className="h-11 px-8 font-black uppercase tracking-tight gap-2" onClick={() => setSelectedPost(post)}>
                                     Engage & Launch Wizard <ArrowRight className="h-4 w-4" />
                                 </Button>
                             </CardFooter>
                         </Card>
                     )) : (
-                        <div className="h-full min-h-[500px] border-4 border-dashed rounded-3xl flex flex-col items-center justify-center text-muted-foreground p-12 text-center bg-muted/5">
-                            <div className="bg-white p-6 rounded-full shadow-lg mb-6 border">
-                                <Facebook className="h-16 w-16 text-blue-600/20" />
+                        <div className="h-full min-h-[500px] border-4 border-dashed rounded-[2rem] flex flex-col items-center justify-center text-muted-foreground p-12 text-center bg-muted/5">
+                            <div className="bg-white p-8 rounded-full shadow-lg mb-8 border">
+                                <Facebook className="h-16 w-16 text-blue-600/10" />
                             </div>
-                            <h3 className="text-2xl font-black text-slate-400 mb-2">Ready for Group Outreach</h3>
-                            <p className="max-w-xs text-sm leading-relaxed">Define your target group parameters on the left to generate high-conversion ad content.</p>
+                            <h3 className="text-3xl font-black text-slate-300 font-headline mb-2 uppercase tracking-tighter">Social Pipeline Ready</h3>
+                            <p className="max-w-xs text-sm leading-relaxed font-medium">Define your target Facebook group parameters on the left to generate conversion-optimized content.</p>
                         </div>
                     )}
                 </div>
@@ -338,3 +344,4 @@ export default function SocialStudio() {
         </div>
     );
 }
+
