@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
         if (!isAdmin) throw new Error("Forbidden: Admin access required.");
 
         switch (action) {
-            // --- PLATFORM OVERSIGHT ---
+            // --- PLATFORM OVERSIGHT & DASHBOARD ---
             case 'getMembers': {
                 const snap = await db.collection('companies').orderBy('createdAt', 'desc').limit(100).get();
                 const data = await Promise.all(snap.docs.map(async (d) => {
@@ -76,6 +76,18 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data });
             }
 
+            case 'getStaff': {
+                const snap = await db.collectionGroup('staff').limit(100).get();
+                const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
+                return NextResponse.json({ success: true, data });
+            }
+
+            case 'getAuditLogs': {
+                const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(100).get();
+                const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
+                return NextResponse.json({ success: true, data });
+            }
+
             // --- CRM & PARTNERS ---
             case 'getPartnersByType': {
                 const { type } = payload;
@@ -96,6 +108,7 @@ export async function POST(req: NextRequest) {
 
             case 'searchRegistry': {
                 const { term, type } = payload;
+                // Query leads collection using range query for search
                 let q = db.collection('leads')
                     .where('companyName', '>=', term)
                     .where('companyName', '<=', term + '\uf8ff')
@@ -114,10 +127,11 @@ export async function POST(req: NextRequest) {
                 const { partner } = payload;
                 const id = partner.id || db.collection('partners').doc().id;
                 
+                // Resilient name normalization for Driver mapping
                 if (partner.service_handle && !partner.firstName) {
                     const parts = partner.service_handle.trim().split(' ');
                     partner.firstName = parts[0];
-                    partner.lastName = parts.slice(1).join(' ');
+                    partner.lastName = parts.slice(1).join(' ') || 'Partner';
                 }
 
                 await db.collection('partners').doc(id).set({ 
@@ -129,6 +143,12 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, id });
             }
 
+            case 'deletePartner': {
+                const { partnerId } = payload;
+                await db.collection('partners').doc(partnerId).delete();
+                return NextResponse.json({ success: true });
+            }
+
             case 'logCommunication': {
                 const { partnerId, type, subject, notes } = payload;
                 const ref = db.collection('partners').doc(partnerId).collection('communications').doc();
@@ -136,6 +156,7 @@ export async function POST(req: NextRequest) {
                     id: ref.id, type, subject, notes,
                     timestamp: FieldValue.serverTimestamp()
                 });
+                // Update parent record for tracking
                 await db.collection('partners').doc(partnerId).set({
                     lastOutreachAt: FieldValue.serverTimestamp(),
                     lastOutreachSubject: subject,
@@ -170,7 +191,13 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true });
             }
 
-            // --- WALLET & PAYOUTS ---
+            // --- WALLET & RECONCILIATION ---
+            case 'getWalletPayments': {
+                const snap = await db.collectionGroup('walletPayments').where('status', '==', 'pending').limit(100).get();
+                const data = snap.docs.map(doc => ({ id: doc.id, companyId: doc.ref.parent.parent?.id, ...serializeTimestamps(doc.data()) }));
+                return NextResponse.json({ success: true, data });
+            }
+
             case 'getWalletTransactions': {
                 const snap = await db.collectionGroup('transactions').orderBy('date', 'desc').limit(100).get();
                 const data = snap.docs.map(doc => {
@@ -215,6 +242,14 @@ export async function POST(req: NextRequest) {
                     updatedAt: FieldValue.serverTimestamp()
                 });
                 return NextResponse.json({ success: true });
+            }
+
+            // --- LENDING PORTAL BACKBONE ---
+            case 'getLendingData': {
+                const { collectionName } = payload;
+                const snap = await db.collection(collectionName).limit(100).get();
+                const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
+                return NextResponse.json({ success: true, data });
             }
 
             default:
