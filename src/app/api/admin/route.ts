@@ -46,7 +46,6 @@ export async function POST(req: NextRequest) {
         if (!isAdmin) throw new Error("Forbidden: Admin access required.");
 
         switch (action) {
-            // --- PLATFORM OVERSIGHT & DASHBOARD ---
             case 'getMembers': {
                 const snap = await db.collection('companies').orderBy('createdAt', 'desc').limit(100).get();
                 const data = await Promise.all(snap.docs.map(async (d) => {
@@ -88,7 +87,6 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data });
             }
 
-            // --- CRM & PARTNERS ---
             case 'getPartnersByType': {
                 const { type } = payload;
                 let q = db.collection('partners').orderBy('updatedAt', 'desc').limit(100);
@@ -108,8 +106,7 @@ export async function POST(req: NextRequest) {
 
             case 'searchRegistry': {
                 const { term, type } = payload;
-                // Query collection using range query for search
-                const collectionName = type === 'lead' ? 'leads' : 'partners';
+                const collectionName = type === 'driver' || type === 'supplier' || type === 'transporter' || type === 'finance' ? 'partners' : 'leads';
                 let q = db.collection(collectionName)
                     .where('companyName', '>=', term)
                     .where('companyName', '<=', term + '\uf8ff')
@@ -124,6 +121,12 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data });
             }
 
+            case 'getPlatformStaff': {
+                const snap = await db.collection('platformStaff').get();
+                const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
+                return NextResponse.json({ success: true, data });
+            }
+
             case 'savePartner': {
                 const { partner } = payload;
                 const id = partner.id || db.collection('partners').doc().id;
@@ -133,12 +136,6 @@ export async function POST(req: NextRequest) {
                     updatedAt: FieldValue.serverTimestamp() 
                 }, { merge: true });
                 return NextResponse.json({ success: true, id });
-            }
-
-            case 'deletePartner': {
-                const { partnerId } = payload;
-                await db.collection('partners').doc(partnerId).delete();
-                return NextResponse.json({ success: true });
             }
 
             case 'logCommunication': {
@@ -155,47 +152,6 @@ export async function POST(req: NextRequest) {
                     updatedAt: FieldValue.serverTimestamp()
                 }, { merge: true });
                 return NextResponse.json({ success: true });
-            }
-
-            // --- STAFF MANAGEMENT ---
-            case 'getPlatformStaff': {
-                const snap = await db.collection('platformStaff').get();
-                const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
-                return NextResponse.json({ success: true, data });
-            }
-
-            case 'savePlatformStaff': {
-                const { staff } = payload;
-                const id = staff.id || db.collection('platformStaff').doc().id;
-                await db.collection('platformStaff').doc(id).set({ 
-                    ...staff, 
-                    id, 
-                    updatedAt: FieldValue.serverTimestamp() 
-                }, { merge: true });
-                return NextResponse.json({ success: true });
-            }
-
-            case 'deletePlatformStaff': {
-                const { staffId } = payload;
-                await db.collection('platformStaff').doc(staffId).delete();
-                return NextResponse.json({ success: true });
-            }
-
-            // --- WALLET & RECONCILIATION ---
-            case 'getWalletPayments': {
-                const snap = await db.collectionGroup('walletPayments').where('status', '==', 'pending').limit(100).get();
-                const data = snap.docs.map(doc => ({ id: doc.id, companyId: doc.ref.parent.parent?.id, ...serializeTimestamps(doc.data()) }));
-                return NextResponse.json({ success: true, data });
-            }
-
-            case 'getWalletTransactions': {
-                const snap = await db.collectionGroup('transactions').orderBy('date', 'desc').limit(100).get();
-                const data = snap.docs.map(doc => {
-                    const d = doc.data();
-                    const companyId = doc.ref.path.split('/')[1];
-                    return { id: doc.id, companyId, ...serializeTimestamps(d) };
-                });
-                return NextResponse.json({ success: true, data });
             }
 
             case 'approvePayout': {
@@ -221,6 +177,25 @@ export async function POST(req: NextRequest) {
                 });
 
                 await batch.commit();
+                return NextResponse.json({ success: true });
+            }
+
+            case 'refreshSupplierCategoryCounts':
+            case 'refreshTransporterCategoryCounts':
+            case 'refreshDriverCategoryCounts':
+            case 'refreshFinanceCategoryCounts': {
+                const type = action.includes('Supplier') ? 'supplier' : action.includes('Transporter') ? 'transporter' : action.includes('Driver') ? 'driver' : 'finance';
+                const statsKey = `${type}DiscoveryStats`;
+                const snap = await db.collection('partners').where('type', '==', type).get();
+                const counts: Record<string, number> = {};
+                snap.docs.forEach(doc => {
+                    const cat = doc.data().entryType || 'General';
+                    counts[cat] = (counts[cat] || 0) + 1;
+                });
+                await db.collection('configuration').doc(statsKey).set({
+                    counts,
+                    lastUpdated: FieldValue.serverTimestamp()
+                });
                 return NextResponse.json({ success: true });
             }
 
