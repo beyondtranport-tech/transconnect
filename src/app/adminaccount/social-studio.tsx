@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -13,13 +12,13 @@ import {
     Building, Award, DollarSign, Wallet, Search, Database, User, Rocket,
     Video, Info, BarChart3, MessageSquare, FileText
 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import { generateSocialCopy } from '@/ai/flows/social-copy-flow';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { getClientSideAuthToken } from '@/firebase';
 import { Textarea } from '@/components/ui/textarea';
-import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
 
 // Media Generation Components
 import ImageGeneratorCard from "@/app/backend/image-generator-card";
