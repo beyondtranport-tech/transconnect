@@ -59,7 +59,7 @@ const socialTemplates = {
         label: 'Reduce Costs',
         icon: BarChart3,
         headline: '📉 Slash Your Operating Costs',
-        body: "High maintenance and fuel costs are a constant tax on your profit. By joining our community, you tap into collective buying power for tires, parts, and fuel. Why pay premium prices when we can negotiate as a syndicate?\n\nLike our page to stay informed on group deals.",
+        body: "High maintenance and fuel costs are a constant tax on your profit. By joining our community, you tap into collective buying power for tires, parts, and fuel. Why pay premium prices when we can negotiate as a syndicate?\n\nLike our page to stay informed on group deals.\n\nClick the link below to access the app for free.",
         imagePrompt: 'Rows of heavy commercial truck tires stacked neatly in a modern warehouse, industrial lighting.'
     },
     'value-community': {
@@ -67,7 +67,7 @@ const socialTemplates = {
         label: 'The Community',
         icon: Users,
         headline: '👥 Power in Numbers',
-        body: "Transport is a lonely business, but it doesn't have to be. Join a trusted network of 5,000+ verified members. Share data, find subcontracting partners, and grow your standing in the industry through our verified registry.\n\nFollow our page to meet the network.",
+        body: "Transport is a lonely business, but it doesn't have to be. Join a trusted network of 5,000+ verified members. Share data, find subcontracting partners, and grow your standing in the industry through our verified registry.\n\nFollow our page to meet the network.\n\nClick the link below to access the app for free.",
         imagePrompt: 'A diverse group of professional South African transporters shaking hands and talking next to a fleet of trucks.'
     },
     'value-funding-inhouse': {
@@ -75,7 +75,7 @@ const socialTemplates = {
         label: 'In-house Funding',
         icon: Landmark,
         headline: '💳 Funding Built for Transporters',
-        body: "Traditional banks often decline transport businesses because they don't understand the risks. Our in-house funding division, Simplyfi Flow, looks at your real-time performance on our platform to build a credit profile that works.\n\nFollow us for funding alerts.",
+        body: "Traditional banks often decline transport businesses because they don't understand the risks. Our in-house funding division, Simplyfi Flow, looks at your real-time performance on our platform to build a credit profile that works.\n\nFollow us for funding alerts.\n\nClick the link below to access the app for free.",
         imagePrompt: 'A digital tablet showing an approved loan application with a truck icon and green checkmark.'
     },
     'value-funding-registry': {
@@ -83,7 +83,7 @@ const socialTemplates = {
         label: 'Funder Registry',
         icon: Building,
         headline: '🏦 Access 85+ Specialized Funders',
-        body: "One application. 85+ Potential Funders. We've mapped the entire niche lending landscape in SA to bring the best asset finance and working capital deals directly to your dashboard.",
+        body: "One application. 85+ Potential Funders. We've mapped the entire niche lending landscape in SA to bring the best asset finance and working capital deals directly to your dashboard.\n\nClick the link below to access the app for free.",
         imagePrompt: 'A sleek modern bank building exterior in Sandton, morning light, professional and clean.'
     },
     'value-loyalty': {
@@ -91,7 +91,7 @@ const socialTemplates = {
         label: 'Grow Loyalty',
         icon: Award,
         headline: '⭐ Rise Through the Tiers',
-        body: "Every action you take in our ecosystem earns you points. Move from Bronze to Gold to unlock deeper discounts, lower commission rates, and priority access to premium loads.\n\nFollow us to see our top member successes.",
+        body: "Every action you take in our ecosystem earns you points. Move from Bronze to Gold to unlock deeper discounts, lower commission rates, and priority access to premium loads.\n\nFollow us to see our top member successes.\n\nClick the link below to access the app for free.",
         imagePrompt: 'A gold, silver, and bronze medal set against a background of logistics data graphs.'
     },
     'value-rewards': {
@@ -99,7 +99,7 @@ const socialTemplates = {
         label: 'Earn Rewards',
         icon: Gift,
         headline: '🎁 Turn Activity into Assets',
-        body: "Earn points for listing products, contributing data, or referring friends. Redeem your rewards for fuel vouchers, service discounts, or exclusive marketplace gear.\n\nLike our page to see the latest rewards added.",
+        body: "Earn points for listing products, contributing data, or referring friends. Redeem your rewards for fuel vouchers, service discounts, or exclusive marketplace gear.\n\nLike our page to see the latest rewards added.\n\nClick the link below to access the app for free.",
         imagePrompt: 'A professional fuel voucher card being handed over at a filling station, clean and sharp focus.'
     },
     'revenue-rewards': {
@@ -107,7 +107,7 @@ const socialTemplates = {
         label: 'In-house Rewards',
         icon: Star,
         headline: '✨ Get Paid to Participate',
-        body: "Our 'Actions Plan' turns your daily tasks into revenue. Uploading your fleet details or listing a route isn't just admin—it's an earning event. Start building your points balance today.\n\nFollow us for 'Actions' guides.",
+        body: "Our 'Actions Plan' turns your daily tasks into revenue. Uploading your fleet details or listing a route isn't just admin—it's an earning event. Start building your points balance today.\n\nFollow us for 'Actions' guides.\n\nClick the link below to access the app for free.",
         imagePrompt: 'A digital wallet on a smartphone screen showing points being added with a star animation.'
     },
     'revenue-discounts': {
@@ -115,7 +115,7 @@ const socialTemplates = {
         label: 'Supplier Discounts',
         icon: Handshake,
         headline: '🤝 Shared Savings is Earned Income',
-        body: "A Rand saved on maintenance is a Rand added to your profit. We share the negotiated savings from our supplier network directly with our members. It's the easiest way to improve your margin.\n\nLike our page to see this week's discounts.",
+        body: "A Rand saved on maintenance is a Rand added to your profit. We share the negotiated savings from our supplier network directly with our members. It's the easiest way to improve your margin.\n\nLike our page to see this week's discounts.\n\nClick the link below to access the app for free.",
         imagePrompt: 'A side-by-side comparison chart showing standard prices vs community discounted prices for truck parts.'
     },
     'revenue-membership': {
@@ -123,7 +123,7 @@ const socialTemplates = {
         label: 'Membership Comms',
         icon: Users,
         headline: '📈 Build a Recurring Annuity',
-        body: "Refer a member, earn a commission. Every single month. When your network signs up for a paid plan, you earn a percentage of their fee for as long as they remain active. Build your own monthly income engine.\n\nFollow us for referral strategies.",
+        body: "Refer a member, earn a commission. Every single month. When your network signs up for a paid plan, you earn a percentage of their fee for as long as they remain active. Build your own monthly income engine.\n\nFollow us for referral strategies.\n\nClick the link below to access the app for free.",
         imagePrompt: 'A calendar showing recurring monthly payments with a green growth arrow.'
     },
     'revenue-transactions': {
@@ -131,7 +131,7 @@ const socialTemplates = {
         label: 'Transaction Comms',
         icon: DollarSign,
         headline: '💸 Earn from Every Deal',
-        body: "Your network is your asset. When your referrals buy tires, parts, or secure funding through our Malls, you get a share of the platform's commission. Their success is literally your profit.\n\nFollow our page for partnership tips.",
+        body: "Your network is your asset. When your referrals buy tires, parts, or secure funding through our Malls, you get a share of the platform's commission. Their success is literally your profit.\n\nFollow our page for partnership tips.\n\nClick the link below to access the app for free.",
         imagePrompt: 'A high-speed montage of various commercial transactions happening on a digital map of South Africa.'
     },
     'howto-profile': {
@@ -139,7 +139,7 @@ const socialTemplates = {
         label: 'Create Profile',
         icon: User,
         headline: '🛠️ How-To: Build Your Digital Branch',
-        body: "Setting up your shop or service profile takes less than 10 minutes. Watch our short guide on using the Wizard to upload your branding and products to the national network.\n\nLike our page for more tutorials.",
+        body: "Setting up your shop or service profile takes less than 10 minutes. Watch our short guide on using the Wizard to upload your branding and products to the national network.\n\nLike our page for more tutorials.\n\nClick the link below to access the app for free.",
         imagePrompt: 'A screen recording showing a clean, easy-to-use business profile setup wizard.'
     },
     'howto-matcher': {
@@ -147,7 +147,7 @@ const socialTemplates = {
         label: 'Freight Matcher',
         icon: Search,
         headline: '📍 How-To: Eliminate Empty Miles',
-        body: "Our AI Freight Matcher is a game-changer. Simply enter your origin and destination, and let our intelligence engine find the highest-paying loads for your return leg.\n\nFollow us to see load matching in action.",
+        body: "Our AI Freight Matcher is a game-changer. Simply enter your origin and destination, and let our intelligence engine find the highest-paying loads for your return leg.\n\nFollow us to see load matching in action.\n\nClick the link below to access the app for free.",
         imagePrompt: 'A map of South Africa with blinking nodes being connected by an AI intelligence line.'
     }
 };
@@ -192,7 +192,8 @@ export default function SocialStudio() {
         setIsGenerating(true);
         try {
             const result = await generateSocialCopy({
-                ...creatorParams,
+                topic: creatorParams.topic,
+                criticalPoints: creatorParams.criticalPoints,
                 audience: 'transporters',
                 tone: 'community_casual'
             });
