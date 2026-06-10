@@ -27,6 +27,17 @@ function serializeTimestamps(docData: any): any {
     return newDocData;
 }
 
+/**
+ * Split array into chunks for batch processing.
+ */
+function chunkArray<T>(array: T[], size: number): T[][] {
+    const chunks: T[][] = [];
+    for (let i = 0; i < array.length; i += size) {
+        chunks.push(array.slice(i, i + size));
+    }
+    return chunks;
+}
+
 export async function POST(req: NextRequest) {
     try {
         const { app, error: initError } = getAdminApp();
@@ -65,7 +76,8 @@ export async function POST(req: NextRequest) {
             }
 
             case 'getShops': {
-                const snap = await db.collectionGroup('shops').limit(100).get();
+                // Using a capped collectionGroup query to protect quota
+                const snap = await db.collectionGroup('shops').orderBy('updatedAt', 'desc').limit(100).get();
                 const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
                 return NextResponse.json({ success: true, data });
             }
@@ -87,11 +99,54 @@ export async function POST(req: NextRequest) {
                 const { type } = payload;
                 let q = db.collection('partners').orderBy('updatedAt', 'desc').limit(100);
                 if (type !== 'all') {
+                    // Requires Index: partners | type: ASC, updatedAt: DESC
                     q = db.collection('partners').where('type', '==', type).orderBy('updatedAt', 'desc').limit(100);
                 }
                 const snap = await q.get();
                 const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
                 return NextResponse.json({ success: true, data });
+            }
+
+            case 'getLeads': {
+                const snap = await db.collection('leads').orderBy('updatedAt', 'desc').limit(100).get();
+                const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
+                return NextResponse.json({ success: true, data });
+            }
+
+            case 'searchRegistry': {
+                const { term, type } = payload;
+                let q = db.collection('leads')
+                    .where('companyName', '>=', term)
+                    .where('companyName', '<=', term + '\uf8ff')
+                    .limit(100);
+                
+                if (type && type !== 'all') {
+                    q = q.where('type', '==', type);
+                }
+
+                const snap = await q.get();
+                const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
+                return NextResponse.json({ success: true, data });
+            }
+
+            case 'savePartner': {
+                const { partner } = payload;
+                const id = partner.id || db.collection('partners').doc().id;
+                
+                // Handle service_handle mapping if present
+                if (partner.service_handle && !partner.firstName) {
+                    const parts = partner.service_handle.trim().split(' ');
+                    partner.firstName = parts[0];
+                    partner.lastName = parts.slice(1).join(' ');
+                }
+
+                await db.collection('partners').doc(id).set({ 
+                    ...partner, 
+                    id, 
+                    updatedAt: FieldValue.serverTimestamp() 
+                }, { merge: true });
+                
+                return NextResponse.json({ success: true, id });
             }
 
             case 'logCommunication': {
@@ -101,28 +156,71 @@ export async function POST(req: NextRequest) {
                     id: ref.id, type, subject, notes,
                     timestamp: FieldValue.serverTimestamp()
                 });
-                await db.collection('partners').doc(partnerId).update({
+                await db.collection('partners').doc(partnerId).set({
                     lastOutreachAt: FieldValue.serverTimestamp(),
                     lastOutreachSubject: subject,
-                    status: 'contacted'
-                });
+                    status: 'contacted',
+                    updatedAt: FieldValue.serverTimestamp()
+                }, { merge: true });
+                
+                // Also mirror to leads if it exists
+                await db.collection('leads').doc(partnerId).set({
+                    lastOutreachAt: FieldValue.serverTimestamp(),
+                    lastOutreachSubject: subject,
+                    status: 'contacted',
+                    updatedAt: FieldValue.serverTimestamp()
+                }, { merge: true }).catch(() => {}); // Ignore if lead doesn't exist
+
                 return NextResponse.json({ success: true });
             }
 
-            case 'savePartner': {
-                const { partner } = payload;
-                const id = partner.id || `ENT_${Math.random().toString(36).substring(7).toUpperCase()}`;
-                await db.collection('partners').doc(id).set({ ...partner, id, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
-                return NextResponse.json({ success: true, id });
+            case 'markLeadsAsResearching': {
+                const { leadIds } = payload;
+                const chunks = chunkArray(leadIds, 50);
+                for (const chunk of chunks) {
+                    const batch = db.batch();
+                    chunk.forEach(id => {
+                        batch.update(db.collection('leads').doc(id), { 
+                            researchStatus: 'researching', 
+                            updatedAt: FieldValue.serverTimestamp() 
+                        });
+                        batch.set(db.collection('partners').doc(id), {
+                            researchStatus: 'researching',
+                            updatedAt: FieldValue.serverTimestamp()
+                        }, { merge: true });
+                    });
+                    await batch.commit();
+                }
+                return NextResponse.json({ success: true });
             }
 
-            case 'deletePartner': {
-                const { partnerId } = payload;
-                await db.collection('partners').doc(partnerId).delete();
+            case 'deleteLeads': {
+                const { leadIds } = payload;
+                const chunks = chunkArray(leadIds, 50);
+                for (const chunk of chunks) {
+                    const batch = db.batch();
+                    chunk.forEach(id => {
+                        batch.delete(db.collection('leads').doc(id));
+                        batch.delete(db.collection('partners').doc(id));
+                    });
+                    await batch.commit();
+                }
                 return NextResponse.json({ success: true });
             }
 
             // --- FINANCIAL OPERATIONS ---
+            case 'getWalletPayments': {
+                const snap = await db.collectionGroup('walletPayments').orderBy('createdAt', 'desc').limit(100).get();
+                const data = snap.docs.map(doc => ({ id: doc.id, companyId: doc.ref.parent.parent?.id, ...serializeTimestamps(doc.data()) }));
+                return NextResponse.json({ success: true, data });
+            }
+
+            case 'getWalletTransactions': {
+                const snap = await db.collectionGroup('transactions').orderBy('date', 'desc').limit(100).get();
+                const data = snap.docs.map(doc => ({ id: doc.id, companyId: doc.ref.parent.parent?.id, ...serializeTimestamps(doc.data()) }));
+                return NextResponse.json({ success: true, data });
+            }
+
             case 'approveWalletPayment': {
                 const { companyId, paymentId, amount, description, reconciliationId } = payload;
                 await db.runTransaction(async (transaction) => {
@@ -214,7 +312,16 @@ export async function POST(req: NextRequest) {
                     const activeQuery = agreementsRef.where('status', '==', 'active');
                     const activeSnap = await transaction.get(activeQuery);
                     activeSnap.docs.forEach(doc => transaction.update(doc.ref, { status: 'archived' }));
-                    transaction.update(agreementsRef.doc(agreementId), { status: 'active', updatedAt: FieldValue.serverTimestamp() });
+                    transaction.update(agreementsRef.doc(agreementId), { 
+                        status: 'active', 
+                        updatedAt: FieldValue.serverTimestamp(),
+                        effectiveDate: FieldValue.serverTimestamp()
+                    });
+                    // Sync the rate to the shop document
+                    const agreementSnap = await transaction.get(agreementsRef.doc(agreementId));
+                    transaction.update(db.doc(`companies/${companyId}/shops/${shopId}`), {
+                        platformCommission: agreementSnap.data()?.percentage || 2.5
+                    });
                 });
                 return NextResponse.json({ success: true });
             }
@@ -229,7 +336,11 @@ export async function POST(req: NextRequest) {
             case 'savePlatformStaff': {
                 const { staff } = payload;
                 const id = staff.id || db.collection('platformStaff').doc().id;
-                await db.collection('platformStaff').doc(id).set({ ...staff, id, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+                await db.collection('platformStaff').doc(id).set({ 
+                    ...staff, 
+                    id, 
+                    updatedAt: FieldValue.serverTimestamp() 
+                }, { merge: true });
                 return NextResponse.json({ success: true });
             }
 
