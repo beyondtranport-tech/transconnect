@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -47,6 +48,9 @@ import {
   FileText,
   Landmark,
   Facebook,
+  Linkedin,
+  Instagram,
+  Music,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -143,7 +147,13 @@ function AdminAccountContent() {
       case 'activity': return <ActivityFeed />;
       case 'leads-agent': return <LeadsAgent />;
       case 'leads-database': return <LeadsDatabase />;
-      case 'social-studio': return <SocialStudio />;
+      
+      // Social Studio Sub-menus
+      case 'social-facebook': return <SocialStudio platform="facebook" />;
+      case 'social-linkedin': return <SocialStudio platform="linkedin" />;
+      case 'social-instagram': return <SocialStudio platform="instagram" />;
+      case 'social-tiktok': return <SocialStudio platform="tiktok" />;
+
       case 'branding-studio': return <BrandingStudio />;
       case 'tts-studio': return <TTSStudio />;
       case 'asset-gallery': return <AssetGallery />;
@@ -187,6 +197,7 @@ function AdminAccountContent() {
 
   const navigate = (view: string) => router.push(`/adminaccount?view=${view}`, { scroll: false });
   const isMarketingActive = activeView.startsWith('marketing-');
+  const isSocialActive = activeView.startsWith('social-');
 
   return (
     <AdminAuthGuard>
@@ -210,11 +221,36 @@ function AdminAccountContent() {
                         <Activity /><span>Activity</span>
                     </SidebarMenuButton>
                 </SidebarMenuItem>
+                
+                {/* Main Social Studio Section */}
                 <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Social Studio" isActive={activeView === 'social-studio'} onClick={() => navigate('social-studio')}>
-                        <Facebook /><span>Social Studio</span>
+                    <SidebarMenuButton tooltip="Social Studio" isActive={isSocialActive}>
+                        <Sparkles /><span>Social Studio</span>
                     </SidebarMenuButton>
+                    <SidebarMenuSub>
+                        <SidebarMenuSubItem>
+                            <SidebarMenuSubButton isActive={activeView === 'social-facebook'} onClick={() => navigate('social-facebook')}>
+                                <Facebook className="h-4 w-4 mr-2" /> Facebook
+                            </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                        <SidebarMenuSubItem>
+                            <SidebarMenuSubButton isActive={activeView === 'social-linkedin'} onClick={() => navigate('social-linkedin')}>
+                                <Linkedin className="h-4 w-4 mr-2" /> LinkedIn
+                            </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                        <SidebarMenuSubItem>
+                            <SidebarMenuSubButton isActive={activeView === 'social-instagram'} onClick={() => navigate('social-instagram')}>
+                                <Instagram className="h-4 w-4 mr-2" /> Instagram
+                            </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                        <SidebarMenuSubItem>
+                            <SidebarMenuSubButton isActive={activeView === 'social-tiktok'} onClick={() => navigate('social-tiktok')}>
+                                <Music className="h-4 w-4 mr-2" /> TikTok
+                            </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                    </SidebarMenuSub>
                 </SidebarMenuItem>
+
                 <SidebarMenuItem>
                     <SidebarMenuButton tooltip="Marketing" isActive={isMarketingActive}><BookOpen /><span>Marketing Library</span></SidebarMenuButton>
                     <SidebarMenuSub>
@@ -237,7 +273,7 @@ function AdminAccountContent() {
                     </SidebarMenuSub>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Content" isActive={activeView.includes('studio')}><Sparkles /><span>Content Studio</span></SidebarMenuButton>
+                    <SidebarMenuButton tooltip="Content" isActive={activeView === 'branding-studio' || activeView === 'tts-studio'}><Sparkles /><span>Content Studio</span></SidebarMenuButton>
                     <SidebarMenuSub>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'branding-studio'} onClick={() => navigate('branding-studio')}>Branding Studio</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'tts-studio'} onClick={() => navigate('tts-studio')}>TTS Studio</SidebarMenuSubButton></SidebarMenuSubItem>
