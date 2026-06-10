@@ -4,9 +4,9 @@ import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { getClientSideAuthToken, useUser } from '@/firebase';
+import { getClientSideAuthToken } from '@/firebase';
 import { 
-  Loader2, PlusCircle, Users, Edit, Trash2, Send, Filter, RotateCcw, Search, Database, Upload, MapPin, Mail, Phone, Save, Download, RefreshCcw, Zap
+  Loader2, PlusCircle, Users, Edit, Trash2, Send, Filter, RotateCcw, Search, Upload, Save, Download, RefreshCcw, Zap
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
@@ -24,7 +24,7 @@ import { PartnerOversightDialog } from './PartnerOversightDialog';
 import { EngageDialog } from './EngageDialog';
 import { CommunicationLogDialog } from './CommunicationLogDialog';
 import { PartnerTasksDialog } from './PartnerTasksDialog';
-import { formatDateSafe, cn, downloadDataAsCSV } from '@/lib/utils';
+import { formatDateSafe } from '@/lib/utils';
 import { EnrichPartnerButton } from './EnrichPartnerButton';
 import { Label } from '@/components/ui/label';
 import { BulkImportDialog } from './BulkImportDialog';
@@ -40,9 +40,6 @@ async function performAdminAction(token: string, action: string, payload: any) {
   
   if (!response.ok) {
     const text = await response.text();
-    if (text.includes('<html>')) {
-        throw new Error("Server Timeout: Operation taking too long. Please try again in 30 seconds.");
-    }
     throw new Error(text || `API Error: ${action}`);
   }
 
@@ -165,7 +162,6 @@ export default function DriverManagement() {
   const handleSearch = async () => {
     if (!searchTerm || searchTerm.length < 3) {
         if (searchTerm.length === 0) forceRefresh();
-        else toast({ title: "Min 3 characters required" });
         return;
     }
     setIsLoading(true);
@@ -184,22 +180,8 @@ export default function DriverManagement() {
   const handleExport = () => {
       if (filteredDrivers.length === 0) return;
       downloadDataAsCSV(filteredDrivers, `drivers-backup-${new Date().toISOString().split('T')[0]}.csv`);
-      toast({ title: "Backup Ready", description: "CSV file has been generated." });
+      toast({ title: "Backup Ready" });
   };
-
-  const integrityStats = useMemo(() => {
-    const stats = { missingEmail: 0, nonMobile: 0, missingLocation: 0 };
-    partners.forEach(p => {
-        const email = (p.email || '').toString().toLowerCase();
-        if (!email || email === 'null' || email === 'n/a' || email === 'none') stats.missingEmail++;
-        
-        const phone = (p.phone || p.registry_line || '').toString();
-        if (phone.startsWith('+271') || phone.startsWith('+272') || phone.startsWith('+273')) stats.nonMobile++;
-        
-        if (!p.address && !p.operational_hub) stats.missingLocation++;
-    });
-    return stats;
-  }, [partners]);
 
   const filteredDrivers = useMemo(() => {
     return partners.filter(p => {
@@ -226,7 +208,7 @@ export default function DriverManagement() {
     { 
         header: 'Driver Identity', 
         cell: ({ row }) => (
-            <div className="flex flex-col">
+            <div className="flex flex-col text-sm">
                 <span className="font-bold">{row.original.service_handle || `${row.original.firstName} ${row.original.lastName}`}</span>
                 <span className="text-[10px] text-muted-foreground uppercase font-black">{row.original.operational_hub || row.original.address || 'SA Region'}</span>
             </div>
@@ -261,9 +243,9 @@ export default function DriverManagement() {
       
       <div className="space-y-6">
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="space-y-1">
-                <CardTitle className="flex items-center gap-2"><Users /> Industrial Workforce Registry</CardTitle>
-                <CardDescription>Targeted view of recent commercial service providers. Use search for deep access.</CardDescription>
+            <div>
+                <CardTitle className="flex items-center gap-2"><Users /> Driver Registry</CardTitle>
+                <CardDescription>Targeted view of recent commercial service providers.</CardDescription>
             </div>
             <div className="flex items-center gap-2">
                 <Button variant="outline" onClick={handleExport} disabled={isLoading}>
@@ -274,41 +256,11 @@ export default function DriverManagement() {
             </div>
         </CardHeader>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card className="bg-amber-50 border-amber-200">
-                <CardContent className="p-4 flex items-center gap-4">
-                    <Mail className="h-8 w-8 text-amber-600 opacity-40" />
-                    <div>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-amber-600">Missing Emails</p>
-                        <p className="text-2xl font-black text-amber-700">{integrityStats.missingEmail}</p>
-                    </div>
-                </CardContent>
-            </Card>
-            <Card className="bg-blue-50 border-blue-200">
-                <CardContent className="p-4 flex items-center gap-4">
-                    <Phone className="h-8 w-8 text-blue-600 opacity-40" />
-                    <div>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-blue-600">Non-Mobile Lines</p>
-                        <p className="text-2xl font-black text-blue-700">{integrityStats.nonMobile}</p>
-                    </div>
-                </CardContent>
-            </Card>
-            <Card className="bg-slate-50 border-slate-200">
-                <CardContent className="p-4 flex items-center gap-4">
-                    <MapPin className="h-8 w-8 text-slate-600 opacity-40" />
-                    <div>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-600">Unknown Regions</p>
-                        <p className="text-2xl font-black text-slate-700">{integrityStats.missingLocation}</p>
-                    </div>
-                </CardContent>
-            </Card>
-        </div>
-
         <Card>
             <CardContent className="pt-6">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg">
                     <div className="md:col-span-2 space-y-2">
-                        <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Search className="h-3 w-3"/> Deep Registry Search</Label>
+                        <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Search className="h-3 w-3"/> Registry Search</Label>
                         <div className="flex gap-2">
                             <Input placeholder="Type name or ID to search thousands of drivers..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearch()} />
                             <Button onClick={handleSearch} disabled={isLoading}><Search className="h-4 w-4"/></Button>
@@ -334,4 +286,31 @@ export default function DriverManagement() {
       </div>
     </>
   );
+}
+
+function downloadDataAsCSV(data: any[], filename: string) {
+    if (!data || data.length === 0) return;
+    const headers = Object.keys(data[0]);
+    const csvContent = [
+        headers.join(','),
+        ...data.map(row => headers.map(fieldName => {
+            let value = row[fieldName];
+            if (value === null || value === undefined) return '';
+            let stringValue = String(value);
+            if (/[",\n]/.test(stringValue)) {
+                stringValue = `"${stringValue.replace(/"/g, '""')}"`;
+            }
+            return stringValue;
+        }).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", filename);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 }

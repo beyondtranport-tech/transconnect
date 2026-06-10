@@ -1,6 +1,7 @@
 'use server';
 /**
  * @fileOverview AI Social Media Copywriter for Logistics Flow expansion.
+ * Optimized for South African industry groups.
  */
 
 import { ai, geminiModel } from '@/ai/genkit';
@@ -39,14 +40,15 @@ const socialCopyFlow = ai.defineFlow(
       system: `You are an elite social media growth strategist for the South African transport industry.
       Your goal is to write high-engagement Facebook posts that drive signups for "Logistics Flow".
       
-      POST STRATEGY:
+      POST STRATEGY & TEMPLATES:
       1. VALUE FIRST: Focus on breaking industry constraints (e.g., high costs, lack of loads).
       2. LOCAL CONTEXT: Use South African industry terms (e.g., "Horses & Trailers", "Bakkie builders", "Rand per KM").
-      3. CLEAR CTA: Always end with a prompt to join using a link.`,
+      3. THE "DIRECT-TO-MD" HOOK: Address the owner directly.
+      4. CLEAR CTA: Always end with a prompt to join using the tracking link.`,
       prompt: `Generate 3 high-conversion Facebook posts for an audience of ${input.audience}. 
       Topic: ${input.topic} 
       Tone: ${input.tone}. 
-      Ensure the image prompts are professional and cinematic.`,
+      Ensure the image prompts are professional, cinematic, and ready for Imagen 4.`,
       output: { schema: SocialCopyOutputSchema }
     });
     
