@@ -108,13 +108,14 @@ export async function POST(req: NextRequest) {
 
             case 'searchRegistry': {
                 const { term, type } = payload;
-                // Query leads collection using range query for search
-                let q = db.collection('leads')
+                // Query collection using range query for search
+                const collectionName = type === 'lead' ? 'leads' : 'partners';
+                let q = db.collection(collectionName)
                     .where('companyName', '>=', term)
                     .where('companyName', '<=', term + '\uf8ff')
                     .limit(100);
                 
-                if (type && type !== 'all') {
+                if (type && type !== 'all' && type !== 'lead') {
                     q = q.where('type', '==', type);
                 }
 
@@ -126,20 +127,11 @@ export async function POST(req: NextRequest) {
             case 'savePartner': {
                 const { partner } = payload;
                 const id = partner.id || db.collection('partners').doc().id;
-                
-                // Resilient name normalization for Driver mapping
-                if (partner.service_handle && !partner.firstName) {
-                    const parts = partner.service_handle.trim().split(' ');
-                    partner.firstName = parts[0];
-                    partner.lastName = parts.slice(1).join(' ') || 'Partner';
-                }
-
                 await db.collection('partners').doc(id).set({ 
                     ...partner, 
                     id, 
                     updatedAt: FieldValue.serverTimestamp() 
                 }, { merge: true });
-                
                 return NextResponse.json({ success: true, id });
             }
 
@@ -156,14 +148,12 @@ export async function POST(req: NextRequest) {
                     id: ref.id, type, subject, notes,
                     timestamp: FieldValue.serverTimestamp()
                 });
-                // Update parent record for tracking
                 await db.collection('partners').doc(partnerId).set({
                     lastOutreachAt: FieldValue.serverTimestamp(),
                     lastOutreachSubject: subject,
                     status: 'contacted',
                     updatedAt: FieldValue.serverTimestamp()
                 }, { merge: true });
-
                 return NextResponse.json({ success: true });
             }
 
@@ -202,8 +192,7 @@ export async function POST(req: NextRequest) {
                 const snap = await db.collectionGroup('transactions').orderBy('date', 'desc').limit(100).get();
                 const data = snap.docs.map(doc => {
                     const d = doc.data();
-                    const pathParts = doc.ref.path.split('/');
-                    const companyId = pathParts[1];
+                    const companyId = doc.ref.path.split('/')[1];
                     return { id: doc.id, companyId, ...serializeTimestamps(d) };
                 });
                 return NextResponse.json({ success: true, data });
@@ -233,23 +222,6 @@ export async function POST(req: NextRequest) {
 
                 await batch.commit();
                 return NextResponse.json({ success: true });
-            }
-
-            case 'rejectPayout': {
-                const { companyId, payoutId } = payload;
-                await db.collection(`companies/${companyId}/payoutRequests`).doc(payoutId).update({
-                    status: 'rejected',
-                    updatedAt: FieldValue.serverTimestamp()
-                });
-                return NextResponse.json({ success: true });
-            }
-
-            // --- LENDING PORTAL BACKBONE ---
-            case 'getLendingData': {
-                const { collectionName } = payload;
-                const snap = await db.collection(collectionName).limit(100).get();
-                const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
-                return NextResponse.json({ success: true, data });
             }
 
             default:

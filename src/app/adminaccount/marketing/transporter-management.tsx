@@ -1,19 +1,19 @@
+
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { getClientSideAuthToken, useUser } from '@/firebase';
+import { getClientSideAuthToken } from '@/firebase';
 import { 
-  Loader2, PlusCircle, Truck, Edit, Trash2, Send, CheckCircle, Users, Filter, Save, 
-  Search, Zap, RotateCcw, XCircle, Info, Sparkles, AlertCircle, Mail, Download, Copy, ShieldCheck, Tag, Clock, Ban, Database, Navigation, Upload
+  Loader2, PlusCircle, Truck, Edit, Trash2, Send, Filter, RotateCcw, Search, Upload, Mail, ShieldCheck, Navigation
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -30,6 +30,27 @@ import { EnrichPartnerButton } from './EnrichPartnerButton';
 import { Label } from '@/components/ui/label';
 import { BulkImportDialog } from './BulkImportDialog';
 
+async function performAdminAction(token: string, action: string, payload: any) {
+  const response = await fetch('/api/admin', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action, payload }),
+    cache: 'no-store'
+  });
+  
+  if (!response.ok) {
+    const text = await response.text();
+    if (text.includes('<html>')) {
+        throw new Error("Server Timeout: Operation taking too long. Please try again in 30 seconds.");
+    }
+    throw new Error(text || `API Error: ${action}`);
+  }
+
+  const result = await response.json();
+  if (!result.success) throw new Error(result.error || `API Error: ${action}`);
+  return result;
+}
+
 const partnerSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
@@ -42,27 +63,6 @@ const partnerSchema = z.object({
   type: z.literal('transporter'),
 });
 type PartnerFormValues = z.infer<typeof partnerSchema>;
-
-async function performAdminAction(token: string, action: string, payload: any) {
-  const response = await fetch('/api/admin', {
-    method: 'POST',
-    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action, payload }),
-    cache: 'no-store'
-  });
-  
-  if (!response.ok) {
-    const text = await response.text();
-    if (text.includes('<html>')) {
-        throw new Error("Server Timeout: Operation taking too long. Registry view is capped at 100 records to prevent this.");
-    }
-    throw new Error(text || `API Error: ${action}`);
-  }
-
-  const result = await response.json();
-  if (!result.success) throw new Error(result.error || `API Error: ${action}`);
-  return result;
-}
 
 function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: boolean; onOpenChange: (open: boolean) => void; partner?: any; onSave: () => void; }) {
   const [isLoading, setIsLoading] = useState(false);
