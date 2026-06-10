@@ -6,13 +6,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
-  Loader2, PlusCircle, Users, Edit, Trash2, Send, Filter, RotateCcw, Search, Database, Upload, MapPin, Mail, Lock, ShieldCheck, Phone, Save, Download
+  Loader2, PlusCircle, Users, Edit, Trash2, Send, Filter, RotateCcw, Search, Database, Upload, MapPin, Mail, Lock, ShieldCheck, Phone, Save, Download, RefreshCcw
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -188,7 +188,7 @@ export default function DriverManagement() {
     const stats = { missingEmail: 0, nonMobile: 0, missingLocation: 0 };
     partners.forEach(p => {
         const email = (p.email || '').toString().toLowerCase();
-        if (!email || email === 'null' || email === 'n/a') stats.missingEmail++;
+        if (!email || email === 'null' || email === 'n/a' || email === 'none') stats.missingEmail++;
         
         const phone = (p.phone || p.registry_line || '').toString();
         if (phone.startsWith('+271') || phone.startsWith('+272') || phone.startsWith('+273')) stats.nonMobile++;

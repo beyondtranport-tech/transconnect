@@ -5,9 +5,6 @@ import { getAdminApp } from '@/lib/firebase-admin';
 
 export const dynamic = 'force-dynamic';
 
-/**
- * Serializes Firestore objects for JSON response.
- */
 function serializeTimestamps(docData: any): any {
     if (!docData) return docData;
     const newDocData: { [key: string]: any } = {};
@@ -74,8 +71,6 @@ export async function POST(req: NextRequest) {
             case 'deleteMember': {
                 const { companyId } = payload;
                 const batch = db.batch();
-                // Note: Complex deletion (subcollections) usually requires a recursive function.
-                // This is a simple document deletion for the prototype.
                 batch.delete(db.collection('companies').doc(companyId));
                 await batch.commit();
                 return NextResponse.json({ success: true });
@@ -95,7 +90,11 @@ export async function POST(req: NextRequest) {
 
             case 'getStaff': {
                 const snap = await db.collectionGroup('staff').limit(100).get();
-                const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
+                const data = snap.docs.map(doc => ({ 
+                    id: doc.id, 
+                    companyId: doc.ref.parent.parent?.id,
+                    ...serializeTimestamps(doc.data()) 
+                }));
                 return NextResponse.json({ success: true, data });
             }
 

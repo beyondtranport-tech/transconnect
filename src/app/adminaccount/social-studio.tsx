@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -9,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Facebook, Sparkles, Loader2, Copy, Send, Link as LinkIcon, ShieldCheck, Zap, Share2, ExternalLink, Image as ImageIcon, ClipboardCheck, History, Info } from 'lucide-react';
+import { Facebook, Sparkles, Loader2, Copy, Send, Link as LinkIcon, ShieldCheck, Zap, Share2, ExternalLink, Image as ImageIcon, ClipboardCheck, History, Info, ArrowRight } from 'lucide-react';
 import { generateSocialCopy, type SocialCopyOutput } from '@/ai/flows/social-copy-flow';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
@@ -26,7 +25,7 @@ function SocialEngageDialog({ open, onOpenChange, post, campaignName }: { open: 
     const [isLogging, setIsLogging] = useState(false);
     const { toast } = useToast();
 
-    // CRITICAL FIX: Safe data derivation with robust null checks to prevent TypeError
+    // Guard against crashes by memoizing derivation and providing fallbacks
     const derived = useMemo(() => {
         if (!post || !post.body) return { trackingLink: '', fullPostBody: '', sanitizedRef: '' };
         
@@ -35,14 +34,13 @@ function SocialEngageDialog({ open, onOpenChange, post, campaignName }: { open: 
             ? campaignName.split('/').filter(Boolean).pop()?.toUpperCase() || 'FB_CAMPAIGN'
             : campaignName.replace(/\s/g, '_').toUpperCase() || 'GENERAL';
 
-        const baseUrl = window.location.origin;
+        const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://studio--ecosystem-hub.us-central1.hosted.app';
         const trackingLink = `${baseUrl}/join?ref=FB_${sanitizedRef}`;
         const fullPostBody = `${post.body}\n\nJoin the community here: ${trackingLink}\n\n${(post.hashtags || []).join(' ')}`;
         
         return { trackingLink, fullPostBody, sanitizedRef };
     }, [post, campaignName]);
 
-    // Guard against rendering without a post object
     if (!post) return null;
 
     const { trackingLink, fullPostBody, sanitizedRef } = derived;
@@ -75,7 +73,6 @@ function SocialEngageDialog({ open, onOpenChange, post, campaignName }: { open: 
             await navigator.clipboard.writeText(fullPostBody);
             toast({ title: "Copy & Log Success", description: "Opening Facebook now. Paste your content to post." });
             
-            // Open the group URL if it was provided, otherwise open general groups feed
             const launchUrl = campaignName.startsWith('http') ? campaignName : 'https://www.facebook.com/groups/feed/';
             window.open(launchUrl, '_blank');
             onOpenChange(false);
@@ -88,7 +85,7 @@ function SocialEngageDialog({ open, onOpenChange, post, campaignName }: { open: 
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-4xl h-[85vh] flex flex-col p-0 overflow-hidden">
+            <DialogContent className="max-w-4xl h-[85vh] flex flex-col p-0 overflow-hidden text-base">
                 <DialogHeader className="p-6 border-b bg-muted/30">
                     <div className="flex justify-between items-start">
                         <div className="space-y-1">
@@ -157,13 +154,6 @@ function SocialEngageDialog({ open, onOpenChange, post, campaignName }: { open: 
                                             <Button className="bg-primary hover:bg-primary/90 flex-1" asChild>
                                                 <Link href="/adminaccount?view=branding-studio">Launch Studio <ArrowRight className="ml-2 h-4 w-4"/></Link>
                                             </Button>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-start gap-4 p-4 border rounded-xl bg-amber-50">
-                                        <Info className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
-                                        <div className="space-y-1">
-                                            <p className="text-sm font-bold text-amber-900">Workflow Note</p>
-                                            <p className="text-xs text-amber-800 leading-relaxed">Generate your high-res visual in the Branding Studio first, then return here to copy the post text and launch to the group.</p>
                                         </div>
                                     </div>
                                 </div>
@@ -244,7 +234,6 @@ export default function SocialStudio() {
             </CardHeader>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* 1. CONFIG PANEL */}
                 <div className="lg:col-span-1 space-y-6">
                     <Card className="shadow-lg border-primary/10 overflow-hidden">
                         <div className="bg-muted/30 border-b py-4 px-6">
@@ -295,26 +284,13 @@ export default function SocialStudio() {
                             </Button>
                         </CardContent>
                     </Card>
-
-                    <div className="p-6 bg-slate-950 rounded-2xl text-white shadow-2xl relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                            <LinkIcon className="h-32 w-32" />
-                        </div>
-                        <h4 className="font-black uppercase tracking-widest text-[9px] text-primary mb-2">Automated Attribution</h4>
-                        <p className="text-xl font-bold leading-tight">Every signup is tracked by source.</p>
-                        <p className="text-xs text-slate-400 mt-2 leading-relaxed font-medium">When you use the wizard to post, we attribute every new member back to the specific Facebook group to calculate your growth ROI.</p>
-                    </div>
                 </div>
 
-                {/* 2. RESULTS FEED */}
                 <div className="lg:col-span-2 space-y-6">
                     {results ? results.posts.map((post, i) => (
                         <Card key={i} className="border-none shadow-xl group overflow-hidden hover:ring-2 hover:ring-primary/20 transition-all">
                             <div className="bg-muted/50 px-6 py-3 border-b flex justify-between items-center">
                                 <Badge variant="secondary" className="font-black uppercase text-[10px] h-5">Ad Variation #{i+1}</Badge>
-                                <div className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase">
-                                    <ShieldCheck className="h-3 w-3 text-green-500" /> Platform Optimized
-                                </div>
                             </div>
                             <CardHeader className="px-6 pt-6">
                                 <CardTitle className="text-2xl font-black font-headline tracking-tight group-hover:text-primary transition-colors">{post.headline}</CardTitle>
@@ -332,11 +308,7 @@ export default function SocialStudio() {
                         </Card>
                     )) : (
                         <div className="h-full min-h-[500px] border-4 border-dashed rounded-[2rem] flex flex-col items-center justify-center text-muted-foreground p-12 text-center bg-muted/5">
-                            <div className="bg-white p-8 rounded-full shadow-lg mb-8 border">
-                                <Facebook className="h-16 w-16 text-blue-600/10" />
-                            </div>
                             <h3 className="text-3xl font-black text-slate-300 font-headline mb-2 uppercase tracking-tighter">Social Pipeline Ready</h3>
-                            <p className="max-w-xs text-sm leading-relaxed font-medium">Define your target Facebook group parameters on the left to generate conversion-optimized content.</p>
                         </div>
                     )}
                 </div>
@@ -344,4 +316,3 @@ export default function SocialStudio() {
         </div>
     );
 }
-

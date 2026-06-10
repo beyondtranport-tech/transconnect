@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
-  Loader2, PlusCircle, Truck, Edit, Trash2, Send, Filter, RotateCcw, Search, Upload, Mail, ShieldCheck, Navigation, Save, Download
+  Loader2, PlusCircle, Truck, Edit, Trash2, Send, Filter, RotateCcw, Search, Upload, Mail, ShieldCheck, Navigation, Save, Download, RefreshCcw
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
@@ -181,6 +181,7 @@ export default function TransporterManagement() {
   const handleExport = () => {
       if (filteredTransporters.length === 0) return;
       downloadDataAsCSV(filteredTransporters, `transporters-backup-${new Date().toISOString().split('T')[0]}.csv`);
+      toast({ title: "Backup Ready", description: "CSV file has been generated." });
   };
 
   const filteredTransporters = useMemo(() => {
