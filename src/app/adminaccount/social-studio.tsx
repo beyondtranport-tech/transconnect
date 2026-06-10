@@ -207,33 +207,45 @@ export default function SocialStudio() {
         }
     };
 
+    /**
+     * CRITICAL: Prioritize clipboard action to satisfy browser security gesture requirements.
+     */
     const handleLogAndLaunch = async () => {
-        setIsLogging(true);
+        // 1. Capture text
+        const textToCopy = derived.fullPostBody;
+
+        // 2. Perform copy IMMEDIATELY
+        try {
+            await navigator.clipboard.writeText(textToCopy);
+            toast({ title: "Content Copied!", description: "Opening Facebook... Paste your post there." });
+        } catch (err) {
+            console.error('Clipboard copy failed:', err);
+            toast({ variant: 'destructive', title: "Copy Failed", description: "Browser blocked auto-copy. Please manually copy the text from the preview box." });
+            // Fallthrough to open FB anyway
+        }
+
+        // 3. Open Facebook immediately while gesture is fresh
+        window.open('https://www.facebook.com/groups/feed/', '_blank');
+
+        // 4. Background logging (Non-blocking)
         try {
             const token = await getClientSideAuthToken();
-            if (!token) throw new Error("Auth failed.");
-
-            await fetch('/api/admin', {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    action: 'logAudit', 
-                    payload: { 
-                        action: 'social_launch', 
-                        details: `Launched post "${activeTab}" for group: ${campaignName}`,
-                        metadata: { campaignName, tab: activeTab }
-                    } 
-                }),
-            });
-
-            await navigator.clipboard.writeText(derived.fullPostBody);
-            toast({ title: "Content Copied & Logged", description: "Opening Facebook... Paste your content to post." });
-            
-            window.open('https://www.facebook.com/groups/feed/', '_blank');
-        } catch (e: any) {
-            toast({ variant: 'destructive', title: "Error", description: e.message });
-        } finally {
-            setIsLogging(false);
+            if (token) {
+                fetch('/api/admin', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        action: 'logAudit', 
+                        payload: { 
+                            action: 'social_launch', 
+                            details: `Launched post "${activeTab}" for group: ${campaignName}`,
+                            metadata: { campaignName, tab: activeTab }
+                        } 
+                    }),
+                });
+            }
+        } catch (e) {
+            console.warn("Audit logging failed after copy.", e);
         }
     };
 
@@ -279,7 +291,7 @@ export default function SocialStudio() {
                 </div>
                 <div className="flex items-center gap-3 bg-muted/50 p-2 rounded-lg border">
                     <div className="space-y-1">
-                        <Label className="text-[10px] font-black uppercase text-muted-foreground px-2">Target Group</Label>
+                        <Label className="text-[10px] font-black uppercase text-muted-foreground px-2">Tracking Label (Group Name)</Label>
                         <Input 
                             placeholder="e.g. Western Cape Transporters" 
                             value={campaignName} 
@@ -289,7 +301,7 @@ export default function SocialStudio() {
                     </div>
                     <Separator orientation="vertical" className="h-10 mx-2" />
                     <div className="space-y-1">
-                        <Label className="text-[10px] font-black uppercase text-muted-foreground px-2">FB Page URL</Label>
+                        <Label className="text-[10px] font-black uppercase text-muted-foreground px-2">Logistics Flow FB Page URL</Label>
                         <Input 
                             value={fbPageUrl} 
                             onChange={e => setFbPageUrl(e.target.value)}
