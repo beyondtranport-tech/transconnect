@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -6,7 +5,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, Handshake, Edit, Trash2, Send, CheckCircle, Users, Filter, Save, Search, Mail } from 'lucide-react';
+import { Loader2, PlusCircle, Handshake, Edit, Trash2, Send, CheckCircle, Users, Filter, Save, Search, Mail, Download } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -20,9 +19,10 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { PartnerOversightDialog } from './PartnerOversightDialog';
-import { CommunicationLogDialog } from './CommunicationLogDialog';
 import { EngageDialog } from './EngageDialog';
-import { formatDateSafe } from '@/lib/utils';
+import { CommunicationLogDialog } from './CommunicationLogDialog';
+import { PartnerTasksDialog } from './PartnerTasksDialog';
+import { formatDateSafe, cn, downloadDataAsCSV } from '@/lib/utils';
 import { EnrichPartnerButton } from './EnrichPartnerButton';
 import { Label } from '@/components/ui/label';
 
@@ -188,6 +188,12 @@ export default function PartnerManagement() {
     });
   }, [partners, statusFilter, assigneeFilter, dataFilter]);
 
+  const handleExport = () => {
+      if (filteredPartners.length === 0) return;
+      downloadDataAsCSV(filteredPartners, `partners-backup-${new Date().toISOString().split('T')[0]}.csv`);
+      toast({ title: "Backup Exported", description: "Current filtered registry has been saved to CSV." });
+  };
+
   async function handleDelete() {
     try {
       const token = await getClientSideAuthToken();
@@ -288,6 +294,9 @@ export default function PartnerManagement() {
         <CardHeader className="flex flex-row items-center justify-between">
           <div><CardTitle><Handshake /> Strategic Partners</CardTitle></div>
           <div className="flex gap-2">
+            <Button variant="outline" onClick={handleExport} disabled={isLoading}>
+                <Download className="mr-2 h-4 w-4" /> Backup (CSV)
+            </Button>
             <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Partner</Button>
           </div>
         </CardHeader>

@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
@@ -36,7 +35,7 @@ import { roles } from '@/lib/roles';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { formatDateSafe, cn } from '@/lib/utils';
+import { formatDateSafe, cn, downloadDataAsCSV } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 
@@ -93,7 +92,6 @@ function LeadsDatabaseComponent() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
 
-  // QUOTA PROTECTION: Use API fetch instead of useCollection real-time listener
   const forceRefresh = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -109,6 +107,12 @@ function LeadsDatabaseComponent() {
   }, [toast]);
 
   useEffect(() => { forceRefresh(); }, [forceRefresh]);
+
+  const handleExport = () => {
+      if (filteredLeads.length === 0) return;
+      downloadDataAsCSV(filteredLeads, `leads-backup-${new Date().toISOString().split('T')[0]}.csv`);
+      toast({ title: "Backup Exported" });
+  };
 
   const filteredLeads = useMemo(() => {
     return leads.filter(p => {
@@ -210,6 +214,9 @@ function LeadsDatabaseComponent() {
             <CardDescription>Capped view of recent leads. Use search for deep registry access.</CardDescription>
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            <Button variant="outline" onClick={handleExport} disabled={isLoading}>
+                <Download className="mr-2 h-4 w-4" /> Backup (CSV)
+            </Button>
             <BulkImportDialog type="lead" onComplete={forceRefresh}><Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
             <Button onClick={() => setIsAddLeadOpen(true)}><PlusCircle className="mr-2 h-4 w-4" />Add Lead</Button>
           </div>

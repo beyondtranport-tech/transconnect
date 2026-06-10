@@ -1,14 +1,13 @@
-
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { BookOpen, Loader2, ClipboardCopy, SearchCode, Target, Users, LayoutDashboard, Send, Sparkles, Landmark, DollarSign } from 'lucide-react';
+import { BookOpen, Loader2, ClipboardCopy, SearchCode, Target, Users, LayoutDashboard, Send, Sparkles, Landmark, DollarSign, Download } from 'lucide-react';
 import { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
-import { copyHtmlToClipboard, cn } from '@/lib/utils';
+import { copyHtmlToClipboard, cn, downloadDataAsCSV } from '@/lib/utils';
 import {
   Dialog,
   DialogContent,
@@ -197,8 +196,7 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
     if (subview && subview !== activeTab) {
         setActiveTab(subview);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [subview]); // Remove activeTab from deps to prevent sync loops
+  }, [subview, activeTab]);
 
   const handleTabChange = (val: string) => {
     setActiveTab(val);
@@ -222,6 +220,16 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
   }, [audience, toast]);
 
   useEffect(() => { fetchPartners(); }, [fetchPartners]);
+
+  const handleExport = () => {
+      if (partners.length === 0) {
+          toast({ variant: 'destructive', title: "No Data", description: "The registry is empty." });
+          return;
+      }
+      const filename = `logistics-flow-${audience}-backup-${new Date().toISOString().split('T')[0]}.csv`;
+      downloadDataAsCSV(partners, filename);
+      toast({ title: "Backup Exported", description: `${partners.length} records saved to CSV.` });
+  };
 
   const handleLogAndCopy = async (logData: any) => {
     try {
@@ -265,6 +273,9 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
                 </div>
             </div>
             <div className="flex items-center gap-2">
+                <Button variant="outline" onClick={handleExport} disabled={isLoadingPartners}>
+                    <Download className="mr-2 h-4 w-4" /> Backup Registry (CSV)
+                </Button>
                 {Discovery && (
                     <Button variant="outline" onClick={() => handleTabChange('discovery')} className={cn(activeTab === 'discovery' && "bg-primary text-white hover:bg-primary/90")}>
                         <Sparkles className="mr-2 h-4 w-4" /> Discovery Engine

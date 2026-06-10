@@ -5,7 +5,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, DollarSign, Edit, Trash2, Send, Users, Filter, Save, Search, Mail, Target, Upload, Info } from 'lucide-react';
+import { Loader2, PlusCircle, DollarSign, Edit, Trash2, Send, Users, Filter, Save, Search, Mail, Target, Upload, Info, Download } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -22,7 +22,7 @@ import { PartnerOversightDialog } from './PartnerOversightDialog';
 import { EngageDialog } from './EngageDialog';
 import { CommunicationLogDialog } from './CommunicationLogDialog';
 import { PartnerTasksDialog } from './PartnerTasksDialog';
-import { formatDateSafe, cn } from '@/lib/utils';
+import { formatDateSafe, cn, downloadDataAsCSV } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
 import { BulkImportDialog } from './BulkImportDialog';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -57,7 +57,7 @@ async function performAdminAction(token: string, action: string, payload: any) {
 const partnerSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
-  email: z.string().email('Invalid email address'),
+  email: z.string().email('Invalid email address').optional().or(z.literal('')),
   phone: z.string().optional(),
   companyName: z.string().optional(),
   status: z.enum(['active', 'inactive', 'contacted', 'new', 'qualified', 'invited']),
@@ -322,6 +322,12 @@ export default function InvestorManagement() {
     forceRefresh();
   }, [forceRefresh]);
 
+  const handleExport = () => {
+      if (partners.length === 0) return;
+      downloadDataAsCSV(partners, `investors-backup-${new Date().toISOString().split('T')[0]}.csv`);
+      toast({ title: "Backup Exported", description: "The full investor list has been saved to CSV." });
+  };
+
   const handleDelete = async () => {
     if (!dialogState.data) return;
     try {
@@ -373,6 +379,9 @@ export default function InvestorManagement() {
             <CardDescription>Research and engage with VCs and Seed Funds for the platform launch.</CardDescription>
           </div>
           <div className="flex gap-2">
+            <Button variant="outline" onClick={handleExport} disabled={isLoading}>
+                <Download className="mr-2 h-4 w-4" /> Backup (CSV)
+            </Button>
             <BulkImportDialog type="investor" onComplete={forceRefresh}><Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
             <DuplicateCleaner onComplete={forceRefresh} />
             <Button onClick={() => setDialogState({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4"/>Add Investor</Button>

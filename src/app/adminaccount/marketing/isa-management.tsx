@@ -5,7 +5,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, Bot, Edit, Trash2, Send, CheckCircle, Users, Filter, Save, Search, Mail } from 'lucide-react';
+import { Loader2, PlusCircle, Bot, Edit, Trash2, Send, CheckCircle, Users, Filter, Save, Search, Mail, Download } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -20,7 +20,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { PartnerOversightDialog } from './PartnerOversightDialog';
 import { EngageDialog } from './EngageDialog';
-import { formatDateSafe } from '@/lib/utils';
+import { formatDateSafe, cn, downloadDataAsCSV } from '@/lib/utils';
 import { EnrichPartnerButton, BulkEnrichButton } from './EnrichPartnerButton';
 import { Label } from '@/components/ui/label';
 
@@ -186,6 +186,12 @@ export default function ISAManagement() {
     });
   }, [partners, statusFilter, assigneeFilter, dataFilter]);
 
+  const handleExport = () => {
+      if (filteredISAs.length === 0) return;
+      downloadDataAsCSV(filteredISAs, `isa-backup-${new Date().toISOString().split('T')[0]}.csv`);
+      toast({ title: "Backup Exported", description: "Current filtered registry has been saved to CSV." });
+  };
+
   async function handleDelete() {
     try {
       const token = await getClientSideAuthToken();
@@ -279,6 +285,9 @@ export default function ISAManagement() {
         <CardHeader className="flex flex-row items-center justify-between">
           <div><CardTitle><Bot /> ISA Agents</CardTitle></div>
           <div className="flex gap-2">
+            <Button variant="outline" onClick={handleExport} disabled={isLoading}>
+                <Download className="mr-2 h-4 w-4" /> Backup (CSV)
+            </Button>
             <BulkEnrichButton partners={partners} onComplete={forceRefresh} />
             <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4" /> Add ISA</Button>
           </div>

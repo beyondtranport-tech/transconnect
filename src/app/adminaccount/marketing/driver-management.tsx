@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -7,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
-  Loader2, PlusCircle, Users, Edit, Trash2, Send, Filter, RotateCcw, Search, Database, Upload, MapPin, Mail, Lock, ShieldCheck, Phone
+  Loader2, PlusCircle, Users, Edit, Trash2, Send, Filter, RotateCcw, Search, Database, Upload, MapPin, Mail, Lock, ShieldCheck, Phone, Save, Download
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
@@ -25,7 +24,7 @@ import { PartnerOversightDialog } from './PartnerOversightDialog';
 import { EngageDialog } from './EngageDialog';
 import { CommunicationLogDialog } from './CommunicationLogDialog';
 import { PartnerTasksDialog } from './PartnerTasksDialog';
-import { formatDateSafe, cn } from '@/lib/utils';
+import { formatDateSafe, cn, downloadDataAsCSV } from '@/lib/utils';
 import { EnrichPartnerButton } from './EnrichPartnerButton';
 import { Label } from '@/components/ui/label';
 import { BulkImportDialog } from './BulkImportDialog';
@@ -42,7 +41,7 @@ async function performAdminAction(token: string, action: string, payload: any) {
   if (!response.ok) {
     const text = await response.text();
     if (text.includes('<html>')) {
-        throw new Error("Server Timeout: Operation taking too long. Please try again.");
+        throw new Error("Server Timeout: Operation taking too long. Please try again in 30 seconds.");
     }
     throw new Error(text || `API Error: ${action}`);
   }
@@ -179,6 +178,12 @@ export default function DriverManagement() {
     }
   };
 
+  const handleExport = () => {
+      if (filteredDrivers.length === 0) return;
+      downloadDataAsCSV(filteredDrivers, `drivers-backup-${new Date().toISOString().split('T')[0]}.csv`);
+      toast({ title: "Backup Ready", description: "CSV file has been generated." });
+  };
+
   const integrityStats = useMemo(() => {
     const stats = { missingEmail: 0, nonMobile: 0, missingLocation: 0 };
     partners.forEach(p => {
@@ -258,6 +263,9 @@ export default function DriverManagement() {
                 <CardDescription>Targeted view of recent commercial service providers. Use search for deep access.</CardDescription>
             </div>
             <div className="flex items-center gap-2">
+                <Button variant="outline" onClick={handleExport} disabled={isLoading}>
+                    <Download className="mr-2 h-4 w-4" /> Backup
+                </Button>
                 <BulkImportDialog type="driver" onComplete={forceRefresh}><Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
                 <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Record</Button>
             </div>

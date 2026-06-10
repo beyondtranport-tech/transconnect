@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -6,7 +5,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, Code, Edit, Trash2, Send, CheckCircle, Users, Filter, Save, Search, Mail } from 'lucide-react';
+import { Loader2, PlusCircle, Code, Edit, Trash2, Send, CheckCircle, Users, Filter, Save, Search, Mail, Download } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -22,7 +21,7 @@ import * as z from 'zod';
 import { PartnerTasksDialog } from './PartnerTasksDialog';
 import { CommunicationLogDialog } from './CommunicationLogDialog';
 import { EngageDialog } from './EngageDialog';
-import { formatDateSafe } from '@/lib/utils';
+import { formatDateSafe, cn, downloadDataAsCSV } from '@/lib/utils';
 import { EnrichPartnerButton } from './EnrichPartnerButton';
 import { Label } from '@/components/ui/label';
 
@@ -169,8 +168,6 @@ export default function DeveloperManagement() {
 
   useEffect(() => { forceRefresh(); }, [forceRefresh]);
 
-  const staffMap = useMemo(() => new Map(staff.map(s => [s.id, `${s.firstName} ${s.lastName}`])), [staff]);
-
   const filteredDevelopers = useMemo(() => {
     return partners.filter(p => {
         const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
@@ -187,6 +184,12 @@ export default function DeveloperManagement() {
         return matchesStatus && matchesAssignee && matchesData;
     });
   }, [partners, statusFilter, assigneeFilter, dataFilter]);
+
+  const handleExport = () => {
+      if (filteredDevelopers.length === 0) return;
+      downloadDataAsCSV(filteredDevelopers, `developers-backup-${new Date().toISOString().split('T')[0]}.csv`);
+      toast({ title: "Backup Exported", description: "Filtered registry saved to CSV." });
+  };
 
   async function handleDelete() {
     try {
@@ -248,6 +251,9 @@ export default function DeveloperManagement() {
         <CardHeader className="flex flex-row items-center justify-between">
           <div><CardTitle><Code /> Developers</CardTitle></div>
           <div className="flex gap-2">
+            <Button variant="outline" onClick={handleExport} disabled={isLoading}>
+                <Download className="mr-2 h-4 w-4" /> Backup (CSV)
+            </Button>
             <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Developer</Button>
           </div>
         </CardHeader>

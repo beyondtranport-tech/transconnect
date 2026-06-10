@@ -75,3 +75,48 @@ export async function copyHtmlToClipboard(html: string, plainText?: string) {
         return false;
     }
 }
+
+/**
+ * Generates and downloads a CSV file from an array of objects.
+ */
+export function downloadDataAsCSV(data: any[], filename: string) {
+    if (!data || data.length === 0) return;
+    
+    // Extract headers from the first object
+    const headers = Object.keys(data[0]);
+    
+    const csvContent = [
+        headers.join(','), // Header row
+        ...data.map(row => headers.map(fieldName => {
+            let value = row[fieldName];
+            
+            // Handle null/undefined
+            if (value === null || value === undefined) return '';
+            
+            // Handle objects (like Timestamps)
+            if (typeof value === 'object') {
+                if (value.toDate) value = value.toDate().toISOString();
+                else value = JSON.stringify(value);
+            }
+            
+            let stringValue = String(value);
+            
+            // Escape quotes and wrap in quotes if contains comma, newline or quote
+            if (/[",\n]/.test(stringValue)) {
+                stringValue = `"${stringValue.replace(/"/g, '""')}"`;
+            }
+            return stringValue;
+        }).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    
+    link.setAttribute("href", url);
+    link.setAttribute("download", filename);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
