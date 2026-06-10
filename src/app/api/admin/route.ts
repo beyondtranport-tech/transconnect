@@ -385,7 +385,7 @@ export async function POST(req: NextRequest) {
                 const counts: Record<string, number> = {};
                 snap.docs.forEach(doc => {
                     const cat = doc.data().entryType || 'General';
-                    counts[cat] = (counts[cat] || 0) + 1;
+                    counts[cat] = (counts[cat] || 0) + (1);
                 });
                 await db.collection('configuration').doc(statsKey).set({
                     counts,

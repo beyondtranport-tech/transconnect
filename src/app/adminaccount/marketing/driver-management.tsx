@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
-  Loader2, PlusCircle, Users, Edit, Trash2, Send, Filter, RotateCcw, Search, Database, Upload, MapPin, Mail, Phone, Save, Download, RefreshCcw
+  Loader2, PlusCircle, Users, Edit, Trash2, Send, Filter, RotateCcw, Search, Database, Upload, MapPin, Mail, Phone, Save, Download, RefreshCcw, Zap
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';

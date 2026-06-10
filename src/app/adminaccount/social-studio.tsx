@@ -98,7 +98,7 @@ function SocialEngageDialog({ open, onOpenChange, post, campaignName }: { open: 
                             </DialogDescription>
                         </div>
                         <Button size="lg" className="bg-blue-600 hover:bg-blue-700 gap-2 shadow-xl h-12 px-8 font-black uppercase tracking-tight" onClick={handleLogAndLaunch} disabled={isLogging}>
-                            {isLogging ? <Loader2 className="h-5 w-5 animate-spin"/> : <ExternalLink className="h-5 w-5" />}
+                            {isLogging ? <Loader2 className="h-5 w-5 animate-spin"/> : <ExternalLink className="mr-2 h-5 w-5" />}
                             Log & Post to Facebook
                         </Button>
                     </div>

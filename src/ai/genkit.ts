@@ -9,7 +9,7 @@ export const ai = genkit({
 });
 
 /**
- * Explicit model identifier used across all flows for reliability.
- * Using the '-latest' suffix often resolves 404 Not Found errors on the v1beta endpoint.
+ * Standardized model identifier for Google AI Studio.
+ * Using 'gemini-1.5-flash' directly to ensure compatibility with the v1beta endpoint.
  */
-export const geminiModel = 'googleai/gemini-1.5-flash-latest';
+export const geminiModel = 'gemini-1.5-flash';
