@@ -355,7 +355,7 @@ export async function POST(req: NextRequest) {
                     });
                 });
                 await batch.commit();
-                return NextResponse.json({ success: true });
+                return NextResponse.json({ success: true, count: leadIds.length });
             }
 
             case 'bulkSavePartners': {

@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -76,7 +75,7 @@ const socialTemplates = {
         label: 'Funder Registry',
         icon: Building,
         headline: '🏦 Access 85+ Specialized Funders',
-        body: "One application. 85+ Potential Funders. We've mapped the entire niche lending landscape in SA to bring the best asset finance and working capital deals directly to your dashboard.\n\nClick the link below to access the app for free.",
+        body: "One application. 85+ Potential Funders. We've mapped the entire niche lending landscape in SA to bring the best asset finance and working capital deals directly to your dashboard.",
         imagePrompt: 'A sleek modern bank building exterior in Sandton, morning light, professional and clean.'
     },
     'value-loyalty': {

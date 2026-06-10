@@ -1,4 +1,3 @@
-
 import { genkit } from 'genkit';
 import { googleAI } from '@genkit-ai/google-genai';
 
@@ -15,5 +14,6 @@ export const ai = genkit({
 /**
  * Resilient model identifier for Google AI Studio v1beta.
  * This string format is required by the current @genkit-ai/google-genai plugin.
+ * Using 'googleai/' prefix to ensure explicit provider matching.
  */
 export const geminiModel = 'googleai/gemini-1.5-flash';
