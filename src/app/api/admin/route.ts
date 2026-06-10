@@ -5,6 +5,9 @@ import { getAdminApp } from '@/lib/firebase-admin';
 
 export const dynamic = 'force-dynamic';
 
+/**
+ * Serializes Firestore timestamps and special FieldValue placeholders into JSON-safe formats.
+ */
 function serializeTimestamps(docData: any): any {
     if (!docData) return docData;
     const newDocData: { [key: string]: any } = {};
@@ -37,8 +40,9 @@ export async function POST(req: NextRequest) {
         
         const { action, payload } = await req.json();
         const db = getFirestore(app);
+        
+        // Critical Admin Check
         const isAdmin = decodedToken.email === 'beyondtransport@gmail.com' || decodedToken.email === 'mkoton100@gmail.com';
-
         if (!isAdmin) throw new Error("Forbidden: Admin access required.");
 
         switch (action) {

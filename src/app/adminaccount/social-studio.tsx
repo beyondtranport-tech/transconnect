@@ -27,7 +27,7 @@ function SocialEngageDialog({ open, onOpenChange, post, campaignName }: { open: 
 
     // Guard against crashes by memoizing derivation and providing fallbacks
     const derived = useMemo(() => {
-        if (!post || !post.body) return { trackingLink: '', fullPostBody: '', sanitizedRef: '' };
+        if (!post || !post.body || !campaignName) return { trackingLink: '', fullPostBody: '', sanitizedRef: '' };
         
         // Extract group name if a URL was pasted, otherwise sanitize the name
         const sanitizedRef = campaignName.includes('facebook.com') 
@@ -94,7 +94,7 @@ function SocialEngageDialog({ open, onOpenChange, post, campaignName }: { open: 
                                 Social Launch Wizard
                             </DialogTitle>
                             <DialogDescription className="font-mono text-xs uppercase tracking-widest text-primary">
-                                Tracking ID: FB_{sanitizedRef}
+                                Tracking ID: FB_{sanitizedRef || 'GENERAL'}
                             </DialogDescription>
                         </div>
                         <Button size="lg" className="bg-blue-600 hover:bg-blue-700 gap-2 shadow-xl h-12 px-8 font-black uppercase tracking-tight" onClick={handleLogAndLaunch} disabled={isLogging}>
@@ -166,7 +166,7 @@ function SocialEngageDialog({ open, onOpenChange, post, campaignName }: { open: 
                                     </div>
                                     <h4 className="text-2xl font-black font-headline">Persistence Monitoring</h4>
                                     <p className="text-sm text-muted-foreground max-w-sm mx-auto leading-relaxed">
-                                        The tracking link for <span className="font-bold text-foreground">{campaignName}</span> is active. 
+                                        The tracking link for <span className="font-bold text-foreground">{campaignName || 'General'}</span> is active. 
                                         Any user signing up via this link will be automatically credited to this campaign in your Leads Database.
                                     </p>
                                     <div className="pt-6">
