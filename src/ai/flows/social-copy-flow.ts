@@ -1,7 +1,7 @@
 'use server';
 /**
  * @fileOverview AI Social Media Copywriter for Logistics Flow expansion.
- * Optimized for South African industry groups.
+ * Optimized for South African industry groups with standardized high-conversion templates.
  */
 
 import { ai, geminiModel } from '@/ai/genkit';
@@ -44,11 +44,17 @@ const socialCopyFlow = ai.defineFlow(
       1. VALUE FIRST: Focus on breaking industry constraints (e.g., high costs, lack of loads).
       2. LOCAL CONTEXT: Use South African industry terms (e.g., "Horses & Trailers", "Bakkie builders", "Rand per KM").
       3. THE "DIRECT-TO-MD" HOOK: Address the owner directly.
-      4. CLEAR CTA: Always end with a prompt to join using the tracking link.`,
+      4. CLEAR CTA: End with a placeholder for the tracking link.`,
       prompt: `Generate 3 high-conversion Facebook posts for an audience of ${input.audience}. 
       Topic: ${input.topic} 
       Tone: ${input.tone}. 
-      Ensure the image prompts are professional, cinematic, and ready for Imagen 4.`,
+      
+      Structure:
+      - Post 1: The "Operational Pain" Hook (e.g. Empty miles are a tax on your fleet).
+      - Post 2: The "Community Growth" Hook (e.g. Strength in numbers, lower tire prices).
+      - Post 3: The "Future-Ready" Hook (e.g. AI-powered matching for small hauliers).
+      
+      Ensure image prompts are professional and ready for Imagen 4.`,
       output: { schema: SocialCopyOutputSchema }
     });
     

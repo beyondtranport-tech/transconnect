@@ -7,9 +7,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Facebook, Sparkles, Loader2, Copy, Send, Link as LinkIcon, ShieldCheck, Zap, Share2, ExternalLink, Image as ImageIcon, ArrowRight } from 'lucide-react';
+import { Facebook, Sparkles, Loader2, Copy, Send, Link as LinkIcon, Share2, ExternalLink, ImageIcon, ArrowRight, Zap } from 'lucide-react';
 import { generateSocialCopy, type SocialCopyOutput } from '@/ai/flows/social-copy-flow';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { getClientSideAuthToken } from '@/firebase';
@@ -17,7 +17,7 @@ import Link from 'next/link';
 
 /**
  * SOCIAL ENGAGEMENT WIZARD
- * Standardized structure following the Partner Action Menu pattern.
+ * Multi-tab launcher for finalizing social campaigns.
  */
 function SocialEngageDialog({ open, onOpenChange, post, campaignName }: { open: boolean, onOpenChange: (o: boolean) => void, post: any, campaignName: string }) {
     const [activeTab, setActiveTab] = useState('copy');
@@ -25,7 +25,7 @@ function SocialEngageDialog({ open, onOpenChange, post, campaignName }: { open: 
     const { toast } = useToast();
 
     const derived = useMemo(() => {
-        if (!post || !post.body || !campaignName) return { trackingLink: '', fullPostBody: '', sanitizedRef: '' };
+        if (!post) return { trackingLink: '', fullPostBody: '', sanitizedRef: '' };
         
         const sanitizedRef = campaignName.includes('facebook.com') 
             ? campaignName.split('/').filter(Boolean).pop()?.toUpperCase() || 'FB_CAMPAIGN'
@@ -39,6 +39,7 @@ function SocialEngageDialog({ open, onOpenChange, post, campaignName }: { open: 
     }, [post, campaignName]);
 
     if (!post) return null;
+    
     const { trackingLink, fullPostBody, sanitizedRef } = derived;
 
     const copyToClipboard = (text: string, label: string) => {
@@ -52,6 +53,7 @@ function SocialEngageDialog({ open, onOpenChange, post, campaignName }: { open: 
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Auth failed.");
 
+            // Log the campaign launch activity
             await fetch('/api/admin', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -91,7 +93,7 @@ function SocialEngageDialog({ open, onOpenChange, post, campaignName }: { open: 
                             <DialogDescription className="mt-1 font-mono text-[10px] uppercase">Tracking ID: FB_{sanitizedRef}</DialogDescription>
                         </div>
                         <Button size="lg" className="bg-blue-600 hover:bg-blue-700 font-bold" onClick={handleLogAndLaunch} disabled={isLogging}>
-                            {isLogging ? <Loader2 className="h-5 w-5 animate-spin"/> : <ExternalLink className="mr-2 h-4 w-4" />}
+                            {isLogging ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <ExternalLink className="mr-2 h-4 w-4" />}
                             Log & Post to Facebook
                         </Button>
                     </div>
@@ -121,7 +123,7 @@ function SocialEngageDialog({ open, onOpenChange, post, campaignName }: { open: 
                             {activeTab === 'copy' && (
                                 <div className="space-y-6">
                                     <h3 className="text-2xl font-bold">{post.headline}</h3>
-                                    <div className="p-6 bg-slate-50 rounded-lg text-sm leading-relaxed whitespace-pre-wrap border border-dashed font-sans italic">
+                                    <div className="p-6 bg-slate-50 rounded-lg text-sm leading-relaxed whitespace-pre-wrap font-sans italic">
                                         {post.body}
                                         <p className="mt-4 text-blue-600 font-bold underline">{trackingLink}</p>
                                         <p className="mt-2 opacity-70">{(post.hashtags || []).join(' ')}</p>
@@ -153,7 +155,7 @@ function SocialEngageDialog({ open, onOpenChange, post, campaignName }: { open: 
                                         <LinkIcon className="h-10 w-10 text-primary" />
                                     </div>
                                     <h4 className="text-2xl font-bold">Persistence Monitoring</h4>
-                                    <p className="text-sm text-muted-foreground max-w-sm mx-auto">The tracking link for <span className="font-bold text-foreground">{campaignName}</span> is active. Every registration through this link is logged as an acquisition.</p>
+                                    <p className="text-sm text-muted-foreground max-w-sm mx-auto">The tracking link for <span className="font-bold text-foreground">{campaignName}</span> is active. Every registration through this link is logged as an acquisition from this specific source.</p>
                                     <Badge variant="outline" className="mt-6 bg-green-50 text-green-700 border-green-200">ACTIVE CAMPAIGN LINK</Badge>
                                 </div>
                             )}
@@ -244,10 +246,10 @@ export default function SocialStudio() {
                                 <Select value={params.topic} onValueChange={(v: any) => setParams({...params, topic: v})}>
                                     <SelectTrigger><SelectValue /></SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="empty_miles">Efficiency</SelectItem>
-                                        <SelectItem value="parts_discounts">High Costs</SelectItem>
-                                        <SelectItem value="capital">Capital</SelectItem>
-                                        <SelectItem value="community_growth">Ecosystem</SelectItem>
+                                        <SelectItem value="empty_miles">Efficiency (Empty Miles)</SelectItem>
+                                        <SelectItem value="parts_discounts">Cost Savings (Parts)</SelectItem>
+                                        <SelectItem value="capital">Access to Capital</SelectItem>
+                                        <SelectItem value="community_growth">Ecosystem Benefits</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -277,6 +279,7 @@ export default function SocialStudio() {
                     )) : (
                         <div className="h-full min-h-[400px] border-4 border-dashed rounded-3xl flex flex-col items-center justify-center text-muted-foreground p-12 text-center bg-muted/5">
                             <h3 className="text-2xl font-black font-headline opacity-30 uppercase">Pipeline Ready</h3>
+                            <p className="mt-2 text-sm opacity-50">Enter campaign details and click generate to see variations.</p>
                         </div>
                     )}
                 </div>

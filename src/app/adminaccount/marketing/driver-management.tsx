@@ -24,7 +24,7 @@ import { PartnerOversightDialog } from './PartnerOversightDialog';
 import { EngageDialog } from './EngageDialog';
 import { CommunicationLogDialog } from './CommunicationLogDialog';
 import { PartnerTasksDialog } from './PartnerTasksDialog';
-import { formatDateSafe } from '@/lib/utils';
+import { formatDateSafe, cn, downloadDataAsCSV } from '@/lib/utils';
 import { EnrichPartnerButton } from './EnrichPartnerButton';
 import { Label } from '@/components/ui/label';
 import { BulkImportDialog } from './BulkImportDialog';
@@ -64,7 +64,10 @@ type PartnerFormValues = z.infer<typeof partnerSchema>;
 function DriverDialog({ open, onOpenChange, partner, onSave }: { open: boolean; onOpenChange: (open: boolean) => void; partner?: any; onSave: () => void; }) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const form = useForm<PartnerFormValues>({ resolver: zodResolver(partnerSchema) });
+  const form = useForm<PartnerFormValues>({ 
+    resolver: zodResolver(partnerSchema),
+    defaultValues: { type: 'driver', status: 'new' }
+  });
 
   useEffect(() => {
     if (open) {
@@ -138,6 +141,7 @@ export default function DriverManagement() {
   const [partners, setPartners] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | null, data?: any }>({ type: null });
 
   const [statusFilter, setStatusFilter] = useState('all');
@@ -162,6 +166,7 @@ export default function DriverManagement() {
   const handleSearch = async () => {
     if (!searchTerm || searchTerm.length < 3) {
         if (searchTerm.length === 0) forceRefresh();
+        else toast({ title: "Min 3 characters required" });
         return;
     }
     setIsLoading(true);
@@ -262,7 +267,7 @@ export default function DriverManagement() {
                     <div className="md:col-span-2 space-y-2">
                         <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Search className="h-3 w-3"/> Registry Search</Label>
                         <div className="flex gap-2">
-                            <Input placeholder="Type name or ID to search thousands of drivers..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearch()} />
+                            <Input placeholder="Type name or ID to search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearch()} />
                             <Button onClick={handleSearch} disabled={isLoading}><Search className="h-4 w-4"/></Button>
                         </div>
                     </div>
@@ -280,37 +285,10 @@ export default function DriverManagement() {
                         <Button variant="outline" onClick={forceRefresh} className="h-10 w-full"><RotateCcw className="mr-2 h-4 w-4" /> Reset</Button>
                     </div>
                 </div>
-                {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredDrivers} />}
+                {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredDrivers} onSelectionChange={setSelectedIds} />}
             </CardContent>
         </Card>
       </div>
     </>
   );
-}
-
-function downloadDataAsCSV(data: any[], filename: string) {
-    if (!data || data.length === 0) return;
-    const headers = Object.keys(data[0]);
-    const csvContent = [
-        headers.join(','),
-        ...data.map(row => headers.map(fieldName => {
-            let value = row[fieldName];
-            if (value === null || value === undefined) return '';
-            let stringValue = String(value);
-            if (/[",\n]/.test(stringValue)) {
-                stringValue = `"${stringValue.replace(/"/g, '""')}"`;
-            }
-            return stringValue;
-        }).join(','))
-    ].join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", filename);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
 }
