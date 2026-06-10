@@ -83,7 +83,7 @@ const socialTemplates = {
         label: 'Funder Registry',
         icon: Building,
         headline: '🏦 Access 85+ Specialized Funders',
-        body: "One application. 85+ Potential Funders. We've mapped the entire niche lending landscape in SA to bring the best asset finance and working capital deals directly to your dashboard.\n\nLike our page to see new funder alerts.",
+        body: "One application. 85+ Potential Funders. We've mapped the entire niche lending landscape in SA to bring the best asset finance and working capital deals directly to your dashboard.",
         imagePrompt: 'A sleek modern bank building exterior in Sandton, morning light, professional and clean.'
     },
     'value-loyalty': {
@@ -156,6 +156,7 @@ export default function SocialStudio() {
     const { toast } = useToast();
     const [activeTab, setActiveTab] = useState<keyof typeof socialTemplates | 'creator'>('app-launch');
     const [campaignName, setCampaignName] = useState('');
+    const [groupUrl, setGroupUrl] = useState('');
     const [fbPageUrl, setFbPageUrl] = useState('https://facebook.com/LogisticsFlow');
     const [isGenerating, setIsGenerating] = useState(false);
     const [isLogging, setIsLogging] = useState(false);
@@ -217,7 +218,8 @@ export default function SocialStudio() {
             toast({ variant: 'destructive', title: "Copy Failed", description: "Please manually copy the text from the preview box." });
         }
 
-        window.open('https://www.facebook.com/groups/feed/', '_blank');
+        const destination = groupUrl.trim() || 'https://www.facebook.com/groups/feed/';
+        window.open(destination, '_blank');
 
         // 2. Perform Logging (Background)
         setIsLogging(true);
@@ -232,7 +234,7 @@ export default function SocialStudio() {
                         payload: { 
                             action: 'social_launch', 
                             details: `Launched post "${activeTab}" for group: ${campaignName}`,
-                            metadata: { campaignName, tab: activeTab }
+                            metadata: { campaignName, groupUrl, tab: activeTab }
                         } 
                     }),
                 });
@@ -286,7 +288,7 @@ export default function SocialStudio() {
                 </div>
                 <div className="flex items-center gap-3 bg-muted/50 p-2 rounded-lg border">
                     <div className="space-y-1">
-                        <Label className="text-[10px] font-black uppercase text-muted-foreground px-2">Tracking Label (Group Name)</Label>
+                        <Label className="text-[10px] font-black uppercase text-muted-foreground px-2">Tracking Label</Label>
                         <Input 
                             placeholder="e.g. Western Cape Transporters" 
                             value={campaignName} 
@@ -296,10 +298,11 @@ export default function SocialStudio() {
                     </div>
                     <Separator orientation="vertical" className="h-10 mx-2" />
                     <div className="space-y-1">
-                        <Label className="text-[10px] font-black uppercase text-muted-foreground px-2">Logistics Flow FB Page URL</Label>
+                        <Label className="text-[10px] font-black uppercase text-muted-foreground px-2">Target Group URL (Optional)</Label>
                         <Input 
-                            value={fbPageUrl} 
-                            onChange={e => setFbPageUrl(e.target.value)}
+                            placeholder="https://facebook.com/groups/..." 
+                            value={groupUrl} 
+                            onChange={e => setGroupUrl(e.target.value)}
                             className="h-8 w-64 bg-white border-none shadow-none text-xs font-mono"
                         />
                     </div>
@@ -327,6 +330,11 @@ export default function SocialStudio() {
 
                     <div className="flex-1 overflow-y-auto bg-slate-50 p-8">
                         <div className="max-w-[800px] mx-auto space-y-8">
+                            <div className="bg-white p-3 rounded-lg border flex items-center justify-between text-xs">
+                                <Label className="text-[10px] font-black uppercase text-muted-foreground">My Facebook Page URL</Label>
+                                <Input value={fbPageUrl} onChange={e => setFbPageUrl(e.target.value)} className="h-7 w-64 border-none shadow-none text-right font-mono" />
+                            </div>
+
                             {activeTab === 'creator' ? (
                                 <Card className="border-amber-200 bg-amber-50/20">
                                     <CardHeader>
@@ -376,19 +384,19 @@ export default function SocialStudio() {
                                             />
                                             <div className="p-6 pt-0 space-y-4">
                                                 <div className="p-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center justify-between">
-                                                    <span className="text-[10px] font-black uppercase text-blue-600 tracking-widest flex items-center gap-2"><LinkIcon className="h-3 w-3"/> Sign-up Link</span>
+                                                    <span className="text-[10px] font-black uppercase text-blue-600 tracking-widest flex items-center gap-2"><LinkIcon className="h-3 w-3"/> Tracking Link</span>
                                                     <code className="text-[10px] font-bold text-blue-800">{derived.trackingLink}</code>
                                                 </div>
                                                 <div className="bg-amber-50 p-3 rounded-lg border border-amber-200 flex items-start gap-3">
                                                     <Info className="h-4 w-4 text-amber-600 mt-0.5" />
-                                                    <p className="text-[11px] text-amber-800 leading-tight">Your referral ID (FB_{campaignName.replace(/\s/g, '_').toUpperCase() || 'GENERAL'}) will be automatically appended to track lead sources.</p>
+                                                    <p className="text-[11px] text-amber-800 leading-tight">Your tracking label (FB_{campaignName.replace(/\s/g, '_').toUpperCase() || 'GENERAL'}) is automatically appended.</p>
                                                 </div>
                                             </div>
                                         </CardContent>
                                         <CardFooter className="bg-muted/10 p-4 border-t flex justify-end">
                                             <Button size="lg" className="bg-blue-600 hover:bg-blue-700 font-black uppercase text-xs tracking-widest gap-2" onClick={handleLogAndLaunch} disabled={isLogging}>
                                                 {isLogging ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <ExternalLink className="mr-2 h-4 w-4" />}
-                                                Log & Launch to Facebook
+                                                Log & Launch to Facebook Group
                                             </Button>
                                         </CardFooter>
                                     </Card>
