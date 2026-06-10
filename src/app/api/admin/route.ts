@@ -50,8 +50,8 @@ export async function POST(req: NextRequest) {
             }
 
             case 'getMembers': {
-                // QUOTA PROTECTION: Limit initial load to 200 members
-                const snap = await db.collection('companies').orderBy('createdAt', 'desc').limit(200).get();
+                // QUOTA SHIELD: Hard limit of 100 to prevent 429
+                const snap = await db.collection('companies').orderBy('createdAt', 'desc').limit(100).get();
                 const data = await Promise.all(snap.docs.map(async (d) => {
                     const cData = d.data();
                     const userSnap = await db.collection('users').doc(cData.ownerId).get();
@@ -69,11 +69,11 @@ export async function POST(req: NextRequest) {
 
             case 'getPartnersByType': {
                 const { type } = payload;
-                // QUOTA PROTECTION: Limit initial load to 200 records to prevent 429
-                let q = db.collection('partners').orderBy('updatedAt', 'desc').limit(200);
+                // QUOTA SHIELD: Hard limit of 100 to prevent background exhaustion
+                let q = db.collection('partners').orderBy('updatedAt', 'desc').limit(100);
                 
                 if (type !== 'all') {
-                    q = db.collection('partners').where('type', '==', type).orderBy('updatedAt', 'desc').limit(200);
+                    q = db.collection('partners').where('type', '==', type).orderBy('updatedAt', 'desc').limit(100);
                 }
                 
                 const snap = await q.get();
@@ -82,8 +82,8 @@ export async function POST(req: NextRequest) {
             }
 
             case 'getLeads': {
-                // QUOTA PROTECTION: The primary killer of quotas is loading the whole lead db
-                const snap = await db.collection('leads').orderBy('updatedAt', 'desc').limit(200).get();
+                // QUOTA SHIELD: Hard limit for initial view
+                const snap = await db.collection('leads').orderBy('updatedAt', 'desc').limit(100).get();
                 const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
                 return NextResponse.json({ success: true, data });
             }
@@ -92,30 +92,42 @@ export async function POST(req: NextRequest) {
                 const { term, type } = payload;
                 if (!term || term.length < 3) return NextResponse.json({ success: true, data: [] });
 
-                // Search by company name (starts with)
-                const leadsSnap = await db.collection('leads')
+                // QUOTA SHIELD: Targeted search only returns top 50 matches
+                const q = db.collection('leads')
                     .where('companyName', '>=', term)
                     .where('companyName', '<=', term + '\uf8ff')
-                    .limit(50)
-                    .get();
+                    .limit(50);
 
-                const data = leadsSnap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
+                const snap = await q.get();
+                const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
                 return NextResponse.json({ success: true, data });
             }
 
-            case 'saveLead':
-            case 'savePartner': {
-                const { lead, partner } = payload;
-                const data = lead || partner;
-                const id = data.id || `PRT_${Math.random().toString(36).substring(7).toUpperCase()}`;
-                const finalData = { ...data, id, updatedAt: FieldValue.serverTimestamp() };
+            case 'findDuplicateLeads': {
+                // QUOTA SHIELD: Reduced scan depth to prevent 429
+                const recentLeads = await db.collection('leads').orderBy('updatedAt', 'desc').limit(200).get();
+                const nameMap = new Map<string, string[]>();
                 
-                const batch = db.batch();
-                batch.set(db.collection('leads').doc(id), finalData, { merge: true });
-                batch.set(db.collection('partners').doc(id), finalData, { merge: true });
-                await batch.commit();
-                
-                return NextResponse.json({ success: true, id });
+                recentLeads.docs.forEach(doc => {
+                    const data = doc.data();
+                    const key = `${(data.companyName || '').toLowerCase().trim()}`;
+                    if (key.length > 5) {
+                        const existing = nameMap.get(key) || [];
+                        nameMap.set(key, [...existing, doc.id]);
+                    }
+                });
+
+                const duplicates: any[][] = [];
+                for (const [key, ids] of nameMap.entries()) {
+                    if (ids.length > 1) {
+                        const group = await Promise.all(ids.map(async id => {
+                            const d = await db.collection('leads').doc(id).get();
+                            return { id, ...serializeTimestamps(d.data()), source: 'Lead' };
+                        }));
+                        duplicates.push(group);
+                    }
+                }
+                return NextResponse.json({ success: true, data: duplicates.slice(0, 10) });
             }
 
             case 'logCommunication': {
@@ -135,49 +147,31 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true });
             }
 
-            case 'deleteLeads': {
-                const { leadIds } = payload;
-                const batchSize = 100;
-                let deletedCount = 0;
-
-                for (let i = 0; i < leadIds.length; i += batchSize) {
-                    const batch = db.batch();
-                    const chunk = leadIds.slice(i, i + batchSize);
-                    chunk.forEach((id: string) => {
-                        batch.delete(db.collection('leads').doc(id));
-                        batch.delete(db.collection('partners').doc(id));
-                    });
-                    await batch.commit();
-                    deletedCount += chunk.length;
-                }
-                return NextResponse.json({ success: true, count: deletedCount });
+            case 'savePartner':
+            case 'saveLead': {
+                const { partner, lead } = payload;
+                const data = partner || lead;
+                const id = data.id || `ENT_${Math.random().toString(36).substring(7).toUpperCase()}`;
+                await db.collection('partners').doc(id).set({ ...data, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+                await db.collection('leads').doc(id).set({ ...data, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+                return NextResponse.json({ success: true, id });
             }
 
-            case 'findDuplicateLeads': {
-                // Optimized memory-efficient duplicate finder for high-volume registries
-                const allLeads = await db.collection('leads').select('companyName', 'contactPerson').get();
-                const nameMap = new Map<string, string[]>();
-                
-                allLeads.docs.forEach(doc => {
-                    const data = doc.data();
-                    const key = `${(data.companyName || '').toLowerCase().trim()}_${(data.contactPerson || '').toLowerCase().trim()}`;
-                    if (key.length > 5) {
-                        const existing = nameMap.get(key) || [];
-                        nameMap.set(key, [...existing, doc.id]);
-                    }
+            case 'deleteLeads': {
+                const { leadIds } = payload;
+                const batch = db.batch();
+                leadIds.forEach((id: string) => {
+                    batch.delete(db.collection('leads').doc(id));
+                    batch.delete(db.collection('partners').doc(id));
                 });
+                await batch.commit();
+                return NextResponse.json({ success: true });
+            }
 
-                const duplicates: any[][] = [];
-                for (const [key, ids] of nameMap.entries()) {
-                    if (ids.length > 1) {
-                        const group = await Promise.all(ids.map(async id => {
-                            const d = await db.collection('leads').doc(id).get();
-                            return { id, ...serializeTimestamps(d.data()), source: 'Lead' };
-                        }));
-                        duplicates.push(group);
-                    }
-                }
-                return NextResponse.json({ success: true, data: duplicates.slice(0, 50) }); // Return limited sets to avoid timeout
+            case 'getAuditLogs': {
+                const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(50).get();
+                const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
+                return NextResponse.json({ success: true, data });
             }
 
             default:
