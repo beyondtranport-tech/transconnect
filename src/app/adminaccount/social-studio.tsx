@@ -7,14 +7,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Facebook, Sparkles, Loader2, Copy, Send, Link as LinkIcon, Share2, ExternalLink, ImageIcon, ArrowRight, Zap, BookOpen, MessageSquare, Video, Film, Wand2 } from 'lucide-react';
+import { Facebook, Sparkles, Loader2, Copy, Send, Link as LinkIcon, Share2, ExternalLink, ImageIcon, ArrowRight, Zap, BookOpen, MessageSquare, Video, Film, Wand2, Info } from 'lucide-react';
 import { generateSocialCopy, type SocialCopyOutput } from '@/ai/flows/social-copy-flow';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { getClientSideAuthToken } from '@/firebase';
 import { Textarea } from '@/components/ui/textarea';
-import Link from 'next/link';
+import { Separator } from '@/components/ui/separator';
 
 // Media Generation Components
 import ImageGeneratorCard from "@/app/backend/image-generator-card";
@@ -77,6 +77,7 @@ function SocialEngageDialog({ open, onOpenChange, post, campaignName }: { open: 
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Auth failed.");
 
+            // Log activity
             await fetch('/api/admin', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -93,8 +94,7 @@ function SocialEngageDialog({ open, onOpenChange, post, campaignName }: { open: 
             await navigator.clipboard.writeText(fullPostBody);
             toast({ title: "Copied & Logged", description: "Opening Facebook... Paste your content to post." });
             
-            const launchUrl = campaignName.startsWith('http') ? campaignName : 'https://www.facebook.com/groups/feed/';
-            window.open(launchUrl, '_blank');
+            window.open('https://www.facebook.com/groups/feed/', '_blank');
             onOpenChange(false);
         } catch (e: any) {
             toast({ variant: 'destructive', title: "Error", description: e.message });
@@ -113,7 +113,7 @@ function SocialEngageDialog({ open, onOpenChange, post, campaignName }: { open: 
                                 <Facebook className="h-7 w-7 text-blue-600" />
                                 Social Engagement Wizard
                             </DialogTitle>
-                            <DialogDescription className="mt-1">Campaign Targeting: <strong>{campaignName}</strong></DialogDescription>
+                            <DialogDescription className="mt-1">Campaign Targeting: <strong>{campaignName || 'General Outreach'}</strong></DialogDescription>
                         </div>
                         <Button size="lg" className="bg-blue-600 hover:bg-blue-700 font-bold gap-2" onClick={handleLogAndLaunch} disabled={isLogging}>
                             {isLogging ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <ExternalLink className="mr-2 h-4 w-4" />}
@@ -123,7 +123,6 @@ function SocialEngageDialog({ open, onOpenChange, post, campaignName }: { open: 
                 </DialogHeader>
 
                 <div className="flex-1 flex overflow-hidden">
-                    {/* Multi-Tab Sidebar */}
                     <div className="w-64 border-r bg-muted/10 p-4 space-y-1">
                         {[
                             { id: 'copy', label: '1. Refine Copy', icon: MessageSquare },
@@ -142,7 +141,6 @@ function SocialEngageDialog({ open, onOpenChange, post, campaignName }: { open: 
                         ))}
                     </div>
 
-                    {/* Integrated Workspace Content */}
                     <div className="flex-1 overflow-y-auto bg-slate-50 p-8">
                         <div className="max-w-[800px] mx-auto space-y-8">
                             {activeTab === 'copy' && (
@@ -186,7 +184,7 @@ function SocialEngageDialog({ open, onOpenChange, post, campaignName }: { open: 
                                             <LinkIcon className="h-10 w-10 text-primary" />
                                         </div>
                                         <h4 className="text-2xl font-bold">Automatic Referrer Logic</h4>
-                                        <p className="text-sm text-muted-foreground max-w-sm mx-auto">This campaign is tagged with ID <span className="font-mono font-bold text-foreground">FB_{sanitizedRef}</span>. When leads sign up using this link, they are automatically categorized as coming from the <span className="font-bold">{campaignName}</span> campaign.</p>
+                                        <p className="text-sm text-muted-foreground max-w-sm mx-auto">This campaign is tagged with ID <span className="font-mono font-bold text-foreground">FB_{sanitizedRef}</span>. When leads sign up using this link, they are automatically categorized as coming from the <span className="font-bold">{campaignName || 'General'}</span> campaign.</p>
                                     </CardContent>
                                 </Card>
                             )}
@@ -205,7 +203,6 @@ export default function SocialStudio() {
     const [campaignName, setCampaignName] = useState('');
     const [selectedPost, setSelectedPost] = useState<any | null>(null);
     
-    // Structured AI Input
     const [params, setParams] = useState({
         topic: '',
         criticalPoints: '',
@@ -214,10 +211,6 @@ export default function SocialStudio() {
     });
 
     const handleGenerate = async () => {
-        if (!campaignName.trim()) {
-            toast({ variant: 'destructive', title: "Group Name Required", description: "Enter the Facebook group name to enable tracking." });
-            return;
-        }
         if (!params.topic || !params.criticalPoints) {
             toast({ variant: 'destructive', title: "Details Required", description: "Enter a topic and critical points for the AI." });
             return;
@@ -253,7 +246,6 @@ export default function SocialStudio() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Control Panel */}
                 <div className="space-y-6">
                     <Card className="shadow-lg border-primary/10">
                         <CardHeader className="bg-muted/30 border-b">
@@ -290,9 +282,7 @@ export default function SocialStudio() {
                     </Card>
                 </div>
 
-                {/* Content Library & Results */}
                 <div className="lg:col-span-2 space-y-10">
-                    {/* 1. Template Library */}
                     <div className="space-y-4">
                         <h3 className="text-xl font-bold flex items-center gap-2"><BookOpen className="h-5 w-5 text-primary"/> Pre-written Library</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -312,7 +302,6 @@ export default function SocialStudio() {
                         </div>
                     </div>
 
-                    {/* 2. AI Generated Results */}
                     {aiResults && (
                         <div className="space-y-4">
                              <h3 className="text-xl font-bold flex items-center gap-2"><Sparkles className="h-5 w-5 text-primary"/> AI Generations</h3>

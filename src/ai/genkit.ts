@@ -3,7 +3,7 @@ import { googleAI } from '@genkit-ai/google-genai';
 
 /**
  * Genkit Configuration
- * Uses the GEMINI_API_KEY from your .env file.
+ * Standardized to use the 'googleai/gemini-1.5-flash' identifier for maximum API resilience.
  */
 export const ai = genkit({
   plugins: [
@@ -12,7 +12,6 @@ export const ai = genkit({
 });
 
 /**
- * Standardized model identifier for Google AI Studio.
- * Using a direct string identifier ensures maximum resilience across server actions.
+ * Resilient model identifier for Google AI Studio v1beta.
  */
 export const geminiModel = 'googleai/gemini-1.5-flash';
