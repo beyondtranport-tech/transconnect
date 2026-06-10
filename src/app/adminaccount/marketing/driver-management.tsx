@@ -78,7 +78,7 @@ const partnerSchema = z.object({
   contactPerson: z.string().optional(),
   companyName: z.string().optional(),
   address: z.string().optional(),
-  status: z.enum(['active', 'inactive', 'contacted', 'new', 'qualified', 'invited']),
+  status: z.enum(['active', 'inactive', 'contacted', 'new', 'qualified', 'invited', 'registered']),
   type: z.literal('driver'),
 });
 type PartnerFormValues = z.infer<typeof partnerSchema>;
@@ -141,6 +141,7 @@ function DriverDialog({ open, onOpenChange, partner, onSave }: { open: boolean; 
                             <SelectItem value="new">New</SelectItem>
                             <SelectItem value="contacted">Researching</SelectItem>
                             <SelectItem value="qualified">Qualified</SelectItem>
+                            <SelectItem value="active">Active</SelectItem>
                         </SelectContent>
                     </Select>
                 </FormItem>

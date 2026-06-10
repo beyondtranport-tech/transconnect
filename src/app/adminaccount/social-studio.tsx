@@ -10,7 +10,8 @@ import {
     Facebook, Sparkles, Loader2, Copy, Send, Link as LinkIcon, 
     MessageSquare, Video, Info, BarChart3, HelpCircle, 
     ExternalLink, ImageIcon, Wand2, ShieldCheck, Zap, BookOpen,
-    Truck, Landmark, Users, Handshake, Gift, PlayCircle
+    Truck, Landmark, Users, Handshake, Gift, PlayCircle,
+    Building, Award, Star, DollarSign, Wallet, Search, Database, User
 } from 'lucide-react';
 import { generateSocialCopy } from '@/ai/flows/social-copy-flow';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -91,7 +92,7 @@ const socialTemplates = {
         label: 'Earn Rewards',
         icon: Gift,
         headline: '🎁 Turn Activity into Assets',
-        body: "Earn points for listing products, contributing data, or referring friends. Redeem your rewards for fuel vouchers, service credits, or exclusive marketplace gear.",
+        body: "Earn points for listing products, contributing data, or referring friends. Redeem your rewards for fuel vouchers, service discounts, or exclusive marketplace gear.",
         imagePrompt: 'A professional fuel voucher card being handed over at a filling station, clean and sharp focus.'
     },
     // PHASE 2: REVENUE MODEL
