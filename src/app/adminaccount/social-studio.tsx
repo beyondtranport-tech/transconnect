@@ -36,7 +36,7 @@ const socialTemplates = {
         label: 'Digital Handshake',
         icon: ShieldCheck,
         headline: '🤝 Establishing a Trusted Connection',
-        body: "For too long, the transport industry has been held back by fragmentation. We are breaking the constraint.\n\nWe're inviting professional hauliers to establish a 'Digital Handshake' with our ecosystem. Get matched with verified loads and access community-negotiated parts discounts instantly.",
+        body: "For too long, the transport industry has been held back by fragmentation. We are breaking the constraint.\n\nWe're inviting professional hauliers to establish a 'Digital Handshake' with our ecosystem. Get matched with verified loads and access community-negotiated parts discounts instantly.\n\nClick the link below to access the app for free.",
         imagePrompt: 'A cinematic high-detail close up of a professional handshake between a haulier and a logistics manager, background shows a clean white truck at sunset.'
     },
     // PHASE 1: VALUE PROPOSITION
@@ -152,7 +152,7 @@ const socialTemplates = {
         icon: Wallet,
         headline: '💳 How-To: Manage Your Funds',
         body: "The Logistics Flow Wallet is your central clearing house. Get paid for sales, pay for services, and request payouts to your bank account with one click. Simple, secure, and transparent.",
-        imagePrompt: 'A professional dashboard view of a business wallet with clear credit and debit ledgers.'
+        imagePrompt: 'A professional dashboard view of a business wallet with clear credit and ledger sheets.'
     },
     'howto-contribute': {
         group: 'Education',
