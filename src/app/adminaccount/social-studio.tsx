@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -251,6 +252,12 @@ export default function SocialStudio() {
         }
     };
 
+    const copyImagePrompt = () => {
+        if (!activePost?.imagePrompt) return;
+        navigator.clipboard.writeText(activePost.imagePrompt);
+        toast({ title: "Prompt Copied!", description: "Paste it into the AI Designer below." });
+    };
+
     const renderSidebarGroup = (groupName: string) => {
         const groupActions = Object.entries(socialTemplates).filter(([_, t]) => t.group === groupName);
         if (groupActions.length === 0) return null;
@@ -389,9 +396,14 @@ export default function SocialStudio() {
                                     {/* INTEGRATED MEDIA TOOLS */}
                                     <div className="space-y-6">
                                         <div className="bg-slate-900 text-white p-6 rounded-xl shadow-lg border-l-4 border-l-amber-500">
-                                            <div className="flex items-center gap-2 mb-4">
-                                                <Sparkles className="h-5 w-5 text-amber-500" />
-                                                <h4 className="font-bold uppercase text-[10px] tracking-widest">Visual Asset Command</h4>
+                                            <div className="flex items-center justify-between mb-4">
+                                                <div className="flex items-center gap-2">
+                                                    <Sparkles className="h-5 w-5 text-amber-500" />
+                                                    <h4 className="font-bold uppercase text-[10px] tracking-widest">Visual Asset Command</h4>
+                                                </div>
+                                                <Button variant="outline" size="sm" className="h-7 text-[9px] uppercase font-black bg-white/10 border-white/20 text-white hover:bg-white/20" onClick={copyImagePrompt}>
+                                                    <Copy className="mr-1 h-3 w-3" /> Copy Prompt
+                                                </Button>
                                             </div>
                                             <p className="text-sm italic font-mono opacity-90 border-l-2 border-primary/50 pl-4 mb-4">{activePost.imagePrompt}</p>
                                             <p className="text-xs text-slate-400">Use the integrated generators below to create matching visuals for this specific template.</p>
