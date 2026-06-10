@@ -13,7 +13,6 @@ export const ai = genkit({
 
 /**
  * Resilient model identifier for Google AI Studio v1beta.
- * This string format is required by the current @genkit-ai/google-genai plugin.
- * Using 'googleai/' prefix to ensure explicit provider matching.
+ * Using 'googleai/' prefix to ensure explicit provider matching and resolve 404 errors.
  */
 export const geminiModel = 'googleai/gemini-1.5-flash';

@@ -27,23 +27,23 @@ import VideoGeneratorCard from "@/app/backend/video-generator-card";
 
 /**
  * EXPANDED SOCIAL TEMPLATE LIBRARY
- * Updated for target audience engagement.
+ * Updated for "Social Connection" (Like/Follow) focus in Facebook Groups.
  */
 const socialTemplates = {
-    'handshake': {
+    'social-connection': {
         group: 'Foundation',
-        label: 'Digital Handshake',
+        label: 'Social Connection',
         icon: ShieldCheck,
-        headline: '🤝 Establishing a Trusted Connection',
-        body: "For too long, the transport industry has been held back by fragmentation. We are breaking the constraint.\n\nWe're inviting professional hauliers to establish a 'Digital Handshake' with our ecosystem. Get matched with verified loads and access community-negotiated parts discounts instantly.\n\nClick the link below to access the app for free.",
-        imagePrompt: 'A cinematic high-detail close up of a professional handshake between a haulier and a logistics manager, background shows a clean white truck at sunset.'
+        headline: '🤝 Join the TransConnect Community',
+        body: "Stay ahead of the curve. Like and Follow our page to get real-time load matching alerts, exclusive parts discounts, and industrial growth strategies delivered to your feed.\n\nBuilding the future of South African logistics, one connection at a time.\n\nAccess the app for free via the link below.",
+        imagePrompt: 'A cinematic high-detail close up of professional logistics operators using tablets in front of a modern truck fleet, morning sun.'
     },
     'intro': {
         group: 'Value',
         label: 'The Value Prop',
         icon: Zap,
         headline: '🚀 Redefining South African Logistics',
-        body: "Logistics Flow is more than a platform—it's a digital branch for your business. We combine the power of community buying with AI-driven efficiency to help you move more with less. No brokers, no middlemen, just direct flow.\n\nClick the link below to access the app for free.",
+        body: "Logistics Flow is more than a platform—it's a digital branch for your business. We combine the power of community buying with AI-driven efficiency to help you move more with less. No brokers, no middlemen, just direct flow.\n\nLike our page for more updates and click below to join for free.",
         imagePrompt: 'A wide cinematic shot of a white superlink truck driving on an open South African highway, bright morning light.'
     },
     'value-costs': {
@@ -51,7 +51,7 @@ const socialTemplates = {
         label: 'Reduce Costs',
         icon: BarChart3,
         headline: '📉 Slash Your Operating Costs',
-        body: "High maintenance and fuel costs are a constant tax on your profit. By joining our community, you tap into collective buying power for tires, parts, and fuel. Why pay premium prices when we can negotiate as a syndicate?\n\nClick the link below to access the app for free.",
+        body: "High maintenance and fuel costs are a constant tax on your profit. By joining our community, you tap into collective buying power for tires, parts, and fuel. Why pay premium prices when we can negotiate as a syndicate?\n\nLike our page to stay informed on group deals.",
         imagePrompt: 'Rows of heavy commercial truck tires stacked neatly in a modern warehouse, industrial lighting.'
     },
     'value-community': {
@@ -59,7 +59,7 @@ const socialTemplates = {
         label: 'The Community',
         icon: Users,
         headline: '👥 Power in Numbers',
-        body: "Transport is a lonely business, but it doesn't have to be. Join a trusted network of 5,000+ verified members. Share data, find subcontracting partners, and grow your standing in the industry through our verified registry.\n\nClick the link below to access the app for free.",
+        body: "Transport is a lonely business, but it doesn't have to be. Join a trusted network of 5,000+ verified members. Share data, find subcontracting partners, and grow your standing in the industry through our verified registry.\n\nFollow our page to meet the network.",
         imagePrompt: 'A diverse group of professional South African transporters shaking hands and talking next to a fleet of trucks.'
     },
     'value-funding-inhouse': {
@@ -67,7 +67,7 @@ const socialTemplates = {
         label: 'In-house Funding',
         icon: Landmark,
         headline: '💳 Funding Built for Transporters',
-        body: "Traditional banks often decline transport businesses because they don't understand the risks. Our in-house funding division, Simplyfi Flow, looks at your real-time performance on our platform to build a credit profile that works.\n\nClick the link below to access the app for free.",
+        body: "Traditional banks often decline transport businesses because they don't understand the risks. Our in-house funding division, Simplyfi Flow, looks at your real-time performance on our platform to build a credit profile that works.\n\nFollow us for funding alerts.",
         imagePrompt: 'A digital tablet showing an approved loan application with a truck icon and green checkmark.'
     },
     'value-funding-registry': {
@@ -75,7 +75,7 @@ const socialTemplates = {
         label: 'Funder Registry',
         icon: Building,
         headline: '🏦 Access 85+ Specialized Funders',
-        body: "One application. 85+ Potential Funders. We've mapped the entire niche lending landscape in SA to bring the best asset finance and working capital deals directly to your dashboard.",
+        body: "One application. 85+ Potential Funders. We've mapped the entire niche lending landscape in SA to bring the best asset finance and working capital deals directly to your dashboard.\n\nLike our page to see new funder alerts.",
         imagePrompt: 'A sleek modern bank building exterior in Sandton, morning light, professional and clean.'
     },
     'value-loyalty': {
@@ -83,7 +83,7 @@ const socialTemplates = {
         label: 'Grow Loyalty',
         icon: Award,
         headline: '⭐ Rise Through the Tiers',
-        body: "Every action you take in our ecosystem earns you points. Move from Bronze to Gold to unlock deeper discounts, lower commission rates, and priority access to premium loads.\n\nClick the link below to access the app for free.",
+        body: "Every action you take in our ecosystem earns you points. Move from Bronze to Gold to unlock deeper discounts, lower commission rates, and priority access to premium loads.\n\nFollow us to see our top member successes.",
         imagePrompt: 'A gold, silver, and bronze medal set against a background of logistics data graphs.'
     },
     'value-rewards': {
@@ -91,7 +91,7 @@ const socialTemplates = {
         label: 'Earn Rewards',
         icon: Gift,
         headline: '🎁 Turn Activity into Assets',
-        body: "Earn points for listing products, contributing data, or referring friends. Redeem your rewards for fuel vouchers, service discounts, or exclusive marketplace gear.\n\nClick the link below to access the app for free.",
+        body: "Earn points for listing products, contributing data, or referring friends. Redeem your rewards for fuel vouchers, service discounts, or exclusive marketplace gear.\n\nLike our page to see the latest rewards added.",
         imagePrompt: 'A professional fuel voucher card being handed over at a filling station, clean and sharp focus.'
     },
     'revenue-rewards': {
@@ -99,7 +99,7 @@ const socialTemplates = {
         label: 'In-house Rewards',
         icon: Star,
         headline: '✨ Get Paid to Participate',
-        body: "Our 'Actions Plan' turns your daily tasks into revenue. Uploading your fleet details or listing a route isn't just admin—it's an earning event. Start building your points balance today.\n\nClick the link below to access the app for free.",
+        body: "Our 'Actions Plan' turns your daily tasks into revenue. Uploading your fleet details or listing a route isn't just admin—it's an earning event. Start building your points balance today.\n\nFollow us for 'Actions' guides.",
         imagePrompt: 'A digital wallet on a smartphone screen showing points being added with a star animation.'
     },
     'revenue-discounts': {
@@ -107,7 +107,7 @@ const socialTemplates = {
         label: 'Supplier Discounts',
         icon: Handshake,
         headline: '🤝 Shared Savings is Earned Income',
-        body: "A Rand saved on maintenance is a Rand added to your profit. We share the negotiated savings from our supplier network directly with our members. It's the easiest way to improve your margin.\n\nClick the link below to access the app for free.",
+        body: "A Rand saved on maintenance is a Rand added to your profit. We share the negotiated savings from our supplier network directly with our members. It's the easiest way to improve your margin.\n\nLike our page to see this week's discounts.",
         imagePrompt: 'A side-by-side comparison chart showing standard prices vs community discounted prices for truck parts.'
     },
     'revenue-membership': {
@@ -115,7 +115,7 @@ const socialTemplates = {
         label: 'Membership Comms',
         icon: Users,
         headline: '📈 Build a Recurring Annuity',
-        body: "Refer a member, earn a commission. Every single month. When your network signs up for a paid plan, you earn a percentage of their fee for as long as they remain active. Build your own monthly income engine.\n\nClick the link below to access the app for free.",
+        body: "Refer a member, earn a commission. Every single month. When your network signs up for a paid plan, you earn a percentage of their fee for as long as they remain active. Build your own monthly income engine.\n\nFollow us for referral strategies.",
         imagePrompt: 'A calendar showing recurring monthly payments with a green growth arrow.'
     },
     'revenue-transactions': {
@@ -123,7 +123,7 @@ const socialTemplates = {
         label: 'Transaction Comms',
         icon: DollarSign,
         headline: '💸 Earn from Every Deal',
-        body: "Your network is your asset. When your referrals buy tires, parts, or secure funding through our Malls, you get a share of the platform's commission. Their success is literally your profit.\n\nClick the link below to access the app for free.",
+        body: "Your network is your asset. When your referrals buy tires, parts, or secure funding through our Malls, you get a share of the platform's commission. Their success is literally your profit.\n\nFollow our page for partnership tips.",
         imagePrompt: 'A high-speed montage of various commercial transactions happening on a digital map of South Africa.'
     },
     'howto-profile': {
@@ -131,7 +131,7 @@ const socialTemplates = {
         label: 'Create Profile',
         icon: User,
         headline: '🛠️ How-To: Build Your Digital Branch',
-        body: "Setting up your shop or service profile takes less than 10 minutes. Watch our short guide on using the Wizard to upload your branding and products to the national network.\n\nClick the link below to access the app for free.",
+        body: "Setting up your shop or service profile takes less than 10 minutes. Watch our short guide on using the Wizard to upload your branding and products to the national network.\n\nLike our page for more tutorials.",
         imagePrompt: 'A screen recording showing a clean, easy-to-use business profile setup wizard.'
     },
     'howto-matcher': {
@@ -139,31 +139,16 @@ const socialTemplates = {
         label: 'Freight Matcher',
         icon: Search,
         headline: '📍 How-To: Eliminate Empty Miles',
-        body: "Our AI Freight Matcher is a game-changer. Simply enter your origin and destination, and let our intelligence engine find the highest-paying loads for your return leg. Watch how it works.\n\nClick the link below to access the app for free.",
+        body: "Our AI Freight Matcher is a game-changer. Simply enter your origin and destination, and let our intelligence engine find the highest-paying loads for your return leg.\n\nFollow us to see load matching in action.",
         imagePrompt: 'A map of South Africa with blinking nodes being connected by an AI intelligence line.'
-    },
-    'howto-wallet': {
-        group: 'Education',
-        label: 'Use the Wallet',
-        icon: Wallet,
-        headline: '💳 How-To: Manage Your Funds',
-        body: "The Logistics Flow Wallet is your central clearing house. Get paid for sales, pay for services, and request payouts to your bank account with one click. Simple, secure, and transparent.\n\nClick the link below to access the app for free.",
-        imagePrompt: 'A professional dashboard view of a business wallet with clear credit and ledger sheets.'
-    },
-    'howto-contribute': {
-        group: 'Education',
-        label: 'Contribute Data',
-        icon: Database,
-        headline: '📊 How-To: The Power of Data',
-        body: "Why contribute your fleet or supplier data? Because data is the currency of negotiation. Watch how sharing anonymous details helps us secure lower prices for your business.\n\nClick the link below to access the app for free.",
-        imagePrompt: 'Abstract visualization of data points flowing into a central hub and turning into a large shield representing collective power.'
     }
 };
 
 export default function SocialStudio() {
     const { toast } = useToast();
-    const [activeTab, setActiveTab] = useState<keyof typeof socialTemplates | 'creator'>('handshake');
+    const [activeTab, setActiveTab] = useState<keyof typeof socialTemplates | 'creator'>('social-connection');
     const [campaignName, setCampaignName] = useState('');
+    const [fbPageUrl, setFbPageUrl] = useState('https://facebook.com/LogisticsFlow');
     const [isGenerating, setIsGenerating] = useState(false);
     const [isLogging, setIsLogging] = useState(false);
 
@@ -181,10 +166,10 @@ export default function SocialStudio() {
         const trackingLink = `${baseUrl}/join?ref=FB_${sanitizedRef}`;
         
         const currentBody = editedContent[activeTab] || activePost.body || activePost.text || '';
-        const fullPostBody = `${currentBody}\n\nJoin the community here: ${trackingLink}\n\n#LogisticsFlow #SATrucking #Efficiency`;
+        const fullPostBody = `${currentBody}\n\n👉 Join the Community: ${trackingLink}\n\n🔗 Like our Page for Updates: ${fbPageUrl}\n\n#LogisticsFlow #SATrucking #Efficiency`;
         
         return { trackingLink, fullPostBody };
-    }, [activePost, campaignName, editedContent, activeTab]);
+    }, [activePost, campaignName, fbPageUrl, editedContent, activeTab]);
 
     const handleContentChange = (val: string) => {
         setEditedContent(prev => ({ ...prev, [activeTab]: val }));
@@ -280,17 +265,28 @@ export default function SocialStudio() {
                     <div className="bg-blue-100 p-3 rounded-xl"><Facebook className="h-8 w-8 text-blue-600" /></div>
                     <div>
                         <h1 className="text-2xl font-black font-headline">Social Engagement Wizard</h1>
-                        <p className="text-muted-foreground">Strategic expansion for industry Facebook groups.</p>
+                        <p className="text-muted-foreground">Strategic community expansion for Facebook Groups.</p>
                     </div>
                 </div>
                 <div className="flex items-center gap-3 bg-muted/50 p-2 rounded-lg border">
-                    <Label className="text-[10px] font-black uppercase text-muted-foreground px-2">Target Group</Label>
-                    <Input 
-                        placeholder="e.g. Western Cape Transporters" 
-                        value={campaignName} 
-                        onChange={e => setCampaignName(e.target.value)}
-                        className="h-8 w-48 bg-white border-none shadow-none text-xs font-bold"
-                    />
+                    <div className="space-y-1">
+                        <Label className="text-[10px] font-black uppercase text-muted-foreground px-2">Target Group</Label>
+                        <Input 
+                            placeholder="e.g. Western Cape Transporters" 
+                            value={campaignName} 
+                            onChange={e => setCampaignName(e.target.value)}
+                            className="h-8 w-48 bg-white border-none shadow-none text-xs font-bold"
+                        />
+                    </div>
+                    <Separator orientation="vertical" className="h-10 mx-2" />
+                    <div className="space-y-1">
+                        <Label className="text-[10px] font-black uppercase text-muted-foreground px-2">FB Page URL</Label>
+                        <Input 
+                            value={fbPageUrl} 
+                            onChange={e => setFbPageUrl(e.target.value)}
+                            className="h-8 w-64 bg-white border-none shadow-none text-xs font-mono"
+                        />
+                    </div>
                 </div>
             </div>
 
@@ -364,12 +360,12 @@ export default function SocialStudio() {
                                             />
                                             <div className="p-6 pt-0 space-y-4">
                                                 <div className="p-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center justify-between">
-                                                    <span className="text-[10px] font-black uppercase text-blue-600 tracking-widest flex items-center gap-2"><LinkIcon className="h-3 w-3"/> Campaign Link</span>
+                                                    <span className="text-[10px] font-black uppercase text-blue-600 tracking-widest flex items-center gap-2"><LinkIcon className="h-3 w-3"/> Sign-up Link</span>
                                                     <code className="text-[10px] font-bold text-blue-800">{derived.trackingLink}</code>
                                                 </div>
                                                 <div className="bg-amber-50 p-3 rounded-lg border border-amber-200 flex items-start gap-3">
                                                     <Info className="h-4 w-4 text-amber-600 mt-0.5" />
-                                                    <p className="text-[11px] text-amber-800 leading-tight">Your referral ID (FB_{campaignName.replace(/\s/g, '_').toUpperCase() || 'GENERAL'}) will be automatically appended to track conversion performance.</p>
+                                                    <p className="text-[11px] text-amber-800 leading-tight">Your referral ID (FB_{campaignName.replace(/\s/g, '_').toUpperCase() || 'GENERAL'}) will be automatically appended to track lead sources.</p>
                                                 </div>
                                             </div>
                                         </CardContent>
@@ -393,7 +389,7 @@ export default function SocialStudio() {
                                                 </Button>
                                             </div>
                                             <p className="text-sm italic font-mono opacity-90 border-l-2 border-primary/50 pl-4 mb-4">{activePost.imagePrompt}</p>
-                                            <p className="text-xs text-slate-400">Use the integrated generators below to create matching visuals for this specific template.</p>
+                                            <p className="text-xs text-slate-400">Use the generators below to create matching visuals for this template.</p>
                                         </div>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                             <ImageGeneratorCard />
