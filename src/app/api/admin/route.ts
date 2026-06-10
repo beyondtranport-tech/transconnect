@@ -28,7 +28,7 @@ function serializeTimestamps(docData: any): any {
 }
 
 /**
- * Split array into chunks for batch processing.
+ * Split array into chunks for parallel batch processing.
  */
 function chunkArray<T>(array: T[], size: number): T[][] {
     const chunks: T[][] = [];
@@ -76,7 +76,6 @@ export async function POST(req: NextRequest) {
             }
 
             case 'getShops': {
-                // Using a capped collectionGroup query to protect quota
                 const snap = await db.collectionGroup('shops').orderBy('updatedAt', 'desc').limit(100).get();
                 const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
                 return NextResponse.json({ success: true, data });
@@ -99,7 +98,6 @@ export async function POST(req: NextRequest) {
                 const { type } = payload;
                 let q = db.collection('partners').orderBy('updatedAt', 'desc').limit(100);
                 if (type !== 'all') {
-                    // Requires Index: partners | type: ASC, updatedAt: DESC
                     q = db.collection('partners').where('type', '==', type).orderBy('updatedAt', 'desc').limit(100);
                 }
                 const snap = await q.get();
@@ -133,7 +131,6 @@ export async function POST(req: NextRequest) {
                 const { partner } = payload;
                 const id = partner.id || db.collection('partners').doc().id;
                 
-                // Handle service_handle mapping if present
                 if (partner.service_handle && !partner.firstName) {
                     const parts = partner.service_handle.trim().split(' ');
                     partner.firstName = parts[0];
@@ -163,13 +160,12 @@ export async function POST(req: NextRequest) {
                     updatedAt: FieldValue.serverTimestamp()
                 }, { merge: true });
                 
-                // Also mirror to leads if it exists
                 await db.collection('leads').doc(partnerId).set({
                     lastOutreachAt: FieldValue.serverTimestamp(),
                     lastOutreachSubject: subject,
                     status: 'contacted',
                     updatedAt: FieldValue.serverTimestamp()
-                }, { merge: true }).catch(() => {}); // Ignore if lead doesn't exist
+                }, { merge: true }).catch(() => {});
 
                 return NextResponse.json({ success: true });
             }
@@ -208,121 +204,33 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true });
             }
 
-            // --- FINANCIAL OPERATIONS ---
-            case 'getWalletPayments': {
-                const snap = await db.collectionGroup('walletPayments').orderBy('createdAt', 'desc').limit(100).get();
-                const data = snap.docs.map(doc => ({ id: doc.id, companyId: doc.ref.parent.parent?.id, ...serializeTimestamps(doc.data()) }));
-                return NextResponse.json({ success: true, data });
-            }
+            case 'refreshTransporterCategoryCounts':
+            case 'refreshSupplierCategoryCounts':
+            case 'refreshFinanceCategoryCounts': {
+                const configId = action.includes('Transporter') ? 'transporterDiscoveryStats' : 
+                                 action.includes('Supplier') ? 'supplierDiscoveryStats' : 
+                                 'financeDiscoveryStats';
+                
+                const typeKey = action.includes('Transporter') ? 'transporter' : 
+                               action.includes('Supplier') ? 'supplier' : 
+                               'finance';
 
-            case 'getWalletTransactions': {
-                const snap = await db.collectionGroup('transactions').orderBy('date', 'desc').limit(100).get();
-                const data = snap.docs.map(doc => ({ id: doc.id, companyId: doc.ref.parent.parent?.id, ...serializeTimestamps(doc.data()) }));
-                return NextResponse.json({ success: true, data });
-            }
+                const categories = action.includes('Transporter') ? ["Long Haul", "Refrigerated", "Flatbed", "Tipper", "Hazmat", "LTL", "Cross-Border", "Local Distribution", "Container Transport", "Abnormal Loads"] :
+                                 action.includes('Supplier') ? ["Accessories", "Air", "Anti-Theft Devices", "Auto Electrical", "Batteries", "Brakes", "Cleaning Products", "Diesel", "Differential", "Engine Refurbish", "Filters", "Injectors", "Lights", "Mechanical repairs", "Oils & Lubricants", "Parts", "Prop Shafts", "Second Hand Trailers", "Second Hand Trucks", "Transport", "Tarpaulins", "Tow in", "Trailer repairs", "Truck Accessories", "Truck Parts", "Truck repairs", "Turbo", "Tyres"] :
+                                 ["Banks", "Government", "AEO", "Niche Lenders"];
 
-            case 'approveWalletPayment': {
-                const { companyId, paymentId, amount, description, reconciliationId } = payload;
-                await db.runTransaction(async (transaction) => {
-                    const companyRef = db.collection('companies').doc(companyId);
-                    const txRef = companyRef.collection('transactions').doc();
-                    
-                    transaction.update(companyRef, {
-                        walletBalance: FieldValue.increment(amount),
-                        availableBalance: FieldValue.increment(amount),
-                        updatedAt: FieldValue.serverTimestamp()
-                    });
-                    
-                    transaction.set(txRef, {
-                        transactionId: txRef.id,
-                        type: 'credit',
-                        amount,
-                        description,
-                        reconciliationId,
-                        date: FieldValue.serverTimestamp(),
-                        status: 'allocated'
-                    });
-                    
-                    transaction.delete(companyRef.collection('walletPayments').doc(paymentId));
-                });
-                return NextResponse.json({ success: true });
-            }
+                const counts: any = {};
+                for (const cat of categories) {
+                    const q = db.collection('partners').where('type', '==', typeKey).where('entryType', '==', cat);
+                    const countRes = await q.count().get();
+                    counts[cat] = countRes.data().count;
+                }
 
-            case 'approvePayout': {
-                const { companyId, payoutId, amount } = payload;
-                await db.runTransaction(async (transaction) => {
-                    const companyRef = db.collection('companies').doc(companyId);
-                    const txRef = companyRef.collection('transactions').doc();
-                    
-                    transaction.update(companyRef, {
-                        walletBalance: FieldValue.increment(-amount),
-                        availableBalance: FieldValue.increment(-amount),
-                        updatedAt: FieldValue.serverTimestamp()
-                    });
-                    
-                    transaction.set(txRef, {
-                        transactionId: txRef.id,
-                        type: 'debit',
-                        amount,
-                        description: 'Withdrawal (Approved)',
-                        date: FieldValue.serverTimestamp(),
-                        status: 'allocated'
-                    });
-                    
-                    transaction.update(companyRef.collection('payoutRequests').doc(payoutId), {
-                        status: 'approved',
-                        processedAt: FieldValue.serverTimestamp()
-                    });
-                });
-                return NextResponse.json({ success: true });
-            }
+                await db.collection('configuration').doc(configId).set({
+                    counts,
+                    lastUpdated: FieldValue.serverTimestamp()
+                }, { merge: true });
 
-            case 'rejectPayout': {
-                const { companyId, payoutId } = payload;
-                await db.collection('companies').doc(companyId).collection('payoutRequests').doc(payoutId).update({
-                    status: 'rejected',
-                    updatedAt: FieldValue.serverTimestamp()
-                });
-                return NextResponse.json({ success: true });
-            }
-
-            // --- NEGOTIATIONS ---
-            case 'getPendingAgreements': {
-                const snap = await db.collectionGroup('agreements').where('status', '==', 'proposed').limit(50).get();
-                const data = await Promise.all(snap.docs.map(async (d) => {
-                    const pathParts = d.ref.path.split('/');
-                    const shopId = pathParts[3];
-                    const shopSnap = await db.collectionGroup('shops').where('id', '==', shopId).limit(1).get();
-                    const shopData = !shopSnap.empty ? shopSnap.docs[0].data() : {};
-                    return { 
-                        id: d.id, 
-                        ...serializeTimestamps(d.data()), 
-                        shopName: shopData.shopName || 'Unknown Shop',
-                        companyId: pathParts[1],
-                        shopId: shopId
-                    };
-                }));
-                return NextResponse.json({ success: true, data });
-            }
-
-            case 'acceptCommercialAgreement': {
-                const { companyId, shopId, agreementId } = payload;
-                const agreementsRef = db.collection(`companies/${companyId}/shops/${shopId}/agreements`);
-                await db.runTransaction(async (transaction) => {
-                    const activeQuery = agreementsRef.where('status', '==', 'active');
-                    const activeSnap = await transaction.get(activeQuery);
-                    activeSnap.docs.forEach(doc => transaction.update(doc.ref, { status: 'archived' }));
-                    transaction.update(agreementsRef.doc(agreementId), { 
-                        status: 'active', 
-                        updatedAt: FieldValue.serverTimestamp(),
-                        effectiveDate: FieldValue.serverTimestamp()
-                    });
-                    // Sync the rate to the shop document
-                    const agreementSnap = await transaction.get(agreementsRef.doc(agreementId));
-                    transaction.update(db.doc(`companies/${companyId}/shops/${shopId}`), {
-                        platformCommission: agreementSnap.data()?.percentage || 2.5
-                    });
-                });
                 return NextResponse.json({ success: true });
             }
 
