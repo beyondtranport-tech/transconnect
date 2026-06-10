@@ -86,6 +86,19 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data });
             }
 
+            case 'logAudit': {
+                const { action, details, metadata } = payload;
+                await db.collection('auditLogs').add({
+                    userId: decodedToken.uid,
+                    userName: decodedToken.name || decodedToken.email,
+                    action,
+                    details,
+                    metadata,
+                    timestamp: FieldValue.serverTimestamp(),
+                });
+                return NextResponse.json({ success: true });
+            }
+
             case 'getPartnersByType': {
                 const { type } = payload;
                 let q = db.collection('partners').orderBy('updatedAt', 'desc').limit(100);
