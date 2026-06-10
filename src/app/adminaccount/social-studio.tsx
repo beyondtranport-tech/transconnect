@@ -9,10 +9,10 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { 
     Facebook, Sparkles, Loader2, Copy, Send, Link as LinkIcon, 
-    MessageSquare, Video, Info, BarChart3, HelpCircle, 
-    ExternalLink, ImageIcon, Wand2, ShieldCheck, Zap, BookOpen,
-    Truck, Landmark, Users, Handshake, Gift, PlayCircle,
-    Building, Award, Star, DollarSign, Wallet, Search, Database, User
+    MessageSquare, Video, Info, BarChart3, 
+    ExternalLink, ImageIcon, ShieldCheck, Zap, 
+    Truck, Landmark, Users, Handshake, Gift, Star,
+    Building, Award, DollarSign, Wallet, Search, Database, User
 } from 'lucide-react';
 import { generateSocialCopy } from '@/ai/flows/social-copy-flow';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -28,10 +28,9 @@ import VideoGeneratorCard from "@/app/backend/video-generator-card";
 
 /**
  * EXPANDED SOCIAL TEMPLATE LIBRARY
- * Grouped by engagement phase and value proposition.
+ * Updated for target audience engagement.
  */
 const socialTemplates = {
-    // PHASE 0: TRUST
     'handshake': {
         group: 'Foundation',
         label: 'Digital Handshake',
@@ -40,13 +39,12 @@ const socialTemplates = {
         body: "For too long, the transport industry has been held back by fragmentation. We are breaking the constraint.\n\nWe're inviting professional hauliers to establish a 'Digital Handshake' with our ecosystem. Get matched with verified loads and access community-negotiated parts discounts instantly.\n\nClick the link below to access the app for free.",
         imagePrompt: 'A cinematic high-detail close up of a professional handshake between a haulier and a logistics manager, background shows a clean white truck at sunset.'
     },
-    // PHASE 1: VALUE PROPOSITION
     'intro': {
         group: 'Value',
         label: 'The Value Prop',
         icon: Zap,
         headline: '🚀 Redefining South African Logistics',
-        body: "Logistics Flow is more than a platform—it's a digital branch for your business. We combine the power of community buying with AI-driven efficiency to help you move more with less. No brokers, no middlemen, just direct flow.",
+        body: "Logistics Flow is more than a platform—it's a digital branch for your business. We combine the power of community buying with AI-driven efficiency to help you move more with less. No brokers, no middlemen, just direct flow.\n\nClick the link below to access the app for free.",
         imagePrompt: 'A wide cinematic shot of a white superlink truck driving on an open South African highway, bright morning light.'
     },
     'value-costs': {
@@ -54,7 +52,7 @@ const socialTemplates = {
         label: 'Reduce Costs',
         icon: BarChart3,
         headline: '📉 Slash Your Operating Costs',
-        body: "High maintenance and fuel costs are a constant tax on your profit. By joining our community, you tap into collective buying power for tires, parts, and fuel. Why pay premium prices when we can negotiate as a syndicate?",
+        body: "High maintenance and fuel costs are a constant tax on your profit. By joining our community, you tap into collective buying power for tires, parts, and fuel. Why pay premium prices when we can negotiate as a syndicate?\n\nClick the link below to access the app for free.",
         imagePrompt: 'Rows of heavy commercial truck tires stacked neatly in a modern warehouse, industrial lighting.'
     },
     'value-community': {
@@ -62,7 +60,7 @@ const socialTemplates = {
         label: 'The Community',
         icon: Users,
         headline: '👥 Power in Numbers',
-        body: "Transport is a lonely business, but it doesn't have to be. Join a trusted network of 5,000+ verified members. Share data, find subcontracting partners, and grow your standing in the industry through our verified registry.",
+        body: "Transport is a lonely business, but it doesn't have to be. Join a trusted network of 5,000+ verified members. Share data, find subcontracting partners, and grow your standing in the industry through our verified registry.\n\nClick the link below to access the app for free.",
         imagePrompt: 'A diverse group of professional South African transporters shaking hands and talking next to a fleet of trucks.'
     },
     'value-funding-inhouse': {
@@ -70,7 +68,7 @@ const socialTemplates = {
         label: 'In-house Funding',
         icon: Landmark,
         headline: '💳 Funding Built for Transporters',
-        body: "Traditional banks often decline transport businesses because they don't understand the risks. Our in-house funding division, Simplyfi Flow, looks at your real-time performance on our platform to build a credit profile that works.",
+        body: "Traditional banks often decline transport businesses because they don't understand the risks. Our in-house funding division, Simplyfi Flow, looks at your real-time performance on our platform to build a credit profile that works.\n\nClick the link below to access the app for free.",
         imagePrompt: 'A digital tablet showing an approved loan application with a truck icon and green checkmark.'
     },
     'value-funding-registry': {
@@ -78,7 +76,7 @@ const socialTemplates = {
         label: 'Funder Registry',
         icon: Building,
         headline: '🏦 Access 85+ Specialized Funders',
-        body: "One application. 85+ Potential Funders. We've mapped the entire niche lending landscape in SA to bring the best asset finance and working capital deals directly to your dashboard.",
+        body: "One application. 85+ Potential Funders. We've mapped the entire niche lending landscape in SA to bring the best asset finance and working capital deals directly to your dashboard.\n\nClick the link below to access the app for free.",
         imagePrompt: 'A sleek modern bank building exterior in Sandton, morning light, professional and clean.'
     },
     'value-loyalty': {
@@ -86,7 +84,7 @@ const socialTemplates = {
         label: 'Grow Loyalty',
         icon: Award,
         headline: '⭐ Rise Through the Tiers',
-        body: "Every action you take in our ecosystem earns you points. Move from Bronze to Gold to unlock deeper discounts, lower commission rates, and priority access to premium loads.",
+        body: "Every action you take in our ecosystem earns you points. Move from Bronze to Gold to unlock deeper discounts, lower commission rates, and priority access to premium loads.\n\nClick the link below to access the app for free.",
         imagePrompt: 'A gold, silver, and bronze medal set against a background of logistics data graphs.'
     },
     'value-rewards': {
@@ -94,16 +92,15 @@ const socialTemplates = {
         label: 'Earn Rewards',
         icon: Gift,
         headline: '🎁 Turn Activity into Assets',
-        body: "Earn points for listing products, contributing data, or referring friends. Redeem your rewards for fuel vouchers, service discounts, or exclusive marketplace gear.",
+        body: "Earn points for listing products, contributing data, or referring friends. Redeem your rewards for fuel vouchers, service discounts, or exclusive marketplace gear.\n\nClick the link below to access the app for free.",
         imagePrompt: 'A professional fuel voucher card being handed over at a filling station, clean and sharp focus.'
     },
-    // PHASE 2: REVENUE MODEL
     'revenue-rewards': {
         group: 'Revenue',
         label: 'In-house Rewards',
         icon: Star,
         headline: '✨ Get Paid to Participate',
-        body: "Our 'Actions Plan' turns your daily tasks into revenue. Uploading your fleet details or listing a route isn't just admin—it's an earning event. Start building your points balance today.",
+        body: "Our 'Actions Plan' turns your daily tasks into revenue. Uploading your fleet details or listing a route isn't just admin—it's an earning event. Start building your points balance today.\n\nClick the link below to access the app for free.",
         imagePrompt: 'A digital wallet on a smartphone screen showing points being added with a star animation.'
     },
     'revenue-discounts': {
@@ -111,7 +108,7 @@ const socialTemplates = {
         label: 'Supplier Discounts',
         icon: Handshake,
         headline: '🤝 Shared Savings is Earned Income',
-        body: "A Rand saved on maintenance is a Rand added to your profit. We share the negotiated savings from our supplier network directly with our members. It's the easiest way to improve your margin.",
+        body: "A Rand saved on maintenance is a Rand added to your profit. We share the negotiated savings from our supplier network directly with our members. It's the easiest way to improve your margin.\n\nClick the link below to access the app for free.",
         imagePrompt: 'A side-by-side comparison chart showing standard prices vs community discounted prices for truck parts.'
     },
     'revenue-membership': {
@@ -119,7 +116,7 @@ const socialTemplates = {
         label: 'Membership Comms',
         icon: Users,
         headline: '📈 Build a Recurring Annuity',
-        body: "Refer a member, earn a commission. Every single month. When your network signs up for a paid plan, you earn a percentage of their fee for as long as they remain active. Build your own monthly income engine.",
+        body: "Refer a member, earn a commission. Every single month. When your network signs up for a paid plan, you earn a percentage of their fee for as long as they remain active. Build your own monthly income engine.\n\nClick the link below to access the app for free.",
         imagePrompt: 'A calendar showing recurring monthly payments with a green growth arrow.'
     },
     'revenue-transactions': {
@@ -127,16 +124,15 @@ const socialTemplates = {
         label: 'Transaction Comms',
         icon: DollarSign,
         headline: '💸 Earn from Every Deal',
-        body: "Your network is your asset. When your referrals buy tires, parts, or secure funding through our Malls, you get a share of the platform's commission. Their success is literally your profit.",
+        body: "Your network is your asset. When your referrals buy tires, parts, or secure funding through our Malls, you get a share of the platform's commission. Their success is literally your profit.\n\nClick the link below to access the app for free.",
         imagePrompt: 'A high-speed montage of various commercial transactions happening on a digital map of South Africa.'
     },
-    // PHASE 3: EDUCATION (HOW-TO)
     'howto-profile': {
         group: 'Education',
         label: 'Create Profile',
         icon: User,
         headline: '🛠️ How-To: Build Your Digital Branch',
-        body: "Setting up your shop or service profile takes less than 10 minutes. Watch our short guide on using the Wizard to upload your branding and products to the national network.",
+        body: "Setting up your shop or service profile takes less than 10 minutes. Watch our short guide on using the Wizard to upload your branding and products to the national network.\n\nClick the link below to access the app for free.",
         imagePrompt: 'A screen recording showing a clean, easy-to-use business profile setup wizard.'
     },
     'howto-matcher': {
@@ -144,7 +140,7 @@ const socialTemplates = {
         label: 'Freight Matcher',
         icon: Search,
         headline: '📍 How-To: Eliminate Empty Miles',
-        body: "Our AI Freight Matcher is a game-changer. Simply enter your origin and destination, and let our intelligence engine find the highest-paying loads for your return leg. Watch how it works.",
+        body: "Our AI Freight Matcher is a game-changer. Simply enter your origin and destination, and let our intelligence engine find the highest-paying loads for your return leg. Watch how it works.\n\nClick the link below to access the app for free.",
         imagePrompt: 'A map of South Africa with blinking nodes being connected by an AI intelligence line.'
     },
     'howto-wallet': {
@@ -152,7 +148,7 @@ const socialTemplates = {
         label: 'Use the Wallet',
         icon: Wallet,
         headline: '💳 How-To: Manage Your Funds',
-        body: "The Logistics Flow Wallet is your central clearing house. Get paid for sales, pay for services, and request payouts to your bank account with one click. Simple, secure, and transparent.",
+        body: "The Logistics Flow Wallet is your central clearing house. Get paid for sales, pay for services, and request payouts to your bank account with one click. Simple, secure, and transparent.\n\nClick the link below to access the app for free.",
         imagePrompt: 'A professional dashboard view of a business wallet with clear credit and ledger sheets.'
     },
     'howto-contribute': {
@@ -160,7 +156,7 @@ const socialTemplates = {
         label: 'Contribute Data',
         icon: Database,
         headline: '📊 How-To: The Power of Data',
-        body: "Why contribute your fleet or supplier data? Because data is the currency of negotiation. Watch how sharing anonymous details helps us secure lower prices for your business.",
+        body: "Why contribute your fleet or supplier data? Because data is the currency of negotiation. Watch how sharing anonymous details helps us secure lower prices for your business.\n\nClick the link below to access the app for free.",
         imagePrompt: 'Abstract visualization of data points flowing into a central hub and turning into a large shield representing collective power.'
     }
 };
@@ -172,10 +168,7 @@ export default function SocialStudio() {
     const [isGenerating, setIsGenerating] = useState(false);
     const [isLogging, setIsLogging] = useState(false);
 
-    // Editable content state
     const [editedContent, setEditedContent] = useState<Record<string, string>>({});
-    
-    // AI Creator state
     const [creatorParams, setCreatorParams] = useState({ topic: '', criticalPoints: '' });
     const [aiResult, setAiResult] = useState<any>(null);
 
@@ -227,7 +220,6 @@ export default function SocialStudio() {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Auth failed.");
 
-            // Log the launch event in the platform audit trail
             await fetch('/api/admin', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -273,7 +265,7 @@ export default function SocialStudio() {
                             className={cn("w-full justify-start gap-3 h-10 px-2", activeTab === id && "bg-white shadow-sm ring-1 ring-primary/20")}
                             onClick={() => setActiveTab(id as any)}
                         >
-                            <template.icon className="h-4 w-4 text-primary" />
+                            {React.createElement(template.icon, { className: "h-4 w-4 text-primary" })}
                             <span className="truncate text-xs font-medium">{template.label}</span>
                         </Button>
                     ))}
@@ -305,7 +297,6 @@ export default function SocialStudio() {
 
             <Card className="flex flex-col h-[78vh] overflow-hidden p-0 shadow-2xl">
                 <div className="flex-1 flex overflow-hidden">
-                    {/* SIDEBAR NAVIGATION */}
                     <div className="w-64 border-r bg-muted/10 p-4 space-y-1 overflow-y-auto">
                         {renderSidebarGroup('Foundation')}
                         {renderSidebarGroup('Value')}
@@ -323,7 +314,6 @@ export default function SocialStudio() {
                         </Button>
                     </div>
 
-                    {/* MAIN CONTENT WORKSPACE */}
                     <div className="flex-1 overflow-y-auto bg-slate-50 p-8">
                         <div className="max-w-[800px] mx-auto space-y-8">
                             {activeTab === 'creator' ? (
@@ -358,7 +348,6 @@ export default function SocialStudio() {
 
                             {activePost ? (
                                 <>
-                                    {/* CONTENT PREVIEW & EDIT */}
                                     <Card className="border-none shadow-xl border-l-4 border-l-primary">
                                         <CardHeader className="bg-white">
                                             <div className="flex justify-between items-center">
@@ -393,7 +382,6 @@ export default function SocialStudio() {
                                         </CardFooter>
                                     </Card>
 
-                                    {/* INTEGRATED MEDIA TOOLS */}
                                     <div className="space-y-6">
                                         <div className="bg-slate-900 text-white p-6 rounded-xl shadow-lg border-l-4 border-l-amber-500">
                                             <div className="flex items-center justify-between mb-4">
