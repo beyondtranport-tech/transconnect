@@ -19,6 +19,7 @@ import { cn } from '@/lib/utils';
 import { getClientSideAuthToken } from '@/firebase';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
 
 // Media Generation Components
 import ImageGeneratorCard from "@/app/backend/image-generator-card";
