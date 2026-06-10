@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -63,6 +62,25 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data });
             }
 
+            case 'updateMemberStatus': {
+                const { companyId, status } = payload;
+                await db.collection('companies').doc(companyId).update({
+                    status,
+                    updatedAt: FieldValue.serverTimestamp()
+                });
+                return NextResponse.json({ success: true });
+            }
+
+            case 'deleteMember': {
+                const { companyId } = payload;
+                const batch = db.batch();
+                // Note: Complex deletion (subcollections) usually requires a recursive function.
+                // This is a simple document deletion for the prototype.
+                batch.delete(db.collection('companies').doc(companyId));
+                await batch.commit();
+                return NextResponse.json({ success: true });
+            }
+
             case 'getShops': {
                 const snap = await db.collectionGroup('shops').orderBy('updatedAt', 'desc').limit(100).get();
                 const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
@@ -91,7 +109,7 @@ export async function POST(req: NextRequest) {
                 const { action: logAction, details, metadata } = payload;
                 await db.collection('auditLogs').add({
                     userId: decodedToken.uid,
-                    userName: decodedToken.name || decodedToken.email,
+                    userName: decodedToken.displayName || decodedToken.email,
                     action: logAction,
                     details,
                     metadata,
@@ -103,7 +121,7 @@ export async function POST(req: NextRequest) {
             case 'getPartnersByType': {
                 const { type } = payload;
                 let q = db.collection('partners').orderBy('updatedAt', 'desc').limit(100);
-                if (type !== 'all') {
+                if (type && type !== 'all') {
                     q = db.collection('partners').where('type', '==', type).orderBy('updatedAt', 'desc').limit(100);
                 }
                 const snap = await q.get();
@@ -119,7 +137,7 @@ export async function POST(req: NextRequest) {
 
             case 'searchRegistry': {
                 const { term, type } = payload;
-                const collectionName = type === 'driver' || type === 'supplier' || type === 'transporter' || type === 'finance' ? 'partners' : 'leads';
+                const collectionName = ['driver', 'supplier', 'transporter', 'finance', 'partner', 'isa', 'investor'].includes(type) ? 'partners' : 'leads';
                 let q = db.collection(collectionName)
                     .where('companyName', '>=', term)
                     .where('companyName', '<=', term + '\uf8ff')
@@ -270,6 +288,32 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data });
             }
 
+            case 'acceptCommercialAgreement': {
+                const { companyId, shopId, agreementId } = payload;
+                const batch = db.batch();
+                const agreementRef = db.doc(`companies/${companyId}/shops/${shopId}/agreements/${agreementId}`);
+                const shopRef = db.doc(`companies/${companyId}/shops/${shopId}`);
+
+                const agreementSnap = await agreementRef.get();
+                const percentage = agreementSnap.data()?.percentage || 2.5;
+
+                batch.update(agreementRef, { status: 'active', updatedAt: FieldValue.serverTimestamp() });
+                batch.update(shopRef, { platformCommission: percentage, updatedAt: FieldValue.serverTimestamp() });
+                
+                await batch.commit();
+                return NextResponse.json({ success: true });
+            }
+
+            case 'proposeCounterOffer': {
+                const { companyId, shopId, agreementId, newPercentage } = payload;
+                await db.doc(`companies/${companyId}/shops/${shopId}/agreements/${agreementId}`).update({
+                    percentage: newPercentage,
+                    status: 'countered',
+                    updatedAt: FieldValue.serverTimestamp()
+                });
+                return NextResponse.json({ success: true });
+            }
+
             case 'approveWalletPayment': {
                 const { companyId, paymentId, amount, description, reconciliationId } = payload;
                 const batch = db.batch();
@@ -333,7 +377,7 @@ export async function POST(req: NextRequest) {
             case 'refreshFinanceCategoryCounts': {
                 const type = action.includes('Supplier') ? 'supplier' : action.includes('Transporter') ? 'transporter' : action.includes('Driver') ? 'driver' : 'finance';
                 const statsKey = `${type}DiscoveryStats`;
-                const collectionName = type === 'finance' || type === 'supplier' || type === 'transporter' || type === 'driver' ? 'partners' : 'leads';
+                const collectionName = ['finance', 'supplier', 'transporter', 'driver'].includes(type) ? 'partners' : 'leads';
                 const snap = await db.collection(collectionName).where('type', '==', type).get();
                 const counts: Record<string, number> = {};
                 snap.docs.forEach(doc => {
