@@ -154,6 +154,38 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true });
             }
 
+            case 'deletePartner': {
+                const { partnerId } = payload;
+                await db.collection('partners').doc(partnerId).delete();
+                return NextResponse.json({ success: true });
+            }
+
+            case 'deleteLeads': {
+                const { leadIds } = payload;
+                const batchSize = 500;
+                for (let i = 0; i < leadIds.length; i += batchSize) {
+                    const chunk = leadIds.slice(i, i + batchSize);
+                    const batch = db.batch();
+                    chunk.forEach((id: string) => batch.delete(db.collection('leads').doc(id)));
+                    await batch.commit();
+                }
+                return NextResponse.json({ success: true, count: leadIds.length });
+            }
+
+            case 'findDuplicateLeads': {
+                const snap = await db.collection('leads').limit(500).get();
+                const nameMap = new Map<string, any[]>();
+                snap.docs.forEach(d => {
+                    const data = d.data();
+                    const name = (data.companyName || '').toLowerCase().trim();
+                    if (!name) return;
+                    if (!nameMap.has(name)) nameMap.set(name, []);
+                    nameMap.get(name)?.push({ id: d.id, ...data, source: 'Lead' });
+                });
+                const duplicates = Array.from(nameMap.values()).filter(group => group.length > 1);
+                return NextResponse.json({ success: true, data: duplicates });
+            }
+
             case 'approvePayout': {
                 const { companyId, payoutId, amount } = payload;
                 const batch = db.batch();
@@ -177,6 +209,15 @@ export async function POST(req: NextRequest) {
                 });
 
                 await batch.commit();
+                return NextResponse.json({ success: true });
+            }
+
+            case 'rejectPayout': {
+                const { companyId, payoutId } = payload;
+                await db.collection(`companies/${companyId}/payoutRequests`).doc(payoutId).update({
+                    status: 'rejected',
+                    updatedAt: FieldValue.serverTimestamp()
+                });
                 return NextResponse.json({ success: true });
             }
 
