@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -8,12 +9,13 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Facebook, Sparkles, Loader2, Copy, Send, Link as LinkIcon, ShieldCheck, Zap, Share2, ExternalLink, Image as ImageIcon, ClipboardCheck, History } from 'lucide-react';
+import { Facebook, Sparkles, Loader2, Copy, Send, Link as LinkIcon, ShieldCheck, Zap, Share2, ExternalLink, Image as ImageIcon, ClipboardCheck, History, Info } from 'lucide-react';
 import { generateSocialCopy, type SocialCopyOutput } from '@/ai/flows/social-copy-flow';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { getClientSideAuthToken } from '@/firebase';
+import Link from 'next/link';
 
 /**
  * SOCIAL ENGAGEMENT WIZARD
@@ -24,9 +26,18 @@ function SocialEngageDialog({ open, onOpenChange, post, campaignName }: { open: 
     const [isLogging, setIsLogging] = useState(false);
     const { toast } = useToast();
 
-    const baseUrl = 'https://studio--ecosystem-hub.us-central1.hosted.app';
-    const trackingLink = `${baseUrl}/join?ref=FB_${campaignName.replace(/\s/g, '_').toUpperCase() || 'GENERAL'}`;
-    const fullPostBody = `${post.body}\n\nJoin here: ${trackingLink}\n\n${post.hashtags.join(' ')}`;
+    // Derived values with robust guard to prevent null access errors
+    const derived = useMemo(() => {
+        if (!post) return { trackingLink: '', fullPostBody: '' };
+        const baseUrl = 'https://studio--ecosystem-hub.us-central1.hosted.app';
+        const trackingLink = `${baseUrl}/join?ref=FB_${campaignName.replace(/\s/g, '_').toUpperCase() || 'GENERAL'}`;
+        const fullPostBody = `${post.body}\n\nJoin here: ${trackingLink}\n\n${(post.hashtags || []).join(' ')}`;
+        return { trackingLink, fullPostBody };
+    }, [post, campaignName]);
+
+    if (!post) return null;
+
+    const { trackingLink, fullPostBody } = derived;
 
     const copyToClipboard = (text: string, label: string) => {
         navigator.clipboard.writeText(text);
@@ -103,7 +114,7 @@ function SocialEngageDialog({ open, onOpenChange, post, campaignName }: { open: 
                             <ImageIcon className="h-4 w-4" /> 2. Visual Prompt
                         </Button>
                         <Button 
-                            variant={activeTab['history' as any] === 'history' ? "secondary" : "ghost"} 
+                            variant={activeTab === 'history' ? "secondary" : "ghost"} 
                             className="w-full justify-start gap-2 text-xs font-bold uppercase tracking-wider"
                             onClick={() => setActiveTab('history')}
                         >
@@ -125,7 +136,7 @@ function SocialEngageDialog({ open, onOpenChange, post, campaignName }: { open: 
                                         <div className="p-4 bg-muted/30 rounded-lg text-sm leading-relaxed whitespace-pre-wrap border">
                                             {post.body}
                                             <p className="mt-4 text-blue-600 font-bold">{trackingLink}</p>
-                                            <p className="mt-2 text-muted-foreground">{post.hashtags.join(' ')}</p>
+                                            <p className="mt-2 text-muted-foreground">{(post.hashtags || []).join(' ')}</p>
                                         </div>
                                     </div>
                                     <Button variant="outline" className="w-full" onClick={() => copyToClipboard(fullPostBody, 'Full Post')}>
@@ -151,13 +162,13 @@ function SocialEngageDialog({ open, onOpenChange, post, campaignName }: { open: 
                                             </Button>
                                         </div>
                                     </div>
-                                    <Alert className="bg-amber-50 border-amber-200">
-                                        <Info className="h-4 w-4 text-amber-600" />
-                                        <AlertTitle className="text-xs font-bold uppercase text-amber-800">Production Tip</AlertTitle>
-                                        <AlertDescription className="text-xs text-amber-700">
-                                            Generate an image first in the Branding Studio, then return here to log the complete post with its tracking link.
-                                        </AlertDescription>
-                                    </Alert>
+                                    <div className="flex items-start gap-4 p-4 border rounded-lg bg-amber-50">
+                                        <Info className="h-5 w-5 text-amber-600 mt-0.5" />
+                                        <div className="space-y-1">
+                                            <p className="text-sm font-bold text-amber-900">Production Tip</p>
+                                            <p className="text-xs text-amber-800">Generate your image first in the Branding Studio, then return here to launch your post.</p>
+                                        </div>
+                                    </div>
                                 </div>
                             )}
 
@@ -327,4 +338,3 @@ export default function SocialStudio() {
         </div>
     );
 }
-

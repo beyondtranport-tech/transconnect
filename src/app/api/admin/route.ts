@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -233,13 +234,107 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true });
             }
 
+            case 'getWalletPayments': {
+                const snap = await db.collectionGroup('walletPayments').where('status', '==', 'pending').limit(100).get();
+                const data = snap.docs.map(doc => ({ 
+                    id: doc.id, 
+                    companyId: doc.ref.parent.parent?.id || 'Unknown',
+                    ...serializeTimestamps(doc.data()) 
+                }));
+                return NextResponse.json({ success: true, data });
+            }
+
+            case 'getWalletTransactions': {
+                const snap = await db.collectionGroup('transactions').orderBy('date', 'desc').limit(100).get();
+                const data = snap.docs.map(doc => ({ 
+                    id: doc.id, 
+                    companyId: doc.ref.parent.parent?.id || 'Unknown',
+                    ...serializeTimestamps(doc.data()) 
+                }));
+                return NextResponse.json({ success: true, data });
+            }
+
+            case 'getPendingAgreements': {
+                const snap = await db.collectionGroup('agreements').where('status', '==', 'proposed').limit(100).get();
+                const data = await Promise.all(snap.docs.map(async (doc) => {
+                    const agreeData = doc.data();
+                    const companyId = doc.ref.parent.parent?.parent?.parent?.id || 'Unknown';
+                    const companySnap = await db.collection('companies').doc(companyId).get();
+                    return { 
+                        id: doc.id, 
+                        companyId,
+                        shopName: companySnap.data()?.companyName || 'Unknown Shop',
+                        ...serializeTimestamps(agreeData) 
+                    };
+                }));
+                return NextResponse.json({ success: true, data });
+            }
+
+            case 'approveWalletPayment': {
+                const { companyId, paymentId, amount, description, reconciliationId } = payload;
+                const batch = db.batch();
+                const companyRef = db.collection('companies').doc(companyId);
+                const paymentRef = db.collection(`companies/${companyId}/walletPayments`).doc(paymentId);
+                const txRef = db.collection(`companies/${companyId}/transactions`).doc();
+
+                batch.update(companyRef, { 
+                    walletBalance: FieldValue.increment(amount),
+                    availableBalance: FieldValue.increment(amount),
+                    updatedAt: FieldValue.serverTimestamp()
+                });
+                batch.delete(paymentRef);
+                batch.set(txRef, {
+                    transactionId: txRef.id,
+                    reconciliationId,
+                    type: 'credit',
+                    amount,
+                    description,
+                    date: FieldValue.serverTimestamp(),
+                    status: 'allocated'
+                });
+
+                await batch.commit();
+                return NextResponse.json({ success: true });
+            }
+
+            case 'markLeadsAsResearching': {
+                const { leadIds } = payload;
+                const batch = db.batch();
+                leadIds.forEach((id: string) => {
+                    batch.update(db.collection('leads').doc(id), { 
+                        researchStatus: 'researching',
+                        status: 'contacted',
+                        updatedAt: FieldValue.serverTimestamp()
+                    });
+                });
+                await batch.commit();
+                return NextResponse.json({ success: true });
+            }
+
+            case 'bulkSavePartners': {
+                const { partners, type } = payload;
+                const batch = db.batch();
+                partners.forEach((p: any) => {
+                    const id = p.record_id || p.id || db.collection('partners').doc().id;
+                    batch.set(db.collection(type === 'lead' ? 'leads' : 'partners').doc(id), {
+                        ...p,
+                        id,
+                        type: type === 'lead' ? undefined : type,
+                        updatedAt: FieldValue.serverTimestamp()
+                    }, { merge: true });
+                });
+                await batch.commit();
+                return NextResponse.json({ success: true, count: partners.length });
+            }
+
             case 'refreshSupplierCategoryCounts':
             case 'refreshTransporterCategoryCounts':
             case 'refreshDriverCategoryCounts':
             case 'refreshFinanceCategoryCounts': {
                 const type = action.includes('Supplier') ? 'supplier' : action.includes('Transporter') ? 'transporter' : action.includes('Driver') ? 'driver' : 'finance';
                 const statsKey = `${type}DiscoveryStats`;
-                const snap = await db.collection('partners').where('type', '==', type).get();
+                const collectionName = type === 'finance' || type === 'supplier' || type === 'transporter' || type === 'driver' ? 'partners' : 'leads';
+                const snap = await db.collection(collectionName).where('type', '==', type).get();
                 const counts: Record<string, number> = {};
                 snap.docs.forEach(doc => {
                     const cat = doc.data().entryType || 'General';
