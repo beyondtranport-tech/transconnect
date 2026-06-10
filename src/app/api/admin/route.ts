@@ -240,6 +240,37 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true });
             }
 
+            case 'listAllUsers': {
+                const auth = getAuth(app);
+                const listUsers = await auth.listUsers(100);
+                const data = listUsers.users.map(u => ({
+                    uid: u.uid,
+                    email: u.email,
+                    displayName: u.displayName,
+                    disabled: u.disabled,
+                    creationTime: u.metadata.creationTime,
+                    lastSignInTime: u.metadata.lastSignInTime
+                }));
+                return NextResponse.json({ success: true, data });
+            }
+
+            case 'savePlatformStaff': {
+                const { staff } = payload;
+                const id = staff.id || db.collection('platformStaff').doc().id;
+                await db.collection('platformStaff').doc(id).set({
+                    ...staff,
+                    id,
+                    updatedAt: FieldValue.serverTimestamp()
+                }, { merge: true });
+                return NextResponse.json({ success: true, id });
+            }
+
+            case 'deletePlatformStaff': {
+                const { staffId } = payload;
+                await db.collection('platformStaff').doc(staffId).delete();
+                return NextResponse.json({ success: true });
+            }
+
             default:
                 return NextResponse.json({ success: false, error: `Action "${action}" not implemented.` }, { status: 400 });
         }
