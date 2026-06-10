@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -47,6 +46,7 @@ import {
   Users,
   FileText,
   Landmark,
+  Facebook,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -88,6 +88,7 @@ import PlatformTasks from '@/app/backend/platform-tasks';
 import PlatformSettingsContent from '@/app/backend/platform-settings';
 import UnifiedDirectory from '@/app/adminaccount/unified-directory';
 import PlatformStaffManagement from '@/app/adminaccount/platform-staff';
+import SocialStudio from '@/app/adminaccount/social-studio';
 
 function AdminAuthGuard({ children }: { children: React.ReactNode }) {
     const { user, isUserLoading } = useUser();
@@ -142,6 +143,7 @@ function AdminAccountContent() {
       case 'activity': return <ActivityFeed />;
       case 'leads-agent': return <LeadsAgent />;
       case 'leads-database': return <LeadsDatabase />;
+      case 'social-studio': return <SocialStudio />;
       case 'branding-studio': return <BrandingStudio />;
       case 'tts-studio': return <TTSStudio />;
       case 'asset-gallery': return <AssetGallery />;
@@ -206,6 +208,11 @@ function AdminAccountContent() {
                 <SidebarMenuItem>
                     <SidebarMenuButton tooltip="Activity" isActive={activeView === 'activity'} onClick={() => navigate('activity')}>
                         <Activity /><span>Activity</span>
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                    <SidebarMenuButton tooltip="Social Studio" isActive={activeView === 'social-studio'} onClick={() => navigate('social-studio')}>
+                        <Facebook /><span>Social Studio</span>
                     </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>

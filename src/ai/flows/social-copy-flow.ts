@@ -1,0 +1,55 @@
+'use server';
+/**
+ * @fileOverview AI Social Media Copywriter for Logistics Flow expansion.
+ */
+
+import { ai, geminiModel } from '@/ai/genkit';
+import { z } from 'genkit';
+
+const SocialCopyInputSchema = z.object({
+  audience: z.enum(['transporters', 'suppliers', 'drivers', 'investors']),
+  topic: z.enum(['empty_miles', 'capital', 'parts_discounts', 'community_growth', 'general_intro']),
+  tone: z.enum(['professional', 'community_casual', 'urgent', 'provocative']),
+});
+export type SocialCopyInput = z.infer<typeof SocialCopyInputSchema>;
+
+const SocialCopyOutputSchema = z.object({
+  posts: z.array(z.object({
+    headline: z.string(),
+    body: z.string(),
+    hashtags: z.array(z.string()),
+    imagePrompt: z.string().describe('Prompt for the AI Image generator to create a matching visual.'),
+  })).describe('Three distinct post options for social media.'),
+});
+export type SocialCopyOutput = z.infer<typeof SocialCopyOutputSchema>;
+
+export async function generateSocialCopy(input: SocialCopyInput): Promise<SocialCopyOutput> {
+  return socialCopyFlow(input);
+}
+
+const socialCopyFlow = ai.defineFlow(
+  {
+    name: 'socialCopyFlow',
+    inputSchema: SocialCopyInputSchema,
+    outputSchema: SocialCopyOutputSchema,
+  },
+  async (input) => {
+    const response = await ai.generate({
+      model: geminiModel,
+      system: `You are an elite social media growth strategist for the South African transport industry.
+      Your goal is to write high-engagement Facebook posts that drive signups for "Logistics Flow".
+      
+      POST STRATEGY:
+      1. VALUE FIRST: Focus on breaking industry constraints (e.g., high costs, lack of loads).
+      2. LOCAL CONTEXT: Use South African industry terms (e.g., "Horses & Trailers", "Bakkie builders", "Rand per KM").
+      3. CLEAR CTA: Always end with a prompt to join using a link.`,
+      prompt: `Generate 3 high-conversion Facebook posts for an audience of ${input.audience}. 
+      Topic: ${input.topic} 
+      Tone: ${input.tone}. 
+      Ensure the image prompts are professional and cinematic.`,
+      output: { schema: SocialCopyOutputSchema }
+    });
+    
+    return response.output || { posts: [] };
+  }
+);
