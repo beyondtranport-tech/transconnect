@@ -7,17 +7,47 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Facebook, Sparkles, Loader2, Copy, Send, Link as LinkIcon, Share2, ExternalLink, ImageIcon, ArrowRight, Zap } from 'lucide-react';
+import { Facebook, Sparkles, Loader2, Copy, Send, Link as LinkIcon, Share2, ExternalLink, ImageIcon, ArrowRight, Zap, BookOpen, MessageSquare, Video, Film, Wand2 } from 'lucide-react';
 import { generateSocialCopy, type SocialCopyOutput } from '@/ai/flows/social-copy-flow';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { getClientSideAuthToken } from '@/firebase';
+import { Textarea } from '@/components/ui/textarea';
 import Link from 'next/link';
+
+// Media Generation Components
+import ImageGeneratorCard from "@/app/backend/image-generator-card";
+import VideoGeneratorCard from "@/app/backend/video-generator-card";
+import IconGeneratorCard from "@/app/backend/icon-generator-card";
+
+const libraryTemplates = [
+    {
+        id: 'empty_miles',
+        headline: 'Stop Burning Money on Empty Miles',
+        body: "Running empty is a tax on your fleet. We've built an AI Freight Matcher that finds loads for your empty legs while you're still on the road.\n\nJoin the Western Cape community of hauliers today.",
+        hashtags: ['#LogisticsFlow', '#SATrucking', '#Efficiency'],
+        imagePrompt: 'A cinematic high-angle shot of a white superlink truck driving on the N1 at sunrise, clean minimalist style.'
+    },
+    {
+        id: 'capital_growth',
+        headline: 'The Bank Said No. We Say Yes.',
+        body: "Standard lenders don't understand the transport business. We do. Access flexible asset finance and working capital tailored for hauliers with a proven track record.",
+        hashtags: ['#FleetFinance', '#Growth', '#TransConnect'],
+        imagePrompt: 'A close up on a professional handshake between two business owners in a boardroom with a truck blurred in the background.'
+    },
+    {
+        id: 'supplier_deals',
+        headline: 'Bulk Tire & Parts Discounts',
+        body: "Strength in numbers. By joining Logistics Flow, you tap into the collective buying power of over 500 fleets to secure deep discounts from major national suppliers.",
+        hashtags: ['#CostReduction', '#FleetCare', '#Community'],
+        imagePrompt: 'A stack of professional commercial truck tires in a clean warehouse environment with bright studio lighting.'
+    }
+];
 
 /**
  * SOCIAL ENGAGEMENT WIZARD
- * Multi-tab launcher for finalizing social campaigns.
+ * Multi-tab launcher for finalizing social campaigns with integrated media tools.
  */
 function SocialEngageDialog({ open, onOpenChange, post, campaignName }: { open: boolean, onOpenChange: (o: boolean) => void, post: any, campaignName: string }) {
     const [activeTab, setActiveTab] = useState('copy');
@@ -27,25 +57,19 @@ function SocialEngageDialog({ open, onOpenChange, post, campaignName }: { open: 
     const derived = useMemo(() => {
         if (!post) return { trackingLink: '', fullPostBody: '', sanitizedRef: '' };
         
-        const sanitizedRef = campaignName.includes('facebook.com') 
-            ? campaignName.split('/').filter(Boolean).pop()?.toUpperCase() || 'FB_CAMPAIGN'
-            : campaignName.replace(/\s/g, '_').toUpperCase() || 'GENERAL';
-
+        const sanitizedRef = campaignName.replace(/\s/g, '_').toUpperCase() || 'GENERAL';
         const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://studio--ecosystem-hub.us-central1.hosted.app';
         const trackingLink = `${baseUrl}/join?ref=FB_${sanitizedRef}`;
-        const fullPostBody = `${post.body}\n\nJoin the community here: ${trackingLink}\n\n${(post.hashtags || []).join(' ')}`;
+        
+        // Handle both template body and AI generated body
+        const postBody = post.body || post.text || '';
+        const fullPostBody = `${postBody}\n\nJoin the community here: ${trackingLink}\n\n${(post.hashtags || []).join(' ')}`;
         
         return { trackingLink, fullPostBody, sanitizedRef };
     }, [post, campaignName]);
 
     if (!post) return null;
-    
     const { trackingLink, fullPostBody, sanitizedRef } = derived;
-
-    const copyToClipboard = (text: string, label: string) => {
-        navigator.clipboard.writeText(text);
-        toast({ title: `${label} Copied!` });
-    };
 
     const handleLogAndLaunch = async () => {
         setIsLogging(true);
@@ -53,7 +77,6 @@ function SocialEngageDialog({ open, onOpenChange, post, campaignName }: { open: 
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Auth failed.");
 
-            // Log the campaign launch activity
             await fetch('/api/admin', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -61,7 +84,7 @@ function SocialEngageDialog({ open, onOpenChange, post, campaignName }: { open: 
                     action: 'logAudit', 
                     payload: { 
                         action: 'social_campaign_launch', 
-                        details: `Launched post "${post.headline}" to group: ${campaignName}`,
+                        details: `Launched post "${post.headline}" for group: ${campaignName}`,
                         metadata: { campaignName, trackingRef: `FB_${sanitizedRef}` }
                     } 
                 }),
@@ -82,34 +105,35 @@ function SocialEngageDialog({ open, onOpenChange, post, campaignName }: { open: 
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-4xl h-[85vh] flex flex-col p-0 overflow-hidden">
+            <DialogContent className="max-w-5xl h-[90vh] flex flex-col p-0 overflow-hidden">
                 <DialogHeader className="p-6 border-b bg-muted/30">
                     <div className="flex justify-between items-start">
                         <div>
                             <DialogTitle className="text-2xl font-black flex items-center gap-2">
                                 <Facebook className="h-7 w-7 text-blue-600" />
-                                Engagement Wizard
+                                Social Engagement Wizard
                             </DialogTitle>
-                            <DialogDescription className="mt-1 font-mono text-[10px] uppercase">Tracking ID: FB_{sanitizedRef}</DialogDescription>
+                            <DialogDescription className="mt-1">Campaign Targeting: <strong>{campaignName}</strong></DialogDescription>
                         </div>
-                        <Button size="lg" className="bg-blue-600 hover:bg-blue-700 font-bold" onClick={handleLogAndLaunch} disabled={isLogging}>
+                        <Button size="lg" className="bg-blue-600 hover:bg-blue-700 font-bold gap-2" onClick={handleLogAndLaunch} disabled={isLogging}>
                             {isLogging ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <ExternalLink className="mr-2 h-4 w-4" />}
-                            Log & Post to Facebook
+                            Log, Copy & Launch
                         </Button>
                     </div>
                 </DialogHeader>
 
                 <div className="flex-1 flex overflow-hidden">
-                    <div className="w-56 border-r bg-muted/10 p-4 space-y-1">
+                    {/* Multi-Tab Sidebar */}
+                    <div className="w-64 border-r bg-muted/10 p-4 space-y-1">
                         {[
-                            { id: 'copy', label: 'Finalize Copy', icon: Share2 },
-                            { id: 'visuals', label: 'AI Visuals', icon: ImageIcon },
-                            { id: 'tracking', label: 'Tracking URL', icon: LinkIcon }
+                            { id: 'copy', label: '1. Refine Copy', icon: MessageSquare },
+                            { id: 'media', label: '2. Generate Media', icon: Sparkles },
+                            { id: 'tracking', label: '3. Tracking & Links', icon: LinkIcon }
                         ].map((tab) => (
                             <Button
                                 key={tab.id}
                                 variant={activeTab === tab.id ? "secondary" : "ghost"}
-                                className="w-full justify-start gap-3"
+                                className="w-full justify-start gap-3 h-11"
                                 onClick={() => setActiveTab(tab.id)}
                             >
                                 <tab.icon className="h-4 w-4" />
@@ -118,46 +142,53 @@ function SocialEngageDialog({ open, onOpenChange, post, campaignName }: { open: 
                         ))}
                     </div>
 
+                    {/* Integrated Workspace Content */}
                     <div className="flex-1 overflow-y-auto bg-slate-50 p-8">
-                        <div className="bg-white p-8 rounded-xl shadow-sm border max-w-[700px] mx-auto">
+                        <div className="max-w-[800px] mx-auto space-y-8">
                             {activeTab === 'copy' && (
-                                <div className="space-y-6">
-                                    <h3 className="text-2xl font-bold">{post.headline}</h3>
-                                    <div className="p-6 bg-slate-50 rounded-lg text-sm leading-relaxed whitespace-pre-wrap font-sans italic">
-                                        {post.body}
-                                        <p className="mt-4 text-blue-600 font-bold underline">{trackingLink}</p>
-                                        <p className="mt-2 opacity-70">{(post.hashtags || []).join(' ')}</p>
-                                    </div>
-                                    <Button variant="outline" className="w-full gap-2" onClick={() => copyToClipboard(fullPostBody, 'Full Post')}>
-                                        <Copy className="h-4 w-4" /> Copy Full Post Body
-                                    </Button>
-                                </div>
+                                <Card>
+                                    <CardHeader><CardTitle>Finalize Ad Copy</CardTitle></CardHeader>
+                                    <CardContent className="space-y-4">
+                                        <div className="p-6 bg-slate-50 rounded-xl border-2 border-dashed border-primary/20 text-sm leading-relaxed whitespace-pre-wrap font-sans italic">
+                                            {post.body || post.text}
+                                            <p className="mt-4 text-blue-600 font-bold underline">{trackingLink}</p>
+                                        </div>
+                                        <div className="bg-amber-50 p-3 rounded-lg border border-amber-200 flex items-start gap-3">
+                                            <Info className="h-4 w-4 text-amber-600 mt-0.5" />
+                                            <p className="text-[11px] text-amber-800">Your unique tracking link is automatically generated based on the Facebook group name to track acquisition success.</p>
+                                        </div>
+                                    </CardContent>
+                                </Card>
                             )}
 
-                            {activeTab === 'visuals' && (
+                            {activeTab === 'media' && (
                                 <div className="space-y-6">
-                                    <div className="p-6 bg-slate-900 text-white rounded-xl shadow-lg border-l-4 border-l-primary">
+                                    <div className="bg-slate-900 text-white p-6 rounded-xl shadow-lg">
                                         <div className="flex items-center gap-2 mb-4">
                                             <Sparkles className="h-5 w-5 text-primary" />
-                                            <h4 className="font-bold uppercase text-xs">Visual Design Command</h4>
+                                            <h4 className="font-bold uppercase text-[10px] tracking-widest">AI Media Command</h4>
                                         </div>
-                                        <p className="text-sm italic font-mono leading-relaxed opacity-90 mb-8 border-l border-white/20 pl-4">{post.imagePrompt}</p>
-                                        <Button className="w-full bg-primary hover:bg-primary/90" asChild>
-                                            <Link href="/adminaccount?view=branding-studio">Open Branding Studio <ArrowRight className="ml-2 h-4 w-4"/></Link>
-                                        </Button>
+                                        <p className="text-sm italic font-mono opacity-90 border-l-2 border-primary/50 pl-4 mb-4">{post.imagePrompt}</p>
+                                        <p className="text-xs text-slate-400">Use the tools below to generate visual assets using this command.</p>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <ImageGeneratorCard />
+                                        <VideoGeneratorCard />
                                     </div>
                                 </div>
                             )}
 
                             {activeTab === 'tracking' && (
-                                <div className="text-center py-12 space-y-4">
-                                    <div className="bg-primary/10 p-5 rounded-full w-fit mx-auto mb-4">
-                                        <LinkIcon className="h-10 w-10 text-primary" />
-                                    </div>
-                                    <h4 className="text-2xl font-bold">Persistence Monitoring</h4>
-                                    <p className="text-sm text-muted-foreground max-w-sm mx-auto">The tracking link for <span className="font-bold text-foreground">{campaignName}</span> is active. Every registration through this link is logged as an acquisition from this specific source.</p>
-                                    <Badge variant="outline" className="mt-6 bg-green-50 text-green-700 border-green-200">ACTIVE CAMPAIGN LINK</Badge>
-                                </div>
+                                <Card>
+                                    <CardHeader><CardTitle>Acquisition Persistence</CardTitle></CardHeader>
+                                    <CardContent className="text-center py-12 space-y-4">
+                                        <div className="bg-primary/10 p-5 rounded-full w-fit mx-auto">
+                                            <LinkIcon className="h-10 w-10 text-primary" />
+                                        </div>
+                                        <h4 className="text-2xl font-bold">Automatic Referrer Logic</h4>
+                                        <p className="text-sm text-muted-foreground max-w-sm mx-auto">This campaign is tagged with ID <span className="font-mono font-bold text-foreground">FB_{sanitizedRef}</span>. When leads sign up using this link, they are automatically categorized as coming from the <span className="font-bold">{campaignName}</span> campaign.</p>
+                                    </CardContent>
+                                </Card>
                             )}
                         </div>
                     </div>
@@ -170,26 +201,33 @@ function SocialEngageDialog({ open, onOpenChange, post, campaignName }: { open: 
 export default function SocialStudio() {
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
-    const [results, setResults] = useState<SocialCopyOutput | null>(null);
+    const [aiResults, setAiResults] = useState<SocialCopyOutput | null>(null);
     const [campaignName, setCampaignName] = useState('');
     const [selectedPost, setSelectedPost] = useState<any | null>(null);
     
+    // Structured AI Input
     const [params, setParams] = useState({
+        topic: '',
+        criticalPoints: '',
         audience: 'transporters' as const,
-        topic: 'empty_miles' as const,
         tone: 'community_casual' as const,
     });
 
     const handleGenerate = async () => {
         if (!campaignName.trim()) {
-            toast({ variant: 'destructive', title: "Group Name Required", description: "Please enter the Facebook group name to enable tracking." });
+            toast({ variant: 'destructive', title: "Group Name Required", description: "Enter the Facebook group name to enable tracking." });
             return;
         }
+        if (!params.topic || !params.criticalPoints) {
+            toast({ variant: 'destructive', title: "Details Required", description: "Enter a topic and critical points for the AI." });
+            return;
+        }
+
         setIsLoading(true);
         try {
             const result = await generateSocialCopy(params);
-            setResults(result);
-            toast({ title: "Copy variations ready." });
+            setAiResults(result);
+            toast({ title: "Custom Copy variations ready." });
         } catch (e: any) {
             toast({ variant: 'destructive', title: "Generation Failed", description: e.message });
         } finally {
@@ -206,80 +244,95 @@ export default function SocialStudio() {
                 campaignName={campaignName} 
             />
 
-            <CardHeader className="px-0">
-                <div className="flex items-center gap-4">
-                    <div className="bg-blue-100 p-3 rounded-xl"><Facebook className="h-8 w-8 text-blue-600" /></div>
-                    <div>
-                        <CardTitle className="text-3xl font-black font-headline">Facebook Growth Studio</CardTitle>
-                        <CardDescription>Generate tracked content for industry groups.</CardDescription>
-                    </div>
+            <div className="flex items-center gap-4">
+                <div className="bg-blue-100 p-3 rounded-xl"><Facebook className="h-8 w-8 text-blue-600" /></div>
+                <div>
+                    <h1 className="text-3xl font-black font-headline">Facebook Growth Studio</h1>
+                    <p className="text-muted-foreground">Strategic ad copy and tracking link generator for industry groups.</p>
                 </div>
-            </CardHeader>
+            </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-1 space-y-6">
+                {/* Control Panel */}
+                <div className="space-y-6">
                     <Card className="shadow-lg border-primary/10">
                         <CardHeader className="bg-muted/30 border-b">
                             <CardTitle className="text-xs font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                                <Zap className="h-3.5 w-3.5 text-primary fill-primary"/> Campaign Parameters
+                                <Zap className="h-3.5 w-3.5 text-primary fill-primary"/> Campaign Config
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-5 pt-6">
                             <div className="space-y-2">
-                                <Label className="text-xs font-bold">Target Facebook Group / URL</Label>
-                                <Input placeholder="e.g. SA Truckers..." value={campaignName} onChange={e => setCampaignName(e.target.value)} />
+                                <Label className="text-xs font-bold">Target Facebook Group Name</Label>
+                                <Input placeholder="e.g. Western Cape Truckers..." value={campaignName} onChange={e => setCampaignName(e.target.value)} />
                             </div>
-                            <div className="space-y-2">
-                                <Label className="text-xs font-bold">Primary Audience</Label>
-                                <Select value={params.audience} onValueChange={(v: any) => setParams({...params, audience: v})}>
-                                    <SelectTrigger><SelectValue /></SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="transporters">Fleet Owners</SelectItem>
-                                        <SelectItem value="drivers">Drivers</SelectItem>
-                                        <SelectItem value="suppliers">Suppliers</SelectItem>
-                                        <SelectItem value="investors">Investors</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                            <Separator />
+                            <div className="space-y-4">
+                                <Label className="text-xs font-black uppercase tracking-widest text-primary">AI Ad Creator</Label>
+                                <div className="space-y-2">
+                                    <Label className="text-xs">Strategic Topic</Label>
+                                    <Input placeholder="e.g. Empty miles reduction" value={params.topic} onChange={e => setParams({...params, topic: e.target.value})} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-xs">Critical Points (one per line)</Label>
+                                    <Textarea 
+                                        placeholder="e.g. AI load matching&#10;50% deadhead reduction&#10;Verified shippers only" 
+                                        value={params.criticalPoints}
+                                        onChange={e => setParams({...params, criticalPoints: e.target.value})}
+                                    />
+                                </div>
+                                <Button className="w-full h-12 font-bold gap-2" onClick={handleGenerate} disabled={isLoading}>
+                                    {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <Sparkles className="h-4 w-4" />}
+                                    Generate Custom Ad Copy
+                                </Button>
                             </div>
-                            <div className="space-y-2">
-                                <Label className="text-xs font-bold">Strategic Hook</Label>
-                                <Select value={params.topic} onValueChange={(v: any) => setParams({...params, topic: v})}>
-                                    <SelectTrigger><SelectValue /></SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="empty_miles">Efficiency (Empty Miles)</SelectItem>
-                                        <SelectItem value="parts_discounts">Cost Savings (Parts)</SelectItem>
-                                        <SelectItem value="capital">Access to Capital</SelectItem>
-                                        <SelectItem value="community_growth">Ecosystem Benefits</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <Button className="w-full mt-2 h-12 font-bold uppercase tracking-tight" onClick={handleGenerate} disabled={isLoading}>
-                                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4" />}
-                                Generate Ad Copy
-                            </Button>
                         </CardContent>
                     </Card>
                 </div>
 
-                <div className="lg:col-span-2 space-y-6">
-                    {results ? results.posts.map((post, i) => (
-                        <Card key={i} className="border-none shadow-xl group overflow-hidden">
-                            <CardHeader className="px-6 pt-6">
-                                <CardTitle className="text-2xl font-black font-headline tracking-tight group-hover:text-primary transition-colors">{post.headline}</CardTitle>
-                            </CardHeader>
-                            <CardContent className="px-6 pb-6 italic text-muted-foreground border-l-4 border-l-muted ml-6">
-                                "{post.body.slice(0, 180)}..."
-                            </CardContent>
-                            <CardFooter className="bg-muted/10 border-t p-4 flex justify-end px-6">
-                                <Button className="font-bold gap-2" onClick={() => setSelectedPost(post)}>
-                                    Engage & Launch Wizard <ArrowRight className="h-4 w-4" />
-                                </Button>
-                            </CardFooter>
-                        </Card>
-                    )) : (
-                        <div className="h-full min-h-[400px] border-4 border-dashed rounded-3xl flex flex-col items-center justify-center text-muted-foreground p-12 text-center bg-muted/5">
-                            <h3 className="text-2xl font-black font-headline opacity-30 uppercase">Pipeline Ready</h3>
-                            <p className="mt-2 text-sm opacity-50">Enter campaign details and click generate to see variations.</p>
+                {/* Content Library & Results */}
+                <div className="lg:col-span-2 space-y-10">
+                    {/* 1. Template Library */}
+                    <div className="space-y-4">
+                        <h3 className="text-xl font-bold flex items-center gap-2"><BookOpen className="h-5 w-5 text-primary"/> Pre-written Library</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {libraryTemplates.map(template => (
+                                <Card key={template.id} className="hover:border-primary transition-colors cursor-pointer group shadow-md" onClick={() => setSelectedPost(template)}>
+                                    <CardHeader className="pb-2">
+                                        <CardTitle className="text-sm font-bold group-hover:text-primary transition-colors">{template.headline}</CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <p className="text-xs text-muted-foreground line-clamp-3 italic">"{template.body}"</p>
+                                    </CardContent>
+                                    <CardFooter className="pt-0 justify-end">
+                                        <Button variant="ghost" size="sm" className="text-[10px] uppercase font-black tracking-widest h-7">Select <ArrowRight className="ml-1 h-3 w-3"/></Button>
+                                    </CardFooter>
+                                </Card>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* 2. AI Generated Results */}
+                    {aiResults && (
+                        <div className="space-y-4">
+                             <h3 className="text-xl font-bold flex items-center gap-2"><Sparkles className="h-5 w-5 text-primary"/> AI Generations</h3>
+                             <div className="space-y-4">
+                                {aiResults.posts.map((post, i) => (
+                                    <Card key={i} className="border-none shadow-xl border-l-4 border-l-primary overflow-hidden">
+                                        <CardHeader>
+                                            <CardTitle className="text-xl font-black">{post.headline}</CardTitle>
+                                        </CardHeader>
+                                        <CardContent className="text-sm text-muted-foreground italic leading-relaxed">
+                                            "{post.body.slice(0, 200)}..."
+                                        </CardContent>
+                                        <CardFooter className="bg-muted/10 border-t p-4 flex justify-end">
+                                            <Button className="font-bold gap-2" onClick={() => setSelectedPost(post)}>
+                                                Engage & Launch Wizard <ArrowRight className="h-4 w-4" />
+                                            </Button>
+                                        </CardFooter>
+                                    </Card>
+                                ))}
+                             </div>
                         </div>
                     )}
                 </div>
