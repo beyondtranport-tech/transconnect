@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -11,7 +12,7 @@ import {
     MessageSquare, Video, Info, BarChart3, 
     ExternalLink, ImageIcon, ShieldCheck, Zap, 
     Truck, Landmark, Users, Handshake, Gift, Star,
-    Building, Award, DollarSign, Wallet, Search, Database, User
+    Building, Award, DollarSign, Wallet, Search, Database, User, Rocket
 } from 'lucide-react';
 import { generateSocialCopy } from '@/ai/flows/social-copy-flow';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -26,16 +27,24 @@ import ImageGeneratorCard from "@/app/backend/image-generator-card";
 import VideoGeneratorCard from "@/app/backend/video-generator-card";
 
 /**
- * EXPANDED SOCIAL TEMPLATE LIBRARY
- * Updated for "Social Connection" (Like/Follow) focus in Facebook Groups.
+ * STRATEGIC SOCIAL TEMPLATE LIBRARY
+ * Categorized by acquisition funnel phases.
  */
 const socialTemplates = {
+    'app-launch': {
+        group: 'Foundation',
+        label: 'Official App Launch',
+        icon: Rocket,
+        headline: '🚀 Revolutionary: The Launch of Logistics Flow',
+        body: "It's finally here. A groundbreaking digital ecosystem built specifically for the South African transport industry. No more fragmented systems or information gaps. We've built an innovative platform designed for you—the haulier, the supplier, the professional.\n\nBe among the first to experience the future of logistics. It's new. It's groundbreaking. It's built for you.\n\nClick the link below to access the app for free.",
+        imagePrompt: 'A high-tech cinematic shot of a glowing digital network grid superimposed over a fleet of trucks at dawn, representing innovation and groundbreaking technology.'
+    },
     'social-connection': {
         group: 'Foundation',
         label: 'Social Connection',
         icon: ShieldCheck,
-        headline: '🤝 Join the TransConnect Community',
-        body: "Stay ahead of the curve. Like and Follow our page to get real-time load matching alerts, exclusive parts discounts, and industrial growth strategies delivered to your feed.\n\nBuilding the future of South African logistics, one connection at a time.\n\nAccess the app for free via the link below.",
+        headline: '🤝 Join the Logistics Flow Community',
+        body: "Stay ahead of the curve. Like and Follow our page to get real-time load matching alerts, exclusive parts discounts, and industrial growth strategies delivered to your feed.\n\nBuilding the future of South African logistics, one connection at a time.\n\nClick the link below to access the app for free.",
         imagePrompt: 'A cinematic high-detail close up of professional logistics operators using tablets in front of a modern truck fleet, morning sun.'
     },
     'intro': {
@@ -146,7 +155,7 @@ const socialTemplates = {
 
 export default function SocialStudio() {
     const { toast } = useToast();
-    const [activeTab, setActiveTab] = useState<keyof typeof socialTemplates | 'creator'>('social-connection');
+    const [activeTab, setActiveTab] = useState<keyof typeof socialTemplates | 'creator'>('app-launch');
     const [campaignName, setCampaignName] = useState('');
     const [fbPageUrl, setFbPageUrl] = useState('https://facebook.com/LogisticsFlow');
     const [isGenerating, setIsGenerating] = useState(false);
