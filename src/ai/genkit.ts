@@ -10,6 +10,6 @@ export const ai = genkit({
 
 /**
  * Explicit model identifier used across all flows for reliability.
- * Using the short string identifier ensures compatibility with Google AI Studio API.
+ * Updated to use the 'googleai/' prefix required by the Genkit Google AI plugin.
  */
-export const geminiModel = 'gemini-1.5-flash';
+export const geminiModel = 'googleai/gemini-1.5-flash';

@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
-  Loader2, PlusCircle, Users, Edit, Trash2, Send, Filter, RotateCcw, Search, Database, Upload, MapPin, Mail, Lock, ShieldCheck, Phone, Save, Download, RefreshCcw
+  Loader2, PlusCircle, Users, Edit, Trash2, Send, Filter, RotateCcw, Search, Database, Upload, MapPin, Mail, Phone, Save, Download, RefreshCcw
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
@@ -109,7 +109,7 @@ function DriverDialog({ open, onOpenChange, partner, onSave }: { open: boolean; 
               <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Phone</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
-            <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Service Handle / Handle</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+            <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Service Handle / Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="status" render={({ field }) => (
                 <FormItem>
                     <FormLabel>Status</FormLabel>
