@@ -8,11 +8,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { 
-    Facebook, Sparkles, Loader2, Copy, Send, Link as LinkIcon, 
-    MessageSquare, Video, Info, BarChart3, 
-    ExternalLink, ImageIcon, ShieldCheck, Zap, 
-    Truck, Landmark, Users, Handshake, Gift, Star,
-    Building, Award, DollarSign, Wallet, Search, Database, User, Rocket
+    Facebook, Sparkles, Loader2, Copy, ExternalLink, ImageIcon, ShieldCheck, Zap, 
+    Truck, Landmark, Users, Handshake, Gift, Star, Link as LinkIcon,
+    Building, Award, DollarSign, Wallet, Search, Database, User, Rocket,
+    Video, Info, BarChart3, MessageSquare, FileText
 } from 'lucide-react';
 import { generateSocialCopy } from '@/ai/flows/social-copy-flow';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -207,31 +206,25 @@ export default function SocialStudio() {
         }
     };
 
-    /**
-     * CRITICAL: Prioritize clipboard action to satisfy browser security gesture requirements.
-     */
     const handleLogAndLaunch = async () => {
-        // 1. Capture text
+        // 1. Prioritize Clipboard and Window Action (Modern Browser Requirement)
         const textToCopy = derived.fullPostBody;
-
-        // 2. Perform copy IMMEDIATELY
         try {
             await navigator.clipboard.writeText(textToCopy);
             toast({ title: "Content Copied!", description: "Opening Facebook... Paste your post there." });
         } catch (err) {
             console.error('Clipboard copy failed:', err);
-            toast({ variant: 'destructive', title: "Copy Failed", description: "Browser blocked auto-copy. Please manually copy the text from the preview box." });
-            // Fallthrough to open FB anyway
+            toast({ variant: 'destructive', title: "Copy Failed", description: "Please manually copy the text from the preview box." });
         }
 
-        // 3. Open Facebook immediately while gesture is fresh
         window.open('https://www.facebook.com/groups/feed/', '_blank');
 
-        // 4. Background logging (Non-blocking)
+        // 2. Perform Logging (Background)
+        setIsLogging(true);
         try {
             const token = await getClientSideAuthToken();
             if (token) {
-                fetch('/api/admin', {
+                await fetch('/api/admin', {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
@@ -245,7 +238,9 @@ export default function SocialStudio() {
                 });
             }
         } catch (e) {
-            console.warn("Audit logging failed after copy.", e);
+            console.warn("Audit logging failed after launch.", e);
+        } finally {
+            setIsLogging(false);
         }
     };
 

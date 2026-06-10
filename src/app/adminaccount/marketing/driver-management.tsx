@@ -212,7 +212,7 @@ export default function DriverManagement() {
   };
 
   const filteredDrivers = useMemo(() => {
-    return partners.filter(p => {
+    return (partners || []).filter(p => {
         const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
         const matchesCategory = categoryFilter === 'all' || p.entryType === categoryFilter;
         return matchesStatus && matchesCategory;
