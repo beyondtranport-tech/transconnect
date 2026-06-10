@@ -10,6 +10,6 @@ export const ai = genkit({
 
 /**
  * Explicit model identifier used across all flows for reliability.
- * Updated to use the standard Gemini 1.5 Flash identifier.
+ * Using the '-latest' suffix often resolves 404 Not Found errors on the v1beta endpoint.
  */
-export const geminiModel = 'googleai/gemini-1.5-flash';
+export const geminiModel = 'googleai/gemini-1.5-flash-latest';

@@ -72,7 +72,7 @@ function DriverDialog({ open, onOpenChange, partner, onSave }: { open: boolean; 
   useEffect(() => {
     if (open) {
       if (partner) form.reset(partner);
-      else form.reset({ firstName: '', lastName: '', email: '', phone: '', contactPerson: '', companyName: '', address: '', status: 'active', type: 'driver' });
+      else form.reset({ firstName: '', lastName: '', email: '', phone: '', contactPerson: '', companyName: '', address: '', status: 'new', type: 'driver' });
     }
   }, [open, partner, form]);
 
@@ -124,7 +124,10 @@ function DriverDialog({ open, onOpenChange, partner, onSave }: { open: boolean; 
                 </FormItem>
             )} />
             <DialogFooter className="pt-4 border-t">
-              <Button type="submit" disabled={isLoading}>{isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />} Save Record</Button>
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />} 
+                Save Record
+              </Button>
             </DialogFooter>
           </form>
         </Form>
