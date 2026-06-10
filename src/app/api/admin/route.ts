@@ -6,6 +6,9 @@ import { getAdminApp } from '@/lib/firebase-admin';
 
 export const dynamic = 'force-dynamic';
 
+/**
+ * Serializes Firestore objects for JSON response.
+ */
 function serializeTimestamps(docData: any): any {
     if (!docData) return docData;
     const newDocData: { [key: string]: any } = {};
@@ -43,14 +46,8 @@ export async function POST(req: NextRequest) {
         if (!isAdmin) throw new Error("Forbidden: Admin access required.");
 
         switch (action) {
-            case 'getPlatformStaff': {
-                const snap = await db.collection('platformStaff').get();
-                const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
-                return NextResponse.json({ success: true, data });
-            }
-
+            // --- PLATFORM OVERSIGHT ---
             case 'getMembers': {
-                // QUOTA SHIELD: Hard limit of 100 to prevent 429
                 const snap = await db.collection('companies').orderBy('createdAt', 'desc').limit(100).get();
                 const data = await Promise.all(snap.docs.map(async (d) => {
                     const cData = d.data();
@@ -67,67 +64,34 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data });
             }
 
+            case 'getShops': {
+                const snap = await db.collectionGroup('shops').limit(100).get();
+                const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
+                return NextResponse.json({ success: true, data });
+            }
+
+            case 'getContributions': {
+                const snap = await db.collection('contributions').orderBy('createdAt', 'desc').limit(100).get();
+                const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
+                return NextResponse.json({ success: true, data });
+            }
+
+            case 'getStaff': {
+                const snap = await db.collectionGroup('staff').limit(100).get();
+                const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
+                return NextResponse.json({ success: true, data });
+            }
+
+            // --- CRM & PARTNERS ---
             case 'getPartnersByType': {
                 const { type } = payload;
-                // QUOTA SHIELD: Hard limit of 100 to prevent background exhaustion
                 let q = db.collection('partners').orderBy('updatedAt', 'desc').limit(100);
-                
                 if (type !== 'all') {
                     q = db.collection('partners').where('type', '==', type).orderBy('updatedAt', 'desc').limit(100);
                 }
-                
                 const snap = await q.get();
                 const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
                 return NextResponse.json({ success: true, data });
-            }
-
-            case 'getLeads': {
-                // QUOTA SHIELD: Hard limit for initial view
-                const snap = await db.collection('leads').orderBy('updatedAt', 'desc').limit(100).get();
-                const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
-                return NextResponse.json({ success: true, data });
-            }
-
-            case 'searchRegistry': {
-                const { term, type } = payload;
-                if (!term || term.length < 3) return NextResponse.json({ success: true, data: [] });
-
-                // QUOTA SHIELD: Targeted search only returns top 50 matches
-                const q = db.collection('leads')
-                    .where('companyName', '>=', term)
-                    .where('companyName', '<=', term + '\uf8ff')
-                    .limit(50);
-
-                const snap = await q.get();
-                const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
-                return NextResponse.json({ success: true, data });
-            }
-
-            case 'findDuplicateLeads': {
-                // QUOTA SHIELD: Reduced scan depth to prevent 429
-                const recentLeads = await db.collection('leads').orderBy('updatedAt', 'desc').limit(200).get();
-                const nameMap = new Map<string, string[]>();
-                
-                recentLeads.docs.forEach(doc => {
-                    const data = doc.data();
-                    const key = `${(data.companyName || '').toLowerCase().trim()}`;
-                    if (key.length > 5) {
-                        const existing = nameMap.get(key) || [];
-                        nameMap.set(key, [...existing, doc.id]);
-                    }
-                });
-
-                const duplicates: any[][] = [];
-                for (const [key, ids] of nameMap.entries()) {
-                    if (ids.length > 1) {
-                        const group = await Promise.all(ids.map(async id => {
-                            const d = await db.collection('leads').doc(id).get();
-                            return { id, ...serializeTimestamps(d.data()), source: 'Lead' };
-                        }));
-                        duplicates.push(group);
-                    }
-                }
-                return NextResponse.json({ success: true, data: duplicates.slice(0, 10) });
             }
 
             case 'logCommunication': {
@@ -137,39 +101,147 @@ export async function POST(req: NextRequest) {
                     id: ref.id, type, subject, notes,
                     timestamp: FieldValue.serverTimestamp()
                 });
-                
                 await db.collection('partners').doc(partnerId).update({
                     lastOutreachAt: FieldValue.serverTimestamp(),
                     lastOutreachSubject: subject,
                     status: 'contacted'
                 });
-                
                 return NextResponse.json({ success: true });
             }
 
-            case 'savePartner':
-            case 'saveLead': {
-                const { partner, lead } = payload;
-                const data = partner || lead;
-                const id = data.id || `ENT_${Math.random().toString(36).substring(7).toUpperCase()}`;
-                await db.collection('partners').doc(id).set({ ...data, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
-                await db.collection('leads').doc(id).set({ ...data, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+            case 'savePartner': {
+                const { partner } = payload;
+                const id = partner.id || `ENT_${Math.random().toString(36).substring(7).toUpperCase()}`;
+                await db.collection('partners').doc(id).set({ ...partner, id, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
                 return NextResponse.json({ success: true, id });
             }
 
-            case 'deleteLeads': {
-                const { leadIds } = payload;
-                const batch = db.batch();
-                leadIds.forEach((id: string) => {
-                    batch.delete(db.collection('leads').doc(id));
-                    batch.delete(db.collection('partners').doc(id));
-                });
-                await batch.commit();
+            case 'deletePartner': {
+                const { partnerId } = payload;
+                await db.collection('partners').doc(partnerId).delete();
                 return NextResponse.json({ success: true });
             }
 
+            // --- FINANCIAL OPERATIONS ---
+            case 'approveWalletPayment': {
+                const { companyId, paymentId, amount, description, reconciliationId } = payload;
+                await db.runTransaction(async (transaction) => {
+                    const companyRef = db.collection('companies').doc(companyId);
+                    const txRef = companyRef.collection('transactions').doc();
+                    
+                    transaction.update(companyRef, {
+                        walletBalance: FieldValue.increment(amount),
+                        availableBalance: FieldValue.increment(amount),
+                        updatedAt: FieldValue.serverTimestamp()
+                    });
+                    
+                    transaction.set(txRef, {
+                        transactionId: txRef.id,
+                        type: 'credit',
+                        amount,
+                        description,
+                        reconciliationId,
+                        date: FieldValue.serverTimestamp(),
+                        status: 'allocated'
+                    });
+                    
+                    transaction.delete(companyRef.collection('walletPayments').doc(paymentId));
+                });
+                return NextResponse.json({ success: true });
+            }
+
+            case 'approvePayout': {
+                const { companyId, payoutId, amount } = payload;
+                await db.runTransaction(async (transaction) => {
+                    const companyRef = db.collection('companies').doc(companyId);
+                    const txRef = companyRef.collection('transactions').doc();
+                    
+                    transaction.update(companyRef, {
+                        walletBalance: FieldValue.increment(-amount),
+                        availableBalance: FieldValue.increment(-amount),
+                        updatedAt: FieldValue.serverTimestamp()
+                    });
+                    
+                    transaction.set(txRef, {
+                        transactionId: txRef.id,
+                        type: 'debit',
+                        amount,
+                        description: 'Withdrawal (Approved)',
+                        date: FieldValue.serverTimestamp(),
+                        status: 'allocated'
+                    });
+                    
+                    transaction.update(companyRef.collection('payoutRequests').doc(payoutId), {
+                        status: 'approved',
+                        processedAt: FieldValue.serverTimestamp()
+                    });
+                });
+                return NextResponse.json({ success: true });
+            }
+
+            case 'rejectPayout': {
+                const { companyId, payoutId } = payload;
+                await db.collection('companies').doc(companyId).collection('payoutRequests').doc(payoutId).update({
+                    status: 'rejected',
+                    updatedAt: FieldValue.serverTimestamp()
+                });
+                return NextResponse.json({ success: true });
+            }
+
+            // --- NEGOTIATIONS ---
+            case 'getPendingAgreements': {
+                const snap = await db.collectionGroup('agreements').where('status', '==', 'proposed').limit(50).get();
+                const data = await Promise.all(snap.docs.map(async (d) => {
+                    const pathParts = d.ref.path.split('/');
+                    const shopId = pathParts[3];
+                    const shopSnap = await db.collectionGroup('shops').where('id', '==', shopId).limit(1).get();
+                    const shopData = !shopSnap.empty ? shopSnap.docs[0].data() : {};
+                    return { 
+                        id: d.id, 
+                        ...serializeTimestamps(d.data()), 
+                        shopName: shopData.shopName || 'Unknown Shop',
+                        companyId: pathParts[1],
+                        shopId: shopId
+                    };
+                }));
+                return NextResponse.json({ success: true, data });
+            }
+
+            case 'acceptCommercialAgreement': {
+                const { companyId, shopId, agreementId } = payload;
+                const agreementsRef = db.collection(`companies/${companyId}/shops/${shopId}/agreements`);
+                await db.runTransaction(async (transaction) => {
+                    const activeQuery = agreementsRef.where('status', '==', 'active');
+                    const activeSnap = await transaction.get(activeQuery);
+                    activeSnap.docs.forEach(doc => transaction.update(doc.ref, { status: 'archived' }));
+                    transaction.update(agreementsRef.doc(agreementId), { status: 'active', updatedAt: FieldValue.serverTimestamp() });
+                });
+                return NextResponse.json({ success: true });
+            }
+
+            // --- STAFF MANAGEMENT ---
+            case 'getPlatformStaff': {
+                const snap = await db.collection('platformStaff').get();
+                const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
+                return NextResponse.json({ success: true, data });
+            }
+
+            case 'savePlatformStaff': {
+                const { staff } = payload;
+                const id = staff.id || db.collection('platformStaff').doc().id;
+                await db.collection('platformStaff').doc(id).set({ ...staff, id, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+                return NextResponse.json({ success: true });
+            }
+
+            case 'deletePlatformStaff': {
+                const { staffId } = payload;
+                await db.collection('platformStaff').doc(staffId).delete();
+                return NextResponse.json({ success: true });
+            }
+
+            // --- SYSTEM LOGS ---
             case 'getAuditLogs': {
-                const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(50).get();
+                const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(100).get();
                 const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
                 return NextResponse.json({ success: true, data });
             }
