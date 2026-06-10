@@ -27,17 +27,6 @@ function serializeTimestamps(docData: any): any {
     return newDocData;
 }
 
-/**
- * Split array into chunks for parallel batch processing.
- */
-function chunkArray<T>(array: T[], size: number): T[][] {
-    const chunks: T[][] = [];
-    for (let i = 0; i < array.length; i += size) {
-        chunks.push(array.slice(i, i + size));
-    }
-    return chunks;
-}
-
 export async function POST(req: NextRequest) {
     try {
         const { app, error: initError } = getAdminApp();
@@ -83,12 +72,6 @@ export async function POST(req: NextRequest) {
 
             case 'getContributions': {
                 const snap = await db.collection('contributions').orderBy('createdAt', 'desc').limit(100).get();
-                const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
-                return NextResponse.json({ success: true, data });
-            }
-
-            case 'getStaff': {
-                const snap = await db.collectionGroup('staff').limit(100).get();
                 const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
                 return NextResponse.json({ success: true, data });
             }
@@ -159,77 +142,6 @@ export async function POST(req: NextRequest) {
                     status: 'contacted',
                     updatedAt: FieldValue.serverTimestamp()
                 }, { merge: true });
-                
-                await db.collection('leads').doc(partnerId).set({
-                    lastOutreachAt: FieldValue.serverTimestamp(),
-                    lastOutreachSubject: subject,
-                    status: 'contacted',
-                    updatedAt: FieldValue.serverTimestamp()
-                }, { merge: true }).catch(() => {});
-
-                return NextResponse.json({ success: true });
-            }
-
-            case 'markLeadsAsResearching': {
-                const { leadIds } = payload;
-                const chunks = chunkArray(leadIds, 50);
-                for (const chunk of chunks) {
-                    const batch = db.batch();
-                    chunk.forEach(id => {
-                        batch.update(db.collection('leads').doc(id), { 
-                            researchStatus: 'researching', 
-                            updatedAt: FieldValue.serverTimestamp() 
-                        });
-                        batch.set(db.collection('partners').doc(id), {
-                            researchStatus: 'researching',
-                            updatedAt: FieldValue.serverTimestamp()
-                        }, { merge: true });
-                    });
-                    await batch.commit();
-                }
-                return NextResponse.json({ success: true });
-            }
-
-            case 'deleteLeads': {
-                const { leadIds } = payload;
-                const chunks = chunkArray(leadIds, 50);
-                for (const chunk of chunks) {
-                    const batch = db.batch();
-                    chunk.forEach(id => {
-                        batch.delete(db.collection('leads').doc(id));
-                        batch.delete(db.collection('partners').doc(id));
-                    });
-                    await batch.commit();
-                }
-                return NextResponse.json({ success: true });
-            }
-
-            case 'refreshTransporterCategoryCounts':
-            case 'refreshSupplierCategoryCounts':
-            case 'refreshFinanceCategoryCounts': {
-                const configId = action.includes('Transporter') ? 'transporterDiscoveryStats' : 
-                                 action.includes('Supplier') ? 'supplierDiscoveryStats' : 
-                                 'financeDiscoveryStats';
-                
-                const typeKey = action.includes('Transporter') ? 'transporter' : 
-                               action.includes('Supplier') ? 'supplier' : 
-                               'finance';
-
-                const categories = action.includes('Transporter') ? ["Long Haul", "Refrigerated", "Flatbed", "Tipper", "Hazmat", "LTL", "Cross-Border", "Local Distribution", "Container Transport", "Abnormal Loads"] :
-                                 action.includes('Supplier') ? ["Accessories", "Air", "Anti-Theft Devices", "Auto Electrical", "Batteries", "Brakes", "Cleaning Products", "Diesel", "Differential", "Engine Refurbish", "Filters", "Injectors", "Lights", "Mechanical repairs", "Oils & Lubricants", "Parts", "Prop Shafts", "Second Hand Trailers", "Second Hand Trucks", "Transport", "Tarpaulins", "Tow in", "Trailer repairs", "Truck Accessories", "Truck Parts", "Truck repairs", "Turbo", "Tyres"] :
-                                 ["Banks", "Government", "AEO", "Niche Lenders"];
-
-                const counts: any = {};
-                for (const cat of categories) {
-                    const q = db.collection('partners').where('type', '==', typeKey).where('entryType', '==', cat);
-                    const countRes = await q.count().get();
-                    counts[cat] = countRes.data().count;
-                }
-
-                await db.collection('configuration').doc(configId).set({
-                    counts,
-                    lastUpdated: FieldValue.serverTimestamp()
-                }, { merge: true });
 
                 return NextResponse.json({ success: true });
             }
@@ -258,11 +170,51 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true });
             }
 
-            // --- SYSTEM LOGS ---
-            case 'getAuditLogs': {
-                const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(100).get();
-                const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
+            // --- WALLET & PAYOUTS ---
+            case 'getWalletTransactions': {
+                const snap = await db.collectionGroup('transactions').orderBy('date', 'desc').limit(100).get();
+                const data = snap.docs.map(doc => {
+                    const d = doc.data();
+                    const pathParts = doc.ref.path.split('/');
+                    const companyId = pathParts[1];
+                    return { id: doc.id, companyId, ...serializeTimestamps(d) };
+                });
                 return NextResponse.json({ success: true, data });
+            }
+
+            case 'approvePayout': {
+                const { companyId, payoutId, amount } = payload;
+                const batch = db.batch();
+                const companyRef = db.collection('companies').doc(companyId);
+                const payoutRef = db.collection(`companies/${companyId}/payoutRequests`).doc(payoutId);
+                const txRef = db.collection(`companies/${companyId}/transactions`).doc();
+
+                batch.update(companyRef, { 
+                    walletBalance: FieldValue.increment(-amount),
+                    availableBalance: FieldValue.increment(-amount),
+                    updatedAt: FieldValue.serverTimestamp()
+                });
+                batch.update(payoutRef, { status: 'approved', updatedAt: FieldValue.serverTimestamp() });
+                batch.set(txRef, {
+                    transactionId: txRef.id,
+                    type: 'debit',
+                    amount,
+                    description: 'Wallet Payout (Approved)',
+                    date: FieldValue.serverTimestamp(),
+                    status: 'allocated'
+                });
+
+                await batch.commit();
+                return NextResponse.json({ success: true });
+            }
+
+            case 'rejectPayout': {
+                const { companyId, payoutId } = payload;
+                await db.collection(`companies/${companyId}/payoutRequests`).doc(payoutId).update({
+                    status: 'rejected',
+                    updatedAt: FieldValue.serverTimestamp()
+                });
+                return NextResponse.json({ success: true });
             }
 
             default:

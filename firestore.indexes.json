@@ -16,32 +16,10 @@
       ]
     },
     {
-      "collectionId": "partners",
-      "fields": [
-        { "fieldPath": "type", "order": "ASCENDING" },
-        { "fieldPath": "entryType", "order": "ASCENDING" }
-      ]
-    },
-    {
       "collectionId": "leads",
       "fields": [
         { "fieldPath": "role", "order": "ASCENDING" },
         { "fieldPath": "updatedAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionId": "leads",
-      "fields": [
-        { "fieldPath": "role", "order": "ASCENDING" },
-        { "fieldPath": "entryType", "order": "ASCENDING" },
-        { "fieldPath": "updatedAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionId": "leads",
-      "fields": [
-        { "fieldPath": "type", "order": "ASCENDING" },
-        { "fieldPath": "companyName", "order": "ASCENDING" }
       ]
     },
     {
@@ -71,21 +49,6 @@
       "fields": [
         { "fieldPath": "status", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "payoutRequests",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        { "fieldPath": "status", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "shops",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        { "fieldPath": "updatedAt", "order": "DESCENDING" }
       ]
     }
   ],
