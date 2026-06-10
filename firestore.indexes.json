@@ -23,6 +23,20 @@
       ]
     },
     {
+      "collectionId": "leads",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "updatedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionId": "leads",
+      "fields": [
+        { "fieldPath": "type", "order": "ASCENDING" },
+        { "fieldPath": "companyName", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionId": "platformCommunications",
       "fields": [
         { "fieldPath": "relatedId", "order": "ASCENDING" },
