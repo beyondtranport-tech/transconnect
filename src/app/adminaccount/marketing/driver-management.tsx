@@ -182,7 +182,7 @@ export default function DriverManagement() {
     } finally {
       setIsLoading(false);
     }
-  }, [toast]);
+  }, []);
 
   useEffect(() => { forceRefresh(); }, [forceRefresh]);
 

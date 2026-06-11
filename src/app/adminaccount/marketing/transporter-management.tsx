@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -150,7 +150,9 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
                 </FormItem>
             )} />
             <DialogFooter className="pt-4 border-t">
-              <Button type="submit" disabled={isLoading}>{isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />} Save Haulier</Button>
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />} Save Haulier
+              </Button>
             </DialogFooter>
           </form>
         </Form>
@@ -181,7 +183,7 @@ export default function TransporterManagement() {
     } finally {
       setIsLoading(false);
     }
-  }, [toast]);
+  }, []);
 
   useEffect(() => { forceRefresh(); }, [forceRefresh]);
 
@@ -207,7 +209,7 @@ export default function TransporterManagement() {
   const handleExport = () => {
       if (filteredTransporters.length === 0) return;
       downloadDataAsCSV(filteredTransporters, `transporters-backup-${new Date().toISOString().split('T')[0]}.csv`);
-      toast({ title: "Backup Ready", description: "CSV file has been generated." });
+      toast({ title: "Backup Ready" });
   };
 
   const filteredTransporters = useMemo(() => {

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -217,7 +218,7 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
     } finally {
         setIsLoadingPartners(false);
     }
-  }, [audience, toast]);
+  }, [audience]);
 
   useEffect(() => { fetchPartners(); }, [fetchPartners]);
 
