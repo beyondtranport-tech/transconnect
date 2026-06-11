@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -91,7 +92,7 @@ function InvestorDialog({ open, onOpenChange, partner, onSave }: { open: boolean
     }
   }, [open, partner, form]);
 
-  async function handleFormSubmit(values: PartnerFormValues) {
+  const handleFormSubmit = async (values: PartnerFormValues) => {
     setIsLoading(true);
     try {
         const token = await getClientSideAuthToken();
@@ -105,7 +106,7 @@ function InvestorDialog({ open, onOpenChange, partner, onSave }: { open: boolean
     } finally {
         setIsLoading(false);
     }
-  }
+  };
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

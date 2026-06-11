@@ -1,10 +1,11 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, MessageSquare, ClipboardList, CheckCircle, Circle, Clock, Activity, AlertTriangle } from 'lucide-react';
+import { Loader2, MessageSquare, ClipboardList, CheckCircle, Circle, Clock, Activity, AlertTriangle, Eye } from 'lucide-react';
 import { getClientSideAuthToken, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { collection, query, orderBy, serverTimestamp, limit } from 'firebase/firestore';
@@ -37,7 +38,6 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
     const isLead = !partner.type || partner.type === 'lead';
     const parentCollection = isLead ? 'leads' : 'partners';
 
-    // Fetch Timeline Data from specific record sub-collections
     const logsQuery = useMemoFirebase(() => {
         if (!firestore || !partner?.id || !isOpen) return null;
         return query(
@@ -71,6 +71,17 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
                     events.push({ ...task, type: 'task', date: task.createdAt || task.date });
                 }
             });
+            
+            // Add tracking pixel event if present
+            if (partner.lastOpenedAt) {
+                events.push({
+                    id: 'pixel-open',
+                    type: 'tracking',
+                    subject: 'Email Open Tracked',
+                    notes: 'The recipient has opened an engagement email containing a tracking pixel.',
+                    date: partner.lastOpenedAt
+                });
+            }
         }
         
         return events.sort((a, b) => {
@@ -78,7 +89,7 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
             const dateB = b.date?.toDate ? b.date.toDate() : new Date(b.date || 0);
             return dateB.getTime() - dateA.getTime();
         });
-    }, [logs, tasks, isOpen, isLoadingLogs, isLoadingTasks]);
+    }, [logs, tasks, isOpen, isLoadingLogs, isLoadingTasks, partner.lastOpenedAt]);
 
     const fetchStaff = useCallback(async () => {
         if (!isOpen) return;
@@ -195,14 +206,17 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
                                     <div key={event.id || idx} className="relative pl-10">
                                         <div className={cn(
                                             "absolute left-2 top-1.5 h-4 w-4 rounded-full border-2 border-background z-10",
-                                            event.type === 'task' ? (event.status === 'completed' ? "bg-green-500" : "bg-amber-500") : "bg-primary"
+                                            event.type === 'task' ? (event.status === 'completed' ? "bg-green-500" : "bg-amber-500") : 
+                                            event.type === 'tracking' ? "bg-blue-600" : "bg-primary"
                                         )} />
                                         <Card className="shadow-none">
                                             <CardContent className="p-4">
                                                 <div className="flex justify-between items-start">
                                                     <div className="space-y-1">
                                                         <div className="flex items-center gap-2">
-                                                            {event.type === 'task' ? <ClipboardList className="h-3.5 w-3.5 text-amber-600" /> : <MessageSquare className="h-3.5 w-3.5 text-primary" />}
+                                                            {event.type === 'task' ? <ClipboardList className="h-3.5 w-3.5 text-amber-600" /> : 
+                                                             event.type === 'tracking' ? <Eye className="h-3.5 w-3.5 text-blue-600" /> :
+                                                             <MessageSquare className="h-3.5 w-3.5 text-primary" />}
                                                             <span className="font-bold text-sm">{event.subject || event.title}</span>
                                                             <Badge variant="outline" className="text-[10px] h-4 uppercase">{event.type}</Badge>
                                                         </div>

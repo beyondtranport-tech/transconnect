@@ -42,7 +42,6 @@ export async function POST(req: NextRequest) {
         const isAdmin = decodedToken.email === 'beyondtransport@gmail.com' || decodedToken.email === 'mkoton100@gmail.com';
         if (!isAdmin) throw new Error("Forbidden: Admin access required.");
 
-        // High capacity load for registry visibility
         const MAX_LOAD = 10000;
 
         switch (action) {
@@ -80,26 +79,11 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data });
             }
 
-            case 'getAuditLogs': {
-                const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(100).get();
-                const data = await Promise.all(snap.docs.map(async (d) => {
-                    const log = d.data();
-                    const userSnap = await db.collection('users').doc(log.userId).get();
-                    const companySnap = log.companyId ? await db.collection('companies').doc(log.companyId).get() : null;
-                    return {
-                        id: d.id,
-                        ...serializeTimestamps(log),
-                        userName: userSnap.exists ? `${userSnap.data()?.firstName} ${userSnap.data()?.lastName}` : 'System',
-                        companyName: companySnap?.exists ? companySnap.data()?.companyName : 'N/A'
-                    };
-                }));
-                return NextResponse.json({ success: true, data });
-            }
-
             case 'savePartner': {
                 const { partner } = payload;
-                const id = partner.id || db.collection('partners').doc().id;
-                await db.collection('partners').doc(id).set({ 
+                const collectionName = partner.type === 'lead' ? 'leads' : 'partners';
+                const id = partner.id || db.collection(collectionName).doc().id;
+                await db.collection(collectionName).doc(id).set({ 
                     ...partner, 
                     id, 
                     updatedAt: FieldValue.serverTimestamp() 
@@ -116,7 +100,6 @@ export async function POST(req: NextRequest) {
                     const id = p.record_id || p.id || db.collection(collectionName).doc().id;
                     const standardized: any = { ...p };
                     
-                    // Intelligent Mapping & Name Splitting
                     if (p.company_name || p.companyName) standardized.companyName = p.company_name || p.companyName;
                     if (p.email_address || p.email) standardized.email = p.email_address || p.email;
                     if (p.telephone_number || p.phone || p.landline) standardized.phone = p.telephone_number || p.phone || p.landline;
@@ -126,9 +109,8 @@ export async function POST(req: NextRequest) {
                     if (p.contact_person || p.contactPerson) {
                         const full = p.contact_person || p.contactPerson;
                         standardized.contactPerson = full;
-                        // Split into first/last for records that use separate fields
                         if (!standardized.firstName) {
-                            const parts = full.trim().split(' ');
+                            const parts = full.trim().split(/\s+/);
                             standardized.firstName = parts[0] || '';
                             standardized.lastName = parts.slice(1).join(' ') || '';
                         }
@@ -142,7 +124,6 @@ export async function POST(req: NextRequest) {
                         updatedAt: FieldValue.serverTimestamp()
                     }, { merge: true });
 
-                    // Auto-log the update in Oversight
                     const logRef = docRef.collection('communications').doc();
                     batch.set(logRef, {
                         id: logRef.id,
@@ -175,27 +156,6 @@ export async function POST(req: NextRequest) {
                 batch.update(ref, {
                     status: 'contacted',
                     updatedAt: FieldValue.serverTimestamp()
-                });
-                
-                await batch.commit();
-                return NextResponse.json({ success: true });
-            }
-
-            case 'bulkLogForensicInitiated': {
-                const { leadIds } = payload;
-                const batch = db.batch();
-                
-                leadIds.forEach((id: string) => {
-                    const ref = db.collection('leads').doc(id);
-                    const logRef = ref.collection('communications').doc();
-                    batch.set(logRef, {
-                        id: logRef.id,
-                        type: 'AI Research',
-                        subject: 'Forensic Batch Initiated',
-                        notes: 'Part of a bulk forensic research command.',
-                        timestamp: FieldValue.serverTimestamp()
-                    });
-                    batch.update(ref, { status: 'contacted', updatedAt: FieldValue.serverTimestamp() });
                 });
                 
                 await batch.commit();
