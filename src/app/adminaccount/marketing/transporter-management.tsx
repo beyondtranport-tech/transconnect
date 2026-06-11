@@ -116,7 +116,7 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl text-left">
+      <DialogContent className="sm:max-w-[700px] text-left">
         <DialogHeader>
           <DialogTitle>{partner ? 'Edit' : 'Add'} Transporter</DialogTitle>
           <DialogDescription>Enter verified record for the haulier.</DialogDescription>
@@ -125,7 +125,7 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left">
             <div className="grid grid-cols-2 gap-4">
               <FormField control={form.control} name="firstName" render={({ field }) => (<FormItem><FormLabel>First Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-              <FormField control={form.control} name="lastName" render={({ field }) => (<FormItem><FormLabel>Last Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormMessage>)} />
+              <FormField control={form.control} name="lastName" render={({ field }) => (<FormItem><FormLabel>Last Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
             <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" /></FormControl><FormMessage /></FormItem>)} />
             <div className="grid grid-cols-2 gap-4">
@@ -207,6 +207,12 @@ export default function TransporterManagement() {
     }
   };
 
+  const handleExport = () => {
+      if (filteredTransporters.length === 0) return;
+      downloadDataAsCSV(filteredTransporters, `transporters-backup-${new Date().toISOString().split('T')[0]}.csv`);
+      toast({ title: "Backup Ready" });
+  };
+
   const filteredTransporters = useMemo(() => {
     return (partners || []).filter(p => {
         const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
@@ -270,7 +276,7 @@ export default function TransporterManagement() {
                 <CardDescription>Targeted intelligence on verified South African hauliers.</CardDescription>
             </div>
             <div className="flex items-center gap-2">
-                <Button variant="outline" onClick={() => downloadDataAsCSV(filteredTransporters, 'transporters.csv')} disabled={isLoading || !hasLoaded}>
+                <Button variant="outline" onClick={handleExport} disabled={isLoading || !hasLoaded}>
                     <Download className="mr-2 h-4 w-4" /> Backup
                 </Button>
                 <BulkImportDialog type="transporter" onComplete={forceRefresh}><Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
@@ -283,14 +289,18 @@ export default function TransporterManagement() {
                 <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
                 <h2 className="text-2xl font-black font-headline mb-2 text-foreground">Registry Search Variables</h2>
                 <p className="text-muted-foreground max-w-sm mx-auto mb-8">Enter your search criteria or load the master haulier registry below. This targets your session to preserve your daily data quota.</p>
-                <div className="flex flex-col md:flex-row justify-center gap-4 max-w-2xl mx-auto">
-                    <Input placeholder="Type name, ID or route to search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearch()} className="h-12 text-lg bg-white" />
-                    <Button size="lg" onClick={handleSearch} disabled={isLoading} className="h-12 px-8">
-                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4" />}
-                        Load Targeted Records
-                    </Button>
+                <div className="flex flex-col md:flex-row justify-center gap-4 max-w-2xl mx-auto text-left">
+                    <div className="flex-1 space-y-2">
+                        <Label className="text-xs font-bold uppercase ml-1">Haulier or Keyword</Label>
+                        <Input placeholder="Type name, ID or route to search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearch()} className="h-12 text-lg bg-white" />
+                    </div>
+                    <div className="pt-8">
+                        <Button size="lg" onClick={handleSearch} disabled={isLoading} className="h-12 px-8">
+                            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4" />}
+                            Load Targeted Records
+                        </Button>
+                    </div>
                 </div>
-                 <Button variant="ghost" size="sm" onClick={forceRefresh} className="mt-4 opacity-50">Or Load Master Tally</Button>
             </Card>
         ) : (
             <Card>

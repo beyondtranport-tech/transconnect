@@ -37,7 +37,7 @@ async function performAdminAction(token: string, action: string, payload: any) {
 
     if (!response.ok) {
         const text = await response.text();
-        throw new Error(text || `API Error: ${action}`);
+        throw new Error(text || `API Error for action: ${action}`);
     }
 
     const result = await response.json();
@@ -82,7 +82,7 @@ function InvestorDialog({ open, onOpenChange, partner, onSave }: { open: boolean
         const token = await getClientSideAuthToken();
         if (!token) throw new Error("Authentication failed.");
         await performAdminAction(token, 'savePartner', { partner: { id: partner?.id, ...values, type: 'investor' } });
-        toast({ title: partner ? 'Investor Updated' : 'Investor Added' });
+        toast({ title: 'Investor Updated' });
         onSave();
         onOpenChange(false);
     } catch(e: any) {
@@ -100,16 +100,16 @@ function InvestorDialog({ open, onOpenChange, partner, onSave }: { open: boolean
                 <DialogDescription>Enter details for VCs, Angels, or Seed Funds.</DialogDescription>
             </DialogHeader>
             <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2">
-                    <div className="grid grid-cols-2 gap-4 text-left">
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left">
+                    <div className="grid grid-cols-2 gap-4">
                         <FormField control={form.control} name="firstName" render={({ field }) => ( <FormItem><FormLabel>First Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                         <FormField control={form.control} name="lastName" render={({ field }) => ( <FormItem><FormLabel>Last Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                     </div>
-                     <div className="grid grid-cols-2 gap-4 text-left">
+                     <div className="grid grid-cols-2 gap-4">
                         <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email"/></FormControl><FormMessage /></FormItem> )} />
-                        <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel>Work Phone</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel>Work Phone (Landline)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                     </div>
-                    <div className="grid grid-cols-2 gap-4 text-left">
+                    <div className="grid grid-cols-2 gap-4">
                         <FormField control={form.control} name="mobile" render={({ field }) => ( <FormItem><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} /></FormControl><FormMessage /></FormItem> )} />
                         <FormField control={form.control} name="companyName" render={({ field }) => ( <FormItem><FormLabel>Fund/Company Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                     </div>
@@ -136,7 +136,7 @@ export default function InvestorManagement() {
   const { toast } = useToast();
   const [partners, setPartners] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | null, data?: any }>({ type: null });
+  const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | 'batch-ai' | null, data?: any }>({ type: null });
 
   const forceRefresh = useCallback(async () => {
     setIsLoading(true);

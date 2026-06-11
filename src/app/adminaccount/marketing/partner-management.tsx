@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -6,7 +5,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, Handshake, Edit, Trash2, Send, CheckCircle, Users, Filter, Save, Search, Mail, Download } from 'lucide-react';
+import { Loader2, PlusCircle, Handshake, Edit, Trash2, Send, CheckCircle, Users, Filter, Save, Search, Mail, Download, Database, RotateCcw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -14,7 +13,6 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -96,7 +94,7 @@ function PartnerDialog({ open, onOpenChange, partner, onSave }: { open: boolean;
             </div>
             <div className="grid grid-cols-2 gap-4">
               <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" /></FormControl><FormMessage /></FormItem>)} />
-              <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Phone</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Landline</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
              <div className="grid grid-cols-2 gap-4">
               <FormField control={form.control} name="mobile" render={({ field }) => (<FormItem><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
@@ -146,7 +144,9 @@ function PartnerDialog({ open, onOpenChange, partner, onSave }: { open: boolean;
 export default function PartnerManagement() {
   const { toast } = useToast();
   const [partners, setPartners] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasLoaded, setHasLoaded] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | null, data?: any }>({ type: null });
 
   const forceRefresh = useCallback(async () => {
@@ -156,6 +156,7 @@ export default function PartnerManagement() {
       if (!token) return;
       const res = await performAdminAction(token, 'getPartnersByType', { type: 'partner' });
       setPartners(res.data || []);
+      setHasLoaded(true);
     } catch (e: any) {
         console.error("Fetch failed", e);
     } finally {
@@ -163,7 +164,25 @@ export default function PartnerManagement() {
     }
   }, []);
 
-  useEffect(() => { forceRefresh(); }, [forceRefresh]);
+  const handleSearch = async () => {
+    if (!searchTerm || searchTerm.length < 3) {
+        if (searchTerm.length === 0) forceRefresh();
+        else toast({ title: "Min 3 characters required" });
+        return;
+    }
+    setIsLoading(true);
+    try {
+        const token = await getClientSideAuthToken();
+        if (!token) return;
+        const res = await performAdminAction(token, 'searchRegistry', { term: searchTerm, type: 'partner' });
+        setPartners(res.data || []);
+        setHasLoaded(true);
+    } catch (e: any) {
+        toast({ variant: 'destructive', title: 'Search Error', description: e.message });
+    } finally {
+        setIsLoading(false);
+    }
+  };
 
   const handleExport = () => {
       if (partners.length === 0) return;
@@ -184,12 +203,12 @@ export default function PartnerManagement() {
     }
   }
 
-  const columns: ColumnDef<any>[] = useMemo(() => [
-    { accessorKey: 'firstName', header: 'Name', cell: ({ row }) => <div className="font-bold">{row.original.firstName} {row.original.lastName}</div> },
-    { accessorKey: 'phone', header: 'Phone' },
+  const columns: ColumnDef<any>[] = [
+    { accessorKey: 'firstName', header: 'Name', cell: ({ row }) => <div className="font-bold text-left">{row.original.firstName} {row.original.lastName}</div> },
+    { accessorKey: 'phone', header: 'Landline' },
     { accessorKey: 'mobile', header: 'Mobile' },
     { accessorKey: 'companyName', header: 'Company' },
-    { accessorKey: 'status', header: 'Status', cell: ({row}) => <Badge variant="outline" className="capitalize">{row.original.status}</Badge>},
+    { accessorKey: 'status', header: 'Status', cell: ({row}) => <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge>},
     { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
       <div className="flex justify-end gap-1">
         <EnrichPartnerButton partner={row.original} onUpdate={forceRefresh} />
@@ -201,7 +220,7 @@ export default function PartnerManagement() {
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'delete', data: row.original })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
       </div>
     )},
-  ], [forceRefresh]);
+  ];
 
   return (
     <>
@@ -213,20 +232,59 @@ export default function PartnerManagement() {
           <AlertDialogFooter><AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between text-left">
-          <div><CardTitle><Handshake /> Strategic Partners</CardTitle></div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={handleExport} disabled={isLoading}>
-                <Download className="mr-2 h-4 w-4" /> Backup
-            </Button>
-            <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Partner</Button>
-          </div>
+
+      <div className="space-y-6">
+        <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="text-left">
+                <CardTitle className="flex items-center gap-2"><Handshake /> Strategic Partners</CardTitle>
+                <CardDescription>Registry of key alliances and corporate partners.</CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+                <Button variant="outline" onClick={handleExport} disabled={isLoading || !hasLoaded}>
+                    <Download className="mr-2 h-4 w-4" /> Backup
+                </Button>
+                <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Partner</Button>
+            </div>
         </CardHeader>
-        <CardContent>
-            {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={partners} />}
-        </CardContent>
-      </Card>
+
+        {!hasLoaded ? (
+            <Card className="bg-primary/5 border-primary/20 p-12 text-center">
+                <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
+                <h2 className="text-2xl font-black font-headline mb-2 text-foreground">Registry Search Variables</h2>
+                <p className="text-muted-foreground max-w-sm mx-auto mb-8">Enter your search criteria or load the master partner registry below. This targets your session to preserve your daily data quota.</p>
+                <div className="flex flex-col md:flex-row justify-center gap-4 max-w-2xl mx-auto text-left">
+                    <div className="flex-1 space-y-2">
+                         <Label className="text-xs font-bold uppercase ml-1">Identity or Keyword</Label>
+                         <Input placeholder="Type name, ID or email to search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearch()} className="h-12 text-lg bg-white" />
+                    </div>
+                    <div className="pt-8">
+                        <Button size="lg" onClick={handleSearch} disabled={isLoading} className="h-12 px-8">
+                            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4" />}
+                            Load Targeted Records
+                        </Button>
+                    </div>
+                </div>
+            </Card>
+        ) : (
+            <Card>
+                <CardContent className="pt-6">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left">
+                        <div className="md:col-span-3 space-y-2 text-left">
+                            <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Search className="h-3 w-3"/> Registry Search</Label>
+                            <div className="flex gap-2">
+                                <Input placeholder="Type name or ID to search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearch()} />
+                                <Button onClick={handleSearch} disabled={isLoading}><Search className="h-4 w-4"/></Button>
+                            </div>
+                        </div>
+                        <div className="flex items-end">
+                            <Button variant="outline" onClick={() => setHasLoaded(false)} className="h-10 w-full"><RotateCcw className="mr-2 h-4 w-4" /> Reset Variables</Button>
+                        </div>
+                    </div>
+                    {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredPartners} />}
+                </CardContent>
+            </Card>
+        )}
+      </div>
     </>
   );
 }

@@ -4,7 +4,7 @@ import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from '@/hooks/use-toast';
-import { getClientSideAuthToken } from '@/firebase';
+import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
   Loader2, PlusCircle, Building, Edit, Trash2, Send, CheckCircle, Users, Mail, Filter, Save, 
   Search, Zap, RotateCcw, XCircle, Tag, Database, Upload, Download, RefreshCcw
@@ -119,7 +119,9 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
                 </FormItem>
             )} />
             <DialogFooter className="pt-4 border-t">
-              <Button type="submit" disabled={isLoading}>{isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />} Save Supplier</Button>
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />} Save Supplier
+              </Button>
             </DialogFooter>
           </form>
         </Form>
@@ -157,6 +159,7 @@ export default function SupplierManagement() {
   const handleSearch = async () => {
     if (!searchTerm || searchTerm.length < 3) {
         if (searchTerm.length === 0) forceRefresh();
+        else toast({ title: "Min 3 characters required" });
         return;
     }
     setIsLoading(true);
@@ -250,12 +253,12 @@ export default function SupplierManagement() {
                 <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
                 <h2 className="text-2xl font-black font-headline mb-2 text-foreground">Registry Search Variables</h2>
                 <p className="text-muted-foreground max-w-sm mx-auto mb-8">Set your variables to load the supplier registry. This ensures your session is efficient and preserves your daily data quota.</p>
-                <div className="flex flex-col md:flex-row justify-center gap-4 max-w-2xl mx-auto">
-                    <div className="flex-1 space-y-2 text-left">
+                <div className="flex flex-col md:flex-row justify-center gap-4 max-w-3xl mx-auto text-left">
+                    <div className="flex-1 space-y-2">
                         <Label className="text-xs font-bold uppercase ml-1">Search Keywords</Label>
                         <Input placeholder="e.g. Scania parts, Tires, Cape Town..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearch()} className="h-12 bg-white" />
                     </div>
-                    <div className="flex-1 space-y-2 text-left">
+                    <div className="flex-1 space-y-2">
                          <Label className="text-xs font-bold uppercase ml-1">Category</Label>
                          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
                             <SelectTrigger className="h-12 bg-white"><SelectValue placeholder="All Categories" /></SelectTrigger>
