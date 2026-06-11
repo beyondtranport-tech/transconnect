@@ -1,10 +1,10 @@
 rules_version = '2';
 
-// Security Rules Version: 1.0.4 - Admin Payout & Transaction Fix
+// Security Rules Version: 1.0.5 - Unified Lead/Partner Activity
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper function for admin check - prioritized for UID and Email
+    // Helper function for admin check
     function isAdmin() {
       return request.auth != null && (
         request.auth.uid == '0Y3IhZffEPNlMAIhURPnzRgNokL2' || 
@@ -15,29 +15,25 @@ service cloud.firestore {
     }
 
     // --- 1. GLOBAL ADMIN BYPASS ---
-    // Absolute priority for administrative accounts across all paths
     match /{allPaths=**} {
       allow read, write: if isAdmin();
     }
 
-    // --- 2. PARTNER CRM & ENRICHMENT ---
+    // --- 2. PARTNER & LEAD CRM ---
     match /partners/{partnerId} {
       allow read, write: if isAdmin();
-      
-      match /communications/{docId} {
-        allow read, write: if isAdmin();
-      }
-      match /tasks/{docId} {
-        allow read, write: if isAdmin();
-      }
+      match /communications/{docId} { allow read, write: if isAdmin(); }
+      match /tasks/{docId} { allow read, write: if isAdmin(); }
     }
 
     match /leads/{leadId} {
       allow read, write: if isAdmin();
+      // Allow activity timeline for leads
+      match /communications/{docId} { allow read, write: if isAdmin(); }
+      match /tasks/{docId} { allow read, write: if isAdmin(); }
     }
 
-    // --- 3. COMPANY & MEMBER DATA (ADMIN OVERRIDE) ---
-    // Explicitly allow admins to manage all company subcollections (transactions, payouts, etc)
+    // --- 3. COMPANY & MEMBER DATA ---
     match /companies/{companyId}/{allPaths=**} {
       allow read, write: if isAdmin();
     }

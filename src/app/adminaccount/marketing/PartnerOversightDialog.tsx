@@ -4,16 +4,15 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Calendar, MessageSquare, ClipboardList, CheckCircle, Circle, UserPlus, Clock, ArrowRight, Activity, AlertTriangle } from 'lucide-react';
+import { Loader2, MessageSquare, ClipboardList, CheckCircle, Circle, Clock, Activity, AlertTriangle } from 'lucide-react';
 import { getClientSideAuthToken, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { collection, query, orderBy, where, serverTimestamp, limit } from 'firebase/firestore';
+import { collection, query, orderBy, serverTimestamp, limit } from 'firebase/firestore';
 import { formatDateSafe } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
-import Link from 'next/link';
 
 async function performAdminAction(token: string, action: string, payload: any) {
     const response = await fetch('/api/admin', {
@@ -35,25 +34,28 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
     const { toast } = useToast();
     const firestore = useFirestore();
 
-    // Fetch Timeline Data from Partner Sub-collections
+    const isLead = !partner.type || partner.type === 'lead';
+    const parentCollection = isLead ? 'leads' : 'partners';
+
+    // Fetch Timeline Data from specific record sub-collections
     const logsQuery = useMemoFirebase(() => {
         if (!firestore || !partner?.id || !isOpen) return null;
         return query(
-            collection(firestore, 'partners', partner.id, 'communications'), 
+            collection(firestore, parentCollection, partner.id, 'communications'), 
             orderBy('timestamp', 'desc'),
             limit(50)
         );
-    }, [firestore, partner?.id, isOpen]);
+    }, [firestore, partner?.id, isOpen, parentCollection]);
     const { data: logs, isLoading: isLoadingLogs, error: logsError } = useCollection(logsQuery);
 
     const tasksQuery = useMemoFirebase(() => {
         if (!firestore || !partner?.id || !isOpen) return null;
         return query(
-            collection(firestore, 'partners', partner.id, 'tasks'), 
+            collection(firestore, parentCollection, partner.id, 'tasks'), 
             orderBy('createdAt', 'desc'),
             limit(50)
         );
-    }, [firestore, partner?.id, isOpen]);
+    }, [firestore, partner?.id, isOpen, parentCollection]);
     const { data: tasks, isLoading: isLoadingTasks, error: tasksError, forceRefresh: refreshTasks } = useCollection(tasksQuery);
 
     const timeline = useMemo(() => {
@@ -106,12 +108,12 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    path: `partners/${partner.id}`,
+                    path: `${parentCollection}/${partner.id}`,
                     data: { assigneeId: staffId === 'none' ? null : staffId, updatedAt: serverTimestamp() }
                 })
             });
             
-            toast({ title: "Partner Allocated", description: "Successfully updated assignee." });
+            toast({ title: "Record Allocated", description: "Successfully updated assignee." });
             onUpdate();
         } catch (e: any) {
             toast({ variant: 'destructive', title: "Assignment Failed", description: e.message });
@@ -126,7 +128,7 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    path: `partners/${partner.id}/tasks/${task.id}`,
+                    path: `${parentCollection}/${partner.id}/tasks/${task.id}`,
                     data: { status: task.status === 'pending' ? 'completed' : 'pending', updatedAt: serverTimestamp() }
                 })
             });
@@ -146,7 +148,7 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
             <DialogContent className="max-w-4xl h-[85vh] flex flex-col p-0">
                 <DialogHeader className="p-6 border-b bg-muted/30">
                     <div className="flex justify-between items-start">
-                        <div>
+                        <div className="text-left">
                             <DialogTitle className="text-2xl font-bold flex items-center gap-2">
                                 <Clock className="h-6 w-6 text-primary" />
                                 Oversight: {partner.companyName || `${partner.firstName} ${partner.lastName}`}
@@ -168,7 +170,7 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
                     </div>
                 </DialogHeader>
 
-                <div className="flex-1 overflow-y-auto p-6 space-y-8 bg-slate-50/50">
+                <div className="flex-1 overflow-y-auto p-6 space-y-8 bg-slate-50/50 text-left">
                     <div className="space-y-4">
                         <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
                             <Activity className="h-4 w-4"/>
@@ -183,7 +185,7 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
                                     <AlertTriangle className="h-6 w-6" />
                                     <div>
                                         <p className="font-bold">Access Issue</p>
-                                        <p className="text-sm">Ensure your admin rules permit sub-collection listing for partners.</p>
+                                        <p className="text-sm">Ensure your admin rules permit sub-collection listing for {parentCollection}.</p>
                                     </div>
                                 </CardContent>
                             </Card>
@@ -229,7 +231,7 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
                         ) : (
                             <div className="text-center py-12 border-2 border-dashed rounded-lg">
                                 <Clock className="h-10 w-10 text-muted-foreground mx-auto mb-2 opacity-20" />
-                                <p className="text-sm text-muted-foreground">No activity recorded for this partner.</p>
+                                <p className="text-sm text-muted-foreground">No activity recorded for this entity.</p>
                             </div>
                         )}
                     </div>

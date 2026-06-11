@@ -35,7 +35,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
-import { Loader2, PlusCircle, DollarSign, Edit, Trash2, Send, Filter, Save, Search, Download } from 'lucide-react';
+import { Loader2, PlusCircle, DollarSign, Edit, Trash2, Send, Download, Save } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -46,6 +46,7 @@ import { CommunicationLogDialog } from './CommunicationLogDialog';
 import { PartnerTasksDialog } from './PartnerTasksDialog';
 import { downloadDataAsCSV } from '@/lib/utils';
 import { EnrichPartnerButton } from './EnrichPartnerButton';
+import { Textarea } from '@/components/ui/textarea';
 
 async function performAdminAction(token: string, action: string, payload: any) {
     const response = await fetch('/api/admin', {
@@ -69,9 +70,11 @@ const partnerSchema = z.object({
   mobile: z.string().optional(),
   contactPerson: z.string().optional(),
   companyName: z.string().optional(),
+  address: z.string().optional(),
   status: z.enum(['active', 'inactive', 'contacted', 'new', 'qualified', 'invited']),
   type: z.literal('investor'),
 });
+
 type PartnerFormValues = z.infer<typeof partnerSchema>;
 
 function InvestorDialog({ open, onOpenChange, partner, onSave }: { open: boolean; onOpenChange: (open: boolean) => void; partner?: any; onSave: () => void; }) {

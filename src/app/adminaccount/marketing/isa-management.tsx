@@ -36,7 +36,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
 import { 
-  Loader2, PlusCircle, Bot, Edit, Trash2, Send, Download, Save, Search, UserCheck
+  Loader2, PlusCircle, Bot, Edit, Trash2, Send, Download, Save, RefreshCcw
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
@@ -48,7 +48,6 @@ import { CommunicationLogDialog } from './CommunicationLogDialog';
 import { PartnerTasksDialog } from './PartnerTasksDialog';
 import { downloadDataAsCSV } from '@/lib/utils';
 import { EnrichPartnerButton } from './EnrichPartnerButton';
-import { Textarea } from '@/components/ui/textarea';
 
 async function performAdminAction(token: string, action: string, payload: any) {
   const response = await fetch('/api/admin', {
@@ -74,6 +73,7 @@ const partnerSchema = z.object({
   status: z.enum(['active', 'inactive', 'contacted', 'new', 'qualified', 'invited', 'registered']),
   type: z.literal('isa'),
 });
+
 type PartnerFormValues = z.infer<typeof partnerSchema>;
 
 function ISADialog({ open, onOpenChange, partner, onSave }: { open: boolean; onOpenChange: (open: boolean) => void; partner?: any; onSave: () => void; }) {
@@ -116,11 +116,11 @@ function ISADialog({ open, onOpenChange, partner, onSave }: { open: boolean; onO
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4 text-left">
               <FormField control={form.control} name="firstName" render={({ field }) => (<FormItem><FormLabel>First Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="lastName" render={({ field }) => (<FormItem><FormLabel>Last Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4 text-left">
               <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Work Landline</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>

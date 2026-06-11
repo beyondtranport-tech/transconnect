@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Sparkles, Loader2, Copy, ClipboardCheck, Info, Zap, Search } from 'lucide-react';
+import { Sparkles, Loader2, ClipboardCheck, Info, Zap, Search } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -32,7 +32,6 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
     const isDriver = partner.type === 'driver' || partner.role === 'Drivers';
 
     const getPrompt = () => {
-        // 1. Map current profile to identify GIVEN DATA
         const currentData = {
             companyName: companyName,
             contactPerson: partner.contactPerson || 'Unknown',
@@ -43,91 +42,62 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
             address: partner.address || 'Missing'
         };
 
-        // 2. Perform GAP ANALYSIS for the AI
         const gaps = Object.entries(currentData)
             .filter(([_, v]) => v === 'Missing' || v === 'Unknown')
             .map(([k]) => k);
 
-        const baseInstructions = `ACT AS AN ELITE CORPORATE INTELLIGENCE AGENT. 
+        return `ACT AS AN ELITE CORPORATE INTELLIGENCE AGENT. 
 RETURN ONLY A RAW JSON OBJECT. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
 
-GIVEN DATA (YOUR STARTING POINT):
+GIVEN DATA:
 ${JSON.stringify(currentData, null, 2)}
 
-INFORMATION GAP ANALYSIS (YOUR SPECIFIC OBJECTIVES):
-The following information is missing from our records for "${companyName}" and MUST be discovered: ${gaps.join(', ')}.
+GAP ANALYSIS: ${gaps.join(', ')}.
 
-TASK: Use the GIVEN DATA as your baseline to perform a deep-search for the missing fields.
-1. IDENTITY VERIFICATION: Use LinkedIn or company registries to find the ACTUAL NAME of the CEO, MD, or Owner. 
-2. CONTACT DISCOVERY: Identify the direct work email and prioritize finding a DIRECT MOBILE number (e.g. +27 82...).
-3. PERSISTENCE: You MUST return the "record_id": "${partner.id}" exactly as provided.
+TASK: Discover and bridge these gaps.
+1. FIND ACTUAL NAME: CEO/MD/Owner. 
+2. FIND DIRECT CONTACTS: Professional email and DIRECT MOBILE (+27...).
+3. PERSISTENCE: Return "record_id": "${partner.id}".
 
-REQUIRED OUTPUT FORMAT (RAW JSON ONLY):
+REQUIRED FORMAT:
 {
   "record_id": "${partner.id}",
   "companyName": "${companyName}",
-  "contactPerson": "SPECIFIC HUMAN FULL NAME (NOT A TITLE)",
-  "email": "Verified Professional Email",
-  "phone": "Company Landline (Work)",
-  "mobile": "Verified DIRECT MOBILE/CELL (+27...)",
-  "website": "Official URL",
-  "address": "Full Physical Headquarters Address"
+  "contactPerson": "FULL NAME",
+  "email": "...",
+  "phone": "Landline",
+  "mobile": "DIRECT CELL",
+  "website": "...",
+  "address": "..."
 }`;
-
-        if (isDriver) {
-            return `ACT AS AN ELITE WORKFORCE INTELLIGENCE AGENT.
-RETURN ONLY A RAW JSON OBJECT. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
-
-DRIVER IDENTITY: ${partner.service_handle || `${partner.firstName} ${partner.lastName}`}
-KNOWN DATA: ${JSON.stringify(currentData, null, 2)}
-
-TASK: Hunt for the DIRECT digital contact channels for this commercial driver.
-1. MOBILE DISCOVERY: Prioritize finding the direct cell number (+27...). 
-2. IDENTITY PERSISTENCE: Return "record_id": "${partner.id}".
-
-REQUIRED OUTPUT (RAW JSON ONLY):
-{
-  "record_id": "${partner.id}",
-  "firstName": "${partner.firstName}",
-  "lastName": "${partner.lastName}",
-  "email": "Verified Direct Email",
-  "phone": "General Landline",
-  "mobile": "Verified DIRECT MOBILE (Cell)",
-  "notes": "Current capability summary",
-  "address": "Primary Operational Region"
-}`;
-        }
-
-        return baseInstructions;
     };
 
-    const aiPrompt = getPrompt();
-
-    const handleCopy = async () => {
-        try {
-            await navigator.clipboard.writeText(aiPrompt);
-            setIsCopied(true);
-            toast({ title: "Forensic Command Copied!", description: "AI is now commanded to bridge the information gaps." });
-        } catch (e) {
-            toast({ variant: 'destructive', title: "Copy Failed" });
-        }
-    };
-
-    const handleMarkAsResearching = async () => {
+    const handleCopyAndLog = async () => {
         setIsLogging(true);
         try {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Auth failed");
 
-            await performAdminAction(token, 'markLeadsAsResearching', { 
-                leadIds: [partner.id] 
+            // 1. Copy to clipboard
+            await navigator.clipboard.writeText(getPrompt());
+            setIsCopied(true);
+
+            // 2. Automate logging and status change
+            await performAdminAction(token, 'logForensicInitiated', { 
+                partnerId: partner.id,
+                isLead: !partner.type || partner.type === 'lead'
             });
 
-            toast({ title: "Record Locked", description: "This entity is now in the 'Searching' queue." });
-            setIsOpen(false);
-            onUpdate();
+            toast({ title: "Prompt Copied & Logged", description: "Oversight timeline updated automatically." });
+            
+            // Close after small delay to show feedback
+            setTimeout(() => {
+                setIsOpen(false);
+                onUpdate();
+            }, 1000);
+
         } catch (e: any) {
-            toast({ variant: 'destructive', title: "Update Failed", description: e.message });
+            toast({ variant: 'destructive', title: "Automation Failed", description: e.message });
         } finally {
             setIsLogging(false);
         }
@@ -139,7 +109,7 @@ REQUIRED OUTPUT (RAW JSON ONLY):
                 variant="ghost" 
                 size="icon" 
                 onClick={() => { setIsCopied(false); setIsOpen(true); }} 
-                title="Perform Gap Analysis"
+                title="Forensic Gap-Analysis"
             >
                 <Search className="h-4 w-4 text-primary" />
             </Button>
@@ -152,35 +122,35 @@ REQUIRED OUTPUT (RAW JSON ONLY):
                             Forensic Gap-Analysis
                         </DialogTitle>
                         <DialogDescription>
-                            Analyzing <strong>{companyName}</strong> to identify and bridge missing contact data.
+                            Command the AI to bridge missing data for <strong>{companyName}</strong>.
                         </DialogDescription>
                     </DialogHeader>
 
-                    <div className="space-y-4 py-4">
+                    <div className="space-y-4 py-4 text-left">
                         <Alert className="bg-primary/5 border-primary/20">
-                            <Info className="h-4 w-4 text-primary" />
-                            <AlertTitle>Intelligence Objective</AlertTitle>
-                            <AlertDescription className="text-xs text-muted-foreground">
-                                This prompt provides the AI with your known baseline and commands it to hunt for the specifically missing data points.
+                            <Zap className="h-4 w-4 text-primary" />
+                            <AlertTitle>Zero-Step Automation</AlertTitle>
+                            <AlertDescription className="text-xs">
+                                Clicking the button below will copy the command and automatically record this research event in the **Oversight Timeline**.
                             </AlertDescription>
                         </Alert>
 
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">Forensic Command</label>
-                            <ScrollArea className="h-48 w-full border rounded-md p-3 bg-muted/30 text-foreground text-left">
-                                <pre className="text-xs whitespace-pre-wrap font-mono leading-relaxed">{aiPrompt}</pre>
+                            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Forensic Command Preview</label>
+                            <ScrollArea className="h-48 w-full border rounded-md p-3 bg-muted/30 text-foreground">
+                                <pre className="text-xs whitespace-pre-wrap font-mono leading-relaxed">{getPrompt()}</pre>
                             </ScrollArea>
                         </div>
                     </div>
 
-                    <DialogFooter className="sm:justify-between gap-4">
-                        <Button variant="outline" onClick={handleCopy}>
-                            {isCopied ? <ClipboardCheck className="mr-2 h-4 w-4 text-green-600" /> : <Search className="mr-2 h-4 w-4" />}
-                            {isCopied ? 'Copied!' : 'Copy Forensic Prompt'}
-                        </Button>
-                        <Button onClick={handleMarkAsResearching} disabled={isLogging || !isCopied} className="bg-primary hover:bg-primary/90 text-white">
-                            {isLogging ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Zap className="mr-2 h-4 w-4" />}
-                            Mark as Searching
+                    <DialogFooter>
+                        <Button 
+                            onClick={handleCopyAndLog} 
+                            disabled={isLogging} 
+                            className="w-full bg-primary hover:bg-primary/90 text-white"
+                        >
+                            {isLogging ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4" />}
+                            {isCopied ? 'Prompt Ready!' : 'Copy Forensic Prompt & Start Logging'}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

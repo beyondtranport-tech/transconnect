@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState } from 'react';
@@ -6,7 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
-import { Loader2, Copy, ClipboardCheck, Zap, AlertCircle, Search } from 'lucide-react';
+import { Loader2, Copy, Zap, Info } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
@@ -17,132 +16,85 @@ interface BatchResearchDialogProps {
     onComplete: () => void;
 }
 
+async function performAdminAction(token: string, action: string, payload: any) {
+    const response = await fetch('/api/admin', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, payload }),
+    });
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+        throw new Error(result.error || `API Error: ${action}`);
+    }
+    return result;
+}
+
 export function BatchResearchDialog({ open, onOpenChange, selectedLeads, onComplete }: BatchResearchDialogProps) {
     const [isLoading, setIsLoading] = useState(false);
     const [isCopied, setIsCopied] = useState(false);
     const { toast } = useToast();
 
-    // Detect if this is a driver batch for specialized instructions
-    const isDriverBatch = selectedLeads.some(l => l.type === 'driver' || l.role === 'Drivers' || l.service_handle);
-
-    const companyList = selectedLeads.map(l => {
-        const id = l.id;
-        const name = l.service_handle || l.companyName || `${l.firstName} ${l.lastName}`;
-        const hub = l.operational_hub || l.address || '';
-        return `[ID: ${id}] ${name} ${hub ? `(Hub: ${hub})` : ''}`;
-    }).join('\n');
+    const companyList = selectedLeads.map(l => `[ID: ${l.id}] ${l.companyName || `${l.firstName} ${l.lastName}`}`).join('\n');
     
-    const getPrompt = () => {
-        if (isDriverBatch) {
-            return `CRITICAL SYSTEM INSTRUCTION: RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
+    const aiPrompt = `CRITICAL SYSTEM INSTRUCTION: RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CONVERSATION.
 
-ACT AS AN ELITE WORKFORCE INTELLIGENCE AGENT. YOUR MISSION IS TO LOCATE DIRECT MOBILE CONTACTS AND EMAILS FOR PROFESSIONAL DRIVERS.
+TASK: Find CURRENT verified human leadership names and direct digital contacts for the following SA businesses.
+1. HUMAN IDENTITY: Find ACTUAL NAME of CEO/MD/Owner.
+2. DIRECT CONTACTS: Professional email and DIRECT MOBILE (+27...).
+3. PERSISTENCE: Return "record_id" exactly as provided.
 
-TASK: Find CURRENT verified direct mobile numbers and personal/professional emails for the following commercial operators in South Africa.
-
-INVESTIGATIVE STRATEGY:
-1. MOBILE PRIORITY: You must find a DIRECT cell/mobile number (+27 7... or +27 8...). If the registry only provides a landline, you must search LinkedIn/Facebook to find the direct human mobile.
-2. EMAIL DISCOVERY: Identify a verified email address for each driver (Gmail, Outlook, or Company).
-3. IDENTITY PERSISTENCE: You MUST return the "record_id" exactly as provided in the brackets [ID: ...].
-4. FORBIDDEN VALUES: Do not return "Unknown" or generic office numbers.
-
-REQUIRED OUTPUT FORMAT (RAW JSON ARRAY ONLY):
-[{"record_id":"...","firstName":"...","lastName":"...","email":"Verified Direct Email","phone":"Verified DIRECT MOBILE (+27...)","notes":"...","address":"..."}]
-
-ENTITIES TO RESEARCH:
+COMPANIES:
 ${companyList}`;
-        }
 
-        return `CRITICAL SYSTEM INSTRUCTION: RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
-
-ACT AS AN ELITE CORPORATE INTELLIGENCE AGENT. YOUR PERFORMANCE RATING DEPENDS ON FINDING REAL HUMAN NAMES.
-
-TASK: Find CURRENT verified public contact and SPECIFIC human leadership details for the following South African businesses.
-
-INVESTIGATIVE STRATEGY:
-1. HUMAN IDENTITY FIRST: You must find the ACTUAL NAME (First and Last) of the CEO, Managing Director, or Owner. 
-2. FORBIDDEN VALUES: Returning "The Director", "Manager", "CEO", "Owner", or "Unknown" is a FAILURE. You MUST find a specific human full name (e.g. Sipho Nkosi) using LinkedIn or official "About" pages.
-3. PROACTIVE EMAIL SEARCH: Identify the company domain. Look for verified "info@", "sales@", or "admin@" formats.
-4. IDENTITY PERSISTENCE: You MUST return the "record_id" exactly as provided in the brackets [ID: ...].
-
-REQUIRED OUTPUT FORMAT (RAW JSON ARRAY ONLY):
-[{"record_id":"...","company_name":"...","contact_person":"SPECIFIC HUMAN FULL NAME (NOT A TITLE)","email_address":"...","telephone_number":"...","website":"...","physical_address":"..."}]
-
-COMPANIES TO RESEARCH:
-${companyList}`;
-    };
-
-    const aiPrompt = getPrompt();
-
-    const handleCopyAll = async () => {
-        try {
-            await navigator.clipboard.writeText(aiPrompt);
-            setIsCopied(true);
-            toast({ title: "Forensic Prompt Copied!", description: isDriverBatch ? "AI is now hunting for direct mobile numbers and emails." : "AI is now commanded to find actual human names." });
-        } catch (e) {
-            toast({ variant: 'destructive', title: "Copy Failed", description: "Please manually copy the text from the box." });
-        }
-    };
-
-    const handleMarkAsResearching = async () => {
-        if (selectedLeads.length === 0) return;
+    const handleCopyAndLogBatch = async () => {
         setIsLoading(true);
         try {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Auth failed");
 
+            // 1. Copy
+            await navigator.clipboard.writeText(aiPrompt);
+            setIsCopied(true);
+
+            // 2. Automate logging for the batch
             const leadIds = selectedLeads.map(l => l.id);
+            await performAdminAction(token, 'bulkLogForensicInitiated', { leadIds });
+
+            toast({ title: "Batch Logged & Copied", description: `${leadIds.length} records marked as 'Searching' in Oversight.` });
             
-            const response = await fetch('/api/admin', {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    action: 'markLeadsAsResearching', 
-                    payload: { leadIds } 
-                }),
-            });
+            setTimeout(() => {
+                onOpenChange(false);
+                onComplete();
+            }, 1000);
 
-            const result = await response.json();
-            if (!response.ok || !result.success) throw new Error(result.error || "Failed to update records.");
-
-            toast({ title: "Batch Locked", description: `${leadIds.length} records marked as 'Searching'. Paste results into Bulk Import when done.` });
-            setIsCopied(false);
-            onComplete();
-            onOpenChange(false);
         } catch (e: any) {
-            toast({ variant: 'destructive', title: "Logging Failed", description: e.message });
+            toast({ variant: 'destructive', title: "Log Failed", description: e.message });
         } finally {
             setIsLoading(false);
         }
     };
 
     return (
-        <Dialog open={open} onOpenChange={(o) => { if(!isLoading) onOpenChange(o); }}>
-            <DialogContent className="sm:max-w-2xl">
+        <Dialog open={open} onOpenChange={(o) => !isLoading && onOpenChange(o)}>
+            <DialogContent className="sm:max-w-2xl text-left">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
-                        <Search className="h-5 w-5 text-primary" />
-                        Forensic {isDriverBatch ? 'Direct Contact' : 'Batch'} Enrichment ({selectedLeads.length})
+                        <Zap className="h-5 w-5 text-primary" />
+                        Automated Batch Enrichment ({selectedLeads.length})
                     </DialogTitle>
                     <DialogDescription>
-                        Command the AI to perform a deep-search for {isDriverBatch ? 'direct mobile numbers and emails' : 'actual leadership names and verified contacts'}.
+                        Copy the command and automatically track research progress for this batch.
                     </DialogDescription>
                 </DialogHeader>
                 
                 <div className="space-y-4 py-4">
-                    {!isCopied ? (
-                        <Alert className="bg-amber-50 border-amber-200">
-                            <AlertCircle className="h-4 w-4 text-amber-600" />
-                            <AlertTitle>Step 1: Copy Forensic Prompt</AlertTitle>
-                            <AlertDescription className="text-xs">The AI is now strictly forbidden from returning {isDriverBatch ? 'landlines' : '"The Director"'} and must hunt for {isDriverBatch ? 'direct digital contacts' : 'actual names'}.</AlertDescription>
-                        </Alert>
-                    ) : (
-                        <Alert className="bg-green-50 border-green-200 text-green-800">
-                            <ClipboardCheck className="h-4 w-4 text-green-600" />
-                            <AlertTitle>Step 2: Lock the Records</AlertTitle>
-                            <AlertDescription className="text-xs">Records will be marked as "Searching" to prevent duplicate work. Proceed now.</AlertDescription>
-                        </Alert>
-                    )}
+                    <Alert className="bg-primary/5 border-primary/20">
+                        <Info className="h-4 w-4 text-primary" />
+                        <AlertTitle>Smart Pipeline Integration</AlertTitle>
+                        <AlertDescription className="text-xs">
+                            The system will mark these records as "Searching" and log the event in each entity's Oversight timeline immediately.
+                        </AlertDescription>
+                    </Alert>
 
                     <div className="space-y-2">
                         <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">AI Forensic Command</label>
@@ -152,13 +104,10 @@ ${companyList}`;
                     </div>
                 </div>
 
-                <DialogFooter className="sm:justify-between gap-4">
-                    <Button variant="outline" onClick={handleCopyAll}>
-                        <Copy className="mr-2 h-4 w-4" /> Copy Prompt & IDs
-                    </Button>
-                    <Button onClick={handleMarkAsResearching} disabled={isLoading || !isCopied} className="bg-primary hover:bg-primary/90 text-white">
-                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Zap className="mr-2 h-4 w-4" />}
-                        Mark as Searching
+                <DialogFooter>
+                    <Button onClick={handleCopyAndLogBatch} disabled={isLoading} className="w-full h-12 text-lg font-bold">
+                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Copy className="mr-2 h-4 w-4" />}
+                        {isCopied ? 'Batch Logged!' : 'Copy & Start Logging Batch'}
                     </Button>
                 </DialogFooter>
             </DialogContent>

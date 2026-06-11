@@ -36,7 +36,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
 import { 
-  Loader2, PlusCircle, Users, Edit, Trash2, Send, Download, Save, Search, RefreshCcw
+  Loader2, PlusCircle, Users, Edit, Trash2, Send, Download, Save, RefreshCcw
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
@@ -49,7 +49,6 @@ import { PartnerTasksDialog } from './PartnerTasksDialog';
 import { downloadDataAsCSV } from '@/lib/utils';
 import { EnrichPartnerButton } from './EnrichPartnerButton';
 import { BulkImportDialog } from './BulkImportDialog';
-import { Textarea } from '@/components/ui/textarea';
 
 async function performAdminAction(token: string, action: string, payload: any) {
   const response = await fetch('/api/admin', {
@@ -75,6 +74,7 @@ const partnerSchema = z.object({
   status: z.enum(['active', 'inactive', 'contacted', 'new', 'qualified', 'invited', 'registered']),
   type: z.literal('driver'),
 });
+
 type PartnerFormValues = z.infer<typeof partnerSchema>;
 
 function DriverDialog({ open, onOpenChange, partner, onSave }: { open: boolean; onOpenChange: (open: boolean) => void; partner?: any; onSave: () => void; }) {
@@ -125,7 +125,7 @@ function DriverDialog({ open, onOpenChange, partner, onSave }: { open: boolean; 
               <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Landline</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
-            <FormField control={form.control} name="mobile" render={({ field }) => (<FormItem><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} /></FormControl><FormMessage /></FormItem>)} />
+            <FormField control={form.control} name="mobile" render={({ field }) => (<FormItem><FormLabel>Mobile (Direct Cell)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} /></FormControl><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Service Handle / Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="status" render={({ field }) => (
                 <FormItem className="text-left">

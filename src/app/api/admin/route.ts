@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -6,9 +5,6 @@ import { getAdminApp } from '@/lib/firebase-admin';
 
 export const dynamic = 'force-dynamic';
 
-/**
- * Serializes Firestore timestamps and special FieldValue placeholders into JSON-safe formats.
- */
 function serializeTimestamps(docData: any): any {
     if (!docData) return docData;
     const newDocData: { [key: string]: any } = {};
@@ -42,11 +38,9 @@ export async function POST(req: NextRequest) {
         const { action, payload } = await req.json();
         const db = getFirestore(app);
         
-        // Critical Admin Check
         const isAdmin = decodedToken.email === 'beyondtransport@gmail.com' || decodedToken.email === 'mkoton100@gmail.com';
         if (!isAdmin) throw new Error("Forbidden: Admin access required.");
 
-        // Increased limit for "Full Records" preference
         const MAX_LOAD = 10000;
 
         switch (action) {
@@ -84,6 +78,52 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data });
             }
 
+            case 'logForensicInitiated': {
+                const { partnerId, isLead } = payload;
+                const parentCollection = isLead ? 'leads' : 'partners';
+                const ref = db.collection(parentCollection).doc(partnerId);
+                
+                const logRef = ref.collection('communications').doc();
+                const batch = db.batch();
+                
+                batch.set(logRef, {
+                    id: logRef.id,
+                    type: 'AI Research',
+                    subject: 'Forensic Research Initiated',
+                    notes: 'Forensic AI prompt copied for industrial intelligence search.',
+                    timestamp: FieldValue.serverTimestamp()
+                });
+                
+                batch.update(ref, {
+                    status: 'contacted',
+                    updatedAt: FieldValue.serverTimestamp()
+                });
+                
+                await batch.commit();
+                return NextResponse.json({ success: true });
+            }
+
+            case 'bulkLogForensicInitiated': {
+                const { leadIds } = payload;
+                const batch = db.batch();
+                
+                leadIds.forEach((id: string) => {
+                    const ref = db.collection('leads').doc(id);
+                    const logRef = ref.collection('communications').doc();
+                    batch.set(logRef, {
+                        id: logRef.id,
+                        type: 'AI Research',
+                        subject: 'Forensic Batch Initiated',
+                        notes: 'Part of a bulk forensic research command.',
+                        timestamp: FieldValue.serverTimestamp()
+                    });
+                    batch.update(ref, { status: 'contacted', updatedAt: FieldValue.serverTimestamp() });
+                });
+                
+                await batch.commit();
+                return NextResponse.json({ success: true });
+            }
+
             case 'savePartner': {
                 const { partner } = payload;
                 const id = partner.id || db.collection('partners').doc().id;
@@ -98,11 +138,12 @@ export async function POST(req: NextRequest) {
             case 'bulkSavePartners': {
                 const { partners, type } = payload;
                 const batch = db.batch();
+                const collectionName = type === 'lead' ? 'leads' : 'partners';
+                
                 partners.forEach((p: any) => {
-                    const id = p.record_id || p.id || db.collection('partners').doc().id;
+                    const id = p.record_id || p.id || db.collection(collectionName).doc().id;
                     const standardized: any = { ...p };
                     
-                    // Intelligent Mapping for AI Variation
                     if (p.company_name || p.companyName) standardized.companyName = p.company_name || p.companyName;
                     if (p.email_address || p.email) standardized.email = p.email_address || p.email;
                     if (p.telephone_number || p.phone || p.landline) standardized.phone = p.telephone_number || p.phone || p.landline;
@@ -110,67 +151,43 @@ export async function POST(req: NextRequest) {
                     if (p.physical_address || p.address) standardized.address = p.physical_address || p.address;
                     if (p.contact_person || p.contactPerson) standardized.contactPerson = p.contact_person || p.contactPerson;
                     
-                    batch.set(db.collection(type === 'lead' ? 'leads' : 'partners').doc(id), {
+                    const docRef = db.collection(collectionName).doc(id);
+                    batch.set(docRef, {
                         ...standardized,
                         id,
                         type: type === 'lead' ? undefined : type,
                         updatedAt: FieldValue.serverTimestamp()
                     }, { merge: true });
+
+                    // Auto-log the update in Oversight
+                    const logRef = docRef.collection('communications').doc();
+                    batch.set(logRef, {
+                        id: logRef.id,
+                        type: 'AI Update',
+                        subject: 'Forensic Data Updated',
+                        notes: 'Forensic research results successfully imported and applied.',
+                        timestamp: FieldValue.serverTimestamp()
+                    });
                 });
                 await batch.commit();
                 return NextResponse.json({ success: true, count: partners.length });
             }
 
             case 'logCommunication': {
-                const { partnerId, type, subject, notes } = payload;
-                const ref = db.collection('partners').doc(partnerId).collection('communications').doc();
+                const { partnerId, type, subject, notes, isLead } = payload;
+                const col = isLead ? 'leads' : 'partners';
+                const ref = db.collection(col).doc(partnerId).collection('communications').doc();
                 await ref.set({
                     id: ref.id, type, subject, notes,
                     timestamp: FieldValue.serverTimestamp()
                 });
-                await db.collection('partners').doc(partnerId).set({
+                await db.collection(col).doc(partnerId).set({
                     lastOutreachAt: FieldValue.serverTimestamp(),
                     lastOutreachSubject: subject,
                     status: 'contacted',
                     updatedAt: FieldValue.serverTimestamp()
                 }, { merge: true });
                 return NextResponse.json({ success: true });
-            }
-
-            case 'deletePartner': {
-                const { partnerId } = payload;
-                await db.collection('partners').doc(partnerId).delete();
-                return NextResponse.json({ success: true });
-            }
-
-            case 'deleteLeads': {
-                const { leadIds } = payload;
-                const batch = db.batch();
-                leadIds.forEach((id: string) => batch.delete(db.collection('leads').doc(id)));
-                await batch.commit();
-                return NextResponse.json({ success: true, count: leadIds.length });
-            }
-
-            case 'getShops': {
-                const snap = await db.collectionGroup('shops').orderBy('updatedAt', 'desc').limit(100).get();
-                const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
-                return NextResponse.json({ success: true, data });
-            }
-
-            case 'getContributions': {
-                const snap = await db.collection('contributions').orderBy('createdAt', 'desc').limit(100).get();
-                const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
-                return NextResponse.json({ success: true, data });
-            }
-
-            case 'getStaff': {
-                const snap = await db.collectionGroup('staff').limit(100).get();
-                const data = snap.docs.map(doc => ({ 
-                    id: doc.id, 
-                    companyId: doc.ref.parent.parent?.id,
-                    ...serializeTimestamps(doc.data()) 
-                }));
-                return NextResponse.json({ success: true, data });
             }
 
             case 'getPlatformStaff': {
