@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -6,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
-  Loader2, PlusCircle, Handshake, Edit, Trash2, Send, Filter, Save, Search, RefreshCcw, Download
+  Loader2, PlusCircle, Handshake, Edit, Trash2, Send, Filter, Save, Search, Download
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
@@ -63,7 +64,7 @@ function PartnerDialog({ open, onOpenChange, partner, onSave }: { open: boolean;
     }
   }, [open, partner, form]);
 
-  async function onSubmit(values: PartnerFormValues) {
+  async function handleFormSubmit(values: PartnerFormValues) {
     setIsLoading(true);
     try {
       const token = await getClientSideAuthToken();
@@ -87,7 +88,7 @@ function PartnerDialog({ open, onOpenChange, partner, onSave }: { open: boolean;
           <DialogDescription>Enter record for the partner.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left">
+          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left">
             <div className="grid grid-cols-2 gap-4">
               <FormField control={form.control} name="firstName" render={({ field }) => (<FormItem><FormLabel>First Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="lastName" render={({ field }) => (<FormItem><FormLabel>Last Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
@@ -148,7 +149,16 @@ export default function PartnerManagement() {
   }
 
   const columns: ColumnDef<any>[] = useMemo(() => [
-    { accessorKey: 'companyName', header: 'Partner Name', cell: ({ row }) => <div className="font-bold text-left">{row.original.companyName || `${row.original.firstName} ${row.original.lastName}`}</div> },
+    { 
+        accessorKey: 'companyName', 
+        header: 'Partner Name', 
+        cell: ({ row }) => (
+            <div className="flex flex-col text-left">
+                <span className="font-bold">{row.original.companyName || row.original.contactPerson || `${row.original.firstName || ''} ${row.original.lastName || ''}`.trim()}</span>
+                <span className="text-[10px] text-muted-foreground uppercase font-black">{row.original.firstName} {row.original.lastName}</span>
+            </div>
+        )
+    },
     { accessorKey: 'phone', header: 'Landline' },
     { accessorKey: 'mobile', header: 'Mobile' },
     { accessorKey: 'email', header: 'Email' },

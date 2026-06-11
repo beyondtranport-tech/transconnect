@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -91,7 +92,7 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
     }
   }, [open, partner, form]);
 
-  async function onSubmit(values: PartnerFormValues) {
+  async function handleFormSubmit(values: PartnerFormValues) {
     setIsLoading(true);
     try {
       const token = await getClientSideAuthToken();
@@ -115,17 +116,17 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
           <DialogDescription>Enter verified record for the haulier.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left">
+          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left">
             <div className="grid grid-cols-2 gap-4">
               <FormField control={form.control} name="firstName" render={({ field }) => (<FormItem><FormLabel>First Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="lastName" render={({ field }) => (<FormItem><FormLabel>Last Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
+            <FormField control={form.control} name="contactPerson" render={({ field }) => (<FormItem><FormLabel>Alternative Contact Name</FormLabel><FormControl><Input placeholder="Full Name" {...field} /></FormControl><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" /></FormControl><FormMessage /></FormItem>)} />
             <div className="grid grid-cols-2 gap-4">
               <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Work Phone (Landline)</FormLabel><FormControl><Input placeholder="+27 11..." {...field} /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="mobile" render={({ field }) => (<FormItem><FormLabel>Mobile (Direct Cell)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
-            <FormField control={form.control} name="contactPerson" render={({ field }) => (<FormItem><FormLabel>Leadership Full Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Company Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="status" render={({ field }) => (
                 <FormItem className="text-left">
@@ -190,10 +191,27 @@ export default function TransporterManagement() {
   }
 
   const columns: ColumnDef<any>[] = useMemo(() => [
-    { accessorKey: 'companyName', header: 'Transporter Name', cell: ({ row }) => <div className="font-bold text-left">{row.original.companyName || `${row.original.firstName} ${row.original.lastName}`}</div> },
+    { 
+        accessorKey: 'companyName', 
+        header: 'Transporter Name', 
+        cell: ({ row }) => (
+            <div className="flex flex-col text-left">
+                <span className="font-bold">{row.original.companyName}</span>
+                <span className="text-[10px] text-muted-foreground uppercase font-black">{row.original.address || 'Operational Hub Verified'}</span>
+            </div>
+        )
+    },
+    { 
+        header: 'Human Contact', 
+        cell: ({ row }) => (
+            <div className="flex flex-col text-sm text-left">
+                <span className="font-bold">{row.original.contactPerson || `${row.original.firstName || ''} ${row.original.lastName || ''}`.trim() || 'N/A'}</span>
+                <span className="text-xs text-muted-foreground">{row.original.email}</span>
+            </div>
+        )
+    },
     { accessorKey: 'phone', header: 'Landline' },
     { accessorKey: 'mobile', header: 'Mobile' },
-    { accessorKey: 'email', header: 'Email' },
     { accessorKey: 'status', header: 'Status', cell: ({ row }) => <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge> },
     { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
       <div className="flex justify-end gap-1">
@@ -223,7 +241,7 @@ export default function TransporterManagement() {
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="text-left">
                 <CardTitle className="flex items-center gap-2"><Truck /> Transporter Registry</CardTitle>
-                <CardDescription>Managed view of verified hauliers ({allRecords.length} records).</CardDescription>
+                <CardDescription>High-capacity view of verified hauliers ({allRecords.length} records).</CardDescription>
             </div>
             <div className="flex items-center gap-2">
                 <Button variant="outline" onClick={() => downloadDataAsCSV(allRecords, 'transporters-export.csv')} disabled={isLoading}>

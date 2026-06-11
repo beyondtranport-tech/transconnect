@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
@@ -59,6 +60,8 @@ async function performAdminAction(token: string, action: string, payload?: any) 
 const leadSchema = z.object({
   companyName: z.string().min(1, 'Company name is required'),
   contactPerson: z.string().optional(),
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
   email: z.string().email('Invalid email address').optional().or(z.literal('')),
   phone: z.string().optional(),
   mobile: z.string().optional(),
@@ -83,7 +86,7 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
     }
   }, [open, lead, form, defaultValues]);
 
-  async function onSubmit(values: LeadFormValues) {
+  async function handleFormSubmit(values: LeadFormValues) {
     setIsLoading(true);
     try {
       const token = await getClientSideAuthToken();
@@ -104,16 +107,18 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
       <DialogContent className="sm:max-w-xl text-left">
         <DialogHeader><DialogTitle>{lead ? 'Edit' : 'Add New'} Lead</DialogTitle></DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[60vh] overflow-y-auto pr-2">
+          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[60vh] overflow-y-auto pr-2">
             <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Company Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             <div className="grid grid-cols-2 gap-4">
-              <FormField control={form.control} name="contactPerson" render={({ field }) => (<FormItem><FormLabel>Contact Person</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="firstName" render={({ field }) => (<FormItem><FormLabel>First Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="lastName" render={({ field }) => (<FormItem><FormLabel>Last Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+            </div>
+            <FormField control={form.control} name="contactPerson" render={({ field }) => (<FormItem><FormLabel>Alternative Contact Name</FormLabel><FormControl><Input placeholder="Full Name" {...field} /></FormControl><FormMessage /></FormItem>)} />
+            <div className="grid grid-cols-2 gap-4">
               <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Landline</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-            </div>
-             <div className="grid grid-cols-2 gap-4">
               <FormField control={form.control} name="mobile" render={({ field }) => (<FormItem><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-              <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" /></FormControl><FormMessage /></FormItem>)} />
             </div>
+            <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" /></FormControl><FormMessage /></FormItem>)} />
              <div className="grid grid-cols-2 gap-4">
               <FormField control={form.control} name="role" render={({ field }) => (
                 <FormItem><FormLabel>Potential Role</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger></FormControl><SelectContent>{roles.map(r => <SelectItem key={r.id} value={r.title}>{r.title}</SelectItem>)}</SelectContent></Select></FormItem>
@@ -164,6 +169,8 @@ function LeadsDatabaseComponent() {
     return allRecords.filter(r => 
         (r.companyName?.toLowerCase().includes(term)) ||
         (r.contactPerson?.toLowerCase().includes(term)) ||
+        (r.firstName?.toLowerCase().includes(term)) ||
+        (r.lastName?.toLowerCase().includes(term)) ||
         (r.email?.toLowerCase().includes(term)) ||
         (r.phone?.toLowerCase().includes(term)) ||
         (r.mobile?.toLowerCase().includes(term))
@@ -187,10 +194,17 @@ function LeadsDatabaseComponent() {
 
   const columns: ColumnDef<any>[] = useMemo(() => [
     { accessorKey: 'companyName', header: 'Company Name' },
-    { accessorKey: 'contactPerson', header: 'Contact' },
+    { 
+        header: 'Human Contact', 
+        cell: ({ row }) => (
+            <div className="flex flex-col text-sm">
+                <span className="font-bold">{row.original.contactPerson || `${row.original.firstName || ''} ${row.original.lastName || ''}`.trim() || 'N/A'}</span>
+                <span className="text-xs text-muted-foreground">{row.original.email}</span>
+            </div>
+        )
+    },
     { accessorKey: 'phone', header: 'Landline' },
     { accessorKey: 'mobile', header: 'Mobile' },
-    { accessorKey: 'email', header: 'Email' },
     {
       id: 'actions',
       header: <div className="text-right">Actions</div>,
@@ -215,11 +229,11 @@ function LeadsDatabaseComponent() {
       
       <div className="space-y-6">
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
-          <div><CardTitle><Users /> Lead Database</CardTitle><CardDescription>Registry view ({allRecords.length} records).</CardDescription></div>
+          <div><CardTitle><Users /> Lead Database</CardTitle><CardDescription>High-capacity registry view ({allRecords.length} records).</CardDescription></div>
           <div className="flex gap-2">
             <div className="relative w-64">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Search leads..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8" />
+                <Input placeholder="Filter registry..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8" />
             </div>
             <Button variant="outline" onClick={() => downloadDataAsCSV(allRecords, 'leads-backup.csv')} disabled={isLoading}><Download className="mr-2 h-4 w-4" /> Export CSV</Button>
             <BulkImportDialog type="lead" onComplete={fetchData}><Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>

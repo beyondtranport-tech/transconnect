@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -91,7 +92,7 @@ function ISADialog({ open, onOpenChange, partner, onSave }: { open: boolean; onO
     }
   }, [open, partner, form]);
 
-  async function onSubmit(values: PartnerFormValues) {
+  async function handleFormSubmit(values: PartnerFormValues) {
     setIsLoading(true);
     try {
       const token = await getClientSideAuthToken();
@@ -115,7 +116,7 @@ function ISADialog({ open, onOpenChange, partner, onSave }: { open: boolean; onO
           <DialogDescription>Enter details for the Independent Sales Agent.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left">
+          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left">
             <div className="grid grid-cols-2 gap-4 text-left">
               <FormField control={form.control} name="firstName" render={({ field }) => (<FormItem><FormLabel>First Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="lastName" render={({ field }) => (<FormItem><FormLabel>Last Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
@@ -193,7 +194,7 @@ export default function ISAManagement() {
         header: 'ISA Agency', 
         cell: ({ row }) => (
             <div className="flex flex-col text-left">
-                <span className="font-bold">{row.original.companyName || `${row.original.firstName} ${row.original.lastName}`}</span>
+                <span className="font-bold">{row.original.companyName || row.original.contactPerson || `${row.original.firstName || ''} ${row.original.lastName || ''}`.trim()}</span>
                 <span className="text-[10px] text-muted-foreground uppercase font-black">{row.original.firstName} {row.original.lastName}</span>
             </div>
         )
