@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -364,13 +365,19 @@ export async function POST(req: NextRequest) {
                 partners.forEach((p: any) => {
                     const id = p.record_id || p.id || db.collection('partners').doc().id;
                     
-                    // INTEL MAPPING: Normalize AI-generated keys to standardized schema
+                    // --- INTELLIGENCE MAPPING LAYER ---
+                    // Normalizes AI-generated key variations into standardized database schema
                     const standardized: any = { ...p };
+                    
                     if (p.company_name || p.companyName) standardized.companyName = p.company_name || p.companyName;
                     if (p.email_address || p.email) standardized.email = p.email_address || p.email;
-                    if (p.telephone_number || p.phone) standardized.phone = p.telephone_number || p.phone;
                     
-                    // Handle mobile specifically to prevent overwriting landline
+                    // Handle landline/primary phone
+                    if (p.telephone_number || p.phone || p.landline) {
+                        standardized.phone = p.telephone_number || p.phone || p.landline;
+                    }
+                    
+                    // Handle direct mobile specifically to prevent overwriting
                     if (p.mobile_number || p.cell || p.direct_cell || p.mobile) {
                         standardized.mobile = p.mobile_number || p.cell || p.direct_cell || p.mobile;
                     }
@@ -378,7 +385,7 @@ export async function POST(req: NextRequest) {
                     if (p.physical_address || p.address) standardized.address = p.physical_address || p.address;
                     if (p.contact_person || p.contactPerson) standardized.contactPerson = p.contact_person || p.contactPerson;
                     
-                    // Cleanup
+                    // Cleanup AI-specific keys
                     delete standardized.record_id;
                     delete standardized.company_name;
                     delete standardized.email_address;
@@ -407,7 +414,6 @@ export async function POST(req: NextRequest) {
                 const type = action.includes('Supplier') ? 'supplier' : action.includes('Transporter') ? 'transporter' : action.includes('Driver') ? 'driver' : 'finance';
                 const statsKey = `${type}DiscoveryStats`;
                 
-                // Role strings used in 'leads' collection
                 const roleMap: Record<string, string[]> = {
                     supplier: ['Supplier', 'Suppliers', 'Vendors', 'Vendor'],
                     transporter: ['Transporter', 'Transporters', 'Logistics', 'Transport'],
@@ -417,7 +423,6 @@ export async function POST(req: NextRequest) {
 
                 const roles = roleMap[type] || [];
 
-                // Fetch ALL matching records from BOTH collections
                 const [partnersSnap, leadsSnap] = await Promise.all([
                     db.collection('partners').where('type', '==', type).get(),
                     db.collection('leads').where('role', 'in', roles).get()

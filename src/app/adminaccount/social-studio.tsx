@@ -35,7 +35,7 @@ const platformConfig: Record<Platform, { label: string, icon: any, color: string
 };
 
 /**
- * Funnel-based social templates
+ * Funnel-based social templates for high-traction engagement
  */
 const socialTemplates = (platform: Platform) => {
     const platformName = platformConfig[platform].label;
