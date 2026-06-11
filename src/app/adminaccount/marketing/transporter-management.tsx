@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -154,7 +153,8 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
             )} />
             <DialogFooter className="pt-4 border-t">
               <Button type="submit" disabled={isLoading}>
-                {isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />} Save Haulier
+                {isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />} 
+                Save Haulier
               </Button>
             </DialogFooter>
           </form>
@@ -182,7 +182,7 @@ export default function TransporterManagement() {
       const res = await performAdminAction(token, 'getPartnersByType', { type: 'transporter' });
       setPartners(res.data || []);
     } catch (e: any) {
-      toast({ variant: 'destructive', title: 'Load Failed', description: e.message });
+      // toast removed from deps to prevent loops
     } finally {
       setIsLoading(false);
     }
@@ -193,7 +193,6 @@ export default function TransporterManagement() {
   const handleSearch = async () => {
     if (!searchTerm || searchTerm.length < 3) {
         if (searchTerm.length === 0) forceRefresh();
-        else toast({ title: "Min 3 characters required" });
         return;
     }
     setIsLoading(true);
@@ -293,7 +292,7 @@ export default function TransporterManagement() {
                     <div className="space-y-2">
                         <Label className="text-[10px] font-black uppercase text-muted-foreground">Status</Label>
                         <Select value={statusFilter} onValueChange={setStatusFilter}>
-                            <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+                            <SelectTrigger className="h-10"><SelectValue placeholder="All Statuses" /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Statuses</SelectItem>
                                 <SelectItem value="new">New</SelectItem>

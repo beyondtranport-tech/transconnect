@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -262,7 +261,7 @@ export default function FinanceDiscoveryEngine() {
         <Card className="shadow-none border-none">
             <Tabs defaultValue="Banks" className="w-full">
                 <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div className="space-y-1">
+                    <div className="space-y-1 text-left">
                         <CardTitle className="flex items-center gap-2">
                             <Landmark className="h-6 w-6 text-amber-500" />
                             Capital Intelligence Discovery
@@ -298,7 +297,7 @@ export default function FinanceDiscoveryEngine() {
                     </TabsList>
 
                     {financeCategories.map(category => (
-                        <TabsContent key={category} value={category} className="mt-0">
+                        <TabsContent key={category} value={category} className="mt-0 text-left">
                             <DiscoveryTab category={category} currentCount={counts[category] || 0} />
                         </TabsContent>
                     ))}

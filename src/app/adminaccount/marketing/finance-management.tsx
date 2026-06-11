@@ -248,24 +248,24 @@ function FinanceDialog({ open, onOpenChange, partner, onSave }: { open: boolean;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl">
+      <DialogContent className="sm:max-w-2xl text-left">
         <DialogHeader>
           <DialogTitle>{partner ? 'Edit' : 'Add'} Finance Entity</DialogTitle>
           <DialogDescription>Enter detailed verified record for the capital partner.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4 text-left">
               <FormField control={form.control} name="firstName" render={({ field }) => (<FormItem><FormLabel>First Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="lastName" render={({ field }) => (<FormItem><FormLabel>Last Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4 text-left">
               <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Phone</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
             <FormField control={form.control} name="contactPerson" render={({ field }) => (<FormItem><FormLabel>Identity Verified Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Entity Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4 text-left">
               <FormField control={form.control} name="entryType" render={({ field }) => (
                 <FormItem>
                     <FormLabel>Finance Category</FormLabel>
@@ -310,7 +310,6 @@ export default function FinanceManagement() {
   const [staff, setStaff] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isResetting, setIsResetting] = useState(false);
-  const [isCategorizing, setIsCategorizing] = useState(false);
   const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | 'batch-ai' | null, data?: any }>({ type: null });
 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -327,16 +326,16 @@ export default function FinanceManagement() {
       const [res, staffRes] = await Promise.all([
         performAdminAction(token, 'getPartnersByType', { type: 'finance' }),
         performAdminAction(token, 'getPlatformStaff', {}),
-        performAdminAction(token, 'refreshFinanceCategoryCounts', {}) // Ensure global tallies are fresh
+        // REMOVED AUTOMATIC SCAN: performAdminAction(token, 'refreshFinanceCategoryCounts', {})
       ]);
       setPartners(res.data || []);
       setStaff(staffRes.data || []);
     } catch (e: any) {
-      toast({ variant: 'destructive', title: 'Error', description: e.message });
+      // toast removed from deps to prevent quota loops
     } finally {
       setIsLoading(false);
     }
-  }, [toast]);
+  }, []);
 
   useEffect(() => { forceRefresh(); }, [forceRefresh]);
 
@@ -381,11 +380,6 @@ export default function FinanceManagement() {
             body: JSON.stringify({ action: 'resetResearchQueue', payload: { type: 'finance' } }),
           });
           
-          if (!response.ok) {
-              const text = await response.text();
-              throw new Error(text.includes('<html>') ? "Server Timeout: Resetting queue is taking longer than expected." : text);
-          }
-
           const result = await response.json();
           if (!result.success) throw new Error(result.error);
           toast({ title: "Queue Reset", description: `${result.count} records set back to 'New'.` });
@@ -411,9 +405,9 @@ export default function FinanceManagement() {
   }
 
   const columns: ColumnDef<any>[] = [
-    { accessorKey: 'companyName', header: 'Entity Name', cell: ({ row }) => <div className="font-bold">{row.original.companyName}</div> },
+    { accessorKey: 'companyName', header: 'Entity Name', cell: ({ row }) => <div className="font-bold text-left">{row.original.companyName}</div> },
     { accessorKey: 'entryType', header: 'Category', cell: ({row}) => <Badge variant="outline" className="text-[10px] uppercase font-bold">{row.original.entryType || 'Finance'}</Badge> },
-    { accessorKey: 'contactPerson', header: 'Decision Maker', cell: ({ row }) => <div>{row.original.contactPerson || 'N/A'}</div> },
+    { accessorKey: 'contactPerson', header: 'Decision Maker', cell: ({ row }) => <div className="text-left">{row.original.contactPerson || 'N/A'}</div> },
     { accessorKey: 'email', header: 'Email' },
     { accessorKey: 'researchStatus', header: 'Enhanced', cell: ({row}) => {
         if (row.original.researchStatus === 'researching') return <Badge variant="outline" className="animate-pulse text-amber-600 border-amber-200 bg-amber-50">Searching...</Badge>;
@@ -449,7 +443,7 @@ export default function FinanceManagement() {
       </AlertDialog>
       <div className="space-y-6">
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="space-y-1">
+            <div className="space-y-1 text-left">
                 <CardTitle className="flex items-center gap-2">
                     <Landmark /> Capital Intelligence Registry
                     <Badge variant="outline" className="ml-2 font-black border-amber-600 text-amber-600">{partners.length} Records</Badge>
@@ -472,7 +466,7 @@ export default function FinanceManagement() {
 
         <Card>
             <CardContent className="pt-6">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left">
                     <div className="space-y-2">
                         <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status</Label>
                         <Select value={statusFilter} onValueChange={setStatusFilter}>
