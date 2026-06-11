@@ -136,49 +136,28 @@ function LeadsDatabaseComponent() {
   const searchParams = useSearchParams();
   const [leads, setLeads] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null);
   
   const [isAddLeadOpen, setIsAddLeadOpen] = useState(false);
   const [editLead, setEditLead] = useState<any | null>(null);
   const [deleteLead, setDeleteLead] = useState<any | null>(null);
   const [engageLead, setEngageLead] = useState<any | null>(null);
 
-  const fetchData = useCallback(async (isLoadMore: boolean = false) => {
-    if (isLoadMore) setIsLoadingMore(true);
-    else setIsLoading(true);
-
+  const fetchData = useCallback(async () => {
+    setIsLoading(true);
     try {
       const token = await getClientSideAuthToken();
       if (!token) return;
-
-      const payload: any = {};
-      if (isLoadMore && lastUpdatedAt) {
-          payload.cursor = lastUpdatedAt;
-      }
-
-      const res = await performAdminAction(token, 'getLeads', payload);
-      const newData = res.data || [];
-      
-      if (isLoadMore) {
-          setLeads(prev => [...prev, ...newData]);
-      } else {
-          setLeads(newData);
-      }
-
-      if (newData.length > 0) {
-          setLastUpdatedAt(newData[newData.length - 1].updatedAt);
-      }
+      const res = await performAdminAction(token, 'getLeads', {});
+      setLeads(res.data || []);
     } catch (e: any) {
-      toast({ variant: 'destructive', title: 'Error', description: e.message });
+        // handled silently
     } finally {
       setIsLoading(false);
-      setIsLoadingMore(false);
     }
-  }, [toast, lastUpdatedAt]);
+  }, []);
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => { fetchData(); }, [fetchData]);
 
   const handleSearch = async () => {
     if (!searchTerm || searchTerm.length < 3) {
@@ -198,7 +177,7 @@ function LeadsDatabaseComponent() {
     }
   };
 
-  const columns: ColumnDef<any>[] = [
+  const columns: ColumnDef<any>[] = useMemo(() => [
     { accessorKey: 'companyName', header: 'Company Name' },
     { accessorKey: 'contactPerson', header: 'Contact' },
     { accessorKey: 'phone', header: 'Landline' },
@@ -219,7 +198,7 @@ function LeadsDatabaseComponent() {
         </div>
       )
     },
-  ];
+  ], [fetchData]);
 
   return (
     <>
@@ -228,7 +207,7 @@ function LeadsDatabaseComponent() {
       
       <div className="space-y-6">
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
-          <div><CardTitle><Users /> Lead Database</CardTitle><CardDescription>Consolidated registry of prospective members (500 per page).</CardDescription></div>
+          <div><CardTitle><Users /> Lead Database</CardTitle><CardDescription>Consolidated registry of prospective members.</CardDescription></div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => downloadDataAsCSV(leads, 'leads-backup.csv')}><Download className="mr-2 h-4 w-4" /> Backup</Button>
             <BulkImportDialog type="lead" onComplete={fetchData}><Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
@@ -242,20 +221,6 @@ function LeadsDatabaseComponent() {
                     <Button onClick={handleSearch} disabled={isLoading}><Search className="h-4 w-4"/></Button>
                 </div>
                 {isLoading ? <div className="flex justify-center p-10"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={leads} />}
-                
-                {!isLoading && leads.length >= 500 && (
-                    <div className="mt-6 flex justify-center">
-                        <Button 
-                            variant="outline" 
-                            className="gap-2" 
-                            onClick={() => fetchData(true)}
-                            disabled={isLoadingMore}
-                        >
-                            {isLoadingMore ? <Loader2 className="h-4 w-4 animate-spin"/> : <RefreshCcw className="h-4 w-4"/>}
-                            Load Next 500
-                        </Button>
-                    </div>
-                )}
             </CardContent>
         </Card>
       </div>

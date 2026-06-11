@@ -46,14 +46,12 @@ export async function POST(req: NextRequest) {
         const isAdmin = decodedToken.email === 'beyondtransport@gmail.com' || decodedToken.email === 'mkoton100@gmail.com';
         if (!isAdmin) throw new Error("Forbidden: Admin access required.");
 
+        // Increased limit for "Full Records" preference
+        const MAX_LOAD = 10000;
+
         switch (action) {
             case 'getMembers': {
-                const { cursor } = payload || {};
-                let q = db.collection('companies').orderBy('createdAt', 'desc').limit(500);
-                if (cursor) {
-                    q = q.startAfter(Timestamp.fromDate(new Date(cursor)));
-                }
-                const snap = await q.get();
+                const snap = await db.collection('companies').orderBy('createdAt', 'desc').limit(MAX_LOAD).get();
                 const data = await Promise.all(snap.docs.map(async (d) => {
                     const cData = d.data();
                     const userSnap = await db.collection('users').doc(cData.ownerId).get();
@@ -70,13 +68,10 @@ export async function POST(req: NextRequest) {
             }
 
             case 'getPartnersByType': {
-                const { type, cursor } = payload;
-                let q = db.collection('partners').orderBy('updatedAt', 'desc').limit(500);
+                const { type } = payload;
+                let q = db.collection('partners').orderBy('updatedAt', 'desc').limit(MAX_LOAD);
                 if (type && type !== 'all') {
-                    q = db.collection('partners').where('type', '==', type).orderBy('updatedAt', 'desc').limit(500);
-                }
-                if (cursor) {
-                    q = q.startAfter(Timestamp.fromDate(new Date(cursor)));
+                    q = db.collection('partners').where('type', '==', type).orderBy('updatedAt', 'desc').limit(MAX_LOAD);
                 }
                 const snap = await q.get();
                 const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
@@ -84,12 +79,7 @@ export async function POST(req: NextRequest) {
             }
 
             case 'getLeads': {
-                const { cursor } = payload || {};
-                let q = db.collection('leads').orderBy('updatedAt', 'desc').limit(500);
-                if (cursor) {
-                    q = q.startAfter(Timestamp.fromDate(new Date(cursor)));
-                }
-                const snap = await q.get();
+                const snap = await db.collection('leads').orderBy('updatedAt', 'desc').limit(MAX_LOAD).get();
                 const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
                 return NextResponse.json({ success: true, data });
             }
@@ -101,7 +91,7 @@ export async function POST(req: NextRequest) {
                 let q = db.collection(collectionName)
                     .where('companyName', '>=', term)
                     .where('companyName', '<=', term + '\uf8ff')
-                    .limit(100);
+                    .limit(500);
                 
                 if (type && type !== 'all' && type !== 'lead') {
                     q = q.where('type', '==', type);
@@ -130,6 +120,7 @@ export async function POST(req: NextRequest) {
                     const id = p.record_id || p.id || db.collection('partners').doc().id;
                     const standardized: any = { ...p };
                     
+                    // Intelligent Mapping for AI Variation
                     if (p.company_name || p.companyName) standardized.companyName = p.company_name || p.companyName;
                     if (p.email_address || p.email) standardized.email = p.email_address || p.email;
                     if (p.telephone_number || p.phone || p.landline) standardized.phone = p.telephone_number || p.phone || p.landline;

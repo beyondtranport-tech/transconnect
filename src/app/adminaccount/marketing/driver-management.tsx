@@ -51,6 +51,7 @@ import { downloadDataAsCSV, cn } from '@/lib/utils';
 import { EnrichPartnerButton } from './EnrichPartnerButton';
 import { Label } from '@/components/ui/label';
 import { BulkImportDialog } from './BulkImportDialog';
+import { Textarea } from '@/components/ui/textarea';
 
 async function performAdminAction(token: string, action: string, payload: any) {
   const response = await fetch('/api/admin', {
@@ -130,7 +131,7 @@ function DriverDialog({ open, onOpenChange, partner, onSave }: { open: boolean; 
             <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Service Handle / Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="status" render={({ field }) => (
                 <FormItem className="text-left">
-                    <FormLabel>Status</FormLabel>
+                    <FormLabel>Status</Label>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                         <SelectContent>
@@ -159,47 +160,24 @@ export default function DriverManagement() {
   const { toast } = useToast();
   const [partners, setPartners] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null);
   const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | null, data?: any }>({ type: null });
 
-  const [statusFilter, setStatusFilter] = useState('all');
-
-  const fetchData = useCallback(async (isLoadMore: boolean = false) => {
-    if (isLoadMore) setIsLoadingMore(true);
-    else setIsLoading(true);
-
+  const fetchData = useCallback(async () => {
+    setIsLoading(true);
     try {
       const token = await getClientSideAuthToken();
       if (!token) return;
-
-      const payload: any = { type: 'driver' };
-      if (isLoadMore && lastUpdatedAt) {
-          payload.cursor = lastUpdatedAt;
-      }
-
-      const res = await performAdminAction(token, 'getPartnersByType', payload);
-      const newData = res.data || [];
-      
-      if (isLoadMore) {
-          setPartners(prev => [...prev, ...newData]);
-      } else {
-          setPartners(newData);
-      }
-
-      if (newData.length > 0) {
-          setLastUpdatedAt(newData[newData.length - 1].updatedAt);
-      }
+      const res = await performAdminAction(token, 'getPartnersByType', { type: 'driver' });
+      setPartners(res.data || []);
     } catch (e: any) {
         toast({ variant: 'destructive', title: 'Fetch Error', description: e.message });
     } finally {
       setIsLoading(false);
-      setIsLoadingMore(false);
     }
-  }, [toast, lastUpdatedAt]);
+  }, []); // Toast removed to prevent infinite loops
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => { fetchData(); }, [fetchData]);
 
   const handleSearch = async () => {
     if (!searchTerm || searchTerm.length < 3) {
@@ -220,17 +198,10 @@ export default function DriverManagement() {
   };
 
   const handleExport = () => {
-      if (filteredDrivers.length === 0) return;
-      downloadDataAsCSV(filteredDrivers, `drivers-backup-${new Date().toISOString().split('T')[0]}.csv`);
+      if (partners.length === 0) return;
+      downloadDataAsCSV(partners, `drivers-backup-${new Date().toISOString().split('T')[0]}.csv`);
       toast({ title: "Backup Ready" });
   };
-
-  const filteredDrivers = useMemo(() => {
-    return (partners || []).filter(p => {
-        const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
-        return matchesStatus;
-    });
-  }, [partners, statusFilter]);
 
   async function handleDelete() {
     try {
@@ -245,7 +216,7 @@ export default function DriverManagement() {
     }
   }
 
-  const columns: ColumnDef<any>[] = [
+  const columns: ColumnDef<any>[] = useMemo(() => [
     { 
         header: 'Driver Identity', 
         cell: ({ row }) => (
@@ -270,7 +241,7 @@ export default function DriverManagement() {
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'delete', data: row.original })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
       </div>
     )},
-  ];
+  ], [fetchData]);
 
   return (
     <>
@@ -287,7 +258,7 @@ export default function DriverManagement() {
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="text-left">
                 <CardTitle className="flex items-center gap-2"><Users /> Driver Registry</CardTitle>
-                <CardDescription>Managed view of professional logistics contractors (500 per page).</CardDescription>
+                <CardDescription>Managed view of professional logistics contractors.</CardDescription>
             </div>
             <div className="flex items-center gap-2">
                 <Button variant="outline" onClick={handleExport} disabled={isLoading}>
@@ -308,35 +279,8 @@ export default function DriverManagement() {
                             <Button onClick={handleSearch} disabled={isLoading}><Search className="h-4 w-4"/></Button>
                         </div>
                     </div>
-                    <div className="space-y-2 text-left w-64">
-                         <Label className="text-[10px] font-black uppercase text-muted-foreground">Status</Label>
-                         <Select value={statusFilter} onValueChange={setStatusFilter}>
-                            <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All Statuses</SelectItem>
-                                <SelectItem value="new">New</SelectItem>
-                                <SelectItem value="contacted">Researching</SelectItem>
-                                <SelectItem value="qualified">Qualified</SelectItem>
-                                <SelectItem value="active">Active</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
                 </div>
-                {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredDrivers} />}
-                
-                {!isLoading && partners.length >= 500 && (
-                    <div className="mt-6 flex justify-center">
-                        <Button 
-                            variant="outline" 
-                            className="gap-2" 
-                            onClick={() => fetchData(true)}
-                            disabled={isLoadingMore}
-                        >
-                            {isLoadingMore ? <Loader2 className="h-4 w-4 animate-spin"/> : <RefreshCcw className="h-4 w-4"/>}
-                            Load Next 500
-                        </Button>
-                    </div>
-                )}
+                {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={partners} />}
             </CardContent>
         </Card>
       </div>

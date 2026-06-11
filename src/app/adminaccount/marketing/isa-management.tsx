@@ -105,7 +105,7 @@ function ISADialog({ open, onOpenChange, partner, onSave }: { open: boolean; onO
             <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Company Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="status" render={({ field }) => (
                 <FormItem className="text-left">
-                    <FormLabel>Status</FormLabel>
+                    <FormLabel>Status</Label>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                         <SelectContent>
@@ -132,47 +132,24 @@ export default function ISAManagement() {
   const { toast } = useToast();
   const [partners, setPartners] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null);
   const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | null, data?: any }>({ type: null });
 
-  const [statusFilter, setStatusFilter] = useState('all');
-
-  const fetchData = useCallback(async (isLoadMore: boolean = false) => {
-    if (isLoadMore) setIsLoadingMore(true);
-    else setIsLoading(true);
-
+  const fetchData = useCallback(async () => {
+    setIsLoading(true);
     try {
       const token = await getClientSideAuthToken();
       if (!token) return;
-
-      const payload: any = { type: 'isa' };
-      if (isLoadMore && lastUpdatedAt) {
-          payload.cursor = lastUpdatedAt;
-      }
-
-      const res = await performAdminAction(token, 'getPartnersByType', payload);
-      const newData = res.data || [];
-      
-      if (isLoadMore) {
-          setPartners(prev => [...prev, ...newData]);
-      } else {
-          setPartners(newData);
-      }
-
-      if (newData.length > 0) {
-          setLastUpdatedAt(newData[newData.length - 1].updatedAt);
-      }
+      const res = await performAdminAction(token, 'getPartnersByType', { type: 'isa' });
+      setPartners(res.data || []);
     } catch (e: any) {
-        toast({ variant: 'destructive', title: 'Fetch Error', description: e.message });
+        // Handled silently
     } finally {
       setIsLoading(false);
-      setIsLoadingMore(false);
     }
-  }, [toast, lastUpdatedAt]);
+  }, []);
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => { fetchData(); }, [fetchData]);
 
   const handleSearch = async () => {
     if (!searchTerm || searchTerm.length < 3) {
@@ -192,13 +169,6 @@ export default function ISAManagement() {
     }
   };
 
-  const filteredISA = useMemo(() => {
-    return (partners || []).filter(p => {
-        const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
-        return matchesStatus;
-    });
-  }, [partners, statusFilter]);
-
   async function handleDelete() {
     try {
       const token = await getClientSideAuthToken();
@@ -212,7 +182,7 @@ export default function ISAManagement() {
     }
   }
 
-  const columns: ColumnDef<any>[] = [
+  const columns: ColumnDef<any>[] = useMemo(() => [
     { accessorKey: 'companyName', header: 'Company', cell: ({ row }) => <div className="font-bold text-left">{row.original.companyName || `${row.original.firstName} ${row.original.lastName}`}</div> },
     { accessorKey: 'phone', header: 'Landline' },
     { accessorKey: 'mobile', header: 'Mobile' },
@@ -228,7 +198,7 @@ export default function ISAManagement() {
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'delete', data: row.original })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
       </div>
     )},
-  ];
+  ], [fetchData]);
 
   return (
     <>
@@ -245,7 +215,7 @@ export default function ISAManagement() {
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="text-left">
                 <CardTitle className="flex items-center gap-2"><Bot /> ISA Agents</CardTitle>
-                <CardDescription>Consolidated view of sales agents (500 per page).</CardDescription>
+                <CardDescription>Consolidated view of sales agents.</CardDescription>
             </div>
             <div className="flex items-center gap-2">
                 <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4" /> Add ISA</Button>
@@ -254,30 +224,11 @@ export default function ISAManagement() {
 
         <Card>
             <CardContent className="pt-6">
-                <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left">
-                    <div className="md:col-span-3 space-y-2 text-left flex-1">
-                        <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Search className="h-3 w-3"/> Registry Search</Label>
-                        <div className="flex gap-2">
-                            <Input placeholder="Type name or ID to search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearch()} />
-                            <Button onClick={handleSearch} disabled={isLoading}><Search className="h-4 w-4"/></Button>
-                        </div>
-                    </div>
+                <div className="flex gap-2 mb-6 max-w-sm">
+                    <Input placeholder="Search by name or ID..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearch()} />
+                    <Button onClick={handleSearch} disabled={isLoading}><Search className="h-4 w-4"/></Button>
                 </div>
-                {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredISA} />}
-                
-                {!isLoading && partners.length >= 500 && (
-                    <div className="mt-6 flex justify-center">
-                        <Button 
-                            variant="outline" 
-                            className="gap-2" 
-                            onClick={() => fetchData(true)}
-                            disabled={isLoadingMore}
-                        >
-                            {isLoadingMore ? <Loader2 className="h-4 w-4 animate-spin"/> : <RefreshCcw className="h-4 w-4"/>}
-                            Load Next 500
-                        </Button>
-                    </div>
-                )}
+                {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={partners} />}
             </CardContent>
         </Card>
       </div>
