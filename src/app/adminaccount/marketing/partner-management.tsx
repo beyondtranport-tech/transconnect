@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -24,9 +23,8 @@ import { PartnerOversightDialog } from './PartnerOversightDialog';
 import { EngageDialog } from './EngageDialog';
 import { CommunicationLogDialog } from './CommunicationLogDialog';
 import { PartnerTasksDialog } from './PartnerTasksDialog';
-import { downloadDataAsCSV, cn } from '@/lib/utils';
+import { downloadDataAsCSV } from '@/lib/utils';
 import { EnrichPartnerButton } from './EnrichPartnerButton';
-import { Label } from '@/components/ui/label';
 
 async function performAdminAction(token: string, action: string, payload: any) {
   const response = await fetch('/api/admin', {
@@ -70,7 +68,7 @@ function PartnerDialog({ open, onOpenChange, partner, onSave }: { open: boolean;
     try {
       const token = await getClientSideAuthToken();
       if (!token) throw new Error("Authentication failed.");
-      await performAdminAction(token, 'savePartner', { partner: { id: partner?.id, ...values } });
+      await performAdminAction(token, 'savePartner', { partner: { id: partner?.id, ...values, type: 'partner' } });
       toast({ title: 'Partner Saved' });
       onSave();
       onOpenChange(false);
@@ -90,15 +88,15 @@ function PartnerDialog({ open, onOpenChange, partner, onSave }: { open: boolean;
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left">
-            <div className="grid grid-cols-2 gap-4 text-left">
+            <div className="grid grid-cols-2 gap-4">
               <FormField control={form.control} name="firstName" render={({ field }) => (<FormItem><FormLabel>First Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="lastName" render={({ field }) => (<FormItem><FormLabel>Last Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
-            <div className="grid grid-cols-2 gap-4 text-left">
+            <div className="grid grid-cols-2 gap-4">
               <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Work Phone</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
-             <div className="grid grid-cols-2 gap-4 text-left">
+             <div className="grid grid-cols-2 gap-4">
               <FormField control={form.control} name="mobile" render={({ field }) => (<FormItem><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Company Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
@@ -118,7 +116,6 @@ export default function PartnerManagement() {
   const { toast } = useToast();
   const [partners, setPartners] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
   const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | null, data?: any }>({ type: null });
 
   const fetchData = useCallback(async () => {
@@ -129,31 +126,13 @@ export default function PartnerManagement() {
       const res = await performAdminAction(token, 'getPartnersByType', { type: 'partner' });
       setPartners(res.data || []);
     } catch (e: any) {
-        // Handled silently
+        toast({ variant: 'destructive', title: 'Fetch Error', description: e.message });
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [toast]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
-
-  const handleSearch = async () => {
-    if (!searchTerm || searchTerm.length < 3) {
-        if (searchTerm.length === 0) fetchData();
-        return;
-    }
-    setIsLoading(true);
-    try {
-        const token = await getClientSideAuthToken();
-        if (!token) return;
-        const res = await performAdminAction(token, 'searchRegistry', { term: searchTerm, type: 'partner' });
-        setPartners(res.data || []);
-    } catch (e: any) {
-        toast({ variant: 'destructive', title: 'Search Error', description: e.message });
-    } finally {
-        setIsLoading(false);
-    }
-  };
 
   async function handleDelete() {
     try {
@@ -199,21 +178,19 @@ export default function PartnerManagement() {
       
       <div className="space-y-6 text-left">
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="text-left">
-                <CardTitle className="flex items-center gap-2"><Handshake /> Strategic Partners</CardTitle>
-                <CardDescription>Managed view of key partners.</CardDescription>
+            <div>
+                <CardTitle><Handshake /> Strategic Partners</CardTitle>
+                <CardDescription>Full registry view (Up to 10,000 records).</CardDescription>
             </div>
             <div className="flex items-center gap-2">
+                <Button variant="outline" onClick={() => downloadDataAsCSV(partners, 'partners-export.csv')} disabled={isLoading}>
+                    <Download className="mr-2 h-4 w-4" /> Export CSV
+                </Button>
                 <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Partner</Button>
             </div>
         </CardHeader>
-
         <Card>
             <CardContent className="pt-6">
-                <div className="flex gap-2 mb-6 max-w-sm">
-                    <Input placeholder="Search by name or ID..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearch()} />
-                    <Button onClick={handleSearch} disabled={isLoading}><Search className="h-4 w-4"/></Button>
-                </div>
                 {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={partners} />}
             </CardContent>
         </Card>

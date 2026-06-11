@@ -47,10 +47,11 @@ import { PartnerOversightDialog } from './PartnerOversightDialog';
 import { EngageDialog } from './EngageDialog';
 import { CommunicationLogDialog } from './CommunicationLogDialog';
 import { PartnerTasksDialog } from './PartnerTasksDialog';
-import { downloadDataAsCSV, cn } from '@/lib/utils';
+import { downloadDataAsCSV } from '@/lib/utils';
 import { EnrichPartnerButton } from './EnrichPartnerButton';
 import { Label } from '@/components/ui/label';
 import { BulkImportDialog } from './BulkImportDialog';
+import { Textarea } from '@/components/ui/textarea';
 
 async function performAdminAction(token: string, action: string, payload: any) {
   const response = await fetch('/api/admin', {
@@ -158,9 +159,8 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
 
 export default function TransporterManagement() {
   const { toast } = useToast();
-  const [partners, setPartners] = useState<any[]>([]);
+  const [allRecords, setAllRecords] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
   const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | null, data?: any }>({ type: null });
 
   const fetchData = useCallback(async () => {
@@ -169,38 +169,15 @@ export default function TransporterManagement() {
       const token = await getClientSideAuthToken();
       if (!token) return;
       const res = await performAdminAction(token, 'getPartnersByType', { type: 'transporter' });
-      setPartners(res.data || []);
+      setAllRecords(res.data || []);
     } catch (e: any) {
-        // Handled silently
+        toast({ variant: 'destructive', title: 'Fetch Error', description: e.message });
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [toast]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
-
-  const handleSearch = async () => {
-    if (!searchTerm || searchTerm.length < 3) {
-        if (searchTerm.length === 0) fetchData();
-        return;
-    }
-    setIsLoading(true);
-    try {
-        const token = await getClientSideAuthToken();
-        if (!token) return;
-        const res = await performAdminAction(token, 'searchRegistry', { term: searchTerm, type: 'transporter' });
-        setPartners(res.data || []);
-    } catch (e: any) {
-        toast({ variant: 'destructive', title: 'Search Error', description: e.message });
-    } finally {
-        setIsLoading(false);
-    }
-  };
-
-  const handleExport = () => {
-      downloadDataAsCSV(partners, 'transporters-export.csv');
-      toast({ title: "Backup Ready" });
-  };
 
   async function handleDelete() {
     try {
@@ -249,11 +226,11 @@ export default function TransporterManagement() {
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="text-left">
                 <CardTitle className="flex items-center gap-2"><Truck /> Transporter Registry</CardTitle>
-                <CardDescription>Managed view of verified hauliers.</CardDescription>
+                <CardDescription>Managed view of verified hauliers ({allRecords.length} records).</CardDescription>
             </div>
             <div className="flex items-center gap-2">
-                <Button variant="outline" onClick={handleExport} disabled={isLoading}>
-                    <Download className="mr-2 h-4 w-4" /> Backup
+                <Button variant="outline" onClick={() => downloadDataAsCSV(allRecords, 'transporters-export.csv')} disabled={isLoading}>
+                    <Download className="mr-2 h-4 w-4" /> Export CSV
                 </Button>
                 <BulkImportDialog type="transporter" onComplete={fetchData}><Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
                 <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Record</Button>
@@ -262,11 +239,7 @@ export default function TransporterManagement() {
 
         <Card>
             <CardContent className="pt-6">
-                <div className="flex gap-2 mb-6 max-w-sm">
-                    <Input placeholder="Search within transporters..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearch()} />
-                    <Button onClick={handleSearch} disabled={isLoading}><Search className="h-4 w-4"/></Button>
-                </div>
-                {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={partners} />}
+                {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={allRecords} />}
             </CardContent>
         </Card>
       </div>

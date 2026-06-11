@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
@@ -34,7 +33,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { roles } from '@/lib/roles';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { downloadDataAsCSV, cn } from '@/lib/utils';
+import { downloadDataAsCSV } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
 
@@ -134,7 +133,7 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
 function LeadsDatabaseComponent() {
   const { toast } = useToast();
   const searchParams = useSearchParams();
-  const [leads, setLeads] = useState<any[]>([]);
+  const [allRecords, setAllRecords] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   
@@ -149,31 +148,40 @@ function LeadsDatabaseComponent() {
       const token = await getClientSideAuthToken();
       if (!token) return;
       const res = await performAdminAction(token, 'getLeads', {});
-      setLeads(res.data || []);
+      setAllRecords(res.data || []);
     } catch (e: any) {
-        // handled silently
+        toast({ variant: 'destructive', title: 'Fetch Error', description: e.message });
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [toast]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  const handleSearch = async () => {
-    if (!searchTerm || searchTerm.length < 3) {
-        if (searchTerm.length === 0) fetchData();
-        return;
-    }
-    setIsLoading(true);
+  const filteredLeads = useMemo(() => {
+    if (!searchTerm) return allRecords;
+    const term = searchTerm.toLowerCase();
+    return allRecords.filter(r => 
+        (r.companyName?.toLowerCase().includes(term)) ||
+        (r.contactPerson?.toLowerCase().includes(term)) ||
+        (r.email?.toLowerCase().includes(term)) ||
+        (r.phone?.toLowerCase().includes(term)) ||
+        (r.mobile?.toLowerCase().includes(term))
+    );
+  }, [allRecords, searchTerm]);
+
+  const handleDelete = async () => {
+    if (!deleteLead) return;
     try {
-        const token = await getClientSideAuthToken();
-        if (!token) return;
-        const res = await performAdminAction(token, 'searchRegistry', { term: searchTerm, type: 'lead' });
-        setLeads(res.data || []);
+      const token = await getClientSideAuthToken();
+      if (!token) throw new Error("Auth failed");
+      await performAdminAction(token, 'deleteLeads', { leadIds: [deleteLead.id] });
+      toast({ title: 'Lead Deleted' });
+      fetchData();
     } catch (e: any) {
-        toast({ variant: 'destructive', title: 'Search Error', description: e.message });
+      toast({ variant: 'destructive', title: 'Delete Failed', description: e.message });
     } finally {
-        setIsLoading(false);
+      setDeleteLead(null);
     }
   };
 
@@ -207,23 +215,29 @@ function LeadsDatabaseComponent() {
       
       <div className="space-y-6">
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
-          <div><CardTitle><Users /> Lead Database</CardTitle><CardDescription>Consolidated registry of prospective members.</CardDescription></div>
+          <div><CardTitle><Users /> Lead Database</CardTitle><CardDescription>Registry view ({allRecords.length} records).</CardDescription></div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => downloadDataAsCSV(leads, 'leads-backup.csv')}><Download className="mr-2 h-4 w-4" /> Backup</Button>
+            <div className="relative w-64">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input placeholder="Search leads..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8" />
+            </div>
+            <Button variant="outline" onClick={() => downloadDataAsCSV(allRecords, 'leads-backup.csv')} disabled={isLoading}><Download className="mr-2 h-4 w-4" /> Export CSV</Button>
             <BulkImportDialog type="lead" onComplete={fetchData}><Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
             <Button onClick={() => setIsAddLeadOpen(true)}><PlusCircle className="mr-2 h-4 w-4" />Add Lead</Button>
           </div>
         </CardHeader>
         <Card>
             <CardContent className="pt-6">
-                 <div className="flex gap-2 mb-6 max-w-sm">
-                    <Input placeholder="Search within leads..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearch()} />
-                    <Button onClick={handleSearch} disabled={isLoading}><Search className="h-4 w-4"/></Button>
-                </div>
-                {isLoading ? <div className="flex justify-center p-10"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={leads} />}
+                {isLoading ? <div className="flex justify-center p-10"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredLeads} />}
             </CardContent>
         </Card>
       </div>
+      <AlertDialog open={!!deleteLead} onOpenChange={(o) => !o && setDeleteLead(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader><AlertDialogTitle>Delete Lead?</AlertDialogTitle><AlertDialogDescription>Permanently remove record?</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogFooter><AlertDialogCancel onClick={() => setDeleteLead(null)}>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction></AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

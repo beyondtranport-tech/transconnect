@@ -26,9 +26,8 @@ import { PartnerOversightDialog } from './PartnerOversightDialog';
 import { EngageDialog } from './EngageDialog';
 import { CommunicationLogDialog } from './CommunicationLogDialog';
 import { PartnerTasksDialog } from './PartnerTasksDialog';
-import { downloadDataAsCSV, cn } from '@/lib/utils';
+import { downloadDataAsCSV } from '@/lib/utils';
 import { EnrichPartnerButton } from './EnrichPartnerButton';
-import { Label } from '@/components/ui/label';
 import { BulkImportDialog } from './BulkImportDialog';
 
 async function performAdminAction(token: string, action: string, payload: any) {
@@ -74,7 +73,7 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
     try {
       const token = await getClientSideAuthToken();
       if (!token) throw new Error("Authentication failed.");
-      await performAdminAction(token, 'savePartner', { partner: { id: partner?.id, ...values } });
+      await performAdminAction(token, 'savePartner', { partner: { id: partner?.id, ...values, type: 'supplier' } });
       toast({ title: 'Supplier Saved' });
       onSave();
       onOpenChange(false);
@@ -100,12 +99,10 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
             </div>
             <div className="grid grid-cols-2 gap-4 text-left">
               <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" /></FormControl><FormMessage /></FormItem>)} />
-              <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Work Phone (Landline)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Landline</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
-            <div className="grid grid-cols-2 gap-4 text-left">
-              <FormField control={form.control} name="mobile" render={({ field }) => (<FormItem><FormLabel>Mobile (Direct Cell)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} /></FormControl><FormMessage /></FormItem>)} />
-              <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Entity Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-            </div>
+            <FormField control={form.control} name="mobile" render={({ field }) => (<FormItem><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} /></FormControl><FormMessage /></FormItem>)} />
+            <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Entity Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="status" render={({ field }) => (
                 <FormItem className="text-left">
                     <FormLabel>Status</FormLabel>
@@ -133,9 +130,8 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
 
 export default function SupplierManagement() {
   const { toast } = useToast();
-  const [partners, setPartners] = useState<any[]>([]);
+  const [allRecords, setAllRecords] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
   const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | null, data?: any }>({ type: null });
 
   const fetchData = useCallback(async () => {
@@ -144,38 +140,15 @@ export default function SupplierManagement() {
       const token = await getClientSideAuthToken();
       if (!token) return;
       const res = await performAdminAction(token, 'getPartnersByType', { type: 'supplier' });
-      setPartners(res.data || []);
+      setAllRecords(res.data || []);
     } catch (e: any) {
-        // Handled silently
+        toast({ variant: 'destructive', title: 'Fetch Error', description: e.message });
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [toast]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
-
-  const handleSearch = async () => {
-    if (!searchTerm || searchTerm.length < 3) {
-        if (searchTerm.length === 0) fetchData();
-        return;
-    }
-    setIsLoading(true);
-    try {
-        const token = await getClientSideAuthToken();
-        if (!token) return;
-        const res = await performAdminAction(token, 'searchRegistry', { term: searchTerm, type: 'supplier' });
-        setPartners(res.data || []);
-    } catch (e: any) {
-        toast({ variant: 'destructive', title: 'Search Error', description: e.message });
-    } finally {
-        setIsLoading(false);
-    }
-  };
-
-  const handleExport = () => {
-      downloadDataAsCSV(partners, `suppliers-backup.csv`);
-      toast({ title: "Backup Exported" });
-  };
 
   async function handleDelete() {
     try {
@@ -220,27 +193,22 @@ export default function SupplierManagement() {
         </AlertDialogContent>
       </AlertDialog>
       <div className="space-y-6">
-        <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
             <div className="text-left">
-                <CardTitle className="flex items-center gap-2"><Building /> Supplier Registry</CardTitle>
-                <CardDescription>Managed view of industrial vendors.</CardDescription>
+                <CardTitle><Building /> Supplier Registry</CardTitle>
+                <CardDescription>Full registry view ({allRecords.length} records).</CardDescription>
             </div>
             <div className="flex items-center gap-2">
-                <Button variant="outline" onClick={handleExport} disabled={isLoading}>
-                    <Download className="mr-2 h-4 w-4" /> Backup
+                <Button variant="outline" onClick={() => downloadDataAsCSV(allRecords, 'suppliers-export.csv')} disabled={isLoading}>
+                    <Download className="mr-2 h-4 w-4" /> Export CSV
                 </Button>
                 <BulkImportDialog type="supplier" onComplete={fetchData}><Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
                 <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Record</Button>
             </div>
         </CardHeader>
-
         <Card>
             <CardContent className="pt-6">
-                <div className="flex gap-2 mb-6 max-w-sm">
-                    <Input placeholder="Search within suppliers..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearch()} />
-                    <Button onClick={handleSearch} disabled={isLoading}><Search className="h-4 w-4"/></Button>
-                </div>
-                {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={partners} />}
+                {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={allRecords} />}
             </CardContent>
         </Card>
       </div>

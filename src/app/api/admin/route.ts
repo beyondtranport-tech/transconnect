@@ -84,24 +84,6 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data });
             }
 
-            case 'searchRegistry': {
-                const { term, type } = payload;
-                const collectionName = ['driver', 'supplier', 'transporter', 'finance', 'partner', 'isa', 'investor'].includes(type) ? 'partners' : 'leads';
-                
-                let q = db.collection(collectionName)
-                    .where('companyName', '>=', term)
-                    .where('companyName', '<=', term + '\uf8ff')
-                    .limit(500);
-                
-                if (type && type !== 'all' && type !== 'lead') {
-                    q = q.where('type', '==', type);
-                }
-
-                const snap = await q.get();
-                const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
-                return NextResponse.json({ success: true, data });
-            }
-
             case 'savePartner': {
                 const { partner } = payload;
                 const id = partner.id || db.collection('partners').doc().id;
@@ -137,58 +119,6 @@ export async function POST(req: NextRequest) {
                 });
                 await batch.commit();
                 return NextResponse.json({ success: true, count: partners.length });
-            }
-
-            case 'refreshSupplierCategoryCounts':
-            case 'refreshTransporterCategoryCounts':
-            case 'refreshDriverCategoryCounts':
-            case 'refreshFinanceCategoryCounts': {
-                const type = action.includes('Supplier') ? 'supplier' : action.includes('Transporter') ? 'transporter' : action.includes('Driver') ? 'driver' : 'finance';
-                const statsKey = `${type}DiscoveryStats`;
-                
-                const roleMap: Record<string, string[]> = {
-                    supplier: ['Supplier', 'Vendor'],
-                    transporter: ['Transporter', 'Logistics'],
-                    driver: ['Driver'],
-                    finance: ['Finance', 'Funder', 'Banks']
-                };
-
-                const roles = roleMap[type] || [];
-
-                const [partnersSnap, leadsSnap] = await Promise.all([
-                    db.collection('partners').where('type', '==', type).limit(1000).get(),
-                    db.collection('leads').where('role', 'in', roles).limit(1000).get()
-                ]);
-                
-                const counts: Record<string, number> = {};
-                const processDocs = (snap: any) => {
-                    snap.docs.forEach((doc: any) => {
-                        const data = doc.data();
-                        const cat = data.entryType || data.industrial_category || data.category || 'General';
-                        counts[cat] = (counts[cat] || 0) + 1;
-                    });
-                };
-                
-                processDocs(partnersSnap);
-                processDocs(leadsSnap);
-
-                await db.collection('configuration').doc(statsKey).set({
-                    counts,
-                    lastUpdated: FieldValue.serverTimestamp()
-                });
-                return NextResponse.json({ success: true });
-            }
-
-            case 'getAuditLogs': {
-                const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(100).get();
-                const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
-                return NextResponse.json({ success: true, data });
-            }
-
-            case 'getPlatformStaff': {
-                const snap = await db.collection('platformStaff').get();
-                const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
-                return NextResponse.json({ success: true, data });
             }
 
             case 'logCommunication': {
@@ -240,6 +170,12 @@ export async function POST(req: NextRequest) {
                     companyId: doc.ref.parent.parent?.id,
                     ...serializeTimestamps(doc.data()) 
                 }));
+                return NextResponse.json({ success: true, data });
+            }
+
+            case 'getPlatformStaff': {
+                const snap = await db.collection('platformStaff').get();
+                const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
                 return NextResponse.json({ success: true, data });
             }
 

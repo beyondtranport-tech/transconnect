@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -36,7 +35,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
-import { Loader2, PlusCircle, DollarSign, Edit, Trash2, Send, Filter, Save, Search, RefreshCcw, Download, Upload } from 'lucide-react';
+import { Loader2, PlusCircle, DollarSign, Edit, Trash2, Send, Filter, Save, Search, Download } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -45,9 +44,8 @@ import { PartnerOversightDialog } from './PartnerOversightDialog';
 import { EngageDialog } from './EngageDialog';
 import { CommunicationLogDialog } from './CommunicationLogDialog';
 import { PartnerTasksDialog } from './PartnerTasksDialog';
-import { downloadDataAsCSV, cn } from '@/lib/utils';
+import { downloadDataAsCSV } from '@/lib/utils';
 import { EnrichPartnerButton } from './EnrichPartnerButton';
-import { Label } from '@/components/ui/label';
 
 async function performAdminAction(token: string, action: string, payload: any) {
     const response = await fetch('/api/admin', {
@@ -149,9 +147,8 @@ function InvestorDialog({ open, onOpenChange, partner, onSave }: { open: boolean
 
 export default function InvestorManagement() {
   const { toast } = useToast();
-  const [partners, setPartners] = useState<any[]>([]);
+  const [allRecords, setAllRecords] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
   const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | null, data?: any }>({ type: null });
 
   const fetchData = useCallback(async () => {
@@ -160,38 +157,15 @@ export default function InvestorManagement() {
         const token = await getClientSideAuthToken();
         if (!token) return;
         const result = await performAdminAction(token, 'getPartnersByType', { type: 'investor' });
-        setPartners(result.data || []);
+        setAllRecords(result.data || []);
     } catch (e: any) {
-        // Handled silently to avoid loops
+        toast({ variant: 'destructive', title: 'Fetch Error', description: e.message });
     } finally {
         setIsLoading(false);
     }
-  }, []);
+  }, [toast]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
-
-  const handleSearch = async () => {
-    if (!searchTerm || searchTerm.length < 3) {
-        if (searchTerm.length === 0) fetchData();
-        return;
-    }
-    setIsLoading(true);
-    try {
-        const token = await getClientSideAuthToken();
-        if (!token) return;
-        const res = await performAdminAction(token, 'searchRegistry', { term: searchTerm, type: 'investor' });
-        setPartners(res.data || []);
-    } catch (e: any) {
-        toast({ variant: 'destructive', title: 'Search Error', description: e.message });
-    } finally {
-        setIsLoading(false);
-    }
-  };
-
-  const handleExport = () => {
-      downloadDataAsCSV(partners, 'investors.csv');
-      toast({ title: "Backup Ready" });
-  };
 
   async function handleDelete() {
     try {
@@ -212,7 +186,7 @@ export default function InvestorManagement() {
     { accessorKey: 'phone', header: 'Landline' },
     { accessorKey: 'mobile', header: 'Mobile' },
     { accessorKey: 'email', header: 'Email' },
-    { accessorKey: 'status', header: 'Status', cell: ({row}) => <Badge className="capitalize">{row.original.status}</Badge>},
+    { accessorKey: 'status', header: 'Status', cell: ({row}) => <Badge variant="outline" className="capitalize">{row.original.status}</Badge>},
     { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
       <div className="flex justify-end items-center gap-1">
         <EnrichPartnerButton partner={row.original} onUpdate={fetchData} />
@@ -242,18 +216,14 @@ export default function InvestorManagement() {
       
       <div className="space-y-6 text-left">
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div><CardTitle><DollarSign /> App Launch Investors</CardTitle></div>
+          <div><CardTitle><DollarSign /> App Launch Investors</CardTitle><CardDescription>Full registry view ({allRecords.length} records).</CardDescription></div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={handleExport} disabled={isLoading}><Download className="mr-2 h-4 w-4"/>Backup</Button>
+            <Button variant="outline" onClick={() => downloadDataAsCSV(allRecords, 'investors-export.csv')} disabled={isLoading}><Download className="mr-2 h-4 w-4"/>Export CSV</Button>
             <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4"/>Add Record</Button>
           </div>
         </CardHeader>
         <CardContent>
-             <div className="flex gap-2 mb-6 max-w-sm">
-                <Input placeholder="Search within investors..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearch()} />
-                <Button onClick={handleSearch} disabled={isLoading}><Search className="h-4 w-4"/></Button>
-            </div>
-            {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={partners} />}
+            {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={allRecords} />}
         </CardContent>
       </div>
     </>
