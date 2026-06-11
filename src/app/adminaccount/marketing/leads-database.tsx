@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
@@ -36,12 +35,11 @@ import { roles } from '@/lib/roles';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { downloadDataAsCSV } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { Label } from '@/components/ui/label';
 
 import { EnrichPartnerButton } from '@/app/adminaccount/marketing/EnrichPartnerButton';
 import { PartnerTasksDialog } from '@/app/adminaccount/marketing/PartnerTasksDialog';
 import { CommunicationLogDialog } from '@/app/adminaccount/marketing/CommunicationLogDialog';
-import { EngageDialog } from '@/app/adminaccount/marketing/EngageDialog';
+import { EngageDialog } from './EngageDialog';
 import { BulkImportDialog } from './BulkImportDialog';
 import { PartnerOversightDialog } from './PartnerOversightDialog';
 
@@ -197,7 +195,7 @@ function LeadsDatabaseComponent() {
     { 
         header: 'Human Contact', 
         cell: ({ row }) => (
-            <div className="flex flex-col text-sm">
+            <div className="flex flex-col text-sm text-left">
                 <span className="font-bold">{row.original.contactPerson || `${row.original.firstName || ''} ${row.original.lastName || ''}`.trim() || 'N/A'}</span>
                 <span className="text-xs text-muted-foreground">{row.original.email}</span>
             </div>
@@ -227,7 +225,7 @@ function LeadsDatabaseComponent() {
       <EngageDialog open={!!engageLead} onOpenChange={(o) => !o && setEngageLead(null)} partner={engageLead} audience="suppliers" onEngageSuccess={fetchData} />
       <LeadDialog open={isAddLeadOpen || !!editLead} onOpenChange={(o) => { if(!o) { setEditLead(null); setIsAddLeadOpen(false); } }} lead={editLead} onSave={fetchData} />
       
-      <div className="space-y-6">
+      <div className="space-y-6 text-left">
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
           <div><CardTitle><Users /> Lead Database</CardTitle><CardDescription>High-capacity registry view ({allRecords.length} records).</CardDescription></div>
           <div className="flex gap-2">
@@ -248,7 +246,7 @@ function LeadsDatabaseComponent() {
       </div>
       <AlertDialog open={!!deleteLead} onOpenChange={(o) => !o && setDeleteLead(null)}>
         <AlertDialogContent>
-          <AlertDialogHeader><AlertDialogTitle>Delete Lead?</AlertDialogTitle><AlertDialogDescription>Permanently remove record?</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Permanently remove record?</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter><AlertDialogCancel onClick={() => setDeleteLead(null)}>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

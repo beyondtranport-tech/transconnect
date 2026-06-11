@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -58,7 +57,10 @@ type PartnerFormValues = z.infer<typeof partnerSchema>;
 function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean; onOpenChange: (open: boolean) => void; partner?: any; onSave: () => void; }) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const form = useForm<PartnerFormValues>({ resolver: zodResolver(partnerSchema) });
+  const form = useForm<PartnerFormValues>({ 
+    resolver: zodResolver(partnerSchema),
+    defaultValues: { type: 'supplier', status: 'new' }
+  });
 
   useEffect(() => {
     if (open) {

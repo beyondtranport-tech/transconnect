@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -138,7 +137,7 @@ function LogAndCopyDialog({ open, onOpenChange, partners, isLoadingPartners, act
                     <DialogDescription>Select a partner to log this communication against before copying.</DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 py-4">
+                    <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 py-4 text-left">
                         <FormField control={form.control} name="partnerId" render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Log against {singularAudience}</FormLabel>
@@ -252,10 +251,12 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
             notes: logData.notes,
         });
 
-        const success = await copyHtmlToClipboard(contentElement.innerHTML);
+        // Wrap in Calibri styling for consistent executive memo look in email clients
+        const wrappedHtml = `<div style="font-family: Calibri, sans-serif; font-size: 12pt; color: #000000; line-height: 1.2; text-align: left;">${contentElement.innerHTML}</div>`;
+        const success = await copyHtmlToClipboard(wrappedHtml);
         if (!success) throw new Error("Copy failed.");
 
-        toast({ title: 'Logged and Copied!', description: 'Interaction recorded. Content ready for paste.' });
+        toast({ title: 'Logged and Copied!', description: 'Interaction recorded. Content ready for paste into your email client.' });
         setIsLogDialogOpen(false);
     } catch (e: any) {
         toast({ variant: 'destructive', title: 'Action Failed', description: e.message });
@@ -265,7 +266,7 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
   const isContentTab = ['company-profile', 'tech-architecture', 'revenue-model', 'offer', 'pitch', 'framework', 'emails'].includes(activeTab);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-left">
         <LogAndCopyDialog open={isLogDialogOpen} onOpenChange={setIsLogDialogOpen} partners={partners} isLoadingPartners={isLoadingPartners} activeTabLabel={activeTab} onLogAndCopy={handleLogAndCopy} audienceTitle={config.title} />
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div className="flex items-center gap-4">
@@ -310,13 +311,13 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
                 <TabsContent value="management"><div id="tab-content-management"><Management /></div></TabsContent>
                 {Discovery && <TabsContent value="discovery"><div id="tab-content-discovery"><Discovery /></div></TabsContent>}
                 {Pitch && <TabsContent value="pitch-generator"><div id="tab-content-pitch-generator"><Pitch /></div></TabsContent>}
-                <TabsContent value="company-profile"><div id="tab-content-company-profile"><CompanyProfile audience={audience} /></div></TabsContent>
-                <TabsContent value="tech-architecture"><div id="tab-content-tech-architecture"><TechArchitecture /></div></TabsContent>
-                <TabsContent value="revenue-model"><div id="tab-content-revenue-model"><RevenueModel /></div></TabsContent>
-                <TabsContent value="offer"><div id="tab-content-offer"><Offer /></div></TabsContent>
-                <TabsContent value="pitch"><div id="tab-content-pitch"><PitchDeck /></div></TabsContent>
-                <TabsContent value="framework"><div id="tab-content-framework"><Framework /></div></TabsContent>
-                <TabsContent value="emails"><div id="tab-content-emails"><Emails /></div></TabsContent>
+                <TabsContent value="company-profile"><div id="tab-content-company-profile"><CompanyProfile partner={null} audience={audience} /></div></TabsContent>
+                <TabsContent value="tech-architecture"><div id="tab-content-tech-architecture"><TechArchitecture partner={null} /></div></TabsContent>
+                <TabsContent value="revenue-model"><div id="tab-content-revenue-model"><RevenueModel partner={null} /></div></TabsContent>
+                <TabsContent value="offer"><div id="tab-content-offer"><Offer partner={null} /></div></TabsContent>
+                <TabsContent value="pitch"><div id="tab-content-pitch"><PitchDeck partner={null} /></div></TabsContent>
+                <TabsContent value="framework"><div id="tab-content-framework"><Framework partner={null} /></div></TabsContent>
+                <TabsContent value="emails"><div id="tab-content-emails"><Emails partner={null} /></div></TabsContent>
             </div>
         </Tabs>
     </div>

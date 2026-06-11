@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -42,6 +41,7 @@ export async function POST(req: NextRequest) {
         const isAdmin = decodedToken.email === 'beyondtransport@gmail.com' || decodedToken.email === 'mkoton100@gmail.com';
         if (!isAdmin) throw new Error("Forbidden: Admin access required.");
 
+        // Maximum results to return in a single "Full Load"
         const MAX_LOAD = 10000;
 
         switch (action) {
@@ -100,12 +100,7 @@ export async function POST(req: NextRequest) {
                     const id = p.record_id || p.id || db.collection(collectionName).doc().id;
                     const standardized: any = { ...p };
                     
-                    if (p.company_name || p.companyName) standardized.companyName = p.company_name || p.companyName;
-                    if (p.email_address || p.email) standardized.email = p.email_address || p.email;
-                    if (p.telephone_number || p.phone || p.landline) standardized.phone = p.telephone_number || p.phone || p.landline;
-                    if (p.mobile_number || p.cell || p.direct_cell || p.mobile) standardized.mobile = p.mobile_number || p.cell || p.direct_cell || p.mobile;
-                    if (p.physical_address || p.address) standardized.address = p.physical_address || p.address;
-                    
+                    // Intelligent Name Splitting for CRM consistency
                     if (p.contact_person || p.contactPerson) {
                         const full = p.contact_person || p.contactPerson;
                         standardized.contactPerson = full;
@@ -115,6 +110,13 @@ export async function POST(req: NextRequest) {
                             standardized.lastName = parts.slice(1).join(' ') || '';
                         }
                     }
+
+                    // Field Normalization
+                    if (p.company_name || p.companyName) standardized.companyName = p.company_name || p.companyName;
+                    if (p.email_address || p.email) standardized.email = p.email_address || p.email;
+                    if (p.telephone_number || p.phone || p.landline) standardized.phone = p.telephone_number || p.phone || p.landline;
+                    if (p.mobile_number || p.cell || p.direct_cell || p.mobile) standardized.mobile = p.mobile_number || p.cell || p.direct_cell || p.mobile;
+                    if (p.physical_address || p.address) standardized.address = p.physical_address || p.address;
                     
                     const docRef = db.collection(collectionName).doc(id);
                     batch.set(docRef, {
