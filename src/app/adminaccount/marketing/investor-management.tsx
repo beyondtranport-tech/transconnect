@@ -5,12 +5,12 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, DollarSign, Edit, Trash2, Send, Users, Filter, Save, Search, Mail, Target, Upload, Info, Download } from 'lucide-react';
+import { Loader2, PlusCircle, DollarSign, Edit, Trash2, Send, Users, Filter, Save, Search, Mail, Target, Upload, Info, Download, ShieldCheck } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -25,8 +25,7 @@ import { PartnerTasksDialog } from './PartnerTasksDialog';
 import { formatDateSafe, cn, downloadDataAsCSV } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
 import { BulkImportDialog } from './BulkImportDialog';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { EnrichPartnerButton } from './EnrichPartnerButton';
 
 async function performAdminAction(token: string, action: string, payload: any) {
     const response = await fetch('/api/admin', {
@@ -41,9 +40,6 @@ async function performAdminAction(token: string, action: string, payload: any) {
 
     if (!response.ok) {
         const text = await response.text();
-        if (text.includes('<html>')) {
-            throw new Error("Server Timeout: The database operation is taking longer than expected due to high volume. Please try again in 30 seconds.");
-        }
         throw new Error(text || `API Error: ${action}`);
     }
 
@@ -130,7 +126,7 @@ function InvestorDialog({ open, onOpenChange, partner, onSave }: { open: boolean
                     </div>
                      <div className="grid grid-cols-2 gap-4 text-left">
                         <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email"/></FormControl><FormMessage /></FormItem> )} />
-                        <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel>Phone (Optional)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel>Work Phone</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                     </div>
                     <div className="grid grid-cols-2 gap-4 text-left">
                         <FormField control={form.control} name="mobile" render={({ field }) => ( <FormItem><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
@@ -143,7 +139,7 @@ function InvestorDialog({ open, onOpenChange, partner, onSave }: { open: boolean
                         <SelectItem value="invited">Invited</SelectItem>
                         <SelectItem value="active">Active Partner</SelectItem>
                     </SelectContent></Select><FormMessage /></FormItem> )} />
-                     <DialogFooter className="pt-4">
+                     <DialogFooter className="pt-4 border-t">
                         <Button type="submit" disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />} Save Investor</Button>
                     </DialogFooter>
                 </form>
@@ -163,16 +159,16 @@ export default function InvestorManagement() {
     setIsLoading(true);
     try {
         const token = await getClientSideAuthToken();
-        if (!token) throw new Error("Authentication failed.");
+        if (!token) return;
         
         const result = await performAdminAction(token, 'getPartnersByType', { type: 'investor' });
         setPartners(result.data || []);
     } catch (e: any) {
-        toast({ variant: 'destructive', title: 'Error loading investors', description: e.message });
+        console.error("Failed to load investors", e);
     } finally {
         setIsLoading(false);
     }
-  }, [toast]);
+  }, []);
   
   useEffect(() => {
     forceRefresh();
@@ -181,7 +177,7 @@ export default function InvestorManagement() {
   const handleExport = () => {
       if (partners.length === 0) return;
       downloadDataAsCSV(partners, `investors-backup-${new Date().toISOString().split('T')[0]}.csv`);
-      toast({ title: "Backup Exported", description: "The full investor list has been saved to CSV." });
+      toast({ title: "Backup Exported" });
   };
 
   const handleDelete = async () => {
@@ -198,7 +194,7 @@ export default function InvestorManagement() {
     }
   };
 
-  const columns: ColumnDef<any>[] = [
+  const columns: ColumnDef<any>[] = useMemo(() => [
     { accessorKey: 'firstName', header: 'Name', cell: ({row}) => <div>{row.original.firstName} {row.original.lastName}</div> },
     { accessorKey: 'companyName', header: 'Fund' },
     { accessorKey: 'phone', header: 'Phone' },
@@ -207,14 +203,16 @@ export default function InvestorManagement() {
     { accessorKey: 'status', header: 'Status', cell: ({row}) => <Badge className="capitalize">{row.original.status}</Badge>},
     { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
       <div className="flex justify-end items-center gap-1">
+        <EnrichPartnerButton partner={row.original} onUpdate={forceRefresh} />
         <Button variant="ghost" size="icon" onClick={() => setDialogState({ type: 'engage', data: row.original })} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
         <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.firstName} />
         <PartnerTasksDialog partner={row.original} />
+        <PartnerOversightDialog partner={row.original} onUpdate={forceRefresh} />
         <Button variant="ghost" size="icon" onClick={() => setDialogState({ type: 'edit', data: row.original })}><Edit className="h-4 w-4" /></Button>
         <Button variant="ghost" size="icon" onClick={() => setDialogState({ type: 'delete', data: row.original })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
       </div>
     ) },
-  ];
+  ], [forceRefresh]);
 
   return (
     <>
@@ -222,7 +220,10 @@ export default function InvestorManagement() {
       <InvestorDialog open={dialogState.type === 'add' || dialogState.type === 'edit'} onOpenChange={(o) => !o && setDialogState({ type: null })} partner={dialogState.type === 'edit' ? dialogState.data : undefined} onSave={forceRefresh} />
       <AlertDialog open={dialogState.type === 'delete'} onOpenChange={(o) => !o && setDialogState({ type: null })}>
         <AlertDialogContent>
-          <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Delete investor "{dialogState.data?.firstName} {dialogState.data?.lastName}"?</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>Delete investor "{dialogState.data?.firstName} {dialogState.data?.lastName}"?</AlertDialogDescription>
+          </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setDialogState({ type: null })}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction>
@@ -238,7 +239,7 @@ export default function InvestorManagement() {
           </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={handleExport} disabled={isLoading}>
-                <Download className="mr-2 h-4 w-4" /> Backup (CSV)
+                <Download className="mr-2 h-4 w-4" /> Backup
             </Button>
             <BulkImportDialog type="investor" onComplete={forceRefresh}><Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
             <Button onClick={() => setDialogState({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4"/>Add Investor</Button>
@@ -251,7 +252,7 @@ export default function InvestorManagement() {
             <DataTable columns={columns} data={partners} />
           )}
         </CardContent>
-      </Card>
+      </div>
     </>
   );
 }

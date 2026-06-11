@@ -211,7 +211,11 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
     try {
         const token = await getClientSideAuthToken();
         if (!token) return;
-        const result = await performAdminAction(token, 'getPartnersByType', { type: audience === 'isa' ? 'isa' : (audience === 'finance' ? 'finance' : (audience === 'drivers' ? 'driver' : audience.slice(0, -1))) });
+        // Limit logging partners to 100 to prevent quota exhaustion in high-volume environments
+        const result = await performAdminAction(token, 'getPartnersByType', { 
+            type: audience === 'isa' ? 'isa' : (audience === 'finance' ? 'finance' : (audience === 'drivers' ? 'driver' : audience.slice(0, -1))),
+            limit: 100 
+        });
         setPartners(result.data || []);
     } catch (e: any) {
         console.warn("Silent failure in logging fetch", e);
@@ -224,7 +228,7 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
 
   const handleExport = () => {
       if (partners.length === 0) {
-          toast({ variant: 'destructive', title: "No Data", description: "The registry is empty." });
+          toast({ variant: 'destructive', title: "No Data", description: "The registry is empty or not loaded." });
           return;
       }
       const filename = `logistics-flow-${audience}-backup-${new Date().toISOString().split('T')[0]}.csv`;
@@ -268,14 +272,14 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div className="flex items-center gap-4">
                 <div className="bg-primary/10 p-3 rounded-lg"><config.icon className="h-6 w-6 text-primary" /></div>
-                <div>
+                <div className="text-left">
                     <h1 className="text-2xl font-bold">Marketing Library: {config.title}</h1>
                     <p className="text-muted-foreground">Manage forensic records and browse engagement materials.</p>
                 </div>
             </div>
             <div className="flex items-center gap-2">
                 <Button variant="outline" onClick={handleExport} disabled={isLoadingPartners}>
-                    <Download className="mr-2 h-4 w-4" /> Backup Registry (CSV)
+                    <Download className="mr-2 h-4 w-4" /> Backup (CSV)
                 </Button>
                 {Discovery && (
                     <Button variant="outline" onClick={() => handleTabChange('discovery')} className={cn(activeTab === 'discovery' && "bg-primary text-white hover:bg-primary/90")}>

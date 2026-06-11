@@ -34,7 +34,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { getClientSideAuthToken } from '@/firebase';
+import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
   Loader2, PlusCircle, Truck, Edit, Trash2, Send, Filter, RotateCcw, Search, Upload, Save, Download, RefreshCcw, Zap, Phone
 } from 'lucide-react';
@@ -61,9 +61,6 @@ async function performAdminAction(token: string, action: string, payload: any) {
   
   if (!response.ok) {
     const text = await response.text();
-    if (text.includes('<html>')) {
-        throw new Error("Server Timeout: Operation taking too long. Please try again in 30 seconds.");
-    }
     throw new Error(text || `API Error: ${action}`);
   }
 
@@ -132,8 +129,8 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
             </div>
             <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" /></FormControl><FormMessage /></FormItem>)} />
             <div className="grid grid-cols-2 gap-4 text-left">
-              <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Landline Phone</FormLabel><FormControl><Input placeholder="+27 11..." {...field} /></FormControl><FormMessage /></FormItem>)} />
-              <FormField control={form.control} name="mobile" render={({ field }) => (<FormItem><FormLabel>Mobile Number (Direct)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} /></FormControl><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Work Phone (Landline)</FormLabel><FormControl><Input placeholder="+27 11..." {...field} /></FormControl><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="mobile" render={({ field }) => (<FormItem><FormLabel>Mobile (Direct Cell)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
             <FormField control={form.control} name="contactPerson" render={({ field }) => (<FormItem><FormLabel>Leadership Full Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Company Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
@@ -171,9 +168,6 @@ export default function TransporterManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | null, data?: any }>({ type: null });
 
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [categoryFilter, setCategoryFilter] = useState('all');
-
   const forceRefresh = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -182,7 +176,7 @@ export default function TransporterManagement() {
       const res = await performAdminAction(token, 'getPartnersByType', { type: 'transporter' });
       setPartners(res.data || []);
     } catch (e: any) {
-      // toast removed from deps to prevent loops
+        console.error("Fetch failed", e);
     } finally {
       setIsLoading(false);
     }
@@ -208,19 +202,9 @@ export default function TransporterManagement() {
     }
   };
 
-  const handleExport = () => {
-      if (filteredTransporters.length === 0) return;
-      downloadDataAsCSV(filteredTransporters, `transporters-backup-${new Date().toISOString().split('T')[0]}.csv`);
-      toast({ title: "Backup Ready" });
-  };
-
   const filteredTransporters = useMemo(() => {
-    return partners.filter(p => {
-        const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
-        const matchesCategory = categoryFilter === 'all' || p.entryType === categoryFilter;
-        return matchesStatus && matchesCategory;
-    });
-  }, [partners, statusFilter, categoryFilter]);
+    return partners.filter(p => true); // Filters can be added here
+  }, [partners]);
 
   async function handleDelete() {
     try {
@@ -235,24 +219,24 @@ export default function TransporterManagement() {
     }
   }
 
-  const columns: ColumnDef<any>[] = [
+  const columns: ColumnDef<any>[] = useMemo(() => [
     { accessorKey: 'companyName', header: 'Transporter Name', cell: ({ row }) => <div className="font-bold">{row.original.companyName || `${row.original.firstName} ${row.original.lastName}`}</div> },
-    { accessorKey: 'phone', header: 'Landline', cell: ({row}) => <div>{row.original.phone || 'N/A'}</div> },
-    { accessorKey: 'mobile', header: 'Mobile', cell: ({row}) => <div>{row.original.mobile || 'N/A'}</div> },
+    { accessorKey: 'phone', header: 'Phone' },
+    { accessorKey: 'mobile', header: 'Mobile' },
     { accessorKey: 'email', header: 'Email' },
     { accessorKey: 'status', header: 'Status', cell: ({ row }) => <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge> },
     { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
       <div className="flex justify-end gap-1">
         <EnrichPartnerButton partner={row.original} onUpdate={forceRefresh} />
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'engage', data: row.original })} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
-        <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.firstName} />
+        <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.companyName} />
         <PartnerTasksDialog partner={row.original} />
         <PartnerOversightDialog partner={row.original} onUpdate={forceRefresh} />
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'edit', data: row.original })}><Edit className="h-4 w-4" /></Button>
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'delete', data: row.original })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
       </div>
     )},
-  ];
+  ], [forceRefresh]);
 
   return (
     <>
@@ -272,7 +256,7 @@ export default function TransporterManagement() {
                 <CardDescription>Capped view of recent hauliers. Use search for full registry access.</CardDescription>
             </div>
             <div className="flex items-center gap-2">
-                <Button variant="outline" onClick={handleExport} disabled={isLoading}>
+                <Button variant="outline" onClick={() => downloadDataAsCSV(filteredTransporters, 'transporters.csv')} disabled={isLoading}>
                     <Download className="mr-2 h-4 w-4" /> Backup
                 </Button>
                 <BulkImportDialog type="transporter" onComplete={forceRefresh}><Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
@@ -289,21 +273,6 @@ export default function TransporterManagement() {
                             <Input placeholder="Type name or ID to search thousands of hauliers..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearch()} />
                             <Button onClick={handleSearch} disabled={isLoading}><Search className="h-4 w-4"/></Button>
                         </div>
-                    </div>
-                    <div className="space-y-2 text-left">
-                        <Label className="text-[10px] font-black uppercase text-muted-foreground">Status</Label>
-                        <Select value={statusFilter} onValueChange={setStatusFilter}>
-                            <SelectTrigger className="h-10"><SelectValue placeholder="All Statuses" /></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All Statuses</SelectItem>
-                                <SelectItem value="new">New</SelectItem>
-                                <SelectItem value="contacted">Researching</SelectItem>
-                                <SelectItem value="active">Member (Active)</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div className="flex items-end">
-                        <Button variant="outline" onClick={forceRefresh} className="h-10 w-full"><RotateCcw className="mr-2 h-4 w-4" /> Reset</Button>
                     </div>
                 </div>
                 {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredTransporters} />}

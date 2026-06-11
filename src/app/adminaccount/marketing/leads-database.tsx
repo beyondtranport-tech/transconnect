@@ -1,6 +1,7 @@
+
 'use client';
 
-import React, { useState, useMemo, useEffect, Suspense } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -24,9 +25,8 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useCollection, useFirestore, getClientSideAuthToken, useMemoFirebase } from '@/firebase';
-import { collection, query } from 'firebase/firestore';
-import { Loader2, PlusCircle, Users, Edit, Trash2, Search, Send, Copy, Filter, Mail, Download, Zap, Info, RotateCcw, Upload, CheckCircle, XCircle, Tag, Save } from 'lucide-react';
+import { getClientSideAuthToken } from '@/firebase';
+import { Loader2, PlusCircle, Users, Edit, Trash2, Search, Send, Copy, Filter, Mail, Download, Zap, RotateCcw, Upload, Tag, Save, Database, RefreshCcw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -36,7 +36,7 @@ import { roles } from '@/lib/roles';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { formatDateSafe, cn } from '@/lib/utils';
+import { formatDateSafe, cn, downloadDataAsCSV } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 
@@ -44,18 +44,30 @@ import { EnrichPartnerButton } from '@/app/adminaccount/marketing/EnrichPartnerB
 import { PartnerTasksDialog } from '@/app/adminaccount/marketing/PartnerTasksDialog';
 import { CommunicationLogDialog } from '@/app/adminaccount/marketing/CommunicationLogDialog';
 import { EngageDialog } from '@/app/adminaccount/marketing/EngageDialog';
-import { BulkImportDialog } from '@/app/adminaccount/marketing/BulkImportDialog';
-import { BatchResearchDialog } from '@/app/adminaccount/marketing/BatchResearchDialog';
-import { BulkOutreachUpdateDialog } from '@/app/adminaccount/marketing/BulkOutreachUpdateDialog';
-import { PartnerOversightDialog } from '@/app/adminaccount/marketing/PartnerOversightDialog';
+import { BulkImportDialog } from './BulkImportDialog';
+import { BatchResearchDialog } from './BatchResearchDialog';
+import { PartnerOversightDialog } from './PartnerOversightDialog';
+
+async function performAdminAction(token: string, action: string, payload?: any) {
+  const response = await fetch('/api/admin', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action, payload }),
+    cache: 'no-store'
+  });
+  const result = await response.json();
+  if (!response.ok || !result.success) throw new Error(result.error || `API Error: ${action}`);
+  return result;
+}
 
 const leadSchema = z.object({
   companyName: z.string().min(1, 'Company name is required'),
   contactPerson: z.string().optional(),
   email: z.string().email('Invalid email address').optional().or(z.literal('')),
   phone: z.string().optional(),
+  mobile: z.string().optional(),
   role: z.string().min(1, 'Role is required'),
-  status: z.enum(['new', 'contacted', 'qualified', 'invited', 'active']).default('new'),
+  status: z.enum(['new', 'contacted', 'qualified', 'unqualified', 'invited', 'active']).default('new'),
   notes: z.string().optional(),
   website: z.string().url().optional().or(z.literal('')),
   address: z.string().optional(),
@@ -84,6 +96,7 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
           contactPerson: defaultValues?.contactPerson || '',
           email: defaultValues?.email || '',
           phone: defaultValues?.phone || '',
+          mobile: defaultValues?.mobile || '',
           role: defaultValues?.role || '',
           status: 'new',
           notes: '',
@@ -100,18 +113,7 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
       const token = await getClientSideAuthToken();
       if (!token) throw new Error("Authentication failed.");
 
-      const response = await fetch('/api/admin', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'saveLead',
-          payload: { lead: { id: lead?.id, ...values } }
-        }),
-        cache: 'no-store'
-      });
-
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error || 'Failed to save lead.');
+      await performAdminAction(token, 'savePartner', { partner: { ...values, id: lead?.id, type: 'lead' } });
 
       toast({ title: 'Record Updated!' });
       onSave();
@@ -133,7 +135,7 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[60vh] overflow-y-auto pr-2">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[60vh] overflow-y-auto pr-2 text-left">
             <FormField control={form.control} name="companyName" render={({ field }) => (
               <FormItem>
                 <FormLabel>Company Name</FormLabel>
@@ -151,19 +153,28 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
               )} />
               <FormField control={form.control} name="phone" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Phone</FormLabel>
+                  <FormLabel>Landline</FormLabel>
                   <FormControl><Input {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
             </div>
-            <FormField control={form.control} name="email" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Email</FormLabel>
-                <FormControl><Input {...field} type="email" /></FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <FormField control={form.control} name="mobile" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Mobile (Direct)</FormLabel>
+                  <FormControl><Input {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="email" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl><Input {...field} type="email" /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+            </div>
             <FormField control={form.control} name="website" render={({ field }) => (
               <FormItem>
                 <FormLabel>Website</FormLabel>
@@ -231,216 +242,40 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
   );
 }
 
-function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [duplicates, setDuplicates] = useState<any[][]>([]);
-  const [selections, setSelections] = useState<Record<number, string>>({});
-  const { toast } = useToast();
-
-  async function findDuplicates() {
-    setIsLoading(true);
-    try {
-      const token = await getClientSideAuthToken();
-      if (!token) throw new Error("Auth failed.");
-      const response = await fetch('/api/admin', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'findDuplicateLeads' }),
-        cache: 'no-store'
-      });
-      const result = await response.json();
-      if (!result.success) throw new Error(result.error);
-      setDuplicates(result.data);
-      if (result.data.length === 0) {
-        toast({ title: "No duplicates found." });
-      } else {
-        const initialSelections: Record<number, string> = {};
-        result.data.forEach((group: any[], index: number) => {
-            const memberRecord = group.find(r => r.source === 'Member');
-            if (memberRecord) initialSelections[index] = memberRecord.id;
-            else initialSelections[index] = group[0].id;
-        });
-        setSelections(initialSelections);
-        setIsOpen(true);
-      }
-    } catch (e: any) {
-      toast({ variant: 'destructive', title: "Error finding duplicates", description: e.message });
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
-  async function handleClean() {
-    setIsLoading(true);
-    const idsToDelete = duplicates.flatMap((group, index) => {
-      const idToKeep = selections[index];
-      if (!idToKeep) return [];
-      return group.filter(lead => lead.id !== idToKeep).map(lead => lead.id);
-    });
-
-    if (idsToDelete.length === 0) {
-      toast({ title: "No duplicates selected for deletion." });
-      setIsLoading(false);
-      setIsOpen(false);
-      return;
-    }
-
-    try {
-      const token = await getClientSideAuthToken();
-      if (!token) throw new Error("Auth failed.");
-      const response = await fetch('/api/admin', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'deleteLeads', payload: { leadIds: idsToDelete } }),
-        cache: 'no-store'
-      });
-      const result = await response.json();
-      if (!result.success) throw new Error(result.error);
-
-      toast({ title: "Duplicates Cleaned!", description: `${idsToDelete.length} duplicate records deleted.` });
-      onComplete();
-      setIsOpen(false);
-    } catch (e: any) {
-      toast({ variant: 'destructive', title: "Error cleaning duplicates", description: e.message });
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
-  return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" onClick={findDuplicates} disabled={isLoading}>
-          {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
-          Find & Clean Duplicates
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle>Duplicate Lead Cleaner</DialogTitle>
-          <DialogDescription>
-            Select the records you want to keep. All unselected records in the group will be deleted.
-          </DialogDescription>
-        </DialogHeader>
-        
-        <Alert className="bg-amber-50 border-amber-200">
-            <Info className="h-4 w-4 text-amber-600" />
-            <AlertTitle>Recommendation Guide</AlertTitle>
-            <AlertDescription className="text-xs">
-                Always keep <strong>Members</strong> (Registered users) and delete <strong>Leads</strong> (Projections). 
-                Deleting a Member record will break their live account access.
-            </AlertDescription>
-        </Alert>
-
-        <div className="flex-1 overflow-y-auto p-4 space-y-6">
-          <div className="flex items-center justify-between mb-4 p-3 bg-muted rounded-md border border-dashed">
-            <div className="flex items-center gap-2">
-                <Checkbox 
-                    id="select-all-recommended-leads" 
-                    checked={Object.keys(selections).length === duplicates.length}
-                    onCheckedChange={(checked) => {
-                        if (checked) {
-                            const newSelections: Record<number, string> = {};
-                            duplicates.forEach((group, index) => {
-                                const member = group.find(r => r.source === 'Member');
-                                newSelections[index] = member ? member.id : group[0].id;
-                            });
-                            setSelections(newSelections);
-                        } else {
-                            setSelections({});
-                        }
-                    }}
-                />
-                <Label htmlFor="select-all-recommended-leads" className="text-xs font-bold cursor-pointer">Apply Recommended Selections to ALL Groups</Label>
-            </div>
-            <p className="text-[10px] text-muted-foreground uppercase font-bold">{duplicates.length} Duplicate Groups Found</p>
-          </div>
-
-          {duplicates.map((group, groupIndex) => {
-             const groupName = group.find(r => r.companyName)?.companyName || 'Unnamed Group';
-             return (
-                <Card key={groupIndex} className="shadow-none border">
-                <CardHeader className="py-3 bg-muted/30"><CardTitle className="text-sm font-bold">Group: {groupName}</CardTitle></CardHeader>
-                <CardContent className="p-0">
-                    {group.map(lead => {
-                        const isRecommended = lead.source === 'Member';
-                        return (
-                            <div key={lead.id} className={cn("flex items-start gap-4 p-4 border-b last:border-b-0", selections[groupIndex] === lead.id ? "bg-primary/5" : "")}>
-                                <Checkbox
-                                    id={`lead-${groupIndex}-${lead.id}`}
-                                    checked={selections[groupIndex] === lead.id}
-                                    onCheckedChange={() => setSelections(prev => ({ ...prev, [groupIndex]: lead.id }))}
-                                />
-                                <label htmlFor={`lead-${groupIndex}-${lead.id}`} className="text-sm cursor-pointer w-full">
-                                    <div className="flex justify-between items-start">
-                                        <div>
-                                            <div className="flex items-center gap-2">
-                                                <p className="font-bold">{lead.companyName || 'No Company Name'}</p>
-                                                {isRecommended && <Badge variant="default" className="bg-green-100 text-green-700 text-[10px] uppercase">Recommended</Badge>}
-                                            </div>
-                                            <p className="text-xs text-muted-foreground">{lead.contactPerson || `${lead.firstName || ''} ${lead.lastName || ''}`.trim() || 'No Contact Name'}</p>
-                                            <p className="text-[10px] font-mono text-muted-foreground mt-1">{lead.id}</p>
-                                        </div>
-                                        <Badge variant={lead.source === 'Member' ? 'default' : 'outline'} className="text-[10px] uppercase font-extrabold">{lead.source}</Badge>
-                                    </div>
-                                    <p className="text-xs text-muted-foreground mt-2">{lead.email || 'No Email'} • {lead.phone || lead.telephone_number || 'No Phone'}</p>
-                                </label>
-                            </div>
-                        )
-                    })}
-                </CardContent>
-                </Card>
-             )
-          })}
-        </div>
-        <DialogFooter className="p-4 border-t">
-          <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
-          <Button onClick={handleClean} disabled={isLoading} className="bg-destructive hover:bg-destructive/90">
-             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
-             Delete Unselected & Clean
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
 function LeadsDatabaseComponent() {
-  const firestore = useFirestore();
+  const { toast } = useToast();
   const searchParams = useSearchParams();
   const router = useRouter();
-  const leadsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'leads')) : null, [firestore]);
-  const { data: leads, isLoading, forceRefresh } = useCollection(leadsQuery);
-  const { toast } = useToast();
 
+  const [leads, setLeads] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasLoaded, setHasLoaded] = useState(false);
   const [isAddLeadOpen, setIsAddLeadOpen] = useState(false);
   const [editLead, setEditLead] = useState<any | null>(null);
   const [isEditLeadOpen, setIsEditLeadOpen] = useState(false);
   const [deleteLead, setDeleteLead] = useState<any | null>(null);
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
   const [engageLead, setEngageLead] = useState<any | null>(null);
-  const [batchDialogOpen, setBatchDialogOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [isResetting, setIsResetting] = useState(false);
-  const [isCategorizing, setIsCategorizing] = useState(false);
 
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [dataFilter, setDataFilter] = useState('all');
 
-  const statusStats = useMemo(() => {
-    const stats = { new: 0, researching: 0, qualified: 0, invited: 0, active: 0 };
-    (leads || []).forEach(p => {
-        const s = p.status;
-        if (s === 'new') stats.new++;
-        else if (s === 'contacted') stats.researching++;
-        else if (s === 'qualified') stats.qualified++;
-        else if (s === 'invited') stats.invited++;
-        else if (s === 'active') stats.active++;
-    });
-    return stats;
-  }, [leads]);
+  const forceRefresh = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const token = await getClientSideAuthToken();
+      if (!token) return;
+      const res = await performAdminAction(token, 'getLeads');
+      setLeads(res.data || []);
+      setHasLoaded(true);
+    } catch (e: any) {
+      toast({ variant: 'destructive', title: 'Registry Load Failed', description: e.message });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [toast]);
 
   const newLeadDefaults = useMemo(() => {
     const companyName = searchParams.get('newCompanyName');
@@ -461,182 +296,39 @@ function LeadsDatabaseComponent() {
   useEffect(() => {
     if (searchParams.get('action') === 'add-member' || newLeadDefaults) {
       setIsAddLeadOpen(true);
-      const newPath = `${window.location.pathname}?view=leads-database`;
-      router.replace(newPath, { scroll: false });
     }
-  }, [searchParams, newLeadDefaults, router]);
+  }, [searchParams, newLeadDefaults]);
 
   const filteredLeads = useMemo(() => {
-    if (!leads) return [];
     return leads.filter(p => {
         const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
         const matchesCategory = categoryFilter === 'all' || p.entryType === categoryFilter;
         
         let matchesData = true;
-        const email = (p.email || p.email_address || '').toString().toLowerCase().trim();
-        const isInvalidEmail = !email || email === 'null' || email === 'n/a' || email === 'none';
+        const email = (p.email || '').toString().toLowerCase().trim();
+        const isInvalidEmail = !email || email === 'null' || email === 'n/a';
 
         if (dataFilter === 'no-email') matchesData = isInvalidEmail;
         else if (dataFilter === 'no-phone') matchesData = !p.phone;
-        else if (dataFilter === 'no-website') matchesData = !p.website;
         else if (dataFilter === 'has-email') matchesData = !isInvalidEmail;
         else if (dataFilter === 'has-phone') matchesData = !!p.phone;
-        else if (dataFilter === 'has-website') matchesData = !!p.website;
 
         return matchesStatus && matchesCategory && matchesData;
     });
   }, [leads, statusFilter, categoryFilter, dataFilter]);
 
-  const uniqueCategories = useMemo(() => {
-    if (!leads) return [];
-    return [...new Set(leads.map(l => l.entryType).filter(Boolean))].sort();
-  }, [leads]);
-
-  const handleCopyBccList = () => {
-      const emails = filteredLeads
-          .map(l => (l.email || '').toString().toLowerCase().trim())
-          .filter(email => email && email !== 'null' && email !== 'n/a' && email.includes('@'));
-      
-      if (emails.length === 0) {
-          toast({ variant: 'destructive', title: "No Emails Found", description: "The current filtered list has no valid email addresses." });
-          return;
-      }
-      
-      navigator.clipboard.writeText(emails.join(', '));
-      toast({ title: "BCC List Copied!", description: `${emails.length} email addresses are ready for Gmail.` });
-  };
-
-  const handleExportCsv = () => {
-    if (filteredLeads.length === 0) return;
-    
-    const headers = ["Company Name", "Contact Person", "Email", "Phone", "Role", "Status", "Website", "Category"];
-    const rows = filteredLeads.map(l => [
-        l.companyName || '',
-        l.contactPerson || '',
-        l.email || '',
-        l.phone || '',
-        l.role || '',
-        l.status || '',
-        l.website || '',
-        l.entryType || 'General'
-    ]);
-
-    const csvContent = [
-        headers.join(','),
-        ...rows.map(r => r.map(cell => `"${(cell || '').toString().replace(/"/g, '""')}"`).join(','))
-    ].join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `logistics-flow-leads-${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast({ title: "Export Ready", description: "CSV file downloaded." });
-  };
-
-  const handleAutoCategorize = async () => {
-      setIsCategorizing(true);
-      try {
-          const token = await getClientSideAuthToken();
-          if (!token) return;
-          const response = await fetch('/api/admin', {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'bulkCategorizeLeads' }),
-          });
-          const result = await response.json();
-          if (!response.ok) throw new Error(result.error);
-          toast({ title: "Categorization Complete", description: `Tagged ${result.count} records.` });
-          forceRefresh();
-      } catch (e: any) {
-          toast({ variant: 'destructive', title: "Tagging Failed", description: e.message });
-      } finally {
-          setIsCategorizing(false);
-      }
-  };
-
-  const candidatesRemaining = useMemo(() => {
-    return (leads || []).filter(p => {
-        const email = (p.email || p.email_address || '').toString().toLowerCase().trim();
-        const isInvalidEmail = !email || email === 'null' || email === 'n/a' || email === 'none';
-        
-        const isSearching = p.researchStatus === 'researching';
-        const isEnriched = p.researchStatus === 'completed' || !isInvalidEmail;
-        
-        return !isSearching && !isEnriched && p.status !== 'active';
-    }).length;
-  }, [leads]);
-
-  const selectedLeadsForBatch = useMemo(() => {
-      return (leads || []).filter(l => selectedIds.includes(l.id));
-  }, [leads, selectedIds]);
-
-  const handleEnhanceBatch = (size: number) => {
-      if (!leads) return;
-      const uniqueNames = new Set<string>();
-      const targets: any[] = [];
-      
-      for (const p of leads) {
-          const name = (p.companyName || '').trim().toLowerCase();
-          const email = (p.email || p.email_address || '').toString().toLowerCase().trim();
-          const isInvalidEmail = !email || email === 'null' || email === 'n/a' || email === 'none';
-          
-          const isSearching = p.researchStatus === 'researching';
-          const isEnriched = p.researchStatus === 'completed' || !isInvalidEmail;
-          
-          if (!isSearching && !isEnriched && name && !uniqueNames.has(name) && p.status !== 'active') {
-              targets.push(p);
-              uniqueNames.add(name);
-              if (targets.length >= size) break;
-          }
-      }
-      
-      if (targets.length === 0) {
-          toast({ title: "No fresh candidates found", description: "All records are enriched or active." });
-          return;
-      }
-
-      setSelectedIds(targets.map(t => t.id));
-      setBatchDialogOpen(true);
-  };
-
-  const handleResetQueue = async () => {
-      setIsResetting(true);
-      try {
-          const token = await getClientSideAuthToken();
-          if (!token) return;
-          const response = await fetch('/api/admin', {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'resetResearchQueue', payload: { type: 'lead' } }),
-          });
-          const result = await response.json();
-          if (!response.ok) throw new Error(result.error);
-
-          toast({ title: "Queue Reset", description: `${result.count} records set back to 'New'.` });
-          forceRefresh();
-      } catch (e: any) {
-          toast({ variant: 'destructive', title: "Reset Failed", description: e.message });
-      } finally {
-          setIsResetting(false);
-      }
+  const handleExport = () => {
+      if (filteredLeads.length === 0) return;
+      downloadDataAsCSV(filteredLeads, `leads-backup-${new Date().toISOString().split('T')[0]}.csv`);
+      toast({ title: "Backup Exported" });
   };
 
   async function handleDelete() {
     if (!deleteLead) return;
     try {
       const token = await getClientSideAuthToken();
-      if (!token) throw new Error("Authentication failed.");
-      const response = await fetch('/api/admin', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'deleteLead', payload: { leadId: deleteLead.id } }),
-        cache: 'no-store'
-      });
-      if (!response.ok) throw new Error((await response.json()).error || 'Failed to delete lead.');
+      if (!token) throw new Error("Auth failed.");
+      await performAdminAction(token, 'deleteLeads', { leadIds: [deleteLead.id] });
       toast({ title: 'Lead Deleted' });
       forceRefresh();
     } catch (e: any) {
@@ -653,65 +345,16 @@ function LeadsDatabaseComponent() {
         header: 'Company Name'
     },
     { 
-        accessorKey: 'entryType', 
-        header: 'Category',
-        cell: ({row}) => row.original.entryType ? <Badge variant="outline" className="text-[10px] uppercase font-bold">{row.original.entryType}</Badge> : <span className="text-muted-foreground italic text-xs">Uncategorized</span>
-    },
-    { 
         accessorKey: 'contactPerson', 
-        header: 'Contact Name',
-        cell: ({ row }) => <div>{row.original.contactPerson || 'N/A'}</div>
+        header: 'Contact Name'
     },
-    { 
-        accessorKey: 'email', 
-        header: 'Email',
-        cell: ({ row }) => {
-            const email = (row.original.email || '').toString().toLowerCase().trim();
-            const isInvalid = !email || email === 'null' || email === 'n/a' || email === 'none';
-            return <div className={cn(isInvalid ? "text-muted-foreground italic" : "")}>{isInvalid ? "Missing" : email}</div>
-        }
-    },
-    {
-        accessorKey: 'researchStatus',
-        header: 'Enhanced',
-        cell: ({row}) => {
-            const isResearching = row.original.researchStatus === 'researching';
-            const email = (row.original.email || '').toString().toLowerCase().trim();
-            const isInvalidEmail = !email || email === 'null' || email === 'n/a';
-            const isCompleted = row.original.researchStatus === 'completed' || !isInvalidEmail;
-
-            if (isResearching) return <Badge variant="outline" className="animate-pulse text-amber-600 border-amber-200 bg-amber-50 text-[10px]">Searching...</Badge>;
-            if (isCompleted) return <Badge variant="default" className="bg-green-100 text-green-700 border-green-200 text-[10px]">Enriched</Badge>;
-            return <span className="text-xs text-muted-foreground">-</span>;
-        }
-    },
-    {
-        accessorKey: 'lastOutreachAt',
-        header: 'Outreach',
-        cell: ({row}) => {
-            if (!row.original.lastOutreachAt) return <span className="text-[10px] text-muted-foreground uppercase font-bold">None</span>;
-            return (
-                <div className="flex flex-col">
-                    <span className="text-[10px] font-bold text-primary truncate max-w-[100px]">{row.original.lastOutreachSubject}</span>
-                    <span className="text-[10px] text-muted-foreground">{formatDateSafe(row.original.lastOutreachAt)}</span>
-                </div>
-            )
-        }
-    },
+    { accessorKey: 'phone', header: 'Landline' },
+    { accessorKey: 'mobile', header: 'Mobile' },
+    { accessorKey: 'email', header: 'Email' },
     {
         accessorKey: 'status',
         header: 'Status',
-        cell: ({ row }) => {
-            const statusMap: Record<string, { label: string, color: string }> = {
-                'new': { label: 'New', color: 'bg-slate-100 text-slate-700' },
-                'contacted': { label: 'Researching', color: 'bg-amber-100 text-amber-700' },
-                'qualified': { label: 'Qualified', color: 'bg-blue-100 text-blue-700' },
-                'invited': { label: 'Invited', color: 'bg-purple-100 text-purple-700' },
-                'active': { label: 'Member (Active)', color: 'bg-green-600 text-white' },
-            };
-            const config = statusMap[row.original.status] || { label: row.original.status, color: 'bg-muted' };
-            return <Badge className={cn("capitalize text-[10px]", config.color)} variant="outline">{config.label}</Badge>
-        }
+        cell: ({ row }) => <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge>
     },
     {
       id: 'actions',
@@ -722,7 +365,7 @@ function LeadsDatabaseComponent() {
           <Button variant="ghost" size="icon" onClick={() => setEngageLead(row.original)} title="Initiate Engagement">
             <Send className="h-4 w-4 text-primary" />
           </Button>
-          <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.firstName} />
+          <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.companyName} />
           <PartnerTasksDialog partner={row.original} />
           <PartnerOversightDialog partner={row.original} onUpdate={forceRefresh} />
           <Button variant="ghost" size="icon" onClick={() => { setEditLead(row.original); setIsEditLeadOpen(true); }}><Edit className="h-4 w-4" /></Button>
@@ -734,153 +377,77 @@ function LeadsDatabaseComponent() {
 
   return (
     <>
-      <BatchResearchDialog 
-        open={batchDialogOpen} 
-        onOpenChange={setBatchDialogOpen} 
-        selectedLeads={selectedLeadsForBatch} 
-        onComplete={() => { setSelectedIds([]); forceRefresh(); }} 
-      />
-      {engageLead && (
-        <EngageDialog 
-          open={!!engageLead} 
-          onOpenChange={(o) => !o && setEngageLead(null)} 
-          partner={engageLead} 
-          audience={engageLead.role?.toLowerCase().includes('supplier') ? 'suppliers' : engageLead.role?.toLowerCase().includes('transporter') ? 'transporters' : 'partners'} 
-          onEngageSuccess={forceRefresh}
-        />
-      )}
+      <EngageDialog open={!!engageLead} onOpenChange={(o) => !o && setEngageLead(null)} partner={engageLead} audience="suppliers" onEngageSuccess={forceRefresh} />
       <LeadDialog open={isAddLeadOpen} onOpenChange={setIsAddLeadOpen} onSave={forceRefresh} defaultValues={newLeadDefaults} />
       {editLead && <LeadDialog open={isEditLeadOpen} onOpenChange={setIsEditLeadOpen} lead={editLead} onSave={forceRefresh} />}
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
         <AlertDialogContent>
-          <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This action will permanently delete the lead for {deleteLead?.companyName}.</AlertDialogDescription></AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setDeleteLead(null)}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction>
-          </AlertDialogFooter>
+          <AlertDialogHeader><AlertDialogTitle>Delete Lead?</AlertDialogTitle><AlertDialogDescription>This will permanently delete the record.</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogFooter><AlertDialogCancel onClick={() => setDeleteLead(null)}>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
       <div className="space-y-6">
         <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4 px-0 pt-0">
-          <div className="space-y-1">
-            <CardTitle className="flex items-center gap-2">
-                <Users /> Lead Database
-                <Badge variant="secondary" className="ml-2">{candidatesRemaining} Candidates</Badge>
-            </CardTitle>
-            <CardDescription>Manage your prospective member pipeline. New users are active immediately upon registration.</CardDescription>
+          <div className="text-left">
+            <CardTitle className="flex items-center gap-2"><Users /> Lead Database</CardTitle>
+            <CardDescription>Comprehensive registry of prospective members and discovered industrial leads.</CardDescription>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Button variant="outline" size="sm" onClick={handleAutoCategorize} disabled={isCategorizing}>
-                {isCategorizing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Tag className="mr-2 h-4 w-4" />}
-                Auto-Categorize
+            <Button variant="outline" onClick={handleExport} disabled={isLoading || !hasLoaded}>
+                <Download className="mr-2 h-4 w-4" /> Backup (CSV)
             </Button>
-            <Button variant="outline" size="sm" onClick={handleResetQueue} disabled={isResetting}>
-                {isResetting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <RotateCcw className="mr-2 h-4 w-4" />}
-                Reset Stuck
-            </Button>
-            <Button variant="default" className="bg-amber-600 hover:bg-amber-700" onClick={() => handleEnhanceBatch(100)}>
-                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Zap className="mr-2 h-4 w-4" />}
-                Master Batch (100)
-            </Button>
-            <BulkImportDialog type="lead" onComplete={forceRefresh}>
-                <Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Import JSON</Button>
-            </BulkImportDialog>
-            <DuplicateCleaner onComplete={forceRefresh} />
+            <BulkImportDialog type="lead" onComplete={forceRefresh}><Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
             <Button onClick={() => setIsAddLeadOpen(true)}><PlusCircle className="mr-2 h-4 w-4" />Add Lead</Button>
           </div>
         </CardHeader>
 
-        {/* Pipeline Statistics Bar */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            <Card className="bg-slate-50 border-none shadow-none">
-                <CardContent className="p-4 text-center">
-                    <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">New</p>
-                    <p className="text-2xl font-black mt-1">{statusStats.new}</p>
+        {!hasLoaded ? (
+            <Card className="bg-primary/5 border-primary/20 p-12 text-center">
+                <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
+                <h2 className="text-2xl font-black font-headline mb-2">Registry Offline</h2>
+                <p className="text-muted-foreground max-w-sm mx-auto mb-8">Click below to load the industrial lead database. This ensures your data quota is preserved.</p>
+                <Button size="lg" onClick={forceRefresh} disabled={isLoading}>
+                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <RefreshCcw className="mr-2 h-4 w-4" />}
+                    Load Master Registry
+                </Button>
+            </Card>
+        ) : (
+            <Card>
+                <CardContent className="pt-6">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left">
+                        <div className="space-y-2">
+                            <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status</Label>
+                            <Select value={statusFilter} onValueChange={setStatusFilter}>
+                                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All</SelectItem>
+                                    <SelectItem value="new">New</SelectItem>
+                                    <SelectItem value="contacted">Researching</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Tag className="h-3 w-3"/> Data Integrity</Label>
+                            <Select value={dataFilter} onValueChange={setDataFilter}>
+                                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Records</SelectItem>
+                                    <SelectItem value="has-email">Has Email</SelectItem>
+                                    <SelectItem value="no-email">Missing Email</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="flex items-end md:col-span-2 gap-2">
+                            <Button variant="outline" size="sm" onClick={forceRefresh} className="h-8 text-xs flex-1">
+                                <RotateCcw className="mr-1 h-3 w-3" /> Refresh View
+                            </Button>
+                        </div>
+                    </div>
+                    {isLoading ? <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin" /></div> : <DataTable columns={columns} data={filteredLeads} onSelectionChange={setSelectedIds} />}
                 </CardContent>
             </Card>
-            <Card className="bg-amber-50 border-none shadow-none text-amber-700">
-                <CardContent className="p-4 text-center">
-                    <p className="text-[10px] font-black uppercase tracking-widest">Researching</p>
-                    <p className="text-2xl font-black mt-1">{statusStats.researching}</p>
-                </CardContent>
-            </Card>
-            <Card className="bg-blue-50 border-none shadow-none text-blue-700">
-                <CardContent className="p-4 text-center">
-                    <p className="text-[10px] font-black uppercase tracking-widest">Qualified</p>
-                    <p className="text-2xl font-black mt-1">{statusStats.qualified}</p>
-                </CardContent>
-            </Card>
-            <Card className="bg-purple-50 border-none shadow-none text-purple-700">
-                <CardContent className="p-4 text-center">
-                    <p className="text-[10px] font-black uppercase tracking-widest">Invited</p>
-                    <p className="text-2xl font-black mt-1">{statusStats.invited}</p>
-                </CardContent>
-            </Card>
-            <Card className="bg-green-600 border-none shadow-lg text-white">
-                <CardContent className="p-4 text-center">
-                    <p className="text-[10px] font-black uppercase tracking-widest opacity-80">Member (Active)</p>
-                    <p className="text-2xl font-black mt-1">{statusStats.active}</p>
-                </CardContent>
-            </Card>
-        </div>
-
-        <Card>
-          <CardContent className="pt-6">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg">
-                  <div className="space-y-2">
-                      <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status</Label>
-                      <Select value={statusFilter} onValueChange={setStatusFilter}>
-                          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                              <SelectItem value="all">All Statuses</SelectItem>
-                              <SelectItem value="new">New</SelectItem>
-                              <SelectItem value="contacted">Researching</SelectItem>
-                              <SelectItem value="qualified">Qualified</SelectItem>
-                              <SelectItem value="invited">Invited</SelectItem>
-                              <SelectItem value="active">Member (Active)</SelectItem>
-                          </SelectContent>
-                      </Select>
-                  </div>
-                  <div className="space-y-2">
-                      <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Tag className="h-3 w-3"/> Focus Category</Label>
-                      <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                              <SelectItem value="all">All Categories</SelectItem>
-                              <SelectItem value="Transport">Transport</SelectItem>
-                              <SelectItem value="Logistics">Logistics</SelectItem>
-                              <SelectItem value="Forwarder">Forwarder</SelectItem>
-                              <SelectItem value="Distribution">Distribution</SelectItem>
-                              <SelectItem value="Warehousing">Warehousing</SelectItem>
-                              {uniqueCategories.filter(c => !['Transport', 'Logistics', 'Forwarder', 'Distribution', 'Warehousing'].includes(c)).map(cat => (
-                                  <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                              ))}
-                          </SelectContent>
-                      </Select>
-                  </div>
-                  <div className="space-y-2">
-                      <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Search className="h-3 w-3"/> Data Filter</Label>
-                      <Select value={dataFilter} onValueChange={setDataFilter}>
-                          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                              <SelectItem value="all">All Records</SelectItem>
-                              <SelectItem value="has-email">Has Email</SelectItem>
-                              <SelectItem value="no-email">Missing Email</SelectItem>
-                          </SelectContent>
-                      </Select>
-                  </div>
-                  <div className="flex items-end gap-2">
-                      <Button variant="outline" size="sm" onClick={handleExportCsv} className="h-8 text-xs flex-1">
-                          <Download className="mr-1 h-3 w-3" /> CSV
-                      </Button>
-                      <Button variant="outline" size="sm" onClick={handleCopyBccList} className="h-8 text-xs flex-1">
-                          <Copy className="mr-1 h-3 w-3" /> BCC
-                      </Button>
-                  </div>
-              </div>
-              {isLoading ? <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin" /></div> : <DataTable columns={columns} data={filteredLeads} onSelectionChange={setSelectedIds} />}
-          </CardContent>
-        </Card>
+        )}
       </div>
     </>
   );
@@ -888,8 +455,9 @@ function LeadsDatabaseComponent() {
 
 export default function LeadsDatabase() {
   return (
-    <Suspense>
+    <Suspense fallback={<Loader2 className="animate-spin h-10 w-10 text-primary mx-auto my-20"/>}>
       <LeadsDatabaseComponent />
     </Suspense>
   );
 }
+

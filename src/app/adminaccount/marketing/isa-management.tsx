@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -20,6 +21,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { PartnerOversightDialog } from './PartnerOversightDialog';
 import { EngageDialog } from './EngageDialog';
+import { CommunicationLogDialog } from './CommunicationLogDialog';
+import { PartnerTasksDialog } from './PartnerTasksDialog';
 import { formatDateSafe, cn, downloadDataAsCSV } from '@/lib/utils';
 import { EnrichPartnerButton } from './EnrichPartnerButton';
 import { Label } from '@/components/ui/label';
@@ -29,6 +32,7 @@ async function performAdminAction(token: string, action: string, payload: any) {
     method: 'POST',
     headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({ action, payload }),
+    cache: 'no-store'
   });
   const result = await response.json();
   if (!response.ok || !result.success) throw new Error(result.error || `API Error: ${action}`);
@@ -44,8 +48,8 @@ const partnerSchema = z.object({
   contactPerson: z.string().optional(),
   companyName: z.string().optional(),
   address: z.string().optional(),
-  status: z.enum(['active', 'inactive']),
-  type: z.enum(['partner', 'isa', 'investor', 'developer', 'supplier', 'transporter']),
+  status: z.enum(['active', 'inactive', 'contacted', 'new', 'qualified', 'invited']),
+  type: z.literal('isa'),
 });
 type PartnerFormValues = z.infer<typeof partnerSchema>;
 
@@ -82,7 +86,7 @@ function ISADialog({ open, onOpenChange, partner, onSave }: { open: boolean; onO
       <DialogContent className="sm:max-w-2xl text-left">
         <DialogHeader>
           <DialogTitle>{partner ? 'Edit' : 'Add'} ISA</DialogTitle>
-          <DialogDescription>Enter the ISA details.</DialogDescription>
+          <DialogDescription>Enter details for the Independent Sales Agent.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2">
@@ -92,32 +96,14 @@ function ISADialog({ open, onOpenChange, partner, onSave }: { open: boolean; onO
             </div>
             <div className="grid grid-cols-2 gap-4">
               <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" /></FormControl><FormMessage /></FormItem>)} />
-              <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Phone</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Work Phone</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
              <div className="grid grid-cols-2 gap-4">
               <FormField control={form.control} name="mobile" render={({ field }) => (<FormItem><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-              <FormField control={form.control} name="contactPerson" render={({ field }) => (<FormItem><FormLabel>Contact Person (Standardized)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="contactPerson" render={({ field }) => (<FormItem><FormLabel>Key Contact</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
             <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Company Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-            <FormField control={form.control} name="address" render={({ field }) => (<FormItem><FormLabel>Address</FormLabel><FormControl><Textarea placeholder="Enter physical address..." {...field} /></FormControl><FormMessage /></FormItem>)} />
-            <div className="grid grid-cols-2 gap-4">
-              <FormField control={form.control} name="type" render={({ field }) => (
-                <FormItem>
-                    <FormLabel>Partner Category</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl><SelectTrigger><SelectValue placeholder="Select a category" /></SelectTrigger></FormControl>
-                        <SelectContent>
-                            <SelectItem value="partner">Strategic Partner</SelectItem>
-                            <SelectItem value="isa">ISA Agent</SelectItem>
-                            <SelectItem value="investor">Investor</SelectItem>
-                            <SelectItem value="developer">Developer</SelectItem>
-                            <SelectItem value="supplier">Supplier</SelectItem>
-                            <SelectItem value="transporter">Transporter</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="status" render={({ field }) => (
+            <FormField control={form.control} name="status" render={({ field }) => (
                 <FormItem>
                     <FormLabel>Status</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
@@ -125,11 +111,11 @@ function ISADialog({ open, onOpenChange, partner, onSave }: { open: boolean; onO
                         <SelectContent>
                             <SelectItem value="active">Active</SelectItem>
                             <SelectItem value="inactive">Inactive</SelectItem>
+                            <SelectItem value="new">New Lead</SelectItem>
                         </SelectContent>
                     </Select>
                 </FormItem>
-              )} />
-            </div>
+            )} />
             <DialogFooter className="pt-4 border-t">
               <Button type="submit" disabled={isLoading}>{isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />} Save ISA</Button>
             </DialogFooter>
@@ -143,57 +129,29 @@ function ISADialog({ open, onOpenChange, partner, onSave }: { open: boolean; onO
 export default function ISAManagement() {
   const { toast } = useToast();
   const [partners, setPartners] = useState<any[]>([]);
-  const [staff, setStaff] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | null, data?: any }>({ type: null });
-
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [assigneeFilter, setAssigneeFilter] = useState('all');
-  const [dataFilter, setDataFilter] = useState('all');
 
   const forceRefresh = useCallback(async () => {
     setIsLoading(true);
     try {
       const token = await getClientSideAuthToken();
       if (!token) return;
-      const [res, staffRes] = await Promise.all([
-        performAdminAction(token, 'getPartnersByType', { type: 'isa' }),
-        performAdminAction(token, 'getPlatformStaff', {})
-      ]);
+      const res = await performAdminAction(token, 'getPartnersByType', { type: 'isa' });
       setPartners(res.data || []);
-      setStaff(staffRes.data || []);
     } catch (e: any) {
-      toast({ variant: 'destructive', title: 'Error', description: e.message });
+        console.error("Fetch failed", e);
     } finally {
       setIsLoading(false);
     }
-  }, [toast]);
+  }, []);
 
   useEffect(() => { forceRefresh(); }, [forceRefresh]);
 
-  const staffMap = useMemo(() => new Map(staff.map(s => [s.id, `${s.firstName} ${s.lastName}`])), [staff]);
-
-  const filteredISAs = useMemo(() => {
-    return partners.filter(p => {
-        const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
-        const matchesAssignee = assigneeFilter === 'all' || p.assigneeId === assigneeFilter;
-        
-        let matchesData = true;
-        if (dataFilter === 'no-email') matchesData = !p.email;
-        else if (dataFilter === 'no-phone') matchesData = !p.phone;
-        else if (dataFilter === 'no-website') matchesData = !p.website;
-        else if (dataFilter === 'has-email') matchesData = !!p.email;
-        else if (dataFilter === 'has-phone') matchesData = !!p.phone;
-        else if (dataFilter === 'has-website') matchesData = !!p.website;
-
-        return matchesStatus && matchesAssignee && matchesData;
-    });
-  }, [partners, statusFilter, assigneeFilter, dataFilter]);
-
   const handleExport = () => {
-      if (filteredISAs.length === 0) return;
-      downloadDataAsCSV(filteredISAs, `isa-backup-${new Date().toISOString().split('T')[0]}.csv`);
-      toast({ title: "Backup Exported", description: "Current filtered registry has been saved to CSV." });
+      if (partners.length === 0) return;
+      downloadDataAsCSV(partners, `isa-backup-${new Date().toISOString().split('T')[0]}.csv`);
+      toast({ title: "Backup Exported" });
   };
 
   async function handleDelete() {
@@ -209,72 +167,28 @@ export default function ISAManagement() {
     }
   }
 
-  const columns: ColumnDef<any>[] = [
+  const columns: ColumnDef<any>[] = useMemo(() => [
     { accessorKey: 'firstName', header: 'Name', cell: ({ row }) => <div className="font-bold">{row.original.firstName} {row.original.lastName}</div> },
-    { 
-        accessorKey: 'contactPerson', 
-        header: 'Contact Name',
-        cell: ({ row }) => <div>{row.original.contactPerson || `${row.original.firstName || ''} ${row.original.lastName || ''}`.trim() || 'N/A'}</div>
-    },
     { accessorKey: 'phone', header: 'Phone' },
     { accessorKey: 'mobile', header: 'Mobile' },
     { accessorKey: 'companyName', header: 'Company' },
-    { 
-        header: 'Last Outreach', 
-        cell: ({row}) => (
-            <div className="flex flex-col gap-1">
-                <span className="text-xs font-bold text-primary">{row.original.lastOutreachSubject || <span className="text-muted-foreground italic">None</span>}</span>
-                {row.original.lastOutreachAt && <span className="text-[10px] text-muted-foreground">{formatDateSafe(row.original.lastOutreachAt)}</span>}
-            </div>
-        )
-    },
-    {
-        header: 'Read Status',
-        cell: ({row}) => (
-            <div className="flex items-center gap-2">
-                {row.original.lastOpenedAt ? (
-                    <Badge variant="default" className="bg-green-100 text-green-700 border-green-200">
-                        <Mail className="mr-1 h-3 w-3" /> Read
-                    </Badge>
-                ) : (
-                    <Badge variant="outline" className="text-muted-foreground">
-                        <Mail className="mr-1 h-3 w-3" /> Sent
-                    </Badge>
-                )}
-            </div>
-        )
-    },
-    { 
-        header: 'Assignee', 
-        cell: ({row}) => (
-            <div className="flex items-center gap-2">
-                <Users className="h-3 w-3 text-muted-foreground" />
-                <span className="text-xs font-medium">{staffMap.get(row.original.assigneeId) || <span className="text-muted-foreground italic">Unallocated</span>}</span>
-            </div>
-        )
-    },
+    { accessorKey: 'status', header: 'Status', cell: ({row}) => <Badge variant="outline" className="capitalize">{row.original.status}</Badge>},
     { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
       <div className="flex justify-end gap-1">
         <EnrichPartnerButton partner={row.original} onUpdate={forceRefresh} />
-        <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'engage', data: row.original })} title="Initiate Engagement">
-          <Send className="h-4 w-4 text-primary" />
-        </Button>
+        <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'engage', data: row.original })} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
+        <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.firstName} />
+        <PartnerTasksDialog partner={row.original} />
         <PartnerOversightDialog partner={row.original} onUpdate={forceRefresh} />
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'edit', data: row.original })}><Edit className="h-4 w-4" /></Button>
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'delete', data: row.original })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
       </div>
     )},
-  ];
+  ], [forceRefresh]);
 
   return (
     <>
-      <EngageDialog 
-        open={dialog.type === 'engage'} 
-        onOpenChange={(o) => !o && setDialog({ type: null })} 
-        partner={dialog.data} 
-        audience="isa" 
-        onEngageSuccess={forceRefresh}
-      />
+      <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.data} audience="isa" onEngageSuccess={forceRefresh} />
       <ISADialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={forceRefresh} />
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
         <AlertDialogContent>
@@ -287,52 +201,13 @@ export default function ISAManagement() {
           <div><CardTitle><Bot /> ISA Agents</CardTitle></div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={handleExport} disabled={isLoading}>
-                <Download className="mr-2 h-4 w-4" /> Backup (CSV)
+                <Download className="mr-2 h-4 w-4" /> Backup
             </Button>
             <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4" /> Add ISA</Button>
           </div>
         </CardHeader>
         <CardContent>
-            <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left">
-                <div className="flex-1 space-y-2">
-                    <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status</Label>
-                    <Select value={statusFilter} onValueChange={setStatusFilter}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All Statuses</SelectItem>
-                            <SelectItem value="active">Active</SelectItem>
-                            <SelectItem value="inactive">Inactive</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-                <div className="flex-1 space-y-2">
-                    <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Users className="h-3 w-3"/> Assignee</Label>
-                    <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All Staff</SelectItem>
-                            <SelectItem value="none">Unallocated</SelectItem>
-                            {staff.map(s => <SelectItem key={s.id} value={s.id}>{s.firstName} {s.lastName}</SelectItem>)}
-                        </SelectContent>
-                    </Select>
-                </div>
-                <div className="flex-1 space-y-2">
-                    <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Search className="h-3 w-3"/> Data Integrity</Label>
-                    <Select value={dataFilter} onValueChange={setDataFilter}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All Records</SelectItem>
-                            <SelectItem value="has-email">Has Email</SelectItem>
-                            <SelectItem value="no-email">Missing Email</SelectItem>
-                            <SelectItem value="has-phone">Has Phone</SelectItem>
-                            <SelectItem value="no-phone">Missing Phone</SelectItem>
-                            <SelectItem value="has-website">Has WWW</SelectItem>
-                            <SelectItem value="no-website">Missing WWW</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-            </div>
-            {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredISAs} />}
+            {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={partners} />}
         </CardContent>
       </Card>
     </>

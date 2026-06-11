@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -190,11 +191,11 @@ export default function TransporterDiscoveryEngine() {
             <Tabs defaultValue="Long Haul" className="w-full">
                 <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="space-y-1">
-                        <CardTitle className="flex items-center gap-2">
+                        <CardTitle className="flex items-center gap-2 text-left">
                             <Database className="h-6 w-6 text-primary" />
                             Haulier Discovery Engine
                         </CardTitle>
-                        <CardDescription>
+                        <CardDescription className="text-left">
                             Locate and extract high-capacity transport partners using manual forensic prompts.
                         </CardDescription>
                     </div>
