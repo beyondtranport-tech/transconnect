@@ -48,7 +48,8 @@
         "firstName": { "type": "string" },
         "lastName": { "type": "string" },
         "email": { "type": "string", "format": "email" },
-        "phone": { "type": "string" },
+        "phone": { "type": "string", "description": "Primary office or landline number." },
+        "mobile": { "type": "string", "description": "Direct mobile or cell number." },
         "companyName": { "type": "string" },
         "status": { "type": "string", "enum": ["active", "inactive", "contacted", "new", "qualified", "invited"], "description": "The operational status of the partnership." },
         "invitationStatus": { "type": "string", "enum": ["pending", "invited", "registered"], "description": "The status of their invitation to join the platform." },
@@ -139,7 +140,7 @@
           "description": "Admin-managed collection of strategic partners, ISAs, suppliers, etc."
         }
       },
-       {
+      {
         "path": "/partners/{partnerId}/communications/{logId}",
         "definition": {
           "entityName": "CommunicationLog",
@@ -147,7 +148,7 @@
           "description": "Log of communications with a partner."
         }
       },
-       {
+      {
         "path": "/partners/{partnerId}/tasks/{taskId}",
         "definition": {
             "entityName": "Task",
@@ -156,6 +157,6 @@
         }
       }
     ],
-    "reasoning": "Added 'finance' to Partner type enum to separate industrial capital providers from app-launch investors."
+    "reasoning": "Standardized Partner entity to include distinct phone and mobile properties for landline and direct cell tracking."
   }
 }
