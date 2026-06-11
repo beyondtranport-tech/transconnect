@@ -25,7 +25,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { getClientSideAuthToken } from '@/firebase';
-import { Loader2, PlusCircle, Users, Edit, Trash2, Search, Send, Copy, Filter, Mail, Download, Zap, RotateCcw, Upload, Tag, Save } from 'lucide-react';
+import { Loader2, PlusCircle, Users, Edit, Trash2, Search, Send, Copy, Filter, Mail, Download, Zap, RotateCcw, Upload, Tag, Save, Database, RefreshCcw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -43,9 +43,9 @@ import { EnrichPartnerButton } from '@/app/adminaccount/marketing/EnrichPartnerB
 import { PartnerTasksDialog } from '@/app/adminaccount/marketing/PartnerTasksDialog';
 import { CommunicationLogDialog } from '@/app/adminaccount/marketing/CommunicationLogDialog';
 import { EngageDialog } from '@/app/adminaccount/marketing/EngageDialog';
-import { BulkImportDialog } from '@/app/adminaccount/marketing/BulkImportDialog';
-import { BatchResearchDialog } from '@/app/adminaccount/marketing/BatchResearchDialog';
-import { PartnerOversightDialog } from '@/app/adminaccount/marketing/PartnerOversightDialog';
+import { BulkImportDialog } from './marketing/BulkImportDialog';
+import { BatchResearchDialog } from './marketing/BatchResearchDialog';
+import { PartnerOversightDialog } from './marketing/PartnerOversightDialog';
 
 async function performAdminAction(token: string, action: string, payload?: any) {
   const response = await fetch('/api/admin', {
@@ -64,8 +64,9 @@ const leadSchema = z.object({
   contactPerson: z.string().optional(),
   email: z.string().email('Invalid email address').optional().or(z.literal('')),
   phone: z.string().optional(),
+  mobile: z.string().optional(),
   role: z.string().min(1, 'Role is required'),
-  status: z.enum(['new', 'contacted', 'qualified', 'invited', 'active']).default('new'),
+  status: z.enum(['new', 'contacted', 'qualified', 'unqualified', 'invited', 'active']).default('new'),
   notes: z.string().optional(),
   website: z.string().url().optional().or(z.literal('')),
   address: z.string().optional(),
@@ -73,13 +74,181 @@ const leadSchema = z.object({
 
 type LeadFormValues = z.infer<typeof leadSchema>;
 
+function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open: boolean; onOpenChange: (open: boolean) => void; lead?: any; onSave: () => void; defaultValues?: Partial<LeadFormValues> }) {
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+
+  const form = useForm<LeadFormValues>({
+    resolver: zodResolver(leadSchema),
+  });
+
+  useEffect(() => {
+    if (open) {
+      if (lead) {
+        form.reset({
+          ...lead,
+          status: lead.status || 'new',
+        });
+      } else {
+        form.reset({
+          companyName: defaultValues?.companyName || '',
+          contactPerson: defaultValues?.contactPerson || '',
+          email: defaultValues?.email || '',
+          phone: defaultValues?.phone || '',
+          mobile: defaultValues?.mobile || '',
+          role: defaultValues?.role || '',
+          status: 'new',
+          notes: '',
+          website: defaultValues?.website || '',
+          address: defaultValues?.address || '',
+        });
+      }
+    }
+  }, [open, lead, form, defaultValues]);
+
+  async function onSubmit(values: LeadFormValues) {
+    setIsLoading(true);
+    try {
+      const token = await getClientSideAuthToken();
+      if (!token) throw new Error("Authentication failed.");
+
+      await performAdminAction(token, 'savePartner', { partner: { ...values, id: lead?.id, type: 'lead' } });
+
+      toast({ title: 'Record Updated!' });
+      onSave();
+      onOpenChange(false);
+    } catch (e: any) {
+      toast({ variant: 'destructive', title: 'Save Failed', description: e.message });
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-xl">
+        <DialogHeader>
+          <DialogTitle>{lead ? 'Edit' : 'Add New'} Lead</DialogTitle>
+          <DialogDescription>
+            Enter the details for the potential member.
+          </DialogDescription>
+        </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[60vh] overflow-y-auto pr-2 text-left">
+            <FormField control={form.control} name="companyName" render={({ field }) => (
+              <FormItem>
+                <FormLabel>Company Name</FormLabel>
+                <FormControl><Input {...field} /></FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <FormField control={form.control} name="contactPerson" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Contact Person</FormLabel>
+                  <FormControl><Input {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="phone" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Landline</FormLabel>
+                  <FormControl><Input {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <FormField control={form.control} name="mobile" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Mobile (Direct)</FormLabel>
+                  <FormControl><Input {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="email" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl><Input {...field} type="email" /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+            </div>
+            <FormField control={form.control} name="website" render={({ field }) => (
+              <FormItem>
+                <FormLabel>Website</FormLabel>
+                <FormControl><Input {...field} type="url" placeholder="https://example.com" /></FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
+            <FormField control={form.control} name="address" render={({ field }) => (
+              <FormItem>
+                <FormLabel>Physical Address</FormLabel>
+                <FormControl><Textarea {...field} placeholder="Enter full address..." /></FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <FormField control={form.control} name="role" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Potential Role</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger><SelectValue placeholder="Select a role" /></SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {roles.map(r => <SelectItem key={r.id} value={r.title}>{r.title}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="status" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Status</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="new">New</SelectItem>
+                      <SelectItem value="contacted">Researching</SelectItem>
+                      <SelectItem value="qualified">Qualified</SelectItem>
+                      <SelectItem value="invited">Invited</SelectItem>
+                      <SelectItem value="active">Member (Active)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )} />
+            </div>
+            <FormField control={form.control} name="notes" render={({ field }) => (
+              <FormItem>
+                <FormLabel>Internal Notes</FormLabel>
+                <FormControl><Textarea {...field} /></FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
+            <DialogFooter className="pt-4 border-t">
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} Save Lead
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function LeadsDatabaseComponent() {
   const { toast } = useToast();
   const searchParams = useSearchParams();
   const router = useRouter();
 
   const [leads, setLeads] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasLoaded, setHasLoaded] = useState(false);
   const [isAddLeadOpen, setIsAddLeadOpen] = useState(false);
   const [editLead, setEditLead] = useState<any | null>(null);
   const [isEditLeadOpen, setIsEditLeadOpen] = useState(false);
@@ -87,10 +256,10 @@ function LeadsDatabaseComponent() {
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
   const [engageLead, setEngageLead] = useState<any | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [isResetting, setIsResetting] = useState(false);
 
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const [dataFilter, setDataFilter] = useState('all');
 
   const forceRefresh = useCallback(async () => {
     setIsLoading(true);
@@ -99,6 +268,7 @@ function LeadsDatabaseComponent() {
       if (!token) return;
       const res = await performAdminAction(token, 'getLeads');
       setLeads(res.data || []);
+      setHasLoaded(true);
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Registry Load Failed', description: e.message });
     } finally {
@@ -106,38 +276,50 @@ function LeadsDatabaseComponent() {
     }
   }, [toast]);
 
-  useEffect(() => { forceRefresh(); }, [forceRefresh]);
+  const newLeadDefaults = useMemo(() => {
+    const companyName = searchParams.get('newCompanyName');
+    if (companyName) {
+      return {
+        companyName,
+        role: searchParams.get('newRole') || '',
+        address: searchParams.get('newAddress') || '',
+        website: searchParams.get('newWebsite') || '',
+        phone: searchParams.get('newPhone') || '',
+        email: searchParams.get('newEmail') || '',
+        contactPerson: searchParams.get('newContactPerson') || '',
+      };
+    }
+    return undefined;
+  }, [searchParams]);
 
-  const handleExport = () => {
-      if (filteredLeads.length === 0) return;
-      downloadDataAsCSV(filteredLeads, `leads-backup-${new Date().toISOString().split('T')[0]}.csv`);
-      toast({ title: "Backup Exported" });
-  };
+  useEffect(() => {
+    if (searchParams.get('action') === 'add-member' || newLeadDefaults) {
+      setIsAddLeadOpen(true);
+    }
+  }, [searchParams, newLeadDefaults]);
 
   const filteredLeads = useMemo(() => {
     return leads.filter(p => {
         const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
         const matchesCategory = categoryFilter === 'all' || p.entryType === categoryFilter;
-        return matchesStatus && matchesCategory;
-    });
-  }, [leads, statusFilter, categoryFilter]);
+        
+        let matchesData = true;
+        const email = (p.email || '').toString().toLowerCase().trim();
+        const isInvalidEmail = !email || email === 'null' || email === 'n/a';
 
-  const handleSearch = async (term: string) => {
-      if (!term || term.length < 3) {
-          if (term.length === 0) forceRefresh();
-          return;
-      }
-      setIsLoading(true);
-      try {
-          const token = await getClientSideAuthToken();
-          if (!token) return;
-          const res = await performAdminAction(token, 'searchRegistry', { term });
-          setLeads(res.data || []);
-      } catch (e: any) {
-          toast({ variant: 'destructive', title: 'Search Error', description: e.message });
-      } finally {
-          setIsLoading(false);
-      }
+        if (dataFilter === 'no-email') matchesData = isInvalidEmail;
+        else if (dataFilter === 'no-phone') matchesData = !p.phone;
+        else if (dataFilter === 'has-email') matchesData = !isInvalidEmail;
+        else if (dataFilter === 'has-phone') matchesData = !!p.phone;
+
+        return matchesStatus && matchesCategory && matchesData;
+    });
+  }, [leads, statusFilter, categoryFilter, dataFilter]);
+
+  const handleExport = () => {
+      if (filteredLeads.length === 0) return;
+      downloadDataAsCSV(filteredLeads, `leads-backup-${new Date().toISOString().split('T')[0]}.csv`);
+      toast({ title: "Backup Exported" });
   };
 
   async function handleDelete() {
@@ -162,18 +344,12 @@ function LeadsDatabaseComponent() {
         header: 'Company Name'
     },
     { 
-        accessorKey: 'entryType', 
-        header: 'Category',
-        cell: ({row}) => row.original.entryType ? <Badge variant="outline" className="text-[10px] uppercase font-bold">{row.original.entryType}</Badge> : <span className="text-muted-foreground italic text-xs">Uncategorized</span>
-    },
-    { 
         accessorKey: 'contactPerson', 
         header: 'Contact Name'
     },
-    { 
-        accessorKey: 'email', 
-        header: 'Email'
-    },
+    { accessorKey: 'phone', header: 'Landline' },
+    { accessorKey: 'mobile', header: 'Mobile' },
+    { accessorKey: 'email', header: 'Email' },
     {
         accessorKey: 'status',
         header: 'Status',
@@ -190,6 +366,7 @@ function LeadsDatabaseComponent() {
           </Button>
           <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.companyName} />
           <PartnerTasksDialog partner={row.original} />
+          <PartnerOversightDialog partner={row.original} onUpdate={forceRefresh} />
           <Button variant="ghost" size="icon" onClick={() => { setEditLead(row.original); setIsEditLeadOpen(true); }}><Edit className="h-4 w-4" /></Button>
           <Button variant="ghost" size="icon" onClick={() => { setDeleteLead(row.original); setIsDeleteAlertOpen(true); }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
         </div>
@@ -199,7 +376,9 @@ function LeadsDatabaseComponent() {
 
   return (
     <>
-      {engageLead && <EngageDialog open={!!engageLead} onOpenChange={(o) => !o && setEngageLead(null)} partner={engageLead} audience="suppliers" onEngageSuccess={forceRefresh} />}
+      <EngageDialog open={!!engageLead} onOpenChange={(o) => !o && setEngageLead(null)} partner={engageLead} audience="suppliers" onEngageSuccess={forceRefresh} />
+      <LeadDialog open={isAddLeadOpen} onOpenChange={setIsAddLeadOpen} onSave={forceRefresh} defaultValues={newLeadDefaults} />
+      {editLead && <LeadDialog open={isEditLeadOpen} onOpenChange={setIsEditLeadOpen} lead={editLead} onSave={forceRefresh} />}
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
         <AlertDialogContent>
           <AlertDialogHeader><AlertDialogTitle>Delete Lead?</AlertDialogTitle><AlertDialogDescription>This will permanently delete the record.</AlertDialogDescription></AlertDialogHeader>
@@ -209,12 +388,12 @@ function LeadsDatabaseComponent() {
 
       <div className="space-y-6">
         <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4 px-0 pt-0">
-          <div>
+          <div className="text-left">
             <CardTitle className="flex items-center gap-2"><Users /> Lead Database</CardTitle>
-            <CardDescription>Capped view of recent leads. Use search for deep registry access.</CardDescription>
+            <CardDescription>Comprehensive registry of prospective members and discovered industrial leads.</CardDescription>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Button variant="outline" onClick={handleExport} disabled={isLoading}>
+            <Button variant="outline" onClick={handleExport} disabled={isLoading || !hasLoaded}>
                 <Download className="mr-2 h-4 w-4" /> Backup (CSV)
             </Button>
             <BulkImportDialog type="lead" onComplete={forceRefresh}><Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
@@ -222,33 +401,52 @@ function LeadsDatabaseComponent() {
           </div>
         </CardHeader>
 
-        <Card>
-          <CardContent className="pt-6">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                  <div className="md:col-span-2 space-y-2">
-                      <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Search className="h-3 w-3"/> Deep Registry Search</Label>
-                      <Input placeholder="Type at least 3 letters to search thousands of leads..." onChange={(e) => handleSearch(e.target.value)} />
-                  </div>
-                  <div className="space-y-2">
-                      <Label className="text-[10px] font-black uppercase text-muted-foreground">Status</Label>
-                      <Select value={statusFilter} onValueChange={setStatusFilter}>
-                          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                              <SelectItem value="all">All</SelectItem>
-                              <SelectItem value="new">New</SelectItem>
-                              <SelectItem value="contacted">Researching</SelectItem>
-                          </SelectContent>
-                      </Select>
-                  </div>
-                   <div className="flex items-end">
-                      <Button variant="outline" size="sm" onClick={forceRefresh} className="h-8 text-xs w-full">
-                          <RotateCcw className="mr-1 h-3 w-3" /> Reset View
-                      </Button>
-                  </div>
-              </div>
-              {isLoading ? <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin" /></div> : <DataTable columns={columns} data={filteredLeads} onSelectionChange={setSelectedIds} />}
-          </CardContent>
-        </Card>
+        {!hasLoaded ? (
+            <Card className="bg-primary/5 border-primary/20 p-12 text-center">
+                <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
+                <h2 className="text-2xl font-black font-headline mb-2">Registry Offline</h2>
+                <p className="text-muted-foreground max-w-sm mx-auto mb-8">Click below to load the industrial lead database. This ensures your data quota is preserved.</p>
+                <Button size="lg" onClick={forceRefresh} disabled={isLoading}>
+                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <RefreshCcw className="mr-2 h-4 w-4" />}
+                    Load Master Registry
+                </Button>
+            </Card>
+        ) : (
+            <Card>
+                <CardContent className="pt-6">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left">
+                        <div className="space-y-2">
+                            <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status</Label>
+                            <Select value={statusFilter} onValueChange={setStatusFilter}>
+                                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All</SelectItem>
+                                    <SelectItem value="new">New</SelectItem>
+                                    <SelectItem value="contacted">Researching</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Tag className="h-3 w-3"/> Data Integrity</Label>
+                            <Select value={dataFilter} onValueChange={setDataFilter}>
+                                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Records</SelectItem>
+                                    <SelectItem value="has-email">Has Email</SelectItem>
+                                    <SelectItem value="no-email">Missing Email</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="flex items-end md:col-span-2 gap-2">
+                            <Button variant="outline" size="sm" onClick={forceRefresh} className="h-8 text-xs flex-1">
+                                <RotateCcw className="mr-1 h-3 w-3" /> Refresh View
+                            </Button>
+                        </div>
+                    </div>
+                    {isLoading ? <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin" /></div> : <DataTable columns={columns} data={filteredLeads} onSelectionChange={setSelectedIds} />}
+                </CardContent>
+            </Card>
+        )}
       </div>
     </>
   );
@@ -256,7 +454,7 @@ function LeadsDatabaseComponent() {
 
 export default function LeadsDatabase() {
   return (
-    <Suspense>
+    <Suspense fallback={<Loader2 className="animate-spin h-10 w-10 text-primary mx-auto my-20"/>}>
       <LeadsDatabaseComponent />
     </Suspense>
   );

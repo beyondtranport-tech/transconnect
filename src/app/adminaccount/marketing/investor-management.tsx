@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -140,7 +141,9 @@ function InvestorDialog({ open, onOpenChange, partner, onSave }: { open: boolean
                         <SelectItem value="active">Active Partner</SelectItem>
                     </SelectContent></Select><FormMessage /></FormItem> )} />
                      <DialogFooter className="pt-4 border-t">
-                        <Button type="submit" disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />} Save Investor</Button>
+                        <Button type="submit" disabled={isLoading}>
+                            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />} Save Investor
+                        </Button>
                     </DialogFooter>
                 </form>
             </Form>

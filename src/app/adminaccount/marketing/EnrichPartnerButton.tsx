@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -176,7 +175,7 @@ REQUIRED OUTPUT (RAW JSON ONLY):
 
                     <DialogFooter className="sm:justify-between gap-4">
                         <Button variant="outline" onClick={handleCopy}>
-                            <Copy className="mr-2 h-4 w-4" /> 
+                            {isCopied ? <ClipboardCheck className="mr-2 h-4 w-4 text-green-600" /> : <Search className="mr-2 h-4 w-4" />}
                             {isCopied ? 'Copied!' : 'Copy Forensic Prompt'}
                         </Button>
                         <Button onClick={handleMarkAsResearching} disabled={isLogging || !isCopied} className="bg-primary hover:bg-primary/90 text-white">
