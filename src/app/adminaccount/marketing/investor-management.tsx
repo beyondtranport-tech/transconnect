@@ -110,7 +110,7 @@ function InvestorDialog({ open, onOpenChange, partner, onSave }: { open: boolean
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-lg text-left">
+        <DialogContent className="sm:max-width-lg text-left">
             <DialogHeader>
                 <DialogTitle>{partner ? 'Edit' : 'Add'} App Launch Investor</DialogTitle>
                 <DialogDescription>Enter details for VCs, Angels, or Seed Funds.</DialogDescription>
