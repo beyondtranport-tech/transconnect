@@ -29,9 +29,9 @@ type Platform = 'facebook' | 'linkedin' | 'instagram' | 'tiktok';
 
 const platformConfig: Record<Platform, { label: string, icon: any, color: string, targetLabel: string, defaultDest: string, defaultPage: string }> = {
     facebook: { label: 'Facebook', icon: Facebook, color: 'text-blue-600', targetLabel: 'Target Group URL', defaultDest: 'https://facebook.com/groups/feed/', defaultPage: 'https://facebook.com/LogisticsFlow' },
-    linkedin: { label: 'LinkedIn', icon: Linkedin, color: 'text-blue-800', targetLabel: 'Target Community/Profile URL', defaultDest: 'https://linkedin.com/feed/', defaultPage: 'https://www.linkedin.com/company/127864195' },
+    linkedin: { label: 'LinkedIn', icon: Linkedin, color: 'text-blue-800', targetLabel: 'Target Community URL', defaultDest: 'https://linkedin.com/feed/', defaultPage: 'https://www.linkedin.com/company/127864195' },
     instagram: { label: 'Instagram', icon: Instagram, color: 'text-pink-600', targetLabel: 'Target Profile URL', defaultDest: 'https://instagram.com/', defaultPage: 'https://instagram.com/LogisticsFlow' },
-    tiktok: { label: 'TikTok', icon: Music, color: 'text-black', targetLabel: 'Target Trend/User URL', defaultDest: 'https://tiktok.com/', defaultPage: 'https://tiktok.com/@LogisticsFlow' },
+    tiktok: { label: 'TikTok', icon: Music, color: 'text-black', targetLabel: 'Target Trend URL', defaultDest: 'https://tiktok.com/', defaultPage: 'https://tiktok.com/@LogisticsFlow' },
 };
 
 /**
@@ -47,7 +47,8 @@ const socialTemplates = (platform: Platform) => {
             icon: Rocket,
             headline: `🚀 Revolutionary: The Launch of Logistics Flow on ${platformName}`,
             body: "It's finally here. A groundbreaking digital ecosystem built specifically for the South African transport industry. No more fragmented systems or information gaps. We've built an innovative platform designed for you—the haulier, the supplier, the professional.\n\nBe among the first to experience the future of logistics. It's new. It's groundbreaking. It's built for you.\n\nClick the link below to access the app for free.",
-            imagePrompt: 'A high-tech cinematic shot of a glowing digital network grid superimposed over a fleet of trucks at dawn, representing innovation and groundbreaking technology.'
+            imagePrompt: 'A high-tech cinematic shot of a glowing digital network grid superimposed over a fleet of trucks at dawn, representing innovation and groundbreaking technology. Ultra-realistic, 8k.',
+            videoPrompt: 'A 5-second dynamic cinematic sweep of a logistics hub. Starting with a close-up of a digital tablet showing a pulsing network map, then pulling back to reveal a fleet of trucks starting their engines and driving out of a modern warehouse as a digital grid glows on the asphalt.'
         },
         'social-connection': {
             group: 'Foundation',
@@ -55,7 +56,8 @@ const socialTemplates = (platform: Platform) => {
             icon: ShieldCheck,
             headline: `🤝 Join the Logistics Flow Community on ${platformName}`,
             body: `Stay ahead of the curve. Follow our ${platformName} profile to get real-time load matching alerts, exclusive parts discounts, and industrial growth strategies delivered to your feed.\n\nBuilding the future of South African logistics, one connection at a time.\n\nClick the link below to access the app for free.`,
-            imagePrompt: 'A cinematic high-detail close up of professional logistics operators using tablets in front of a modern truck fleet, morning sun.'
+            imagePrompt: 'A cinematic high-detail close up of professional logistics operators using tablets in front of a modern truck fleet, morning sun.',
+            videoPrompt: 'A slow motion shot of two transport owners shaking hands in an industrial setting, with a modern truck blurred in the background. The scene transitions to a high-speed montage of the Logistics Flow dashboard showing matching results.'
         },
         'value-costs': {
             group: 'Value',
@@ -63,7 +65,8 @@ const socialTemplates = (platform: Platform) => {
             icon: BarChart3,
             headline: '📉 Slash Your Operating Costs',
             body: "High maintenance and fuel costs are a constant tax on your profit. By joining our community, you tap into collective buying power for tires, parts, and fuel. Why pay premium prices when we can negotiate as a syndicate?\n\nFollow us for more updates on group deals.\n\nClick the link below to access the app for free.",
-            imagePrompt: 'Rows of heavy commercial truck tires stacked neatly in a modern warehouse, industrial lighting.'
+            imagePrompt: 'Rows of heavy commercial truck tires stacked neatly in a modern warehouse, industrial lighting.',
+            videoPrompt: 'A high-speed time-lapse of a truck being fitted with new tires in a clean, modern workshop. Floating digital tags show prices dropping as a "Community Syndicate" discount is applied.'
         },
         'value-funding-registry': {
             group: 'Value',
@@ -71,23 +74,26 @@ const socialTemplates = (platform: Platform) => {
             icon: Building,
             headline: '🏦 Access 85+ Specialized Funders',
             body: "One application. 85+ Potential Funders. We've mapped the entire niche lending landscape in SA to bring the best asset finance and working capital deals directly to your dashboard.\n\nFollow us for more updates.\n\nClick the link below to access the app for free.",
-            imagePrompt: 'A sleek modern bank building exterior in Sandton, morning light, professional and clean.'
+            imagePrompt: 'A sleek modern bank building exterior in Sandton, morning light, professional and clean.',
+            videoPrompt: 'An animation showing a map of South Africa. 85+ light nodes pulse across the country, all connecting back to a central "Logistics Flow" hub. A "Funded" seal appears over a new truck.'
         },
         'revenue-membership': {
             group: 'Revenue',
             label: 'Membership Comms',
             icon: Users,
             headline: '📈 Build a Recurring Annuity',
-            body: "Refer a member, earn a commission. Every single month. When your network signs up for a paid plan, you earn a percentage of their fee for as long as they remain active. Build your own monthly income engine.\n\nFollow us for more updates.\n\nClick the link below to access the app for free.",
-            imagePrompt: 'A calendar showing recurring monthly payments with a green growth arrow.'
+            body: "Refer a member, earn a commission. Every single month. When your network signs up for a paid plan, you earn a percentage of their fee for as long as they remain active. Build your own monthly income engine.\n\nFollow us for more updates on group deals.\n\nClick the link below to access the app for free.",
+            imagePrompt: 'A calendar showing recurring monthly payments with a green growth arrow.',
+            videoPrompt: 'A clean 3D animation showing a "Member" icon joining the network, which triggers a "Commission" coin to flow into a digital wallet. The cycle repeats and scales up as more icons join.'
         },
         'howto-matcher': {
             group: 'Education',
             label: 'Freight Matcher',
             icon: Search,
             headline: '📍 How-To: Eliminate Empty Miles',
-            body: "Our AI Freight Matcher is a game-changer. Simply enter your origin and destination, and let our intelligence engine find the highest-paying loads for your return leg.\n\nFollow us for more updates.\n\nClick the link below to access the app for free.",
-            imagePrompt: 'A map of South Africa with blinking nodes being connected by an AI intelligence line.'
+            body: "Our AI Freight Matcher is a game-changer. Simply enter your origin and destination, and let our intelligence engine find the highest-paying loads for your return leg.\n\nFollow us for more updates on group deals.\n\nClick the link below to access the app for free.",
+            imagePrompt: 'A map of South Africa with blinking nodes being connected by an AI intelligence line.',
+            videoPrompt: 'A screen recording of the Logistics Flow app. A user enters "Durban to JHB". The AI pulses and reveals 12 matching loads with high rates. The user clicks "Accept Match".'
         }
     };
 };
@@ -159,6 +165,13 @@ export default function SocialStudio({ platform = 'facebook' }: { platform?: Pla
         }
     };
 
+    const handleCopyPrompt = (promptType: 'image' | 'video') => {
+        const prompt = promptType === 'image' ? activePost?.imagePrompt : activePost?.videoPrompt;
+        if (!prompt) return;
+        navigator.clipboard.writeText(prompt);
+        toast({ title: `${promptType === 'image' ? 'Image' : 'Video'} Prompt Copied!`, description: "Paste it into the AI Designer tool below." });
+    };
+
     const handleGenerateCustom = async () => {
         if (!creatorParams.topic || !creatorParams.criticalPoints) {
             toast({ variant: 'destructive', title: "Details Required", description: "Please enter a topic and points." });
@@ -173,7 +186,10 @@ export default function SocialStudio({ platform = 'facebook' }: { platform?: Pla
                 tone: 'community_casual'
             });
             if (result.posts && result.posts.length > 0) {
-                setAiResult(result.posts[0]);
+                setAiResult({
+                    ...result.posts[0],
+                    videoPrompt: `A cinematic video interpretation of the topic: ${creatorParams.topic}. Focus on movement, professional logistics, and growth.`
+                });
                 toast({ title: "AI Copy Ready" });
             }
         } catch (e: any) {
@@ -181,12 +197,6 @@ export default function SocialStudio({ platform = 'facebook' }: { platform?: Pla
         } finally {
             setIsGenerating(false);
         }
-    };
-
-    const copyImagePrompt = () => {
-        if (!activePost?.imagePrompt) return;
-        navigator.clipboard.writeText(activePost.imagePrompt);
-        toast({ title: "Prompt Copied!", description: "Paste it into the AI Designer below." });
     };
 
     return (
@@ -210,6 +220,7 @@ export default function SocialStudio({ platform = 'facebook' }: { platform?: Pla
                     <div className="space-y-1 text-left">
                         <Label className="text-[10px] font-black uppercase text-muted-foreground px-2 tracking-widest">{config.targetLabel}</Label>
                         <Input placeholder="Link to group or profile..." value={groupUrl} onChange={e => setGroupUrl(e.target.value)} className="h-8 w-64 bg-white border-none shadow-none text-xs font-mono" />
+                        <p className="text-[9px] text-muted-foreground px-2 italic">The external page where you want to post or engage.</p>
                     </div>
                 </div>
             </div>
@@ -244,9 +255,12 @@ export default function SocialStudio({ platform = 'facebook' }: { platform?: Pla
 
                     <div className="flex-1 overflow-y-auto bg-slate-50 p-8">
                         <div className="max-w-[800px] mx-auto space-y-8">
-                             <div className="bg-white p-3 rounded-lg border flex items-center justify-between text-xs">
-                                <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Follow Link: {config.label} Profile/Page URL</Label>
-                                <Input value={pageUrl} onChange={e => setPageUrl(e.target.value)} className="h-7 w-80 border-none shadow-none text-right font-mono" />
+                             <div className="bg-white p-3 rounded-lg border flex flex-col gap-1">
+                                <div className="flex items-center justify-between text-xs">
+                                    <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Follow Link: {config.label} Profile URL</Label>
+                                    <Input value={pageUrl} onChange={e => setPageUrl(e.target.value)} className="h-7 w-80 border-none shadow-none text-right font-mono" />
+                                </div>
+                                <p className="text-[9px] text-muted-foreground text-right italic">Your official company page URL. Added to the post to drive followers.</p>
                             </div>
 
                             {activeTab === 'creator' && (
@@ -292,18 +306,26 @@ export default function SocialStudio({ platform = 'facebook' }: { platform?: Pla
                                         </CardFooter>
                                     </Card>
 
-                                    <div className="space-y-6">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="bg-slate-900 text-white p-6 rounded-xl border-l-4 border-l-primary text-left">
+                                            <div className="flex items-center justify-between mb-4">
+                                                <h4 className="font-bold uppercase text-[10px] tracking-widest text-primary flex items-center gap-2"><ImageIcon className="h-3 w-3"/> AI Image Command</h4>
+                                                <Button variant="outline" size="sm" className="h-7 text-[9px] uppercase bg-white/10" onClick={() => handleCopyPrompt('image')}><Copy className="mr-1 h-3 w-3" /> Copy</Button>
+                                            </div>
+                                            <p className="text-xs italic font-mono opacity-90 border-l border-white/20 pl-4">{activePost.imagePrompt}</p>
+                                        </div>
                                         <div className="bg-slate-900 text-white p-6 rounded-xl border-l-4 border-l-amber-500 text-left">
                                             <div className="flex items-center justify-between mb-4">
-                                                <h4 className="font-bold uppercase text-[10px] tracking-widest text-amber-500">AI Design Command</h4>
-                                                <Button variant="outline" size="sm" className="h-7 text-[9px] uppercase bg-white/10" onClick={copyImagePrompt}><Copy className="mr-1 h-3 w-3" /> Copy Prompt</Button>
+                                                <h4 className="font-bold uppercase text-[10px] tracking-widest text-amber-500 flex items-center gap-2"><Video className="h-3 w-3"/> AI Video Command</h4>
+                                                <Button variant="outline" size="sm" className="h-7 text-[9px] uppercase bg-white/10" onClick={() => handleCopyPrompt('video')}><Copy className="mr-1 h-3 w-3" /> Copy</Button>
                                             </div>
-                                            <p className="text-sm italic font-mono opacity-90 border-l-2 border-primary/50 pl-4 mb-4">{activePost.imagePrompt}</p>
+                                            <p className="text-xs italic font-mono opacity-90 border-l border-amber-500/20 pl-4">{activePost.videoPrompt || 'A slow cinematic 4k video of the subject moving towards the camera with high-tech overlays.'}</p>
                                         </div>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            <ImageGeneratorCard />
-                                            <VideoGeneratorCard />
-                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <ImageGeneratorCard />
+                                        <VideoGeneratorCard />
                                     </div>
                                 </>
                             )}
