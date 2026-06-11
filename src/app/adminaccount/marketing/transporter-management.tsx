@@ -34,7 +34,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { getClientSideAuthToken, useUser } from '@/firebase';
+import { getClientSideAuthToken } from '@/firebase';
 import { 
   Loader2, PlusCircle, Truck, Edit, Trash2, Send, Filter, RotateCcw, Search, Upload, Save, Download, RefreshCcw, Zap, Phone
 } from 'lucide-react';
@@ -238,6 +238,7 @@ export default function TransporterManagement() {
   const columns: ColumnDef<any>[] = [
     { accessorKey: 'companyName', header: 'Transporter Name', cell: ({ row }) => <div className="font-bold">{row.original.companyName || `${row.original.firstName} ${row.original.lastName}`}</div> },
     { accessorKey: 'phone', header: 'Landline', cell: ({row}) => <div>{row.original.phone || 'N/A'}</div> },
+    { accessorKey: 'mobile', header: 'Mobile', cell: ({row}) => <div>{row.original.mobile || 'N/A'}</div> },
     { accessorKey: 'email', header: 'Email' },
     { accessorKey: 'status', header: 'Status', cell: ({ row }) => <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge> },
     { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
@@ -264,7 +265,7 @@ export default function TransporterManagement() {
         </AlertDialogContent>
       </AlertDialog>
       
-      <div className="space-y-6">
+      <div className="space-y-6 text-left">
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="text-left">
                 <CardTitle className="flex items-center gap-2"><Truck /> Transporter Registry</CardTitle>
@@ -282,14 +283,14 @@ export default function TransporterManagement() {
         <Card>
             <CardContent className="pt-6">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left">
-                    <div className="md:col-span-2 space-y-2">
+                    <div className="md:col-span-2 space-y-2 text-left">
                         <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Search className="h-3 w-3"/> Deep Registry Search</Label>
                         <div className="flex gap-2">
                             <Input placeholder="Type name or ID to search thousands of hauliers..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearch()} />
                             <Button onClick={handleSearch} disabled={isLoading}><Search className="h-4 w-4"/></Button>
                         </div>
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-2 text-left">
                         <Label className="text-[10px] font-black uppercase text-muted-foreground">Status</Label>
                         <Select value={statusFilter} onValueChange={setStatusFilter}>
                             <SelectTrigger className="h-10"><SelectValue placeholder="All Statuses" /></SelectTrigger>

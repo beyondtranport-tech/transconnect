@@ -21,7 +21,7 @@ import * as z from 'zod';
 import { PartnerOversightDialog } from './PartnerOversightDialog';
 import { EngageDialog } from './EngageDialog';
 import { formatDateSafe, cn, downloadDataAsCSV } from '@/lib/utils';
-import { EnrichPartnerButton, BulkEnrichButton } from './EnrichPartnerButton';
+import { EnrichPartnerButton } from './EnrichPartnerButton';
 import { Label } from '@/components/ui/label';
 
 async function performAdminAction(token: string, action: string, payload: any) {
@@ -40,6 +40,7 @@ const partnerSchema = z.object({
   lastName: z.string().min(1, 'Last name is required'),
   email: z.string().email('Invalid email address').optional().or(z.literal('')),
   phone: z.string().optional(),
+  mobile: z.string().optional(),
   contactPerson: z.string().optional(),
   companyName: z.string().optional(),
   address: z.string().optional(),
@@ -56,7 +57,7 @@ function ISADialog({ open, onOpenChange, partner, onSave }: { open: boolean; onO
   useEffect(() => {
     if (open) {
       if (partner) form.reset(partner);
-      else form.reset({ firstName: '', lastName: '', email: '', phone: '', contactPerson: '', companyName: '', address: '', status: 'active', type: 'isa' });
+      else form.reset({ firstName: '', lastName: '', email: '', phone: '', mobile: '', contactPerson: '', companyName: '', address: '', status: 'active', type: 'isa' });
     }
   }, [open, partner, form]);
 
@@ -78,7 +79,7 @@ function ISADialog({ open, onOpenChange, partner, onSave }: { open: boolean; onO
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl">
+      <DialogContent className="sm:max-w-2xl text-left">
         <DialogHeader>
           <DialogTitle>{partner ? 'Edit' : 'Add'} ISA</DialogTitle>
           <DialogDescription>Enter the ISA details.</DialogDescription>
@@ -93,7 +94,10 @@ function ISADialog({ open, onOpenChange, partner, onSave }: { open: boolean; onO
               <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Phone</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
-            <FormField control={form.control} name="contactPerson" render={({ field }) => (<FormItem><FormLabel>Contact Person (Standardized)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+             <div className="grid grid-cols-2 gap-4">
+              <FormField control={form.control} name="mobile" render={({ field }) => (<FormItem><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="contactPerson" render={({ field }) => (<FormItem><FormLabel>Contact Person (Standardized)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+            </div>
             <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Company Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="address" render={({ field }) => (<FormItem><FormLabel>Address</FormLabel><FormControl><Textarea placeholder="Enter physical address..." {...field} /></FormControl><FormMessage /></FormItem>)} />
             <div className="grid grid-cols-2 gap-4">
@@ -101,7 +105,7 @@ function ISADialog({ open, onOpenChange, partner, onSave }: { open: boolean; onO
                 <FormItem>
                     <FormLabel>Partner Category</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                        <FormControl><SelectTrigger><SelectValue placeholder="Select a category" /></SelectTrigger></FormControl>
                         <SelectContent>
                             <SelectItem value="partner">Strategic Partner</SelectItem>
                             <SelectItem value="isa">ISA Agent</SelectItem>
@@ -212,11 +216,8 @@ export default function ISAManagement() {
         header: 'Contact Name',
         cell: ({ row }) => <div>{row.original.contactPerson || `${row.original.firstName || ''} ${row.original.lastName || ''}`.trim() || 'N/A'}</div>
     },
-    { 
-        accessorKey: 'phone', 
-        header: 'Contact Number',
-        cell: ({ row }) => <div>{row.original.phone || row.original.telephone_number || 'N/A'}</div>
-    },
+    { accessorKey: 'phone', header: 'Phone' },
+    { accessorKey: 'mobile', header: 'Mobile' },
     { accessorKey: 'companyName', header: 'Company' },
     { 
         header: 'Last Outreach', 
@@ -282,18 +283,17 @@ export default function ISAManagement() {
         </AlertDialogContent>
       </AlertDialog>
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader className="flex flex-row items-center justify-between text-left">
           <div><CardTitle><Bot /> ISA Agents</CardTitle></div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={handleExport} disabled={isLoading}>
                 <Download className="mr-2 h-4 w-4" /> Backup (CSV)
             </Button>
-            <BulkEnrichButton partners={partners} onComplete={forceRefresh} />
             <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4" /> Add ISA</Button>
           </div>
         </CardHeader>
         <CardContent>
-            <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg">
+            <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left">
                 <div className="flex-1 space-y-2">
                     <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status</Label>
                     <Select value={statusFilter} onValueChange={setStatusFilter}>

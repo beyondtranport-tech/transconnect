@@ -59,161 +59,13 @@ const partnerSchema = z.object({
   lastName: z.string().min(1, 'Last name is required'),
   email: z.string().email('Invalid email address').optional().or(z.literal('')),
   phone: z.string().optional(),
+  mobile: z.string().optional(),
   companyName: z.string().optional(),
   status: z.enum(['active', 'inactive', 'contacted', 'new', 'qualified', 'invited']),
   type: z.literal('investor'),
 });
 
 type PartnerFormValues = z.infer<typeof partnerSchema>;
-
-function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [duplicates, setDuplicates] = useState<any[][]>([]);
-  const [selections, setSelections] = useState<Record<number, string>>({});
-  const { toast } = useToast();
-
-  async function findDuplicates() {
-    setIsLoading(true);
-    try {
-      const token = await getClientSideAuthToken();
-      if (!token) throw new Error("Auth failed.");
-      const response = await fetch('/api/admin', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'findDuplicateLeads' }),
-        cache: 'no-store'
-      });
-
-      if (!response.ok) {
-          const text = await response.text();
-          throw new Error(text.includes('<html>') ? "Server Timeout: Scanning large database took too long. Please try again." : text);
-      }
-
-      const result = await response.json();
-      if (!result.success) throw new Error(result.error);
-      setDuplicates(result.data || []);
-      if (result.data.length === 0) {
-        toast({ title: "No duplicates found." });
-      } else {
-        const initialSelections: Record<number, string> = {};
-        result.data.forEach((group: any[], index: number) => {
-            const memberRecord = group.find(r => r.source === 'Member');
-            if (memberRecord) initialSelections[index] = memberRecord.id;
-            else initialSelections[index] = group[0].id;
-        });
-        setSelections(initialSelections);
-        setIsOpen(true);
-      }
-    } catch (e: any) {
-      toast({ variant: 'destructive', title: "Error finding duplicates", description: e.message });
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
-  async function handleClean() {
-    setIsLoading(true);
-    const idsToDelete = duplicates.flatMap((group, index) => {
-      const idToKeep = selections[index];
-      if (!idToKeep) return [];
-      return group.filter(lead => lead.id !== idToKeep).map(lead => lead.id);
-    });
-
-    if (idsToDelete.length === 0) {
-      toast({ title: "No duplicates selected for deletion." });
-      setIsLoading(false);
-      setIsOpen(false);
-      return;
-    }
-
-    try {
-      const token = await getClientSideAuthToken();
-      if (!token) throw new Error("Auth failed.");
-      await performAdminAction(token, 'deleteLeads', { leadIds: idsToDelete });
-
-      toast({ title: "Duplicates Cleaned!", description: `${idsToDelete.length} duplicate records deleted.` });
-      onComplete();
-      setIsOpen(false);
-    } catch (e: any) {
-      toast({ variant: 'destructive', title: "Error cleaning duplicates", description: e.message });
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
-  return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" onClick={findDuplicates} disabled={isLoading}>
-          {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
-          Find & Clean Duplicates
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle>Duplicate Investor Cleaner</DialogTitle>
-          <DialogDescription>
-            Select the records you want to keep. This tool matches based on fund name and leadership identity.
-          </DialogDescription>
-        </DialogHeader>
-        
-        <Alert className="bg-amber-50 border-amber-200">
-            <Info className="h-4 w-4 text-amber-600" />
-            <AlertTitle>Protection Recommendation</AlertTitle>
-            <AlertDescription className="text-xs">
-                Always keep <strong>Members</strong> and delete <strong>Leads</strong> to ensure account integrity.
-            </AlertDescription>
-        </Alert>
-
-        <div className="flex-1 overflow-y-auto p-4 space-y-6">
-          {duplicates.map((group, groupIndex) => {
-             const companyName = group.find(r => r.companyName)?.companyName || 'Unnamed Group';
-             const contactPerson = group.find(r => r.contactPerson)?.contactPerson || 'N/A';
-             return (
-                <Card key={groupIndex} className="shadow-none border">
-                <CardHeader className="py-3 bg-muted/30 flex flex-row justify-between items-center">
-                    <div>
-                        <CardTitle className="text-sm font-bold">Group: {companyName}</CardTitle>
-                        <CardDescription className="text-[10px] uppercase font-black text-amber-600">Decision Maker Match: {contactPerson}</CardDescription>
-                    </div>
-                </CardHeader>
-                <CardContent className="p-0">
-                    {group.map(lead => (
-                        <div key={lead.id} className={cn("flex items-start gap-4 p-4 border-b last:border-b-0", selections[groupIndex] === lead.id ? "bg-primary/5" : "")}>
-                            <Checkbox
-                                id={`investor-${groupIndex}-${lead.id}`}
-                                checked={selections[groupIndex] === lead.id}
-                                onCheckedChange={() => setSelections(prev => ({ ...prev, [groupIndex]: lead.id }))}
-                            />
-                            <label htmlFor={`investor-${groupIndex}-${lead.id}`} className="text-sm cursor-pointer w-full">
-                                <div className="flex justify-between items-start">
-                                    <div className="flex items-center gap-2">
-                                        <p className="font-bold">{lead.companyName || 'N/A'}</p>
-                                        {lead.source === 'Member' && <Badge className="bg-green-100 text-green-700 text-[10px]">Active Member</Badge>}
-                                    </div>
-                                    <Badge variant="outline" className="text-[10px] uppercase">{lead.source}</Badge>
-                                </div>
-                                <p className="text-xs text-muted-foreground mt-2">{lead.email || 'No Email'} • {lead.phone || 'No Phone'}</p>
-                            </label>
-                        </div>
-                    ))}
-                </CardContent>
-                </Card>
-             )
-          })}
-        </div>
-        <DialogFooter className="p-4 border-t">
-          <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
-          <Button onClick={handleClean} disabled={isLoading} className="bg-destructive hover:bg-destructive/90">
-             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
-             Delete Unselected
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
 
 function InvestorDialog({ open, onOpenChange, partner, onSave }: { open: boolean; onOpenChange: (open: boolean) => void; partner?: any; onSave: () => void; }) {
   const [isLoading, setIsLoading] = useState(false);
@@ -234,6 +86,7 @@ function InvestorDialog({ open, onOpenChange, partner, onSave }: { open: boolean
           lastName: '',
           email: '',
           phone: '',
+          mobile: '',
           companyName: '',
           status: 'new',
           type: 'investor',
@@ -262,7 +115,7 @@ function InvestorDialog({ open, onOpenChange, partner, onSave }: { open: boolean
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-lg text-left">
             <DialogHeader>
                 <DialogTitle>{partner ? 'Edit' : 'Add New'} App Launch Investor</DialogTitle>
                 <DialogDescription>
@@ -270,17 +123,20 @@ function InvestorDialog({ open, onOpenChange, partner, onSave }: { open: boolean
                 </DialogDescription>
             </DialogHeader>
             <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-                    <div className="grid grid-cols-2 gap-4">
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2">
+                    <div className="grid grid-cols-2 gap-4 text-left">
                         <FormField control={form.control} name="firstName" render={({ field }) => ( <FormItem><FormLabel>First Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                         <FormField control={form.control} name="lastName" render={({ field }) => ( <FormItem><FormLabel>Last Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                     </div>
-                     <div className="grid grid-cols-2 gap-4">
+                     <div className="grid grid-cols-2 gap-4 text-left">
                         <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email"/></FormControl><FormMessage /></FormItem> )} />
                         <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel>Phone (Optional)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                     </div>
-                    <FormField control={form.control} name="companyName" render={({ field }) => ( <FormItem><FormLabel>Fund/Company Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
-                    <FormField control={form.control} name="status" render={({ field }) => ( <FormItem><FormLabel>Pipeline Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent>
+                    <div className="grid grid-cols-2 gap-4 text-left">
+                        <FormField control={form.control} name="mobile" render={({ field }) => ( <FormItem><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="companyName" render={({ field }) => ( <FormItem><FormLabel>Fund/Company Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+                    </div>
+                    <FormField control={form.control} name="status" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Pipeline Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent>
                         <SelectItem value="new">New</SelectItem>
                         <SelectItem value="contacted">Contacted</SelectItem>
                         <SelectItem value="qualified">Qualified</SelectItem>
@@ -345,6 +201,8 @@ export default function InvestorManagement() {
   const columns: ColumnDef<any>[] = [
     { accessorKey: 'firstName', header: 'Name', cell: ({row}) => <div>{row.original.firstName} {row.original.lastName}</div> },
     { accessorKey: 'companyName', header: 'Fund' },
+    { accessorKey: 'phone', header: 'Phone' },
+    { accessorKey: 'mobile', header: 'Mobile' },
     { accessorKey: 'email', header: 'Email' },
     { accessorKey: 'status', header: 'Status', cell: ({row}) => <Badge className="capitalize">{row.original.status}</Badge>},
     { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
@@ -372,9 +230,9 @@ export default function InvestorManagement() {
         </AlertDialogContent>
       </AlertDialog>
       
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
+      <div className="space-y-6 text-left">
+        <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="text-left">
             <CardTitle className="flex items-center gap-2"><DollarSign /> App Launch Investors</CardTitle>
             <CardDescription>Research and engage with VCs and Seed Funds for the platform launch.</CardDescription>
           </div>
@@ -383,7 +241,6 @@ export default function InvestorManagement() {
                 <Download className="mr-2 h-4 w-4" /> Backup (CSV)
             </Button>
             <BulkImportDialog type="investor" onComplete={forceRefresh}><Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
-            <DuplicateCleaner onComplete={forceRefresh} />
             <Button onClick={() => setDialogState({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4"/>Add Investor</Button>
           </div>
         </CardHeader>

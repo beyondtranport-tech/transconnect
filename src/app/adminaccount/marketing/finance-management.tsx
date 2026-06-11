@@ -25,7 +25,7 @@ import { PartnerOversightDialog } from './PartnerOversightDialog';
 import { EngageDialog } from './EngageDialog';
 import { CommunicationLogDialog } from './CommunicationLogDialog';
 import { PartnerTasksDialog } from './PartnerTasksDialog';
-import { formatDateSafe, cn } from '@/lib/utils';
+import { formatDateSafe, cn, downloadDataAsCSV } from '@/lib/utils';
 import { EnrichPartnerButton } from './EnrichPartnerButton';
 import { Label } from '@/components/ui/label';
 import { BatchResearchDialog } from './BatchResearchDialog';
@@ -60,6 +60,7 @@ const partnerSchema = z.object({
   lastName: z.string().min(1, 'Last name is required'),
   email: z.string().email('Invalid email address').optional().or(z.literal('')),
   phone: z.string().optional(),
+  mobile: z.string().optional(),
   contactPerson: z.string().optional(),
   companyName: z.string().optional(),
   address: z.string().optional(),
@@ -69,155 +70,6 @@ const partnerSchema = z.object({
 });
 type PartnerFormValues = z.infer<typeof partnerSchema>;
 
-function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [duplicates, setDuplicates] = useState<any[][]>([]);
-  const [selections, setSelections] = useState<Record<number, string>>({});
-  const { toast } = useToast();
-
-  async function findDuplicates() {
-    setIsLoading(true);
-    try {
-      const token = await getClientSideAuthToken();
-      if (!token) throw new Error("Auth failed.");
-      const response = await fetch('/api/admin', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'findDuplicateLeads', payload: {} }),
-        cache: 'no-store'
-      });
-      
-      if (!response.ok) {
-        const text = await response.text();
-        throw new Error(text.includes('<html>') ? "Server Timeout: Scanning large database took too long. Please try again." : text);
-      }
-
-      const result = await response.json();
-      if (!result.success) throw new Error(result.error);
-      setDuplicates(result.data || []);
-      if (result.data.length === 0) {
-        toast({ title: "No duplicates found." });
-      } else {
-        const initialSelections: Record<number, string> = {};
-        result.data.forEach((group: any[], index: number) => {
-            const memberRecord = group.find(r => r.source === 'Member');
-            if (memberRecord) initialSelections[index] = memberRecord.id;
-            else initialSelections[index] = group[0].id;
-        });
-        setSelections(initialSelections);
-        setIsOpen(true);
-      }
-    } catch (e: any) {
-      toast({ variant: 'destructive', title: "Error finding duplicates", description: e.message });
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
-  async function handleClean() {
-    setIsLoading(true);
-    const idsToDelete = duplicates.flatMap((group, index) => {
-      const idToKeep = selections[index];
-      if (!idToKeep) return [];
-      return group.filter(lead => lead.id !== idToKeep).map(lead => lead.id);
-    });
-
-    if (idsToDelete.length === 0) {
-      toast({ title: "No duplicates selected for deletion." });
-      setIsLoading(false);
-      setIsOpen(false);
-      return;
-    }
-
-    try {
-      const token = await getClientSideAuthToken();
-      if (!token) throw new Error("Auth failed.");
-      await performAdminAction(token, 'deleteLeads', { leadIds: idsToDelete });
-
-      toast({ title: "Duplicates Cleaned!", description: `${idsToDelete.length} duplicate records deleted.` });
-      onComplete();
-      setIsOpen(false);
-    } catch (e: any) {
-      toast({ variant: 'destructive', title: "Error cleaning duplicates", description: e.message });
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
-  return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" onClick={findDuplicates} disabled={isLoading}>
-          {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
-          Find & Clean Duplicates
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle>Duplicate Funder Cleaner</DialogTitle>
-          <DialogDescription>
-            Select the records you want to keep. Using <strong>Forensic Matching</strong>: duplicates are only identified if <strong>BOTH</strong> the Entity Name and Decision Maker match.
-          </DialogDescription>
-        </DialogHeader>
-        
-        <Alert className="bg-amber-50 border-amber-200">
-            <Info className="h-4 w-4 text-amber-600" />
-            <AlertTitle>Identity Protection</AlertTitle>
-            <AlertDescription className="text-xs">
-                Always keep <strong>Members</strong> (Active accounts) and delete <strong>Leads</strong> (Projections).
-            </AlertDescription>
-        </Alert>
-
-        <div className="flex-1 overflow-y-auto p-4 space-y-6">
-          {duplicates.map((group, groupIndex) => {
-             const companyName = group.find(r => r.companyName)?.companyName || 'Unnamed Group';
-             const contactPerson = group.find(r => r.contactPerson)?.contactPerson || 'N/A';
-             return (
-                <Card key={groupIndex} className="shadow-none border">
-                <CardHeader className="py-3 bg-muted/30 flex flex-row justify-between items-center">
-                    <div>
-                        <CardTitle className="text-sm font-bold">Group: {companyName}</CardTitle>
-                        <CardDescription className="text-[10px] uppercase font-black text-amber-600">Decision Maker Match: {contactPerson}</CardDescription>
-                    </div>
-                </CardHeader>
-                <CardContent className="p-0">
-                    {group.map(lead => (
-                        <div key={lead.id} className={cn("flex items-start gap-4 p-4 border-b last:border-b-0", selections[groupIndex] === lead.id ? "bg-primary/5" : "")}>
-                            <Checkbox
-                                id={`funder-${groupIndex}-${lead.id}`}
-                                checked={selections[groupIndex] === lead.id}
-                                onCheckedChange={() => setSelections(prev => ({ ...prev, [groupIndex]: lead.id }))}
-                            />
-                            <label htmlFor={`funder-${groupIndex}-${lead.id}`} className="text-sm cursor-pointer w-full">
-                                <div className="flex justify-between items-start">
-                                    <div className="flex items-center gap-2">
-                                        <p className="font-bold">{lead.companyName || 'N/A'}</p>
-                                        {lead.source === 'Member' && <Badge className="bg-green-100 text-green-700 text-[10px]">Active Member</Badge>}
-                                    </div>
-                                    <Badge variant="outline" className="text-[10px] uppercase">{lead.source}</Badge>
-                                </div>
-                                <p className="text-xs text-muted-foreground mt-2">{lead.email || 'No Email'} • {lead.phone || 'No Phone'}</p>
-                            </label>
-                        </div>
-                    ))}
-                </CardContent>
-                </Card>
-             )
-          })}
-        </div>
-        <DialogFooter className="p-4 border-t">
-          <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
-          <Button onClick={handleClean} disabled={isLoading} className="bg-destructive hover:bg-destructive/90">
-             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
-             Delete Unselected
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
 function FinanceDialog({ open, onOpenChange, partner, onSave }: { open: boolean; onOpenChange: (open: boolean) => void; partner?: any; onSave: () => void; }) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -226,7 +78,7 @@ function FinanceDialog({ open, onOpenChange, partner, onSave }: { open: boolean;
   useEffect(() => {
     if (open) {
       if (partner) form.reset(partner);
-      else form.reset({ firstName: '', lastName: '', email: '', phone: '', contactPerson: '', companyName: '', address: '', status: 'active', type: 'finance', entryType: 'Banks' });
+      else form.reset({ firstName: '', lastName: '', email: '', phone: '', mobile: '', contactPerson: '', companyName: '', address: '', status: 'active', type: 'finance', entryType: 'Banks' });
     }
   }, [open, partner, form]);
 
@@ -263,7 +115,10 @@ function FinanceDialog({ open, onOpenChange, partner, onSave }: { open: boolean;
               <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Phone</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
-            <FormField control={form.control} name="contactPerson" render={({ field }) => (<FormItem><FormLabel>Identity Verified Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+            <div className="grid grid-cols-2 gap-4 text-left">
+              <FormField control={form.control} name="mobile" render={({ field }) => (<FormItem><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="contactPerson" render={({ field }) => (<FormItem><FormLabel>Identity Verified Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+            </div>
             <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Entity Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             <div className="grid grid-cols-2 gap-4 text-left">
               <FormField control={form.control} name="entryType" render={({ field }) => (
@@ -325,13 +180,11 @@ export default function FinanceManagement() {
       if (!token) return;
       const [res, staffRes] = await Promise.all([
         performAdminAction(token, 'getPartnersByType', { type: 'finance' }),
-        performAdminAction(token, 'getPlatformStaff', {}),
-        // REMOVED AUTOMATIC SCAN: performAdminAction(token, 'refreshFinanceCategoryCounts', {})
+        performAdminAction(token, 'getPlatformStaff', {})
       ]);
       setPartners(res.data || []);
       setStaff(staffRes.data || []);
     } catch (e: any) {
-      // toast removed from deps to prevent quota loops
     } finally {
       setIsLoading(false);
     }
@@ -355,40 +208,10 @@ export default function FinanceManagement() {
     });
   }, [partners, statusFilter, assigneeFilter, categoryFilter, dataFilter]);
 
-  const selectedLeadsForBatch = useMemo(() => {
-      return (partners || []).filter(l => selectedIds.includes(l.id));
-  }, [partners, selectedIds]);
-
-  const handleEnhanceBatch = (size: number) => {
-      const targets = partners.filter(p => !p.email && p.researchStatus !== 'researching').slice(0, size);
-      if (targets.length === 0) {
-          toast({ title: "No candidates found" });
-          return;
-      }
-      setSelectedIds(targets.map(t => t.id));
-      setDialog({ type: 'batch-ai' });
-  };
-
-  const handleResetQueue = async () => {
-      setIsResetting(true);
-      try {
-          const token = await getClientSideAuthToken();
-          if (!token) return;
-          const response = await fetch('/api/admin', {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'resetResearchQueue', payload: { type: 'finance' } }),
-          });
-          
-          const result = await response.json();
-          if (!result.success) throw new Error(result.error);
-          toast({ title: "Queue Reset", description: `${result.count} records set back to 'New'.` });
-          forceRefresh();
-      } catch (e: any) {
-          toast({ variant: 'destructive', title: "Reset Failed", description: e.message });
-      } finally {
-          setIsResetting(false);
-      }
+  const handleExport = () => {
+      if (filteredInvestors.length === 0) return;
+      downloadDataAsCSV(filteredInvestors, `finance-backup-${new Date().toISOString().split('T')[0]}.csv`);
+      toast({ title: "Backup Exported", description: "Filtered registry saved to CSV." });
   };
 
   async function handleDelete() {
@@ -408,6 +231,8 @@ export default function FinanceManagement() {
     { accessorKey: 'companyName', header: 'Entity Name', cell: ({ row }) => <div className="font-bold text-left">{row.original.companyName}</div> },
     { accessorKey: 'entryType', header: 'Category', cell: ({row}) => <Badge variant="outline" className="text-[10px] uppercase font-bold">{row.original.entryType || 'Finance'}</Badge> },
     { accessorKey: 'contactPerson', header: 'Decision Maker', cell: ({ row }) => <div className="text-left">{row.original.contactPerson || 'N/A'}</div> },
+    { accessorKey: 'phone', header: 'Phone' },
+    { accessorKey: 'mobile', header: 'Mobile' },
     { accessorKey: 'email', header: 'Email' },
     { accessorKey: 'researchStatus', header: 'Enhanced', cell: ({row}) => {
         if (row.original.researchStatus === 'researching') return <Badge variant="outline" className="animate-pulse text-amber-600 border-amber-200 bg-amber-50">Searching...</Badge>;
@@ -429,7 +254,6 @@ export default function FinanceManagement() {
 
   return (
     <>
-      <BatchResearchDialog open={dialog.type === 'batch-ai'} onOpenChange={(o) => !o && setDialog({ type: null })} selectedLeads={selectedLeadsForBatch} onComplete={() => { setSelectedIds([]); forceRefresh(); }} />
       <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.data} audience="finance" onEngageSuccess={forceRefresh} />
       <FinanceDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={forceRefresh} />
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
@@ -441,7 +265,7 @@ export default function FinanceManagement() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      <div className="space-y-6">
+      <div className="space-y-6 text-left">
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="space-y-1 text-left">
                 <CardTitle className="flex items-center gap-2">
@@ -451,15 +275,10 @@ export default function FinanceManagement() {
                 <CardDescription>Forensic database of Banks, Government Funders, AEO Partners, and Niche Lenders.</CardDescription>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-                <Button variant="outline" size="sm" onClick={handleResetQueue} disabled={isResetting}>
-                    <RotateCcw className="mr-2 h-4 w-4" />
-                    Reset Queue
-                </Button>
-                <Button variant="default" className="bg-amber-600 hover:bg-amber-700" onClick={() => handleEnhanceBatch(50)} disabled={isLoading}>
-                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Zap className="mr-2 h-4 w-4" />} Batch (50)
+                <Button variant="outline" onClick={handleExport} disabled={isLoading}>
+                    <Download className="mr-2 h-4 w-4" /> Backup (CSV)
                 </Button>
                 <BulkImportDialog type="finance" onComplete={forceRefresh}><Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Import JSON</Button></BulkImportDialog>
-                <DuplicateCleaner onComplete={forceRefresh} />
                 <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Record</Button>
             </div>
         </CardHeader>
