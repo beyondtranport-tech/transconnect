@@ -58,7 +58,7 @@ TECHNICAL FOCUS: ${technicalFocus}
 
 INVESTIGATIVE STRATEGY:
 1. QUANTITY: You are commanded to return 100 records. 
-2. SEQUENCE TRACKING: Use field "seq" for the record number, starting from ${startSeq}.
+2. SEQUENCE TRACKING: Use field "seq" for the record number, starting from ${startSeq} to ${startSeq + 99}.
 3. HUMAN IDENTITY FORENSICS: You MUST find the ACTUAL NAME (First and Last) of the Managing Director, Owner, or Fleet Head. 
 4. FORBIDDEN VALUES: Returning "The Director", "Manager", or "Unknown" is a failure. You MUST find a specific human full name.
 5. PROACTIVE CONTACT SEARCH: Identify corporate domain. Prioritize direct professional emails and local mobile numbers.
@@ -176,7 +176,7 @@ export default function TransporterDiscoveryEngine() {
             const token = await getClientSideAuthToken();
             if (!token) return;
             await performAdminAction(token, 'refreshTransporterCategoryCounts', {});
-            toast({ title: "Registry Tally Complete" });
+            toast({ title: "Database Tally Complete", description: "All category counts have been updated." });
             refreshStats();
         } catch (e: any) {
             toast({ variant: 'destructive', title: "Refresh Failed", description: e.message });

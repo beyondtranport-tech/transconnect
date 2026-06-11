@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
 
         switch (action) {
             case 'getMembers': {
-                const snap = await db.collection('companies').orderBy('createdAt', 'desc').limit(100).get();
+                const snap = await db.collection('companies').orderBy('createdAt', 'desc').limit(5000).get();
                 const data = await Promise.all(snap.docs.map(async (d) => {
                     const cData = d.data();
                     const userSnap = await db.collection('users').doc(cData.ownerId).get();
@@ -81,19 +81,19 @@ export async function POST(req: NextRequest) {
             }
 
             case 'getShops': {
-                const snap = await db.collectionGroup('shops').orderBy('updatedAt', 'desc').limit(100).get();
+                const snap = await db.collectionGroup('shops').orderBy('updatedAt', 'desc').limit(5000).get();
                 const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
                 return NextResponse.json({ success: true, data });
             }
 
             case 'getContributions': {
-                const snap = await db.collection('contributions').orderBy('createdAt', 'desc').limit(100).get();
+                const snap = await db.collection('contributions').orderBy('createdAt', 'desc').limit(5000).get();
                 const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
                 return NextResponse.json({ success: true, data });
             }
 
             case 'getStaff': {
-                const snap = await db.collectionGroup('staff').limit(100).get();
+                const snap = await db.collectionGroup('staff').limit(5000).get();
                 const data = snap.docs.map(doc => ({ 
                     id: doc.id, 
                     companyId: doc.ref.parent.parent?.id,
@@ -103,7 +103,7 @@ export async function POST(req: NextRequest) {
             }
 
             case 'getAuditLogs': {
-                const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(100).get();
+                const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(5000).get();
                 const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
                 return NextResponse.json({ success: true, data });
             }
@@ -123,9 +123,9 @@ export async function POST(req: NextRequest) {
 
             case 'getPartnersByType': {
                 const { type } = payload;
-                let q = db.collection('partners').orderBy('updatedAt', 'desc').limit(100);
+                let q = db.collection('partners').orderBy('updatedAt', 'desc').limit(5000);
                 if (type && type !== 'all') {
-                    q = db.collection('partners').where('type', '==', type).orderBy('updatedAt', 'desc').limit(100);
+                    q = db.collection('partners').where('type', '==', type).orderBy('updatedAt', 'desc').limit(5000);
                 }
                 const snap = await q.get();
                 const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
@@ -133,7 +133,7 @@ export async function POST(req: NextRequest) {
             }
 
             case 'getLeads': {
-                const snap = await db.collection('leads').orderBy('updatedAt', 'desc').limit(100).get();
+                const snap = await db.collection('leads').orderBy('updatedAt', 'desc').limit(5000).get();
                 const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
                 return NextResponse.json({ success: true, data });
             }
@@ -144,7 +144,7 @@ export async function POST(req: NextRequest) {
                 let q = db.collection(collectionName)
                     .where('companyName', '>=', term)
                     .where('companyName', '<=', term + '\uf8ff')
-                    .limit(100);
+                    .limit(5000);
                 
                 if (type && type !== 'all' && type !== 'lead') {
                     q = q.where('type', '==', type);
@@ -266,7 +266,7 @@ export async function POST(req: NextRequest) {
             }
 
             case 'getWalletTransactions': {
-                const snap = await db.collectionGroup('transactions').orderBy('date', 'desc').limit(100).get();
+                const snap = await db.collectionGroup('transactions').orderBy('date', 'desc').limit(5000).get();
                 const data = snap.docs.map(doc => ({ 
                     id: doc.id, 
                     companyId: doc.ref.parent.parent?.id || 'Unknown',
@@ -380,18 +380,40 @@ export async function POST(req: NextRequest) {
             case 'refreshFinanceCategoryCounts': {
                 const type = action.includes('Supplier') ? 'supplier' : action.includes('Transporter') ? 'transporter' : action.includes('Driver') ? 'driver' : 'finance';
                 const statsKey = `${type}DiscoveryStats`;
-                const collectionName = ['finance', 'supplier', 'transporter', 'driver'].includes(type) ? 'partners' : 'leads';
-                const snap = await db.collection(collectionName).where('type', '==', type).get();
+                
+                // Role strings used in 'leads' collection
+                const roleMap: Record<string, string[]> = {
+                    supplier: ['Supplier', 'Suppliers', 'Vendors', 'Vendor'],
+                    transporter: ['Transporter', 'Transporters', 'Logistics', 'Transport'],
+                    driver: ['Driver', 'Drivers'],
+                    finance: ['Finance', 'Funder', 'Lender', 'Banks', 'Investor', 'Investors']
+                };
+
+                const roles = roleMap[type] || [];
+
+                // Fetch ALL matching records from BOTH collections
+                const [partnersSnap, leadsSnap] = await Promise.all([
+                    db.collection('partners').where('type', '==', type).get(),
+                    db.collection('leads').where('role', 'in', roles).get()
+                ]);
+                
                 const counts: Record<string, number> = {};
-                snap.docs.forEach(doc => {
-                    const cat = doc.data().entryType || 'General';
-                    counts[cat] = (counts[cat] || 0) + (1);
-                });
+                const processDocs = (snap: any) => {
+                    snap.docs.forEach((doc: any) => {
+                        const data = doc.data();
+                        const cat = data.entryType || data.industrial_category || data.category || data.industrialCategory || 'General';
+                        counts[cat] = (counts[cat] || 0) + 1;
+                    });
+                };
+                
+                processDocs(partnersSnap);
+                processDocs(leadsSnap);
+
                 await db.collection('configuration').doc(statsKey).set({
                     counts,
                     lastUpdated: FieldValue.serverTimestamp()
                 });
-                return NextResponse.json({ success: true });
+                return NextResponse.json({ success: true, total: (partnersSnap.size + leadsSnap.size) });
             }
 
             case 'listAllUsers': {
