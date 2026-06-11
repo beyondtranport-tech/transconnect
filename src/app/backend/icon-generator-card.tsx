@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -30,7 +31,7 @@ import { Textarea } from '@/components/ui/textarea';
 export default function IconGeneratorCard() {
   const [isOpen, setIsOpen] = useState(false);
   const [prompt, setPrompt] = useState(
-    "A professional minimalist logo for 'Logistics Flow'. The design features the words 'logistics' and 'flow' in a clean, modern lowercase sans-serif typography. Include a stylized, dynamic blue ribbon or arrow element that connects the two words, symbolizing movement and efficiency. The logo should be in a high-quality vector style on a plain white background."
+    "A professional minimalist logo for 'logistics flow'. The design features the words 'logistics' and 'flow' in a clean, modern lowercase sans-serif typography. Include a stylized, dynamic blue ribbon or arrow element that connects the two words, symbolizing movement and efficiency. The logo should be in a high-quality vector style on a plain white background, matching the style of a modern tech-driven logistics brand."
   );
   const [isLoading, setIsLoading] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
@@ -86,7 +87,7 @@ export default function IconGeneratorCard() {
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="text-left">
         <CardTitle className="flex items-center gap-2">
           <ImageIcon /> AI Logo Generator
         </CardTitle>
@@ -99,14 +100,14 @@ export default function IconGeneratorCard() {
           <DialogTrigger asChild>
             <Button className="w-full">Create Logo</Button>
           </DialogTrigger>
-          <DialogContent className="flex flex-col max-h-[90vh] sm:max-w-2xl">
+          <DialogContent className="flex flex-col max-h-[90vh] sm:max-w-2xl text-left">
             <DialogHeader>
               <DialogTitle>AI Logo Generator</DialogTitle>
               <DialogDescription>
                 Describe the logo you want to create. Be specific for best results.
               </DialogDescription>
             </DialogHeader>
-            <div className="flex-1 overflow-y-auto space-y-4 py-4 pr-4">
+            <div className="flex-1 overflow-y-auto space-y-4 py-4 pr-4 text-left">
                 <div className="space-y-2">
                   <Label htmlFor="generate-prompt">Your Prompt</Label>
                   <Textarea

@@ -35,9 +35,9 @@ import {
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { getClientSideAuthToken } from '@/firebase';
+import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
-  Loader2, PlusCircle, Truck, Edit, Trash2, Send, Filter, RotateCcw, Search, Upload, Save, Download, RefreshCcw, Zap
+  Loader2, PlusCircle, Truck, Edit, Trash2, Send, Filter, RotateCcw, Search, Upload, Save, Download, RefreshCcw, Zap, Phone
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
@@ -120,26 +120,26 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl">
+      <DialogContent className="sm:max-w-2xl text-left">
         <DialogHeader>
           <DialogTitle>{partner ? 'Edit' : 'Add'} Transporter</DialogTitle>
           <DialogDescription>Enter verified record for the haulier.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4 text-left">
               <FormField control={form.control} name="firstName" render={({ field }) => (<FormItem><FormLabel>First Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="lastName" render={({ field }) => (<FormItem><FormLabel>Last Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
             <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" /></FormControl><FormMessage /></FormItem>)} />
-            <div className="grid grid-cols-2 gap-4">
-              <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Phone (Landline)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-              <FormField control={form.control} name="mobile" render={({ field }) => (<FormItem><FormLabel>Mobile Number (Direct Cell)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+            <div className="grid grid-cols-2 gap-4 text-left">
+              <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Landline Phone</FormLabel><FormControl><Input placeholder="+27 11..." {...field} /></FormControl><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="mobile" render={({ field }) => (<FormItem><FormLabel>Mobile Number (Direct)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
-            <FormField control={form.control} name="contactPerson" render={({ field }) => (<FormItem><FormLabel>Identity Verified Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-            <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Entity Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+            <FormField control={form.control} name="contactPerson" render={({ field }) => (<FormItem><FormLabel>Leadership Full Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+            <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Company Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="status" render={({ field }) => (
-                <FormItem>
+                <FormItem className="text-left">
                     <FormLabel>Status</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
@@ -147,6 +147,7 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
                             <SelectItem value="new">New</SelectItem>
                             <SelectItem value="contacted">Researching</SelectItem>
                             <SelectItem value="qualified">Qualified</SelectItem>
+                            <SelectItem value="active">Active</SelectItem>
                         </SelectContent>
                     </Select>
                 </FormItem>
@@ -237,11 +238,8 @@ export default function TransporterManagement() {
 
   const columns: ColumnDef<any>[] = [
     { accessorKey: 'companyName', header: 'Transporter Name', cell: ({ row }) => <div className="font-bold">{row.original.companyName || `${row.original.firstName} ${row.original.lastName}`}</div> },
-    { accessorKey: 'entryType', header: 'Category', cell: ({row}) => row.original.entryType ? <Badge variant="outline" className="text-[10px] uppercase font-bold">{row.original.entryType}</Badge> : <span className="text-muted-foreground italic text-xs">Uncategorized</span> },
-    { accessorKey: 'contactPerson', header: 'Leadership' },
+    { accessorKey: 'phone', header: 'Landline', cell: ({row}) => <div>{row.original.phone || 'N/A'}</div> },
     { accessorKey: 'email', header: 'Email' },
-    { accessorKey: 'phone', header: 'Landline' },
-    { accessorKey: 'mobile', header: 'Mobile' },
     { accessorKey: 'status', header: 'Status', cell: ({ row }) => <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge> },
     { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
       <div className="flex justify-end gap-1">
@@ -269,7 +267,7 @@ export default function TransporterManagement() {
       
       <div className="space-y-6">
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
+            <div className="text-left">
                 <CardTitle className="flex items-center gap-2"><Truck /> Transporter Registry</CardTitle>
                 <CardDescription>Capped view of recent hauliers. Use search for full registry access.</CardDescription>
             </div>
@@ -284,7 +282,7 @@ export default function TransporterManagement() {
 
         <Card>
             <CardContent className="pt-6">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left">
                     <div className="md:col-span-2 space-y-2">
                         <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Search className="h-3 w-3"/> Deep Registry Search</Label>
                         <div className="flex gap-2">

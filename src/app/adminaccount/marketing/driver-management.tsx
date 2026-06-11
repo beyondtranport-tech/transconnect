@@ -117,24 +117,24 @@ function DriverDialog({ open, onOpenChange, partner, onSave }: { open: boolean; 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl">
+      <DialogContent className="sm:max-w-2xl text-left">
         <DialogHeader>
           <DialogTitle>{partner ? 'Edit' : 'Add'} Driver Record</DialogTitle>
           <DialogDescription>Enter verified record for the industrial service unit.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4 text-left">
               <FormField control={form.control} name="firstName" render={({ field }) => (<FormItem><FormLabel>First Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="lastName" render={({ field }) => (<FormItem><FormLabel>Last Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4 text-left">
               <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Phone</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
             <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Service Handle / Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="status" render={({ field }) => (
-                <FormItem>
+                <FormItem className="text-left">
                     <FormLabel>Status</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
@@ -236,7 +236,7 @@ export default function DriverManagement() {
     { 
         header: 'Driver Identity', 
         cell: ({ row }) => (
-            <div className="flex flex-col text-sm">
+            <div className="flex flex-col text-sm text-left">
                 <span className="font-bold">{row.original.service_handle || `${row.original.firstName} ${row.original.lastName}`}</span>
                 <span className="text-[10px] text-muted-foreground uppercase font-black">{row.original.operational_hub || row.original.address || 'SA Region'}</span>
             </div>
@@ -271,7 +271,7 @@ export default function DriverManagement() {
       
       <div className="space-y-6">
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
+            <div className="text-left">
                 <CardTitle className="flex items-center gap-2"><Users /> Driver Registry</CardTitle>
                 <CardDescription>Targeted view of recent commercial service providers.</CardDescription>
             </div>
@@ -286,15 +286,15 @@ export default function DriverManagement() {
 
         <Card>
             <CardContent className="pt-6">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg">
-                    <div className="md:col-span-2 space-y-2">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left">
+                    <div className="md:col-span-2 space-y-2 text-left">
                         <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Search className="h-3 w-3"/> Registry Search</Label>
                         <div className="flex gap-2">
                             <Input placeholder="Type name or ID to search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearch()} />
                             <Button onClick={handleSearch} disabled={isLoading}><Search className="h-4 w-4"/></Button>
                         </div>
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-2 text-left">
                         <Label className="text-[10px] font-black uppercase text-muted-foreground">Category</Label>
                         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
                             <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>

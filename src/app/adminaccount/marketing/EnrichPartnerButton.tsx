@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -32,7 +33,7 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
     const isDriver = partner.type === 'driver' || partner.role === 'Drivers';
 
     const getPrompt = () => {
-        // Build the current knowledge profile
+        // Current profile mapping
         const currentData = {
             companyName: companyName,
             contactPerson: partner.contactPerson || 'Unknown',
@@ -43,25 +44,24 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
             address: partner.address || 'Missing'
         };
 
-        // Explicitly identify what information is lacking
+        // Explicit identification of gaps
         const gaps = Object.entries(currentData)
             .filter(([_, v]) => v === 'Missing' || v === 'Unknown')
             .map(([k]) => k);
 
         const baseInstructions = `ACT AS AN ELITE CORPORATE INTELLIGENCE AGENT. 
-RETURN ONLY A RAW JSON OBJECT. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION. NO EXPLANATORY TEXT.
+RETURN ONLY A RAW JSON OBJECT. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
 
-GIVEN DATA (USE THIS AS YOUR STARTING POINT):
+GIVEN DATA (START POINT):
 ${JSON.stringify(currentData, null, 2)}
 
-INFORMATION GAPS (PRIORITY OBJECTIVES):
+GAP ANALYSIS (OBJECTIVES):
 ${gaps.join(', ')}
 
-TASK: Use the GIVEN DATA to find the missing fields.
-1. FORENSIC IDENTITY: You MUST locate the ACTUAL NAME of the CEO, Owner, or MD. 
-2. DIFFERENTIATION: Differentiate between the Company Landline ("phone") and the Director's Direct Cell ("mobile").
-3. SOURCES: Use LinkedIn, Google Maps, Facebook Business, and corporate "About" pages.
-4. IDENTITY PERSISTENCE: You MUST return "record_id": "${partner.id}" exactly.
+TASK: Find the missing data fields for "${companyName}".
+1. FORENSIC IDENTITY: Find the ACTUAL NAME of the CEO, Owner, or MD. 
+2. DIFFERENTIATION: Distinguish between Company Landline ("phone") and Director's Direct Cell ("mobile").
+3. PERSISTENCE: Return "record_id": "${partner.id}".
 
 REQUIRED OUTPUT (RAW JSON ONLY):
 {
@@ -79,13 +79,12 @@ REQUIRED OUTPUT (RAW JSON ONLY):
             return `ACT AS AN ELITE WORKFORCE INTELLIGENCE AGENT.
 RETURN ONLY A RAW JSON OBJECT. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
 
-DRIVER PROFILE: ${partner.service_handle || `${partner.firstName} ${partner.lastName}`}
-CURRENT DATA: ${JSON.stringify({ phone: partner.phone, hub: partner.operational_hub }, null, 2)}
+DRIVER: ${partner.service_handle || `${partner.firstName} ${partner.lastName}`}
+GAPS: ${gaps.join(', ')}
 
-TASK: Find the DIRECT digital channels for this operator.
-1. MOBILE DISCOVERY: Hunt for the direct cell number (+27...). LANDLINES ARE FAILURES for drivers.
-2. EMAIL DISCOVERY: Find the verified personal or professional email.
-3. PERSISTENCE: Return "record_id": "${partner.id}".
+TASK: Find the DIRECT digital channels.
+1. MOBILE DISCOVERY: Hunt for direct cell (+27...). NO LANDLINES.
+2. IDENTITY: Return "record_id": "${partner.id}".
 
 REQUIRED OUTPUT (RAW JSON ONLY):
 {
@@ -95,8 +94,8 @@ REQUIRED OUTPUT (RAW JSON ONLY):
   "email": "Verified Direct Email",
   "phone": "Landline",
   "mobile": "Verified DIRECT MOBILE",
-  "notes": "Consolidated capability profile",
-  "address": "Primary Region"
+  "notes": "Capability profile",
+  "address": "Region"
 }`;
         }
 
@@ -109,7 +108,7 @@ REQUIRED OUTPUT (RAW JSON ONLY):
         try {
             await navigator.clipboard.writeText(aiPrompt);
             setIsCopied(true);
-            toast({ title: "Forensic Prompt Copied!", description: "AI is now instructed to bridge the detected information gaps using your existing data." });
+            toast({ title: "Forensic Prompt Copied!", description: "AI is now commanded to bridge the detected information gaps." });
         } catch (e) {
             toast({ variant: 'destructive', title: "Copy Failed" });
         }
@@ -161,15 +160,15 @@ REQUIRED OUTPUT (RAW JSON ONLY):
                     <div className="space-y-4 py-4">
                         <Alert className="bg-primary/5 border-primary/20">
                             <Info className="h-4 w-4 text-primary" />
-                            <AlertTitle>Start Point Intelligence</AlertTitle>
+                            <AlertTitle>Gap Identification Active</AlertTitle>
                             <AlertDescription className="text-xs text-muted-foreground">
-                                This prompt identifies exactly what is missing and commands the AI to use your current data to find the specific missing leadership and cell details.
+                                This prompt identifies exactly what data is missing from this record and commands the AI to bridge those specific gaps.
                             </AlertDescription>
                         </Alert>
 
                         <div className="space-y-2">
                             <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">AI Forensic Command</label>
-                            <ScrollArea className="h-48 w-full border rounded-md p-3 bg-muted/30 text-foreground">
+                            <ScrollArea className="h-48 w-full border rounded-md p-3 bg-muted/30 text-foreground text-left">
                                 <pre className="text-xs whitespace-pre-wrap font-mono leading-relaxed">{aiPrompt}</pre>
                             </ScrollArea>
                         </div>
@@ -214,21 +213,21 @@ function BatchResearchDialog({ open, onOpenChange, selectedLeads, onComplete }: 
 
     const companyList = selectedLeads.map((l: any) => `[ID: ${l.id}] ${l.companyName || l.service_handle}`).join('\n');
     
-    const aiPrompt = `CRITICAL SYSTEM INSTRUCTION: RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION. NO EXPLANATORY TEXT.
+    const aiPrompt = `CRITICAL SYSTEM INSTRUCTION: RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
 
 ACT AS AN ELITE CORPORATE INTELLIGENCE AGENT. 
 
-TASK: Find CURRENT verified leadership and direct digital contact details for the following South African entities.
+TASK: Find leadership and direct contact details for the following South African entities.
 
 INVESTIGATIVE STRATEGY:
-1. HUMAN IDENTITY: You MUST find the ACTUAL NAME of the CEO, MD, or Owner. 
-2. CONTACT DIFFERENTIATION: Differentiate between "phone" (Work Landline) and "mobile" (Direct Cell +27...).
-3. IDENTITY PERSISTENCE: You MUST return the "record_id" exactly as provided.
+1. HUMAN IDENTITY: Find ACTUAL NAME of CEO/MD/Owner. 
+2. DIFFERENTIATION: Differentiate "phone" (Landline) and "mobile" (Direct Cell).
+3. PERSISTENCE: Return "record_id" exactly.
 
-REQUIRED OUTPUT FORMAT (RAW JSON ARRAY ONLY):
+REQUIRED OUTPUT (RAW JSON ARRAY ONLY):
 [{"record_id":"...","companyName":"...","contactPerson":"FULL NAME","email":"...","phone":"Landline","mobile":"Direct Cell","website":"...","address":"..."}]
 
-ENTITIES TO RESEARCH:
+LIST:
 ${companyList}`;
 
     const handleCopyAll = async () => {
@@ -265,15 +264,15 @@ ${companyList}`;
                     <DialogTitle>Batch Forensic Enrichment ({selectedLeads.length})</DialogTitle>
                 </DialogHeader>
                 <div className="py-4">
-                    <ScrollArea className="h-64 border rounded-md p-4 bg-muted/30">
+                    <ScrollArea className="h-64 border rounded-md p-4 bg-muted/30 text-left">
                         <pre className="text-[10px] font-mono whitespace-pre-wrap">{aiPrompt}</pre>
                     </ScrollArea>
                 </div>
-                <DialogFooter className="sm:justify-between">
+                <DialogFooter className="sm:justify-between gap-4">
                     <Button variant="outline" onClick={handleCopyAll}>
                         <Copy className="mr-2 h-4 w-4" /> Copy Prompt
                     </Button>
-                    <Button onClick={handleMarkAsResearching} disabled={isLoading || !isCopied}>
+                    <Button onClick={handleMarkAsResearching} disabled={isLoading || !isCopied} className="bg-primary hover:bg-primary/90 text-white">
                         {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Zap className="mr-2 h-4 w-4" />}
                         Mark as Searching
                     </Button>
