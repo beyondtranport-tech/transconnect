@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -367,14 +366,19 @@ export async function POST(req: NextRequest) {
                     
                     // INTEL MAPPING: Normalize AI-generated keys to standardized schema
                     const standardized: any = { ...p };
-                    if (p.company_name) standardized.companyName = p.company_name;
-                    if (p.email_address) standardized.email = p.email_address;
-                    if (p.telephone_number) standardized.phone = p.telephone_number;
-                    if (p.mobile_number || p.cell || p.direct_cell) standardized.mobile = p.mobile_number || p.cell || p.direct_cell;
-                    if (p.physical_address) standardized.address = p.physical_address;
-                    if (p.contact_person) standardized.contactPerson = p.contact_person;
+                    if (p.company_name || p.companyName) standardized.companyName = p.company_name || p.companyName;
+                    if (p.email_address || p.email) standardized.email = p.email_address || p.email;
+                    if (p.telephone_number || p.phone) standardized.phone = p.telephone_number || p.phone;
                     
-                    // Final payload cleanup to prevent messy document structure
+                    // Handle mobile specifically to prevent overwriting landline
+                    if (p.mobile_number || p.cell || p.direct_cell || p.mobile) {
+                        standardized.mobile = p.mobile_number || p.cell || p.direct_cell || p.mobile;
+                    }
+
+                    if (p.physical_address || p.address) standardized.address = p.physical_address || p.address;
+                    if (p.contact_person || p.contactPerson) standardized.contactPerson = p.contact_person || p.contactPerson;
+                    
+                    // Cleanup
                     delete standardized.record_id;
                     delete standardized.company_name;
                     delete standardized.email_address;

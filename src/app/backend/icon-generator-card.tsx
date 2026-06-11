@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -31,7 +30,7 @@ import { Textarea } from '@/components/ui/textarea';
 export default function IconGeneratorCard() {
   const [isOpen, setIsOpen] = useState(false);
   const [prompt, setPrompt] = useState(
-    "A modern, minimalist company logo for a logistics business. The design should be clean, professional, and in a vector style on a plain white background. It should evoke themes of transport, networking, and efficiency. Use a color palette of green and charcoal."
+    "A professional minimalist logo for 'Logistics Flow'. The design features the words 'logistics' and 'flow' in a clean, modern lowercase sans-serif typography. Include a stylized, dynamic blue ribbon or arrow element that connects the two words, symbolizing movement and efficiency. The logo should be in a high-quality vector style on a plain white background."
   );
   const [isLoading, setIsLoading] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
@@ -114,7 +113,7 @@ export default function IconGeneratorCard() {
                     id="generate-prompt"
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
-                    placeholder="e.g., A minimalist logo for 'Swift Haulers' with a stylized S and a speeding truck..."
+                    placeholder="e.g., A minimalist logo for 'Logistics Flow' with a stylized blue arrow..."
                     rows={5}
                   />
                 </div>

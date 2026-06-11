@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -30,11 +29,10 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
     const { toast } = useToast();
 
     const companyName = partner.companyName || partner.trading_name || `${partner.firstName} ${partner.lastName}`;
-    const isNCR = partner.record_id?.startsWith('NCR_') || !!partner.registration_date;
     const isDriver = partner.type === 'driver' || partner.role === 'Drivers';
 
     const getPrompt = () => {
-        // Prepare current knowledge block
+        // Build the current knowledge profile
         const currentData = {
             companyName: companyName,
             contactPerson: partner.contactPerson || 'Unknown',
@@ -45,33 +43,34 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
             address: partner.address || 'Missing'
         };
 
+        // Explicitly identify what information is lacking
         const gaps = Object.entries(currentData)
             .filter(([_, v]) => v === 'Missing' || v === 'Unknown')
             .map(([k]) => k);
 
         const baseInstructions = `ACT AS AN ELITE CORPORATE INTELLIGENCE AGENT. 
-RETURN ONLY A RAW JSON OBJECT. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
+RETURN ONLY A RAW JSON OBJECT. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION. NO EXPLANATORY TEXT.
 
-GIVEN DATA (VERIFY THIS):
+GIVEN DATA (USE THIS AS YOUR STARTING POINT):
 ${JSON.stringify(currentData, null, 2)}
 
-GAP ANALYSIS (URGENT - FIND THESE):
+INFORMATION GAPS (PRIORITY OBJECTIVES):
 ${gaps.join(', ')}
 
-TASK: Using the GIVEN DATA as a forensic starting point, perform a deep-web investigation to find the missing fields.
-1. HUMAN IDENTITY: You MUST find the ACTUAL NAME (First and Last) of the CEO, MD, or Owner. 
-2. CONTACT DIFFERENTIATION: Differentiate between "phone" (General Office Landline) and "mobile" (Direct Cell Number +27...). 
-3. SOURCE: Use LinkedIn, Facebook Business, and official "About" pages.
+TASK: Use the GIVEN DATA to find the missing fields.
+1. FORENSIC IDENTITY: You MUST locate the ACTUAL NAME of the CEO, Owner, or MD. 
+2. DIFFERENTIATION: Differentiate between the Company Landline ("phone") and the Director's Direct Cell ("mobile").
+3. SOURCES: Use LinkedIn, Google Maps, Facebook Business, and corporate "About" pages.
 4. IDENTITY PERSISTENCE: You MUST return "record_id": "${partner.id}" exactly.
 
 REQUIRED OUTPUT (RAW JSON ONLY):
 {
   "record_id": "${partner.id}",
   "companyName": "${companyName}",
-  "contactPerson": "SPECIFIC HUMAN NAME",
-  "email": "Verified Professional Email",
-  "phone": "Verified Landline Number",
-  "mobile": "Verified DIRECT MOBILE/CELL Number (e.g. +27 82...)",
+  "contactPerson": "ACTUAL HUMAN FULL NAME",
+  "email": "Verified Email",
+  "phone": "Verified Landline",
+  "mobile": "Verified DIRECT MOBILE (e.g. +27 82...)",
   "website": "URL",
   "address": "Full Physical Address"
 }`;
@@ -80,13 +79,12 @@ REQUIRED OUTPUT (RAW JSON ONLY):
             return `ACT AS AN ELITE WORKFORCE INTELLIGENCE AGENT.
 RETURN ONLY A RAW JSON OBJECT. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
 
-DRIVER IDENTITY: ${partner.service_handle || `${partner.firstName} ${partner.lastName}`}
-CURRENT CONTACT: ${partner.phone || partner.registry_line || 'N/A'}
-REGION: ${partner.address || partner.operational_hub || 'N/A'}
+DRIVER PROFILE: ${partner.service_handle || `${partner.firstName} ${partner.lastName}`}
+CURRENT DATA: ${JSON.stringify({ phone: partner.phone, hub: partner.operational_hub }, null, 2)}
 
-TASK: Identify the DIRECT DIGITAL CHANNELS for this operator.
-1. MOBILE DISCOVERY: Hunt for a direct cell/mobile number (+27...). LANDLINES ARE FAILURES.
-2. EMAIL DISCOVERY: Find a verified personal or professional email.
+TASK: Find the DIRECT digital channels for this operator.
+1. MOBILE DISCOVERY: Hunt for the direct cell number (+27...). LANDLINES ARE FAILURES for drivers.
+2. EMAIL DISCOVERY: Find the verified personal or professional email.
 3. PERSISTENCE: Return "record_id": "${partner.id}".
 
 REQUIRED OUTPUT (RAW JSON ONLY):
@@ -95,7 +93,7 @@ REQUIRED OUTPUT (RAW JSON ONLY):
   "firstName": "${partner.firstName}",
   "lastName": "${partner.lastName}",
   "email": "Verified Direct Email",
-  "phone": "Work Landline",
+  "phone": "Landline",
   "mobile": "Verified DIRECT MOBILE",
   "notes": "Consolidated capability profile",
   "address": "Primary Region"
@@ -111,7 +109,7 @@ REQUIRED OUTPUT (RAW JSON ONLY):
         try {
             await navigator.clipboard.writeText(aiPrompt);
             setIsCopied(true);
-            toast({ title: "Forensic Prompt Copied!", description: "AI is now instructed to bridge the detected information gaps." });
+            toast({ title: "Forensic Prompt Copied!", description: "AI is now instructed to bridge the detected information gaps using your existing data." });
         } catch (e) {
             toast({ variant: 'destructive', title: "Copy Failed" });
         }
@@ -143,7 +141,7 @@ REQUIRED OUTPUT (RAW JSON ONLY):
                 variant="ghost" 
                 size="icon" 
                 onClick={() => { setIsCopied(false); setIsOpen(true); }} 
-                title="Forensic Enrichment"
+                title="Forensic Intelligence"
             >
                 <Search className="h-4 w-4 text-primary" />
             </Button>
@@ -153,24 +151,24 @@ REQUIRED OUTPUT (RAW JSON ONLY):
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
                             <Sparkles className="h-5 w-5 text-primary" />
-                            Forensic Intelligence Pass
+                            Gap-Analysis Intelligence Pass
                         </DialogTitle>
                         <DialogDescription>
-                            Analyzing gaps for <strong>{companyName}</strong>. Generate a tailored command for the AI Researcher.
+                            Performing a forensic audit for <strong>{companyName}</strong>. 
                         </DialogDescription>
                     </DialogHeader>
 
                     <div className="space-y-4 py-4">
                         <Alert className="bg-primary/5 border-primary/20">
                             <Info className="h-4 w-4 text-primary" />
-                            <AlertTitle>Gap Analysis Active</AlertTitle>
+                            <AlertTitle>Start Point Intelligence</AlertTitle>
                             <AlertDescription className="text-xs text-muted-foreground">
-                                This prompt explicitly identifies what is missing from your record and commands the AI to use existing data to locate direct human leadership and mobile contacts.
+                                This prompt identifies exactly what is missing and commands the AI to use your current data to find the specific missing leadership and cell details.
                             </AlertDescription>
                         </Alert>
 
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">AI Researcher Command</label>
+                            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">AI Forensic Command</label>
                             <ScrollArea className="h-48 w-full border rounded-md p-3 bg-muted/30 text-foreground">
                                 <pre className="text-xs whitespace-pre-wrap font-mono leading-relaxed">{aiPrompt}</pre>
                             </ScrollArea>
@@ -216,7 +214,7 @@ function BatchResearchDialog({ open, onOpenChange, selectedLeads, onComplete }: 
 
     const companyList = selectedLeads.map((l: any) => `[ID: ${l.id}] ${l.companyName || l.service_handle}`).join('\n');
     
-    const aiPrompt = `CRITICAL SYSTEM INSTRUCTION: RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
+    const aiPrompt = `CRITICAL SYSTEM INSTRUCTION: RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION. NO EXPLANATORY TEXT.
 
 ACT AS AN ELITE CORPORATE INTELLIGENCE AGENT. 
 
