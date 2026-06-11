@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -168,7 +169,7 @@ export default function InvestorManagement() {
     }
   }
 
-  const columns: ColumnDef<any>[] = [
+  const columns: ColumnDef<any>[] = useMemo(() => [
     { accessorKey: 'firstName', header: 'Name', cell: ({row}) => <div>{row.original.firstName} {row.original.lastName}</div> },
     { accessorKey: 'companyName', header: 'Fund' },
     { accessorKey: 'phone', header: 'Phone' },
@@ -186,7 +187,7 @@ export default function InvestorManagement() {
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'delete', data: row.original })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
       </div>
     ) },
-  ];
+  ], [forceRefresh]);
 
   return (
     <>

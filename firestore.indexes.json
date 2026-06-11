@@ -9,6 +9,13 @@
       ]
     },
     {
+      "collectionId": "partners",
+      "fields": [
+        { "fieldPath": "type", "order": "ASCENDING" },
+        { "fieldPath": "companyName", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionId": "leads",
       "fields": [
         { "fieldPath": "status", "order": "ASCENDING" },

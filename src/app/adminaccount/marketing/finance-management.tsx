@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -231,7 +232,7 @@ export default function FinanceManagement() {
     }
   }
 
-  const columns: ColumnDef<any>[] = [
+  const columns: ColumnDef<any>[] = useMemo(() => [
     { accessorKey: 'companyName', header: 'Entity Name', cell: ({ row }) => <div className="font-bold text-left">{row.original.companyName}</div> },
     { accessorKey: 'entryType', header: 'Category', cell: ({row}) => <Badge variant="outline" className="text-[10px] uppercase font-bold">{row.original.entryType || 'Finance'}</Badge> },
     { accessorKey: 'phone', header: 'Landline' },
@@ -248,7 +249,7 @@ export default function FinanceManagement() {
         <Button variant="ghost" size="icon" onClick={() => { setDialog({ type: 'delete', data: row.original }); }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
       </div>
     )},
-  ];
+  ], [forceRefresh]);
 
   return (
     <>

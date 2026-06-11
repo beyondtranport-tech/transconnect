@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
@@ -352,7 +353,7 @@ function LeadsDatabaseComponent() {
     }
   }
 
-  const columns: ColumnDef<any>[] = [
+  const columns: ColumnDef<any>[] = useMemo(() => [
     { accessorKey: 'companyName', header: 'Company Name' },
     { accessorKey: 'contactPerson', header: 'Contact Name' },
     { accessorKey: 'phone', header: 'Landline' },
@@ -378,7 +379,7 @@ function LeadsDatabaseComponent() {
         </div>
       )
     },
-  ];
+  ], [forceRefresh]);
 
   return (
     <>

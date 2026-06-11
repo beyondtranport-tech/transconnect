@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -156,6 +157,8 @@ export default function SupplierManagement() {
     }
   }, []);
 
+  useEffect(() => { forceRefresh(); }, [forceRefresh]);
+
   const handleSearch = async () => {
     if (!searchTerm || searchTerm.length < 3) {
         if (searchTerm.length === 0) forceRefresh();
@@ -203,7 +206,7 @@ export default function SupplierManagement() {
     }
   }
 
-  const columns: ColumnDef<any>[] = [
+  const columns: ColumnDef<any>[] = useMemo(() => [
     { accessorKey: 'companyName', header: 'Supplier Name', cell: ({ row }) => <div className="font-bold text-left">{row.original.companyName || `${row.original.firstName} ${row.original.lastName}`}</div> },
     { accessorKey: 'entryType', header: 'Category', cell: ({row}) => row.original.entryType ? <Badge variant="outline" className="text-[10px] uppercase font-bold">{row.original.entryType}</Badge> : <span className="text-muted-foreground italic text-xs">Uncategorized</span> },
     { accessorKey: 'phone', header: 'Landline' },
@@ -221,7 +224,7 @@ export default function SupplierManagement() {
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'delete', data: row.original })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
       </div>
     )},
-  ];
+  ], [forceRefresh]);
 
   return (
     <>
