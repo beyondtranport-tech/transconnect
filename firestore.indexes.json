@@ -28,6 +28,12 @@
         { "fieldPath": "role", "order": "ASCENDING" },
         { "fieldPath": "companyName", "order": "ASCENDING" }
       ]
+    },
+    {
+      "collectionId": "leads",
+      "fields": [
+        { "fieldPath": "updatedAt", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": [

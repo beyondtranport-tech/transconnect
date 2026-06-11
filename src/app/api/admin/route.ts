@@ -48,7 +48,8 @@ export async function POST(req: NextRequest) {
 
         switch (action) {
             case 'getMembers': {
-                const snap = await db.collection('companies').orderBy('createdAt', 'desc').limit(100).get();
+                // Paginated to 500
+                const snap = await db.collection('companies').orderBy('createdAt', 'desc').limit(500).get();
                 const data = await Promise.all(snap.docs.map(async (d) => {
                     const cData = d.data();
                     const userSnap = await db.collection('users').doc(cData.ownerId).get();
@@ -66,9 +67,10 @@ export async function POST(req: NextRequest) {
 
             case 'getPartnersByType': {
                 const { type } = payload;
-                let q = db.collection('partners').orderBy('updatedAt', 'desc').limit(100);
+                // Defaulting to 500 limit for quota protection
+                let q = db.collection('partners').orderBy('updatedAt', 'desc').limit(500);
                 if (type && type !== 'all') {
-                    q = db.collection('partners').where('type', '==', type).orderBy('updatedAt', 'desc').limit(100);
+                    q = db.collection('partners').where('type', '==', type).orderBy('updatedAt', 'desc').limit(500);
                 }
                 const snap = await q.get();
                 const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
@@ -76,7 +78,7 @@ export async function POST(req: NextRequest) {
             }
 
             case 'getLeads': {
-                const snap = await db.collection('leads').orderBy('updatedAt', 'desc').limit(100).get();
+                const snap = await db.collection('leads').orderBy('updatedAt', 'desc').limit(500).get();
                 const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
                 return NextResponse.json({ success: true, data });
             }
@@ -85,7 +87,6 @@ export async function POST(req: NextRequest) {
                 const { term, type } = payload;
                 const collectionName = ['driver', 'supplier', 'transporter', 'finance', 'partner', 'isa', 'investor'].includes(type) ? 'partners' : 'leads';
                 
-                // Using a standardized search limit to prevent quota spikes
                 let q = db.collection(collectionName)
                     .where('companyName', '>=', term)
                     .where('companyName', '<=', term + '\uf8ff')
@@ -125,16 +126,6 @@ export async function POST(req: NextRequest) {
                     if (p.physical_address || p.address) standardized.address = p.physical_address || p.address;
                     if (p.contact_person || p.contactPerson) standardized.contactPerson = p.contact_person || p.contactPerson;
                     
-                    delete standardized.record_id;
-                    delete standardized.company_name;
-                    delete standardized.email_address;
-                    delete standardized.telephone_number;
-                    delete standardized.mobile_number;
-                    delete standardized.cell;
-                    delete standardized.direct_cell;
-                    delete standardized.physical_address;
-                    delete standardized.contact_person;
-
                     batch.set(db.collection(type === 'lead' ? 'leads' : 'partners').doc(id), {
                         ...standardized,
                         id,

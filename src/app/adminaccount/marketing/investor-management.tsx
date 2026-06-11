@@ -1,12 +1,12 @@
 
 'use client';
 
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, DollarSign, Edit, Trash2, Send, Filter, Save, Search, RefreshCcw, Database, RotateCcw } from 'lucide-react';
+import { getClientSideAuthToken } from '@/firebase';
+import { Loader2, PlusCircle, DollarSign, Edit, Trash2, Send, Filter, Save, Search, RefreshCcw, Download, Upload } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -22,9 +22,10 @@ import { PartnerOversightDialog } from './PartnerOversightDialog';
 import { EngageDialog } from './EngageDialog';
 import { CommunicationLogDialog } from './CommunicationLogDialog';
 import { PartnerTasksDialog } from './PartnerTasksDialog';
-import { formatDateSafe, cn, downloadDataAsCSV } from '@/lib/utils';
+import { downloadDataAsCSV } from '@/lib/utils';
 import { EnrichPartnerButton } from './EnrichPartnerButton';
 import { Label } from '@/components/ui/label';
+import { BulkImportDialog } from './BulkImportDialog';
 
 async function performAdminAction(token: string, action: string, payload: any) {
     const response = await fetch('/api/admin', {
@@ -36,14 +37,8 @@ async function performAdminAction(token: string, action: string, payload: any) {
         body: JSON.stringify({ action, payload }),
         cache: 'no-store'
     });
-
-    if (!response.ok) {
-        const text = await response.text();
-        throw new Error(text || `API Error for action: ${action}`);
-    }
-
     const result = await response.json();
-    if (!result.success) {
+    if (!response.ok || !result.success) {
         throw new Error(result.error || `API Error for action: ${action}`);
     }
     return result;
@@ -59,13 +54,11 @@ const partnerSchema = z.object({
   status: z.enum(['active', 'inactive', 'contacted', 'new', 'qualified', 'invited']),
   type: z.literal('investor'),
 });
-
 type PartnerFormValues = z.infer<typeof partnerSchema>;
 
 function InvestorDialog({ open, onOpenChange, partner, onSave }: { open: boolean; onOpenChange: (open: boolean) => void; partner?: any; onSave: () => void; }) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-
   const form = useForm<PartnerFormValues>({
     resolver: zodResolver(partnerSchema),
     defaultValues: { type: 'investor', status: 'new' }
@@ -84,7 +77,7 @@ function InvestorDialog({ open, onOpenChange, partner, onSave }: { open: boolean
         const token = await getClientSideAuthToken();
         if (!token) throw new Error("Authentication failed.");
         await performAdminAction(token, 'savePartner', { partner: { id: partner?.id, ...values, type: 'investor' } });
-        toast({ title: 'Investor Updated' });
+        toast({ title: 'Investor Saved' });
         onSave();
         onOpenChange(false);
     } catch(e: any) {
@@ -137,10 +130,11 @@ function InvestorDialog({ open, onOpenChange, partner, onSave }: { open: boolean
 export default function InvestorManagement() {
   const { toast } = useToast();
   const [partners, setPartners] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [hasLoaded, setHasLoaded] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | 'batch-ai' | null, data?: any }>({ type: null });
+  const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | null, data?: any }>({ type: null });
+
+  const [statusFilter, setStatusFilter] = useState('all');
 
   const forceRefresh = useCallback(async () => {
     setIsLoading(true);
@@ -149,13 +143,12 @@ export default function InvestorManagement() {
         if (!token) return;
         const result = await performAdminAction(token, 'getPartnersByType', { type: 'investor' });
         setPartners(result.data || []);
-        setHasLoaded(true);
     } catch (e: any) {
-        console.error("Failed to load investors", e);
+        toast({ variant: 'destructive', title: 'Fetch Error', description: e.message });
     } finally {
         setIsLoading(false);
     }
-  }, []);
+  }, [toast]);
   
   useEffect(() => { forceRefresh(); }, [forceRefresh]);
 
@@ -170,7 +163,6 @@ export default function InvestorManagement() {
         if (!token) return;
         const res = await performAdminAction(token, 'searchRegistry', { term: searchTerm, type: 'investor' });
         setPartners(res.data || []);
-        setHasLoaded(true);
     } catch (e: any) {
         toast({ variant: 'destructive', title: 'Search Error', description: e.message });
     } finally {
@@ -178,24 +170,30 @@ export default function InvestorManagement() {
     }
   };
 
+  const filteredInvestors = useMemo(() => {
+    return (partners || []).filter(p => {
+        const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
+        return matchesStatus;
+    });
+  }, [partners, statusFilter]);
+
   async function handleDelete() {
-    if (!dialog.data) return;
     try {
         const token = await getClientSideAuthToken();
-        if (!token) throw new Error("Authentication failed.");
+        if (!token) return;
         await performAdminAction(token, 'deletePartner', { partnerId: dialog.data.id });
-        toast({ title: 'Investor Deleted' });
+        toast({ title: 'Deleted' });
         forceRefresh();
         setDialog({ type: null });
     } catch (e: any) {
-        toast({ variant: 'destructive', title: 'Delete Failed', description: e.message });
+        toast({ variant: 'destructive', title: 'Error', description: e.message });
     }
   }
 
-  const columns: ColumnDef<any>[] = useMemo(() => [
+  const columns: ColumnDef<any>[] = [
     { accessorKey: 'firstName', header: 'Name', cell: ({row}) => <div>{row.original.firstName} {row.original.lastName}</div> },
     { accessorKey: 'companyName', header: 'Fund' },
-    { accessorKey: 'phone', header: 'Phone' },
+    { accessorKey: 'phone', header: 'Landline' },
     { accessorKey: 'mobile', header: 'Mobile' },
     { accessorKey: 'email', header: 'Email' },
     { accessorKey: 'status', header: 'Status', cell: ({row}) => <Badge className="capitalize">{row.original.status}</Badge>},
@@ -210,7 +208,7 @@ export default function InvestorManagement() {
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'delete', data: row.original })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
       </div>
     ) },
-  ], [forceRefresh]);
+  ];
 
   return (
     <>
@@ -218,7 +216,7 @@ export default function InvestorManagement() {
       <InvestorDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={forceRefresh} />
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
         <AlertDialogContent>
-          <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Delete investor "{dialog.data?.firstName}"?</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Delete record?</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction>
@@ -231,39 +229,25 @@ export default function InvestorManagement() {
           <div><CardTitle><DollarSign /> App Launch Investors</CardTitle></div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => downloadDataAsCSV(partners, 'investors.csv')} disabled={isLoading}><RefreshCcw className={cn("mr-2 h-4 w-4", isLoading && "animate-spin")}/>Refresh</Button>
-            <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4"/>Add Investor</Button>
+            <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4"/>Add Record</Button>
           </div>
         </CardHeader>
         <CardContent>
-             {!hasLoaded ? (
-                <Card className="bg-primary/5 border-primary/20 p-12 text-center">
-                    <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
-                    <h2 className="text-2xl font-black font-headline mb-2">Registry Search Variables</h2>
-                    <p className="text-muted-foreground max-w-sm mx-auto mb-8">Enter search criteria or load the master investor registry. This preserves your daily data quota.</p>
-                    <div className="flex flex-col md:flex-row justify-center gap-4 max-w-2xl mx-auto">
-                        <Input placeholder="Type fund name or ID to search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearch()} className="h-12 text-lg bg-white" />
-                        <Button size="lg" onClick={handleSearch} disabled={isLoading} className="h-12 px-8">
-                            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4" />}
-                            Load Master Registry
-                        </Button>
+            <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left">
+                <div className="md:col-span-3 space-y-2 text-left flex-1">
+                    <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Search className="h-3 w-3"/> Registry Search</Label>
+                    <div className="flex gap-2">
+                        <Input placeholder="Type fund name or ID to search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearch()} />
+                        <Button onClick={handleSearch} disabled={isLoading}><Search className="h-4 w-4"/></Button>
                     </div>
-                </Card>
-            ) : (
-                <>
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left">
-                        <div className="md:col-span-3 space-y-2">
-                            <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Search className="h-3 w-3"/> Registry Search</Label>
-                             <div className="flex gap-2">
-                                <Input placeholder="Refine your search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearch()} />
-                                <Button onClick={handleSearch} disabled={isLoading}><Search className="h-4 w-4"/></Button>
-                            </div>
-                        </div>
-                        <div className="flex items-end">
-                            <Button variant="outline" onClick={() => setHasLoaded(false)} className="h-10 w-full"><RotateCcw className="mr-1 h-3 w-3" /> Reset Variables</Button>
-                        </div>
-                    </div>
-                    {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div> : <DataTable columns={columns} data={partners} />}
-                </>
+                </div>
+            </div>
+            {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredInvestors} />}
+            
+            {!isLoading && filteredInvestors.length >= 500 && (
+                <div className="mt-6 flex justify-center">
+                    <Button variant="outline" className="gap-2">Load Next 500 <RefreshCcw className="h-4 w-4"/></Button>
+                </div>
             )}
         </CardContent>
       </div>

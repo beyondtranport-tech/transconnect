@@ -1,11 +1,14 @@
+
 'use client';
 
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, Bot, Edit, Trash2, Send, CheckCircle, Users, Filter, Save, Search, Mail, Download, Database, RotateCcw } from 'lucide-react';
+import { 
+  Loader2, PlusCircle, Bot, Edit, Trash2, Send, Filter, Save, Search, RefreshCcw, Download, Upload
+} from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -13,7 +16,6 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -22,7 +24,7 @@ import { PartnerOversightDialog } from './PartnerOversightDialog';
 import { EngageDialog } from './EngageDialog';
 import { CommunicationLogDialog } from './CommunicationLogDialog';
 import { PartnerTasksDialog } from './PartnerTasksDialog';
-import { formatDateSafe, cn, downloadDataAsCSV } from '@/lib/utils';
+import { downloadDataAsCSV, cn } from '@/lib/utils';
 import { EnrichPartnerButton } from './EnrichPartnerButton';
 import { Label } from '@/components/ui/label';
 
@@ -46,7 +48,6 @@ const partnerSchema = z.object({
   mobile: z.string().optional(),
   contactPerson: z.string().optional(),
   companyName: z.string().optional(),
-  address: z.string().optional(),
   status: z.enum(['active', 'inactive', 'contacted', 'new', 'qualified', 'invited']),
   type: z.literal('isa'),
 });
@@ -60,7 +61,7 @@ function ISADialog({ open, onOpenChange, partner, onSave }: { open: boolean; onO
   useEffect(() => {
     if (open) {
       if (partner) form.reset(partner);
-      else form.reset({ firstName: '', lastName: '', email: '', phone: '', mobile: '', contactPerson: '', companyName: '', address: '', status: 'active', type: 'isa' });
+      else form.reset({ firstName: '', lastName: '', email: '', phone: '', mobile: '', contactPerson: '', companyName: '', status: 'active', type: 'isa' });
     }
   }, [open, partner, form]);
 
@@ -88,7 +89,7 @@ function ISADialog({ open, onOpenChange, partner, onSave }: { open: boolean; onO
           <DialogDescription>Enter details for the Independent Sales Agent.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left">
             <div className="grid grid-cols-2 gap-4 text-left">
               <FormField control={form.control} name="firstName" render={({ field }) => (<FormItem><FormLabel>First Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="lastName" render={({ field }) => (<FormItem><FormLabel>Last Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
@@ -116,7 +117,9 @@ function ISADialog({ open, onOpenChange, partner, onSave }: { open: boolean; onO
                 </FormItem>
             )} />
             <DialogFooter className="pt-4 border-t">
-              <Button type="submit" disabled={isLoading}>{isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />} Save ISA</Button>
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />} Save ISA
+              </Button>
             </DialogFooter>
           </form>
         </Form>
@@ -128,10 +131,11 @@ function ISADialog({ open, onOpenChange, partner, onSave }: { open: boolean; onO
 export default function ISAManagement() {
   const { toast } = useToast();
   const [partners, setPartners] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [hasLoaded, setHasLoaded] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | null, data?: any }>({ type: null });
+
+  const [statusFilter, setStatusFilter] = useState('all');
 
   const forceRefresh = useCallback(async () => {
     setIsLoading(true);
@@ -140,20 +144,18 @@ export default function ISAManagement() {
       if (!token) return;
       const res = await performAdminAction(token, 'getPartnersByType', { type: 'isa' });
       setPartners(res.data || []);
-      setHasLoaded(true);
     } catch (e: any) {
-        console.error("Fetch failed", e);
+        toast({ variant: 'destructive', title: 'Fetch Error', description: e.message });
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [toast]);
 
   useEffect(() => { forceRefresh(); }, [forceRefresh]);
 
   const handleSearch = async () => {
     if (!searchTerm || searchTerm.length < 3) {
         if (searchTerm.length === 0) forceRefresh();
-        else toast({ title: "Min 3 characters required" });
         return;
     }
     setIsLoading(true);
@@ -162,7 +164,6 @@ export default function ISAManagement() {
         if (!token) return;
         const res = await performAdminAction(token, 'searchRegistry', { term: searchTerm, type: 'isa' });
         setPartners(res.data || []);
-        setHasLoaded(true);
     } catch (e: any) {
         toast({ variant: 'destructive', title: 'Search Error', description: e.message });
     } finally {
@@ -170,11 +171,12 @@ export default function ISAManagement() {
     }
   };
 
-  const handleExport = () => {
-      if (partners.length === 0) return;
-      downloadDataAsCSV(partners, `isa-backup-${new Date().toISOString().split('T')[0]}.csv`);
-      toast({ title: "Backup Exported" });
-  };
+  const filteredISA = useMemo(() => {
+    return (partners || []).filter(p => {
+        const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
+        return matchesStatus;
+    });
+  }, [partners, statusFilter]);
 
   async function handleDelete() {
     try {
@@ -191,7 +193,7 @@ export default function ISAManagement() {
 
   const columns: ColumnDef<any>[] = [
     { accessorKey: 'firstName', header: 'Name', cell: ({ row }) => <div className="font-bold text-left">{row.original.firstName} {row.original.lastName}</div> },
-    { accessorKey: 'phone', header: 'Phone' },
+    { accessorKey: 'phone', header: 'Landline' },
     { accessorKey: 'mobile', header: 'Mobile' },
     { accessorKey: 'companyName', header: 'Company' },
     { accessorKey: 'status', header: 'Status', cell: ({row}) => <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge>},
@@ -214,62 +216,42 @@ export default function ISAManagement() {
       <ISADialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={forceRefresh} />
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
         <AlertDialogContent>
-          <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Delete ISA "{dialog.data?.firstName}"?</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Delete ISA record?</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter><AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
       
-      <div className="space-y-6">
+      <div className="space-y-6 text-left">
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="text-left">
                 <CardTitle className="flex items-center gap-2"><Bot /> ISA Agents</CardTitle>
-                <CardDescription>Registry of top-performing Independent Sales Agents.</CardDescription>
+                <CardDescription>Consolidated view of sales agents (Top 500).</CardDescription>
             </div>
             <div className="flex items-center gap-2">
-                <Button variant="outline" onClick={handleExport} disabled={isLoading || !hasLoaded}>
-                    <Download className="mr-2 h-4 w-4" /> Backup
-                </Button>
                 <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4" /> Add ISA</Button>
             </div>
         </CardHeader>
 
-        {!hasLoaded ? (
-            <Card className="bg-primary/5 border-primary/20 p-12 text-center">
-                <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
-                <h2 className="text-2xl font-black font-headline mb-2 text-foreground">Registry Search Variables</h2>
-                <p className="text-muted-foreground max-w-sm mx-auto mb-8">Enter your search criteria or load the master ISA registry below. This targets your session to preserve your daily data quota.</p>
-                <div className="flex flex-col md:flex-row justify-center gap-4 max-w-2xl mx-auto text-left">
-                    <div className="flex-1 space-y-2">
-                         <Label className="text-xs font-bold uppercase ml-1">Identity or Keyword</Label>
-                         <Input placeholder="Type name, ID or email to search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearch()} className="h-12 text-lg bg-white" />
-                    </div>
-                    <div className="pt-8">
-                        <Button size="lg" onClick={handleSearch} disabled={isLoading} className="h-12 px-8">
-                            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4" />}
-                            Load Targeted Records
-                        </Button>
+        <Card>
+            <CardContent className="pt-6">
+                <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left">
+                    <div className="md:col-span-3 space-y-2 text-left flex-1">
+                        <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Search className="h-3 w-3"/> Registry Search</Label>
+                        <div className="flex gap-2">
+                            <Input placeholder="Type name or ID to search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearch()} />
+                            <Button onClick={handleSearch} disabled={isLoading}><Search className="h-4 w-4"/></Button>
+                        </div>
                     </div>
                 </div>
-            </Card>
-        ) : (
-            <Card>
-                <CardContent className="pt-6">
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left">
-                        <div className="md:col-span-3 space-y-2 text-left">
-                            <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Search className="h-3 w-3"/> Registry Search</Label>
-                            <div className="flex gap-2">
-                                <Input placeholder="Type name or ID to search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearch()} />
-                                <Button onClick={handleSearch} disabled={isLoading}><Search className="h-4 w-4"/></Button>
-                            </div>
-                        </div>
-                        <div className="flex items-end">
-                            <Button variant="outline" onClick={() => setHasLoaded(false)} className="h-10 w-full"><RotateCcw className="mr-2 h-4 w-4" /> Reset Variables</Button>
-                        </div>
+                {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredISA} />}
+                
+                {!isLoading && filteredISA.length >= 500 && (
+                    <div className="mt-6 flex justify-center">
+                        <Button variant="outline" className="gap-2">Load Next 500 <RefreshCcw className="h-4 w-4"/></Button>
                     </div>
-                    {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredPartners} />}
-                </CardContent>
-            </Card>
-        )}
+                )}
+            </CardContent>
+        </Card>
       </div>
     </>
   );

@@ -37,7 +37,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
 import { 
-  Loader2, PlusCircle, Users, Edit, Trash2, Send, Filter, RotateCcw, Search, Upload, Save, Download, RefreshCcw, Database
+  Loader2, PlusCircle, Users, Edit, Trash2, Send, Filter, Search, Upload, Save, Download, RefreshCcw
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
@@ -47,11 +47,10 @@ import { PartnerOversightDialog } from './PartnerOversightDialog';
 import { EngageDialog } from './EngageDialog';
 import { CommunicationLogDialog } from './CommunicationLogDialog';
 import { PartnerTasksDialog } from './PartnerTasksDialog';
-import { cn, downloadDataAsCSV } from '@/lib/utils';
+import { downloadDataAsCSV } from '@/lib/utils';
 import { EnrichPartnerButton } from './EnrichPartnerButton';
 import { Label } from '@/components/ui/label';
 import { BulkImportDialog } from './BulkImportDialog';
-import { driverCategories } from './driver-discovery';
 
 async function performAdminAction(token: string, action: string, payload: any) {
   const response = await fetch('/api/admin', {
@@ -60,14 +59,8 @@ async function performAdminAction(token: string, action: string, payload: any) {
     body: JSON.stringify({ action, payload }),
     cache: 'no-store'
   });
-  
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(text || `API Error: ${action}`);
-  }
-
   const result = await response.json();
-  if (!result.success) throw new Error(result.error || `API Error: ${action}`);
+  if (!response.ok || !result.success) throw new Error(result.error || `API Error: ${action}`);
   return result;
 }
 
@@ -165,13 +158,11 @@ function DriverDialog({ open, onOpenChange, partner, onSave }: { open: boolean; 
 export default function DriverManagement() {
   const { toast } = useToast();
   const [partners, setPartners] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [hasLoaded, setHasLoaded] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | null, data?: any }>({ type: null });
 
   const [statusFilter, setStatusFilter] = useState('all');
-  const [categoryFilter, setCategoryFilter] = useState('all');
 
   const forceRefresh = useCallback(async () => {
     setIsLoading(true);
@@ -180,18 +171,18 @@ export default function DriverManagement() {
       if (!token) return;
       const res = await performAdminAction(token, 'getPartnersByType', { type: 'driver' });
       setPartners(res.data || []);
-      setHasLoaded(true);
     } catch (e: any) {
-        console.warn("Manual fetch failed", e);
+        toast({ variant: 'destructive', title: 'Fetch Error', description: e.message });
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [toast]);
+
+  useEffect(() => { forceRefresh(); }, [forceRefresh]);
 
   const handleSearch = async () => {
     if (!searchTerm || searchTerm.length < 3) {
         if (searchTerm.length === 0) forceRefresh();
-        else toast({ title: "Min 3 characters required" });
         return;
     }
     setIsLoading(true);
@@ -200,7 +191,6 @@ export default function DriverManagement() {
         if (!token) return;
         const res = await performAdminAction(token, 'searchRegistry', { term: searchTerm, type: 'driver' });
         setPartners(res.data || []);
-        setHasLoaded(true);
     } catch (e: any) {
         toast({ variant: 'destructive', title: 'Search Error', description: e.message });
     } finally {
@@ -217,10 +207,9 @@ export default function DriverManagement() {
   const filteredDrivers = useMemo(() => {
     return (partners || []).filter(p => {
         const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
-        const matchesCategory = categoryFilter === 'all' || p.entryType === categoryFilter;
-        return matchesStatus && matchesCategory;
+        return matchesStatus;
     });
-  }, [partners, statusFilter, categoryFilter]);
+  }, [partners, statusFilter]);
 
   async function handleDelete() {
     try {
@@ -235,7 +224,7 @@ export default function DriverManagement() {
     }
   }
 
-  const columns: ColumnDef<any>[] = useMemo(() => [
+  const columns: ColumnDef<any>[] = [
     { 
         header: 'Driver Identity', 
         cell: ({ row }) => (
@@ -245,9 +234,9 @@ export default function DriverManagement() {
             </div>
         )
     },
-    { accessorKey: 'entryType', header: 'License', cell: ({row}) => <Badge variant="outline" className="text-[10px] uppercase font-bold">{row.original.entryType || 'General'}</Badge> },
     { accessorKey: 'phone', header: 'Landline' },
     { accessorKey: 'mobile', header: 'Mobile' },
+    { accessorKey: 'email', header: 'Email' },
     { accessorKey: 'status', header: 'Status', cell: ({ row }) => <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge> },
     { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
       <div className="flex justify-end gap-1">
@@ -260,7 +249,7 @@ export default function DriverManagement() {
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'delete', data: row.original })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
       </div>
     )},
-  ], [forceRefresh]);
+  ];
 
   return (
     <>
@@ -273,14 +262,14 @@ export default function DriverManagement() {
         </AlertDialogContent>
       </AlertDialog>
       
-      <div className="space-y-6">
+      <div className="space-y-6 text-left">
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="text-left">
                 <CardTitle className="flex items-center gap-2"><Users /> Driver Registry</CardTitle>
-                <CardDescription>Targeted view of recent commercial service providers.</CardDescription>
+                <CardDescription>Managed view of professional logistics contractors (Top 500).</CardDescription>
             </div>
             <div className="flex items-center gap-2">
-                <Button variant="outline" onClick={handleExport} disabled={isLoading || !hasLoaded}>
+                <Button variant="outline" onClick={handleExport} disabled={isLoading}>
                     <Download className="mr-2 h-4 w-4" /> Backup
                 </Button>
                 <BulkImportDialog type="driver" onComplete={forceRefresh}><Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
@@ -288,53 +277,39 @@ export default function DriverManagement() {
             </div>
         </CardHeader>
 
-        {!hasLoaded ? (
-            <Card className="bg-primary/5 border-primary/20 p-12 text-center">
-                <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
-                <h2 className="text-2xl font-black font-headline mb-2 text-foreground">Registry Search Variables</h2>
-                <p className="text-muted-foreground max-w-sm mx-auto mb-8">Enter your search criteria or load the master driver registry below. This targets your session to preserve your daily data quota.</p>
-                <div className="flex flex-col md:flex-row justify-center gap-4 max-w-2xl mx-auto">
-                    <div className="flex-1 space-y-2 text-left">
-                         <Label className="text-xs font-bold uppercase ml-1">Identity or Region</Label>
-                         <Input placeholder="Type name, ID or region to search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearch()} className="h-12 bg-white" />
+        <Card>
+            <CardContent className="pt-6">
+                <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left">
+                    <div className="md:col-span-3 space-y-2 text-left flex-1">
+                        <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Search className="h-3 w-3"/> Registry Search</Label>
+                        <div className="flex gap-2">
+                            <Input placeholder="Type name or ID to search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearch()} />
+                            <Button onClick={handleSearch} disabled={isLoading}><Search className="h-4 w-4"/></Button>
+                        </div>
                     </div>
-                     <div className="flex-1 space-y-2 text-left">
-                         <Label className="text-xs font-bold uppercase ml-1">License Class</Label>
-                         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                            <SelectTrigger className="h-12 bg-white"><SelectValue placeholder="All Classes" /></SelectTrigger>
+                    <div className="space-y-2 text-left w-64">
+                         <Label className="text-[10px] font-black uppercase text-muted-foreground">Status</Label>
+                         <Select value={statusFilter} onValueChange={setStatusFilter}>
+                            <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">All Classes</SelectItem>
-                                {driverCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
+                                <SelectItem value="all">All Statuses</SelectItem>
+                                <SelectItem value="new">New</SelectItem>
+                                <SelectItem value="contacted">Researching</SelectItem>
+                                <SelectItem value="qualified">Qualified</SelectItem>
+                                <SelectItem value="active">Active</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
-                    <div className="pt-8">
-                        <Button size="lg" onClick={handleSearch} disabled={isLoading} className="h-12 px-8">
-                            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4" />}
-                            Load Targeted Records
-                        </Button>
-                    </div>
                 </div>
-            </Card>
-        ) : (
-            <Card>
-                <CardContent className="pt-6">
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left">
-                        <div className="md:col-span-2 space-y-2 text-left">
-                            <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Search className="h-3 w-3"/> Registry Search</Label>
-                            <div className="flex gap-2">
-                                <Input placeholder="Type name or ID to search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearch()} />
-                                <Button onClick={handleSearch} disabled={isLoading}><Search className="h-4 w-4"/></Button>
-                            </div>
-                        </div>
-                        <div className="flex items-end">
-                            <Button variant="outline" onClick={() => setHasLoaded(false)} className="h-10 w-full"><RotateCcw className="mr-2 h-4 w-4" /> Reset Variables</Button>
-                        </div>
+                {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredDrivers} />}
+                
+                {!isLoading && filteredDrivers.length >= 500 && (
+                    <div className="mt-6 flex justify-center">
+                        <Button variant="outline" className="gap-2">Load Next 500 <RefreshCcw className="h-4 w-4"/></Button>
                     </div>
-                    {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredDrivers} />}
-                </CardContent>
-            </Card>
-        )}
+                )}
+            </CardContent>
+        </Card>
       </div>
     </>
   );
