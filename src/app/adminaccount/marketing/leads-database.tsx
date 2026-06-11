@@ -36,6 +36,7 @@ import { roles } from '@/lib/roles';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { downloadDataAsCSV, cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { Label } from '@/components/ui/label';
 
 import { EnrichPartnerButton } from '@/app/adminaccount/marketing/EnrichPartnerButton';
 import { PartnerTasksDialog } from '@/app/adminaccount/marketing/PartnerTasksDialog';
@@ -135,31 +136,53 @@ function LeadsDatabaseComponent() {
   const searchParams = useSearchParams();
   const [leads, setLeads] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null);
+  
   const [isAddLeadOpen, setIsAddLeadOpen] = useState(false);
   const [editLead, setEditLead] = useState<any | null>(null);
   const [deleteLead, setDeleteLead] = useState<any | null>(null);
   const [engageLead, setEngageLead] = useState<any | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
 
-  const forceRefresh = useCallback(async () => {
-    setIsLoading(true);
+  const fetchData = useCallback(async (isLoadMore: boolean = false) => {
+    if (isLoadMore) setIsLoadingMore(true);
+    else setIsLoading(true);
+
     try {
       const token = await getClientSideAuthToken();
       if (!token) return;
-      const res = await performAdminAction(token, 'getLeads');
-      setLeads(res.data || []);
+
+      const payload: any = {};
+      if (isLoadMore && lastUpdatedAt) {
+          payload.cursor = lastUpdatedAt;
+      }
+
+      const res = await performAdminAction(token, 'getLeads', payload);
+      const newData = res.data || [];
+      
+      if (isLoadMore) {
+          setLeads(prev => [...prev, ...newData]);
+      } else {
+          setLeads(newData);
+      }
+
+      if (newData.length > 0) {
+          setLastUpdatedAt(newData[newData.length - 1].updatedAt);
+      }
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Error', description: e.message });
     } finally {
       setIsLoading(false);
+      setIsLoadingMore(false);
     }
-  }, [toast]);
+  }, [toast, lastUpdatedAt]);
 
-  useEffect(() => { forceRefresh(); }, [forceRefresh]);
+  useEffect(() => { fetchData(); }, []);
 
   const handleSearch = async () => {
     if (!searchTerm || searchTerm.length < 3) {
-        if (searchTerm.length === 0) forceRefresh();
+        if (searchTerm.length === 0) fetchData();
         return;
     }
     setIsLoading(true);
@@ -186,11 +209,11 @@ function LeadsDatabaseComponent() {
       header: <div className="text-right">Actions</div>,
       cell: ({ row }) => (
         <div className="text-right flex items-center justify-end gap-1">
-          <EnrichPartnerButton partner={row.original} onUpdate={forceRefresh} />
+          <EnrichPartnerButton partner={row.original} onUpdate={fetchData} />
           <Button variant="ghost" size="icon" onClick={() => setEngageLead(row.original)}><Send className="h-4 w-4 text-primary" /></Button>
           <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.companyName} />
           <PartnerTasksDialog partner={row.original} />
-          <PartnerOversightDialog partner={row.original} onUpdate={forceRefresh} />
+          <PartnerOversightDialog partner={row.original} onUpdate={fetchData} />
           <Button variant="ghost" size="icon" onClick={() => { setEditLead(row.original); }}><Edit className="h-4 w-4" /></Button>
           <Button variant="ghost" size="icon" onClick={() => { setDeleteLead(row.original); }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
         </div>
@@ -200,15 +223,15 @@ function LeadsDatabaseComponent() {
 
   return (
     <>
-      <EngageDialog open={!!engageLead} onOpenChange={(o) => !o && setEngageLead(null)} partner={engageLead} audience="suppliers" onEngageSuccess={forceRefresh} />
-      <LeadDialog open={isAddLeadOpen || !!editLead} onOpenChange={(o) => { if(!o) { setEditLead(null); setIsAddLeadOpen(false); } }} lead={editLead} onSave={forceRefresh} />
+      <EngageDialog open={!!engageLead} onOpenChange={(o) => !o && setEngageLead(null)} partner={engageLead} audience="suppliers" onEngageSuccess={fetchData} />
+      <LeadDialog open={isAddLeadOpen || !!editLead} onOpenChange={(o) => { if(!o) { setEditLead(null); setIsAddLeadOpen(false); } }} lead={editLead} onSave={fetchData} />
       
       <div className="space-y-6">
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
-          <div><CardTitle><Users /> Lead Database</CardTitle><CardDescription>Consolidated registry of prospective members (Top 500).</CardDescription></div>
+          <div><CardTitle><Users /> Lead Database</CardTitle><CardDescription>Consolidated registry of prospective members (500 per page).</CardDescription></div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => downloadDataAsCSV(leads, 'leads-backup.csv')}><Download className="mr-2 h-4 w-4" /> Backup</Button>
-            <BulkImportDialog type="lead" onComplete={forceRefresh}><Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
+            <BulkImportDialog type="lead" onComplete={fetchData}><Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
             <Button onClick={() => setIsAddLeadOpen(true)}><PlusCircle className="mr-2 h-4 w-4" />Add Lead</Button>
           </div>
         </CardHeader>
@@ -222,7 +245,15 @@ function LeadsDatabaseComponent() {
                 
                 {!isLoading && leads.length >= 500 && (
                     <div className="mt-6 flex justify-center">
-                        <Button variant="outline" className="gap-2">Load Next 500 <RefreshCcw className="h-4 w-4"/></Button>
+                        <Button 
+                            variant="outline" 
+                            className="gap-2" 
+                            onClick={() => fetchData(true)}
+                            disabled={isLoadingMore}
+                        >
+                            {isLoadingMore ? <Loader2 className="h-4 w-4 animate-spin"/> : <RefreshCcw className="h-4 w-4"/>}
+                            Load Next 500
+                        </Button>
                     </div>
                 )}
             </CardContent>

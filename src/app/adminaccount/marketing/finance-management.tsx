@@ -135,30 +135,51 @@ export default function FinanceManagement() {
   const { toast } = useToast();
   const [partners, setPartners] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null);
   const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | null, data?: any }>({ type: null });
 
   const [statusFilter, setStatusFilter] = useState('all');
 
-  const forceRefresh = useCallback(async () => {
-    setIsLoading(true);
+  const fetchData = useCallback(async (isLoadMore: boolean = false) => {
+    if (isLoadMore) setIsLoadingMore(true);
+    else setIsLoading(true);
+
     try {
       const token = await getClientSideAuthToken();
       if (!token) return;
-      const res = await performAdminAction(token, 'getPartnersByType', { type: 'finance' });
-      setPartners(res.data || []);
+
+      const payload: any = { type: 'finance' };
+      if (isLoadMore && lastUpdatedAt) {
+          payload.cursor = lastUpdatedAt;
+      }
+
+      const res = await performAdminAction(token, 'getPartnersByType', payload);
+      const newData = res.data || [];
+      
+      if (isLoadMore) {
+          setPartners(prev => [...prev, ...newData]);
+      } else {
+          setPartners(newData);
+      }
+
+      if (newData.length > 0) {
+          setLastUpdatedAt(newData[newData.length - 1].updatedAt);
+      }
     } catch (e: any) {
         toast({ variant: 'destructive', title: 'Fetch Error', description: e.message });
     } finally {
       setIsLoading(false);
+      setIsLoadingMore(false);
     }
-  }, [toast]);
+  }, [toast, lastUpdatedAt]);
 
-  useEffect(() => { forceRefresh(); }, [forceRefresh]);
+  useEffect(() => { fetchData(); }, []);
 
   const handleSearch = async () => {
     if (!searchTerm || searchTerm.length < 3) {
-        if (searchTerm.length === 0) forceRefresh();
+        if (searchTerm.length === 0) fetchData();
         return;
     }
     setIsLoading(true);
@@ -193,7 +214,7 @@ export default function FinanceManagement() {
       if (!token) return;
       await performAdminAction(token, 'deletePartner', { partnerId: dialog.data.id });
       toast({ title: 'Deleted' });
-      forceRefresh();
+      fetchData();
       setDialog({ type: null });
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Error', description: e.message });
@@ -208,11 +229,11 @@ export default function FinanceManagement() {
     { accessorKey: 'status', header: 'Status', cell: ({ row }) => <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge> },
     { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
       <div className="flex justify-end gap-1">
-        <EnrichPartnerButton partner={row.original} onUpdate={forceRefresh} />
+        <EnrichPartnerButton partner={row.original} onUpdate={fetchData} />
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'engage', data: row.original })} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
         <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.companyName} />
         <PartnerTasksDialog partner={row.original} />
-        <PartnerOversightDialog partner={row.original} onUpdate={forceRefresh} />
+        <PartnerOversightDialog partner={row.original} onUpdate={fetchData} />
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'edit', data: row.original })}><Edit className="h-4 w-4" /></Button>
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'delete', data: row.original })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
       </div>
@@ -221,8 +242,8 @@ export default function FinanceManagement() {
 
   return (
     <>
-      <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.data} audience="finance" onEngageSuccess={forceRefresh} />
-      <FinanceDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={forceRefresh} />
+      <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.data} audience="finance" onEngageSuccess={fetchData} />
+      <FinanceDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={fetchData} />
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
         <AlertDialogContent>
           <AlertDialogHeader><AlertDialogTitle>Delete Record?</AlertDialogTitle><AlertDialogDescription>Delete "{dialog.data?.companyName}"?</AlertDialogDescription></AlertDialogHeader>
@@ -233,13 +254,13 @@ export default function FinanceManagement() {
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="text-left">
                 <CardTitle className="flex items-center gap-2"><Landmark /> Finance Registry</CardTitle>
-                <CardDescription>Managed view of credit providers and insurers (Top 500).</CardDescription>
+                <CardDescription>Managed view of credit providers and insurers (500 per page).</CardDescription>
             </div>
             <div className="flex items-center gap-2">
                 <Button variant="outline" onClick={handleExport} disabled={isLoading}>
                     <Download className="mr-2 h-4 w-4" /> Backup
                 </Button>
-                <BulkImportDialog type="finance" onComplete={forceRefresh}><Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
+                <BulkImportDialog type="finance" onComplete={fetchData}><Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
                 <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Record</Button>
             </div>
         </CardHeader>
@@ -257,9 +278,17 @@ export default function FinanceManagement() {
                 </div>
                 {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredFinance} />}
                 
-                {!isLoading && filteredFinance.length >= 500 && (
+                {!isLoading && partners.length >= 500 && (
                     <div className="mt-6 flex justify-center">
-                        <Button variant="outline" className="gap-2">Load Next 500 <RefreshCcw className="h-4 w-4"/></Button>
+                        <Button 
+                            variant="outline" 
+                            className="gap-2" 
+                            onClick={() => fetchData(true)}
+                            disabled={isLoadingMore}
+                        >
+                            {isLoadingMore ? <Loader2 className="h-4 w-4 animate-spin"/> : <RefreshCcw className="h-4 w-4"/>}
+                            Load Next 500
+                        </Button>
                     </div>
                 )}
             </CardContent>

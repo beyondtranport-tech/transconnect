@@ -2,7 +2,37 @@
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 import { Button, buttonVariants } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
@@ -10,19 +40,12 @@ import { Loader2, PlusCircle, DollarSign, Edit, Trash2, Send, Filter, Save, Sear
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
 import { PartnerOversightDialog } from './PartnerOversightDialog';
 import { EngageDialog } from './EngageDialog';
 import { CommunicationLogDialog } from './CommunicationLogDialog';
 import { PartnerTasksDialog } from './PartnerTasksDialog';
-import { downloadDataAsCSV } from '@/lib/utils';
+import { downloadDataAsCSV, cn } from '@/lib/utils';
 import { EnrichPartnerButton } from './EnrichPartnerButton';
 import { Label } from '@/components/ui/label';
 import { BulkImportDialog } from './BulkImportDialog';
@@ -50,6 +73,7 @@ const partnerSchema = z.object({
   email: z.string().email('Invalid email address').optional().or(z.literal('')),
   phone: z.string().optional(),
   mobile: z.string().optional(),
+  contactPerson: z.string().optional(),
   companyName: z.string().optional(),
   status: z.enum(['active', 'inactive', 'contacted', 'new', 'qualified', 'invited']),
   type: z.literal('investor'),
@@ -131,30 +155,51 @@ export default function InvestorManagement() {
   const { toast } = useToast();
   const [partners, setPartners] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null);
   const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | null, data?: any }>({ type: null });
 
   const [statusFilter, setStatusFilter] = useState('all');
 
-  const forceRefresh = useCallback(async () => {
-    setIsLoading(true);
+  const fetchData = useCallback(async (isLoadMore: boolean = false) => {
+    if (isLoadMore) setIsLoadingMore(true);
+    else setIsLoading(true);
+
     try {
         const token = await getClientSideAuthToken();
         if (!token) return;
-        const result = await performAdminAction(token, 'getPartnersByType', { type: 'investor' });
-        setPartners(result.data || []);
+
+        const payload: any = { type: 'investor' };
+        if (isLoadMore && lastUpdatedAt) {
+            payload.cursor = lastUpdatedAt;
+        }
+
+        const result = await performAdminAction(token, 'getPartnersByType', payload);
+        const newData = result.data || [];
+
+        if (isLoadMore) {
+            setPartners(prev => [...prev, ...newData]);
+        } else {
+            setPartners(newData);
+        }
+
+        if (newData.length > 0) {
+            setLastUpdatedAt(newData[newData.length - 1].updatedAt);
+        }
     } catch (e: any) {
         toast({ variant: 'destructive', title: 'Fetch Error', description: e.message });
     } finally {
         setIsLoading(false);
+        setIsLoadingMore(false);
     }
-  }, [toast]);
+  }, [toast, lastUpdatedAt]);
   
-  useEffect(() => { forceRefresh(); }, [forceRefresh]);
+  useEffect(() => { fetchData(); }, []);
 
   const handleSearch = async () => {
     if (!searchTerm || searchTerm.length < 3) {
-        if (searchTerm.length === 0) forceRefresh();
+        if (searchTerm.length === 0) fetchData();
         return;
     }
     setIsLoading(true);
@@ -183,7 +228,7 @@ export default function InvestorManagement() {
         if (!token) return;
         await performAdminAction(token, 'deletePartner', { partnerId: dialog.data.id });
         toast({ title: 'Deleted' });
-        forceRefresh();
+        fetchData();
         setDialog({ type: null });
     } catch (e: any) {
         toast({ variant: 'destructive', title: 'Error', description: e.message });
@@ -199,11 +244,11 @@ export default function InvestorManagement() {
     { accessorKey: 'status', header: 'Status', cell: ({row}) => <Badge className="capitalize">{row.original.status}</Badge>},
     { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
       <div className="flex justify-end items-center gap-1">
-        <EnrichPartnerButton partner={row.original} onUpdate={forceRefresh} />
+        <EnrichPartnerButton partner={row.original} onUpdate={fetchData} />
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'engage', data: row.original })} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
         <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.firstName} />
         <PartnerTasksDialog partner={row.original} />
-        <PartnerOversightDialog partner={row.original} onUpdate={forceRefresh} />
+        <PartnerOversightDialog partner={row.original} onUpdate={fetchData} />
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'edit', data: row.original })}><Edit className="h-4 w-4" /></Button>
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'delete', data: row.original })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
       </div>
@@ -212,8 +257,8 @@ export default function InvestorManagement() {
 
   return (
     <>
-      <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.data} audience="investors" onEngageSuccess={forceRefresh} />
-      <InvestorDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={forceRefresh} />
+      <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.data} audience="investors" onEngageSuccess={fetchData} />
+      <InvestorDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={fetchData} />
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
         <AlertDialogContent>
           <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Delete record?</AlertDialogDescription></AlertDialogHeader>
@@ -244,9 +289,17 @@ export default function InvestorManagement() {
             </div>
             {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredInvestors} />}
             
-            {!isLoading && filteredInvestors.length >= 500 && (
+            {!isLoading && partners.length >= 500 && (
                 <div className="mt-6 flex justify-center">
-                    <Button variant="outline" className="gap-2">Load Next 500 <RefreshCcw className="h-4 w-4"/></Button>
+                    <Button 
+                        variant="outline" 
+                        className="gap-2" 
+                        onClick={() => fetchData(true)}
+                        disabled={isLoadingMore}
+                    >
+                        {isLoadingMore ? <Loader2 className="h-4 w-4 animate-spin"/> : <RefreshCcw className="h-4 w-4"/>}
+                        Load Next 500
+                    </Button>
                 </div>
             )}
         </CardContent>

@@ -132,30 +132,51 @@ export default function ISAManagement() {
   const { toast } = useToast();
   const [partners, setPartners] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null);
   const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | null, data?: any }>({ type: null });
 
   const [statusFilter, setStatusFilter] = useState('all');
 
-  const forceRefresh = useCallback(async () => {
-    setIsLoading(true);
+  const fetchData = useCallback(async (isLoadMore: boolean = false) => {
+    if (isLoadMore) setIsLoadingMore(true);
+    else setIsLoading(true);
+
     try {
       const token = await getClientSideAuthToken();
       if (!token) return;
-      const res = await performAdminAction(token, 'getPartnersByType', { type: 'isa' });
-      setPartners(res.data || []);
+
+      const payload: any = { type: 'isa' };
+      if (isLoadMore && lastUpdatedAt) {
+          payload.cursor = lastUpdatedAt;
+      }
+
+      const res = await performAdminAction(token, 'getPartnersByType', payload);
+      const newData = res.data || [];
+      
+      if (isLoadMore) {
+          setPartners(prev => [...prev, ...newData]);
+      } else {
+          setPartners(newData);
+      }
+
+      if (newData.length > 0) {
+          setLastUpdatedAt(newData[newData.length - 1].updatedAt);
+      }
     } catch (e: any) {
         toast({ variant: 'destructive', title: 'Fetch Error', description: e.message });
     } finally {
       setIsLoading(false);
+      setIsLoadingMore(false);
     }
-  }, [toast]);
+  }, [toast, lastUpdatedAt]);
 
-  useEffect(() => { forceRefresh(); }, [forceRefresh]);
+  useEffect(() => { fetchData(); }, []);
 
   const handleSearch = async () => {
     if (!searchTerm || searchTerm.length < 3) {
-        if (searchTerm.length === 0) forceRefresh();
+        if (searchTerm.length === 0) fetchData();
         return;
     }
     setIsLoading(true);
@@ -184,7 +205,7 @@ export default function ISAManagement() {
       if (!token) return;
       await performAdminAction(token, 'deletePartner', { partnerId: dialog.data.id });
       toast({ title: 'Deleted' });
-      forceRefresh();
+      fetchData();
       setDialog({ type: null });
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Error', description: e.message });
@@ -192,18 +213,17 @@ export default function ISAManagement() {
   }
 
   const columns: ColumnDef<any>[] = [
-    { accessorKey: 'firstName', header: 'Name', cell: ({ row }) => <div className="font-bold text-left">{row.original.firstName} {row.original.lastName}</div> },
+    { accessorKey: 'companyName', header: 'Company', cell: ({ row }) => <div className="font-bold text-left">{row.original.companyName || `${row.original.firstName} ${row.original.lastName}`}</div> },
     { accessorKey: 'phone', header: 'Landline' },
     { accessorKey: 'mobile', header: 'Mobile' },
-    { accessorKey: 'companyName', header: 'Company' },
     { accessorKey: 'status', header: 'Status', cell: ({row}) => <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge>},
     { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
       <div className="flex justify-end gap-1">
-        <EnrichPartnerButton partner={row.original} onUpdate={forceRefresh} />
+        <EnrichPartnerButton partner={row.original} onUpdate={fetchData} />
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'engage', data: row.original })} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
         <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.firstName} />
         <PartnerTasksDialog partner={row.original} />
-        <PartnerOversightDialog partner={row.original} onUpdate={forceRefresh} />
+        <PartnerOversightDialog partner={row.original} onUpdate={fetchData} />
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'edit', data: row.original })}><Edit className="h-4 w-4" /></Button>
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'delete', data: row.original })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
       </div>
@@ -212,8 +232,8 @@ export default function ISAManagement() {
 
   return (
     <>
-      <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.data} audience="isa" onEngageSuccess={forceRefresh} />
-      <ISADialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={forceRefresh} />
+      <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.data} audience="isa" onEngageSuccess={fetchData} />
+      <ISADialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={fetchData} />
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
         <AlertDialogContent>
           <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Delete ISA record?</AlertDialogDescription></AlertDialogHeader>
@@ -225,7 +245,7 @@ export default function ISAManagement() {
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="text-left">
                 <CardTitle className="flex items-center gap-2"><Bot /> ISA Agents</CardTitle>
-                <CardDescription>Consolidated view of sales agents (Top 500).</CardDescription>
+                <CardDescription>Consolidated view of sales agents (500 per page).</CardDescription>
             </div>
             <div className="flex items-center gap-2">
                 <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4" /> Add ISA</Button>
@@ -245,9 +265,17 @@ export default function ISAManagement() {
                 </div>
                 {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredISA} />}
                 
-                {!isLoading && filteredISA.length >= 500 && (
+                {!isLoading && partners.length >= 500 && (
                     <div className="mt-6 flex justify-center">
-                        <Button variant="outline" className="gap-2">Load Next 500 <RefreshCcw className="h-4 w-4"/></Button>
+                        <Button 
+                            variant="outline" 
+                            className="gap-2" 
+                            onClick={() => fetchData(true)}
+                            disabled={isLoadingMore}
+                        >
+                            {isLoadingMore ? <Loader2 className="h-4 w-4 animate-spin"/> : <RefreshCcw className="h-4 w-4"/>}
+                            Load Next 500
+                        </Button>
                     </div>
                 )}
             </CardContent>

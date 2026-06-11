@@ -47,7 +47,7 @@ import { PartnerOversightDialog } from './PartnerOversightDialog';
 import { EngageDialog } from './EngageDialog';
 import { CommunicationLogDialog } from './CommunicationLogDialog';
 import { PartnerTasksDialog } from './PartnerTasksDialog';
-import { downloadDataAsCSV } from '@/lib/utils';
+import { downloadDataAsCSV, cn } from '@/lib/utils';
 import { EnrichPartnerButton } from './EnrichPartnerButton';
 import { Label } from '@/components/ui/label';
 import { BulkImportDialog } from './BulkImportDialog';
@@ -160,31 +160,51 @@ export default function TransporterManagement() {
   const { toast } = useToast();
   const [partners, setPartners] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null);
   const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | null, data?: any }>({ type: null });
 
   const [statusFilter, setStatusFilter] = useState('all');
-  const [dataFilter, setDataFilter] = useState('all');
 
-  const forceRefresh = useCallback(async () => {
-    setIsLoading(true);
+  const fetchData = useCallback(async (isLoadMore: boolean = false) => {
+    if (isLoadMore) setIsLoadingMore(true);
+    else setIsLoading(true);
+
     try {
       const token = await getClientSideAuthToken();
       if (!token) return;
-      const res = await performAdminAction(token, 'getPartnersByType', { type: 'transporter' });
-      setPartners(res.data || []);
+
+      const payload: any = { type: 'transporter' };
+      if (isLoadMore && lastUpdatedAt) {
+          payload.cursor = lastUpdatedAt;
+      }
+
+      const res = await performAdminAction(token, 'getPartnersByType', payload);
+      const newData = res.data || [];
+      
+      if (isLoadMore) {
+          setPartners(prev => [...prev, ...newData]);
+      } else {
+          setPartners(newData);
+      }
+
+      if (newData.length > 0) {
+          setLastUpdatedAt(newData[newData.length - 1].updatedAt);
+      }
     } catch (e: any) {
         toast({ variant: 'destructive', title: 'Fetch Error', description: e.message });
     } finally {
       setIsLoading(false);
+      setIsLoadingMore(false);
     }
-  }, [toast]);
+  }, [toast, lastUpdatedAt]);
 
-  useEffect(() => { forceRefresh(); }, [forceRefresh]);
+  useEffect(() => { fetchData(); }, []);
 
   const handleSearch = async () => {
     if (!searchTerm || searchTerm.length < 3) {
-        if (searchTerm.length === 0) forceRefresh();
+        if (searchTerm.length === 0) fetchData();
         return;
     }
     setIsLoading(true);
@@ -209,13 +229,9 @@ export default function TransporterManagement() {
   const filteredTransporters = useMemo(() => {
     return (partners || []).filter(p => {
         const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
-        let matchesData = true;
-        if (dataFilter === 'no-email') matchesData = !p.email;
-        else if (dataFilter === 'no-phone') matchesData = !p.phone && !p.mobile;
-        else if (dataFilter === 'has-email') matchesData = !!p.email;
-        return matchesStatus && matchesData;
+        return matchesStatus;
     });
-  }, [partners, statusFilter, dataFilter]);
+  }, [partners, statusFilter]);
 
   async function handleDelete() {
     try {
@@ -223,7 +239,7 @@ export default function TransporterManagement() {
       if (!token) return;
       await performAdminAction(token, 'deletePartner', { partnerId: dialog.data.id });
       toast({ title: 'Deleted' });
-      forceRefresh();
+      fetchData();
       setDialog({ type: null });
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Error', description: e.message });
@@ -238,11 +254,11 @@ export default function TransporterManagement() {
     { accessorKey: 'status', header: 'Status', cell: ({ row }) => <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge> },
     { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
       <div className="flex justify-end gap-1">
-        <EnrichPartnerButton partner={row.original} onUpdate={forceRefresh} />
+        <EnrichPartnerButton partner={row.original} onUpdate={fetchData} />
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'engage', data: row.original })} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
         <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.companyName} />
         <PartnerTasksDialog partner={row.original} />
-        <PartnerOversightDialog partner={row.original} onUpdate={forceRefresh} />
+        <PartnerOversightDialog partner={row.original} onUpdate={fetchData} />
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'edit', data: row.original })}><Edit className="h-4 w-4" /></Button>
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'delete', data: row.original })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
       </div>
@@ -251,8 +267,8 @@ export default function TransporterManagement() {
 
   return (
     <>
-      <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.data} audience="transporters" onEngageSuccess={forceRefresh} />
-      <TransporterDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={forceRefresh} />
+      <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.data} audience="transporters" onEngageSuccess={fetchData} />
+      <TransporterDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={fetchData} />
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
         <AlertDialogContent>
           <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Delete haulier record?</AlertDialogDescription></AlertDialogHeader>
@@ -264,13 +280,13 @@ export default function TransporterManagement() {
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="text-left">
                 <CardTitle className="flex items-center gap-2"><Truck /> Transporter Registry</CardTitle>
-                <CardDescription>Consolidated view of verified hauliers (Top 500).</CardDescription>
+                <CardDescription>Managed view of verified hauliers (500 per page).</CardDescription>
             </div>
             <div className="flex items-center gap-2">
                 <Button variant="outline" onClick={handleExport} disabled={isLoading}>
                     <Download className="mr-2 h-4 w-4" /> Backup
                 </Button>
-                <BulkImportDialog type="transporter" onComplete={forceRefresh}><Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
+                <BulkImportDialog type="transporter" onComplete={fetchData}><Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
                 <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Record</Button>
             </div>
         </CardHeader>
@@ -301,9 +317,17 @@ export default function TransporterManagement() {
                 </div>
                 {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredTransporters} />}
                 
-                {!isLoading && filteredTransporters.length >= 500 && (
+                {!isLoading && partners.length >= 500 && (
                      <div className="mt-6 flex justify-center">
-                        <Button variant="outline" className="gap-2">Load Next 500 <RefreshCcw className="h-4 w-4"/></Button>
+                        <Button 
+                            variant="outline" 
+                            className="gap-2" 
+                            onClick={() => fetchData(true)}
+                            disabled={isLoadingMore}
+                        >
+                            {isLoadingMore ? <Loader2 className="h-4 w-4 animate-spin"/> : <RefreshCcw className="h-4 w-4"/>}
+                            Load Next 500
+                        </Button>
                     </div>
                 )}
             </CardContent>

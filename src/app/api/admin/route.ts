@@ -48,8 +48,12 @@ export async function POST(req: NextRequest) {
 
         switch (action) {
             case 'getMembers': {
-                // Paginated to 500
-                const snap = await db.collection('companies').orderBy('createdAt', 'desc').limit(500).get();
+                const { cursor } = payload || {};
+                let q = db.collection('companies').orderBy('createdAt', 'desc').limit(500);
+                if (cursor) {
+                    q = q.startAfter(Timestamp.fromDate(new Date(cursor)));
+                }
+                const snap = await q.get();
                 const data = await Promise.all(snap.docs.map(async (d) => {
                     const cData = d.data();
                     const userSnap = await db.collection('users').doc(cData.ownerId).get();
@@ -66,11 +70,13 @@ export async function POST(req: NextRequest) {
             }
 
             case 'getPartnersByType': {
-                const { type } = payload;
-                // Defaulting to 500 limit for quota protection
+                const { type, cursor } = payload;
                 let q = db.collection('partners').orderBy('updatedAt', 'desc').limit(500);
                 if (type && type !== 'all') {
                     q = db.collection('partners').where('type', '==', type).orderBy('updatedAt', 'desc').limit(500);
+                }
+                if (cursor) {
+                    q = q.startAfter(Timestamp.fromDate(new Date(cursor)));
                 }
                 const snap = await q.get();
                 const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
@@ -78,7 +84,12 @@ export async function POST(req: NextRequest) {
             }
 
             case 'getLeads': {
-                const snap = await db.collection('leads').orderBy('updatedAt', 'desc').limit(500).get();
+                const { cursor } = payload || {};
+                let q = db.collection('leads').orderBy('updatedAt', 'desc').limit(500);
+                if (cursor) {
+                    q = q.startAfter(Timestamp.fromDate(new Date(cursor)));
+                }
+                const snap = await q.get();
                 const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
                 return NextResponse.json({ success: true, data });
             }
