@@ -370,14 +370,18 @@ export async function POST(req: NextRequest) {
                     if (p.company_name) standardized.companyName = p.company_name;
                     if (p.email_address) standardized.email = p.email_address;
                     if (p.telephone_number) standardized.phone = p.telephone_number;
+                    if (p.mobile_number || p.cell || p.direct_cell) standardized.mobile = p.mobile_number || p.cell || p.direct_cell;
                     if (p.physical_address) standardized.address = p.physical_address;
                     if (p.contact_person) standardized.contactPerson = p.contact_person;
                     
-                    // Final payload cleanup
+                    // Final payload cleanup to prevent messy document structure
                     delete standardized.record_id;
                     delete standardized.company_name;
                     delete standardized.email_address;
                     delete standardized.telephone_number;
+                    delete standardized.mobile_number;
+                    delete standardized.cell;
+                    delete standardized.direct_cell;
                     delete standardized.physical_address;
                     delete standardized.contact_person;
 

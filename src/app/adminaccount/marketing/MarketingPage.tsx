@@ -214,7 +214,7 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
         const result = await performAdminAction(token, 'getPartnersByType', { type: audience === 'isa' ? 'isa' : (audience === 'finance' ? 'finance' : (audience === 'drivers' ? 'driver' : audience.slice(0, -1))) });
         setPartners(result.data || []);
     } catch (e: any) {
-        toast({ variant: 'destructive', title: `Could not load partners`, description: e.message });
+        console.warn("Silent failure in logging fetch", e);
     } finally {
         setIsLoadingPartners(false);
     }

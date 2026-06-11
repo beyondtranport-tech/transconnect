@@ -34,94 +34,75 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
     const isDriver = partner.type === 'driver' || partner.role === 'Drivers';
 
     const getPrompt = () => {
-        if (isDriver) {
-            return `CRITICAL SYSTEM INSTRUCTION: RETURN ONLY A RAW JSON OBJECT. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
+        // Prepare current knowledge block
+        const currentData = {
+            companyName: companyName,
+            contactPerson: partner.contactPerson || 'Unknown',
+            email: partner.email || 'Missing',
+            phone: partner.phone || 'Missing',
+            mobile: partner.mobile || 'Missing',
+            website: partner.website || 'Missing',
+            address: partner.address || 'Missing'
+        };
 
-ACT AS AN ELITE WORKFORCE INTELLIGENCE AGENT. YOUR MISSION IS TO LOCATE DIRECT DIGITAL CONTACT CHANNELS FOR A HEAVY VEHICLE OPERATOR.
+        const gaps = Object.entries(currentData)
+            .filter(([_, v]) => v === 'Missing' || v === 'Unknown')
+            .map(([k]) => k);
 
-TARGET ENTITY: 
-- Name/Handle: ${partner.service_handle || `${partner.firstName} ${partner.lastName}`}
-- Category: ${partner.entryType || partner.service_classification || 'Code 14 Heavy'}
-- Known Registry Line: ${partner.phone || partner.registry_line || 'N/A'} (Note: This may be a landline/switchboard).
-- Experience Profile: ${partner.notes || partner.capability_profile || 'N/A'}
+        const baseInstructions = `ACT AS AN ELITE CORPORATE INTELLIGENCE AGENT. 
+RETURN ONLY A RAW JSON OBJECT. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
 
-INVESTIGATIVE STRATEGY (DIRECT CONTACT ENRICHMENT):
-1. SOCIAL CLUSTER SEARCH: Cross-reference this driver's name and hub (${partner.address || partner.operational_hub}) in LinkedIn and Facebook South African Trucking groups.
-2. MOBILE IDENTIFICATION: Locate a verified direct mobile/cell number (+27 7... or +27 8...). A landline is unacceptable for the 'mobile' field.
-3. EMAIL DISCOVERY: Find a personal or professional email address (e.g. Gmail, Outlook, or Company domain). 
-4. IDENTITY PERSISTENCE: You MUST return "record_id": "${partner.id}".
+GIVEN DATA (VERIFY THIS):
+${JSON.stringify(currentData, null, 2)}
 
-REQUIRED OUTPUT FORMAT (RAW JSON ONLY):
-{
-  "record_id": "${partner.id}",
-  "firstName": "...",
-  "lastName": "...",
-  "email": "Verified Direct Email",
-  "phone": "Work Landline Number",
-  "mobile": "Verified DIRECT MOBILE Number (e.g. +27 72...)",
-  "notes": "Consolidated profile including verified certs (PrDP, Hazmat) and years of experience",
-  "address": "Primary Hub/Region",
-  "research_status": "completed"
-}`;
-        }
+GAP ANALYSIS (URGENT - FIND THESE):
+${gaps.join(', ')}
 
-        if (isNCR) {
-            return `CRITICAL SYSTEM INSTRUCTION: RETURN ONLY A RAW JSON OBJECT. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
+TASK: Using the GIVEN DATA as a forensic starting point, perform a deep-web investigation to find the missing fields.
+1. HUMAN IDENTITY: You MUST find the ACTUAL NAME (First and Last) of the CEO, MD, or Owner. 
+2. CONTACT DIFFERENTIATION: Differentiate between "phone" (General Office Landline) and "mobile" (Direct Cell Number +27...). 
+3. SOURCE: Use LinkedIn, Facebook Business, and official "About" pages.
+4. IDENTITY PERSISTENCE: You MUST return "record_id": "${partner.id}" exactly.
 
-ACT AS AN ELITE CORPORATE INTELLIGENCE AGENT. THIS ENTITY IS REGISTERED WITH THE NATIONAL CREDIT REGULATOR (NCR).
-
-TASK: Perform Phase 2 Enrichment for the following NCR-registered business.
-
-TARGET ENTITY: 
-- Legal Name: ${partner.companyName}
-- Trading Name: ${partner.trading_name || 'N/A'}
-- NCR Reg Date: ${partner.registration_date || 'N/A'}
-
-INVESTIGATIVE STRATEGY (PHASE 2: ACTIVITY & LEADERSHIP):
-1. OFFICIAL FOOTPRINT: Find this company's official website and LinkedIn page.
-2. HUMAN IDENTITY: Identify the ACTUAL NAME (First and Last) of the CEO, Managing Director, or Head of Credit. 
-3. PRODUCT INTELLIGENCE: Analyze their business activities and identify which agreement types they offer: [Loans, Installment Sale, Lease, Factoring].
-4. CATEGORIZATION: Based on their activity, assign them to: [Banks, Government, AEO, Niche Lenders].
-5. IDENTITY PERSISTENCE: You MUST return "record_id": "${partner.id}".
-
-REQUIRED OUTPUT FORMAT (RAW JSON ONLY):
-{
-  "record_id": "${partner.id}",
-  "website": "URL",
-  "contact_person": "ACTUAL HUMAN FULL NAME",
-  "email": "Verified Direct Email",
-  "phone": "Work Landline",
-  "mobile": "Direct Mobile Number",
-  "business_activity": "Detailed Summary of Services",
-  "agreement_types": ["List of types found"],
-  "entryType": "Refined Category from list above",
-  "research_status": "completed"
-}`;
-        }
-
-        return `CRITICAL SYSTEM INSTRUCTION: RETURN ONLY A RAW JSON OBJECT. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION. NO EXPLANATORY TEXT.
-
-ACT AS AN ELITE CORPORATE INTELLIGENCE AGENT. YOUR PRIMARY MISSION IS TO IDENTIFY ACTUAL HUMAN BEINGS IN LEADERSHIP.
-
-TASK: Find CURRENT verified public contact and SPECIFIC human leadership details for the following South African business.
-
-INVESTIGATIVE STRATEGY:
-1. HUMAN IDENTITY FIRST: You must find the ACTUAL NAME (First and Last) of the CEO, Managing Director, or Owner. 
-2. FORBIDDEN VALUES: Returning "The Director", "The Manager", "Managing Director", or "Unknown" is a FAILURE. You MUST hunt LinkedIn profiles or "About Us" pages to find a specific human name (e.g. "Sipho Nkosi").
-3. CONTACT DIFFERENTIATION: You MUST find both the company Landline (Phone) and the decision-maker's Direct Cell (Mobile).
-4. IDENTITY PERSISTENCE: You MUST return the "record_id": "${partner.id}" exactly as provided.
-
-REQUIRED OUTPUT FORMAT (RAW JSON ONLY):
+REQUIRED OUTPUT (RAW JSON ONLY):
 {
   "record_id": "${partner.id}",
   "companyName": "${companyName}",
-  "contactPerson": "ACTUAL HUMAN FULL NAME (NOT A TITLE)",
-  "email": "Verified Email",
-  "phone": "Work Landline Number",
+  "contactPerson": "SPECIFIC HUMAN NAME",
+  "email": "Verified Professional Email",
+  "phone": "Verified Landline Number",
   "mobile": "Verified DIRECT MOBILE/CELL Number (e.g. +27 82...)",
   "website": "URL",
   "address": "Full Physical Address"
 }`;
+
+        if (isDriver) {
+            return `ACT AS AN ELITE WORKFORCE INTELLIGENCE AGENT.
+RETURN ONLY A RAW JSON OBJECT. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
+
+DRIVER IDENTITY: ${partner.service_handle || `${partner.firstName} ${partner.lastName}`}
+CURRENT CONTACT: ${partner.phone || partner.registry_line || 'N/A'}
+REGION: ${partner.address || partner.operational_hub || 'N/A'}
+
+TASK: Identify the DIRECT DIGITAL CHANNELS for this operator.
+1. MOBILE DISCOVERY: Hunt for a direct cell/mobile number (+27...). LANDLINES ARE FAILURES.
+2. EMAIL DISCOVERY: Find a verified personal or professional email.
+3. PERSISTENCE: Return "record_id": "${partner.id}".
+
+REQUIRED OUTPUT (RAW JSON ONLY):
+{
+  "record_id": "${partner.id}",
+  "firstName": "${partner.firstName}",
+  "lastName": "${partner.lastName}",
+  "email": "Verified Direct Email",
+  "phone": "Work Landline",
+  "mobile": "Verified DIRECT MOBILE",
+  "notes": "Consolidated capability profile",
+  "address": "Primary Region"
+}`;
+        }
+
+        return baseInstructions;
     };
 
     const aiPrompt = getPrompt();
@@ -130,7 +111,7 @@ REQUIRED OUTPUT FORMAT (RAW JSON ONLY):
         try {
             await navigator.clipboard.writeText(aiPrompt);
             setIsCopied(true);
-            toast({ title: "Forensic Prompt Copied!", description: isDriver ? "AI will now hunt for direct mobile and email contacts." : "AI will now hunt for leadership and direct contacts." });
+            toast({ title: "Forensic Prompt Copied!", description: "AI is now instructed to bridge the detected information gaps." });
         } catch (e) {
             toast({ variant: 'destructive', title: "Copy Failed" });
         }
@@ -162,7 +143,7 @@ REQUIRED OUTPUT FORMAT (RAW JSON ONLY):
                 variant="ghost" 
                 size="icon" 
                 onClick={() => { setIsCopied(false); setIsOpen(true); }} 
-                title="Generate Forensic Prompt"
+                title="Forensic Enrichment"
             >
                 <Search className="h-4 w-4 text-primary" />
             </Button>
@@ -172,32 +153,24 @@ REQUIRED OUTPUT FORMAT (RAW JSON ONLY):
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
                             <Sparkles className="h-5 w-5 text-primary" />
-                            {isDriver ? 'Workforce Direct-Contact Forensics' : (isNCR ? 'Phase 2: Forensic Enrichment' : 'Forensic Individual AI Research')}
+                            Forensic Intelligence Pass
                         </DialogTitle>
                         <DialogDescription>
-                            {isDriver 
-                                ? `Identify direct digital contact channels (Mobile & Email) for: ${partner.service_handle || partner.firstName}`
-                                : (isNCR 
-                                    ? `Determine the business activity and leadership for NCR record: ${companyName}`
-                                    : `Generate a deep-search prompt optimized to find human leadership and direct mobile contacts for ${companyName}.`)}
+                            Analyzing gaps for <strong>{companyName}</strong>. Generate a tailored command for the AI Researcher.
                         </DialogDescription>
                     </DialogHeader>
 
                     <div className="space-y-4 py-4">
                         <Alert className="bg-primary/5 border-primary/20">
                             <Info className="h-4 w-4 text-primary" />
-                            <AlertTitle>{isDriver ? 'Mobile Discovery Active' : (isNCR ? 'ActivityPass Active' : 'Direct Contact Command Active')}</AlertTitle>
+                            <AlertTitle>Gap Analysis Active</AlertTitle>
                             <AlertDescription className="text-xs text-muted-foreground">
-                                {isDriver 
-                                    ? "The AI is strictly commanded to find a direct mobile number (+27 7... or +27 8...) and a personal/professional email, bypassing the provided landline."
-                                    : (isNCR 
-                                        ? "The AI is instructed to find agreement types and identify the specific human credit decision-maker."
-                                        : "This prompt explicitly commands the AI to differentiate between the general business landline and the direct mobile number of the leadership.")}
+                                This prompt explicitly identifies what is missing from your record and commands the AI to use existing data to locate direct human leadership and mobile contacts.
                             </AlertDescription>
                         </Alert>
 
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">AI Forensic Command</label>
+                            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">AI Researcher Command</label>
                             <ScrollArea className="h-48 w-full border rounded-md p-3 bg-muted/30 text-foreground">
                                 <pre className="text-xs whitespace-pre-wrap font-mono leading-relaxed">{aiPrompt}</pre>
                             </ScrollArea>
@@ -223,7 +196,7 @@ REQUIRED OUTPUT FORMAT (RAW JSON ONLY):
 export function BulkEnrichButton({ partners, onComplete }: { partners: any[], onComplete: () => void }) {
     const [open, setOpen] = useState(false);
     const selectedPartners = useMemo(() => {
-        return partners.filter(p => (!p.email || p.email === 'null') || p.researchStatus === 'researching').slice(0, 10);
+        return partners.filter(p => (!p.email || p.email === 'null' || p.email === 'Missing') || p.researchStatus === 'researching').slice(0, 10);
     }, [partners]);
 
     return (
