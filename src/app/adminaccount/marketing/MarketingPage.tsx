@@ -211,10 +211,8 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
     try {
         const token = await getClientSideAuthToken();
         if (!token) return;
-        // Limit logging partners to 100 to prevent quota exhaustion in high-volume environments
         const result = await performAdminAction(token, 'getPartnersByType', { 
-            type: audience === 'isa' ? 'isa' : (audience === 'finance' ? 'finance' : (audience === 'drivers' ? 'driver' : audience.slice(0, -1))),
-            limit: 100 
+            type: audience === 'isa' ? 'isa' : (audience === 'finance' ? 'finance' : (audience === 'drivers' ? 'driver' : audience.slice(0, -1)))
         });
         setPartners(result.data || []);
     } catch (e: any) {

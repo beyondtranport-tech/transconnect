@@ -42,6 +42,7 @@ export async function POST(req: NextRequest) {
         const isAdmin = decodedToken.email === 'beyondtransport@gmail.com' || decodedToken.email === 'mkoton100@gmail.com';
         if (!isAdmin) throw new Error("Forbidden: Admin access required.");
 
+        // High capacity load for registry visibility
         const MAX_LOAD = 10000;
 
         switch (action) {
