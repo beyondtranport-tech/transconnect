@@ -5,14 +5,14 @@
       "collectionId": "partners",
       "fields": [
         { "fieldPath": "type", "order": "ASCENDING" },
-        { "fieldPath": "updatedAt", "order": "DESCENDING" }
+        { "fieldPath": "companyName", "order": "ASCENDING" }
       ]
     },
     {
       "collectionId": "partners",
       "fields": [
         { "fieldPath": "type", "order": "ASCENDING" },
-        { "fieldPath": "companyName", "order": "ASCENDING" }
+        { "fieldPath": "updatedAt", "order": "DESCENDING" }
       ]
     },
     {
@@ -25,7 +25,7 @@
     {
       "collectionId": "leads",
       "fields": [
-        { "fieldPath": "type", "order": "ASCENDING" },
+        { "fieldPath": "role", "order": "ASCENDING" },
         { "fieldPath": "companyName", "order": "ASCENDING" }
       ]
     }

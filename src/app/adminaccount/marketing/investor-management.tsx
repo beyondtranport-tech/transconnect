@@ -6,7 +6,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, DollarSign, Edit, Trash2, Send, Filter, Save, Search, RefreshCcw } from 'lucide-react';
+import { Loader2, PlusCircle, DollarSign, Edit, Trash2, Send, Filter, Save, Search, RefreshCcw, Database, RotateCcw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -24,6 +24,7 @@ import { CommunicationLogDialog } from './CommunicationLogDialog';
 import { PartnerTasksDialog } from './PartnerTasksDialog';
 import { formatDateSafe, cn, downloadDataAsCSV } from '@/lib/utils';
 import { EnrichPartnerButton } from './EnrichPartnerButton';
+import { Label } from '@/components/ui/label';
 
 async function performAdminAction(token: string, action: string, payload: any) {
     const response = await fetch('/api/admin', {
@@ -137,6 +138,8 @@ export default function InvestorManagement() {
   const { toast } = useToast();
   const [partners, setPartners] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [hasLoaded, setHasLoaded] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | 'batch-ai' | null, data?: any }>({ type: null });
 
   const forceRefresh = useCallback(async () => {
@@ -146,6 +149,7 @@ export default function InvestorManagement() {
         if (!token) return;
         const result = await performAdminAction(token, 'getPartnersByType', { type: 'investor' });
         setPartners(result.data || []);
+        setHasLoaded(true);
     } catch (e: any) {
         console.error("Failed to load investors", e);
     } finally {
@@ -154,6 +158,25 @@ export default function InvestorManagement() {
   }, []);
   
   useEffect(() => { forceRefresh(); }, [forceRefresh]);
+
+  const handleSearch = async () => {
+    if (!searchTerm || searchTerm.length < 3) {
+        if (searchTerm.length === 0) forceRefresh();
+        return;
+    }
+    setIsLoading(true);
+    try {
+        const token = await getClientSideAuthToken();
+        if (!token) return;
+        const res = await performAdminAction(token, 'searchRegistry', { term: searchTerm, type: 'investor' });
+        setPartners(res.data || []);
+        setHasLoaded(true);
+    } catch (e: any) {
+        toast({ variant: 'destructive', title: 'Search Error', description: e.message });
+    } finally {
+        setIsLoading(false);
+    }
+  };
 
   async function handleDelete() {
     if (!dialog.data) return;
@@ -212,11 +235,36 @@ export default function InvestorManagement() {
           </div>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
-            <div className="flex justify-center items-center py-10"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
-          ) : (
-            <DataTable columns={columns} data={partners} />
-          )}
+             {!hasLoaded ? (
+                <Card className="bg-primary/5 border-primary/20 p-12 text-center">
+                    <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
+                    <h2 className="text-2xl font-black font-headline mb-2">Registry Search Variables</h2>
+                    <p className="text-muted-foreground max-w-sm mx-auto mb-8">Enter search criteria or load the master investor registry. This preserves your daily data quota.</p>
+                    <div className="flex flex-col md:flex-row justify-center gap-4 max-w-2xl mx-auto">
+                        <Input placeholder="Type fund name or ID to search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearch()} className="h-12 text-lg bg-white" />
+                        <Button size="lg" onClick={handleSearch} disabled={isLoading} className="h-12 px-8">
+                            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4" />}
+                            Load Master Registry
+                        </Button>
+                    </div>
+                </Card>
+            ) : (
+                <>
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left">
+                        <div className="md:col-span-3 space-y-2">
+                            <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Search className="h-3 w-3"/> Registry Search</Label>
+                             <div className="flex gap-2">
+                                <Input placeholder="Refine your search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearch()} />
+                                <Button onClick={handleSearch} disabled={isLoading}><Search className="h-4 w-4"/></Button>
+                            </div>
+                        </div>
+                        <div className="flex items-end">
+                            <Button variant="outline" onClick={() => setHasLoaded(false)} className="h-10 w-full"><RotateCcw className="mr-1 h-3 w-3" /> Reset Variables</Button>
+                        </div>
+                    </div>
+                    {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div> : <DataTable columns={columns} data={partners} />}
+                </>
+            )}
         </CardContent>
       </div>
     </>
