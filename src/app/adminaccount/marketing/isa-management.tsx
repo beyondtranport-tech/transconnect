@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -175,7 +174,8 @@ export default function ISAManagement() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  async function handleDelete() {
+  const handleDelete = async () => {
+    if (!dialog.data) return;
     try {
       const token = await getClientSideAuthToken();
       if (!token) return;
@@ -186,7 +186,7 @@ export default function ISAManagement() {
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Error', description: e.message });
     }
-  }
+  };
 
   const columns: ColumnDef<any>[] = useMemo(() => [
     { 

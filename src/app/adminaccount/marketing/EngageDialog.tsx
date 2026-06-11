@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Loader2, ExternalLink, Send, ClipboardCheck, Mail, Info } from 'lucide-react';
+import { Loader2, ExternalLink, Send } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
 import { copyHtmlToClipboard } from '@/lib/utils';
@@ -111,9 +111,8 @@ export function EngageDialog({ open, onOpenChange, partner, audience, onEngageSu
             subject: subjectLabel,
             notes: `System generated engagement for ${partner.firstName} (${partner.entryType || 'General'}).`,
         });
-        toast({ title: "Step 1: Interaction Logged", description: "History updated." });
 
-        // 2. Prepare HTML
+        // 2. Prepare HTML for clipboard - Wrap in a font-preserving div
         const contentClone = contentElement.cloneNode(true) as HTMLElement;
         const origin = window.location.origin;
         
@@ -129,24 +128,18 @@ export function EngageDialog({ open, onOpenChange, partner, audience, onEngageSu
             if (href?.startsWith('/')) a.href = `${origin}${href}`;
         });
 
-        // Tracking pixel
-        const trackingPixel = document.createElement('img');
-        trackingPixel.src = `${origin}/api/trackEmailOpen/${partner.id}?t=${Date.now()}`;
-        trackingPixel.width = 1;
-        trackingPixel.height = 1;
-        trackingPixel.style.display = 'block';
-        trackingPixel.style.opacity = '0.01';
-        contentClone.appendChild(trackingPixel);
+        // Wrap in a div that enforces the Calibri font for the destination email client
+        const wrappedHtml = `<div style="font-family: Calibri, sans-serif; font-size: 12pt; color: #000000; line-height: 1.2; text-align: left;">${contentClone.innerHTML}</div>`;
 
         // 3. Copy HTML
-        const success = await copyHtmlToClipboard(contentClone.innerHTML);
+        const success = await copyHtmlToClipboard(wrappedHtml);
         if (!success) throw new Error("Clipboard failed.");
-        toast({ title: "Step 2: Content Copied", description: "HTML layout is in your clipboard." });
+
+        toast({ title: "Content Ready", description: "Interaction logged and formatted HTML copied to clipboard." });
 
         // 4. Launch Client
         const mailtoUrl = `mailto:${partner.email}?subject=${encodeURIComponent(getSubject())}`;
         window.location.href = mailtoUrl;
-        toast({ title: "Step 3: Launching Email", description: "Paste the content into your mail app now." });
         
         if (onEngageSuccess) onEngageSuccess();
         onOpenChange(false);
@@ -164,7 +157,7 @@ export function EngageDialog({ open, onOpenChange, partner, audience, onEngageSu
         <DialogContent className="max-w-5xl h-[90vh] flex flex-col p-0">
             <DialogHeader className="p-6 border-b bg-muted/50">
                 <div className="flex justify-between items-start">
-                    <div>
+                    <div className="text-left">
                         <DialogTitle className="text-2xl font-bold flex items-center gap-2">
                             <Send className="h-6 w-6 text-primary" />
                             Engagement: {partner.firstName} {partner.lastName}
@@ -204,20 +197,15 @@ export function EngageDialog({ open, onOpenChange, partner, audience, onEngageSu
                 </div>
 
                 <div className="flex-1 overflow-y-auto bg-slate-50 p-8">
-                    <div id={`engage-content-wrapper-${activeTab}`} className="bg-white p-8 rounded-lg shadow-sm border mx-auto max-w-[800px]">
-                        <div style={{ fontFamily: 'Arial, sans-serif', color: '#1e293b', lineHeight: '1.6' }}>
-                            <p style={{ marginBottom: '16px' }}>Good day {partner.firstName},</p>
-                            <div style={{ borderTop: '2px solid #f1f5f9', paddingTop: '24px', marginTop: '24px' }}>
-                                {activeTab === 'digital-handshake' && <DigitalHandshake partner={partner} />}
-                                {activeTab === 'company-profile' && <CompanyProfile audience={audience} partner={partner} />}
-                                {activeTab === 'tech-architecture' && <TechArchitecture partner={partner} />}
-                                {activeTab === 'revenue-model' && <RevenueModel partner={partner} />}
-                                {activeTab === 'offer' && <Offer partner={partner} />}
-                                {activeTab === 'pitch' && <PitchDeck partner={partner} />}
-                                {activeTab === 'framework' && <Framework partner={partner} />}
-                                {activeTab === 'emails' && <Emails partner={partner} />}
-                            </div>
-                        </div>
+                    <div id={`engage-content-wrapper-${activeTab}`} className="bg-white p-8 rounded-lg shadow-sm border mx-auto max-w-[800px] text-left">
+                        {activeTab === 'digital-handshake' && <DigitalHandshake partner={partner} />}
+                        {activeTab === 'company-profile' && <CompanyProfile audience={audience} partner={partner} />}
+                        {activeTab === 'tech-architecture' && <TechArchitecture partner={partner} />}
+                        {activeTab === 'revenue-model' && <RevenueModel partner={partner} />}
+                        {activeTab === 'offer' && <Offer partner={partner} />}
+                        {activeTab === 'pitch' && <PitchDeck partner={partner} />}
+                        {activeTab === 'framework' && <Framework partner={partner} />}
+                        {activeTab === 'emails' && <Emails partner={partner} />}
                     </div>
                 </div>
             </div>

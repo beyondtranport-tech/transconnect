@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -110,7 +109,7 @@ function InvestorDialog({ open, onOpenChange, partner, onSave }: { open: boolean
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-width-lg text-left">
+        <DialogContent className="sm:max-w-2xl text-left">
             <DialogHeader>
                 <DialogTitle>{partner ? 'Edit' : 'Add'} App Launch Investor</DialogTitle>
                 <DialogDescription>Enter details for VCs, Angels, or Seed Funds.</DialogDescription>
@@ -170,7 +169,8 @@ export default function InvestorManagement() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  async function handleDelete() {
+  const handleDelete = async () => {
+    if (!dialog.data) return;
     try {
         const token = await getClientSideAuthToken();
         if (!token) return;
@@ -181,7 +181,7 @@ export default function InvestorManagement() {
     } catch (e: any) {
         toast({ variant: 'destructive', title: 'Error', description: e.message });
     }
-  }
+  };
 
   const columns: ColumnDef<any>[] = useMemo(() => [
     { 
@@ -226,7 +226,7 @@ export default function InvestorManagement() {
       
       <div className="space-y-6 text-left">
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div><CardTitle><DollarSign /> App Launch Investors</CardTitle><CardDescription>Full registry view ({allRecords.length} records).</CardDescription></div>
+          <div className="text-left"><CardTitle><DollarSign /> App Launch Investors</CardTitle><CardDescription>Full registry view ({allRecords.length} records).</CardDescription></div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => downloadDataAsCSV(allRecords, 'investors-export.csv')} disabled={isLoading}><Download className="mr-2 h-4 w-4"/>Export CSV</Button>
             <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4"/>Add Record</Button>

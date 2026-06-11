@@ -1,93 +1,46 @@
 'use client';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Wrench, Server, Database, BrainCircuit, ShieldCheck } from "lucide-react";
-import Image from 'next/image';
+import React from "react";
 
 export default function TechArchitecture({ partner }: { partner?: any }) {
     const recipientName = partner?.firstName || 'Partner';
     const companyName = partner?.companyName || 'your business';
 
-    const techStack = [
-        { name: 'Next.js & React', description: 'For a high-performance, server-rendered frontend experience.', logo: 'https://placehold.co/40x40?text=Next' },
-        { name: 'Firebase', description: 'Powers our secure backend, database, and authentication.', logo: 'https://placehold.co/40x40?text=FB' },
-        { name: 'Google Cloud & Genkit', description: 'Drives all AI features, from load matching to business intelligence.', logo: 'https://placehold.co/40x40?text=GCP' },
-        { name: 'Tailwind CSS', description: 'Ensures a modern, responsive interface on any device.', logo: 'https://placehold.co/40x40?text=UI' },
-    ];
-
     return (
-        <div className="space-y-8">
-            <CardHeader className="px-0">
-                <CardTitle className="flex items-center gap-2">
-                    <Wrench className="h-6 w-6" />
-                    Technology Architecture for {recipientName}
-                </CardTitle>
-                <CardDescription>
-                    How Logistics Flow provides {companyName} with a robust, scalable, and secure digital infrastructure.
-                </CardDescription>
-            </CardHeader>
+        <div style={{ 
+            fontFamily: 'Calibri, Candara, Segoe, "Segoe UI", Optima, Arial, sans-serif', 
+            fontSize: '12pt', 
+            color: '#000000', 
+            lineHeight: '1.2',
+            backgroundColor: '#ffffff',
+            padding: '0'
+        }}>
+            <p style={{ margin: '0 0 14pt 0', fontWeight: 'bold', textTransform: 'uppercase', borderBottom: '2px solid #000000', paddingBottom: '4pt' }}>
+                Technology Architecture & Scalability: {companyName.toUpperCase()}
+            </p>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-3"><Server className="h-5 w-5 text-primary"/>Performance & Scale</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="text-muted-foreground">
-                            Built on a modern, serverless architecture, our platform ensures that {companyName} experiences zero downtime and lightning-fast load times, even when managing large inventories or fleet data.
-                        </p>
-                    </CardContent>
-                </Card>
-                 <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-3"><Database className="h-5 w-5 text-primary"/>Real-Time Ledger</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="text-muted-foreground">
-                            Utilizing Google's Firestore, we maintain a real-time digital ledger of all activity. This creates an immutable track record of performance that {recipientName} can leverage for funding and partnership validations.
-                        </p>
-                    </CardContent>
-                </Card>
-                 <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-3"><BrainCircuit className="h-5 w-5 text-primary"/>Integrated Intelligence</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="text-muted-foreground">
-                            AI is not an add-on; it's core to our system. Using Gemini 1.5, we provide tools that help {companyName} automate SEO, generate marketing assets, and match freight loads with unprecedented accuracy.
-                        </p>
-                    </CardContent>
-                </Card>
-                 <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-3"><ShieldCheck className="h-5 w-5 text-primary"/>Enterprise-Grade Security</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="text-muted-foreground">
-                            Security is our priority. We employ full encryption and strict Firestore Security Rules, ensuring that {companyName}'s sensitive business data remains private and protected at all times.
-                        </p>
-                    </CardContent>
-                </Card>
-            </div>
-            
-            <Card>
-                 <CardHeader>
-                    <CardTitle>Core Technology Stack</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="space-y-4">
-                        {techStack.map(tech => (
-                             <div key={tech.name} className="flex items-center gap-4 p-3 border rounded-lg">
-                                <Image src={tech.logo} alt={`${tech.name} logo`} width={40} height={40} className="rounded-md" />
-                                <div>
-                                    <h4 className="font-semibold">{tech.name}</h4>
-                                    <p className="text-sm text-muted-foreground">{tech.description}</p>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </CardContent>
-            </Card>
+            <p style={{ margin: '0 0 14pt 0' }}>
+                Logistics Flow provides {companyName} with a robust, scalable, and secure digital infrastructure designed to replace manual processes with high-velocity data flow.
+            </p>
+
+            <p style={{ margin: '0 0 7pt 0', fontWeight: 'bold' }}>Core Architectural Pillars:</p>
+            <ul style={{ listStyleType: 'disc', marginLeft: '20pt', margin: '0 0 14pt 20pt' }}>
+                <li style={{ marginBottom: '7pt' }}><strong>Performance & Scale:</strong> Built on a modern, serverless architecture ensuring zero downtime and lightning-fast load times for your digital branch.</li>
+                <li style={{ marginBottom: '7pt' }}><strong>Real-Time Ledger:</strong> Utilizing specialized database structures to maintain an immutable record of all commercial activity, creating a validated track record for funding.</li>
+                <li style={{ marginBottom: '7pt' }}><strong>Integrated Intelligence:</strong> Core AI integration (Gemini 1.5) that handles complex freight matching and automated SEO for your product listings.</li>
+                <li style={{ marginBottom: '7pt' }}><strong>Enterprise Security:</strong> Full encryption and strict security protocols ensuring that {companyName}&apos;s sensitive business data remains private.</li>
+            </ul>
+
+            <p style={{ margin: '0 0 14pt 0' }}>
+                This technology stack allows {recipientName} to compete with the industry&apos;s largest players by leveraging the same high-tier tools used by global logistics giants.
+            </p>
+
+            <p style={{ margin: '0 0 14pt 0' }}>
+                Regards,
+            </p>
+            <p style={{ margin: '0' }}>
+                The Logistics Flow Technical Division
+            </p>
         </div>
     );
 }
