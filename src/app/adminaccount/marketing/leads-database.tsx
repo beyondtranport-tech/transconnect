@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
@@ -44,9 +43,9 @@ import { EnrichPartnerButton } from '@/app/adminaccount/marketing/EnrichPartnerB
 import { PartnerTasksDialog } from '@/app/adminaccount/marketing/PartnerTasksDialog';
 import { CommunicationLogDialog } from '@/app/adminaccount/marketing/CommunicationLogDialog';
 import { EngageDialog } from '@/app/adminaccount/marketing/EngageDialog';
-import { BulkImportDialog } from './BulkImportDialog';
-import { BatchResearchDialog } from './BatchResearchDialog';
-import { PartnerOversightDialog } from './PartnerOversightDialog';
+import { BulkImportDialog } from './marketing/BulkImportDialog';
+import { BatchResearchDialog } from './marketing/BatchResearchDialog';
+import { PartnerOversightDialog } from './marketing/PartnerOversightDialog';
 
 async function performAdminAction(token: string, action: string, payload?: any) {
   const response = await fetch('/api/admin', {
@@ -258,8 +257,8 @@ function LeadsDatabaseComponent() {
   const [engageLead, setEngageLead] = useState<any | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
+  const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [categoryFilter, setCategoryFilter] = useState('all');
   const [dataFilter, setDataFilter] = useState('all');
 
   const forceRefresh = useCallback(async () => {
@@ -276,6 +275,26 @@ function LeadsDatabaseComponent() {
       setIsLoading(false);
     }
   }, [toast]);
+
+  const handleSearch = async () => {
+    if (!searchTerm || searchTerm.length < 3) {
+        if (searchTerm.length === 0) forceRefresh();
+        else toast({ title: "Min 3 characters required" });
+        return;
+    }
+    setIsLoading(true);
+    try {
+        const token = await getClientSideAuthToken();
+        if (!token) return;
+        const res = await performAdminAction(token, 'searchRegistry', { term: searchTerm, type: 'lead' });
+        setLeads(res.data || []);
+        setHasLoaded(true);
+    } catch (e: any) {
+        toast({ variant: 'destructive', title: 'Search Error', description: e.message });
+    } finally {
+        setIsLoading(false);
+    }
+  };
 
   const newLeadDefaults = useMemo(() => {
     const companyName = searchParams.get('newCompanyName');
@@ -300,22 +319,16 @@ function LeadsDatabaseComponent() {
   }, [searchParams, newLeadDefaults]);
 
   const filteredLeads = useMemo(() => {
-    return leads.filter(p => {
+    return (leads || []).filter(p => {
         const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
-        const matchesCategory = categoryFilter === 'all' || p.entryType === categoryFilter;
         
         let matchesData = true;
-        const email = (p.email || '').toString().toLowerCase().trim();
-        const isInvalidEmail = !email || email === 'null' || email === 'n/a';
+        if (dataFilter === 'no-email') matchesData = !p.email;
+        else if (dataFilter === 'has-email') matchesData = !!p.email;
 
-        if (dataFilter === 'no-email') matchesData = isInvalidEmail;
-        else if (dataFilter === 'no-phone') matchesData = !p.phone;
-        else if (dataFilter === 'has-email') matchesData = !isInvalidEmail;
-        else if (dataFilter === 'has-phone') matchesData = !!p.phone;
-
-        return matchesStatus && matchesCategory && matchesData;
+        return matchesStatus && matchesData;
     });
-  }, [leads, statusFilter, categoryFilter, dataFilter]);
+  }, [leads, statusFilter, dataFilter]);
 
   const handleExport = () => {
       if (filteredLeads.length === 0) return;
@@ -339,15 +352,9 @@ function LeadsDatabaseComponent() {
     }
   }
 
-  const columns: ColumnDef<any>[] = useMemo(() => [
-    { 
-        accessorKey: 'companyName', 
-        header: 'Company Name'
-    },
-    { 
-        accessorKey: 'contactPerson', 
-        header: 'Contact Name'
-    },
+  const columns: ColumnDef<any>[] = [
+    { accessorKey: 'companyName', header: 'Company Name' },
+    { accessorKey: 'contactPerson', header: 'Contact Name' },
     { accessorKey: 'phone', header: 'Landline' },
     { accessorKey: 'mobile', header: 'Mobile' },
     { accessorKey: 'email', header: 'Email' },
@@ -362,9 +369,7 @@ function LeadsDatabaseComponent() {
       cell: ({ row }) => (
         <div className="text-right flex items-center justify-end gap-1">
           <EnrichPartnerButton partner={row.original} onUpdate={forceRefresh} />
-          <Button variant="ghost" size="icon" onClick={() => setEngageLead(row.original)} title="Initiate Engagement">
-            <Send className="h-4 w-4 text-primary" />
-          </Button>
+          <Button variant="ghost" size="icon" onClick={() => setEngageLead(row.original)} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
           <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.companyName} />
           <PartnerTasksDialog partner={row.original} />
           <PartnerOversightDialog partner={row.original} onUpdate={forceRefresh} />
@@ -373,7 +378,7 @@ function LeadsDatabaseComponent() {
         </div>
       )
     },
-  ], [forceRefresh]);
+  ];
 
   return (
     <>
@@ -395,7 +400,7 @@ function LeadsDatabaseComponent() {
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Button variant="outline" onClick={handleExport} disabled={isLoading || !hasLoaded}>
-                <Download className="mr-2 h-4 w-4" /> Backup (CSV)
+                <Download className="mr-2 h-4 w-4" /> Backup
             </Button>
             <BulkImportDialog type="lead" onComplete={forceRefresh}><Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
             <Button onClick={() => setIsAddLeadOpen(true)}><PlusCircle className="mr-2 h-4 w-4" />Add Lead</Button>
@@ -405,32 +410,31 @@ function LeadsDatabaseComponent() {
         {!hasLoaded ? (
             <Card className="bg-primary/5 border-primary/20 p-12 text-center">
                 <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
-                <h2 className="text-2xl font-black font-headline mb-2">Registry Offline</h2>
-                <p className="text-muted-foreground max-w-sm mx-auto mb-8">Click below to load the industrial lead database. This ensures your data quota is preserved.</p>
-                <Button size="lg" onClick={forceRefresh} disabled={isLoading}>
-                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <RefreshCcw className="mr-2 h-4 w-4" />}
-                    Load Master Registry
-                </Button>
+                <h2 className="text-2xl font-black font-headline mb-2">Registry Search Variables</h2>
+                <p className="text-muted-foreground max-w-sm mx-auto mb-8">Enter your search criteria to load the master registry. This targets your session to preserve your daily data quota.</p>
+                <div className="flex flex-col md:flex-row justify-center gap-4 max-w-2xl mx-auto">
+                    <Input placeholder="Type company name, ID or email to search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearch()} className="h-12 text-lg bg-white" />
+                    <Button size="lg" onClick={handleSearch} disabled={isLoading} className="h-12 px-8">
+                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4" />}
+                        Load Master Registry
+                    </Button>
+                </div>
             </Card>
         ) : (
             <Card>
                 <CardContent className="pt-6">
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left">
-                        <div className="space-y-2">
-                            <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status</Label>
-                            <Select value={statusFilter} onValueChange={setStatusFilter}>
-                                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All</SelectItem>
-                                    <SelectItem value="new">New</SelectItem>
-                                    <SelectItem value="contacted">Researching</SelectItem>
-                                </SelectContent>
-                            </Select>
+                        <div className="md:col-span-2 space-y-2">
+                            <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Search className="h-3 w-3"/> Registry Search</Label>
+                             <div className="flex gap-2">
+                                <Input placeholder="Refine your search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearch()} />
+                                <Button onClick={handleSearch} disabled={isLoading}><Search className="h-4 w-4"/></Button>
+                            </div>
                         </div>
                         <div className="space-y-2">
-                            <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Tag className="h-3 w-3"/> Data Integrity</Label>
+                            <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Tag className="h-3 w-3"/> Data Filter</Label>
                             <Select value={dataFilter} onValueChange={setDataFilter}>
-                                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                                <SelectTrigger className="h-10 text-xs bg-white"><SelectValue /></SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="all">All Records</SelectItem>
                                     <SelectItem value="has-email">Has Email</SelectItem>
@@ -438,13 +442,11 @@ function LeadsDatabaseComponent() {
                                 </SelectContent>
                             </Select>
                         </div>
-                        <div className="flex items-end md:col-span-2 gap-2">
-                            <Button variant="outline" size="sm" onClick={forceRefresh} className="h-8 text-xs flex-1">
-                                <RotateCcw className="mr-1 h-3 w-3" /> Refresh View
-                            </Button>
+                        <div className="flex items-end">
+                            <Button variant="outline" onClick={() => setHasLoaded(false)} className="h-10 w-full"><RotateCcw className="mr-1 h-3 w-3" /> Reset Variables</Button>
                         </div>
                     </div>
-                    {isLoading ? <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin" /></div> : <DataTable columns={columns} data={filteredLeads} onSelectionChange={setSelectedIds} />}
+                    {isLoading ? <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div> : <DataTable columns={columns} data={filteredLeads} onSelectionChange={setSelectedIds} />}
                 </CardContent>
             </Card>
         )}
@@ -460,4 +462,3 @@ export default function LeadsDatabase() {
     </Suspense>
   );
 }
-

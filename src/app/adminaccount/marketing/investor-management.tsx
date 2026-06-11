@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -6,7 +5,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, DollarSign, Edit, Trash2, Send, Users, Filter, Save, Search, Mail, Target, Upload, Info, Download, ShieldCheck } from 'lucide-react';
+import { Loader2, PlusCircle, DollarSign, Edit, Trash2, Send, Filter, Save, Search, RefreshCcw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -14,7 +13,6 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -24,8 +22,6 @@ import { EngageDialog } from './EngageDialog';
 import { CommunicationLogDialog } from './CommunicationLogDialog';
 import { PartnerTasksDialog } from './PartnerTasksDialog';
 import { formatDateSafe, cn, downloadDataAsCSV } from '@/lib/utils';
-import { Label } from '@/components/ui/label';
-import { BulkImportDialog } from './BulkImportDialog';
 import { EnrichPartnerButton } from './EnrichPartnerButton';
 
 async function performAdminAction(token: string, action: string, payload: any) {
@@ -75,31 +71,17 @@ function InvestorDialog({ open, onOpenChange, partner, onSave }: { open: boolean
 
   useEffect(() => {
     if (open) {
-      if (partner) {
-        form.reset(partner);
-      } else {
-        form.reset({
-          firstName: '',
-          lastName: '',
-          email: '',
-          phone: '',
-          mobile: '',
-          companyName: '',
-          status: 'new',
-          type: 'investor',
-        });
-      }
+      if (partner) form.reset(partner);
+      else form.reset({ firstName: '', lastName: '', email: '', phone: '', mobile: '', companyName: '', status: 'new', type: 'investor' });
     }
   }, [open, partner, form]);
 
-  const onSubmit = async (values: PartnerFormValues) => {
+  async function onSubmit(values: PartnerFormValues) {
     setIsLoading(true);
     try {
         const token = await getClientSideAuthToken();
         if (!token) throw new Error("Authentication failed.");
-        
-        await performAdminAction(token, 'savePartner', { partner: { id: partner?.id, ...values } });
-
+        await performAdminAction(token, 'savePartner', { partner: { id: partner?.id, ...values, type: 'investor' } });
         toast({ title: partner ? 'Investor Updated' : 'Investor Added' });
         onSave();
         onOpenChange(false);
@@ -108,16 +90,14 @@ function InvestorDialog({ open, onOpenChange, partner, onSave }: { open: boolean
     } finally {
         setIsLoading(false);
     }
-  };
+  }
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-lg text-left">
             <DialogHeader>
-                <DialogTitle>{partner ? 'Edit' : 'Add New'} App Launch Investor</DialogTitle>
-                <DialogDescription>
-                    Enter details for VCs, Angels, or Seed Funds for the platform launch.
-                </DialogDescription>
+                <DialogTitle>{partner ? 'Edit' : 'Add'} App Launch Investor</DialogTitle>
+                <DialogDescription>Enter details for VCs, Angels, or Seed Funds.</DialogDescription>
             </DialogHeader>
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2">
@@ -130,7 +110,7 @@ function InvestorDialog({ open, onOpenChange, partner, onSave }: { open: boolean
                         <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel>Work Phone</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                     </div>
                     <div className="grid grid-cols-2 gap-4 text-left">
-                        <FormField control={form.control} name="mobile" render={({ field }) => ( <FormItem><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="mobile" render={({ field }) => ( <FormItem><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} /></FormControl><FormMessage /></FormItem> )} />
                         <FormField control={form.control} name="companyName" render={({ field }) => ( <FormItem><FormLabel>Fund/Company Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                     </div>
                     <FormField control={form.control} name="status" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Pipeline Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent>
@@ -155,15 +135,14 @@ function InvestorDialog({ open, onOpenChange, partner, onSave }: { open: boolean
 export default function InvestorManagement() {
   const { toast } = useToast();
   const [partners, setPartners] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [dialogState, setDialogState] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | null, data?: any }>({ type: null });
+  const [isLoading, setIsLoading] = useState(false);
+  const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | null, data?: any }>({ type: null });
 
   const forceRefresh = useCallback(async () => {
     setIsLoading(true);
     try {
         const token = await getClientSideAuthToken();
         if (!token) return;
-        
         const result = await performAdminAction(token, 'getPartnersByType', { type: 'investor' });
         setPartners(result.data || []);
     } catch (e: any) {
@@ -173,31 +152,23 @@ export default function InvestorManagement() {
     }
   }, []);
   
-  useEffect(() => {
-    forceRefresh();
-  }, [forceRefresh]);
+  useEffect(() => { forceRefresh(); }, [forceRefresh]);
 
-  const handleExport = () => {
-      if (partners.length === 0) return;
-      downloadDataAsCSV(partners, `investors-backup-${new Date().toISOString().split('T')[0]}.csv`);
-      toast({ title: "Backup Exported" });
-  };
-
-  const handleDelete = async () => {
-    if (!dialogState.data) return;
+  async function handleDelete() {
+    if (!dialog.data) return;
     try {
         const token = await getClientSideAuthToken();
         if (!token) throw new Error("Authentication failed.");
-        await performAdminAction(token, 'deletePartner', { partnerId: dialogState.data.id });
+        await performAdminAction(token, 'deletePartner', { partnerId: dialog.data.id });
         toast({ title: 'Investor Deleted' });
         forceRefresh();
-        setDialogState({ type: null });
+        setDialog({ type: null });
     } catch (e: any) {
         toast({ variant: 'destructive', title: 'Delete Failed', description: e.message });
     }
-  };
+  }
 
-  const columns: ColumnDef<any>[] = useMemo(() => [
+  const columns: ColumnDef<any>[] = [
     { accessorKey: 'firstName', header: 'Name', cell: ({row}) => <div>{row.original.firstName} {row.original.lastName}</div> },
     { accessorKey: 'companyName', header: 'Fund' },
     { accessorKey: 'phone', header: 'Phone' },
@@ -207,28 +178,25 @@ export default function InvestorManagement() {
     { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
       <div className="flex justify-end items-center gap-1">
         <EnrichPartnerButton partner={row.original} onUpdate={forceRefresh} />
-        <Button variant="ghost" size="icon" onClick={() => setDialogState({ type: 'engage', data: row.original })} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
+        <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'engage', data: row.original })} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
         <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.firstName} />
         <PartnerTasksDialog partner={row.original} />
         <PartnerOversightDialog partner={row.original} onUpdate={forceRefresh} />
-        <Button variant="ghost" size="icon" onClick={() => setDialogState({ type: 'edit', data: row.original })}><Edit className="h-4 w-4" /></Button>
-        <Button variant="ghost" size="icon" onClick={() => setDialogState({ type: 'delete', data: row.original })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+        <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'edit', data: row.original })}><Edit className="h-4 w-4" /></Button>
+        <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'delete', data: row.original })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
       </div>
     ) },
-  ], [forceRefresh]);
+  ];
 
   return (
     <>
-      <EngageDialog open={dialogState.type === 'engage'} onOpenChange={(o) => !o && setDialogState({ type: null })} partner={dialogState.data} audience="investors" onEngageSuccess={forceRefresh} />
-      <InvestorDialog open={dialogState.type === 'add' || dialogState.type === 'edit'} onOpenChange={(o) => !o && setDialogState({ type: null })} partner={dialogState.type === 'edit' ? dialogState.data : undefined} onSave={forceRefresh} />
-      <AlertDialog open={dialogState.type === 'delete'} onOpenChange={(o) => !o && setDialogState({ type: null })}>
+      <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.data} audience="investors" onEngageSuccess={forceRefresh} />
+      <InvestorDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={forceRefresh} />
+      <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
         <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>Delete investor "{dialogState.data?.firstName} {dialogState.data?.lastName}"?</AlertDialogDescription>
-          </AlertDialogHeader>
+          <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Delete investor "{dialog.data?.firstName}"?</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setDialogState({ type: null })}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -236,16 +204,10 @@ export default function InvestorManagement() {
       
       <div className="space-y-6 text-left">
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="text-left">
-            <CardTitle className="flex items-center gap-2"><DollarSign /> App Launch Investors</CardTitle>
-            <CardDescription>Research and engage with VCs and Seed Funds for the platform launch.</CardDescription>
-          </div>
+          <div><CardTitle><DollarSign /> App Launch Investors</CardTitle></div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={handleExport} disabled={isLoading}>
-                <Download className="mr-2 h-4 w-4" /> Backup
-            </Button>
-            <BulkImportDialog type="investor" onComplete={forceRefresh}><Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
-            <Button onClick={() => setDialogState({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4"/>Add Investor</Button>
+            <Button variant="outline" onClick={() => downloadDataAsCSV(partners, 'investors.csv')} disabled={isLoading}><RefreshCcw className={cn("mr-2 h-4 w-4", isLoading && "animate-spin")}/>Refresh</Button>
+            <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4"/>Add Investor</Button>
           </div>
         </CardHeader>
         <CardContent>

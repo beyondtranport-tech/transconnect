@@ -7,7 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
   Loader2, PlusCircle, Landmark, Edit, Trash2, Send, Users, Filter, Save, 
-  Search, Zap, RotateCcw, XCircle, Info, Tag, Database, Mail, ShieldCheck, Upload
+  Search, Zap, RotateCcw, XCircle, Info, Tag, Database, Mail, ShieldCheck, Upload, Download, RefreshCcw
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
@@ -45,7 +45,7 @@ async function performAdminAction(token: string, action: string, payload: any) {
   if (!response.ok) {
     const text = await response.text();
     if (text.includes('<html>')) {
-        throw new Error("Server Timeout: The database operation is taking longer than expected due to high volume. Please try again in 30 seconds.");
+        throw new Error("Server Timeout: High traffic detected. Please retry in 30 seconds.");
     }
     throw new Error(text || `API Error: ${action}`);
   }
@@ -66,7 +66,7 @@ const partnerSchema = z.object({
   address: z.string().optional(),
   entryType: z.string().optional(),
   status: z.enum(['active', 'inactive', 'contacted', 'new', 'qualified', 'invited']),
-  type: z.enum(['partner', 'isa', 'investor', 'developer', 'supplier', 'transporter', 'finance']),
+  type: z.literal('finance'),
 });
 type PartnerFormValues = z.infer<typeof partnerSchema>;
 
@@ -87,7 +87,7 @@ function FinanceDialog({ open, onOpenChange, partner, onSave }: { open: boolean;
     try {
       const token = await getClientSideAuthToken();
       if (!token) throw new Error("Authentication failed.");
-      await performAdminAction(token, 'savePartner', { partner: { id: partner?.id, ...values } });
+      await performAdminAction(token, 'savePartner', { partner: { id: partner?.id, ...values, type: 'finance' } });
       toast({ title: 'Record Saved' });
       onSave();
       onOpenChange(false);
@@ -106,20 +106,17 @@ function FinanceDialog({ open, onOpenChange, partner, onSave }: { open: boolean;
           <DialogDescription>Enter detailed verified record for the capital partner.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2">
-            <div className="grid grid-cols-2 gap-4 text-left">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left">
+            <div className="grid grid-cols-2 gap-4">
               <FormField control={form.control} name="firstName" render={({ field }) => (<FormItem><FormLabel>First Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="lastName" render={({ field }) => (<FormItem><FormLabel>Last Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
-            <div className="grid grid-cols-2 gap-4 text-left">
+            <div className="grid grid-cols-2 gap-4">
               <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" /></FormControl><FormMessage /></FormItem>)} />
-              <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Phone</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Work Phone (Landline)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
-            <div className="grid grid-cols-2 gap-4 text-left">
-              <FormField control={form.control} name="mobile" render={({ field }) => (<FormItem><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-              <FormField control={form.control} name="contactPerson" render={({ field }) => (<FormItem><FormLabel>Identity Verified Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-            </div>
-            <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Entity Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+            <FormField control={form.control} name="mobile" render={({ field }) => (<FormItem><FormLabel>Mobile (Direct Cell)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} /></FormControl><FormMessage /></FormItem>)} />
+            <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Entity Legal Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             <div className="grid grid-cols-2 gap-4 text-left">
               <FormField control={form.control} name="entryType" render={({ field }) => (
                 <FormItem>
@@ -163,15 +160,13 @@ export default function FinanceManagement() {
   const { toast } = useToast();
   const [partners, setPartners] = useState<any[]>([]);
   const [staff, setStaff] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isResetting, setIsResetting] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasLoaded, setHasLoaded] = useState(false);
   const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | 'batch-ai' | null, data?: any }>({ type: null });
 
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [assigneeFilter, setAssigneeFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
-  const [dataFilter, setDataFilter] = useState('all');
 
   const forceRefresh = useCallback(async () => {
     setIsLoading(true);
@@ -184,34 +179,45 @@ export default function FinanceManagement() {
       ]);
       setPartners(res.data || []);
       setStaff(staffRes.data || []);
+      setHasLoaded(true);
     } catch (e: any) {
+        toast({ variant: 'destructive', title: 'Registry Load Failed', description: e.message });
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [toast]);
 
-  useEffect(() => { forceRefresh(); }, [forceRefresh]);
+  const handleSearch = async () => {
+    if (!searchTerm || searchTerm.length < 3) {
+        if (searchTerm.length === 0) forceRefresh();
+        return;
+    }
+    setIsLoading(true);
+    try {
+        const token = await getClientSideAuthToken();
+        if (!token) return;
+        const res = await performAdminAction(token, 'searchRegistry', { term: searchTerm, type: 'finance' });
+        setPartners(res.data || []);
+        setHasLoaded(true);
+    } catch (e: any) {
+        toast({ variant: 'destructive', title: 'Search Error', description: e.message });
+    } finally {
+        setIsLoading(false);
+    }
+  };
 
   const filteredInvestors = useMemo(() => {
-    return partners.filter(p => {
+    return (partners || []).filter(p => {
         const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
-        const matchesAssignee = assigneeFilter === 'all' || p.assigneeId === assigneeFilter;
         const matchesCategory = categoryFilter === 'all' || p.entryType === categoryFilter;
-        
-        let matchesData = true;
-        if (dataFilter === 'no-email') matchesData = !p.email;
-        else if (dataFilter === 'no-phone') matchesData = !p.phone;
-        else if (dataFilter === 'has-email') matchesData = !!p.email;
-        else if (dataFilter === 'has-phone') matchesData = !!p.phone;
-
-        return matchesStatus && matchesAssignee && matchesCategory && matchesData;
+        return matchesStatus && matchesCategory;
     });
-  }, [partners, statusFilter, assigneeFilter, categoryFilter, dataFilter]);
+  }, [partners, statusFilter, categoryFilter]);
 
   const handleExport = () => {
       if (filteredInvestors.length === 0) return;
       downloadDataAsCSV(filteredInvestors, `finance-backup-${new Date().toISOString().split('T')[0]}.csv`);
-      toast({ title: "Backup Exported", description: "Filtered registry saved to CSV." });
+      toast({ title: "Backup Exported" });
   };
 
   async function handleDelete() {
@@ -230,15 +236,9 @@ export default function FinanceManagement() {
   const columns: ColumnDef<any>[] = [
     { accessorKey: 'companyName', header: 'Entity Name', cell: ({ row }) => <div className="font-bold text-left">{row.original.companyName}</div> },
     { accessorKey: 'entryType', header: 'Category', cell: ({row}) => <Badge variant="outline" className="text-[10px] uppercase font-bold">{row.original.entryType || 'Finance'}</Badge> },
-    { accessorKey: 'contactPerson', header: 'Decision Maker', cell: ({ row }) => <div className="text-left">{row.original.contactPerson || 'N/A'}</div> },
-    { accessorKey: 'phone', header: 'Phone' },
+    { accessorKey: 'phone', header: 'Landline' },
     { accessorKey: 'mobile', header: 'Mobile' },
     { accessorKey: 'email', header: 'Email' },
-    { accessorKey: 'researchStatus', header: 'Enhanced', cell: ({row}) => {
-        if (row.original.researchStatus === 'researching') return <Badge variant="outline" className="animate-pulse text-amber-600 border-amber-200 bg-amber-50">Searching...</Badge>;
-        if (row.original.email) return <Badge variant="default" className="bg-green-100 text-green-700 border-green-200">Enriched</Badge>;
-        return <span className="text-xs text-muted-foreground">-</span>;
-    }},
     { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
       <div className="flex justify-end gap-1">
         <EnrichPartnerButton partner={row.original} onUpdate={forceRefresh} />
@@ -268,68 +268,65 @@ export default function FinanceManagement() {
       <div className="space-y-6 text-left">
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="space-y-1 text-left">
-                <CardTitle className="flex items-center gap-2">
-                    <Landmark /> Capital Intelligence Registry
-                    <Badge variant="outline" className="ml-2 font-black border-amber-600 text-amber-600">{partners.length} Records</Badge>
-                </CardTitle>
-                <CardDescription>Forensic database of Banks, Government Funders, AEO Partners, and Niche Lenders.</CardDescription>
+                <CardTitle className="flex items-center gap-2"><Landmark /> Capital Intelligence Registry</CardTitle>
+                <CardDescription>Forensic database of Banks, Funders, and specialized Logistics Insurers.</CardDescription>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-                <Button variant="outline" onClick={handleExport} disabled={isLoading}>
-                    <Download className="mr-2 h-4 w-4" /> Backup (CSV)
+                <Button variant="outline" onClick={handleExport} disabled={isLoading || !hasLoaded}>
+                    <Download className="mr-2 h-4 w-4" /> Backup
                 </Button>
-                <BulkImportDialog type="finance" onComplete={forceRefresh}><Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Import JSON</Button></BulkImportDialog>
+                <BulkImportDialog type="finance" onComplete={forceRefresh}><Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
                 <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Record</Button>
             </div>
         </CardHeader>
 
-        <Card>
-            <CardContent className="pt-6">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left">
-                    <div className="space-y-2">
-                        <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status</Label>
-                        <Select value={statusFilter} onValueChange={setStatusFilter}>
-                            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All Statuses</SelectItem>
-                                <SelectItem value="new">New</SelectItem>
-                                <SelectItem value="contacted">Researching</SelectItem>
-                                <SelectItem value="active">Active</SelectItem>
-                            </SelectContent>
-                        </Select>
+        {!hasLoaded ? (
+            <Card className="bg-primary/5 border-primary/20 p-12 text-center">
+                <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
+                <h2 className="text-2xl font-black font-headline mb-2 text-foreground">Registry Search Variables</h2>
+                <p className="text-muted-foreground max-w-sm mx-auto mb-8">Set your variables to load the capital intelligence registry. This targets your session and preserves your daily data quota.</p>
+                <div className="flex flex-col md:flex-row justify-center gap-4 max-w-3xl mx-auto">
+                    <div className="flex-1 space-y-2 text-left">
+                        <Label className="text-xs font-bold uppercase ml-1">Funder or Keyword</Label>
+                        <Input placeholder="e.g. Asset finance, Bridging, Bank..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearch()} className="h-12 bg-white" />
                     </div>
-                    <div className="space-y-2">
-                        <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Tag className="h-3 w-3"/> Category</Label>
-                        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                    <div className="flex-1 space-y-2 text-left">
+                         <Label className="text-xs font-bold uppercase ml-1">Funder Category</Label>
+                         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                            <SelectTrigger className="h-12 bg-white"><SelectValue placeholder="All Categories" /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Categories</SelectItem>
                                 {financeCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
                             </SelectContent>
                         </Select>
                     </div>
-                    <div className="space-y-2">
-                        <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Users className="h-3 w-3"/> Assignee</Label>
-                        <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-                            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                            <SelectContent><SelectItem value="all">All Staff</SelectItem><SelectItem value="none">Unallocated</SelectItem>{staff.map(s => <SelectItem key={s.id} value={s.id}>{s.firstName} {s.lastName}</SelectItem>)}</SelectContent>
-                        </Select>
-                    </div>
-                    <div className="space-y-2">
-                        <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Search className="h-3 w-3"/> Data Integrity</Label>
-                        <Select value={dataFilter} onValueChange={setDataFilter}>
-                            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All Records</SelectItem>
-                                <SelectItem value="has-email">Has Email</SelectItem>
-                                <SelectItem value="no-email">Missing Email</SelectItem>
-                            </SelectContent>
-                        </Select>
+                    <div className="pt-8">
+                        <Button size="lg" onClick={handleSearch} disabled={isLoading} className="h-12 px-8">
+                            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <RefreshCcw className="mr-2 h-4 w-4" />}
+                            Load Registry Data
+                        </Button>
                     </div>
                 </div>
-                {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredInvestors} onSelectionChange={setSelectedIds} />}
-            </CardContent>
-        </Card>
+            </Card>
+        ) : (
+            <Card>
+                <CardContent className="pt-6">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left">
+                        <div className="md:col-span-2 space-y-2 text-left">
+                            <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Search className="h-3 w-3"/> Registry Search</Label>
+                            <div className="flex gap-2">
+                                <Input placeholder="Type at least 3 characters..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearch()} />
+                                <Button onClick={handleSearch} disabled={isLoading}><Search className="h-4 w-4"/></Button>
+                            </div>
+                        </div>
+                         <div className="flex items-end">
+                            <Button variant="outline" onClick={() => setHasLoaded(false)} className="h-10 w-full"><RotateCcw className="mr-2 h-4 w-4" /> Reset Variables</Button>
+                        </div>
+                    </div>
+                    {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredInvestors} />}
+                </CardContent>
+            </Card>
+        )}
       </div>
     </>
   );

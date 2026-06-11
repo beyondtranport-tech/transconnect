@@ -1,14 +1,13 @@
-
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from '@/hooks/use-toast';
-import { getClientSideAuthToken, useUser } from '@/firebase';
+import { getClientSideAuthToken } from '@/firebase';
 import { 
   Loader2, PlusCircle, Building, Edit, Trash2, Send, CheckCircle, Users, Mail, Filter, Save, 
-  Search, Zap, RotateCcw, XCircle, Tag, Database, Upload, Download
+  Search, Zap, RotateCcw, XCircle, Tag, Database, Upload, Download, RefreshCcw
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
@@ -93,7 +92,7 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
           <DialogDescription>Enter verified record for the vendor.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left">
             <div className="grid grid-cols-2 gap-4 text-left">
               <FormField control={form.control} name="firstName" render={({ field }) => (<FormItem><FormLabel>First Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="lastName" render={({ field }) => (<FormItem><FormLabel>Last Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
@@ -132,7 +131,9 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
 export default function SupplierManagement() {
   const { toast } = useToast();
   const [partners, setPartners] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasLoaded, setHasLoaded] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | null, data?: any }>({ type: null });
 
   const [statusFilter, setStatusFilter] = useState('all');
@@ -145,6 +146,7 @@ export default function SupplierManagement() {
       if (!token) return;
       const res = await performAdminAction(token, 'getPartnersByType', { type: 'supplier' });
       setPartners(res.data || []);
+      setHasLoaded(true);
     } catch (e: any) {
         console.error("Fetch failed", e);
     } finally {
@@ -152,19 +154,18 @@ export default function SupplierManagement() {
     }
   }, []);
 
-  useEffect(() => { forceRefresh(); }, [forceRefresh]);
-
-  const handleSearch = async (term: string) => {
-    if (!term || term.length < 3) {
-        if (term.length === 0) forceRefresh();
+  const handleSearch = async () => {
+    if (!searchTerm || searchTerm.length < 3) {
+        if (searchTerm.length === 0) forceRefresh();
         return;
     }
     setIsLoading(true);
     try {
         const token = await getClientSideAuthToken();
         if (!token) return;
-        const res = await performAdminAction(token, 'searchRegistry', { term, type: 'supplier' });
+        const res = await performAdminAction(token, 'searchRegistry', { term: searchTerm, type: 'supplier' });
         setPartners(res.data || []);
+        setHasLoaded(true);
     } catch (e: any) {
         toast({ variant: 'destructive', title: 'Search Error', description: e.message });
     } finally {
@@ -179,7 +180,7 @@ export default function SupplierManagement() {
   };
 
   const filteredSuppliers = useMemo(() => {
-    return partners.filter(p => {
+    return (partners || []).filter(p => {
         const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
         const matchesCategory = categoryFilter === 'all' || p.entryType === categoryFilter;
         return matchesStatus && matchesCategory;
@@ -199,10 +200,10 @@ export default function SupplierManagement() {
     }
   }
 
-  const columns: ColumnDef<any>[] = useMemo(() => [
+  const columns: ColumnDef<any>[] = [
     { accessorKey: 'companyName', header: 'Supplier Name', cell: ({ row }) => <div className="font-bold text-left">{row.original.companyName || `${row.original.firstName} ${row.original.lastName}`}</div> },
     { accessorKey: 'entryType', header: 'Category', cell: ({row}) => row.original.entryType ? <Badge variant="outline" className="text-[10px] uppercase font-bold">{row.original.entryType}</Badge> : <span className="text-muted-foreground italic text-xs">Uncategorized</span> },
-    { accessorKey: 'phone', header: 'Phone' },
+    { accessorKey: 'phone', header: 'Landline' },
     { accessorKey: 'mobile', header: 'Mobile' },
     { accessorKey: 'email', header: 'Email' },
     { accessorKey: 'status', header: 'Status', cell: ({ row }) => <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge> },
@@ -217,7 +218,7 @@ export default function SupplierManagement() {
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'delete', data: row.original })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
       </div>
     )},
-  ], [forceRefresh]);
+  ];
 
   return (
     <>
@@ -232,42 +233,62 @@ export default function SupplierManagement() {
       <div className="space-y-6">
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="text-left">
-                <CardTitle className="flex items-center gap-2"><Building /> Supplier Database</CardTitle>
-                <CardDescription>Capped view of recent suppliers. Use search for full registry access.</CardDescription>
+                <CardTitle className="flex items-center gap-2"><Building /> Supplier Registry</CardTitle>
+                <CardDescription>Targeted view of industrial vendors and parts suppliers.</CardDescription>
             </div>
             <div className="flex items-center gap-2">
-                <Button variant="outline" onClick={handleExport} disabled={isLoading}>
-                    <Download className="mr-2 h-4 w-4" /> Backup (CSV)
+                <Button variant="outline" onClick={handleExport} disabled={isLoading || !hasLoaded}>
+                    <Download className="mr-2 h-4 w-4" /> Backup
                 </Button>
                 <BulkImportDialog type="supplier" onComplete={forceRefresh}><Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
-                <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Supplier</Button>
+                <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Record</Button>
             </div>
         </CardHeader>
 
-        <Card>
-            <CardContent className="pt-6">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left">
-                    <div className="md:col-span-2 space-y-2 text-left">
-                        <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Search className="h-3 w-3"/> Registry Search</Label>
-                        <Input placeholder="Type at least 3 letters to search all suppliers..." onChange={(e) => handleSearch(e.target.value)} />
+        {!hasLoaded ? (
+            <Card className="bg-primary/5 border-primary/20 p-12 text-center">
+                <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
+                <h2 className="text-2xl font-black font-headline mb-2 text-foreground">Registry Search Variables</h2>
+                <p className="text-muted-foreground max-w-sm mx-auto mb-8">Set your variables to load the supplier registry. This ensures your session is efficient and preserves your daily data quota.</p>
+                <div className="flex flex-col md:flex-row justify-center gap-4 max-w-2xl mx-auto">
+                    <div className="flex-1 space-y-2 text-left">
+                        <Label className="text-xs font-bold uppercase ml-1">Search Keywords</Label>
+                        <Input placeholder="e.g. Scania parts, Tires, Cape Town..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearch()} className="h-12 bg-white" />
                     </div>
-                    <div className="space-y-2 text-left">
-                        <Label className="text-[10px] font-black uppercase text-muted-foreground">Category</Label>
-                        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                            <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+                    <div className="flex-1 space-y-2 text-left">
+                         <Label className="text-xs font-bold uppercase ml-1">Category</Label>
+                         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                            <SelectTrigger className="h-12 bg-white"><SelectValue placeholder="All Categories" /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Categories</SelectItem>
                                 {supplierCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
                             </SelectContent>
                         </Select>
                     </div>
-                    <div className="flex items-end">
-                        <Button variant="outline" onClick={forceRefresh} className="h-10 w-full"><RotateCcw className="mr-2 h-4 w-4" /> Reset</Button>
+                    <div className="pt-8">
+                        <Button size="lg" onClick={handleSearch} disabled={isLoading} className="h-12 px-8">
+                            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <RefreshCcw className="mr-2 h-4 w-4" />}
+                            Load Targeted Data
+                        </Button>
                     </div>
                 </div>
-                {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredSuppliers} />}
-            </CardContent>
-        </Card>
+            </Card>
+        ) : (
+            <Card>
+                <CardContent className="pt-6">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left">
+                        <div className="md:col-span-2 space-y-2 text-left">
+                            <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Search className="h-3 w-3"/> Search within results</Label>
+                            <Input placeholder="Type at least 3 letters to search all suppliers..." onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearch()} />
+                        </div>
+                        <div className="flex items-end">
+                            <Button variant="outline" onClick={() => setHasLoaded(false)} className="h-10 w-full"><RotateCcw className="mr-2 h-4 w-4" /> Reset Variables</Button>
+                        </div>
+                    </div>
+                    {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredSuppliers} />}
+                </CardContent>
+            </Card>
+        )}
       </div>
     </>
   );

@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -137,7 +136,7 @@ function DriverDialog({ open, onOpenChange, partner, onSave }: { open: boolean; 
             <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Service Handle / Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="status" render={({ field }) => (
                 <FormItem className="text-left">
-                    <FormLabel>Status</FormLabel>
+                    <FormLabel>Status</Label>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                         <SelectContent>
@@ -182,7 +181,7 @@ export default function DriverManagement() {
       setPartners(res.data || []);
       setHasLoaded(true);
     } catch (e: any) {
-      console.warn("Manual fetch failed", e);
+        console.warn("Manual fetch failed", e);
     } finally {
       setIsLoading(false);
     }
@@ -200,6 +199,7 @@ export default function DriverManagement() {
         if (!token) return;
         const res = await performAdminAction(token, 'searchRegistry', { term: searchTerm, type: 'driver' });
         setPartners(res.data || []);
+        setHasLoaded(true);
     } catch (e: any) {
         toast({ variant: 'destructive', title: 'Search Error', description: e.message });
     } finally {
@@ -234,7 +234,7 @@ export default function DriverManagement() {
     }
   }
 
-  const columns: ColumnDef<any>[] = useMemo(() => [
+  const columns: ColumnDef<any>[] = [
     { 
         header: 'Driver Identity', 
         cell: ({ row }) => (
@@ -259,7 +259,7 @@ export default function DriverManagement() {
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'delete', data: row.original })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
       </div>
     )},
-  ], [forceRefresh]);
+  ];
 
   return (
     <>
@@ -290,12 +290,30 @@ export default function DriverManagement() {
         {!hasLoaded ? (
             <Card className="bg-primary/5 border-primary/20 p-12 text-center">
                 <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
-                <h2 className="text-2xl font-black font-headline mb-2">Registry Offline</h2>
-                <p className="text-muted-foreground max-w-sm mx-auto mb-8">Click below to load the industrial driver registry. This ensures your data quota is preserved.</p>
-                <Button size="lg" onClick={forceRefresh} disabled={isLoading}>
-                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <RefreshCcw className="mr-2 h-4 w-4" />}
-                    Load Master Registry
-                </Button>
+                <h2 className="text-2xl font-black font-headline mb-2 text-foreground">Registry Search Variables</h2>
+                <p className="text-muted-foreground max-w-sm mx-auto mb-8">Enter your search criteria or load the master driver registry below. This targets your session to preserve your daily data quota.</p>
+                <div className="flex flex-col md:flex-row justify-center gap-4 max-w-2xl mx-auto">
+                    <div className="flex-1 space-y-2 text-left">
+                         <Label className="text-xs font-bold uppercase ml-1">Identity or Region</Label>
+                         <Input placeholder="Type name, ID or region to search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSearch()} className="h-12 bg-white" />
+                    </div>
+                     <div className="flex-1 space-y-2 text-left">
+                         <Label className="text-xs font-bold uppercase ml-1">License Class</Label>
+                         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                            <SelectTrigger className="h-12 bg-white"><SelectValue placeholder="All Classes" /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Classes</SelectItem>
+                                {driverCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="pt-8">
+                        <Button size="lg" onClick={handleSearch} disabled={isLoading} className="h-12 px-8">
+                            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4" />}
+                            Load Targeted Records
+                        </Button>
+                    </div>
+                </div>
             </Card>
         ) : (
             <Card>
@@ -308,18 +326,8 @@ export default function DriverManagement() {
                                 <Button onClick={handleSearch} disabled={isLoading}><Search className="h-4 w-4"/></Button>
                             </div>
                         </div>
-                        <div className="space-y-2 text-left">
-                            <Label className="text-[10px] font-black uppercase text-muted-foreground">Category</Label>
-                            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                                <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All Categories</SelectItem>
-                                    {driverCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
-                                </SelectContent>
-                            </Select>
-                        </div>
                         <div className="flex items-end">
-                            <Button variant="outline" onClick={forceRefresh} className="h-10 w-full"><RotateCcw className="mr-2 h-4 w-4" /> Reset</Button>
+                            <Button variant="outline" onClick={() => setHasLoaded(false)} className="h-10 w-full"><RotateCcw className="mr-2 h-4 w-4" /> Reset Variables</Button>
                         </div>
                     </div>
                     {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredDrivers} />}
