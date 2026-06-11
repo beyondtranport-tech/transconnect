@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -21,7 +22,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Sparkles, Wand2 } from 'lucide-react';
+import { Loader2, Sparkles, Wand2, Download } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import React from 'react';
@@ -97,6 +98,16 @@ export default function ImageEditorCard() {
     }
   };
 
+  const handleDownload = () => {
+    if (!editedImage) return;
+    const link = document.createElement('a');
+    link.href = editedImage;
+    link.download = `edited-image-${Date.now()}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -122,7 +133,7 @@ export default function ImageEditorCard() {
             <div className="flex-1 overflow-y-auto py-4 pr-4 -mr-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
-                  <div className="space-y-2">
+                  <div className="space-y-2 text-left">
                     <Label htmlFor="image-upload">1. Upload Original Image</Label>
                     <Input id="image-upload" type="file" accept="image/*" onChange={handleImageUpload} />
                   </div>
@@ -132,12 +143,12 @@ export default function ImageEditorCard() {
                           <Button variant="destructive" size="sm" onClick={clearOriginalImage} className="absolute top-2 right-2">Change</Button>
                       </div>
                   )}
-                   <div className="space-y-2">
+                   <div className="space-y-2 text-left">
                       <Label htmlFor="prompt">2. Describe Your Edit</Label>
                       <Input id="prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="e.g., place this truck in a forest" />
                    </div>
                 </div>
-                <div className="space-y-4">
+                <div className="space-y-4 text-left">
                   <Label>3. Edited Image</Label>
                   <div className="relative aspect-square w-full rounded-md border border-dashed flex items-center justify-center bg-muted">
                       {isLoading ? (
@@ -154,10 +165,15 @@ export default function ImageEditorCard() {
                 </div>
               </div>
             </div>
-            <DialogFooter className="mt-auto pt-4 border-t">
-              <Button onClick={handleEdit} disabled={isLoading}>
+            <DialogFooter className="mt-auto pt-4 border-t justify-between">
+               {editedImage && (
+                <Button variant="secondary" onClick={handleDownload} disabled={isLoading}>
+                  <Download className="mr-2 h-4 w-4" /> Download Image
+                </Button>
+              )}
+              <Button onClick={handleEdit} disabled={isLoading} className={!editedImage ? 'w-full' : 'ml-auto'}>
                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                Generate Edit
+                {editedImage ? 'Edit Again' : 'Generate Edit'}
               </Button>
             </DialogFooter>
           </DialogContent>
