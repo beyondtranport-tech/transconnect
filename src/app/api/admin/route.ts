@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -363,8 +364,25 @@ export async function POST(req: NextRequest) {
                 const batch = db.batch();
                 partners.forEach((p: any) => {
                     const id = p.record_id || p.id || db.collection('partners').doc().id;
+                    
+                    // INTEL MAPPING: Normalize AI-generated keys to standardized schema
+                    const standardized: any = { ...p };
+                    if (p.company_name) standardized.companyName = p.company_name;
+                    if (p.email_address) standardized.email = p.email_address;
+                    if (p.telephone_number) standardized.phone = p.telephone_number;
+                    if (p.physical_address) standardized.address = p.physical_address;
+                    if (p.contact_person) standardized.contactPerson = p.contact_person;
+                    
+                    // Final payload cleanup
+                    delete standardized.record_id;
+                    delete standardized.company_name;
+                    delete standardized.email_address;
+                    delete standardized.telephone_number;
+                    delete standardized.physical_address;
+                    delete standardized.contact_person;
+
                     batch.set(db.collection(type === 'lead' ? 'leads' : 'partners').doc(id), {
-                        ...p,
+                        ...standardized,
                         id,
                         type: type === 'lead' ? undefined : type,
                         updatedAt: FieldValue.serverTimestamp()

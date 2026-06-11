@@ -47,7 +47,7 @@ TARGET ENTITY:
 
 INVESTIGATIVE STRATEGY (DIRECT CONTACT ENRICHMENT):
 1. SOCIAL CLUSTER SEARCH: Cross-reference this driver's name and hub (${partner.address || partner.operational_hub}) in LinkedIn and Facebook South African Trucking groups.
-2. MOBILE IDENTIFICATION: Locate a verified direct mobile/cell number. A landline is unacceptable for final output.
+2. MOBILE IDENTIFICATION: Locate a verified direct mobile/cell number (+27 7... or +27 8...). A landline is unacceptable for the 'mobile' field.
 3. EMAIL DISCOVERY: Find a personal or professional email address (e.g. Gmail, Outlook, or Company domain). 
 4. IDENTITY PERSISTENCE: You MUST return "record_id": "${partner.id}".
 
@@ -57,7 +57,8 @@ REQUIRED OUTPUT FORMAT (RAW JSON ONLY):
   "firstName": "...",
   "lastName": "...",
   "email": "Verified Direct Email",
-  "phone": "Verified MOBILE Number (e.g. +27 72...)",
+  "phone": "Work Landline Number",
+  "mobile": "Verified DIRECT MOBILE Number (e.g. +27 72...)",
   "notes": "Consolidated profile including verified certs (PrDP, Hazmat) and years of experience",
   "address": "Primary Hub/Region",
   "research_status": "completed"
@@ -88,7 +89,9 @@ REQUIRED OUTPUT FORMAT (RAW JSON ONLY):
   "record_id": "${partner.id}",
   "website": "URL",
   "contact_person": "ACTUAL HUMAN FULL NAME",
-  "email_address": "Verified Direct Email",
+  "email": "Verified Direct Email",
+  "phone": "Work Landline",
+  "mobile": "Direct Mobile Number",
   "business_activity": "Detailed Summary of Services",
   "agreement_types": ["List of types found"],
   "entryType": "Refined Category from list above",
@@ -105,18 +108,19 @@ TASK: Find CURRENT verified public contact and SPECIFIC human leadership details
 INVESTIGATIVE STRATEGY:
 1. HUMAN IDENTITY FIRST: You must find the ACTUAL NAME (First and Last) of the CEO, Managing Director, or Owner. 
 2. FORBIDDEN VALUES: Returning "The Director", "The Manager", "Managing Director", or "Unknown" is a FAILURE. You MUST hunt LinkedIn profiles or "About Us" pages to find a specific human name (e.g. "Sipho Nkosi").
-3. PROACTIVE EMAIL SEARCH: Identify the corporate domain and look for verified "info@", "sales@", or "admin@" formats if direct personal emails are hidden.
+3. CONTACT DIFFERENTIATION: You MUST find both the company Landline (Phone) and the decision-maker's Direct Cell (Mobile).
 4. IDENTITY PERSISTENCE: You MUST return the "record_id": "${partner.id}" exactly as provided.
 
 REQUIRED OUTPUT FORMAT (RAW JSON ONLY):
 {
   "record_id": "${partner.id}",
-  "company_name": "${companyName}",
-  "contact_person": "ACTUAL HUMAN FULL NAME (NOT A TITLE)",
-  "email_address": "Verified Email",
-  "telephone_number": "Phone Number",
+  "companyName": "${companyName}",
+  "contactPerson": "ACTUAL HUMAN FULL NAME (NOT A TITLE)",
+  "email": "Verified Email",
+  "phone": "Work Landline Number",
+  "mobile": "Verified DIRECT MOBILE/CELL Number (e.g. +27 82...)",
   "website": "URL",
-  "physical_address": "Full Physical Address"
+  "address": "Full Physical Address"
 }`;
     };
 
@@ -126,7 +130,7 @@ REQUIRED OUTPUT FORMAT (RAW JSON ONLY):
         try {
             await navigator.clipboard.writeText(aiPrompt);
             setIsCopied(true);
-            toast({ title: "Forensic Prompt Copied!", description: isDriver ? "AI will now hunt for direct mobile and email contacts." : "AI will now hunt for leadership identities." });
+            toast({ title: "Forensic Prompt Copied!", description: isDriver ? "AI will now hunt for direct mobile and email contacts." : "AI will now hunt for leadership and direct contacts." });
         } catch (e) {
             toast({ variant: 'destructive', title: "Copy Failed" });
         }
@@ -175,20 +179,20 @@ REQUIRED OUTPUT FORMAT (RAW JSON ONLY):
                                 ? `Identify direct digital contact channels (Mobile & Email) for: ${partner.service_handle || partner.firstName}`
                                 : (isNCR 
                                     ? `Determine the business activity and leadership for NCR record: ${companyName}`
-                                    : `Generate a deep-search prompt optimized to find actual human leadership names for ${companyName}.`)}
+                                    : `Generate a deep-search prompt optimized to find human leadership and direct mobile contacts for ${companyName}.`)}
                         </DialogDescription>
                     </DialogHeader>
 
                     <div className="space-y-4 py-4">
                         <Alert className="bg-primary/5 border-primary/20">
                             <Info className="h-4 w-4 text-primary" />
-                            <AlertTitle>{isDriver ? 'Mobile Discovery Active' : (isNCR ? 'ActivityPass Active' : 'Anti-Placeholder Command Active')}</AlertTitle>
+                            <AlertTitle>{isDriver ? 'Mobile Discovery Active' : (isNCR ? 'ActivityPass Active' : 'Direct Contact Command Active')}</AlertTitle>
                             <AlertDescription className="text-xs text-muted-foreground">
                                 {isDriver 
                                     ? "The AI is strictly commanded to find a direct mobile number (+27 7... or +27 8...) and a personal/professional email, bypassing the provided landline."
                                     : (isNCR 
-                                        ? "The AI is instructed to find agreement types (Loan, Lease, etc.) and identify the specific human credit decision-maker."
-                                        : "This prompt strictly forbids the AI from returning titles like \"The Director\" and commands it to hunt for verified human identities.")}
+                                        ? "The AI is instructed to find agreement types and identify the specific human credit decision-maker."
+                                        : "This prompt explicitly commands the AI to differentiate between the general business landline and the direct mobile number of the leadership.")}
                             </AlertDescription>
                         </Alert>
 
@@ -229,5 +233,81 @@ export function BulkEnrichButton({ partners, onComplete }: { partners: any[], on
             selectedLeads={selectedPartners} 
             onComplete={onComplete} 
         />
+    );
+}
+
+function BatchResearchDialog({ open, onOpenChange, selectedLeads, onComplete }: any) {
+    const [isLoading, setIsLoading] = useState(false);
+    const [isCopied, setIsCopied] = useState(false);
+    const { toast } = useToast();
+
+    const companyList = selectedLeads.map((l: any) => `[ID: ${l.id}] ${l.companyName || l.service_handle}`).join('\n');
+    
+    const aiPrompt = `CRITICAL SYSTEM INSTRUCTION: RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
+
+ACT AS AN ELITE CORPORATE INTELLIGENCE AGENT. 
+
+TASK: Find CURRENT verified leadership and direct digital contact details for the following South African entities.
+
+INVESTIGATIVE STRATEGY:
+1. HUMAN IDENTITY: You MUST find the ACTUAL NAME of the CEO, MD, or Owner. 
+2. CONTACT DIFFERENTIATION: Differentiate between "phone" (Work Landline) and "mobile" (Direct Cell +27...).
+3. IDENTITY PERSISTENCE: You MUST return the "record_id" exactly as provided.
+
+REQUIRED OUTPUT FORMAT (RAW JSON ARRAY ONLY):
+[{"record_id":"...","companyName":"...","contactPerson":"FULL NAME","email":"...","phone":"Landline","mobile":"Direct Cell","website":"...","address":"..."}]
+
+ENTITIES TO RESEARCH:
+${companyList}`;
+
+    const handleCopyAll = async () => {
+        try {
+            await navigator.clipboard.writeText(aiPrompt);
+            setIsCopied(true);
+            toast({ title: "Batch Prompt Copied!" });
+        } catch (e) {
+            toast({ variant: 'destructive', title: "Copy Failed" });
+        }
+    };
+
+    const handleMarkAsResearching = async () => {
+        setIsLoading(true);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Auth failed");
+            const leadIds = selectedLeads.map((l: any) => l.id);
+            await performAdminAction(token, 'markLeadsAsResearching', { leadIds });
+            toast({ title: "Batch Marked as Searching" });
+            onComplete();
+            onOpenChange(false);
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: "Update Failed", description: e.message });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-2xl">
+                <DialogHeader>
+                    <DialogTitle>Batch Forensic Enrichment ({selectedLeads.length})</DialogTitle>
+                </DialogHeader>
+                <div className="py-4">
+                    <ScrollArea className="h-64 border rounded-md p-4 bg-muted/30">
+                        <pre className="text-[10px] font-mono whitespace-pre-wrap">{aiPrompt}</pre>
+                    </ScrollArea>
+                </div>
+                <DialogFooter className="sm:justify-between">
+                    <Button variant="outline" onClick={handleCopyAll}>
+                        <Copy className="mr-2 h-4 w-4" /> Copy Prompt
+                    </Button>
+                    <Button onClick={handleMarkAsResearching} disabled={isLoading || !isCopied}>
+                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Zap className="mr-2 h-4 w-4" />}
+                        Mark as Searching
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     );
 }

@@ -2,25 +2,48 @@
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 import { Button, buttonVariants } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { getClientSideAuthToken, useUser } from '@/firebase';
+import { getClientSideAuthToken } from '@/firebase';
 import { 
   Loader2, PlusCircle, Truck, Edit, Trash2, Send, Filter, RotateCcw, Search, Upload, Mail, ShieldCheck, Navigation, Save, Download, RefreshCcw
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
 import { PartnerOversightDialog } from './PartnerOversightDialog';
 import { EngageDialog } from './EngageDialog';
 import { CommunicationLogDialog } from './CommunicationLogDialog';
@@ -109,7 +132,7 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
             <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" /></FormControl><FormMessage /></FormItem>)} />
             <div className="grid grid-cols-2 gap-4">
               <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Phone (Landline)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-              <FormField control={form.control} name="mobile" render={({ field }) => (<FormItem><FormLabel>Mobile Number</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="mobile" render={({ field }) => (<FormItem><FormLabel>Mobile Number (Direct Cell)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
             <FormField control={form.control} name="contactPerson" render={({ field }) => (<FormItem><FormLabel>Identity Verified Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Entity Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
@@ -213,7 +236,8 @@ export default function TransporterManagement() {
     { accessorKey: 'entryType', header: 'Category', cell: ({row}) => row.original.entryType ? <Badge variant="outline" className="text-[10px] uppercase font-bold">{row.original.entryType}</Badge> : <span className="text-muted-foreground italic text-xs">Uncategorized</span> },
     { accessorKey: 'contactPerson', header: 'Leadership' },
     { accessorKey: 'email', header: 'Email' },
-    { accessorKey: 'phone', header: 'Phone' },
+    { accessorKey: 'phone', header: 'Landline' },
+    { accessorKey: 'mobile', header: 'Mobile' },
     { accessorKey: 'status', header: 'Status', cell: ({ row }) => <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge> },
     { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
       <div className="flex justify-end gap-1">
@@ -234,7 +258,7 @@ export default function TransporterManagement() {
       <TransporterDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={forceRefresh} />
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
         <AlertDialogContent>
-          <AlertDialogHeader><AlertDialogTitle>Delete Record?</AlertDialogTitle><AlertDialogDescription>Delete haulier record?</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Delete haulier record?</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter><AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
