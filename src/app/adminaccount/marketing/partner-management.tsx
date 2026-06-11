@@ -180,7 +180,7 @@ export default function PartnerManagement() {
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
                 <CardTitle><Handshake /> Strategic Partners</CardTitle>
-                <CardDescription>Full registry view (Up to 10,000 records).</CardDescription>
+                <CardDescription>Full registry view ({partners.length} records).</CardDescription>
             </div>
             <div className="flex items-center gap-2">
                 <Button variant="outline" onClick={() => downloadDataAsCSV(partners, 'partners-export.csv')} disabled={isLoading}>

@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -7,8 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
-  Loader2, PlusCircle, Building, Edit, Trash2, Send, Filter, Save, 
-  Search, RefreshCcw, Download, Upload
+  Loader2, PlusCircle, Building, Edit, Trash2, Send, Download, Save, Upload
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
@@ -112,6 +110,7 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
                             <SelectItem value="new">New</SelectItem>
                             <SelectItem value="contacted">Researching</SelectItem>
                             <SelectItem value="qualified">Qualified</SelectItem>
+                            <SelectItem value="active">Active</SelectItem>
                         </SelectContent>
                     </Select>
                 </FormItem>

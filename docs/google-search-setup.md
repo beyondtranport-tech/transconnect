@@ -14,7 +14,7 @@ To get the Leads AI Agent working, we use a **"Business Whitelist"** strategy. B
 4.  If "Search the entire web" is **OFF** and cannot be turned on, you must add the whitelist below.
 5.  Click **"ADD"** and copy-paste the following list of domains (one per line). 
 
-### The "Top 50" Business Whitelist (Corrected Format)
+### The "Forensic" Whitelist (Optimized for SA Industry)
 Copy and paste these into your "Sites to search" list. **Note the `/*` at the end, which is required by Google:**
 ```text
 linkedin.com/*
@@ -22,8 +22,15 @@ facebook.com/*
 instagram.com/*
 twitter.com/*
 x.com/*
-yellowpages.co.za/*
-brabys.com/*
+infoisinfo.co.za/*
+government.co.za/*
+yep.co.za/*
+constructionsite.co.za/*
+thinklocal.co.za/*
+yellosa.co.za/*
+toprated.co.za/*
+southafricayp.co.za/*
+braby.com/*
 sayellow.com/*
 easyinfo.co.za/*
 hotfrog.co.za/*

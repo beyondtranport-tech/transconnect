@@ -6,8 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
-  Loader2, PlusCircle, Landmark, Edit, Trash2, Send, Users, Filter, Save, 
-  Search, RefreshCcw, Download, Upload
+  Loader2, PlusCircle, Landmark, Edit, Trash2, Send, Download, Save, Search, Upload
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
@@ -197,7 +196,7 @@ export default function FinanceManagement() {
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="text-left">
                 <CardTitle className="flex items-center gap-2"><Landmark /> Finance Registry</CardTitle>
-                <CardDescription>Full registry view (Up to 10,000 records).</CardDescription>
+                <CardDescription>Full registry view ({partners.length} records).</CardDescription>
             </div>
             <div className="flex items-center gap-2">
                 <Button variant="outline" onClick={() => downloadDataAsCSV(partners, 'finance-export.csv')} disabled={isLoading}>
