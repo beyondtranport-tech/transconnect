@@ -234,7 +234,7 @@ function AdminAccountContent() {
                 </SidebarMenuSub>
               </SidebarMenuItem>
           </SidebarGroup>
-        </Sidebar>
+        </SidebarContent>
         <SidebarFooter>
             <div className="flex items-center gap-3 p-2 rounded-md bg-sidebar-accent">
               <Avatar className="h-10 w-10">

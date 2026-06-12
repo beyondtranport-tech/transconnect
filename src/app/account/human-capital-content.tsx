@@ -6,11 +6,11 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useUser, getClientSideAuthToken } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, Users, Award, MapPin, Sparkles, Info, Banknote, Briefcase } from 'lucide-react';
+import { Loader2, Save, Users, Award, MapPin, Info, Briefcase, Banknote } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
 
@@ -96,7 +96,6 @@ export default function HumanCapitalContent() {
                             </AlertDescription>
                         </Alert>
                         
-                        {/* Job Categories */}
                         <div className="space-y-4 text-left">
                             <h3 className="font-bold flex items-center gap-2 text-lg text-foreground"><Briefcase className="h-5 w-5 text-primary" /> Industry Category (Role)</h3>
                             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -111,7 +110,6 @@ export default function HumanCapitalContent() {
                             </div>
                         </div>
 
-                        {/* Certifications */}
                         <div className="space-y-4 text-left">
                             <h3 className="font-bold flex items-center gap-2 text-lg text-foreground"><Award className="h-5 w-5 text-primary" /> Certifications & Licenses</h3>
                             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -126,7 +124,6 @@ export default function HumanCapitalContent() {
                             </div>
                         </div>
 
-                        {/* Location */}
                         <div className="space-y-4 text-left">
                             <h3 className="font-bold flex items-center gap-2 text-lg text-foreground"><MapPin className="h-5 w-5 text-primary" /> Work Availability (Location)</h3>
                             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -141,7 +138,6 @@ export default function HumanCapitalContent() {
                             </div>
                         </div>
 
-                        {/* Desired Salary */}
                         <div className="space-y-4 text-left">
                             <h3 className="font-bold flex items-center gap-2 text-lg text-foreground"><Banknote className="h-5 w-5 text-primary" /> Desired Salary / Rate</h3>
                             <FormField control={form.control} name="desiredSalary" render={({ field }) => (
