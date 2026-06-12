@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { provinces } from '@/lib/geodata';
-import { Truck, Search, MapPin, ShieldCheck, Loader2, ArrowRight, Lock, Navigation, Sparkles, Info, CheckCircle2, AlertTriangle, AlertCircle, Database, Table as TableIcon } from 'lucide-react';
+import { Truck, Search, MapPin, ShieldCheck, Loader2, ArrowRight, Lock, Navigation, Sparkles, Info, CheckCircle2, AlertCircle, Database, Table as TableIcon } from 'lucide-react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { useUser, getClientSideAuthToken } from '@/firebase';
@@ -19,6 +19,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 const servicesMap = [
+    { id: 'all', label: 'All Services' },
     { id: 'container', label: 'Container Transport' },
     { id: 'reefer-container', label: 'Refrigerated Containers' },
     { id: 'general-freight', label: 'General Freight' },
@@ -32,7 +33,7 @@ export default function TransporterIntelligencePage() {
     const [selectedProvince, setSelectedProvince] = useState('');
     const [selectedCity, setSelectedCity] = useState('');
     const [selectedSuburb, setSelectedSuburb] = useState('');
-    const [selectedService, setSelectedService] = useState('');
+    const [selectedService, setSelectedService] = useState('all');
     const [results, setResults] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [hasSearched, setHasSearched] = useState(false);
@@ -80,7 +81,7 @@ export default function TransporterIntelligencePage() {
                     province: selectedProvince,
                     city: selectedCity,
                     suburb: selectedSuburb,
-                    service: selectedService
+                    service: selectedService === 'all' ? '' : selectedService
                 }),
             });
             const result = await response.json();
@@ -245,7 +246,7 @@ export default function TransporterIntelligencePage() {
                         </div>
                     </CardContent>
                     <CardFooter className="bg-slate-50 border-t flex justify-center p-4">
-                        <Button className="h-12 px-12 font-black uppercase text-xs tracking-widest gap-2" onClick={handleSearch} disabled={isLoading || !selectedService}>
+                        <Button className="h-12 px-12 font-black uppercase text-xs tracking-widest gap-2" onClick={handleSearch} disabled={isLoading}>
                             {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <Search className="h-4 w-4" />}
                             Execute Search
                         </Button>

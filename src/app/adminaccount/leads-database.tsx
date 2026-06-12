@@ -257,6 +257,7 @@ function LeadsDatabaseComponent() {
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
   const [engageLead, setEngageLead] = useState<any | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isBatchDialogOpen, setIsBatchDialogOpen] = useState(false);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -296,6 +297,10 @@ function LeadsDatabaseComponent() {
         setIsLoading(false);
     }
   };
+
+  const selectedLeads = useMemo(() => {
+      return leads.filter(l => selectedIds.includes(l.id));
+  }, [leads, selectedIds]);
 
   const newLeadDefaults = useMemo(() => {
     const companyName = searchParams.get('newCompanyName');
@@ -386,6 +391,7 @@ function LeadsDatabaseComponent() {
       <EngageDialog open={!!engageLead} onOpenChange={(o) => !o && setEngageLead(null)} partner={engageLead} audience="suppliers" onEngageSuccess={forceRefresh} />
       <LeadDialog open={isAddLeadOpen} onOpenChange={setIsAddLeadOpen} onSave={forceRefresh} defaultValues={newLeadDefaults} />
       {editLead && <LeadDialog open={isEditLeadOpen} onOpenChange={setIsEditLeadOpen} lead={editLead} onSave={forceRefresh} />}
+      <BatchResearchDialog open={isBatchDialogOpen} onOpenChange={setIsBatchDialogOpen} selectedLeads={selectedLeads} onComplete={forceRefresh} />
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
         <AlertDialogContent>
           <AlertDialogHeader><AlertDialogTitle>Delete Lead?</AlertDialogTitle><AlertDialogDescription>This will permanently delete the record.</AlertDialogDescription></AlertDialogHeader>
@@ -400,6 +406,11 @@ function LeadsDatabaseComponent() {
             <CardDescription>Comprehensive registry of prospective members and discovered industrial leads.</CardDescription>
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            {selectedIds.length > 0 && (
+                <Button variant="secondary" onClick={() => setIsBatchDialogOpen(true)} className="animate-in fade-in zoom-in slide-in-from-right-4">
+                    <Zap className="mr-2 h-4 w-4" /> Batch Research ({selectedIds.length})
+                </Button>
+            )}
             <Button variant="outline" onClick={handleExport} disabled={isLoading || !hasLoaded}>
                 <Download className="mr-2 h-4 w-4" /> Backup
             </Button>

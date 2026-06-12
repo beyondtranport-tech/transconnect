@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -95,7 +96,61 @@ export async function POST(req: NextRequest) {
                 const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
                 return NextResponse.json({ success: true, data });
             }
-            
+
+            case 'bulkLogForensicInitiated': {
+                const { leadIds } = payload;
+                const batch = db.batch();
+                leadIds.forEach((id: string) => {
+                    const ref = db.collection('leads').doc(id);
+                    batch.set(ref, { 
+                        status: 'contacted', 
+                        updatedAt: FieldValue.serverTimestamp() 
+                    }, { merge: true });
+
+                    const logRef = ref.collection('communications').doc();
+                    batch.set(logRef, {
+                        type: 'Meeting',
+                        subject: 'AI Forensic Mining Initiated',
+                        notes: 'Automated batch research command generated for external AI verification.',
+                        timestamp: FieldValue.serverTimestamp()
+                    });
+                });
+                await batch.commit();
+                return NextResponse.json({ success: true });
+            }
+
+            case 'logForensicInitiated': {
+                const { partnerId, isLead } = payload;
+                const collection = isLead ? 'leads' : 'partners';
+                const ref = db.collection(collection).doc(partnerId);
+                const batch = db.batch();
+                
+                batch.set(ref, { status: 'contacted', updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+                
+                const logRef = ref.collection('communications').doc();
+                batch.set(logRef, {
+                    type: 'Meeting',
+                    subject: 'Forensic Mining Initiated',
+                    notes: 'AI prompt generated for web-data mining of contact and leadership gaps.',
+                    timestamp: FieldValue.serverTimestamp()
+                });
+                
+                await batch.commit();
+                return NextResponse.json({ success: true });
+            }
+
+            case 'refreshSupplierCategoryCounts': {
+                const snap = await db.collection('leads').where('role', '==', 'Supplier').limit(5000).get();
+                const counts: Record<string, number> = {};
+                snap.forEach(doc => {
+                    const data = doc.data();
+                    const cat = data.notes?.match(/Category:\s*(.+)/)?.[1] || data.entryType || 'General';
+                    counts[cat] = (counts[cat] || 0) + 1;
+                });
+                await db.collection('configuration').doc('supplierDiscoveryStats').set({ counts, lastUpdated: FieldValue.serverTimestamp() });
+                return NextResponse.json({ success: true });
+            }
+
             case 'getAuditLogs': {
                 const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(MAX_LOAD).get();
                 const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
