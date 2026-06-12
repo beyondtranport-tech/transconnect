@@ -96,16 +96,16 @@ export default function TransporterIntelligencePage() {
 
             <section className="container mx-auto px-4 -mt-12">
                 <Card className="max-w-5xl mx-auto shadow-2xl border-none">
-                    <CardHeader className="bg-white rounded-t-xl border-b">
+                    <CardHeader className="bg-white rounded-t-xl border-b text-left">
                         <CardTitle className="flex items-center gap-2">
                             <Navigation className="h-5 w-5 text-primary" />
                             Specify Requirements
                         </CardTitle>
                         <CardDescription>Select your location and the specific service type to match with verified capacity.</CardDescription>
                     </CardHeader>
-                    <CardContent className="p-6 grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                    <CardContent className="p-6 grid grid-cols-1 md:grid-cols-4 gap-4 items-end text-left">
                         <div className="space-y-2">
-                            <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Province</Label>
+                            <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Province</Label>
                             <Select value={selectedProvince} onValueChange={setSelectedProvince}>
                                 <SelectTrigger><SelectValue placeholder="Select Province" /></SelectTrigger>
                                 <SelectContent>
@@ -114,7 +114,7 @@ export default function TransporterIntelligencePage() {
                             </Select>
                         </div>
                         <div className="space-y-2">
-                            <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">City</Label>
+                            <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">City</Label>
                             <Select value={selectedCity} onValueChange={setSelectedCity} disabled={!selectedProvince}>
                                 <SelectTrigger><SelectValue placeholder="Select City" /></SelectTrigger>
                                 <SelectContent>
@@ -123,7 +123,7 @@ export default function TransporterIntelligencePage() {
                             </Select>
                         </div>
                         <div className="space-y-2">
-                            <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Industrial Hub / Suburb</Label>
+                            <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Hub / Suburb</Label>
                             <Select value={selectedSuburb} onValueChange={setSelectedSuburb} disabled={!selectedCity}>
                                 <SelectTrigger><SelectValue placeholder="Select Suburb" /></SelectTrigger>
                                 <SelectContent>
@@ -132,7 +132,7 @@ export default function TransporterIntelligencePage() {
                             </Select>
                         </div>
                         <div className="space-y-2">
-                            <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Required Service</Label>
+                            <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Required Service</Label>
                             <Select value={selectedService} onValueChange={setSelectedService}>
                                 <SelectTrigger><SelectValue placeholder="Select Service" /></SelectTrigger>
                                 <SelectContent>
@@ -163,7 +163,7 @@ export default function TransporterIntelligencePage() {
                     </div>
                 ) : (
                     <div className="max-w-6xl mx-auto space-y-8">
-                        <div className="flex justify-between items-center px-4 border-l-4 border-primary">
+                        <div className="flex justify-between items-center px-4 border-l-4 border-primary text-left">
                             <div>
                                 <h2 className="text-2xl font-black">Search Results ({results.length})</h2>
                                 <p className="text-xs text-muted-foreground">Showing verified hauliers matching <strong>{selectedService}</strong> capacity.</p>
@@ -178,7 +178,7 @@ export default function TransporterIntelligencePage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {results.map(res => (
                                 <Card key={res.id} className="bg-white border-none shadow-lg hover:shadow-xl transition-all overflow-hidden group">
-                                    <CardHeader className="pb-4">
+                                    <CardHeader className="pb-4 text-left">
                                         <div className="flex justify-between items-start mb-2">
                                             <Badge variant="outline" className="text-[10px] font-black uppercase border-primary text-primary">{res.entryType || 'Haulier'}</Badge>
                                             <ShieldCheck className="h-4 w-4 text-green-500" />
@@ -189,7 +189,7 @@ export default function TransporterIntelligencePage() {
                                             <span className="truncate">{res.address || 'South Africa'}</span>
                                         </div>
                                     </CardHeader>
-                                    <CardContent className="space-y-4">
+                                    <CardContent className="space-y-4 text-left">
                                         <div className={cn("p-4 rounded-xl border-2 border-dashed space-y-3", !isPaid ? "bg-slate-50 border-slate-200" : "bg-primary/5 border-primary/20")}>
                                             <div className="flex items-center justify-between text-xs">
                                                 <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Fleet Head</span>

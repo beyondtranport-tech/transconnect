@@ -77,7 +77,7 @@ export default function FleetContent() {
 
     return (
         <Card className="max-w-4xl mx-auto shadow-xl">
-            <CardHeader className="border-b bg-muted/20">
+            <CardHeader className="border-b bg-muted/20 text-left">
                 <div className="flex items-center gap-4">
                     <div className="bg-primary/10 p-3 rounded-xl"><Truck className="h-6 w-6 text-primary" /></div>
                     <div className="text-left">

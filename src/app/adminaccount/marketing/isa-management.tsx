@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, Bot, Edit, Trash2, Send, Download, Save, Search } from 'lucide-react';
+import { Loader2, PlusCircle, Bot, Edit, Trash2, Send, Download, Save, Search, Users, Filter } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -23,6 +23,7 @@ import { CommunicationLogDialog } from './CommunicationLogDialog';
 import { PartnerTasksDialog } from './PartnerTasksDialog';
 import { downloadDataAsCSV } from '@/lib/utils';
 import { EnrichPartnerButton } from './EnrichPartnerButton';
+import { Label } from '@/components/ui/label';
 
 async function performAdminAction(token: string, action: string, payload: any) {
   const response = await fetch('/api/admin', {
@@ -128,17 +129,25 @@ function ISADialog({ open, onOpenChange, partner, onSave }: { open: boolean; onO
 export default function ISAManagement() {
   const { toast } = useToast();
   const [allRecords, setAllRecords] = useState<any[]>([]);
+  const [staff, setStaff] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | null, data?: any }>({ type: null });
+
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [assigneeFilter, setAssigneeFilter] = useState('all');
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
       const token = await getClientSideAuthToken();
       if (!token) return;
-      const res = await performAdminAction(token, 'getPartnersByType', { type: 'isa' });
+      const [res, staffRes] = await Promise.all([
+        performAdminAction(token, 'getPartnersByType', { type: 'isa' }),
+        performAdminAction(token, 'getPlatformStaff', {})
+      ]);
       setAllRecords(res.data || []);
+      setStaff(staffRes.data || []);
     } catch (e: any) {
         toast({ variant: 'destructive', title: 'Fetch Error', description: e.message });
     } finally {
@@ -149,17 +158,20 @@ export default function ISAManagement() {
   useEffect(() => { fetchData(); }, [fetchData]);
 
   const filteredRecords = useMemo(() => {
-    if (!searchTerm) return allRecords;
-    const term = searchTerm.toLowerCase();
-    return allRecords.filter(r => 
-        (r.companyName?.toLowerCase().includes(term)) ||
-        (r.firstName?.toLowerCase().includes(term)) ||
-        (r.lastName?.toLowerCase().includes(term)) ||
-        (r.email?.toLowerCase().includes(term)) ||
-        (r.phone?.toLowerCase().includes(term)) ||
-        (r.mobile?.toLowerCase().includes(term))
-    );
-  }, [allRecords, searchTerm]);
+    return allRecords.filter(r => {
+        const term = searchTerm.toLowerCase();
+        const matchesSearch = !searchTerm || 
+            (r.companyName?.toLowerCase().includes(term)) ||
+            (r.firstName?.toLowerCase().includes(term)) ||
+            (r.lastName?.toLowerCase().includes(term)) ||
+            (r.email?.toLowerCase().includes(term));
+            
+        const matchesStatus = statusFilter === 'all' || r.status === statusFilter;
+        const matchesAssignee = assigneeFilter === 'all' || r.assigneeId === assigneeFilter;
+
+        return matchesSearch && matchesStatus && matchesAssignee;
+    });
+  }, [allRecords, searchTerm, statusFilter, assigneeFilter]);
 
   const handleDelete = async () => {
     if (!dialog.data) return;
@@ -175,7 +187,7 @@ export default function ISAManagement() {
     }
   };
 
-  const columns: ColumnDef<any>[] = useMemo(() => [
+  const columns: ColumnDef<any>[] = [
     { 
         header: 'ISA Agency', 
         cell: ({ row }) => (
@@ -200,10 +212,10 @@ export default function ISAManagement() {
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'delete', data: row.original })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
       </div>
     )},
-  ], [fetchData]);
+  ];
 
   return (
-    <>
+    <div className="space-y-6">
       <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.data} audience="isa" onEngageSuccess={fetchData} />
       <ISADialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={fetchData} />
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
@@ -229,10 +241,35 @@ export default function ISAManagement() {
         </CardHeader>
         <Card>
             <CardContent className="pt-6 text-left">
+                <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left">
+                    <div className="flex-1 space-y-2">
+                        <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status</Label>
+                        <Select value={statusFilter} onValueChange={setStatusFilter}>
+                            <SelectTrigger className="bg-white"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Statuses</SelectItem>
+                                <SelectItem value="new">New</SelectItem>
+                                <SelectItem value="contacted">Contacted</SelectItem>
+                                <SelectItem value="active">Active</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="flex-1 space-y-2">
+                        <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Users className="h-3 w-3"/> Assignee</Label>
+                        <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
+                            <SelectTrigger className="bg-white"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Staff</SelectItem>
+                                <SelectItem value="none">Unallocated</SelectItem>
+                                {staff.map(s => <SelectItem key={s.id} value={s.id}>{s.firstName} {s.lastName}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
                 {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredRecords} />}
             </CardContent>
         </Card>
       </div>
-    </>
+    </div>
   );
 }
