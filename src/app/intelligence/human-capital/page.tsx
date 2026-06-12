@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { provinces } from '@/lib/geodata';
-import { Users, Search, MapPin, ShieldCheck, Loader2, ArrowRight, Lock, Navigation, Sparkles, Info, CheckCircle2, Briefcase } from 'lucide-react';
+import { Users, Search, MapPin, ShieldCheck, Loader2, ArrowRight, Lock, Navigation, Sparkles, Info, CheckCircle2, Briefcase, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { useUser, getClientSideAuthToken } from '@/firebase';
@@ -32,6 +32,7 @@ export default function HumanCapitalIntelligencePage() {
     const [isLoading, setIsLoading] = useState(false);
     const [hasSearched, setHasSearched] = useState(false);
     const [skipProfile, setSkipProfile] = useState(false);
+    const [error, setError] = useState<string | null>(null);
     
     const isPaid = user?.companyData?.membershipId && user.companyData.membershipId !== 'free';
     const isTransporter = user?.declaredPosition === 'transporter' || user?.companyData?.shopType === 'transporter';
@@ -68,6 +69,7 @@ export default function HumanCapitalIntelligencePage() {
     const handleSearch = async () => {
         setIsLoading(true);
         setHasSearched(true);
+        setError(null);
         try {
             const token = await getClientSideAuthToken();
             const response = await fetch('/api/searchLeads', {
@@ -77,7 +79,7 @@ export default function HumanCapitalIntelligencePage() {
                     'Content-Type': 'application/json' 
                 },
                 body: JSON.stringify({ 
-                    type: 'driver', // Targeting human nodes
+                    type: 'driver',
                     province: selectedProvince,
                     city: selectedCity,
                     suburb: selectedSuburb,
@@ -85,9 +87,14 @@ export default function HumanCapitalIntelligencePage() {
                 }),
             });
             const result = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(result.error || "Search failed.");
+            }
+
             setResults(result.data || []);
-        } catch (e) {
-            console.error(e);
+        } catch (e: any) {
+            setError(e.message);
         } finally {
             setIsLoading(false);
         }
@@ -100,7 +107,7 @@ export default function HumanCapitalIntelligencePage() {
     if (!user) {
         return (
             <div className="container mx-auto px-4 py-20 text-left">
-                <Card className="max-w-2xl mx-auto shadow-2xl overflow-hidden border-none bg-slate-900 text-white">
+                <Card className="max-w-2xl mx-auto shadow-2xl overflow-hidden border-none bg-slate-900 text-white text-left">
                     <CardHeader className="p-8 pb-4 text-center">
                         <div className="bg-primary/10 p-4 rounded-full w-fit mx-auto mb-6">
                             <Lock className="h-12 w-12 text-primary" />
@@ -120,7 +127,7 @@ export default function HumanCapitalIntelligencePage() {
                             </div>
                         </div>
                         <div className="flex flex-col gap-3 pt-4">
-                            <Button size="lg" className="h-14 text-lg font-black uppercase tracking-tight" asChild>
+                            <Button size="lg" className="h-14 text-lg font-black uppercase tracking-tight shadow-xl" asChild>
                                 <Link href="/join">Join for Free</Link>
                             </Button>
                             <Button variant="ghost" className="text-slate-400 hover:text-white" asChild>
@@ -136,7 +143,7 @@ export default function HumanCapitalIntelligencePage() {
     if (!isProfileComplete && !skipProfile) {
         return (
             <div className="bg-slate-50 min-h-screen py-16 text-left">
-                <div className="container mx-auto px-4 max-w-4xl">
+                <div className="container mx-auto px-4 max-w-4xl text-left">
                     <Card className="shadow-2xl border-none">
                         <CardHeader className="bg-slate-900 text-white rounded-t-xl p-8 text-left">
                             <div className="flex items-center gap-4 text-left">
@@ -148,8 +155,9 @@ export default function HumanCapitalIntelligencePage() {
                             </div>
                         </CardHeader>
                         <CardContent className="p-8 space-y-8 bg-white text-left">
-                            <Alert className="bg-primary/5 border-primary/20">
+                            <Alert className="bg-primary/5 border-primary/20 text-left">
                                 <Info className="h-5 w-5 text-primary" />
+                                <AlertTitle className="font-bold text-left">Why do we ask for this?</AlertTitle>
                                 <AlertDescription className="text-sm text-muted-foreground leading-relaxed mt-1 text-left">
                                     Our intelligence engine uses your specific fleet data or cargo needs to automatically filter the registry and deliver more accurate search data. This eliminates "empty searches" and connects you with the right capacity instantly. This data also helps us negotiate collective group discounts for your specific equipment.
                                 </AlertDescription>
@@ -188,7 +196,7 @@ export default function HumanCapitalIntelligencePage() {
             </section>
 
             <section className="container mx-auto px-4 -mt-12 text-left">
-                <Card className="max-w-5xl mx-auto shadow-2xl border-none">
+                <Card className="max-w-5xl mx-auto shadow-2xl border-none text-left">
                     <CardHeader className="bg-white rounded-t-xl border-b text-left">
                         <CardTitle className="flex items-center gap-2">
                             <Navigation className="h-5 w-5 text-primary" />
@@ -244,7 +252,28 @@ export default function HumanCapitalIntelligencePage() {
             </section>
 
             <section className="container mx-auto px-4 py-16">
-                {!hasSearched ? (
+                {error && (
+                    <Card className="max-w-2xl mx-auto border-destructive bg-destructive/10 text-left">
+                        <CardHeader className="flex flex-row items-center gap-3">
+                            <AlertCircle className="h-6 w-6 text-destructive" />
+                            <CardTitle className="text-destructive">Search Restricted</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <p className="text-sm text-destructive-foreground font-bold">{error}</p>
+                            <p className="text-xs text-muted-foreground mt-2">Upgrade to Intelligence Access to unlock unlimited daily searches across all forensic registries.</p>
+                        </CardContent>
+                        <CardFooter className="flex flex-wrap gap-2 pt-0">
+                            <Button asChild size="sm">
+                                <Link href="/checkout/intelligence">Unlock Paid Intelligence</Link>
+                            </Button>
+                            <Button asChild variant="outline" size="sm">
+                                <Link href="/pricing">View All Plans</Link>
+                            </Button>
+                        </CardFooter>
+                    </Card>
+                )}
+
+                {!hasSearched && !error ? (
                     <div className="text-center py-20 opacity-20">
                         <Users className="h-24 w-24 mx-auto mb-4" />
                         <p className="text-xl font-bold uppercase tracking-widest">Ready to Scan Talent Registry</p>
@@ -254,11 +283,11 @@ export default function HumanCapitalIntelligencePage() {
                         <Loader2 className="h-12 w-12 animate-spin text-primary" />
                         <p className="font-bold text-muted-foreground uppercase tracking-widest">Mapping Human Capital intelligence...</p>
                     </div>
-                ) : (
+                ) : !error && (
                     <div className="max-w-6xl mx-auto space-y-8 text-left">
                         <div className="flex justify-between items-center px-4 border-l-4 border-primary text-left">
                             <div className="text-left">
-                                <h2 className="text-2xl font-black">Forensic Results ({results.length})</h2>
+                                <h2 className="text-2xl font-black text-left">Forensic Results ({results.length})</h2>
                                 <p className="text-xs text-muted-foreground">Showing verified talent matching <strong>{selectedCategory}</strong>.</p>
                             </div>
                             {!isPaid && (
@@ -276,23 +305,23 @@ export default function HumanCapitalIntelligencePage() {
                                             <Badge variant="outline" className="text-[10px] font-black uppercase border-primary text-primary">{res.industrial_category || 'Industrial Node'}</Badge>
                                             <ShieldCheck className="h-4 w-4 text-green-500" />
                                         </div>
-                                        <CardTitle className="text-lg font-black group-hover:text-primary transition-colors">{res.service_handle || 'Vetted Professional'}</CardTitle>
-                                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
+                                        <CardTitle className="text-lg font-black group-hover:text-primary transition-colors text-left">{res.service_handle || 'Vetted Professional'}</CardTitle>
+                                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1 text-left">
                                             <MapPin className="h-3 w-3" />
                                             <span className="truncate">{res.operational_hub || 'South Africa'}</span>
                                         </div>
                                     </CardHeader>
                                     <CardContent className="space-y-4 text-left">
                                         <div className={cn("p-4 rounded-xl border-2 border-dashed space-y-3", !isPaid ? "bg-slate-50 border-slate-200" : "bg-primary/5 border-primary/20")}>
-                                            <div className="flex items-center justify-between text-xs">
+                                            <div className="flex items-center justify-between text-xs text-left">
                                                 <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Contact Handle</span>
-                                                {isPaid ? <span className="font-bold">{res.service_handle || 'Verified'}</span> : <span className="blur-sm bg-slate-300 rounded px-4 text-transparent">HIDDEN NAME</span>}
+                                                {isPaid ? <span className="font-bold">{res.service_handle || 'Verified'}</span> : <span className="blur-sm bg-slate-300 rounded px-4 text-transparent">LOCKED</span>}
                                             </div>
-                                            <div className="flex items-center justify-between text-xs">
+                                            <div className="flex items-center justify-between text-xs text-left">
                                                 <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Direct Line</span>
-                                                {isPaid ? <span className="font-bold text-primary truncate ml-4">{res.registry_line || 'N/A'}</span> : <span className="blur-sm bg-slate-300 rounded px-4 text-transparent">HIDDEN LINE</span>}
+                                                {isPaid ? <span className="font-bold text-primary truncate ml-4">{res.registry_line || 'N/A'}</span> : <span className="blur-sm bg-slate-300 rounded px-4 text-transparent">LOCKED</span>}
                                             </div>
-                                            <div className="text-xs space-y-1">
+                                            <div className="text-xs space-y-1 text-left">
                                                 <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground block">Capability Profile</span>
                                                 <p className="text-[11px] leading-relaxed line-clamp-2">{res.capability_profile || 'Professional logistics credentials verified.'}</p>
                                             </div>

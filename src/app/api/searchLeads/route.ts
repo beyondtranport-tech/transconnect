@@ -1,10 +1,18 @@
+
 import { NextRequest, NextResponse } from 'next/server';
-import { getFirestore } from 'firebase-admin/firestore';
+import { getFirestore, FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase-admin';
 
 export const dynamic = 'force-dynamic';
 
+/**
+ * INTELLIGENCE SEARCH ENGINE
+ * Enforces:
+ * 1. 1-search-per-day limit for Free members.
+ * 2. Data masking (name, email, phone, web) for Free members.
+ * 3. 100-record hard cap for all tiers.
+ */
 export async function POST(req: NextRequest) {
     try {
         const { app, error: initError } = getAdminApp();
@@ -12,30 +20,54 @@ export async function POST(req: NextRequest) {
 
         const { type, query: searchTerm, category, service, province, city, suburb } = await req.json();
         const authorization = req.headers.get('authorization');
-        const db = getFirestore(app);
         
-        let isPaid = false;
-        let uid = null;
+        if (!authorization?.startsWith('Bearer ')) {
+            return NextResponse.json({ success: false, error: 'Unauthorized: Access restricted to members.' }, { status: 401 });
+        }
 
-        if (authorization?.startsWith('Bearer ')) {
-            const token = authorization.split('Bearer ')[1];
-            const adminAuth = getAuth(app);
-            const decodedToken = await adminAuth.verifyIdToken(token);
-            uid = decodedToken.uid;
+        const token = authorization.split('Bearer ')[1];
+        const adminAuth = getAuth(app);
+        const decodedToken = await adminAuth.verifyIdToken(token);
+        const uid = decodedToken.uid;
+        const db = getFirestore(app);
 
-            const companySnap = await db.collection('companies').where('ownerId', '==', uid).limit(1).get();
-            if (!companySnap.empty) {
-                const companyData = companySnap.docs[0].data();
-                if (companyData.membershipId && companyData.membershipId !== 'free') {
-                    isPaid = true;
-                }
+        // 1. Get Member Status
+        const userDoc = await db.collection('users').doc(uid).get();
+        const companyId = userDoc.data()?.companyId;
+        if (!companyId) throw new Error("Member company profile not found.");
+
+        const companyRef = db.collection('companies').doc(companyId);
+        const companyDoc = await companyRef.get();
+        const companyData = companyDoc.data()!;
+        
+        const membershipId = companyData.membershipId || 'free';
+        const isPaid = membershipId !== 'free';
+
+        // 2. Enforce Daily Limit for Free Members
+        if (!isPaid) {
+            const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
+            const recentSearches = await companyRef.collection('searchLogs')
+                .where('timestamp', '>', Timestamp.fromDate(yesterday))
+                .limit(1)
+                .get();
+
+            if (!recentSearches.empty) {
+                return NextResponse.json({ 
+                    success: false, 
+                    error: 'Daily Limit Reached: Free members are restricted to 1 intelligence search per 24 hours.',
+                    limitReached: true
+                }, { status: 429 });
             }
         }
 
-        // Logic: First, fetch ALL matching leads (max 1000) then filter specifically for intelligence logic
-        let leadsRef = db.collection('leads');
-        let firestoreQuery: any = leadsRef;
-
+        // 3. Execute Registry Scan
+        // Strategy: Pull broader set and filter in memory to bypass complex index requirements
+        let collectionName = 'leads';
+        if (type === 'driver') collectionName = 'partners'; // Drivers stored in partners for now
+        
+        let firestoreQuery: any = db.collection(collectionName);
+        
+        // Filter by role/type
         if (type === 'supplier') {
             firestoreQuery = firestoreQuery.where('role', 'in', ['Vendors', 'Vendor', 'Supplier', 'Suppliers']);
         } else if (type === 'transporter') {
@@ -44,26 +76,20 @@ export async function POST(req: NextRequest) {
             firestoreQuery = firestoreQuery.where('role', 'in', ['Investors', 'Investor', 'Finance', 'Funder', 'Lender']);
         }
 
-        // Apply high-level category if provided (e.g. from discovery tags)
-        if (category) {
-            firestoreQuery = firestoreQuery.where('entryType', '==', category);
-        }
-
         const snapshot = await firestoreQuery.limit(500).get();
 
-        let data = snapshot.docs.map((doc: any) => {
+        let results = snapshot.docs.map((doc: any) => {
             const lead = doc.data();
             const normalized = {
                 id: doc.id,
-                companyName: lead.companyName || lead.trading_name || 'Unknown Entity',
+                companyName: lead.companyName || lead.trading_name || 'Industrial Entity',
                 address: lead.address || lead.physical_address || lead.location || 'South Africa',
                 entryType: lead.entryType || lead.industrial_category || 'General',
-                researchStatus: lead.researchStatus,
                 fleet: lead.fleet || {}, 
                 region: lead.region || lead.operational_hub || '',
             };
 
-            // Intelligence Data masking
+            // Intelligence Data Masking Logic
             if (isPaid) {
                 return {
                     ...normalized,
@@ -73,61 +99,57 @@ export async function POST(req: NextRequest) {
                     mobile: lead.mobile || lead.registry_line,
                     website: lead.website || lead.url,
                 };
+            } else {
+                return {
+                    ...normalized,
+                    contactPerson: 'Locked: Upgrade Tier',
+                    email: 'Locked: Upgrade Tier',
+                    phone: 'Locked',
+                    mobile: 'Locked',
+                    website: 'Locked',
+                    isMasked: true
+                };
             }
-            return normalized;
         });
 
-        // Advanced Logic Filtering (In-Memory to bypass complex indexes)
-        if (searchTerm || service || city || suburb || province) {
+        // 4. Memory Filter (Region/Category/Search)
+        if (searchTerm || service || city || suburb || province || category) {
             const lowSearch = searchTerm?.toLowerCase() || '';
-            const lowProvince = province?.toLowerCase() || '';
+            const lowProv = province?.toLowerCase() || '';
             const lowCity = city?.toLowerCase() || '';
-            const lowSuburb = suburb?.toLowerCase() || '';
+            const lowCat = category?.toLowerCase() || '';
             
-            data = data.filter((item: any) => {
-                // Location Matching
-                const addressStr = (item.address || '').toLowerCase();
-                const regionStr = (item.region || '').toLowerCase();
-                
-                const matchesProvince = !lowProvince || addressStr.includes(lowProvince) || regionStr.includes(lowProvince);
-                const matchesCity = !lowCity || addressStr.includes(lowCity) || regionStr.includes(lowCity);
-                const matchesSuburb = !lowSuburb || addressStr.includes(lowSuburb) || regionStr.includes(lowSuburb);
-                
-                // Text Search
-                const matchesText = !lowSearch || 
-                                    item.companyName.toLowerCase().includes(lowSearch) || 
-                                    item.entryType.toLowerCase().includes(lowSearch);
-                
-                // Fleet-Service Intelligence Logic
-                let matchesService = true;
-                if (service) {
-                    const fleetTrailers = item.fleet?.trailers || [];
-                    if (service === 'reefer-container') {
-                        // Requires Skeletal AND Genset
-                        if (!fleetTrailers.includes('Skeletal') || !fleetTrailers.includes('Skeletal + Genset')) matchesService = false;
-                    } else if (service === 'container') {
-                        // Requires Skeletal
-                        if (!fleetTrailers.some((t: string) => t.includes('Skeletal'))) matchesService = false;
-                    } else if (service === 'general-freight') {
-                        // Requires Tautliner or Flatbed
-                        if (!fleetTrailers.includes('Tautliner') && !fleetTrailers.includes('Flatbed')) matchesService = false;
-                    } else if (service === 'bulk-aggregates') {
-                        if (!fleetTrailers.includes('Tipper')) matchesService = false;
-                    }
-                }
+            results = results.filter((item: any) => {
+                const addr = (item.address || '').toLowerCase();
+                const typeStr = (item.entryType || '').toLowerCase();
+                const name = (item.companyName || '').toLowerCase();
 
-                return matchesProvince && matchesCity && matchesSuburb && matchesText && matchesService;
+                const matchesLoc = (!lowProv || addr.includes(lowProv)) && (!lowCity || addr.includes(lowCity));
+                const matchesCat = !lowCat || typeStr.includes(lowCat);
+                const matchesText = !lowSearch || name.includes(lowSearch) || typeStr.includes(lowSearch);
+
+                return matchesLoc && matchesCat && matchesText;
             });
         }
 
-        // Cap final output based on tier
-        const limitCount = isPaid ? 100 : 10;
-        const finalResults = data.slice(0, limitCount);
+        // 5. Final Quota Cap
+        const finalResults = results.slice(0, 100);
+
+        // 6. Log Search (For History & Limit Enforcement)
+        await companyRef.collection('searchLogs').add({
+            userId: uid,
+            type,
+            searchTerm: searchTerm || '',
+            variables: { province, city, suburb, category, service },
+            resultCount: finalResults.length,
+            timestamp: FieldValue.serverTimestamp(),
+            tier: membershipId
+        });
 
         return NextResponse.json({ 
             success: true, 
             data: finalResults, 
-            isLimited: !isPaid 
+            isMasked: !isPaid 
         });
 
     } catch (error: any) {

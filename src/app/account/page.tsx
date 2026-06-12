@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -36,6 +37,7 @@ import {
   ShoppingCart,
   Package,
   Award,
+  Search,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -67,10 +69,10 @@ import NetworkOffer from './network-offer';
 import NetworkEmails from './network-emails';
 import SupportChatContent from './support-chat';
 import LoadBoardContent from './load-board-content';
-import VehicleListingsContent from './vehicle-listings-content';
 import LoyaltyPlanPage from '@/app/connect/loyalty/page';
 import RewardsPlanPage from '@/app/connect/rewards/page';
 import ActionsPlanPage from '@/app/connect/actions/page';
+import IntelligenceHistory from './intelligence-history';
 
 function AccountPageContent() {
   const router = useRouter();
@@ -101,6 +103,10 @@ function AccountPageContent() {
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
   };
 
+  const navigate = (view: string) => {
+    router.push(`/account?view=${view}`, { scroll: false });
+  };
+
   const renderContent = useCallback(() => {
     switch (activeView) {
       case 'profile': return <ProfileContent />;
@@ -112,7 +118,6 @@ function AccountPageContent() {
       case 'staff': return <StaffContent />;
       case 'shop': return <ShopContent />;
       case 'load-board': return <LoadBoardContent />;
-      case 'vehicle-listings': return <VehicleListingsContent />;
       case 'wallet': return <WalletContent />;
       case 'billing': return <BillingContent />;
       case 'rewards': return <RewardsContent />;
@@ -125,15 +130,12 @@ function AccountPageContent() {
       case 'connect-loyalty': return <LoyaltyPlanPage />;
       case 'connect-rewards': return <RewardsPlanPage />;
       case 'connect-actions': return <ActionsPlanPage />;
+      case 'search-history': return <IntelligenceHistory />;
       case 'dashboard':
       default:
         return <AccountDashboard />;
     }
   }, [activeView]);
-
-  const navigate = (view: string) => {
-    router.push(`/account?view=${view}`, { scroll: false });
-  };
 
   if (isUserLoading || !user) {
     return (
@@ -168,6 +170,11 @@ function AccountPageContent() {
               <SidebarMenuItem>
                 <SidebarMenuButton tooltip={isTransporter ? "Service Profile" : "My Shop"} isActive={activeView === 'shop'} onClick={() => navigate('shop')}><Store /><span>{isTransporter ? "Service Profile" : "My Shop"}</span></SidebarMenuButton>
               </SidebarMenuItem>
+              
+              <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Intelligence History" isActive={activeView === 'search-history'} onClick={() => navigate('search-history')}><Search /><span>Search History</span></SidebarMenuButton>
+              </SidebarMenuItem>
+
               <SidebarMenuItem>
                 <SidebarMenuButton tooltip="My Profile" isActive={activeView === 'profile'} onClick={() => navigate('profile')}><User /><span>My Profile</span></SidebarMenuButton>
               </SidebarMenuItem>
