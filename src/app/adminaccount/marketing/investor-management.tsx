@@ -11,7 +11,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { getClientSideAuthToken } from '@/firebase';
+import { getClientSideAuthToken, useUser } from '@/firebase';
 import { Loader2, PlusCircle, DollarSign, Edit, Trash2, Send, Download, Save, Search, Users, Filter } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
@@ -90,7 +90,7 @@ function InvestorDialog({ open, onOpenChange, partner, onSave }: { open: boolean
                 <DialogDescription>Enter details for the capital partner.</DialogDescription>
             </DialogHeader>
             <Form {...form}>
-                <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2">
+                <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left">
                     <div className="grid grid-cols-2 gap-4">
                         <FormField control={form.control} name="firstName" render={({ field }) => ( <FormItem><FormLabel>First Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                         <FormField control={form.control} name="lastName" render={({ field }) => ( <FormItem><FormLabel>Last Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
@@ -119,7 +119,7 @@ function InvestorDialog({ open, onOpenChange, partner, onSave }: { open: boolean
                             <FormMessage />
                         </FormItem> 
                     )} />
-                     <DialogFooter className="pt-4 border-t">
+                     <DialogFooter className="pt-4 border-t text-left">
                         <Button type="submit" disabled={isLoading}>
                             {isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />} Save Record
                         </Button>
@@ -197,7 +197,7 @@ export default function InvestorManagement() {
         header: 'Investor Entity', 
         cell: ({row}) => (
             <div className="flex flex-col text-left">
-                <span className="font-bold">{row.original.companyName || `${row.original.firstName} ${row.original.lastName}`}</span>
+                <span className="font-bold text-left">{row.original.companyName || `${row.original.firstName} ${row.original.lastName}`}</span>
                 <span className="text-[10px] text-muted-foreground uppercase font-black">{row.original.firstName} {row.original.lastName}</span>
             </div>
         )
@@ -234,7 +234,7 @@ export default function InvestorManagement() {
       </AlertDialog>
       
       <div className="space-y-6 text-left">
-        <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
           <div className="text-left"><CardTitle><DollarSign /> App Launch Investors</CardTitle><CardDescription>Registry view ({partners.length} records).</CardDescription></div>
           <div className="flex gap-2">
             <div className="relative w-64 text-left">

@@ -167,7 +167,7 @@ export default function HomePage() {
             <h1 className="text-4xl md:text-7xl font-black font-headline leading-tight mb-6">
                 Connecting People,<br/>Creating <span className="text-primary">Flow</span>
             </h1>
-            <p className="text-lg md:text-2xl text-slate-300 max-w-3xl mx-auto mb-10 leading-relaxed">
+            <p className="text-lg md:text-2xl text-slate-300 max-w-3xl mx-auto mb-10 leading-relaxed text-center">
                 Logistics Flow is a unified digital ecosystem built to break the constraints of the transport industry through shared intelligence and collective power.
             </p>
             <div className="flex flex-col sm:flex-row justify-center gap-4">
@@ -193,8 +193,8 @@ export default function HomePage() {
                         Access a massive database of verified South African hauliers. From long-haul refrigerated fleets to local distribution experts, we provide the map to your next reliable capacity partner.
                     </p>
                     <div className="space-y-4 pt-4">
-                        <div className="flex items-center gap-3"><CheckCircle2 className="h-5 w-5 text-blue-600"/> <span className="font-bold">Verified RC1 Compliance Data</span></div>
-                        <div className="flex items-center gap-3"><CheckCircle2 className="h-5 w-5 text-blue-600"/> <span className="font-bold">Direct Line to CEO/MD Leadership</span></div>
+                        <div className="flex items-center gap-3 text-left"><CheckCircle2 className="h-5 w-5 text-blue-600"/> <span className="font-bold">Verified RC1 Compliance Data</span></div>
+                        <div className="flex items-center gap-3 text-left"><CheckCircle2 className="h-5 w-5 text-blue-600"/> <span className="font-bold">Direct Line to CEO/MD Leadership</span></div>
                     </div>
                     <Button asChild className="mt-6" size="lg" variant="outline"><Link href="/intelligence/transporter">Search Haulier Registry <ArrowRight className="ml-2 h-4 w-4"/></Link></Button>
                 </div>
@@ -225,7 +225,7 @@ export default function HomePage() {
                     </p>
                     <Card className="bg-white border-2 border-dashed border-primary/20 shadow-none">
                         <CardContent className="p-6">
-                            <p className="text-sm font-black mb-2 flex items-center gap-2 text-primary"><Database className="h-4 w-4"/> {Number(supplierCount).toLocaleString()} Verified Records</p>
+                            <p className="text-sm font-black mb-2 flex items-center gap-2 text-primary text-left"><Database className="h-4 w-4"/> {Number(supplierCount).toLocaleString()} Verified Records</p>
                             <p className="text-xs text-muted-foreground leading-relaxed text-left">We provide direct access to the actual decision-makers at these businesses, enabling you to bypass generic call centers and secure the parts you need instantly.</p>
                         </CardContent>
                     </Card>
@@ -252,7 +252,7 @@ export default function HomePage() {
             <div className="grid lg:grid-cols-2 gap-16 items-center">
                 <div className="space-y-6 text-left">
                     <div className="bg-amber-100 p-3 rounded-xl w-fit"><Landmark className="h-8 w-8 text-amber-600" /></div>
-                    <h2 className="text-3xl md:text-5xl font-black font-headline">The Capital Network</h2>
+                    <h2 className="text-3xl md:text-5xl font-black font-headline text-left">The Capital Network</h2>
                     <p className="text-lg text-muted-foreground leading-relaxed">
                         Stop applying to deaf ears. Our Finance Mall connects your operational performance data with specialized lenders who actually understand the trucking business.
                     </p>
@@ -290,15 +290,16 @@ export default function HomePage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                          <Card className="bg-white/5 border-white/10 shadow-none text-left">
                             <CardContent className="p-4">
-                                <p className="text-xs font-black mb-1 flex items-center gap-2 text-primary uppercase"><Briefcase className="h-3 w-3"/> For Applicants</p>
-                                <p className="text-[10px] text-slate-400 leading-relaxed italic">Access the premium jobs board and verified employer database for R100/month.</p>
+                                <p className="text-xs font-black mb-1 flex items-center gap-2 text-primary uppercase text-left"><Briefcase className="h-3 w-3"/> For Applicants</p>
+                                <p className="text-[10px] text-slate-400 leading-relaxed italic text-left">Access the premium jobs board and verified employer database for R100/month.</p>
                             </CardContent>
                         </Card>
                          <Card className="bg-white/5 border-white/10 shadow-none text-left">
                             <CardContent className="p-4">
-                                <p className="text-xs font-black mb-1 flex items-center gap-2 text-primary uppercase"><UserPlus className="h-3 w-3"/> For Employers</p>
-                                <p className="text-[10px] text-slate-400 leading-relaxed italic">Create vacancies from your dashboard. Fill roles via our vetted talent pool. (Success commission applies).</p>
+                                <p className="text-xs font-black mb-1 flex items-center gap-2 text-primary uppercase text-left"><UserPlus className="h-3 w-3"/> For Employers</p>
+                                <p className="text-[10px] text-slate-400 leading-relaxed italic text-left">Create vacancies from your dashboard. Fill roles via our vetted talent pool. (Success commission applies).</p>
                             </CardContent>
+                        </Card>
                     </div>
                     <Button asChild size="lg" className="mt-4 h-14 px-10 text-lg font-black uppercase tracking-tight" onClick={handleJoinClick}>
                         <Link href={ctaLink}>Register for Early Access <ArrowRight className="ml-2 h-4 w-4"/></Link>
@@ -325,7 +326,7 @@ export default function HomePage() {
             <div className="grid lg:grid-cols-2 gap-16 items-center">
                 <div className="space-y-6 text-left">
                     <h2 className="text-3xl md:text-5xl font-black font-headline">Absolute Data Privacy</h2>
-                    <p className="text-lg text-slate-400 leading-relaxed">
+                    <p className="text-lg text-slate-400 leading-relaxed text-left">
                         While we give you the map to the industry, your own business data remains under your absolute control.
                     </p>
                     <div className="space-y-4 pt-4">
@@ -336,25 +337,25 @@ export default function HomePage() {
                         ].map((item, i) => (
                             <div key={i} className="flex items-start gap-4">
                                 <div className="bg-primary/20 p-2 rounded-lg mt-1"><ShieldCheck className="h-5 w-5 text-primary" /></div>
-                                <div>
-                                    <p className="font-bold text-white">{item.title}</p>
-                                    <p className="text-sm text-slate-500">{item.desc}</p>
+                                <div className="text-left">
+                                    <p className="font-bold text-white text-left">{item.title}</p>
+                                    <p className="text-sm text-slate-500 text-left">{item.desc}</p>
                                 </div>
                             </div>
                         ))}
                     </div>
                 </div>
                 <Card className="bg-slate-900 border-white/10 shadow-2xl p-8 text-slate-300 text-left">
-                    <div className="space-y-6">
+                    <div className="space-y-6 text-left">
                          <div className="flex items-center gap-3">
                             <Zap className="h-6 w-6 text-primary fill-primary" />
-                            <h4 className="font-black uppercase tracking-widest text-sm">Intelligence Access Tier</h4>
+                            <h4 className="font-black uppercase tracking-widest text-sm text-left">Intelligence Access Tier</h4>
                         </div>
-                        <p className="text-4xl font-black text-white">R100 <span className="text-sm font-normal text-slate-500">/ per month</span></p>
+                        <p className="text-4xl font-black text-white text-left">R100 <span className="text-sm font-normal text-slate-500">/ per month</span></p>
                         <Separator className="bg-white/10" />
                         <ul className="space-y-3">
                             {["Unlimited Registry Search", "Direct CEO/MD Contacts", "Verified Mobile Numbers", "Publish Your Shop Profile", "Apply for Industry Funding"].map(f => (
-                                <li key={f} className="flex items-center gap-2 text-sm">
+                                <li key={f} className="flex items-center gap-2 text-sm text-left">
                                     <CheckCircle2 className="h-4 w-4 text-primary" /> {f}
                                 </li>
                             ))}
@@ -370,8 +371,8 @@ export default function HomePage() {
       
        <section className="py-20 md:py-32 bg-background">
             <div className="container mx-auto px-4 text-center">
-                <h2 className="text-3xl md:text-5xl font-black font-headline">Ready to Transform Your Business?</h2>
-                <p className="mt-6 text-xl max-w-2xl mx-auto text-muted-foreground">
+                <h2 className="text-3xl md:text-5xl font-black font-headline text-center">Ready to Transform Your Business?</h2>
+                <p className="mt-6 text-xl max-w-2xl mx-auto text-muted-foreground text-center">
                     Join a growing community of transport professionals who are building a more efficient and profitable future.
                 </p>
                 <div className="mt-10 flex justify-center gap-4">

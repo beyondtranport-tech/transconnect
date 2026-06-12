@@ -105,7 +105,7 @@ export default function SupplierIntelligencePage() {
             <div className="container mx-auto px-4 py-20 text-left">
                 <Card className="max-w-2xl mx-auto shadow-2xl overflow-hidden border-none bg-slate-900 text-white">
                     <CardHeader className="p-8 pb-4 text-center">
-                        <div className="bg-primary/20 p-4 rounded-full w-fit mx-auto mb-6">
+                        <div className="bg-primary/10 p-4 rounded-full w-fit mx-auto mb-6">
                             <Lock className="h-12 w-12 text-primary" />
                         </div>
                         <CardTitle className="text-4xl font-black font-headline">Member Access Only</CardTitle>
@@ -113,15 +113,15 @@ export default function SupplierIntelligencePage() {
                     </CardHeader>
                     <CardContent className="p-8 pt-4 space-y-6">
                         <div className="space-y-4">
-                            <div className="flex items-start gap-3">
+                            <div className="flex items-start gap-3 text-left">
                                 <CheckCircle2 className="h-5 w-5 text-primary mt-1 shrink-0" />
                                 <p className="text-sm text-slate-300">Access thousands of verified industrial suppliers nationwide.</p>
                             </div>
-                            <div className="flex items-start gap-3">
+                            <div className="flex items-start gap-3 text-left">
                                 <CheckCircle2 className="h-5 w-5 text-primary mt-1 shrink-0" />
                                 <p className="text-sm text-slate-300">Connect directly with owners and managing directors.</p>
                             </div>
-                            <div className="flex items-start gap-3">
+                            <div className="flex items-start gap-3 text-left">
                                 <CheckCircle2 className="h-5 w-5 text-primary mt-1 shrink-0" />
                                 <p className="text-sm text-slate-300">Filter by highly specific industrial categories and regions.</p>
                             </div>
@@ -149,7 +149,7 @@ export default function SupplierIntelligencePage() {
                         <CardHeader className="bg-slate-900 text-white rounded-t-xl p-8">
                             <div className="flex items-center gap-4">
                                 <div className="bg-primary/20 p-3 rounded-lg"><Sparkles className="h-6 w-6 text-primary" /></div>
-                                <div>
+                                <div className="text-left">
                                     <CardTitle className="text-2xl font-black font-headline">Complete Your Strategic Profile</CardTitle>
                                     <CardDescription className="text-slate-400 mt-1">To ensure high-fidelity matches, we need to understand your requirements.</CardDescription>
                                 </div>
@@ -158,7 +158,7 @@ export default function SupplierIntelligencePage() {
                         <CardContent className="p-8 space-y-8 bg-white">
                             <Alert className="bg-primary/5 border-primary/20">
                                 <Info className="h-5 w-5 text-primary" />
-                                <AlertDescription className="text-sm text-muted-foreground leading-relaxed mt-1">
+                                <AlertDescription className="text-sm text-muted-foreground leading-relaxed mt-1 text-left">
                                     Our intelligence engine uses your specific fleet data or cargo needs to automatically filter the registry and deliver more accurate search data. This eliminates "empty searches" and connects you with the right capacity instantly. This data also helps us negotiate collective group discounts for your specific equipment.
                                 </AlertDescription>
                             </Alert>
@@ -189,11 +189,11 @@ export default function SupplierIntelligencePage() {
                 <div className="container mx-auto px-4 text-center">
                     <Badge className="mb-4 bg-primary/20 text-primary border-primary/30 py-1.5 px-4 text-[10px] font-black uppercase tracking-widest">Forensic Registry</Badge>
                     <h1 className="text-4xl md:text-6xl font-black font-headline">Supplier Intelligence</h1>
-                    <p className="mt-4 text-lg text-slate-400 max-w-2xl mx-auto">Map the South African industrial landscape. Find verified suppliers based on precise categories and regional presence.</p>
+                    <p className="mt-4 text-lg text-slate-400 max-w-2xl mx-auto text-center">Map the South African industrial landscape. Find verified suppliers based on precise categories and regional presence.</p>
                 </div>
             </section>
 
-            <section className="container mx-auto px-4 -mt-12">
+            <section className="container mx-auto px-4 -mt-12 text-left">
                 <Card className="max-w-5xl mx-auto shadow-2xl border-none">
                     <CardHeader className="bg-white rounded-t-xl border-b text-left">
                         <CardTitle className="flex items-center gap-2">
@@ -203,7 +203,7 @@ export default function SupplierIntelligencePage() {
                         <CardDescription>Select a region and industrial category to scan the master registry.</CardDescription>
                     </CardHeader>
                     <CardContent className="p-6 grid grid-cols-1 md:grid-cols-4 gap-4 items-end text-left">
-                        <div className="space-y-2">
+                        <div className="space-y-2 text-left">
                             <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Province</Label>
                             <Select value={selectedProvince} onValueChange={setSelectedProvince}>
                                 <SelectTrigger><SelectValue placeholder="Select Province" /></SelectTrigger>
@@ -212,7 +212,7 @@ export default function SupplierIntelligencePage() {
                                 </SelectContent>
                             </Select>
                         </div>
-                        <div className="space-y-2">
+                        <div className="space-y-2 text-left">
                             <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">City / Town</Label>
                             <Select value={selectedCity} onValueChange={setSelectedCity} disabled={!selectedProvince}>
                                 <SelectTrigger><SelectValue placeholder="Select City" /></SelectTrigger>
@@ -221,7 +221,7 @@ export default function SupplierIntelligencePage() {
                                 </SelectContent>
                             </Select>
                         </div>
-                        <div className="space-y-2">
+                        <div className="space-y-2 text-left">
                             <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Industrial Suburb</Label>
                             <Select value={selectedSuburb} onValueChange={setSelectedSuburb} disabled={!selectedCity}>
                                 <SelectTrigger><SelectValue placeholder="Select Hub" /></SelectTrigger>
@@ -230,7 +230,7 @@ export default function SupplierIntelligencePage() {
                                 </SelectContent>
                             </Select>
                         </div>
-                        <div className="space-y-2">
+                        <div className="space-y-2 text-left">
                             <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Industry Category</Label>
                             <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                                 <SelectTrigger><SelectValue placeholder="Select Category" /></SelectTrigger>
@@ -263,7 +263,7 @@ export default function SupplierIntelligencePage() {
                 ) : (
                     <div className="max-w-6xl mx-auto space-y-8">
                         <div className="flex justify-between items-center px-4 border-l-4 border-primary text-left">
-                            <div>
+                            <div className="text-left">
                                 <h2 className="text-2xl font-black">Forensic Results ({results.length})</h2>
                                 <p className="text-xs text-muted-foreground">Showing verified suppliers matching <strong>{selectedCategory}</strong> in {selectedCity || 'the selected region'}.</p>
                             </div>
@@ -282,8 +282,8 @@ export default function SupplierIntelligencePage() {
                                             <Badge variant="outline" className="text-[10px] font-black uppercase border-primary text-primary">{res.entryType || 'Supplier'}</Badge>
                                             <ShieldCheck className="h-4 w-4 text-green-500" />
                                         </div>
-                                        <CardTitle className="text-lg font-black group-hover:text-primary transition-colors">{res.companyName}</CardTitle>
-                                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1 font-medium">
+                                        <CardTitle className="text-lg font-black group-hover:text-primary transition-colors text-left">{res.companyName}</CardTitle>
+                                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1 font-medium text-left">
                                             <MapPin className="h-3 w-3" />
                                             <span className="truncate">{res.address || 'South Africa'}</span>
                                         </div>

@@ -107,7 +107,7 @@ function ISADialog({ open, onOpenChange, partner, onSave }: { open: boolean; onO
                         <FormControl><SelectTrigger><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
                         <SelectContent>
                             <SelectItem value="new">New Lead</SelectItem>
-                            <SelectItem value="contacted">In Contact</SelectItem>
+                            <SelectItem value="contacted">Contacted</SelectItem>
                             <SelectItem value="active">Active ISA</SelectItem>
                         </SelectContent>
                     </Select>
