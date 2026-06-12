@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -37,6 +38,7 @@ import {
   Zap,
   ShoppingCart,
   Package,
+  Award,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -58,6 +60,7 @@ import CompanyContent from './company-content';
 import FleetContent from './fleet-content';
 import NeedsContent from './needs-content';
 import SupplierProductContent from './supplier-product-content';
+import HumanCapitalContent from './human-capital-content';
 import ShopContent from './shop-content';
 import BillingContent from './billing-content';
 import WalletContent from './wallet-content';
@@ -122,6 +125,7 @@ function AccountPageContent() {
       case 'fleet': return <FleetContent />;
       case 'needs': return <NeedsContent />;
       case 'product-portfolio': return <SupplierProductContent />;
+      case 'professional-profile': return <HumanCapitalContent />;
       case 'staff': return <StaffContent />;
       case 'shop': return <ShopContent />;
       case 'load-board': return <LoadBoardContent />;
@@ -157,6 +161,7 @@ function AccountPageContent() {
   
   const isTransporter = user.declaredPosition === 'transporter' || user.companyData?.shopType === 'transporter';
   const isSupplier = user.declaredPosition === 'vendor' || user.companyData?.shopType === 'vendor';
+  const isDriver = user.declaredPosition === 'driver' || user.role === 'driver';
 
   return (
     <SidebarProvider>
@@ -195,7 +200,13 @@ function AccountPageContent() {
                 </SidebarMenuItem>
               )}
 
-              {!isTransporter && !isSupplier && (
+              {isDriver && (
+                <SidebarMenuItem>
+                    <SidebarMenuButton tooltip="Professional Profile" isActive={activeView === 'professional-profile'} onClick={() => navigate('professional-profile')}><Award /><span>Professional Profile</span></SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
+
+              {!isTransporter && !isSupplier && !isDriver && (
                 <SidebarMenuItem>
                     <SidebarMenuButton tooltip="Logistics Needs" isActive={activeView === 'needs'} onClick={() => navigate('needs')}><ShoppingCart /><span>Logistics Needs</span></SidebarMenuButton>
                 </SidebarMenuItem>
@@ -252,7 +263,7 @@ function AccountPageContent() {
                 <SidebarMenuButton tooltip="Settings" isActive={activeView === 'settings'} onClick={() => navigate('settings')}><Settings /><span>Settings</span></SidebarMenuButton>
               </SidebarMenuItem>
           </SidebarGroup>
-        </SidebarContent>
+        </Sidebar>
         <SidebarFooter>
           <div className="flex items-center gap-3 p-2 rounded-md bg-sidebar-accent">
             <Avatar className="h-10 w-10">

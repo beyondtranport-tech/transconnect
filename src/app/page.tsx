@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -142,7 +143,7 @@ export default function HomePage() {
   const ctaLink = user ? '/account' : '#';
 
   return (
-    <div className="bg-background">
+    <div className="bg-background text-left">
       <HomeIntentModal isOpen={isModalOpen} onOpenChange={setIsModalOpen} />
       
       <section className="relative w-full h-[60vh] md:h-[70vh] flex items-center justify-center overflow-hidden bg-slate-950 text-white">
@@ -184,12 +185,12 @@ export default function HomePage() {
       </section>
 
       <section className="py-24 bg-white border-b overflow-hidden">
-        <div className="container mx-auto px-4">
+        <div className="container mx-auto px-4 text-left">
             <div className="grid lg:grid-cols-2 gap-16 items-center">
                 <div className="space-y-6 text-left">
                     <div className="bg-blue-100 p-3 rounded-xl w-fit"><Truck className="h-8 w-8 text-blue-600" /></div>
-                    <h2 className="text-3xl md:text-5xl font-black font-headline">Transporter intelligence</h2>
-                    <p className="text-lg text-muted-foreground leading-relaxed">
+                    <h2 className="text-3xl md:text-5xl font-black font-headline text-left">Transporter intelligence</h2>
+                    <p className="text-lg text-muted-foreground leading-relaxed text-left">
                         Access a massive database of verified South African hauliers. From long-haul refrigerated fleets to local distribution experts, we provide the map to your next reliable capacity partner.
                     </p>
                     <div className="space-y-4 pt-4">
@@ -214,16 +215,16 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="py-24 bg-slate-50 border-b overflow-hidden">
+      <section className="py-24 bg-slate-50 border-b overflow-hidden text-left">
         <div className="container mx-auto px-4">
             <div className="grid lg:grid-cols-2 gap-16 items-center">
                 <div className="lg:order-2 space-y-6 text-left">
                     <div className="bg-primary/10 p-3 rounded-xl w-fit"><SearchCode className="h-8 w-8 text-primary" /></div>
                     <h2 className="text-3xl md:text-5xl font-black font-headline text-left">Supplier intelligence</h2>
-                    <p className="text-lg text-muted-foreground leading-relaxed">
+                    <p className="text-lg text-muted-foreground leading-relaxed text-left">
                         Our AI discovery engine has cataloged the entire independent supplier ecosystem. Every niche, from differentials to engine overrides, is represented in our forensic database.
                     </p>
-                    <Card className="bg-white border-2 border-dashed border-primary/20 shadow-none">
+                    <Card className="bg-white border-2 border-dashed border-primary/20 shadow-none text-left">
                         <CardContent className="p-6">
                             <p className="text-sm font-black mb-2 flex items-center gap-2 text-primary text-left"><Database className="h-4 w-4"/> {Number(supplierCount).toLocaleString()} Verified Records</p>
                             <p className="text-xs text-muted-foreground leading-relaxed text-left">We provide direct access to the actual decision-makers at these businesses, enabling you to bypass generic call centers and secure the parts you need instantly.</p>
@@ -247,13 +248,13 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="py-24 bg-white border-b overflow-hidden">
+      <section className="py-24 bg-white border-b overflow-hidden text-left">
         <div className="container mx-auto px-4">
             <div className="grid lg:grid-cols-2 gap-16 items-center">
                 <div className="space-y-6 text-left">
                     <div className="bg-amber-100 p-3 rounded-xl w-fit"><Landmark className="h-8 w-8 text-amber-600" /></div>
                     <h2 className="text-3xl md:text-5xl font-black font-headline text-left">Capital intelligence</h2>
-                    <p className="text-lg text-muted-foreground leading-relaxed">
+                    <p className="text-lg text-muted-foreground leading-relaxed text-left">
                         Stop applying to deaf ears. Our Capital Intelligence portal connects your operational performance data with specialized lenders who actually understand the trucking business.
                     </p>
                     <div className="p-6 bg-amber-50 rounded-2xl border border-amber-200 text-left">
@@ -278,16 +279,16 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="py-24 bg-slate-900 border-b overflow-hidden text-white">
+      <section className="py-24 bg-slate-900 border-b overflow-hidden text-white text-left">
         <div className="container mx-auto px-4">
             <div className="grid lg:grid-cols-2 gap-16 items-center">
                 <div className="lg:order-2 space-y-6 text-left">
                     <div className="bg-primary/20 p-3 rounded-xl w-fit"><Users className="h-8 w-8 text-primary" /></div>
-                    <h2 className="text-3xl md:text-5xl font-black font-headline">Human Capital intelligence</h2>
-                    <p className="text-lg text-slate-300 leading-relaxed">
+                    <h2 className="text-3xl md:text-5xl font-black font-headline text-left">Human Capital intelligence</h2>
+                    <p className="text-lg text-slate-300 leading-relaxed text-left">
                         Breaking the recruitment constraint. Connect with verified talent across the South African logistics landscape. Our soon-to-launch jobs board will source roles directly from our community member base.
                     </p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
                          <Card className="bg-white/5 border-white/10 shadow-none text-left">
                             <CardContent className="p-4">
                                 <p className="text-xs font-black mb-1 flex items-center gap-2 text-primary uppercase text-left"><Briefcase className="h-3 w-3"/> For Applicants</p>
@@ -297,12 +298,12 @@ export default function HomePage() {
                          <Card className="bg-white/5 border-white/10 shadow-none text-left">
                             <CardContent className="p-4">
                                 <p className="text-xs font-black mb-1 flex items-center gap-2 text-primary uppercase text-left"><UserPlus className="h-3 w-3"/> For Employers</p>
-                                <p className="text-[10px] text-slate-400 leading-relaxed italic text-left">Create vacancies from your dashboard. Fill roles via our vetted talent pool. (Success commission applies).</p>
+                                <p className="text-[10px] text-slate-400 leading-relaxed italic text-left">Create vacancies from your dashboard. Fill roles via our vetted talent pool.</p>
                             </CardContent>
                         </Card>
                     </div>
-                    <Button asChild size="lg" className="mt-4 h-14 px-10 text-lg font-black uppercase tracking-tight" onClick={handleJoinClick}>
-                        <Link href={ctaLink}>Register for Early Access <ArrowRight className="ml-2 h-4 w-4"/></Link>
+                    <Button asChild size="lg" className="mt-4 h-14 px-10 text-lg font-black uppercase tracking-tight" asChild>
+                        <Link href="/intelligence/human-capital">Explore Human Capital <ArrowRight className="ml-2 h-4 w-4"/></Link>
                     </Button>
                 </div>
                 <div className="lg:order-1 relative">
@@ -321,21 +322,21 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="py-24 bg-slate-950 text-white border-y border-white/5">
+      <section className="py-24 bg-slate-950 text-white border-y border-white/5 text-left">
         <div className="container mx-auto px-4">
             <div className="grid lg:grid-cols-2 gap-16 items-center">
                 <div className="space-y-6 text-left">
-                    <h2 className="text-3xl md:text-5xl font-black font-headline">Absolute Data Privacy</h2>
+                    <h2 className="text-3xl md:text-5xl font-black font-headline text-left">Absolute Data Privacy</h2>
                     <p className="text-lg text-slate-400 leading-relaxed text-left">
                         While we give you the map to the industry, your own business data remains under your absolute control.
                     </p>
-                    <div className="space-y-4 pt-4">
+                    <div className="space-y-4 pt-4 text-left">
                         {[
                             { title: "Registry Access Shield", desc: "We verify every human identity before granting access to forensic contact data." },
                             { title: "Zero Data Resale", desc: "We never sell member contact lists. Introduction is only via direct request." },
                             { title: "POPI Compliant Ledger", desc: "Every interaction is logged on a secure, encrypted digital registry." }
                         ].map((item, i) => (
-                            <div key={i} className="flex items-start gap-4">
+                            <div key={i} className="flex items-start gap-4 text-left">
                                 <div className="bg-primary/20 p-2 rounded-lg mt-1"><ShieldCheck className="h-5 w-5 text-primary" /></div>
                                 <div className="text-left">
                                     <p className="font-bold text-white text-left">{item.title}</p>
@@ -347,13 +348,13 @@ export default function HomePage() {
                 </div>
                 <Card className="bg-slate-900 border-white/10 shadow-2xl p-8 text-slate-300 text-left">
                     <div className="space-y-6 text-left">
-                         <div className="flex items-center gap-3">
+                         <div className="flex items-center gap-3 text-left">
                             <Zap className="h-6 w-6 text-primary fill-primary" />
                             <h4 className="font-black uppercase tracking-widest text-sm text-left">Intelligence Access Tier</h4>
                         </div>
                         <p className="text-4xl font-black text-white text-left">R100 <span className="text-sm font-normal text-slate-500">/ per month</span></p>
                         <Separator className="bg-white/10" />
-                        <ul className="space-y-3">
+                        <ul className="space-y-3 text-left">
                             {["Unlimited Registry Search", "Direct CEO/MD Contacts", "Verified Mobile Numbers", "Publish Your Shop Profile", "Apply for Industry Funding"].map(f => (
                                 <li key={f} className="flex items-center gap-2 text-sm text-left">
                                     <CheckCircle2 className="h-4 w-4 text-primary" /> {f}
@@ -369,7 +370,7 @@ export default function HomePage() {
         </div>
       </section>
       
-       <section className="py-20 md:py-32 bg-background">
+       <section className="py-20 md:py-32 bg-background text-left">
             <div className="container mx-auto px-4 text-center">
                 <h2 className="text-3xl md:text-5xl font-black font-headline text-center">Ready to Transform Your Business?</h2>
                 <p className="mt-6 text-xl max-w-2xl mx-auto text-muted-foreground text-center">
