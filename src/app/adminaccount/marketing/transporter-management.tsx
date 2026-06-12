@@ -40,7 +40,6 @@ import { PartnerTasksDialog } from './PartnerTasksDialog';
 import { downloadDataAsCSV } from '@/lib/utils';
 import { EnrichPartnerButton } from './EnrichPartnerButton';
 import { BulkImportDialog } from './BulkImportDialog';
-import { BatchResearchDialog } from './BatchResearchDialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 
@@ -82,17 +81,24 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
 
   useEffect(() => {
     if (open) {
-      if (partner) form.reset(partner);
-      else form.reset({ firstName: '', lastName: '', email: '', phone: '', mobile: '', contactPerson: '', companyName: '', website: '', notes: '', address: '', status: 'active', type: 'transporter' });
+      if (partner) {
+        form.reset({
+          ...partner,
+          website: partner.website || '',
+          notes: partner.notes || '',
+        });
+      } else {
+        form.reset({ firstName: '', lastName: '', email: '', phone: '', mobile: '', contactPerson: '', companyName: '', website: '', notes: '', address: '', status: 'new', type: 'transporter' });
+      }
     }
   }, [open, partner, form]);
 
-  async function onSubmit(values: PartnerFormValues) {
+  const handleFormSubmit = async (values: PartnerFormValues) => {
     setIsLoading(true);
     try {
       const token = await getClientSideAuthToken();
       if (!token) throw new Error("Authentication failed.");
-      await performAdminAction(token, 'savePartner', { partner: { id: partner?.id, ...values } });
+      await performAdminAction(token, 'savePartner', { partner: { id: partner?.id, ...values, type: 'transporter' } });
       toast({ title: 'Record Saved' });
       onSave();
       onOpenChange(false);
@@ -101,17 +107,17 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
     } finally {
       setIsLoading(false);
     }
-  }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[700px] text-left">
+      <DialogContent className="sm:max-w-2xl text-left">
         <DialogHeader>
           <DialogTitle>{partner ? 'Edit' : 'Add'} Transporter</DialogTitle>
-          <DialogDescription>Manage verified haulier record.</DialogDescription>
+          <DialogDescription>Manage verified haulier record and technical descriptions.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left">
+          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left">
             <div className="grid grid-cols-2 gap-4">
               <FormField control={form.control} name="firstName" render={({ field }) => (<FormItem><FormLabel>First Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="lastName" render={({ field }) => (<FormItem><FormLabel>Last Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
@@ -123,9 +129,9 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
               <FormField control={form.control} name="mobile" render={({ field }) => (<FormItem><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
             <FormField control={form.control} name="address" render={({ field }) => (<FormItem><FormLabel>Physical Address</FormLabel><FormControl><Textarea placeholder="Enter full address..." {...field} /></FormControl><FormMessage /></FormItem>)} />
-            <FormField control={form.control} name="notes" render={({ field }) => (<FormItem><FormLabel>Service Wording / Notes</FormLabel><FormControl><Textarea placeholder="Extract of home/about/services wording from website..." {...field} className="min-h-[120px]" /></FormControl><FormMessage /></FormItem>)} />
+            <FormField control={form.control} name="notes" render={({ field }) => (<FormItem><FormLabel>Service Wording / Notes</FormLabel><FormControl><Textarea placeholder="AI extracted service details..." {...field} className="min-h-[120px]" /></FormControl><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="status" render={({ field }) => (
-                <FormItem>
+                <FormItem className="text-left">
                     <FormLabel>Status</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl><SelectTrigger><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
@@ -162,7 +168,6 @@ export default function TransporterManagement() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [assigneeFilter, setAssigneeFilter] = useState('all');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [isBatchDialogOpen, setIsBatchDialogOpen] = useState(false);
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
@@ -200,10 +205,6 @@ export default function TransporterManagement() {
         return matchesSearch && matchesStatus && matchesAssignee;
     });
   }, [allRecords, searchTerm, statusFilter, assigneeFilter]);
-
-  const selectedRecords = useMemo(() => {
-    return allRecords.filter(r => selectedIds.includes(r.id));
-  }, [allRecords, selectedIds]);
 
   const handleDelete = async () => {
     if (!dialog.data) return;
@@ -262,7 +263,6 @@ export default function TransporterManagement() {
     <div className="space-y-6 text-left">
       <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.data} audience="transporters" onEngageSuccess={fetchData} />
       <TransporterDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={fetchData} />
-      <BatchResearchDialog open={isBatchDialogOpen} onOpenChange={setIsBatchDialogOpen} selectedLeads={selectedRecords} onComplete={fetchData} />
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
         <AlertDialogContent>
           <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Delete haulier record?</AlertDialogDescription></AlertDialogHeader>
@@ -281,11 +281,6 @@ export default function TransporterManagement() {
                     <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input placeholder="Filter registry..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8" />
                 </div>
-                {selectedIds.length > 0 && (
-                    <Button variant="secondary" onClick={() => setIsBatchDialogOpen(true)} className="animate-in fade-in zoom-in slide-in-from-right-4">
-                        <Zap className="mr-2 h-4 w-4" /> Batch Research ({selectedIds.length})
-                    </Button>
-                )}
                 <Button variant="outline" onClick={() => downloadDataAsCSV(allRecords, 'transporters-export.csv')} disabled={isLoading}>
                     <Download className="mr-2 h-4 w-4" /> Export CSV
                 </Button>

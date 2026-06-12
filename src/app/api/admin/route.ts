@@ -84,27 +84,26 @@ export async function POST(req: NextRequest) {
                     // Name Splitting Logic for clean Form population
                     let firstName = p.firstName || '';
                     let lastName = p.lastName || '';
-                    const contactName = p.contact_person || p.contactPerson;
+                    const contactName = p.contact_person || p.contactPerson || p.contact_name;
 
-                    if (contactName && !firstName) {
+                    if (contactName && (!firstName || firstName === 'Unknown')) {
                         const parts = contactName.split(' ');
                         firstName = parts[0] || 'Unknown';
                         lastName = parts.slice(1).join(' ') || 'Partner';
                     }
 
-                    const dataToSave = {
+                    const dataToSave: any = {
                         ...p,
-                        firstName,
-                        lastName,
-                        companyName: p.company_name || p.companyName || '',
+                        firstName: firstName || p.firstName || 'Unknown',
+                        lastName: lastName || p.lastName || 'Partner',
+                        companyName: p.company_name || p.companyName || p.trading_name || '',
                         contactPerson: contactName || '',
                         email: p.email_address || p.email || '',
                         phone: p.telephone_number || p.phone || '',
                         mobile: p.registry_line || p.mobile || '',
-                        website: p.website || '',
+                        website: p.website || p.url || '',
                         address: p.physical_address || p.address || '',
-                        // Mapping "Technical wording" from AI to notes/description
-                        notes: p.primary_services || p.notes || '',
+                        notes: p.primary_services || p.notes || p.description || '',
                         updatedAt: FieldValue.serverTimestamp()
                     };
                     
