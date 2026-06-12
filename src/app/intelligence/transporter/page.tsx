@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { provinces } from '@/lib/geodata';
-import { Truck, Search, MapPin, ShieldCheck, Loader2, ArrowRight, Lock, Navigation, Sparkles, Info, CheckCircle2, AlertTriangle, AlertCircle } from 'lucide-react';
+import { Truck, Search, MapPin, ShieldCheck, Loader2, ArrowRight, Lock, Navigation, Sparkles, Info, CheckCircle2, AlertTriangle, AlertCircle, Database } from 'lucide-react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { useUser, getClientSideAuthToken } from '@/firebase';
@@ -117,8 +117,8 @@ export default function TransporterIntelligencePage() {
                         <div className="bg-primary/10 p-4 rounded-full w-fit mx-auto mb-6">
                             <Lock className="h-12 w-12 text-primary" />
                         </div>
-                        <CardTitle className="text-4xl font-black font-headline">Member Access Only</CardTitle>
-                        <CardDescription className="text-slate-400 text-lg mt-2">The forensic haulier registry is exclusive to registered members.</CardDescription>
+                        <CardTitle className="text-4xl font-black font-headline text-center">Member Access Only</CardTitle>
+                        <CardDescription className="text-slate-400 text-lg mt-2 text-center">The forensic haulier registry is exclusive to registered members.</CardDescription>
                     </CardHeader>
                     <CardContent className="p-8 pt-4 space-y-6">
                         <div className="space-y-4">
@@ -199,7 +199,7 @@ export default function TransporterIntelligencePage() {
             <section className="container mx-auto px-4 -mt-12 text-left">
                 <Card className="max-w-5xl mx-auto shadow-2xl border-none text-left">
                     <CardHeader className="bg-white rounded-t-xl border-b text-left">
-                        <CardTitle className="flex items-center gap-2">
+                        <CardTitle className="flex items-center gap-2 text-left">
                             <Navigation className="h-5 w-5 text-primary" />
                             Specify Requirements
                         </CardTitle>
@@ -288,7 +288,7 @@ export default function TransporterIntelligencePage() {
                     <div className="max-w-6xl mx-auto space-y-8 text-left">
                         <div className="flex justify-between items-center px-4 border-l-4 border-primary text-left">
                             <div className="text-left">
-                                <h2 className="text-2xl font-black">Forensic Results ({results.length})</h2>
+                                <h2 className="text-2xl font-black text-left">Forensic Results ({results.length})</h2>
                                 <p className="text-xs text-muted-foreground">Showing verified capacity matching <strong>{selectedService}</strong> requirements.</p>
                             </div>
                             {!isPaid && (

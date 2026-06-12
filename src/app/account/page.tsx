@@ -147,7 +147,7 @@ function AccountPageContent() {
 
   const isTransporter = user.declaredPosition === 'transporter' || user.companyData?.shopType === 'transporter';
   const isSupplier = user.declaredPosition === 'vendor' || user.companyData?.shopType === 'vendor';
-  const isDriver = user.declaredPosition === 'driver' || user.role === 'driver';
+  const isProfessional = user.declaredPosition === 'driver' || user.role === 'driver';
   
   const isSalesActive = ['network', 'performance', 'offer', 'emails'].includes(activeView);
   const isConnectActive = ['connect-loyalty', 'connect-rewards', 'connect-actions'].includes(activeView);
@@ -192,12 +192,12 @@ function AccountPageContent() {
                     <SidebarMenuButton tooltip="Product Portfolio" isActive={activeView === 'product-portfolio'} onClick={() => navigate('product-portfolio')}><Package /><span>Product Portfolio</span></SidebarMenuButton>
                 </SidebarMenuItem>
               )}
-              {isDriver && (
+              {isProfessional && (
                 <SidebarMenuItem>
                     <SidebarMenuButton tooltip="Professional Profile" isActive={activeView === 'professional-profile'} onClick={() => navigate('professional-profile')}><Award /><span>Professional Profile</span></SidebarMenuButton>
                 </SidebarMenuItem>
               )}
-              {!isTransporter && !isSupplier && !isDriver && (
+              {!isTransporter && !isSupplier && !isProfessional && (
                 <SidebarMenuItem>
                     <SidebarMenuButton tooltip="Logistics Needs" isActive={activeView === 'needs'} onClick={() => navigate('needs')}><ShoppingCart /><span>Logistics Needs</span></SidebarMenuButton>
                 </SidebarMenuItem>
