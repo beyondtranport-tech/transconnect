@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -109,7 +110,7 @@ function AdminAccountContent() {
   const searchParams = useSearchParams();
   const initialView = searchParams.get('view') || 'dashboard';
   const [activeView, setActiveView] = useState(initialView);
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
   const auth = useAuth();
   
   useEffect(() => {

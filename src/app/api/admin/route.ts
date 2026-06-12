@@ -42,41 +42,13 @@ export async function POST(req: NextRequest) {
         const isAdmin = decodedToken.email === 'beyondtransport@gmail.com' || decodedToken.email === 'mkoton100@gmail.com';
         if (!isAdmin) throw new Error("Forbidden: Admin access required.");
 
-        // QUOTA PROTECTION: Strictly limit loads to 100
         const MAX_LOAD = 100;
 
         switch (action) {
             case 'getMembers': {
                 const snap = await db.collection('companies').orderBy('createdAt', 'desc').limit(MAX_LOAD).get();
                 if (snap.empty) return NextResponse.json({ success: true, data: [] });
-
-                const ownerIds = [...new Set(snap.docs.map(doc => doc.data().ownerId).filter(Boolean))];
-                
-                const userMap = new Map();
-                if (ownerIds.length > 0) {
-                    // Firestore allows max 30 items in 'in' clause
-                    const batches = [];
-                    for (let i = 0; i < ownerIds.length; i += 30) {
-                        const batch = ownerIds.slice(i, i + 30);
-                        batches.push(db.collection('users').where('id', 'in', batch).get());
-                    }
-                    const usersSnaps = await Promise.all(batches);
-                    usersSnaps.forEach(usersSnap => {
-                        usersSnap.forEach(u => userMap.set(u.id, u.data()));
-                    });
-                }
-
-                const data = snap.docs.map(d => {
-                    const cData = d.data();
-                    const uData = userMap.get(cData.ownerId) || {};
-                    return { 
-                        ...serializeTimestamps(cData), 
-                        id: d.id,
-                        firstName: uData.firstName || 'N/A',
-                        lastName: uData.lastName || '',
-                        email: uData.email || 'N/A'
-                    };
-                });
+                const data = snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) }));
                 return NextResponse.json({ success: true, data });
             }
 
@@ -95,6 +67,42 @@ export async function POST(req: NextRequest) {
                 const snap = await db.collection('leads').orderBy('updatedAt', 'desc').limit(MAX_LOAD).get();
                 const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
                 return NextResponse.json({ success: true, data });
+            }
+
+            case 'bulkSavePartners': {
+                const { partners, type } = payload;
+                if (!Array.isArray(partners)) throw new Error("Invalid payload: 'partners' must be an array.");
+                
+                const collectionName = type === 'lead' ? 'leads' : 'partners';
+                const batch = db.batch();
+                
+                partners.forEach((p: any) => {
+                    // Map record_id or seq or id to the doc ID
+                    const docId = p.record_id || p.id || p.seq?.toString();
+                    if (!docId) return;
+
+                    const ref = db.collection(collectionName).doc(docId);
+                    
+                    // Normalize fields from AI output to Firestore schema
+                    const dataToSave = {
+                        ...p,
+                        companyName: p.company_name || p.companyName || '',
+                        contactPerson: p.contact_person || p.contactPerson || '',
+                        email: p.email_address || p.email || '',
+                        phone: p.telephone_number || p.phone || '',
+                        mobile: p.registry_line || p.mobile || '',
+                        website: p.website || '',
+                        address: p.physical_address || p.address || '',
+                        updatedAt: FieldValue.serverTimestamp()
+                    };
+                    
+                    if (type !== 'lead') dataToSave.type = type;
+
+                    batch.set(ref, dataToSave, { merge: true });
+                });
+                
+                await batch.commit();
+                return NextResponse.json({ success: true, count: partners.length });
             }
 
             case 'bulkLogForensicInitiated': {
@@ -119,38 +127,6 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true });
             }
 
-            case 'logForensicInitiated': {
-                const { partnerId, isLead } = payload;
-                const collection = isLead ? 'leads' : 'partners';
-                const ref = db.collection(collection).doc(partnerId);
-                const batch = db.batch();
-                
-                batch.set(ref, { status: 'contacted', updatedAt: FieldValue.serverTimestamp() }, { merge: true });
-                
-                const logRef = ref.collection('communications').doc();
-                batch.set(logRef, {
-                    type: 'Meeting',
-                    subject: 'Forensic Mining Initiated',
-                    notes: 'AI prompt generated for web-data mining of contact and leadership gaps.',
-                    timestamp: FieldValue.serverTimestamp()
-                });
-                
-                await batch.commit();
-                return NextResponse.json({ success: true });
-            }
-
-            case 'refreshSupplierCategoryCounts': {
-                const snap = await db.collection('leads').where('role', '==', 'Supplier').limit(5000).get();
-                const counts: Record<string, number> = {};
-                snap.forEach(doc => {
-                    const data = doc.data();
-                    const cat = data.notes?.match(/Category:\s*(.+)/)?.[1] || data.entryType || 'General';
-                    counts[cat] = (counts[cat] || 0) + 1;
-                });
-                await db.collection('configuration').doc('supplierDiscoveryStats').set({ counts, lastUpdated: FieldValue.serverTimestamp() });
-                return NextResponse.json({ success: true });
-            }
-
             case 'getAuditLogs': {
                 const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(MAX_LOAD).get();
                 const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
@@ -165,11 +141,22 @@ export async function POST(req: NextRequest) {
 
             case 'savePartner': {
                 const { partner } = payload;
-                const ref = partner.id ? db.collection('partners').doc(partner.id) : db.collection('partners').doc();
+                const collectionName = partner.type === 'lead' ? 'leads' : 'partners';
+                const ref = partner.id ? db.collection(collectionName).doc(partner.id) : db.collection(collectionName).doc();
                 const data = { ...partner, id: ref.id, updatedAt: FieldValue.serverTimestamp() };
                 if (!partner.id) data.createdAt = FieldValue.serverTimestamp();
                 await ref.set(data, { merge: true });
                 return NextResponse.json({ success: true, id: ref.id });
+            }
+
+            case 'deleteLeads': {
+                const { leadIds } = payload;
+                const batch = db.batch();
+                leadIds.forEach((id: string) => {
+                    batch.delete(db.collection('leads').doc(id));
+                });
+                await batch.commit();
+                return NextResponse.json({ success: true });
             }
 
             case 'deletePartner': {
