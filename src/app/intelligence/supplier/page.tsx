@@ -15,6 +15,7 @@ import * as gtag from '@/lib/gtag';
 import { cn } from '@/lib/utils';
 import FleetContent from '@/app/account/fleet-content';
 import NeedsContent from '@/app/account/needs-content';
+import SupplierProductContent from '@/app/account/supplier-product-content';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { supplierCategories } from '@/app/adminaccount/marketing/discovery-engine';
 
@@ -35,6 +36,7 @@ export default function SupplierIntelligencePage() {
     
     const isPaid = user?.companyData?.membershipId && user.companyData.membershipId !== 'free';
     const isTransporter = user?.declaredPosition === 'transporter' || user?.companyData?.shopType === 'transporter';
+    const isSupplier = user?.declaredPosition === 'vendor' || user?.companyData?.shopType === 'vendor';
 
     // Check if profile is complete
     const isProfileComplete = useMemo(() => {
@@ -42,11 +44,14 @@ export default function SupplierIntelligencePage() {
         if (isTransporter) {
             const fleet = user.companyData.fleet;
             return fleet && fleet.poweredUnits?.length > 0 && fleet.trailers?.length > 0;
+        } else if (isSupplier) {
+            const productProfile = user.companyData.productProfile;
+            return productProfile && productProfile.categories?.length > 0 && productProfile.supportedBrands?.length > 0;
         } else {
             const needs = user.companyData.logisticsNeeds;
             return needs && needs.cargoTypes?.length > 0 && needs.routes?.length > 0;
         }
-    }, [user, isTransporter]);
+    }, [user, isTransporter, isSupplier]);
 
     const cities = useMemo(() => {
         const prov = provinces.find(p => p.name === selectedProvince);
@@ -112,16 +117,16 @@ export default function SupplierIntelligencePage() {
                         <CardDescription className="text-slate-400 text-lg mt-2">The forensic supplier registry is exclusive to registered members of the ecosystem.</CardDescription>
                     </CardHeader>
                     <CardContent className="p-8 pt-4 space-y-6">
-                        <div className="space-y-4">
-                            <div className="flex items-start gap-3 text-left">
+                        <div className="space-y-4 text-left">
+                            <div className="flex items-start gap-3">
                                 <CheckCircle2 className="h-5 w-5 text-primary mt-1 shrink-0" />
                                 <p className="text-sm text-slate-300">Access thousands of verified industrial suppliers nationwide.</p>
                             </div>
-                            <div className="flex items-start gap-3 text-left">
+                            <div className="flex items-start gap-3">
                                 <CheckCircle2 className="h-5 w-5 text-primary mt-1 shrink-0" />
                                 <p className="text-sm text-slate-300">Connect directly with owners and managing directors.</p>
                             </div>
-                            <div className="flex items-start gap-3 text-left">
+                            <div className="flex items-start gap-3">
                                 <CheckCircle2 className="h-5 w-5 text-primary mt-1 shrink-0" />
                                 <p className="text-sm text-slate-300">Filter by highly specific industrial categories and regions.</p>
                             </div>
@@ -146,16 +151,16 @@ export default function SupplierIntelligencePage() {
             <div className="bg-slate-50 min-h-screen py-16 text-left">
                 <div className="container mx-auto px-4 max-w-4xl">
                     <Card className="shadow-2xl border-none">
-                        <CardHeader className="bg-slate-900 text-white rounded-t-xl p-8">
+                        <CardHeader className="bg-slate-900 text-white rounded-t-xl p-8 text-left">
                             <div className="flex items-center gap-4">
                                 <div className="bg-primary/20 p-3 rounded-lg"><Sparkles className="h-6 w-6 text-primary" /></div>
                                 <div className="text-left">
-                                    <CardTitle className="text-2xl font-black font-headline">Complete Your Strategic Profile</CardTitle>
-                                    <CardDescription className="text-slate-400 mt-1">To ensure high-fidelity matches, we need to understand your requirements.</CardDescription>
+                                    <CardTitle className="text-2xl font-black font-headline text-left">Complete Your Strategic Profile</CardTitle>
+                                    <CardDescription className="text-slate-400 mt-1 text-left">To ensure high-fidelity matches, we need to understand your requirements.</CardDescription>
                                 </div>
                             </div>
                         </CardHeader>
-                        <CardContent className="p-8 space-y-8 bg-white">
+                        <CardContent className="p-8 space-y-8 bg-white text-left">
                             <Alert className="bg-primary/5 border-primary/20">
                                 <Info className="h-5 w-5 text-primary" />
                                 <AlertDescription className="text-sm text-muted-foreground leading-relaxed mt-1 text-left">
@@ -165,6 +170,8 @@ export default function SupplierIntelligencePage() {
 
                             {isTransporter ? (
                                 <FleetContent />
+                            ) : isSupplier ? (
+                                <SupplierProductContent />
                             ) : (
                                 <NeedsContent />
                             )}
@@ -331,3 +338,4 @@ export default function SupplierIntelligencePage() {
         </div>
     );
 }
+

@@ -36,6 +36,7 @@ import {
   Heart,
   Zap,
   ShoppingCart,
+  Package,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -56,6 +57,7 @@ import ProfileContent from './profile-content';
 import CompanyContent from './company-content';
 import FleetContent from './fleet-content';
 import NeedsContent from './needs-content';
+import SupplierProductContent from './supplier-product-content';
 import ShopContent from './shop-content';
 import BillingContent from './billing-content';
 import WalletContent from './wallet-content';
@@ -119,6 +121,7 @@ function AccountPageContent() {
       case 'company': return <CompanyContent />;
       case 'fleet': return <FleetContent />;
       case 'needs': return <NeedsContent />;
+      case 'product-portfolio': return <SupplierProductContent />;
       case 'staff': return <StaffContent />;
       case 'shop': return <ShopContent />;
       case 'load-board': return <LoadBoardContent />;
@@ -151,14 +154,16 @@ function AccountPageContent() {
   const navigate = (view: string) => router.push(`/account?view=${view}`, { scroll: false });
   const isSalesActive = ['network', 'performance', 'offer', 'emails'].includes(activeView);
   const isConnectActive = ['connect-loyalty', 'connect-rewards', 'connect-actions'].includes(activeView);
+  
   const isTransporter = user.declaredPosition === 'transporter' || user.companyData?.shopType === 'transporter';
+  const isSupplier = user.declaredPosition === 'vendor' || user.companyData?.shopType === 'vendor';
 
   return (
     <SidebarProvider>
       <AIChatWidget />
       <Sidebar>
         <SidebarHeader>
-          <div className="flex items-center gap-2 p-2">
+          <div className="flex items-center gap-2 p-2 text-left">
             <div className="bg-primary/10 p-2 rounded-full"><User className="h-6 w-6 text-primary" /></div>
             <h2 className="text-lg font-semibold text-sidebar-foreground">Member Area</h2>
           </div>
@@ -177,15 +182,25 @@ function AccountPageContent() {
                <SidebarMenuItem>
                 <SidebarMenuButton tooltip="Company" isActive={activeView === 'company'} onClick={() => navigate('company')}><Building /><span>Company</span></SidebarMenuButton>
               </SidebarMenuItem>
-              {isTransporter ? (
+              
+              {isTransporter && (
                 <SidebarMenuItem>
                     <SidebarMenuButton tooltip="Fleet & Services" isActive={activeView === 'fleet'} onClick={() => navigate('fleet')}><Truck /><span>Fleet & Services</span></SidebarMenuButton>
                 </SidebarMenuItem>
-              ) : (
+              )}
+
+              {isSupplier && (
+                <SidebarMenuItem>
+                    <SidebarMenuButton tooltip="Product Portfolio" isActive={activeView === 'product-portfolio'} onClick={() => navigate('product-portfolio')}><Package /><span>Product Portfolio</span></SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
+
+              {!isTransporter && !isSupplier && (
                 <SidebarMenuItem>
                     <SidebarMenuButton tooltip="Logistics Needs" isActive={activeView === 'needs'} onClick={() => navigate('needs')}><ShoppingCart /><span>Logistics Needs</span></SidebarMenuButton>
                 </SidebarMenuItem>
               )}
+
                <SidebarMenuItem>
                 <SidebarMenuButton tooltip="Company Staff" isActive={activeView === 'staff'} onClick={() => navigate('staff')}><Users /><span>Company Staff</span></SidebarMenuButton>
               </SidebarMenuItem>
@@ -243,7 +258,7 @@ function AccountPageContent() {
             <Avatar className="h-10 w-10">
               <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
             </Avatar>
-            <div className="flex flex-col truncate">
+            <div className="flex flex-col truncate text-left">
               <span className="text-sm font-medium text-sidebar-foreground truncate">{user.displayName}</span>
               <span className="text-xs text-sidebar-foreground/70 truncate">{user.email}</span>
             </div>
