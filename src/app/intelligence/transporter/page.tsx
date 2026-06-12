@@ -167,7 +167,7 @@ export default function TransporterIntelligencePage() {
                                 <Info className="h-5 w-5 text-primary" />
                                 <AlertTitle className="font-bold">Why do we ask for this?</AlertTitle>
                                 <AlertDescription className="text-sm text-muted-foreground leading-relaxed mt-1">
-                                    Our intelligence engine uses your specific fleet data or cargo needs to automatically filter the registry. This eliminates "empty searches" and connects you with the right capacity instantly.
+                                    Our intelligence engine uses your specific fleet data or cargo needs to automatically filter the registry and deliver more accurate search data. This eliminates "empty searches" and connects you with the right capacity instantly. This data also helps us negotiate collective group discounts for your specific equipment.
                                 </AlertDescription>
                             </Alert>
 
@@ -195,7 +195,7 @@ export default function TransporterIntelligencePage() {
         <div className="bg-slate-50 min-h-screen text-left">
             <section className="bg-slate-900 text-white py-16">
                 <div className="container mx-auto px-4 text-center">
-                    <Badge className="mb-4 bg-primary/20 text-primary border-primary/30 py-1 px-4 text-[10px] font-black uppercase tracking-widest">Forensic Registry</Badge>
+                    <Badge className="mb-4 bg-primary/20 text-primary border-primary/30 py-1.5 px-4 text-[10px] font-black uppercase tracking-widest">Forensic Registry</Badge>
                     <h1 className="text-4xl md:text-6xl font-black font-headline">Transporter Intelligence</h1>
                     <p className="mt-4 text-lg text-slate-400 max-w-2xl mx-auto">Map the South African transport landscape. Find verified hauliers based on precise fleet capabilities and regional presence.</p>
                 </div>
