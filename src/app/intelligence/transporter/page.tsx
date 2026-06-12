@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { provinces } from '@/lib/geodata';
-import { Truck, Search, MapPin, ShieldCheck, Loader2, ArrowRight, Lock, Navigation, Sparkles, Info, CheckCircle2, AlertTriangle, AlertCircle, Database } from 'lucide-react';
+import { Truck, Search, MapPin, ShieldCheck, Loader2, ArrowRight, Lock, Navigation, Sparkles, Info, CheckCircle2, AlertTriangle, AlertCircle, Database, Table as TableIcon } from 'lucide-react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { useUser, getClientSideAuthToken } from '@/firebase';
@@ -16,6 +16,7 @@ import { cn } from '@/lib/utils';
 import FleetContent from '@/app/account/fleet-content';
 import NeedsContent from '@/app/account/needs-content';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 const servicesMap = [
     { id: 'container', label: 'Container Transport' },
@@ -261,11 +262,11 @@ export default function TransporterIntelligencePage() {
                         </CardHeader>
                         <CardContent>
                             <p className="text-sm text-destructive-foreground font-bold">{error}</p>
-                            <p className="text-xs text-muted-foreground mt-2">Upgrade to intelligence Access to unlock unlimited daily searches across all forensic registries.</p>
+                            <p className="text-xs text-muted-foreground mt-2">Upgrade to Intelligence Access to unlock unlimited daily searches across all forensic registries.</p>
                         </CardContent>
                         <CardFooter className="flex flex-wrap gap-2 pt-0">
                             <Button asChild size="sm">
-                                <Link href="/checkout/intelligence">Unlock Paid intelligence</Link>
+                                <Link href="/checkout/intelligence">Unlock Paid Intelligence</Link>
                             </Button>
                             <Button asChild variant="outline" size="sm">
                                 <Link href="/pricing">View All Plans</Link>
@@ -288,8 +289,11 @@ export default function TransporterIntelligencePage() {
                     <div className="max-w-6xl mx-auto space-y-8 text-left">
                         <div className="flex justify-between items-center px-4 border-l-4 border-primary text-left">
                             <div className="text-left">
-                                <h2 className="text-2xl font-black text-left">Forensic Results ({results.length})</h2>
-                                <p className="text-xs text-muted-foreground">Showing verified capacity matching <strong>{selectedService}</strong> requirements.</p>
+                                <h2 className="text-2xl font-black text-left flex items-center gap-2">
+                                    <TableIcon className="h-6 w-6 text-primary" />
+                                    Forensic Results ({results.length})
+                                </h2>
+                                <p className="text-xs text-muted-foreground">Vetted haulier matches for <strong>{selectedService}</strong> capacity.</p>
                             </div>
                             {!isPaid && (
                                 <Badge variant="secondary" className="gap-1.5 py-1.5 px-4 border border-amber-200 text-amber-700 bg-amber-50">
@@ -298,57 +302,75 @@ export default function TransporterIntelligencePage() {
                             )}
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-left">
-                            {results.map(res => (
-                                <Card key={res.id} className="bg-white border-none shadow-lg hover:shadow-xl transition-all overflow-hidden group">
-                                    <CardHeader className="pb-4 text-left">
-                                        <div className="flex justify-between items-start mb-2">
-                                            <Badge variant="outline" className="text-[10px] font-black uppercase border-primary text-primary">{res.entryType || 'Haulier'}</Badge>
-                                            <ShieldCheck className="h-4 w-4 text-green-500" />
-                                        </div>
-                                        <CardTitle className="text-lg font-black group-hover:text-primary transition-colors text-left">{res.companyName}</CardTitle>
-                                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1 text-left">
-                                            <MapPin className="h-3 w-3" />
-                                            <span className="truncate">{res.address || 'South Africa'}</span>
-                                        </div>
-                                    </CardHeader>
-                                    <CardContent className="space-y-4 text-left">
-                                        <div className={cn("p-4 rounded-xl border-2 border-dashed space-y-3", !isPaid ? "bg-slate-50 border-slate-200" : "bg-primary/5 border-primary/20")}>
-                                            <div className="flex items-center justify-between text-xs text-left">
-                                                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Fleet Head</span>
-                                                <span className={cn("font-bold", !isPaid && "blur-sm bg-slate-300 rounded px-4 text-transparent")}>
-                                                    {res.contactPerson || 'Verified'}
+                        <Card className="border-none shadow-xl overflow-hidden">
+                            <Table>
+                                <TableHeader className="bg-slate-900 hover:bg-slate-900">
+                                    <TableRow className="hover:bg-slate-900 border-none">
+                                        <TableHead className="text-white font-bold uppercase text-[10px] tracking-widest py-4">Company Entity</TableHead>
+                                        <TableHead className="text-white font-bold uppercase text-[10px] tracking-widest py-4">Location</TableHead>
+                                        <TableHead className="text-white font-bold uppercase text-[10px] tracking-widest py-4">Fleet Head</TableHead>
+                                        <TableHead className="text-white font-bold uppercase text-[10px] tracking-widest py-4">Direct Contacts</TableHead>
+                                        <TableHead className="text-white font-bold uppercase text-[10px] tracking-widest py-4 text-right">Actions</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {results.map((res) => (
+                                        <TableRow key={res.id} className="group hover:bg-slate-50 transition-colors">
+                                            <TableCell className="py-4">
+                                                <div className="flex flex-col">
+                                                    <span className="font-black text-sm text-slate-900">{res.companyName}</span>
+                                                    <Badge variant="outline" className="w-fit text-[9px] h-4 mt-1 border-primary/30 text-primary uppercase">{res.entryType || 'Haulier'}</Badge>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="text-xs text-muted-foreground">
+                                                <div className="flex items-center gap-1">
+                                                    <MapPin className="h-3 w-3 shrink-0" />
+                                                    <span className="truncate max-w-[150px]">{res.address || 'South Africa'}</span>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                <span className={cn("text-xs font-bold", !isPaid && "blur-sm select-none opacity-50")}>
+                                                    {res.contactPerson || 'Forensic ID Verified'}
                                                 </span>
-                                            </div>
-                                            <div className="flex items-center justify-between text-xs text-left">
-                                                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Direct E-mail</span>
-                                                <span className={cn("font-bold text-primary truncate ml-4", !isPaid && "blur-sm bg-slate-300 rounded px-4 text-transparent")}>
-                                                    {res.email || 'N/A'}
-                                                </span>
-                                            </div>
-                                            <div className="flex items-center justify-between text-xs text-left">
-                                                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Direct Mobile</span>
-                                                <span className={cn("font-bold", !isPaid && "blur-sm bg-slate-300 rounded px-4 text-transparent")}>
-                                                    {res.mobile || res.phone || 'N/A'}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </CardContent>
-                                    <CardFooter className="pt-0 border-t bg-slate-50/50 flex flex-col gap-2 p-4">
-                                        {!isPaid ? (
-                                            <Button asChild className="w-full h-11 font-black uppercase text-xs tracking-widest" variant="secondary">
-                                                <Link href="/pricing"><Lock className="h-3 w-3 mr-2" /> Unlock Funder intelligence</Link>
-                                            </Button>
-                                        ) : (
-                                            <div className="w-full flex gap-2 pt-2">
-                                                <Button className="flex-1 font-bold text-xs" size="sm">Book Capacity</Button>
-                                                <Button variant="outline" className="flex-1 font-bold text-xs" size="sm">View RC1</Button>
-                                            </div>
-                                        )}
-                                    </CardFooter>
-                                </Card>
-                            ))}
-                        </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className={cn("flex flex-col gap-1", !isPaid && "blur-sm select-none opacity-50")}>
+                                                    <span className="text-[10px] font-mono text-primary font-bold">{res.email || 'locked@tc.co.za'}</span>
+                                                    <span className="text-[10px] font-mono text-muted-foreground">{res.mobile || res.phone || '0XX XXX XXXX'}</span>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                {isPaid ? (
+                                                    <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <Button size="sm" variant="outline" className="h-8 text-[10px] font-black uppercase">Book</Button>
+                                                        <Button size="sm" variant="ghost" className="h-8 text-[10px] font-black uppercase">RC1</Button>
+                                                    </div>
+                                                ) : (
+                                                    <Button asChild size="sm" variant="ghost" className="h-8 text-[10px] font-black uppercase text-amber-600 bg-amber-50 hover:bg-amber-100 border border-amber-100">
+                                                        <Link href="/pricing"><Lock className="h-3 w-3 mr-1" /> Unlock</Link>
+                                                    </Button>
+                                                )}
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </Card>
+
+                        {!isPaid && results.length >= 10 && (
+                            <Card className="bg-slate-900 text-white border-none shadow-2xl p-10 text-center max-w-2xl mx-auto">
+                                <div className="bg-primary/20 p-4 rounded-full w-fit mx-auto mb-6">
+                                    <ShieldCheck className="h-10 w-10 text-primary" />
+                                </div>
+                                <h3 className="text-3xl font-black font-headline mb-4">Complete Your intelligence Access</h3>
+                                <p className="text-slate-400 text-lg mb-8 leading-relaxed">
+                                    You are viewing a restricted preview of the registry. Upgrade to the **Intelligence tier** to remove blurring and unlock direct digital contacts for thousands of vetted hauliers.
+                                </p>
+                                <Button asChild size="lg" className="h-14 px-12 text-lg font-black uppercase tracking-tight shadow-xl shadow-primary/20">
+                                    <Link href="/pricing">Get Unlimited Access <ArrowRight className="ml-2 h-5 w-5"/></Link>
+                                </Button>
+                            </Card>
+                        )}
                     </div>
                 )}
             </section>

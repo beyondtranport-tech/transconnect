@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 /**
  * INTELLIGENCE SEARCH ENGINE
  * Enforces:
- * 1. 1-search-per-day limit for Free members.
+ * 1. 10-search-per-day limit for Free members (increased for testing).
  * 2. Data masking (name, email, phone, web) for Free members.
  * 3. 100-record hard cap for all tiers.
  */
@@ -43,18 +43,17 @@ export async function POST(req: NextRequest) {
         const membershipId = companyData.membershipId || 'free';
         const isPaid = membershipId !== 'free';
 
-        // 2. Enforce Daily Limit for Free Members
+        // 2. Enforce Daily Limit (10 per day for testing)
         if (!isPaid) {
             const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
             const recentSearches = await companyRef.collection('searchLogs')
                 .where('timestamp', '>', Timestamp.fromDate(yesterday))
-                .limit(1)
                 .get();
 
-            if (!recentSearches.empty) {
+            if (recentSearches.size >= 10) {
                 return NextResponse.json({ 
                     success: false, 
-                    error: 'Daily Limit Reached: Free members are restricted to 1 intelligence search per 24 hours.',
+                    error: 'Testing Limit Reached: Free members are restricted to 10 intelligence searches per 24 hours during this phase.',
                     limitReached: true
                 }, { status: 429 });
             }
@@ -100,10 +99,10 @@ export async function POST(req: NextRequest) {
                 return {
                     ...normalized,
                     contactPerson: 'Locked',
-                    email: 'Locked',
-                    phone: 'Locked',
-                    mobile: 'Locked',
-                    website: 'Locked',
+                    email: 'locked@transconnect.co.za',
+                    phone: '011 XXX XXXX',
+                    mobile: '082 XXX XXXX',
+                    website: 'www.locked.co.za',
                     isMasked: true
                 };
             }

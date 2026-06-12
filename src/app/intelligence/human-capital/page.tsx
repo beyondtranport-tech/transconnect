@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { provinces } from '@/lib/geodata';
-import { Users, Search, MapPin, ShieldCheck, Loader2, ArrowRight, Lock, Navigation, Sparkles, Info, CheckCircle2, Briefcase, AlertCircle } from 'lucide-react';
+import { Users, Search, MapPin, ShieldCheck, Loader2, ArrowRight, Lock, Navigation, Sparkles, Info, CheckCircle2, Briefcase, AlertCircle, Table as TableIcon } from 'lucide-react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { useUser, getClientSideAuthToken } from '@/firebase';
@@ -18,6 +18,7 @@ import NeedsContent from '@/app/account/needs-content';
 import SupplierProductContent from '@/app/account/supplier-product-content';
 import HumanCapitalContent from '@/app/account/human-capital-content';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 const talentCategories = ["Code 14 Driver", "Diesel Mechanic", "Logistics Manager", "Operations Lead", "Fleet Controller", "Warehouse Manager"];
 
@@ -281,13 +282,16 @@ export default function HumanCapitalIntelligencePage() {
                 ) : isLoading ? (
                     <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
                         <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                        <p className="font-bold text-muted-foreground uppercase tracking-widest">Mapping Human Capital intelligence...</p>
+                        <p className="font-bold text-muted-foreground uppercase tracking-widest text-center">Mapping Human Capital intelligence...</p>
                     </div>
                 ) : !error && (
                     <div className="max-w-6xl mx-auto space-y-8 text-left">
                         <div className="flex justify-between items-center px-4 border-l-4 border-primary text-left">
                             <div className="text-left">
-                                <h2 className="text-2xl font-black text-left">Forensic Results ({results.length})</h2>
+                                <h2 className="text-2xl font-black text-left flex items-center gap-2">
+                                    <TableIcon className="h-6 w-6 text-primary" />
+                                    Forensic Results ({results.length})
+                                </h2>
                                 <p className="text-xs text-muted-foreground">Showing verified talent matching <strong>{selectedCategory}</strong>.</p>
                             </div>
                             {!isPaid && (
@@ -297,51 +301,72 @@ export default function HumanCapitalIntelligencePage() {
                             )}
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {results.map(res => (
-                                <Card key={res.id} className="bg-white border-none shadow-lg hover:shadow-xl transition-all overflow-hidden group">
-                                    <CardHeader className="pb-4 text-left">
-                                        <div className="flex justify-between items-start mb-2">
-                                            <Badge variant="outline" className="text-[10px] font-black uppercase border-primary text-primary">{res.industrial_category || 'Industrial Node'}</Badge>
-                                            <ShieldCheck className="h-4 w-4 text-green-500" />
-                                        </div>
-                                        <CardTitle className="text-lg font-black group-hover:text-primary transition-colors text-left">{res.service_handle || 'Vetted Professional'}</CardTitle>
-                                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1 text-left">
-                                            <MapPin className="h-3 w-3" />
-                                            <span className="truncate">{res.operational_hub || 'South Africa'}</span>
-                                        </div>
-                                    </CardHeader>
-                                    <CardContent className="space-y-4 text-left">
-                                        <div className={cn("p-4 rounded-xl border-2 border-dashed space-y-3", !isPaid ? "bg-slate-50 border-slate-200" : "bg-primary/5 border-primary/20")}>
-                                            <div className="flex items-center justify-between text-xs text-left">
-                                                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Contact Handle</span>
-                                                {isPaid ? <span className="font-bold">{res.service_handle || 'Verified'}</span> : <span className="blur-sm bg-slate-300 rounded px-4 text-transparent">LOCKED</span>}
-                                            </div>
-                                            <div className="flex items-center justify-between text-xs text-left">
-                                                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Direct Line</span>
-                                                {isPaid ? <span className="font-bold text-primary truncate ml-4">{res.registry_line || 'N/A'}</span> : <span className="blur-sm bg-slate-300 rounded px-4 text-transparent">LOCKED</span>}
-                                            </div>
-                                            <div className="text-xs space-y-1 text-left">
-                                                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground block">Capability Profile</span>
-                                                <p className="text-[11px] leading-relaxed line-clamp-2">{res.capability_profile || 'Professional logistics credentials verified.'}</p>
-                                            </div>
-                                        </div>
-                                    </CardContent>
-                                    <CardFooter className="pt-0 border-t bg-slate-50/50 flex flex-col gap-2 p-4">
-                                        {!isPaid ? (
-                                            <Button asChild className="w-full h-11 font-black uppercase text-xs tracking-widest" variant="secondary">
-                                                <Link href="/pricing"><Lock className="h-3 w-3 mr-2" /> Unlock Talent intelligence</Link>
-                                            </Button>
-                                        ) : (
-                                            <div className="w-full flex gap-2 pt-2">
-                                                <Button className="flex-1 font-bold text-xs" size="sm">Invite to Role</Button>
-                                                <Button variant="outline" className="flex-1 font-bold text-xs" size="sm">View CV</Button>
-                                            </div>
-                                        )}
-                                    </CardFooter>
-                                </Card>
-                            ))}
-                        </div>
+                         <Card className="border-none shadow-xl overflow-hidden">
+                            <Table>
+                                <TableHeader className="bg-slate-900 hover:bg-slate-900">
+                                    <TableRow className="hover:bg-slate-900 border-none">
+                                        <TableHead className="text-white font-bold uppercase text-[10px] tracking-widest py-4">Professional handle</TableHead>
+                                        <TableHead className="text-white font-bold uppercase text-[10px] tracking-widest py-4">Operational Hub</TableHead>
+                                        <TableHead className="text-white font-bold uppercase text-[10px] tracking-widest py-4">Classification</TableHead>
+                                        <TableHead className="text-white font-bold uppercase text-[10px] tracking-widest py-4">Direct Contacts</TableHead>
+                                        <TableHead className="text-white font-bold uppercase text-[10px] tracking-widest py-4 text-right">Actions</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {results.map((res) => (
+                                        <TableRow key={res.id} className="group hover:bg-slate-50 transition-colors">
+                                            <TableCell className="py-4">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="bg-primary/10 p-2 rounded-full"><Users className="h-4 w-4 text-primary"/></div>
+                                                    <span className={cn("font-black text-sm text-slate-900", !isPaid && "blur-sm select-none opacity-50")}>
+                                                        {res.service_handle || 'Vetted Professional'}
+                                                    </span>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="text-xs text-muted-foreground">
+                                                <div className="flex items-center gap-1">
+                                                    <MapPin className="h-3 w-3 shrink-0" />
+                                                    <span className="truncate max-w-[150px]">{res.operational_hub || 'South Africa'}</span>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Badge variant="outline" className="text-[9px] uppercase border-primary/30 text-primary">{res.industrial_category || 'Industrial'}</Badge>
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className={cn("flex flex-col gap-1", !isPaid && "blur-sm select-none opacity-50")}>
+                                                    <span className="text-[10px] font-mono text-primary font-bold">{res.email || 'locked@tc.co.za'}</span>
+                                                    <span className="text-[10px] font-mono text-muted-foreground">{res.registry_line || '0XX XXX XXXX'}</span>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                {isPaid ? (
+                                                    <Button size="sm" variant="outline" className="h-8 text-[10px] font-black uppercase opacity-0 group-hover:opacity-100 transition-opacity">View Profile</Button>
+                                                ) : (
+                                                    <Button asChild size="sm" variant="ghost" className="h-8 text-[10px] font-black uppercase text-amber-600 bg-amber-50 hover:bg-amber-100 border border-amber-100">
+                                                        <Link href="/pricing"><Lock className="h-3 w-3 mr-1" /> Unlock</Link>
+                                                    </Button>
+                                                )}
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </Card>
+
+                        {!isPaid && results.length >= 10 && (
+                            <Card className="bg-slate-900 text-white border-none shadow-2xl p-10 text-center max-w-2xl mx-auto">
+                                <div className="bg-primary/20 p-4 rounded-full w-fit mx-auto mb-6">
+                                    <Users className="h-10 w-10 text-primary" />
+                                </div>
+                                <h3 className="text-3xl font-black font-headline mb-4">Complete Talent transparency</h3>
+                                <p className="text-slate-400 text-lg mb-8 leading-relaxed">
+                                    You are viewing a restricted preview of the talent registry. Upgrade to **Intelligence Access** to remove blurring and unlock direct lines to thousands of verified professionals.
+                                </p>
+                                <Button asChild size="lg" className="h-14 px-12 text-lg font-black uppercase tracking-tight shadow-xl shadow-primary/20">
+                                    <Link href="/pricing">Unlock Human Capital Registry <ArrowRight className="ml-2 h-5 w-5"/></Link>
+                                </Button>
+                            </Card>
+                        )}
                     </div>
                 )}
             </section>
