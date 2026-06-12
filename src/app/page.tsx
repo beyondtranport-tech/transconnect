@@ -196,7 +196,7 @@ export default function HomePage() {
                         <div className="flex items-center gap-3"><CheckCircle2 className="h-5 w-5 text-blue-600"/> <span className="font-bold">Verified RC1 Compliance Data</span></div>
                         <div className="flex items-center gap-3"><CheckCircle2 className="h-5 w-5 text-blue-600"/> <span className="font-bold">Direct Line to CEO/MD Leadership</span></div>
                     </div>
-                    <Button asChild className="mt-6" size="lg" variant="outline"><Link href="/intelligence/transporter">Search Intelligence <ArrowRight className="ml-2 h-4 w-4"/></Link></Button>
+                    <Button asChild className="mt-6" size="lg" variant="outline"><Link href="/intelligence/transporter">Search Haulier Registry <ArrowRight className="ml-2 h-4 w-4"/></Link></Button>
                 </div>
                 <div className="relative">
                     <RegistryNode 
@@ -229,7 +229,7 @@ export default function HomePage() {
                             <p className="text-xs text-muted-foreground leading-relaxed text-left">We provide direct access to the actual decision-makers at these businesses, enabling you to bypass generic call centers and secure the parts you need instantly.</p>
                         </CardContent>
                     </Card>
-                    <Button asChild size="lg" className="mt-4"><Link href="/mall/supplier">Search Spares & Services <ArrowRight className="ml-2 h-4 w-4"/></Link></Button>
+                    <Button asChild size="lg" className="mt-4"><Link href="/intelligence/supplier">Search Supplier Registry <ArrowRight className="ml-2 h-4 w-4"/></Link></Button>
                 </div>
                 <div className="lg:order-1 relative">
                     <RegistryNode 
@@ -299,7 +299,6 @@ export default function HomePage() {
                                 <p className="text-xs font-black mb-1 flex items-center gap-2 text-primary uppercase"><UserPlus className="h-3 w-3"/> For Employers</p>
                                 <p className="text-[10px] text-slate-400 leading-relaxed italic">Create vacancies from your dashboard. Fill roles via our vetted talent pool. (Success commission applies).</p>
                             </CardContent>
-                        </Card>
                     </div>
                     <Button asChild size="lg" className="mt-4 h-14 px-10 text-lg font-black uppercase tracking-tight" onClick={handleJoinClick}>
                         <Link href={ctaLink}>Register for Early Access <ArrowRight className="ml-2 h-4 w-4"/></Link>
