@@ -314,7 +314,7 @@ export default function TransporterIntelligencePage() {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {results.map((res) => (
+                                    {results.length > 0 ? results.map((res) => (
                                         <TableRow key={res.id} className="group hover:bg-slate-50 transition-colors">
                                             <TableCell className="py-4">
                                                 <div className="flex flex-col">
@@ -352,7 +352,14 @@ export default function TransporterIntelligencePage() {
                                                 )}
                                             </TableCell>
                                         </TableRow>
-                                    ))}
+                                    )) : (
+                                        <TableRow>
+                                            <TableCell colSpan={5} className="text-center py-20 text-muted-foreground">
+                                                <Info className="h-8 w-8 mx-auto mb-2 opacity-20" />
+                                                <p>No matching transporters found in this region. Try broadening your search area.</p>
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
                                 </TableBody>
                             </Table>
                         </Card>
@@ -363,7 +370,7 @@ export default function TransporterIntelligencePage() {
                                     <ShieldCheck className="h-10 w-10 text-primary" />
                                 </div>
                                 <h3 className="text-3xl font-black font-headline mb-4">Complete Your intelligence Access</h3>
-                                <p className="text-slate-400 text-lg mb-8 leading-relaxed">
+                                <p className="text-slate-400 text-lg mb-8 leading-relaxed text-center">
                                     You are viewing a restricted preview of the registry. Upgrade to the **Intelligence tier** to remove blurring and unlock direct digital contacts for thousands of vetted hauliers.
                                 </p>
                                 <Button asChild size="lg" className="h-14 px-12 text-lg font-black uppercase tracking-tight shadow-xl shadow-primary/20">

@@ -9,8 +9,8 @@ export const dynamic = 'force-dynamic';
 /**
  * INTELLIGENCE SEARCH ENGINE
  * Enforces:
- * 1. 10-search-per-day limit for Free members (increased for testing).
- * 2. Data masking (name, email, phone, web) for Free members.
+ * 1. 10-search-per-day testing limit for Free members.
+ * 2. Visual data masking for Free tier.
  * 3. 100-record hard cap for all tiers.
  */
 export async function POST(req: NextRequest) {
@@ -18,9 +18,10 @@ export async function POST(req: NextRequest) {
         const { app, error: initError } = getAdminApp();
         if (initError || !app) throw new Error(`Admin SDK failed: ${initError}`);
 
-        const { type, query: searchTerm, category, service, province, city, suburb } = await req.json();
-        const authorization = req.headers.get('authorization');
+        const body = await req.json();
+        const { type, query: searchTerm, category, service, province, city, suburb } = body;
         
+        const authorization = req.headers.get('authorization');
         if (!authorization?.startsWith('Bearer ')) {
             return NextResponse.json({ success: false, error: 'Unauthorized: Access restricted to members.' }, { status: 401 });
         }
@@ -53,53 +54,44 @@ export async function POST(req: NextRequest) {
             if (recentSearches.size >= 10) {
                 return NextResponse.json({ 
                     success: false, 
-                    error: 'Testing Limit Reached: Free members are restricted to 10 intelligence searches per 24 hours during this phase.',
+                    error: 'Testing Limit Reached: Free members are restricted to 10 searches per 24 hours.',
                     limitReached: true
                 }, { status: 429 });
             }
         }
 
         // 3. Execute Registry Scan
+        // Strategy: Fetch a larger batch and filter in-memory for maximum resilience in prototype
         let collectionName = 'leads';
         if (type === 'driver') collectionName = 'partners';
         
-        let firestoreQuery: any = db.collection(collectionName);
-        
-        if (type === 'supplier') {
-            firestoreQuery = firestoreQuery.where('role', 'in', ['Vendors', 'Vendor', 'Supplier', 'Suppliers']);
-        } else if (type === 'transporter') {
-            firestoreQuery = firestoreQuery.where('role', 'in', ['Transporters', 'Transporter', 'Logistics', 'Transport']);
-        } else if (type === 'finance') {
-            firestoreQuery = firestoreQuery.where('role', 'in', ['Investors', 'Investor', 'Finance', 'Funder', 'Lender']);
-        }
-
-        const snapshot = await firestoreQuery.limit(500).get();
+        const snapshot = await db.collection(collectionName).limit(500).get();
 
         let results = snapshot.docs.map((doc: any) => {
-            const lead = doc.data();
+            const item = doc.data();
+            // Resilient field mapping
             const normalized = {
                 id: doc.id,
-                companyName: lead.companyName || lead.trading_name || 'Industrial Entity',
-                address: lead.address || lead.physical_address || lead.location || 'South Africa',
-                entryType: lead.entryType || lead.industrial_category || 'General',
-                fleet: lead.fleet || {}, 
-                region: lead.region || lead.operational_hub || '',
+                companyName: item.companyName || item.trading_name || item.name || 'Industrial Entity',
+                address: item.address || item.physicalAddress || item.physical_address || item.location || 'South Africa',
+                entryType: item.entryType || item.industrial_category || item.category || item.role || 'General',
+                region: item.region || item.operational_hub || item.city || '',
             };
 
             if (isPaid) {
                 return {
                     ...normalized,
-                    contactPerson: lead.contactPerson || (lead.firstName ? `${lead.firstName} ${lead.lastName}` : 'N/A'),
-                    email: lead.email || lead.email_address || 'N/A',
-                    phone: lead.phone || lead.telephone_number || 'N/A',
-                    mobile: lead.mobile || lead.registry_line || 'N/A',
-                    website: lead.website || lead.url || 'N/A',
+                    contactPerson: item.contactPerson || (item.firstName ? `${item.firstName} ${item.lastName}` : 'N/A'),
+                    email: item.email || item.email_address || 'N/A',
+                    phone: item.phone || item.telephone_number || 'N/A',
+                    mobile: item.mobile || item.registry_line || 'N/A',
+                    website: item.website || item.url || 'N/A',
                 };
             } else {
                 return {
                     ...normalized,
                     contactPerson: 'Locked',
-                    email: 'locked@transconnect.co.za',
+                    email: 'locked@tc.co.za',
                     phone: '011 XXX XXXX',
                     mobile: '082 XXX XXXX',
                     website: 'www.locked.co.za',
@@ -114,6 +106,7 @@ export async function POST(req: NextRequest) {
             const lowProv = province?.toLowerCase() || '';
             const lowCity = city?.toLowerCase() || '';
             const lowCat = category?.toLowerCase() || '';
+            const lowServ = service?.toLowerCase() || '';
             
             results = results.filter((item: any) => {
                 const addr = (item.address || '').toLowerCase();
@@ -122,15 +115,16 @@ export async function POST(req: NextRequest) {
 
                 const matchesLoc = (!lowProv || addr.includes(lowProv)) && (!lowCity || addr.includes(lowCity));
                 const matchesCat = !lowCat || typeStr.includes(lowCat);
-                const matchesText = !lowSearch || name.includes(lowSearch) || typeStr.includes(lowSearch);
+                const matchesServ = !lowServ || typeStr.includes(lowServ);
+                const matchesText = !lowSearch || name.includes(lowSearch) || typeStr.includes(lowSearch) || addr.includes(lowSearch);
 
-                return matchesLoc && matchesCat && matchesText;
+                return matchesLoc && (matchesCat || matchesServ) && matchesText;
             });
         }
 
         const finalResults = results.slice(0, 100);
 
-        // 5. Log Search (Safely handle undefined values)
+        // 5. Log Search (Sanitize undefined values)
         await companyRef.collection('searchLogs').add({
             userId: uid,
             type,

@@ -172,7 +172,7 @@ function AccountPageContent() {
               </SidebarMenuItem>
               
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Intelligence History" isActive={activeView === 'search-history'} onClick={() => navigate('search-history')}><Search /><span>Search History</span></SidebarMenuButton>
+                <SidebarMenuButton tooltip="Search History" isActive={activeView === 'search-history'} onClick={() => navigate('search-history')}><Search /><span>Search History</span></SidebarMenuButton>
               </SidebarMenuItem>
 
               <SidebarMenuItem>

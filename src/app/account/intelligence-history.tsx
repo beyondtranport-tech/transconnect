@@ -1,9 +1,9 @@
 
 'use client';
 
-import React, { useMemo } from 'react';
+import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Search, Loader2, Calendar, MapPin, Tag, ArrowRight, ShieldAlert, Lock, Zap } from 'lucide-react';
+import { Search, Loader2, Calendar, MapPin, Tag, ArrowRight, Lock, Zap } from 'lucide-react';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, limit } from 'firebase/firestore';
 import { formatDateSafe } from '@/lib/utils';
