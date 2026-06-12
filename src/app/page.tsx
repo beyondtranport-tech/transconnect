@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -20,7 +19,6 @@ import { Separator } from "@/components/ui/separator";
 const { placeholderImages } = data;
 const heroImage = placeholderImages.find(p => p.id === 'hero-home');
 
-// Heuristic count generator to make the registry feel dense and specific
 const getCatCount = (cat: string, base: number) => {
     const hash = cat.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
     return Math.floor(base * (0.5 + (hash % 100) / 100));
@@ -61,7 +59,6 @@ const RegistryNode = ({
     const center = 250;
     return (
         <div className="relative group w-full h-[550px] flex items-center justify-center select-none overflow-visible">
-            {/* SVG Connector Lines */}
             <svg className={cn("absolute pointer-events-none overflow-visible", lineColor)} style={{ width: center * 2, height: center * 2 }}>
                 {categories.map((_, i) => {
                     const angle = (i * (360 / categories.length) - 90) * (Math.PI / 180);
@@ -81,7 +78,6 @@ const RegistryNode = ({
                 })}
             </svg>
 
-            {/* Central Node */}
             <div className={cn(
                 "relative z-20 w-40 h-40 md:w-56 md:h-52 rounded-full flex flex-col items-center justify-center text-center shadow-2xl transition-all duration-500 group-hover:scale-105 border-4",
                 colorClass
@@ -91,7 +87,6 @@ const RegistryNode = ({
                 <p className="text-[10px] md:text-xs font-black uppercase tracking-widest opacity-80 px-4">{title}</p>
             </div>
 
-            {/* Orbital Badges with Counts */}
             {categories.map((cat, i) => {
                 const angle = (i * (360 / categories.length) - 90) * (Math.PI / 180);
                 const x = center + Math.cos(angle) * radius;
@@ -150,7 +145,6 @@ export default function HomePage() {
     <div className="bg-background">
       <HomeIntentModal isOpen={isModalOpen} onOpenChange={setIsModalOpen} />
       
-      {/* HERO: Community & Connection */}
       <section className="relative w-full h-[60vh] md:h-[70vh] flex items-center justify-center overflow-hidden bg-slate-950 text-white">
         <div className="absolute inset-0 z-0 opacity-20">
            {heroImage && (
@@ -189,13 +183,12 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* HUB SECTION 1: Transporters */}
       <section className="py-24 bg-white border-b overflow-hidden">
         <div className="container mx-auto px-4">
             <div className="grid lg:grid-cols-2 gap-16 items-center">
-                <div className="space-y-6">
+                <div className="space-y-6 text-left">
                     <div className="bg-blue-100 p-3 rounded-xl w-fit"><Truck className="h-8 w-8 text-blue-600" /></div>
-                    <h2 className="text-3xl md:text-5xl font-black font-headline">The Transporter Registry</h2>
+                    <h2 className="text-3xl md:text-5xl font-black font-headline">Transporter Intelligence</h2>
                     <p className="text-lg text-muted-foreground leading-relaxed">
                         Access a massive database of verified South African hauliers. From long-haul refrigerated fleets to local distribution experts, we provide the map to your next reliable capacity partner.
                     </p>
@@ -203,7 +196,7 @@ export default function HomePage() {
                         <div className="flex items-center gap-3"><CheckCircle2 className="h-5 w-5 text-blue-600"/> <span className="font-bold">Verified RC1 Compliance Data</span></div>
                         <div className="flex items-center gap-3"><CheckCircle2 className="h-5 w-5 text-blue-600"/> <span className="font-bold">Direct Line to CEO/MD Leadership</span></div>
                     </div>
-                    <Button asChild className="mt-6" size="lg" variant="outline"><Link href="/mall/transporter">Search Transporters <ArrowRight className="ml-2 h-4 w-4"/></Link></Button>
+                    <Button asChild className="mt-6" size="lg" variant="outline"><Link href="/intelligence/transporter">Search Intelligence <ArrowRight className="ml-2 h-4 w-4"/></Link></Button>
                 </div>
                 <div className="relative">
                     <RegistryNode 
@@ -221,20 +214,19 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* HUB SECTION 2: Suppliers (The Forensic Core) */}
       <section className="py-24 bg-slate-50 border-b overflow-hidden">
         <div className="container mx-auto px-4">
             <div className="grid lg:grid-cols-2 gap-16 items-center">
-                <div className="lg:order-2 space-y-6">
+                <div className="lg:order-2 space-y-6 text-left">
                     <div className="bg-primary/10 p-3 rounded-xl w-fit"><SearchCode className="h-8 w-8 text-primary" /></div>
-                    <h2 className="text-3xl md:text-5xl font-black font-headline">The Forensic Supplier Registry</h2>
+                    <h2 className="text-3xl md:text-5xl font-black font-headline">Forensic Supplier Registry</h2>
                     <p className="text-lg text-muted-foreground leading-relaxed">
                         Our AI discovery engine has cataloged the entire independent supplier ecosystem. Every niche, from differentials to engine overrides, is represented in our forensic database.
                     </p>
                     <Card className="bg-white border-2 border-dashed border-primary/20 shadow-none">
                         <CardContent className="p-6">
                             <p className="text-sm font-black mb-2 flex items-center gap-2 text-primary"><Database className="h-4 w-4"/> {Number(supplierCount).toLocaleString()} Verified Records</p>
-                            <p className="text-xs text-muted-foreground leading-relaxed">We provide direct access to the actual decision-makers at these businesses, enabling you to bypass generic call centers and secure the parts you need instantly.</p>
+                            <p className="text-xs text-muted-foreground leading-relaxed text-left">We provide direct access to the actual decision-makers at these businesses, enabling you to bypass generic call centers and secure the parts you need instantly.</p>
                         </CardContent>
                     </Card>
                     <Button asChild size="lg" className="mt-4"><Link href="/mall/supplier">Search Spares & Services <ArrowRight className="ml-2 h-4 w-4"/></Link></Button>
@@ -255,17 +247,16 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* HUB SECTION 3: Finance */}
       <section className="py-24 bg-white border-b overflow-hidden">
         <div className="container mx-auto px-4">
             <div className="grid lg:grid-cols-2 gap-16 items-center">
-                <div className="space-y-6">
+                <div className="space-y-6 text-left">
                     <div className="bg-amber-100 p-3 rounded-xl w-fit"><Landmark className="h-8 w-8 text-amber-600" /></div>
                     <h2 className="text-3xl md:text-5xl font-black font-headline">The Capital Network</h2>
                     <p className="text-lg text-muted-foreground leading-relaxed">
                         Stop applying to deaf ears. Our Finance Mall connects your operational performance data with specialized lenders who actually understand the trucking business.
                     </p>
-                    <div className="p-6 bg-amber-50 rounded-2xl border border-amber-200">
+                    <div className="p-6 bg-amber-50 rounded-2xl border border-amber-200 text-left">
                          <p className="text-xl font-black text-amber-800">85 Active Funding Partners</p>
                          <p className="text-sm text-amber-700/80 mt-1">Unlock asset finance and working capital tailored for transport growth.</p>
                     </div>
@@ -287,24 +278,23 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* HUB SECTION 4: Human Capital (The Recruitment Hub) */}
       <section className="py-24 bg-slate-900 border-b overflow-hidden text-white">
         <div className="container mx-auto px-4">
             <div className="grid lg:grid-cols-2 gap-16 items-center">
-                <div className="lg:order-2 space-y-6">
+                <div className="lg:order-2 space-y-6 text-left">
                     <div className="bg-primary/20 p-3 rounded-xl w-fit"><Users className="h-8 w-8 text-primary" /></div>
                     <h2 className="text-3xl md:text-5xl font-black font-headline">Human Capital Registry</h2>
                     <p className="text-lg text-slate-300 leading-relaxed">
                         Breaking the recruitment constraint. Connect with verified talent across the South African logistics landscape. Our soon-to-launch jobs board will source roles directly from our community member base.
                     </p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                         <Card className="bg-white/5 border-white/10 shadow-none">
+                         <Card className="bg-white/5 border-white/10 shadow-none text-left">
                             <CardContent className="p-4">
                                 <p className="text-xs font-black mb-1 flex items-center gap-2 text-primary uppercase"><Briefcase className="h-3 w-3"/> For Applicants</p>
                                 <p className="text-[10px] text-slate-400 leading-relaxed italic">Access the premium jobs board and verified employer database for R100/month.</p>
                             </CardContent>
                         </Card>
-                         <Card className="bg-white/5 border-white/10 shadow-none">
+                         <Card className="bg-white/5 border-white/10 shadow-none text-left">
                             <CardContent className="p-4">
                                 <p className="text-xs font-black mb-1 flex items-center gap-2 text-primary uppercase"><UserPlus className="h-3 w-3"/> For Employers</p>
                                 <p className="text-[10px] text-slate-400 leading-relaxed italic">Create vacancies from your dashboard. Fill roles via our vetted talent pool. (Success commission applies).</p>
@@ -331,11 +321,10 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* SECTION 5: Trust & Privacy */}
       <section className="py-24 bg-slate-950 text-white border-y border-white/5">
         <div className="container mx-auto px-4">
             <div className="grid lg:grid-cols-2 gap-16 items-center">
-                <div className="space-y-6">
+                <div className="space-y-6 text-left">
                     <h2 className="text-3xl md:text-5xl font-black font-headline">Absolute Data Privacy</h2>
                     <p className="text-lg text-slate-400 leading-relaxed">
                         While we give you the map to the industry, your own business data remains under your absolute control.
@@ -356,7 +345,7 @@ export default function HomePage() {
                         ))}
                     </div>
                 </div>
-                <Card className="bg-slate-900 border-white/10 shadow-2xl p-8 text-slate-300">
+                <Card className="bg-slate-900 border-white/10 shadow-2xl p-8 text-slate-300 text-left">
                     <div className="space-y-6">
                          <div className="flex items-center gap-3">
                             <Zap className="h-6 w-6 text-primary fill-primary" />
@@ -380,7 +369,6 @@ export default function HomePage() {
         </div>
       </section>
       
-       {/* Call to Action */}
        <section className="py-20 md:py-32 bg-background">
             <div className="container mx-auto px-4 text-center">
                 <h2 className="text-3xl md:text-5xl font-black font-headline">Ready to Transform Your Business?</h2>

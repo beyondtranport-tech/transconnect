@@ -5,39 +5,14 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button, buttonVariants } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { getClientSideAuthToken } from '@/firebase';
-import { 
-  Loader2, PlusCircle, Bot, Edit, Trash2, Send, Download, Save, RefreshCcw
-} from 'lucide-react';
+import { getClientSideAuthToken, useUser } from '@/firebase';
+import { Loader2, PlusCircle, Bot, Edit, Trash2, Send, Download, Save, Search } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -69,11 +44,9 @@ const partnerSchema = z.object({
   mobile: z.string().optional(),
   contactPerson: z.string().optional(),
   companyName: z.string().optional(),
-  address: z.string().optional(),
   status: z.enum(['active', 'inactive', 'contacted', 'new', 'qualified', 'invited', 'registered']),
   type: z.literal('isa'),
 });
-
 type PartnerFormValues = z.infer<typeof partnerSchema>;
 
 function ISADialog({ open, onOpenChange, partner, onSave }: { open: boolean; onOpenChange: (open: boolean) => void; partner?: any; onSave: () => void; }) {
@@ -87,7 +60,7 @@ function ISADialog({ open, onOpenChange, partner, onSave }: { open: boolean; onO
   useEffect(() => {
     if (open) {
       if (partner) form.reset(partner);
-      else form.reset({ firstName: '', lastName: '', email: '', phone: '', mobile: '', contactPerson: '', companyName: '', address: '', status: 'new', type: 'isa' });
+      else form.reset({ firstName: '', lastName: '', email: '', phone: '', mobile: '', contactPerson: '', companyName: '', status: 'new', type: 'isa' });
     }
   }, [open, partner, form]);
 
@@ -96,7 +69,7 @@ function ISADialog({ open, onOpenChange, partner, onSave }: { open: boolean; onO
     try {
       const token = await getClientSideAuthToken();
       if (!token) throw new Error("Authentication failed.");
-      await performAdminAction(token, 'savePartner', { partner: { id: partner?.id, ...values } });
+      await performAdminAction(token, 'savePartner', { partner: { id: partner?.id, ...values, type: 'isa' } });
       toast({ title: 'ISA Saved' });
       onSave();
       onOpenChange(false);
@@ -105,7 +78,7 @@ function ISADialog({ open, onOpenChange, partner, onSave }: { open: boolean; onO
     } finally {
       setIsLoading(false);
     }
-  }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -122,7 +95,7 @@ function ISADialog({ open, onOpenChange, partner, onSave }: { open: boolean; onO
             </div>
             <div className="grid grid-cols-2 gap-4">
               <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" /></FormControl><FormMessage /></FormItem>)} />
-              <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Work Landline</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Work Phone</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
             <FormField control={form.control} name="mobile" render={({ field }) => (<FormItem><FormLabel>Mobile (Direct Cell)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} /></FormControl><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Agency / Company Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
@@ -154,8 +127,9 @@ function ISADialog({ open, onOpenChange, partner, onSave }: { open: boolean; onO
 
 export default function ISAManagement() {
   const { toast } = useToast();
-  const [partners, setPartners] = useState<any[]>([]);
+  const [allRecords, setAllRecords] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
   const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | null, data?: any }>({ type: null });
 
   const fetchData = useCallback(async () => {
@@ -164,7 +138,7 @@ export default function ISAManagement() {
       const token = await getClientSideAuthToken();
       if (!token) return;
       const res = await performAdminAction(token, 'getPartnersByType', { type: 'isa' });
-      setPartners(res.data || []);
+      setAllRecords(res.data || []);
     } catch (e: any) {
         toast({ variant: 'destructive', title: 'Fetch Error', description: e.message });
     } finally {
@@ -173,6 +147,19 @@ export default function ISAManagement() {
   }, [toast]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  const filteredRecords = useMemo(() => {
+    if (!searchTerm) return allRecords;
+    const term = searchTerm.toLowerCase();
+    return allRecords.filter(r => 
+        (r.companyName?.toLowerCase().includes(term)) ||
+        (r.firstName?.toLowerCase().includes(term)) ||
+        (r.lastName?.toLowerCase().includes(term)) ||
+        (r.email?.toLowerCase().includes(term)) ||
+        (r.phone?.toLowerCase().includes(term)) ||
+        (r.mobile?.toLowerCase().includes(term))
+    );
+  }, [allRecords, searchTerm]);
 
   const handleDelete = async () => {
     if (!dialog.data) return;
@@ -190,11 +177,10 @@ export default function ISAManagement() {
 
   const columns: ColumnDef<any>[] = useMemo(() => [
     { 
-        accessorKey: 'companyName', 
         header: 'ISA Agency', 
         cell: ({ row }) => (
             <div className="flex flex-col text-left">
-                <span className="font-bold">{row.original.companyName || row.original.contactPerson || `${row.original.firstName || ''} ${row.original.lastName || ''}`.trim()}</span>
+                <span className="font-bold">{row.original.companyName || row.original.contactPerson || `${row.original.firstName} ${row.original.lastName}`}</span>
                 <span className="text-[10px] text-muted-foreground uppercase font-black">{row.original.firstName} {row.original.lastName}</span>
             </div>
         )
@@ -226,24 +212,24 @@ export default function ISAManagement() {
           <AlertDialogFooter><AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      
       <div className="space-y-6 text-left">
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="text-left">
                 <CardTitle className="flex items-center gap-2"><Bot /> ISA Management</CardTitle>
-                <CardDescription>Comprehensive registry of Independent Sales Agents ({partners.length} records).</CardDescription>
+                <CardDescription>High-capacity registry view ({allRecords.length} records).</CardDescription>
             </div>
             <div className="flex items-center gap-2">
-                <Button variant="outline" onClick={() => downloadDataAsCSV(partners, 'isa-export.csv')} disabled={isLoading}>
-                    <Download className="mr-2 h-4 w-4" /> Export CSV
-                </Button>
+                <div className="relative w-64">
+                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input placeholder="Filter registry..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8" />
+                </div>
+                <Button variant="outline" onClick={() => downloadDataAsCSV(allRecords, 'isa-export.csv')} disabled={isLoading}><Download className="mr-2 h-4 w-4" /> Export CSV</Button>
                 <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4" /> Add ISA</Button>
             </div>
         </CardHeader>
-
         <Card>
-            <CardContent className="pt-6">
-                {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={partners} />}
+            <CardContent className="pt-6 text-left">
+                {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredRecords} />}
             </CardContent>
         </Card>
       </div>

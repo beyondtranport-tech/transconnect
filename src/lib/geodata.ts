@@ -1,12 +1,49 @@
 
 export const provinces = [
-  { name: 'Eastern Cape', cities: ['East London', 'Gqeberha (Port Elizabeth)', 'Mthatha', 'Queenstown'] },
-  { name: 'Free State', cities: ['Bloemfontein', 'Welkom', 'Sasolburg', 'Kroonstad'] },
-  { name: 'Gauteng', cities: ['Johannesburg', 'Pretoria', 'Sandton', 'Ekurhuleni', 'Soweto', 'Midrand'] },
-  { name: 'KwaZulu-Natal', cities: ['Durban', 'Pietermaritzburg', 'Richards Bay', 'Newcastle'] },
-  { name: 'Limpopo', cities: ['Polokwane', 'Mokopane', 'Thohoyandou', 'Musina'] },
-  { name: 'Mpumalanga', cities: ['Mbombela (Nelspruit)', 'Emalahleni (Witbank)', 'Middelburg', 'Secunda'] },
-  { name: 'North West', cities: ['Mahikeng', 'Klerksdorp', 'Rustenburg', 'Potchefstroom'] },
-  { name: 'Northern Cape', cities: ['Kimberley', 'Upington', 'Springbok', 'De Aar'] },
-  { name: 'Western Cape', cities: ['Cape Town', 'Stellenbosch', 'George', 'Paarl', 'Saldanha'] },
+  { 
+    name: 'Gauteng', 
+    cities: [
+      { 
+        name: 'Johannesburg', 
+        suburbs: ['City Deep', 'Isando', 'Jet Park', 'Spartan', 'Aeroton', 'Alrode', 'Wadeville', 'Midrand'] 
+      },
+      { 
+        name: 'Pretoria', 
+        suburbs: ['Rosslyn', 'Silverton', 'Sunderland Ridge', 'Clayville'] 
+      },
+    ] 
+  },
+  { 
+    name: 'Western Cape', 
+    cities: [
+      { 
+        name: 'Cape Town', 
+        suburbs: ['Epping', 'Montague Gardens', 'Paarden Eiland', 'Stikland', 'Blackheath', 'Airport Industria', 'Killarney Gardens'] 
+      },
+      { name: 'George', suburbs: ['George Industria'] },
+    ] 
+  },
+  { 
+    name: 'KwaZulu-Natal', 
+    cities: [
+      { 
+        name: 'Durban', 
+        suburbs: ['Pinetown', 'Westmead', 'Mobeni', 'Prospecton', 'New Germany', 'Phoenix Industrial'] 
+      },
+      { name: 'Richards Bay', suburbs: ['Altona', 'Arboretum'] },
+    ] 
+  },
+  { 
+    name: 'Eastern Cape', 
+    cities: [
+      { name: 'Gqeberha', suburbs: ['Struandale', 'Deal Party', 'Markman'] },
+      { name: 'East London', suburbs: ['West Bank', 'Arcadia'] },
+    ] 
+  },
+  { 
+    name: 'Free State', 
+    cities: [
+      { name: 'Bloemfontein', suburbs: ['Hamilton', 'Oos-Einde'] },
+    ] 
+  },
 ];

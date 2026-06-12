@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -49,11 +48,12 @@ import React from 'react';
 import AIChatWidget from '@/components/ai-chat-widget';
 import Link from 'next/link';
 
-// Statically import all components that are conditionally rendered
+// Component Imports
 import AccountDashboard from './dashboard';
 import StaffContent from './staff-content';
 import ProfileContent from './profile-content';
 import CompanyContent from './company-content';
+import FleetContent from './fleet-content';
 import ShopContent from './shop-content';
 import BillingContent from './billing-content';
 import WalletContent from './wallet-content';
@@ -71,32 +71,21 @@ import LoyaltyPlanPage from '@/app/connect/loyalty/page';
 import RewardsPlanPage from '@/app/connect/rewards/page';
 import ActionsPlanPage from '@/app/connect/actions/page';
 
-
-// Placeholder components for sections under construction
 function DocumentsContent() {
     return (
-        <Card>
-            <CardHeader><CardTitle>Documents</CardTitle></CardHeader>
-            <CardContent><p className="text-muted-foreground">This section is under construction. Your document management center will appear here.</p></CardContent>
-        </Card>
+        <Card><CardHeader><CardTitle>Documents</CardTitle></CardHeader><CardContent><p className="text-muted-foreground">This section is under construction.</p></CardContent></Card>
     )
 }
 function SettingsContent() {
      return (
-        <Card>
-            <CardHeader><CardTitle>Settings</CardTitle></CardHeader>
-            <CardContent><p className="text-muted-foreground">This section is under construction. Your account settings will appear here.</p></CardContent>
-        </Card>
+        <Card><CardHeader><CardTitle>Settings</CardTitle></CardHeader><CardContent><p className="text-muted-foreground">This section is under construction.</p></CardContent></Card>
     )
 }
-
 
 function AccountPageContent() {
   const router = useRouter();
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
-  const pathname = usePathname();
-  
   const searchParams = useSearchParams();
   const initialView = searchParams.get('view') || 'dashboard';
   const [activeView, setActiveView] = useState(initialView);
@@ -110,7 +99,6 @@ function AccountPageContent() {
       router.replace('/signin');
     }
   }, [user, isUserLoading, router]);
-
 
   const onLogout = async () => {
     if (!auth) return;
@@ -127,6 +115,7 @@ function AccountPageContent() {
     switch (activeView) {
       case 'profile': return <ProfileContent />;
       case 'company': return <CompanyContent />;
+      case 'fleet': return <FleetContent />;
       case 'staff': return <StaffContent />;
       case 'shop': return <ShopContent />;
       case 'load-board': return <LoadBoardContent />;
@@ -137,22 +126,15 @@ function AccountPageContent() {
       case 'rewards': return <RewardsContent />;
       case 'activity': return <ActivityFeed />;
       case 'support-chat': return <SupportChatContent />;
-      
-      // Sales / Network
       case 'network': return <NetworkContent />;
       case 'performance': return <PerformanceContent />;
       case 'offer': return <NetworkOffer />;
       case 'emails': return <NetworkEmails />;
-
-      // Connect Plans
       case 'connect-loyalty': return <LoyaltyPlanPage />;
       case 'connect-rewards': return <RewardsPlanPage />;
       case 'connect-actions': return <ActionsPlanPage />;
-      
-      // Placeholders
       case 'documents': return <DocumentsContent />;
       case 'settings': return <SettingsContent />;
-
       case 'dashboard':
       default:
         return <AccountDashboard />;
@@ -160,21 +142,12 @@ function AccountPageContent() {
   }, [activeView]);
 
   if (isUserLoading || !user) {
-    return (
-        <div className="flex justify-center items-center min-h-[calc(100vh-8rem)]">
-            <Loader2 className="h-16 w-16 animate-spin text-primary" />
-        </div>
-    );
+    return <div className="flex justify-center items-center py-40"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>;
   }
 
-  const navigate = (view: string) => {
-    router.push(`/account?view=${view}`, { scroll: false });
-  };
-  
+  const navigate = (view: string) => router.push(`/account?view=${view}`, { scroll: false });
   const isSalesActive = ['network', 'performance', 'offer', 'emails'].includes(activeView);
   const isConnectActive = ['connect-loyalty', 'connect-rewards', 'connect-actions'].includes(activeView);
-  
-  // Robust check for transporter role
   const isTransporter = user.declaredPosition === 'transporter' || user.companyData?.shopType === 'transporter';
 
   return (
@@ -182,159 +155,79 @@ function AccountPageContent() {
       <AIChatWidget />
       <Sidebar>
         <SidebarHeader>
-          <div className="flex items-center gap-2">
-            <div className="bg-primary/10 p-2 rounded-full">
-              <User className="h-6 w-6 text-primary" />
-            </div>
-            <h2 className="text-lg font-semibold text-sidebar-foreground">
-              Member Area
-            </h2>
+          <div className="flex items-center gap-2 p-2">
+            <div className="bg-primary/10 p-2 rounded-full"><User className="h-6 w-6 text-primary" /></div>
+            <h2 className="text-lg font-semibold text-sidebar-foreground">Member Area</h2>
           </div>
         </SidebarHeader>
         <SidebarContent>
           <SidebarGroup>
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Dashboard" isActive={activeView === 'dashboard'} onClick={() => navigate('dashboard')}>
-                  <LayoutDashboard />
-                  <span>Dashboard</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              
-              {/* Commercial Profile Link: Dynamic Rebranding */}
-              <SidebarMenuItem>
-                <SidebarMenuButton tooltip={isTransporter ? "Service Profile (Shop)" : "My Shop"} isActive={activeView === 'shop'} onClick={() => navigate('shop')}>
-                  <Store />
-                  <span>{isTransporter ? "Service Profile (Shop)" : "My Shop"}</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-
-              <SidebarMenuItem>
-                <SidebarMenuButton tooltip="My Profile" isActive={activeView === 'profile'} onClick={() => navigate('profile')}>
-                  <User />
-                  <span>My Profile</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Company" isActive={activeView === 'company'} onClick={() => navigate('company')}>
-                  <Building />
-                  <span>Company</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Company Staff" isActive={activeView === 'staff'} onClick={() => navigate('staff')}>
-                  <Users />
-                  <span>Company Staff</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-
-               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="My Load Board" isActive={activeView === 'load-board'} onClick={() => navigate('load-board')}>
-                  <Truck />
-                  <span>My Load Board</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-               <SidebarMenuItem>
-                <SidebarMenuButton tooltip={isTransporter ? "Vehicles for Sale" : "My Vehicles"} isActive={activeView === 'vehicle-listings'} onClick={() => navigate('vehicle-listings')}>
-                  <Truck />
-                  <span>{isTransporter ? "Vehicles for Sale" : "My Vehicles"}</span>
-                </SidebarMenuButton>
+                <SidebarMenuButton tooltip="Dashboard" isActive={activeView === 'dashboard'} onClick={() => navigate('dashboard')}><LayoutDashboard /><span>Dashboard</span></SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="AI Marketing Studio" isActive={activeView === 'marketing-studio'} onClick={() => navigate('marketing-studio')}>
-                  <Sparkles />
-                  <span>AI Marketing</span>
-                </SidebarMenuButton>
+                <SidebarMenuButton tooltip={isTransporter ? "Service Profile" : "My Shop"} isActive={activeView === 'shop'} onClick={() => navigate('shop')}><Store /><span>{isTransporter ? "Service Profile" : "My Shop"}</span></SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Sales" isActive={isSalesActive}>
-                    <Handshake /><span>Sales</span>
-                </SidebarMenuButton>
+                <SidebarMenuButton tooltip="My Profile" isActive={activeView === 'profile'} onClick={() => navigate('profile')}><User /><span>My Profile</span></SidebarMenuButton>
+              </SidebarMenuItem>
+               <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Company" isActive={activeView === 'company'} onClick={() => navigate('company')}><Building /><span>Company</span></SidebarMenuButton>
+              </SidebarMenuItem>
+              {isTransporter && (
+                <SidebarMenuItem>
+                    <SidebarMenuButton tooltip="Fleet & Services" isActive={activeView === 'fleet'} onClick={() => navigate('fleet')}><Truck /><span>Fleet & Services</span></SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
+               <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Company Staff" isActive={activeView === 'staff'} onClick={() => navigate('staff')}><Users /><span>Company Staff</span></SidebarMenuButton>
+              </SidebarMenuItem>
+               <SidebarMenuItem>
+                <SidebarMenuButton tooltip="My Load Board" isActive={activeView === 'load-board'} onClick={() => navigate('load-board')}><Truck /><span>My Load Board</span></SidebarMenuButton>
+              </SidebarMenuItem>
+               <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Vehicle Ads" isActive={activeView === 'vehicle-listings'} onClick={() => navigate('vehicle-listings')}><Truck /><span>Vehicle Listings</span></SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton tooltip="AI Marketing" isActive={activeView === 'marketing-studio'} onClick={() => navigate('marketing-studio')}><Sparkles /><span>AI Marketing</span></SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Sales" isActive={isSalesActive}><Handshake /><span>Sales</span></SidebarMenuButton>
                 <SidebarMenuSub>
-                    <SidebarMenuSubItem>
-                        <SidebarMenuSubButton isActive={activeView === 'network'} onClick={() => navigate('network')}>
-                            <Users />My Network
-                        </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
-                    <SidebarMenuSubItem>
-                        <SidebarMenuSubButton isActive={activeView === 'performance'} onClick={() => navigate('performance')}>
-                            <TrendingUp />Performance
-                        </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
-                    <SidebarMenuSubItem>
-                        <SidebarMenuSubButton isActive={activeView === 'offer'} onClick={() => navigate('offer')}>
-                            <Gift />The Offer
-                        </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
-                    <SidebarMenuSubItem>
-                        <SidebarMenuSubButton isActive={activeView === 'emails'} onClick={() => navigate('emails')}>
-                            <Mail />Email Templates
-                        </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
+                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'network'} onClick={() => navigate('network')}><Users />My Network</SidebarMenuSubButton></SidebarMenuSubItem>
+                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'performance'} onClick={() => navigate('performance')}><TrendingUp />Performance</SidebarMenuSubButton></SidebarMenuSubItem>
+                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'offer'} onClick={() => navigate('offer')}><Gift />The Offer</SidebarMenuSubButton></SidebarMenuSubItem>
+                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'emails'} onClick={() => navigate('emails')}><Mail />Email Templates</SidebarMenuSubButton></SidebarMenuSubItem>
                 </SidebarMenuSub>
               </SidebarMenuItem>
                 <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Connect Plans" isActive={isConnectActive}>
-                    <Zap /><span>Connect</span>
-                </SidebarMenuButton>
+                <SidebarMenuButton tooltip="Connect Plans" isActive={isConnectActive}><Zap /><span>Connect</span></SidebarMenuButton>
                 <SidebarMenuSub>
-                    <SidebarMenuSubItem>
-                        <SidebarMenuSubButton isActive={activeView === 'connect-loyalty'} onClick={() => navigate('connect-loyalty')}>
-                            <Heart />Loyalty Plan
-                        </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
-                    <SidebarMenuSubItem>
-                        <SidebarMenuSubButton isActive={activeView === 'connect-rewards'} onClick={() => navigate('connect-rewards')}>
-                            <Gift />Rewards Plan
-                        </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
-                    <SidebarMenuSubItem>
-                        <SidebarMenuSubButton isActive={activeView === 'connect-actions'} onClick={() => navigate('connect-actions')}>
-                            <Zap />Actions Plan
-                        </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
+                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'connect-loyalty'} onClick={() => navigate('connect-loyalty')}><Heart />Loyalty Plan</SidebarMenuSubButton></SidebarMenuSubItem>
+                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'connect-rewards'} onClick={() => navigate('connect-rewards')}><Gift />Rewards Plan</SidebarMenuSubButton></SidebarMenuSubItem>
+                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'connect-actions'} onClick={() => navigate('connect-actions')}><Zap />Actions Plan</SidebarMenuSubButton></SidebarMenuSubItem>
                 </SidebarMenuSub>
               </SidebarMenuItem>
                <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Wallet" isActive={activeView === 'wallet'} onClick={() => navigate('wallet')}>
-                  <Wallet />
-                  <span>Wallet</span>
-                </SidebarMenuButton>
+                <SidebarMenuButton tooltip="Wallet" isActive={activeView === 'wallet'} onClick={() => navigate('wallet')}><Wallet /><span>Wallet</span></SidebarMenuButton>
               </SidebarMenuItem>
                <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Loyalty & Rewards" isActive={activeView === 'rewards'} onClick={() => navigate('rewards')}>
-                  <Gift />
-                  <span>Rewards Store</span>
-                </SidebarMenuButton>
+                <SidebarMenuButton tooltip="Rewards Store" isActive={activeView === 'rewards'} onClick={() => navigate('rewards')}><Gift /><span>Rewards Store</span></SidebarMenuButton>
               </SidebarMenuItem>
                 <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Activity" isActive={activeView === 'activity'} onClick={() => navigate('activity')}>
-                  <Activity />
-                  <span>Activity</span>
-                </SidebarMenuButton>
+                <SidebarMenuButton tooltip="Activity" isActive={activeView === 'activity'} onClick={() => navigate('activity')}><Activity /><span>Activity</span></SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Support Chat" isActive={activeView === 'support-chat'} onClick={() => navigate('support-chat')}>
-                  <MessageSquare />
-                  <span>Support Chat</span>
-                </SidebarMenuButton>
+                <SidebarMenuButton tooltip="Support Chat" isActive={activeView === 'support-chat'} onClick={() => navigate('support-chat')}><MessageSquare /><span>Support Chat</span></SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Billing" isActive={activeView === 'billing'} onClick={() => navigate('billing')}>
-                  <CreditCard />
-                  <span>Billing</span>
-                </SidebarMenuButton>
+                <SidebarMenuButton tooltip="Billing" isActive={activeView === 'billing'} onClick={() => navigate('billing')}><CreditCard /><span>Billing</span></SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Documents" isActive={activeView === 'documents'} onClick={() => navigate('documents')}>
-                  <FileText />
-                  <span>Documents</span>
-                </SidebarMenuButton>
+                <SidebarMenuButton tooltip="Documents" isActive={activeView === 'documents'} onClick={() => navigate('documents')}><FileText /><span>Documents</span></SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Settings" isActive={activeView === 'settings'} onClick={() => navigate('settings')}>
-                  <Settings />
-                  <span>Settings</span>
-                </SidebarMenuButton>
+                <SidebarMenuButton tooltip="Settings" isActive={activeView === 'settings'} onClick={() => navigate('settings')}><Settings /><span>Settings</span></SidebarMenuButton>
               </SidebarMenuItem>
           </SidebarGroup>
         </SidebarContent>
@@ -344,39 +237,21 @@ function AccountPageContent() {
               <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
             </Avatar>
             <div className="flex flex-col truncate">
-              <span className="text-sm font-medium text-sidebar-foreground truncate">
-                {user.displayName}
-              </span>
-              <span className="text-xs text-sidebar-foreground/70 truncate">
-                {user.email}
-              </span>
+              <span className="text-sm font-medium text-sidebar-foreground truncate">{user.displayName}</span>
+              <span className="text-xs text-sidebar-foreground/70 truncate">{user.email}</span>
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="ml-auto"
-              onClick={onLogout}
-            >
-              <LogOut className="h-5 w-5" />
-            </Button>
+            <Button variant="ghost" size="icon" className="ml-auto" onClick={onLogout}><LogOut className="h-5 w-5" /></Button>
           </div>
         </SidebarFooter>
       </Sidebar>
-      <SidebarInset>
-        <div className="p-4 md:p-6">
-          <Suspense fallback={<Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" />}>
-            {renderContent()}
-          </Suspense>
-        </div>
-      </SidebarInset>
+      <SidebarInset><div className="p-4 md:p-6">{renderContent()}</div></SidebarInset>
     </SidebarProvider>
   );
 }
 
-
 export default function AccountPage() {
   return (
-    <Suspense fallback={<div className="flex justify-center items-center min-h-[calc(100vh-8rem)]"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>}>
+    <Suspense fallback={<div className="flex justify-center items-center py-40"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>}>
       <AccountPageContent />
     </Suspense>
   );
