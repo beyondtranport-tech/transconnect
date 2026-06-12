@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useUser, getClientSideAuthToken } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
@@ -76,11 +76,11 @@ export default function SupplierProductContent() {
     return (
         <Card className="max-w-4xl mx-auto shadow-xl">
             <CardHeader className="border-b bg-muted/20 text-left">
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-4 text-left">
                     <div className="bg-primary/10 p-3 rounded-xl"><Building2 className="h-6 w-6 text-primary" /></div>
                     <div className="text-left">
-                        <CardTitle className="text-2xl font-bold">Product Portfolio & Focus</CardTitle>
-                        <CardDescription>Declare your specific industrial capabilities to enable AI matching with fleet owners.</CardDescription>
+                        <CardTitle className="text-2xl font-bold text-left">Product Portfolio & Focus</CardTitle>
+                        <CardDescription className="text-left">Declare your specific industrial capabilities to enable AI matching with fleet owners.</CardDescription>
                     </div>
                 </div>
             </CardHeader>
@@ -90,13 +90,12 @@ export default function SupplierProductContent() {
                         <Alert className="bg-primary/5 border-primary/20">
                             <Info className="h-5 w-5 text-primary" />
                             <AlertTitle className="font-bold">Ecosystem Connectivity</AlertTitle>
-                            <AlertDescription className="text-sm text-muted-foreground leading-relaxed mt-1">
+                            <AlertDescription className="text-sm text-muted-foreground leading-relaxed mt-1 text-left">
                                 By specifying your categories and supported brands, our intelligence engine can deliver your profile directly to members who have declared matching fleet equipment. This drives high-intent RFQs to your digital branch.
                             </AlertDescription>
                         </Alert>
                         
-                        {/* Categories */}
-                        <div className="space-y-4">
+                        <div className="space-y-4 text-left">
                             <h3 className="font-bold flex items-center gap-2 text-lg text-foreground"><Package className="h-5 w-5 text-primary" /> Industrial Categories</h3>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                 {supplierCategories.map(item => (
@@ -110,8 +109,7 @@ export default function SupplierProductContent() {
                             </div>
                         </div>
 
-                        {/* Supported Brands */}
-                        <div className="space-y-4">
+                        <div className="space-y-4 text-left">
                             <h3 className="font-bold flex items-center gap-2 text-lg text-foreground"><Sparkles className="h-5 w-5 text-primary" /> Supported Truck Brands</h3>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                 {brandOptions.map(item => (
@@ -125,8 +123,7 @@ export default function SupplierProductContent() {
                             </div>
                         </div>
 
-                        {/* Regions */}
-                        <div className="space-y-4">
+                        <div className="space-y-4 text-left">
                             <h3 className="font-bold flex items-center gap-2 text-lg text-foreground"><MapPin className="h-5 w-5 text-primary" /> Service Regions</h3>
                             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                                 {regionOptions.map(item => (
@@ -139,7 +136,6 @@ export default function SupplierProductContent() {
                                 ))}
                             </div>
                         </div>
-
                     </CardContent>
                     <CardFooter className="bg-slate-50 border-t p-6 flex justify-end">
                         <Button type="submit" disabled={isSaving} size="lg" className="h-12 px-10 font-bold gap-2">

@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { provinces } from '@/lib/geodata';
-import { Building2, Search, MapPin, ShieldCheck, Loader2, ArrowRight, Lock, Navigation, ShieldAlert, Sparkles, Database, Info, CheckCircle2 } from 'lucide-react';
+import { Building2, Search, MapPin, ShieldCheck, Loader2, ArrowRight, Lock, Navigation, Sparkles, Database, Info, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { useUser, getClientSideAuthToken } from '@/firebase';
@@ -38,18 +38,18 @@ export default function SupplierIntelligencePage() {
     const isTransporter = user?.declaredPosition === 'transporter' || user?.companyData?.shopType === 'transporter';
     const isSupplier = user?.declaredPosition === 'vendor' || user?.companyData?.shopType === 'vendor';
 
-    // Check if profile is complete
+    // Check if profile is complete based on role
     const isProfileComplete = useMemo(() => {
         if (!user || !user.companyData) return false;
         if (isTransporter) {
             const fleet = user.companyData.fleet;
-            return fleet && fleet.poweredUnits?.length > 0 && fleet.trailers?.length > 0;
+            return !!(fleet && fleet.poweredUnits?.length > 0 && fleet.trailers?.length > 0);
         } else if (isSupplier) {
             const productProfile = user.companyData.productProfile;
-            return productProfile && productProfile.categories?.length > 0 && productProfile.supportedBrands?.length > 0;
+            return !!(productProfile && productProfile.categories?.length > 0 && productProfile.supportedBrands?.length > 0);
         } else {
             const needs = user.companyData.logisticsNeeds;
-            return needs && needs.cargoTypes?.length > 0 && needs.routes?.length > 0;
+            return !!(needs && needs.cargoTypes?.length > 0 && needs.routes?.length > 0);
         }
     }, [user, isTransporter, isSupplier]);
 
@@ -104,7 +104,6 @@ export default function SupplierIntelligencePage() {
         return <div className="flex justify-center items-center h-screen"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
     }
 
-    // STEP 1: Not Logged In
     if (!user) {
         return (
             <div className="container mx-auto px-4 py-20 text-left">
@@ -114,7 +113,7 @@ export default function SupplierIntelligencePage() {
                             <Lock className="h-12 w-12 text-primary" />
                         </div>
                         <CardTitle className="text-4xl font-black font-headline">Member Access Only</CardTitle>
-                        <CardDescription className="text-slate-400 text-lg mt-2">The forensic supplier registry is exclusive to registered members of the ecosystem.</CardDescription>
+                        <CardDescription className="text-slate-400 text-lg mt-2">The forensic supplier registry is exclusive to registered members.</CardDescription>
                     </CardHeader>
                     <CardContent className="p-8 pt-4 space-y-6">
                         <div className="space-y-4 text-left">
@@ -126,17 +125,13 @@ export default function SupplierIntelligencePage() {
                                 <CheckCircle2 className="h-5 w-5 text-primary mt-1 shrink-0" />
                                 <p className="text-sm text-slate-300">Connect directly with owners and managing directors.</p>
                             </div>
-                            <div className="flex items-start gap-3">
-                                <CheckCircle2 className="h-5 w-5 text-primary mt-1 shrink-0" />
-                                <p className="text-sm text-slate-300">Filter by highly specific industrial categories and regions.</p>
-                            </div>
                         </div>
                         <div className="flex flex-col gap-3 pt-4">
                             <Button size="lg" className="h-14 text-lg font-black uppercase tracking-tight" asChild>
                                 <Link href="/join">Join for Free</Link>
                             </Button>
                             <Button variant="ghost" className="text-slate-400 hover:text-white" asChild>
-                                <Link href="/signin">Already a member? Sign In</Link>
+                                <Link href="/signin">Sign In</Link>
                             </Button>
                         </div>
                     </CardContent>
@@ -145,14 +140,13 @@ export default function SupplierIntelligencePage() {
         );
     }
 
-    // STEP 2: Logged in but Profile Incomplete
     if (!isProfileComplete && !skipProfile) {
         return (
             <div className="bg-slate-50 min-h-screen py-16 text-left">
                 <div className="container mx-auto px-4 max-w-4xl">
                     <Card className="shadow-2xl border-none">
                         <CardHeader className="bg-slate-900 text-white rounded-t-xl p-8 text-left">
-                            <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-4 text-left">
                                 <div className="bg-primary/20 p-3 rounded-lg"><Sparkles className="h-6 w-6 text-primary" /></div>
                                 <div className="text-left">
                                     <CardTitle className="text-2xl font-black font-headline text-left">Complete Your Strategic Profile</CardTitle>
@@ -168,16 +162,15 @@ export default function SupplierIntelligencePage() {
                                 </AlertDescription>
                             </Alert>
 
-                            {isTransporter ? (
-                                <FleetContent />
-                            ) : isSupplier ? (
+                            {isSupplier ? (
                                 <SupplierProductContent />
+                            ) : isTransporter ? (
+                                <FleetContent />
                             ) : (
                                 <NeedsContent />
                             )}
                             
                             <div className="flex flex-col items-center pt-8 border-t">
-                                <p className="text-xs text-muted-foreground mb-4 italic">Providing this data improves your visibility and negotiation power.</p>
                                 <Button variant="ghost" className="text-muted-foreground hover:text-primary font-bold uppercase tracking-widest text-[10px]" onClick={() => setSkipProfile(true)}>
                                     Proceed without profile <ArrowRight className="ml-1 h-3 w-3" />
                                 </Button>
@@ -189,14 +182,13 @@ export default function SupplierIntelligencePage() {
         );
     }
 
-    // STEP 3: Authorized and Complete (or skipped)
     return (
         <div className="bg-slate-50 min-h-screen text-left">
-            <section className="bg-slate-900 text-white py-16">
-                <div className="container mx-auto px-4 text-center">
+            <section className="bg-slate-900 text-white py-16 text-center">
+                <div className="container mx-auto px-4">
                     <Badge className="mb-4 bg-primary/20 text-primary border-primary/30 py-1.5 px-4 text-[10px] font-black uppercase tracking-widest">Forensic Registry</Badge>
                     <h1 className="text-4xl md:text-6xl font-black font-headline">Supplier Intelligence</h1>
-                    <p className="mt-4 text-lg text-slate-400 max-w-2xl mx-auto text-center">Map the South African industrial landscape. Find verified suppliers based on precise categories and regional presence.</p>
+                    <p className="mt-4 text-lg text-slate-400 max-w-2xl mx-auto">Map the South African industrial landscape by category and region.</p>
                 </div>
             </section>
 
@@ -207,7 +199,7 @@ export default function SupplierIntelligencePage() {
                             <Navigation className="h-5 w-5 text-primary" />
                             Specify Search Variables
                         </CardTitle>
-                        <CardDescription>Select a region and industrial category to scan the master registry.</CardDescription>
+                        <CardDescription>Select a region and category to scan the registry.</CardDescription>
                     </CardHeader>
                     <CardContent className="p-6 grid grid-cols-1 md:grid-cols-4 gap-4 items-end text-left">
                         <div className="space-y-2 text-left">
@@ -268,11 +260,11 @@ export default function SupplierIntelligencePage() {
                         <p className="font-bold text-muted-foreground uppercase tracking-widest">Mapping Supplier Intelligence...</p>
                     </div>
                 ) : (
-                    <div className="max-w-6xl mx-auto space-y-8">
+                    <div className="max-w-6xl mx-auto space-y-8 text-left">
                         <div className="flex justify-between items-center px-4 border-l-4 border-primary text-left">
                             <div className="text-left">
                                 <h2 className="text-2xl font-black">Forensic Results ({results.length})</h2>
-                                <p className="text-xs text-muted-foreground">Showing verified suppliers matching <strong>{selectedCategory}</strong> in {selectedCity || 'the selected region'}.</p>
+                                <p className="text-xs text-muted-foreground">Showing verified suppliers matching <strong>{selectedCategory}</strong>.</p>
                             </div>
                             {!isPaid && (
                                 <Badge variant="secondary" className="gap-1.5 py-1.5 px-4 border border-amber-200 text-amber-700 bg-amber-50">
@@ -289,8 +281,8 @@ export default function SupplierIntelligencePage() {
                                             <Badge variant="outline" className="text-[10px] font-black uppercase border-primary text-primary">{res.entryType || 'Supplier'}</Badge>
                                             <ShieldCheck className="h-4 w-4 text-green-500" />
                                         </div>
-                                        <CardTitle className="text-lg font-black group-hover:text-primary transition-colors text-left">{res.companyName}</CardTitle>
-                                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1 font-medium text-left">
+                                        <CardTitle className="text-lg font-black group-hover:text-primary transition-colors">{res.companyName}</CardTitle>
+                                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
                                             <MapPin className="h-3 w-3" />
                                             <span className="truncate">{res.address || 'South Africa'}</span>
                                         </div>
@@ -326,16 +318,9 @@ export default function SupplierIntelligencePage() {
                                 </Card>
                             ))}
                         </div>
-                        
-                        {results.length === 0 && (
-                            <div className="text-center py-20 bg-white rounded-3xl border-2 border-dashed">
-                                <p className="text-muted-foreground italic">No verified suppliers found for this specific industrial category and region match. Try a broader search.</p>
-                            </div>
-                        )}
                     </div>
                 )}
             </section>
         </div>
     );
 }
-
