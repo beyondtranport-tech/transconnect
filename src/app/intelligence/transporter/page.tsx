@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { provinces } from '@/lib/geodata';
-import { Truck, Search, MapPin, ShieldCheck, Loader2, ArrowRight, Lock, Navigation, UserCheck, ShieldAlert, Sparkles, Database } from 'lucide-react';
+import { Truck, Search, MapPin, ShieldCheck, Loader2, ArrowRight, Lock, Navigation, UserCheck, ShieldAlert, Sparkles, Database, Info } from 'lucide-react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { useUser, getClientSideAuthToken } from '@/firebase';
@@ -15,6 +15,7 @@ import * as gtag from '@/lib/gtag';
 import { cn } from '@/lib/utils';
 import FleetContent from '@/app/account/fleet-content';
 import NeedsContent from '@/app/account/needs-content';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const servicesMap = [
     { id: 'container', label: 'Container Transport', requiredFleet: ['Skeletal'] },

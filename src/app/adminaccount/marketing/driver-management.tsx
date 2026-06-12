@@ -189,7 +189,7 @@ export default function DriverManagement() {
     }
   };
 
-  const columns: ColumnDef<any>[] = [
+  const columns: ColumnDef<any>[] = useMemo(() => [
     { 
         header: 'Driver Identity', 
         cell: ({ row }) => (
@@ -214,7 +214,7 @@ export default function DriverManagement() {
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'delete', data: row.original })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
       </div>
     )},
-  ];
+  ], [fetchData]);
 
   return (
     <div className="space-y-6">
