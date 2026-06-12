@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { provinces } from '@/lib/geodata';
-import { Truck, Search, MapPin, ShieldCheck, Loader2, ArrowRight, Lock, Navigation, UserCheck, ShieldAlert, Sparkles, Database, Info } from 'lucide-react';
+import { Truck, Search, MapPin, ShieldCheck, Loader2, ArrowRight, Lock, Navigation, UserCheck, ShieldAlert, Sparkles, Database, Info, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { useUser, getClientSideAuthToken } from '@/firebase';
@@ -18,11 +18,11 @@ import NeedsContent from '@/app/account/needs-content';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const servicesMap = [
-    { id: 'container', label: 'Container Transport', requiredFleet: ['Skeletal'] },
-    { id: 'reefer-container', label: 'Refrigerated Containers', requiredFleet: ['Skeletal', 'Skeletal + Genset'] },
-    { id: 'general-freight', label: 'General Freight', requiredFleet: ['Tautliner', 'Flatbed'] },
-    { id: 'bulk-aggregates', label: 'Bulk / Aggregates', requiredFleet: ['Tipper'] },
-    { id: 'abnormal-loads', label: 'Abnormal Loads', requiredFleet: ['Lowbed'] },
+    { id: 'container', label: 'Container Transport' },
+    { id: 'reefer-container', label: 'Refrigerated Containers' },
+    { id: 'general-freight', label: 'General Freight' },
+    { id: 'bulk-aggregates', label: 'Bulk / Aggregates' },
+    { id: 'abnormal-loads', label: 'Abnormal Loads' },
 ];
 
 export default function TransporterIntelligencePage() {
@@ -37,10 +37,13 @@ export default function TransporterIntelligencePage() {
     const [isLoading, setIsLoading] = useState(false);
     const [hasSearched, setHasSearched] = useState(false);
     
+    // Profile Optionality State
+    const [skipProfile, setSkipProfile] = useState(false);
+    
     const isPaid = user?.companyData?.membershipId && user.companyData.membershipId !== 'free';
     const isTransporter = user?.declaredPosition === 'transporter' || user?.companyData?.shopType === 'transporter';
 
-    // Check if profile is complete (fleet for transporters, needs for buyers)
+    // Check if profile is complete
     const isProfileComplete = useMemo(() => {
         if (!user || !user.companyData) return false;
         if (isTransporter) {
@@ -144,8 +147,8 @@ export default function TransporterIntelligencePage() {
         );
     }
 
-    // STEP 2: Logged in but Profile Incomplete
-    if (!isProfileComplete) {
+    // STEP 2: Logged in but Profile Incomplete (Show prompt unless skipped)
+    if (!isProfileComplete && !skipProfile) {
         return (
             <div className="bg-slate-50 min-h-screen py-16 text-left">
                 <div className="container mx-auto px-4 max-w-4xl">
@@ -164,7 +167,7 @@ export default function TransporterIntelligencePage() {
                                 <Info className="h-5 w-5 text-primary" />
                                 <AlertTitle className="font-bold">Why do we ask for this?</AlertTitle>
                                 <AlertDescription className="text-sm text-muted-foreground leading-relaxed mt-1">
-                                    Our intelligence engine uses your specific fleet data or cargo needs to automatically filter the registry. This eliminates "empty searches" and connects you with the right capacity instantly. This data also helps us negotiate collective group discounts for your specific equipment.
+                                    Our intelligence engine uses your specific fleet data or cargo needs to automatically filter the registry. This eliminates "empty searches" and connects you with the right capacity instantly.
                                 </AlertDescription>
                             </Alert>
 
@@ -173,6 +176,13 @@ export default function TransporterIntelligencePage() {
                             ) : (
                                 <NeedsContent />
                             )}
+                            
+                            <div className="flex flex-col items-center pt-8 border-t">
+                                <p className="text-xs text-muted-foreground mb-4 italic">Providing this data improves your visibility and negotiation power.</p>
+                                <Button variant="ghost" className="text-muted-foreground hover:text-primary font-bold uppercase tracking-widest text-[10px]" onClick={() => setSkipProfile(true)}>
+                                    Proceed without profile <ArrowRight className="ml-1 h-3 w-3" />
+                                </Button>
+                            </div>
                         </CardContent>
                     </Card>
                 </div>
@@ -180,7 +190,7 @@ export default function TransporterIntelligencePage() {
         );
     }
 
-    // STEP 3: Authorized and Complete - Search View
+    // STEP 3: Authorized and Complete (or skipped) - Search View
     return (
         <div className="bg-slate-50 min-h-screen text-left">
             <section className="bg-slate-900 text-white py-16">
@@ -305,7 +315,7 @@ export default function TransporterIntelligencePage() {
                                     <CardFooter className="pt-0 border-t bg-slate-50/50 flex flex-col gap-2 p-4">
                                         {!isPaid ? (
                                             <Button asChild className="w-full h-11 font-black uppercase text-xs tracking-widest" variant="secondary">
-                                                <Link href="/pricing"><Lock className="h-3 w-3 mr-2" /> Unlock Funder Intelligence</Link>
+                                                <Link href="/pricing"><Lock className="h-3 w-3 mr-2" /> Unlock Contact Intelligence</Link>
                                             </Button>
                                         ) : (
                                             <div className="w-full flex gap-2 pt-2">
@@ -328,24 +338,4 @@ export default function TransporterIntelligencePage() {
             </section>
         </div>
     );
-}
-
-function CheckCircle2(props: any) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" />
-      <path d="m9 12 2 2 4-4" />
-    </svg>
-  )
 }
