@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -5,6 +6,7 @@ import { getAdminApp } from '@/lib/firebase-admin';
 
 export const dynamic = 'force-dynamic';
 
+// Helper to serialize Firestore Timestamps
 function serializeTimestamps(docData: any): any {
     if (!docData) return docData;
     const newDocData: { [key: string]: any } = {};
@@ -41,8 +43,8 @@ export async function POST(req: NextRequest) {
         const isAdmin = decodedToken.email === 'beyondtransport@gmail.com' || decodedToken.email === 'mkoton100@gmail.com';
         if (!isAdmin) throw new Error("Forbidden: Admin access required.");
 
-        // Maximum results to return in a single "Full Load"
-        const MAX_LOAD = 10000;
+        // QUOTA PROTECTION: Cap default loads to 100 to prevent 429/Resource Exhausted errors
+        const MAX_LOAD = 100;
 
         switch (action) {
             case 'getMembers': {
@@ -78,6 +80,20 @@ export async function POST(req: NextRequest) {
                 const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
                 return NextResponse.json({ success: true, data });
             }
+            
+            case 'searchRegistry': {
+                const { term, type } = payload;
+                const collectionName = type === 'lead' ? 'leads' : 'partners';
+                // Simple keyword search on companyName for performance
+                const snap = await db.collection(collectionName)
+                    .orderBy('companyName')
+                    .startAt(term)
+                    .endAt(term + '\uf8ff')
+                    .limit(100)
+                    .get();
+                const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
+                return NextResponse.json({ success: true, data });
+            }
 
             case 'savePartner': {
                 const { partner } = payload;
@@ -91,94 +107,10 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, id });
             }
 
-            case 'bulkSavePartners': {
-                const { partners, type } = payload;
-                const batch = db.batch();
-                const collectionName = type === 'lead' ? 'leads' : 'partners';
-                
-                partners.forEach((p: any) => {
-                    const id = p.record_id || p.id || db.collection(collectionName).doc().id;
-                    const standardized: any = { ...p };
-                    
-                    // Intelligent Name Splitting for CRM consistency
-                    if (p.contact_person || p.contactPerson) {
-                        const full = p.contact_person || p.contactPerson;
-                        standardized.contactPerson = full;
-                        if (!standardized.firstName) {
-                            const parts = full.trim().split(/\s+/);
-                            standardized.firstName = parts[0] || '';
-                            standardized.lastName = parts.slice(1).join(' ') || '';
-                        }
-                    }
-
-                    // Field Normalization
-                    if (p.company_name || p.companyName) standardized.companyName = p.company_name || p.companyName;
-                    if (p.email_address || p.email) standardized.email = p.email_address || p.email;
-                    if (p.telephone_number || p.phone || p.landline) standardized.phone = p.telephone_number || p.phone || p.landline;
-                    if (p.mobile_number || p.cell || p.direct_cell || p.mobile) standardized.mobile = p.mobile_number || p.cell || p.direct_cell || p.mobile;
-                    if (p.physical_address || p.address) standardized.address = p.physical_address || p.address;
-                    
-                    const docRef = db.collection(collectionName).doc(id);
-                    batch.set(docRef, {
-                        ...standardized,
-                        id,
-                        type: type === 'lead' ? undefined : type,
-                        updatedAt: FieldValue.serverTimestamp()
-                    }, { merge: true });
-
-                    const logRef = docRef.collection('communications').doc();
-                    batch.set(logRef, {
-                        id: logRef.id,
-                        type: 'AI Update',
-                        subject: 'Forensic Data Updated',
-                        notes: 'Forensic research results successfully imported and applied.',
-                        timestamp: FieldValue.serverTimestamp()
-                    });
-                });
-                await batch.commit();
-                return NextResponse.json({ success: true, count: partners.length });
-            }
-
-            case 'logForensicInitiated': {
-                const { partnerId, isLead } = payload;
-                const parentCollection = isLead ? 'leads' : 'partners';
-                const ref = db.collection(parentCollection).doc(partnerId);
-                
-                const logRef = ref.collection('communications').doc();
-                const batch = db.batch();
-                
-                batch.set(logRef, {
-                    id: logRef.id,
-                    type: 'AI Research',
-                    subject: 'Forensic Research Initiated',
-                    notes: 'Forensic AI prompt copied for industrial intelligence search.',
-                    timestamp: FieldValue.serverTimestamp()
-                });
-                
-                batch.update(ref, {
-                    status: 'contacted',
-                    updatedAt: FieldValue.serverTimestamp()
-                });
-                
-                await batch.commit();
-                return NextResponse.json({ success: true });
-            }
-
-            case 'logCommunication': {
-                const { partnerId, type, subject, notes, isLead } = payload;
-                const col = isLead ? 'leads' : 'partners';
-                const ref = db.collection(col).doc(partnerId).collection('communications').doc();
-                await ref.set({
-                    id: ref.id, type, subject, notes,
-                    timestamp: FieldValue.serverTimestamp()
-                });
-                await db.collection(col).doc(partnerId).set({
-                    lastOutreachAt: FieldValue.serverTimestamp(),
-                    lastOutreachSubject: subject,
-                    status: 'contacted',
-                    updatedAt: FieldValue.serverTimestamp()
-                }, { merge: true });
-                return NextResponse.json({ success: true });
+            case 'getAuditLogs': {
+                const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(MAX_LOAD).get();
+                const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
+                return NextResponse.json({ success: true, data });
             }
 
             case 'getPlatformStaff': {
