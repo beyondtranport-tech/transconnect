@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -27,7 +26,7 @@ const certOptions = ["Valid PrDP", "Hazmat / DG Certificate", "Forklift License"
 const regionOptions = ['Gauteng', 'Western Cape', 'KwaZulu-Natal', 'Eastern Cape', 'Free State', 'Mpumalanga', 'Limpopo', 'North West', 'Northern Cape', 'Cross-Border (SADC)'];
 
 export default function HumanCapitalContent() {
-    const { user, isUserLoading, forceRefresh } = userUser();
+    const { user, isUserLoading, forceRefresh } = useUser();
     const { toast } = useToast();
     const [isSaving, setIsSaving] = useState(false);
 
@@ -48,6 +47,7 @@ export default function HumanCapitalContent() {
     }, [user, form]);
 
     const onSubmit = async (values: z.infer<typeof humanCapitalSchema>) => {
+        if (!user?.companyId) return;
         setIsSaving(true);
         try {
             const token = await getClientSideAuthToken();
@@ -87,17 +87,17 @@ export default function HumanCapitalContent() {
             </CardHeader>
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)}>
-                    <CardContent className="p-8 space-y-10">
+                    <CardContent className="p-8 space-y-10 text-left">
                         <Alert className="bg-primary/5 border-primary/20">
                             <Info className="h-5 w-5 text-primary" />
                             <AlertTitle className="font-bold">Career Intelligence</AlertTitle>
-                            <AlertDescription className="text-sm text-muted-foreground leading-relaxed mt-1">
+                            <AlertDescription className="text-sm text-muted-foreground leading-relaxed mt-1 text-left">
                                 Our platform uses this data to match your skills with suitable vacancies across our member network. Declaring your certifications and regions is a strict requirement for verified visibility.
                             </AlertDescription>
                         </Alert>
                         
                         {/* Job Categories */}
-                        <div className="space-y-4">
+                        <div className="space-y-4 text-left">
                             <h3 className="font-bold flex items-center gap-2 text-lg text-foreground"><Briefcase className="h-5 w-5 text-primary" /> Industry Category (Role)</h3>
                             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                                 {jobOptions.map(item => (
@@ -112,7 +112,7 @@ export default function HumanCapitalContent() {
                         </div>
 
                         {/* Certifications */}
-                        <div className="space-y-4">
+                        <div className="space-y-4 text-left">
                             <h3 className="font-bold flex items-center gap-2 text-lg text-foreground"><Award className="h-5 w-5 text-primary" /> Certifications & Licenses</h3>
                             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                                 {certOptions.map(item => (
@@ -127,7 +127,7 @@ export default function HumanCapitalContent() {
                         </div>
 
                         {/* Location */}
-                        <div className="space-y-4">
+                        <div className="space-y-4 text-left">
                             <h3 className="font-bold flex items-center gap-2 text-lg text-foreground"><MapPin className="h-5 w-5 text-primary" /> Work Availability (Location)</h3>
                             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                                 {regionOptions.map(item => (
@@ -142,7 +142,7 @@ export default function HumanCapitalContent() {
                         </div>
 
                         {/* Desired Salary */}
-                        <div className="space-y-4">
+                        <div className="space-y-4 text-left">
                             <h3 className="font-bold flex items-center gap-2 text-lg text-foreground"><Banknote className="h-5 w-5 text-primary" /> Desired Salary / Rate</h3>
                             <FormField control={form.control} name="desiredSalary" render={({ field }) => (
                                 <FormItem className="max-w-xs">

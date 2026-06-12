@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -17,10 +16,8 @@ import {
 } from '@/components/ui/sidebar';
 import {
   Users,
-  Settings,
   LogOut,
   LayoutDashboard,
-  FileText,
   User,
   Building,
   Store,
@@ -42,15 +39,13 @@ import {
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { useRouter, useSearchParams, usePathname } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect, Suspense, useCallback } from 'react';
 import { useUser, useAuth } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { Loader2 } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import React from 'react';
 import AIChatWidget from '@/components/ai-chat-widget';
-import Link from 'next/link';
 
 // Component Imports
 import AccountDashboard from './dashboard';
@@ -70,24 +65,12 @@ import NetworkContent from './network-content';
 import PerformanceContent from './performance-content';
 import NetworkOffer from './network-offer';
 import NetworkEmails from './network-emails';
-import MarketingStudio from './marketing-studio';
 import SupportChatContent from './support-chat';
 import LoadBoardContent from './load-board-content';
 import VehicleListingsContent from './vehicle-listings-content';
 import LoyaltyPlanPage from '@/app/connect/loyalty/page';
 import RewardsPlanPage from '@/app/connect/rewards/page';
 import ActionsPlanPage from '@/app/connect/actions/page';
-
-function DocumentsContent() {
-    return (
-        <Card><CardHeader><CardTitle>Documents</CardTitle></CardHeader><CardContent><p className="text-muted-foreground">This section is under construction.</p></CardContent></Card>
-    )
-}
-function SettingsContent() {
-     return (
-        <Card><CardHeader><CardTitle>Settings</CardTitle></CardHeader><CardContent><p className="text-muted-foreground">This section is under construction.</p></CardContent></Card>
-    )
-}
 
 function AccountPageContent() {
   const router = useRouter();
@@ -130,7 +113,6 @@ function AccountPageContent() {
       case 'shop': return <ShopContent />;
       case 'load-board': return <LoadBoardContent />;
       case 'vehicle-listings': return <VehicleListingsContent />;
-      case 'marketing-studio': return <MarketingStudio />;
       case 'wallet': return <WalletContent />;
       case 'billing': return <BillingContent />;
       case 'rewards': return <RewardsContent />;
@@ -143,25 +125,30 @@ function AccountPageContent() {
       case 'connect-loyalty': return <LoyaltyPlanPage />;
       case 'connect-rewards': return <RewardsPlanPage />;
       case 'connect-actions': return <ActionsPlanPage />;
-      case 'documents': return <DocumentsContent />;
-      case 'settings': return <SettingsContent />;
       case 'dashboard':
       default:
         return <AccountDashboard />;
     }
   }, [activeView]);
 
+  const navigate = (view: string) => {
+    router.push(`/account?view=${view}`, { scroll: false });
+  };
+
   if (isUserLoading || !user) {
-    return <div className="flex justify-center items-center py-40"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>;
+    return (
+      <div className="flex justify-center items-center py-40">
+        <Loader2 className="h-16 w-16 animate-spin text-primary" />
+      </div>
+    );
   }
 
-  const navigate = (view: string) => router.push(`/account?view=${view}`, { scroll: false });
-  const isSalesActive = ['network', 'performance', 'offer', 'emails'].includes(activeView);
-  const isConnectActive = ['connect-loyalty', 'connect-rewards', 'connect-actions'].includes(activeView);
-  
   const isTransporter = user.declaredPosition === 'transporter' || user.companyData?.shopType === 'transporter';
   const isSupplier = user.declaredPosition === 'vendor' || user.companyData?.shopType === 'vendor';
   const isDriver = user.declaredPosition === 'driver' || user.role === 'driver';
+  
+  const isSalesActive = ['network', 'performance', 'offer', 'emails'].includes(activeView);
+  const isConnectActive = ['connect-loyalty', 'connect-rewards', 'connect-actions'].includes(activeView);
 
   return (
     <SidebarProvider>
@@ -193,19 +180,16 @@ function AccountPageContent() {
                     <SidebarMenuButton tooltip="Fleet & Services" isActive={activeView === 'fleet'} onClick={() => navigate('fleet')}><Truck /><span>Fleet & Services</span></SidebarMenuButton>
                 </SidebarMenuItem>
               )}
-
               {isSupplier && (
                 <SidebarMenuItem>
                     <SidebarMenuButton tooltip="Product Portfolio" isActive={activeView === 'product-portfolio'} onClick={() => navigate('product-portfolio')}><Package /><span>Product Portfolio</span></SidebarMenuButton>
                 </SidebarMenuItem>
               )}
-
               {isDriver && (
                 <SidebarMenuItem>
                     <SidebarMenuButton tooltip="Professional Profile" isActive={activeView === 'professional-profile'} onClick={() => navigate('professional-profile')}><Award /><span>Professional Profile</span></SidebarMenuButton>
                 </SidebarMenuItem>
               )}
-
               {!isTransporter && !isSupplier && !isDriver && (
                 <SidebarMenuItem>
                     <SidebarMenuButton tooltip="Logistics Needs" isActive={activeView === 'needs'} onClick={() => navigate('needs')}><ShoppingCart /><span>Logistics Needs</span></SidebarMenuButton>
@@ -214,15 +198,6 @@ function AccountPageContent() {
 
                <SidebarMenuItem>
                 <SidebarMenuButton tooltip="Company Staff" isActive={activeView === 'staff'} onClick={() => navigate('staff')}><Users /><span>Company Staff</span></SidebarMenuButton>
-              </SidebarMenuItem>
-               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="My Load Board" isActive={activeView === 'load-board'} onClick={() => navigate('load-board')}><Truck /><span>My Load Board</span></SidebarMenuButton>
-              </SidebarMenuItem>
-               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Vehicle Ads" isActive={activeView === 'vehicle-listings'} onClick={() => navigate('vehicle-listings')}><Truck /><span>Vehicle Listings</span></SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton tooltip="AI Marketing" isActive={activeView === 'marketing-studio'} onClick={() => navigate('marketing-studio')}><Sparkles /><span>AI Marketing</span></SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton tooltip="Sales" isActive={isSalesActive}><Handshake /><span>Sales</span></SidebarMenuButton>
@@ -244,9 +219,6 @@ function AccountPageContent() {
                <SidebarMenuItem>
                 <SidebarMenuButton tooltip="Wallet" isActive={activeView === 'wallet'} onClick={() => navigate('wallet')}><Wallet /><span>Wallet</span></SidebarMenuButton>
               </SidebarMenuItem>
-               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Rewards Store" isActive={activeView === 'rewards'} onClick={() => navigate('rewards')}><Gift /><span>Rewards Store</span></SidebarMenuButton>
-              </SidebarMenuItem>
                 <SidebarMenuItem>
                 <SidebarMenuButton tooltip="Activity" isActive={activeView === 'activity'} onClick={() => navigate('activity')}><Activity /><span>Activity</span></SidebarMenuButton>
               </SidebarMenuItem>
@@ -256,14 +228,8 @@ function AccountPageContent() {
               <SidebarMenuItem>
                 <SidebarMenuButton tooltip="Billing" isActive={activeView === 'billing'} onClick={() => navigate('billing')}><CreditCard /><span>Billing</span></SidebarMenuButton>
               </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Documents" isActive={activeView === 'documents'} onClick={() => navigate('documents')}><FileText /><span>Documents</span></SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Settings" isActive={activeView === 'settings'} onClick={() => navigate('settings')}><Settings /><span>Settings</span></SidebarMenuButton>
-              </SidebarMenuItem>
           </SidebarGroup>
-        </Sidebar>
+        </SidebarContent>
         <SidebarFooter>
           <div className="flex items-center gap-3 p-2 rounded-md bg-sidebar-accent">
             <Avatar className="h-10 w-10">
