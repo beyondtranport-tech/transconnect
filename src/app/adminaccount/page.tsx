@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -167,8 +166,8 @@ function AdminAccountContent() {
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
   };
 
-  const isMarketingActive = activeView.startsWith('marketing-');
   const navigate = (view: string) => router.push(`/adminaccount?view=${view}`, { scroll: false });
+  const isMarketingActive = activeView.startsWith('marketing-');
 
   return (
     <SidebarProvider>
@@ -252,9 +251,7 @@ function AdminAccountContent() {
       </Sidebar>
       <SidebarInset>
           <div className="p-6">
-              <Suspense fallback={<Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" />}>
-                  {renderContent()}
-              </Suspense>
+              {renderContent()}
           </div>
       </SidebarInset>
     </SidebarProvider>

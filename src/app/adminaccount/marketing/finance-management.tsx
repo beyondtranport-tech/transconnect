@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -112,7 +111,7 @@ function FinanceDialog({ open, onOpenChange, partner, onSave }: { open: boolean;
             </div>
             <div className="grid grid-cols-2 gap-4 text-left">
               <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" /></FormControl><FormMessage /></FormItem>)} />
-              <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Work Phone (Landline)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Work Phone (Landline)</FormLabel><FormControl><Input placeholder="+27 11..." {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
             <div className="grid grid-cols-2 gap-4 text-left">
               <FormField control={form.control} name="mobile" render={({ field }) => (<FormItem><FormLabel>Mobile (Direct Cell)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} /></FormControl><FormMessage /></FormItem>)} />
@@ -201,7 +200,7 @@ export default function FinanceManagement() {
     }
   }
 
-  const columns: ColumnDef<any>[] = useMemo(() => [
+  const columns: ColumnDef<any>[] = [
     { accessorKey: 'companyName', header: 'Entity Name', cell: ({ row }) => <div className="font-bold text-left">{row.original.companyName || `${row.original.firstName} ${row.original.lastName}`}</div> },
     { accessorKey: 'phone', header: 'Landline' },
     { accessorKey: 'mobile', header: 'Mobile' },
@@ -218,7 +217,7 @@ export default function FinanceManagement() {
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'delete', data: row.original })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
       </div>
     )},
-  ], [fetchData]);
+  ];
 
   return (
     <>
@@ -234,7 +233,7 @@ export default function FinanceManagement() {
       <div className="space-y-6 text-left">
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
             <div className="text-left">
-                <CardTitle className="flex items-center gap-2"><Landmark /> Finance Registry</CardTitle>
+                <CardTitle className="flex items-center gap-2"><Landmark /> Capital Intelligence Registry</CardTitle>
                 <CardDescription>Full registry view ({partners.length} records).</CardDescription>
             </div>
             <div className="flex items-center gap-2">
