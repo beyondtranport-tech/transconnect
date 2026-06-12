@@ -1,19 +1,20 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { provinces } from '@/lib/geodata';
-import { Truck, Search, MapPin, ShieldCheck, Loader2, ArrowRight, Lock, Navigation } from 'lucide-react';
-import Image from 'next/image';
+import { Truck, Search, MapPin, ShieldCheck, Loader2, ArrowRight, Lock, Navigation, UserCheck, ShieldAlert, Sparkles, Database } from 'lucide-react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { useUser, getClientSideAuthToken } from '@/firebase';
 import * as gtag from '@/lib/gtag';
 import { cn } from '@/lib/utils';
+import FleetContent from '@/app/account/fleet-content';
+import NeedsContent from '@/app/account/needs-content';
 
 const servicesMap = [
     { id: 'container', label: 'Container Transport', requiredFleet: ['Skeletal'] },
@@ -24,17 +25,31 @@ const servicesMap = [
 ];
 
 export default function TransporterIntelligencePage() {
-    const { user } = useUser();
+    const { user, isUserLoading } = useUser();
+    
+    // Search State
     const [selectedProvince, setSelectedProvince] = useState('');
     const [selectedCity, setSelectedCity] = useState('');
     const [selectedSuburb, setSelectedSuburb] = useState('');
     const [selectedService, setSelectedService] = useState('');
-    
     const [results, setResults] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [hasSearched, setHasSearched] = useState(false);
     
     const isPaid = user?.companyData?.membershipId && user.companyData.membershipId !== 'free';
+    const isTransporter = user?.declaredPosition === 'transporter' || user?.companyData?.shopType === 'transporter';
+
+    // Check if profile is complete (fleet for transporters, needs for buyers)
+    const isProfileComplete = useMemo(() => {
+        if (!user || !user.companyData) return false;
+        if (isTransporter) {
+            const fleet = user.companyData.fleet;
+            return fleet && fleet.poweredUnits?.length > 0 && fleet.trailers?.length > 0;
+        } else {
+            const needs = user.companyData.logisticsNeeds;
+            return needs && needs.cargoTypes?.length > 0 && needs.routes?.length > 0;
+        }
+    }, [user, isTransporter]);
 
     const cities = useMemo(() => {
         const prov = provinces.find(p => p.name === selectedProvince);
@@ -83,6 +98,88 @@ export default function TransporterIntelligencePage() {
         }
     };
 
+    if (isUserLoading) {
+        return <div className="flex justify-center items-center h-screen"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
+    }
+
+    // STEP 1: Not Logged In
+    if (!user) {
+        return (
+            <div className="container mx-auto px-4 py-20 text-left">
+                <Card className="max-w-2xl mx-auto shadow-2xl overflow-hidden border-none bg-slate-900 text-white">
+                    <CardHeader className="p-8 pb-4 text-center">
+                        <div className="bg-primary/20 p-4 rounded-full w-fit mx-auto mb-6">
+                            <Lock className="h-12 w-12 text-primary" />
+                        </div>
+                        <CardTitle className="text-4xl font-black font-headline">Member Access Only</CardTitle>
+                        <CardDescription className="text-slate-400 text-lg mt-2">The forensic haulier registry is exclusive to registered members of the ecosystem.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="p-8 pt-4 space-y-6">
+                        <div className="space-y-4">
+                            <div className="flex items-start gap-3">
+                                <CheckCircle2 className="h-5 w-5 text-primary mt-1 shrink-0" />
+                                <p className="text-sm text-slate-300">Access thousands of verified transporters nationwide.</p>
+                            </div>
+                            <div className="flex items-start gap-3">
+                                <CheckCircle2 className="h-5 w-5 text-primary mt-1 shrink-0" />
+                                <p className="text-sm text-slate-300">See direct contact details for fleet owners and MDs.</p>
+                            </div>
+                            <div className="flex items-start gap-3">
+                                <CheckCircle2 className="h-5 w-5 text-primary mt-1 shrink-0" />
+                                <p className="text-sm text-slate-300">Filter by precise fleet capacity and technical specifications.</p>
+                            </div>
+                        </div>
+                        <div className="flex flex-col gap-3 pt-4">
+                            <Button size="lg" className="h-14 text-lg font-black uppercase tracking-tight" asChild>
+                                <Link href="/join">Join for Free</Link>
+                            </Button>
+                            <Button variant="ghost" className="text-slate-400 hover:text-white" asChild>
+                                <Link href="/signin">Already a member? Sign In</Link>
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+        );
+    }
+
+    // STEP 2: Logged in but Profile Incomplete
+    if (!isProfileComplete) {
+        return (
+            <div className="bg-slate-50 min-h-screen py-16 text-left">
+                <div className="container mx-auto px-4 max-w-4xl">
+                    <Card className="shadow-2xl border-none">
+                        <CardHeader className="bg-slate-900 text-white rounded-t-xl p-8">
+                            <div className="flex items-center gap-4">
+                                <div className="bg-primary/20 p-3 rounded-lg"><Sparkles className="h-6 w-6 text-primary" /></div>
+                                <div>
+                                    <CardTitle className="text-2xl font-black font-headline">Complete Your Strategic Profile</CardTitle>
+                                    <CardDescription className="text-slate-400 mt-1">To ensure high-fidelity matches, we need to understand your requirements.</CardDescription>
+                                </div>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="p-8 space-y-8 bg-white">
+                            <Alert className="bg-primary/5 border-primary/20">
+                                <Info className="h-5 w-5 text-primary" />
+                                <AlertTitle className="font-bold">Why do we ask for this?</AlertTitle>
+                                <AlertDescription className="text-sm text-muted-foreground leading-relaxed mt-1">
+                                    Our intelligence engine uses your specific fleet data or cargo needs to automatically filter the registry. This eliminates "empty searches" and connects you with the right capacity instantly. This data also helps us negotiate collective group discounts for your specific equipment.
+                                </AlertDescription>
+                            </Alert>
+
+                            {isTransporter ? (
+                                <FleetContent />
+                            ) : (
+                                <NeedsContent />
+                            )}
+                        </CardContent>
+                    </Card>
+                </div>
+            </div>
+        );
+    }
+
+    // STEP 3: Authorized and Complete - Search View
     return (
         <div className="bg-slate-50 min-h-screen text-left">
             <section className="bg-slate-900 text-white py-16">
@@ -152,7 +249,7 @@ export default function TransporterIntelligencePage() {
             <section className="container mx-auto px-4 py-16">
                 {!hasSearched ? (
                     <div className="text-center py-20 opacity-20">
-                        <Truck className="h-24 w-24 mx-auto mb-4" />
+                        <Database className="h-24 w-24 mx-auto mb-4" />
                         <p className="text-xl font-bold uppercase tracking-widest">Ready to Scan Registry</p>
                     </div>
                 ) : isLoading ? (
@@ -230,4 +327,24 @@ export default function TransporterIntelligencePage() {
             </section>
         </div>
     );
+}
+
+function CheckCircle2(props: any) {
+  return (
+    <svg
+      {...props}
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" />
+      <path d="m9 12 2 2 4-4" />
+    </svg>
+  )
 }

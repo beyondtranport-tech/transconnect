@@ -91,7 +91,7 @@ function InvestorDialog({ open, onOpenChange, partner, onSave }: { open: boolean
             </DialogHeader>
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2">
-                    <div className="grid grid-cols-2 gap-4 text-left">
+                    <div className="grid grid-cols-2 gap-4">
                         <FormField control={form.control} name="firstName" render={({ field }) => ( <FormItem><FormLabel>First Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                         <FormField control={form.control} name="lastName" render={({ field }) => ( <FormItem><FormLabel>Last Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                     </div>
@@ -107,7 +107,7 @@ function InvestorDialog({ open, onOpenChange, partner, onSave }: { open: boolean
                         <FormItem className="text-left">
                             <FormLabel>Pipeline Status</FormLabel>
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                                <FormControl><SelectTrigger><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
                                 <SelectContent>
                                     <SelectItem value="new">New</SelectItem>
                                     <SelectItem value="contacted">Researching</SelectItem>
@@ -141,7 +141,6 @@ export default function InvestorManagement() {
 
   const [statusFilter, setStatusFilter] = useState('all');
   const [assigneeFilter, setAssigneeFilter] = useState('all');
-  const [dataFilter, setDataFilter] = useState('all');
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
@@ -175,13 +174,9 @@ export default function InvestorManagement() {
         const matchesStatus = statusFilter === 'all' || r.status === statusFilter;
         const matchesAssignee = assigneeFilter === 'all' || r.assigneeId === assigneeFilter;
         
-        let matchesData = true;
-        if (dataFilter === 'no-email') matchesData = !r.email;
-        else if (dataFilter === 'has-email') matchesData = !!r.email;
-
-        return matchesSearch && matchesStatus && matchesAssignee && matchesData;
+        return matchesSearch && matchesStatus && matchesAssignee;
     });
-  }, [partners, searchTerm, statusFilter, assigneeFilter, dataFilter]);
+  }, [partners, searchTerm, statusFilter, assigneeFilter]);
 
   const handleDelete = async () => {
     if (!dialog.data) return;
@@ -242,7 +237,7 @@ export default function InvestorManagement() {
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="text-left"><CardTitle><DollarSign /> App Launch Investors</CardTitle><CardDescription>Registry view ({partners.length} records).</CardDescription></div>
           <div className="flex gap-2">
-            <div className="relative w-64">
+            <div className="relative w-64 text-left">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input placeholder="Filter registry..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8" />
             </div>

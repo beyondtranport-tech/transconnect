@@ -35,6 +35,7 @@ import {
   Truck,
   Heart,
   Zap,
+  ShoppingCart,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -54,6 +55,7 @@ import StaffContent from './staff-content';
 import ProfileContent from './profile-content';
 import CompanyContent from './company-content';
 import FleetContent from './fleet-content';
+import NeedsContent from './needs-content';
 import ShopContent from './shop-content';
 import BillingContent from './billing-content';
 import WalletContent from './wallet-content';
@@ -116,6 +118,7 @@ function AccountPageContent() {
       case 'profile': return <ProfileContent />;
       case 'company': return <CompanyContent />;
       case 'fleet': return <FleetContent />;
+      case 'needs': return <NeedsContent />;
       case 'staff': return <StaffContent />;
       case 'shop': return <ShopContent />;
       case 'load-board': return <LoadBoardContent />;
@@ -174,9 +177,13 @@ function AccountPageContent() {
                <SidebarMenuItem>
                 <SidebarMenuButton tooltip="Company" isActive={activeView === 'company'} onClick={() => navigate('company')}><Building /><span>Company</span></SidebarMenuButton>
               </SidebarMenuItem>
-              {isTransporter && (
+              {isTransporter ? (
                 <SidebarMenuItem>
                     <SidebarMenuButton tooltip="Fleet & Services" isActive={activeView === 'fleet'} onClick={() => navigate('fleet')}><Truck /><span>Fleet & Services</span></SidebarMenuButton>
+                </SidebarMenuItem>
+              ) : (
+                <SidebarMenuItem>
+                    <SidebarMenuButton tooltip="Logistics Needs" isActive={activeView === 'needs'} onClick={() => navigate('needs')}><ShoppingCart /><span>Logistics Needs</span></SidebarMenuButton>
                 </SidebarMenuItem>
               )}
                <SidebarMenuItem>

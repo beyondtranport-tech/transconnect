@@ -10,8 +10,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { Checkbox } from '@/components/ui/checkbox';
 import { useUser, getClientSideAuthToken } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, Truck, Package, MapPin, ShieldCheck } from 'lucide-react';
-import { Separator } from '@/components/ui/separator';
+import { Loader2, Save, Truck, Package, MapPin, ShieldCheck, Info } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const fleetSchema = z.object({
     poweredUnits: z.array(z.string()).min(1, "Please select at least one unit type."),
@@ -82,13 +82,20 @@ export default function FleetContent() {
                     <div className="bg-primary/10 p-3 rounded-xl"><Truck className="h-6 w-6 text-primary" /></div>
                     <div className="text-left">
                         <CardTitle className="text-2xl font-bold">Fleet & Service Profile</CardTitle>
-                        <CardDescription>Declare your capabilities to ensure accurate matches in the Transporter Intelligence Registry.</CardDescription>
+                        <CardDescription>Declare your specific vehicle and equipment configuration for accurate marketplace matching.</CardDescription>
                     </div>
                 </div>
             </CardHeader>
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)}>
                     <CardContent className="p-8 space-y-10 text-left">
+                        <Alert className="bg-primary/5 border-primary/20">
+                            <Info className="h-5 w-5 text-primary" />
+                            <AlertTitle className="font-bold">Matching Intelligence</AlertTitle>
+                            <AlertDescription className="text-sm text-muted-foreground leading-relaxed mt-1">
+                                Our platform uses this data to match your fleet with suitable loads. For example, declaring "Skeletal + Genset" trailers is a strict requirement to be visible for Refrigerated Container transport searches.
+                            </AlertDescription>
+                        </Alert>
                         
                         {/* Powered Units */}
                         <div className="space-y-4">
