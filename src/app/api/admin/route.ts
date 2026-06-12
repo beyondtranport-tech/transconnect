@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -81,7 +82,6 @@ export async function POST(req: NextRequest) {
 
                     const ref = db.collection(collectionName).doc(docId);
                     
-                    // Name Splitting Logic for clean Form population
                     let firstName = p.firstName || '';
                     let lastName = p.lastName || '';
                     const contactName = p.contact_person || p.contactPerson || p.contact_name;
@@ -172,6 +172,43 @@ export async function POST(req: NextRequest) {
 
             case 'deletePartner': {
                 await db.collection('partners').doc(payload.partnerId).delete();
+                return NextResponse.json({ success: true });
+            }
+
+            case 'getPlatformStaff': {
+                const snap = await db.collection('platformStaff').get();
+                const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
+                return NextResponse.json({ success: true, data });
+            }
+            
+            case 'logCommunication': {
+                const { partnerId, type, subject, notes } = payload;
+                const ref = db.collection('partners').doc(partnerId).collection('communications').doc();
+                await ref.set({
+                    type,
+                    subject,
+                    notes,
+                    timestamp: FieldValue.serverTimestamp()
+                });
+                return NextResponse.json({ success: true });
+            }
+
+            case 'logForensicInitiated': {
+                const { partnerId, isLead } = payload;
+                const collectionName = isLead ? 'leads' : 'partners';
+                const ref = db.collection(collectionName).doc(partnerId);
+                await ref.set({ 
+                    status: 'contacted', 
+                    updatedAt: FieldValue.serverTimestamp() 
+                }, { merge: true });
+
+                const logRef = ref.collection('communications').doc();
+                await logRef.set({
+                    type: 'Meeting',
+                    subject: 'AI Forensic Mining Initiated',
+                    notes: 'Direct forensic gap-analysis command generated for individual record verification.',
+                    timestamp: FieldValue.serverTimestamp()
+                });
                 return NextResponse.json({ success: true });
             }
 

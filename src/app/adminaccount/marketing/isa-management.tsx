@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -28,7 +29,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, Bot, Edit, Trash2, Send, Download, Save, Search, Users, Filter } from 'lucide-react';
+import { Loader2, PlusCircle, Bot, Edit, Trash2, Send, Download, Save, Search, Users, Filter, Globe } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -80,8 +81,15 @@ function ISADialog({ open, onOpenChange, partner, onSave }: { open: boolean; onO
 
   useEffect(() => {
     if (open) {
-      if (partner) form.reset(partner);
-      else form.reset({ firstName: '', lastName: '', email: '', phone: '', mobile: '', contactPerson: '', companyName: '', website: '', notes: '', address: '', status: 'new', type: 'isa' });
+      if (partner) {
+        form.reset({
+          ...partner,
+          website: partner.website || '',
+          notes: partner.notes || '',
+        });
+      } else {
+        form.reset({ firstName: '', lastName: '', email: '', phone: '', mobile: '', contactPerson: '', companyName: '', website: '', notes: '', address: '', status: 'new', type: 'isa' });
+      }
     }
   }, [open, partner, form]);
 
@@ -121,8 +129,8 @@ function ISADialog({ open, onOpenChange, partner, onSave }: { open: boolean; onO
               <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Work Phone</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
             <FormField control={form.control} name="mobile" render={({ field }) => (<FormItem className="text-left"><FormLabel>Mobile (Direct Cell)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} /></FormControl><FormMessage /></FormItem>)} />
-            <FormField control={form.control} name="address" render={({ field }) => (<FormItem className="text-left"><FormLabel>Address</FormLabel><FormControl><Textarea placeholder="Enter physical address..." {...field} /></FormControl><FormMessage /></FormItem>)} />
-            <FormField control={form.control} name="notes" render={({ field }) => (<FormItem className="text-left"><FormLabel>Bio / Notes</FormLabel><FormControl><Textarea placeholder="Details about the agent..." {...field} className="min-h-[100px]" /></FormControl><FormMessage /></FormItem>)} />
+            <FormField control={form.control} name="address" render={({ field }) => (<FormItem className="text-left"><FormLabel>Address</Label><FormControl><Textarea placeholder="Enter physical address..." {...field} /></FormControl><FormMessage /></FormItem>)} />
+            <FormField control={form.control} name="notes" render={({ field }) => (<FormItem className="text-left"><FormLabel>Bio / Technical Notes</FormLabel><FormControl><Textarea placeholder="Details about the agent..." {...field} className="min-h-[100px]" /></FormControl><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="status" render={({ field }) => (
                 <FormItem className="text-left">
                     <FormLabel>Status</FormLabel>
@@ -217,7 +225,10 @@ export default function ISAManagement() {
         cell: ({ row }) => (
             <div className="flex flex-col text-sm text-left">
                 <span className="font-bold text-left">{row.original.companyName || row.original.contactPerson || `${row.original.firstName} ${row.original.lastName}`}</span>
-                <span className="text-[10px] text-muted-foreground uppercase font-black">{row.original.firstName} {row.original.lastName}</span>
+                <div className="flex items-center gap-2 mt-1">
+                    <span className="text-[10px] text-muted-foreground uppercase font-black">{row.original.firstName} {row.original.lastName}</span>
+                    {row.original.website && <Globe className="h-3 w-3 text-primary" />}
+                </div>
             </div>
         )
     },

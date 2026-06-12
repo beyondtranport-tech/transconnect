@@ -5,7 +5,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, MessageSquare, ClipboardList, CheckCircle, Circle, Clock, Activity, AlertTriangle, Eye } from 'lucide-react';
+import { Loader2, MessageSquare, ClipboardList, CheckCircle, Circle, Clock, Activity, AlertTriangle, Eye, Globe, BookOpen } from 'lucide-react';
 import { getClientSideAuthToken, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { collection, query, orderBy, serverTimestamp, limit } from 'firebase/firestore';
@@ -14,6 +14,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
+import { Separator } from '@/components/ui/separator';
 
 async function performAdminAction(token: string, action: string, payload: any) {
     const response = await fetch('/api/admin', {
@@ -72,7 +73,6 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
                 }
             });
             
-            // Add tracking pixel event if present
             if (partner.lastOpenedAt) {
                 events.push({
                     id: 'pixel-open',
@@ -164,7 +164,7 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
                                 <Clock className="h-6 w-6 text-primary" />
                                 Oversight: {partner.companyName || `${partner.firstName} ${partner.lastName}`}
                             </DialogTitle>
-                            <DialogDescription className="mt-1">Full engagement history and task management.</DialogDescription>
+                            <DialogDescription className="mt-1">Full engagement history and technical profile.</DialogDescription>
                         </div>
                         <div className="space-y-2 text-right">
                              <Label className="text-xs font-bold uppercase text-muted-foreground">Allocated Staff</Label>
@@ -182,6 +182,39 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
                 </DialogHeader>
 
                 <div className="flex-1 overflow-y-auto p-6 space-y-8 bg-slate-50/50 text-left">
+                    {/* Technical Profile Section */}
+                    <div className="space-y-4">
+                        <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                            <BookOpen className="h-4 w-4 text-primary"/>
+                            Forensic & Technical Profile
+                        </h3>
+                        <Card className="shadow-none bg-white">
+                            <CardContent className="p-6 space-y-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="space-y-1">
+                                        <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Official Website</p>
+                                        {partner.website ? (
+                                            <a href={partner.website} target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-primary hover:underline flex items-center gap-1.5">
+                                                <Globe className="h-3.5 w-3.5" />
+                                                {partner.website}
+                                            </a>
+                                        ) : (
+                                            <p className="text-sm text-muted-foreground italic">No website URL recorded.</p>
+                                        )}
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Mined Service Summary</p>
+                                        <p className="text-sm leading-relaxed text-foreground">
+                                            {partner.notes || "No technical service wording has been mined for this record yet."}
+                                        </p>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    <Separator />
+
                     <div className="space-y-4">
                         <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
                             <Activity className="h-4 w-4"/>
@@ -196,7 +229,7 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
                                     <AlertTriangle className="h-6 w-6" />
                                     <div>
                                         <p className="font-bold">Access Issue</p>
-                                        <p className="text-sm">Ensure your admin rules permit sub-collection listing for {parentCollection}.</p>
+                                        <p className="text-sm">Ensure your admin rules permit sub-collection listing.</p>
                                     </div>
                                 </CardContent>
                             </Card>
