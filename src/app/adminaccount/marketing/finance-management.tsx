@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -169,7 +168,6 @@ export default function FinanceManagement() {
 
   const [statusFilter, setStatusFilter] = useState('all');
   const [assigneeFilter, setAssigneeFilter] = useState('all');
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
@@ -220,7 +218,7 @@ export default function FinanceManagement() {
             <div className="flex flex-col text-left">
                 <span className="font-bold text-left">{row.original.companyName || `${row.original.firstName} ${row.original.lastName}`}</span>
                 {row.original.website && (
-                    <div className="flex items-center gap-1.5 mt-1">
+                    <div className="flex items-center gap-1.5 mt-1 text-left">
                         <Globe className="h-3 w-3 text-primary" />
                         <span className="text-[10px] text-muted-foreground truncate max-w-[150px]">{row.original.website}</span>
                     </div>
@@ -258,7 +256,7 @@ export default function FinanceManagement() {
       <div className="space-y-6 text-left">
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
             <div className="text-left">
-                <CardTitle className="flex items-center gap-2"><Landmark /> Capital Intelligence Registry</CardTitle>
+                <CardTitle className="flex items-center gap-2 text-left"><Landmark /> Capital Intelligence Registry</CardTitle>
                 <CardDescription>Full registry view ({partners.length} records).</CardDescription>
             </div>
             <div className="flex items-center gap-2 text-left">
@@ -298,7 +296,7 @@ export default function FinanceManagement() {
                         </Select>
                     </div>
                 </div>
-                {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />}
+                {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredRecords} />}
             </CardContent>
         </Card>
       </div>

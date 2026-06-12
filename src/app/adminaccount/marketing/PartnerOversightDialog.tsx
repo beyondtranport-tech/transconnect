@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -192,19 +191,19 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
                             <CardContent className="p-6 space-y-4">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="space-y-1">
-                                        <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Official Website</p>
+                                        <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest text-left">Official Website</p>
                                         {partner.website ? (
                                             <a href={partner.website} target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-primary hover:underline flex items-center gap-1.5">
                                                 <Globe className="h-3.5 w-3.5" />
                                                 {partner.website}
                                             </a>
                                         ) : (
-                                            <p className="text-sm text-muted-foreground italic">No website URL recorded.</p>
+                                            <p className="text-sm text-muted-foreground italic text-left">No website URL recorded.</p>
                                         )}
                                     </div>
                                     <div className="space-y-1">
-                                        <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Mined Service Summary</p>
-                                        <p className="text-sm leading-relaxed text-foreground">
+                                        <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest text-left">Mined Service Summary</p>
+                                        <p className="text-sm leading-relaxed text-foreground text-left">
                                             {partner.notes || "No technical service wording has been mined for this record yet."}
                                         </p>
                                     </div>
@@ -245,15 +244,15 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
                                         <Card className="shadow-none">
                                             <CardContent className="p-4">
                                                 <div className="flex justify-between items-start">
-                                                    <div className="space-y-1">
-                                                        <div className="flex items-center gap-2">
+                                                    <div className="space-y-1 text-left">
+                                                        <div className="flex items-center gap-2 text-left">
                                                             {event.type === 'task' ? <ClipboardList className="h-3.5 w-3.5 text-amber-600" /> : 
                                                              event.type === 'tracking' ? <Eye className="h-3.5 w-3.5 text-blue-600" /> :
                                                              <MessageSquare className="h-3.5 w-3.5 text-primary" />}
-                                                            <span className="font-bold text-sm">{event.subject || event.title}</span>
+                                                            <span className="font-bold text-sm text-left">{event.subject || event.title}</span>
                                                             <Badge variant="outline" className="text-[10px] h-4 uppercase">{event.type}</Badge>
                                                         </div>
-                                                        <p className="text-sm text-muted-foreground">{event.notes || event.description || 'No details.'}</p>
+                                                        <p className="text-sm text-muted-foreground text-left">{event.notes || event.description || 'No details.'}</p>
                                                     </div>
                                                     <div className="text-right space-y-1">
                                                         <p className="text-[10px] font-bold text-muted-foreground uppercase">{formatDateSafe(event.date, "dd MMM yyyy, HH:mm")}</p>

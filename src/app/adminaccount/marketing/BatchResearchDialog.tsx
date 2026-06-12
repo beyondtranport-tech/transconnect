@@ -90,16 +90,16 @@ ${companyList}`;
                     </DialogDescription>
                 </DialogHeader>
                 
-                <div className="space-y-4 py-4">
-                    <Alert className="bg-primary/5 border-primary/20">
+                <div className="space-y-4 py-4 text-left">
+                    <Alert className="bg-primary/5 border-primary/20 text-left">
                         <Info className="h-4 w-4 text-primary" />
-                        <AlertTitle>Refined Discovery Logic</AlertTitle>
-                        <AlertDescription className="text-xs">
+                        <AlertTitle className="text-left font-bold">Refined Discovery Logic</AlertTitle>
+                        <AlertDescription className="text-xs text-left">
                             This prompt prioritizes website discovery as the key to unlocking MD names and service wording.
                         </AlertDescription>
                     </Alert>
 
-                    <div className="space-y-2">
+                    <div className="space-y-2 text-left">
                         <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">AI Forensic Command</label>
                         <ScrollArea className="h-64 w-full border rounded-md p-3 bg-muted/30">
                             <pre className="text-[11px] whitespace-pre-wrap font-mono leading-relaxed text-foreground">{aiPrompt}</pre>
