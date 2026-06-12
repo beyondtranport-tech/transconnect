@@ -34,10 +34,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { getClientSideAuthToken, useUser } from '@/firebase';
-import { 
-  Loader2, PlusCircle, Truck, Edit, Trash2, Send, Download, Save, Upload
-} from 'lucide-react';
+import { getClientSideAuthToken } from '@/firebase';
+import { Loader2, PlusCircle, Truck, Edit, Trash2, Send, Download, Save, Upload, Search, Filter, Users, Zap } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -49,6 +47,8 @@ import { PartnerTasksDialog } from './PartnerTasksDialog';
 import { downloadDataAsCSV } from '@/lib/utils';
 import { EnrichPartnerButton } from './EnrichPartnerButton';
 import { BulkImportDialog } from './BulkImportDialog';
+import { BatchResearchDialog } from './BatchResearchDialog';
+import { Label } from '@/components/ui/label';
 
 async function performAdminAction(token: string, action: string, payload: any) {
   const response = await fetch('/api/admin', {
@@ -157,26 +157,59 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
 export default function TransporterManagement() {
   const { toast } = useToast();
   const [allRecords, setAllRecords] = useState<any[]>([]);
+  const [staff, setStaff] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
   const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | null, data?: any }>({ type: null });
+
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [assigneeFilter, setAssigneeFilter] = useState('all');
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isBatchDialogOpen, setIsBatchDialogOpen] = useState(false);
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
       const token = await getClientSideAuthToken();
       if (!token) return;
-      const res = await performAdminAction(token, 'getPartnersByType', { type: 'transporter' });
+      const [res, staffRes] = await Promise.all([
+        performAdminAction(token, 'getPartnersByType', { type: 'transporter' }),
+        performAdminAction(token, 'getPlatformStaff', {})
+      ]);
       setAllRecords(res.data || []);
+      setStaff(staffRes.data || []);
     } catch (e: any) {
-        toast({ variant: 'destructive', title: 'Fetch Error', description: e.message });
+        console.error("Fetch Error:", e);
     } finally {
       setIsLoading(false);
     }
-  }, [toast]);
+  }, []);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  async function handleDelete() {
+  const filteredRecords = useMemo(() => {
+    return allRecords.filter(r => {
+        const term = searchTerm.toLowerCase();
+        const matchesSearch = !searchTerm || 
+            (r.companyName?.toLowerCase().includes(term)) ||
+            (r.contactPerson?.toLowerCase().includes(term)) ||
+            (r.firstName?.toLowerCase().includes(term)) ||
+            (r.lastName?.toLowerCase().includes(term)) ||
+            (r.email?.toLowerCase().includes(term));
+            
+        const matchesStatus = statusFilter === 'all' || r.status === statusFilter;
+        const matchesAssignee = assigneeFilter === 'all' || r.assigneeId === assigneeFilter;
+
+        return matchesSearch && matchesStatus && matchesAssignee;
+    });
+  }, [allRecords, searchTerm, statusFilter, assigneeFilter]);
+
+  const selectedRecords = useMemo(() => {
+    return allRecords.filter(r => selectedIds.includes(r.id));
+  }, [allRecords, selectedIds]);
+
+  const handleDelete = async () => {
+    if (!dialog.data) return;
     try {
       const token = await getClientSideAuthToken();
       if (!token) return;
@@ -187,14 +220,14 @@ export default function TransporterManagement() {
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Error', description: e.message });
     }
-  }
+  };
 
   const columns: ColumnDef<any>[] = useMemo(() => [
     { 
         accessorKey: 'companyName', 
         header: 'Transporter Name', 
         cell: ({ row }) => (
-            <div className="flex flex-col text-left">
+            <div className="flex flex-col text-sm text-left">
                 <span className="font-bold text-left">{row.original.companyName}</span>
                 <span className="text-[10px] text-muted-foreground uppercase font-black text-left">{row.original.address || 'Operational Hub Verified'}</span>
             </div>
@@ -229,6 +262,7 @@ export default function TransporterManagement() {
     <div className="space-y-6 text-left">
       <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.data} audience="transporters" onEngageSuccess={fetchData} />
       <TransporterDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={fetchData} />
+      <BatchResearchDialog open={isBatchDialogOpen} onOpenChange={setIsBatchDialogOpen} selectedLeads={selectedRecords} onComplete={fetchData} />
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
         <AlertDialogContent>
           <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Delete haulier record?</AlertDialogDescription></AlertDialogHeader>
@@ -243,6 +277,15 @@ export default function TransporterManagement() {
                 <CardDescription>High-capacity view of verified hauliers ({allRecords.length} records).</CardDescription>
             </div>
             <div className="flex items-center gap-2 text-left">
+                <div className="relative w-64 text-left">
+                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input placeholder="Filter registry..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8" />
+                </div>
+                {selectedIds.length > 0 && (
+                    <Button variant="secondary" onClick={() => setIsBatchDialogOpen(true)} className="animate-in fade-in zoom-in slide-in-from-right-4">
+                        <Zap className="mr-2 h-4 w-4" /> Batch Research ({selectedIds.length})
+                    </Button>
+                )}
                 <Button variant="outline" onClick={() => downloadDataAsCSV(allRecords, 'transporters-export.csv')} disabled={isLoading}>
                     <Download className="mr-2 h-4 w-4" /> Export CSV
                 </Button>
@@ -253,7 +296,33 @@ export default function TransporterManagement() {
 
         <Card>
             <CardContent className="pt-6 text-left">
-                {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={allRecords} />}
+                <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left">
+                    <div className="flex-1 space-y-2 text-left">
+                        <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status</Label>
+                        <Select value={statusFilter} onValueChange={setStatusFilter}>
+                            <SelectTrigger className="bg-white"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Statuses</SelectItem>
+                                <SelectItem value="new">New</SelectItem>
+                                <SelectItem value="contacted">Searching</SelectItem>
+                                <SelectItem value="qualified">Qualified</SelectItem>
+                                <SelectItem value="active">Active</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="flex-1 space-y-2 text-left">
+                        <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Users className="h-3 w-3"/> Assignee</Label>
+                        <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
+                            <SelectTrigger className="bg-white"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Staff</SelectItem>
+                                <SelectItem value="none">Unallocated</SelectItem>
+                                {staff.map(s => <SelectItem key={s.id} value={s.id}>{s.firstName} {s.lastName}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
+                {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />}
             </CardContent>
         </Card>
       </div>

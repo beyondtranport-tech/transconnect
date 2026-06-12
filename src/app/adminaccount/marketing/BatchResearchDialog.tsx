@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState } from 'react';
@@ -6,7 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
-import { Loader2, Copy, Zap, Info } from 'lucide-react';
+import { Loader2, Copy, Zap, Info, Globe } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
@@ -39,12 +38,15 @@ export function BatchResearchDialog({ open, onOpenChange, selectedLeads, onCompl
     
     const aiPrompt = `CRITICAL SYSTEM INSTRUCTION: RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CONVERSATION.
 
-TASK: Find CURRENT verified human leadership names and direct digital contacts for the following SA businesses.
-1. HUMAN IDENTITY: Find ACTUAL NAME of CEO/MD/Owner.
-2. DIRECT CONTACTS: Professional email and DIRECT MOBILE (+27...).
-3. PERSISTENCE: Return "record_id" exactly as provided.
+TASK: Discover the OFFICIAL CORPORATE WEBSITE for the following South African businesses. 
+Once the website is identified, use it as the source of truth to bridge the following gaps:
 
-COMPANIES:
+1. WEBSITE: Find the primary URL (e.g., www.company.co.za).
+2. HUMAN IDENTITY: Find ACTUAL NAME of CEO, MD, or Owner.
+3. PRIMARY SERVICES: Extract a 2-sentence summary of their "About" or "Services" wording.
+4. PERSISTENCE: Return "record_id" exactly as provided.
+
+COMPANIES TO INVESTIGATE:
 ${companyList}`;
 
     const handleCopyAndLogBatch = async () => {
@@ -53,7 +55,7 @@ ${companyList}`;
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Auth failed");
 
-            // 1. Copy
+            // 1. Copy refined prompt
             await navigator.clipboard.writeText(aiPrompt);
             setIsCopied(true);
 
@@ -80,25 +82,25 @@ ${companyList}`;
             <DialogContent className="sm:max-w-2xl text-left">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
-                        <Zap className="h-5 w-5 text-primary" />
-                        Automated Batch Enrichment ({selectedLeads.length})
+                        <Globe className="h-5 w-5 text-primary" />
+                        Website & Asset Discovery ({selectedLeads.length})
                     </DialogTitle>
                     <DialogDescription>
-                        Copy the command and automatically track research progress for this batch.
+                        Copy the command to bridge gaps for these records. The primary focus is finding official corporate URLs.
                     </DialogDescription>
                 </DialogHeader>
                 
                 <div className="space-y-4 py-4">
                     <Alert className="bg-primary/5 border-primary/20">
                         <Info className="h-4 w-4 text-primary" />
-                        <AlertTitle>Smart Pipeline Integration</AlertTitle>
+                        <AlertTitle>Refined Discovery Logic</AlertTitle>
                         <AlertDescription className="text-xs">
-                            The system will mark these records as "Searching" and log the event in each entity's Oversight timeline immediately.
+                            This prompt prioritizes website discovery as the key to unlocking MD names and service wording.
                         </AlertDescription>
                     </Alert>
 
                     <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">AI Forensic Command</label>
+                        <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">AI Forensic Command</label>
                         <ScrollArea className="h-64 w-full border rounded-md p-3 bg-muted/30">
                             <pre className="text-[11px] whitespace-pre-wrap font-mono leading-relaxed text-foreground">{aiPrompt}</pre>
                         </ScrollArea>
@@ -107,8 +109,8 @@ ${companyList}`;
 
                 <DialogFooter>
                     <Button onClick={handleCopyAndLogBatch} disabled={isLoading} className="w-full h-12 text-lg font-bold">
-                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Copy className="mr-2 h-4 w-4" />}
-                        {isCopied ? 'Batch Logged!' : 'Copy & Start Logging Batch'}
+                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Zap className="mr-2 h-4 w-4" />}
+                        {isCopied ? 'Batch Logged!' : 'Copy & Start Discovery Batch'}
                     </Button>
                 </DialogFooter>
             </DialogContent>

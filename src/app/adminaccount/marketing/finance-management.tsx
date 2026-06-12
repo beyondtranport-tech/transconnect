@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
-  Loader2, PlusCircle, Landmark, Edit, Trash2, Send, Download, Save, Search, Upload
+  Loader2, PlusCircle, Landmark, Edit, Trash2, Send, Download, Save, Search, Upload, Filter, Users, Zap
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
@@ -27,6 +27,8 @@ import { PartnerTasksDialog } from './PartnerTasksDialog';
 import { downloadDataAsCSV } from '@/lib/utils';
 import { EnrichPartnerButton } from './EnrichPartnerButton';
 import { BulkImportDialog } from './BulkImportDialog';
+import { BatchResearchDialog } from './BatchResearchDialog';
+import { Label } from '@/components/ui/label';
 
 async function performAdminAction(token: string, action: string, payload: any) {
   const response = await fetch('/api/admin', {
@@ -104,9 +106,9 @@ function FinanceDialog({ open, onOpenChange, partner, onSave }: { open: boolean;
             </div>
             <FormField control={form.control} name="status" render={({ field }) => (
                 <FormItem className="text-left">
-                    <FormLabel>Status</FormLabel>
+                    <FormLabel>Status</Label>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                        <FormControl><SelectTrigger><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
                         <SelectContent>
                             <SelectItem value="new">New</SelectItem>
                             <SelectItem value="contacted">Researching</SelectItem>
@@ -131,16 +133,26 @@ function FinanceDialog({ open, onOpenChange, partner, onSave }: { open: boolean;
 export default function FinanceManagement() {
   const { toast } = useToast();
   const [partners, setPartners] = useState<any[]>([]);
+  const [staff, setStaff] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | null, data?: any }>({ type: null });
+
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [assigneeFilter, setAssigneeFilter] = useState('all');
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isBatchDialogOpen, setIsBatchDialogOpen] = useState(false);
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
       const token = await getClientSideAuthToken();
       if (!token) return;
-      const res = await performAdminAction(token, 'getPartnersByType', { type: 'finance' });
+      const [res, staffRes] = await Promise.all([
+        performAdminAction(token, 'getPartnersByType', { type: 'finance' }),
+        performAdminAction(token, 'getPlatformStaff', {})
+      ]);
       setPartners(res.data || []);
+      setStaff(staffRes.data || []);
     } catch (e: any) {
         toast({ variant: 'destructive', title: 'Fetch Error', description: e.message });
     } finally {
@@ -149,6 +161,18 @@ export default function FinanceManagement() {
   }, [toast]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  const filteredRecords = useMemo(() => {
+    return partners.filter(p => {
+        const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
+        const matchesAssignee = assigneeFilter === 'all' || p.assigneeId === assigneeFilter;
+        return matchesStatus && matchesAssignee;
+    });
+  }, [partners, statusFilter, assigneeFilter]);
+
+  const selectedRecords = useMemo(() => {
+    return partners.filter(r => selectedIds.includes(r.id));
+  }, [partners, selectedIds]);
 
   async function handleDelete() {
     try {
@@ -186,6 +210,7 @@ export default function FinanceManagement() {
     <>
       <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.data} audience="finance" onEngageSuccess={fetchData} />
       <FinanceDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={fetchData} />
+      <BatchResearchDialog open={isBatchDialogOpen} onOpenChange={setIsBatchDialogOpen} selectedLeads={selectedRecords} onComplete={fetchData} />
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
         <AlertDialogContent>
           <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Delete Record?</AlertDialogDescription></AlertDialogHeader>
@@ -193,12 +218,17 @@ export default function FinanceManagement() {
         </AlertDialogContent>
       </AlertDialog>
       <div className="space-y-6 text-left">
-        <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
             <div className="text-left">
                 <CardTitle className="flex items-center gap-2"><Landmark /> Finance Registry</CardTitle>
                 <CardDescription>Full registry view ({partners.length} records).</CardDescription>
             </div>
             <div className="flex items-center gap-2">
+                {selectedIds.length > 0 && (
+                    <Button variant="secondary" onClick={() => setIsBatchDialogOpen(true)} className="animate-in fade-in zoom-in slide-in-from-right-4">
+                        <Zap className="mr-2 h-4 w-4" /> Batch Research ({selectedIds.length})
+                    </Button>
+                )}
                 <Button variant="outline" onClick={() => downloadDataAsCSV(partners, 'finance-export.csv')} disabled={isLoading}>
                     <Download className="mr-2 h-4 w-4" /> Export CSV
                 </Button>
@@ -209,7 +239,33 @@ export default function FinanceManagement() {
 
         <Card>
             <CardContent className="pt-6">
-                {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={partners} />}
+                <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left">
+                    <div className="flex-1 space-y-2">
+                        <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status</Label>
+                        <Select value={statusFilter} onValueChange={setStatusFilter}>
+                            <SelectTrigger className="bg-white"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Statuses</SelectItem>
+                                <SelectItem value="new">New</SelectItem>
+                                <SelectItem value="contacted">Researching</SelectItem>
+                                <SelectItem value="qualified">Qualified</SelectItem>
+                                <SelectItem value="active">Active</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="flex-1 space-y-2">
+                        <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Users className="h-3 w-3"/> Assignee</Label>
+                        <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
+                            <SelectTrigger className="bg-white"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Staff</SelectItem>
+                                <SelectItem value="none">Unallocated</SelectItem>
+                                {staff.map(s => <SelectItem key={s.id} value={s.id}>{s.firstName} {s.lastName}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
+                {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />}
             </CardContent>
         </Card>
       </div>
