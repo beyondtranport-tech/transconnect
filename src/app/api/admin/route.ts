@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -77,22 +76,35 @@ export async function POST(req: NextRequest) {
                 const batch = db.batch();
                 
                 partners.forEach((p: any) => {
-                    // Map record_id or seq or id to the doc ID
                     const docId = p.record_id || p.id || p.seq?.toString();
                     if (!docId) return;
 
                     const ref = db.collection(collectionName).doc(docId);
                     
-                    // Normalize fields from AI output to Firestore schema
+                    // Name Splitting Logic for clean Form population
+                    let firstName = p.firstName || '';
+                    let lastName = p.lastName || '';
+                    const contactName = p.contact_person || p.contactPerson;
+
+                    if (contactName && !firstName) {
+                        const parts = contactName.split(' ');
+                        firstName = parts[0] || 'Unknown';
+                        lastName = parts.slice(1).join(' ') || 'Partner';
+                    }
+
                     const dataToSave = {
                         ...p,
+                        firstName,
+                        lastName,
                         companyName: p.company_name || p.companyName || '',
-                        contactPerson: p.contact_person || p.contactPerson || '',
+                        contactPerson: contactName || '',
                         email: p.email_address || p.email || '',
                         phone: p.telephone_number || p.phone || '',
                         mobile: p.registry_line || p.mobile || '',
                         website: p.website || '',
                         address: p.physical_address || p.address || '',
+                        // Mapping "Technical wording" from AI to notes/description
+                        notes: p.primary_services || p.notes || '',
                         updatedAt: FieldValue.serverTimestamp()
                     };
                     
