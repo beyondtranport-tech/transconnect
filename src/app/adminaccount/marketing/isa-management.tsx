@@ -248,7 +248,7 @@ export default function ISAManagement() {
                             <SelectTrigger className="bg-white"><SelectValue /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Statuses</SelectItem>
-                                <SelectItem value="new">New</SelectItem>
+                                <SelectItem value="new">New Lead</SelectItem>
                                 <SelectItem value="contacted">Contacted</SelectItem>
                                 <SelectItem value="active">Active</SelectItem>
                             </SelectContent>

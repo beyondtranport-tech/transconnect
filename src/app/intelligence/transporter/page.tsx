@@ -17,11 +17,10 @@ import { cn } from '@/lib/utils';
 
 const servicesMap = [
     { id: 'container', label: 'Container Transport', requiredFleet: ['Skeletal'] },
-    { id: 'reefer-container', label: 'Refrigerated Containers', requiredFleet: ['Skeletal', 'Genset'] },
-    { id: 'general-freight', label: 'General Freight', requiredFleet: ['Tautliner'] },
+    { id: 'reefer-container', label: 'Refrigerated Containers', requiredFleet: ['Skeletal', 'Skeletal + Genset'] },
+    { id: 'general-freight', label: 'General Freight', requiredFleet: ['Tautliner', 'Flatbed'] },
     { id: 'bulk-aggregates', label: 'Bulk / Aggregates', requiredFleet: ['Tipper'] },
     { id: 'abnormal-loads', label: 'Abnormal Loads', requiredFleet: ['Lowbed'] },
-    { id: 'flatbed-cargo', label: 'Steel / Timber / Pipes', requiredFleet: ['Flatbed'] },
 ];
 
 export default function TransporterIntelligencePage() {
