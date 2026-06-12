@@ -91,7 +91,7 @@ export default function SupplierIntelligencePage() {
             if (process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID) {
                 gtag.event({
                     action: 'supplier_intelligence_search',
-                    category: 'Supplier Intelligence',
+                    category: 'Supplier intelligence',
                     label: `${selectedCity}_${selectedCategory}`,
                     value: result.data?.length || 0
                 });
@@ -118,13 +118,13 @@ export default function SupplierIntelligencePage() {
                         <CardTitle className="text-4xl font-black font-headline">Member Access Only</CardTitle>
                         <CardDescription className="text-slate-400 text-lg mt-2">The forensic supplier registry is exclusive to registered members.</CardDescription>
                     </CardHeader>
-                    <CardContent className="p-8 pt-4 space-y-6">
+                    <CardContent className="p-8 pt-4 space-y-6 text-left">
                         <div className="space-y-4">
-                            <div className="flex items-start gap-3">
+                            <div className="flex items-start gap-3 text-left">
                                 <CheckCircle2 className="h-5 w-5 text-primary mt-1 shrink-0" />
                                 <p className="text-sm text-slate-300">Access thousands of verified industrial suppliers nationwide.</p>
                             </div>
-                            <div className="flex items-start gap-3">
+                            <div className="flex items-start gap-3 text-left">
                                 <CheckCircle2 className="h-5 w-5 text-primary mt-1 shrink-0" />
                                 <p className="text-sm text-slate-300">Connect directly with owners and managing directors.</p>
                             </div>
@@ -146,9 +146,9 @@ export default function SupplierIntelligencePage() {
     if (!isProfileComplete && !skipProfile) {
         return (
             <div className="bg-slate-50 min-h-screen py-16 text-left">
-                <div className="container mx-auto px-4 max-w-4xl">
+                <div className="container mx-auto px-4 max-w-4xl text-left">
                     <Card className="shadow-2xl border-none text-left">
-                        <CardHeader className="bg-slate-900 text-white rounded-t-xl p-8">
+                        <CardHeader className="bg-slate-900 text-white rounded-t-xl p-8 text-left">
                             <div className="flex items-center gap-4 text-left">
                                 <div className="bg-primary/20 p-3 rounded-lg"><Sparkles className="h-6 w-6 text-primary" /></div>
                                 <div className="text-left">
@@ -191,7 +191,7 @@ export default function SupplierIntelligencePage() {
             <section className="bg-slate-900 text-white py-16 text-center">
                 <div className="container mx-auto px-4">
                     <Badge className="mb-4 bg-primary/20 text-primary border-primary/30 py-1.5 px-4 text-[10px] font-black uppercase tracking-widest">Forensic Registry</Badge>
-                    <h1 className="text-4xl md:text-6xl font-black font-headline">Supplier Intelligence</h1>
+                    <h1 className="text-4xl md:text-6xl font-black font-headline text-white">Supplier intelligence</h1>
                     <p className="mt-4 text-lg text-slate-400 max-w-2xl mx-auto">Map the South African industrial landscape by category and region.</p>
                 </div>
             </section>
@@ -252,7 +252,7 @@ export default function SupplierIntelligencePage() {
                 </Card>
             </section>
 
-            <section className="container mx-auto px-4 py-16">
+            <section className="container mx-auto px-4 py-16 text-left">
                 {error && (
                     <Card className="max-w-2xl mx-auto border-destructive bg-destructive/10 text-left">
                         <CardHeader className="flex flex-row items-center gap-3">
@@ -261,11 +261,11 @@ export default function SupplierIntelligencePage() {
                         </CardHeader>
                         <CardContent>
                             <p className="text-sm text-destructive-foreground font-bold">{error}</p>
-                            <p className="text-xs text-muted-foreground mt-2">Upgrade to Intelligence Access to unlock unlimited daily searches across all forensic registries.</p>
+                            <p className="text-xs text-muted-foreground mt-2 text-left">Upgrade to intelligence Access to unlock unlimited daily searches across all forensic registries.</p>
                         </CardContent>
                         <CardFooter className="flex flex-wrap gap-2 pt-0">
                             <Button asChild size="sm">
-                                <Link href="/checkout/intelligence">Unlock Paid Intelligence</Link>
+                                <Link href="/checkout/intelligence">Unlock Paid intelligence</Link>
                             </Button>
                             <Button asChild variant="outline" size="sm">
                                 <Link href="/pricing">View All Plans</Link>
@@ -282,7 +282,7 @@ export default function SupplierIntelligencePage() {
                 ) : isLoading ? (
                     <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
                         <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                        <p className="font-bold text-muted-foreground uppercase tracking-widest">Mapping Supplier Intelligence...</p>
+                        <p className="font-bold text-muted-foreground uppercase tracking-widest text-center">Mapping Supplier intelligence...</p>
                     </div>
                 ) : !error && (
                     <div className="max-w-6xl mx-auto space-y-8 text-left">
@@ -293,12 +293,12 @@ export default function SupplierIntelligencePage() {
                             </div>
                             {!isPaid && (
                                 <Badge variant="secondary" className="gap-1.5 py-1.5 px-4 border border-amber-200 text-amber-700 bg-amber-50">
-                                    <Lock className="h-3 w-3" /> Intelligence Tier Restricted
+                                    <Lock className="h-3 w-3" /> intelligence Tier Restricted
                                 </Badge>
                             )}
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-left">
                             {results.map(res => (
                                 <Card key={res.id} className="bg-white border-none shadow-lg hover:shadow-xl transition-all overflow-hidden group">
                                     <CardHeader className="pb-4 text-left">
@@ -307,31 +307,37 @@ export default function SupplierIntelligencePage() {
                                             <ShieldCheck className="h-4 w-4 text-green-500" />
                                         </div>
                                         <CardTitle className="text-lg font-black group-hover:text-primary transition-colors text-left">{res.companyName}</CardTitle>
-                                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
+                                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1 text-left">
                                             <MapPin className="h-3 w-3" />
                                             <span className="truncate">{res.address || 'South Africa'}</span>
                                         </div>
                                     </CardHeader>
                                     <CardContent className="space-y-4 text-left">
                                         <div className={cn("p-4 rounded-xl border-2 border-dashed space-y-3", !isPaid ? "bg-slate-50 border-slate-200" : "bg-primary/5 border-primary/20")}>
-                                            <div className="flex items-center justify-between text-xs">
+                                            <div className="flex items-center justify-between text-xs text-left">
                                                 <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Leadership</span>
-                                                {isPaid ? <span className="font-bold">{res.contactPerson || 'Verified'}</span> : <span className="blur-sm bg-slate-300 rounded px-4 text-transparent">LOCKED</span>}
+                                                <span className={cn("font-bold", !isPaid && "blur-sm bg-slate-300 rounded px-4 text-transparent")}>
+                                                    {res.contactPerson || 'Verified'}
+                                                </span>
                                             </div>
-                                            <div className="flex items-center justify-between text-xs">
+                                            <div className="flex items-center justify-between text-xs text-left">
                                                 <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Direct E-mail</span>
-                                                {isPaid ? <span className="font-bold text-primary truncate ml-4">{res.email || 'N/A'}</span> : <span className="blur-sm bg-slate-300 rounded px-4 text-transparent">LOCKED</span>}
+                                                <span className={cn("font-bold text-primary truncate ml-4", !isPaid && "blur-sm bg-slate-300 rounded px-4 text-transparent")}>
+                                                    {res.email || 'N/A'}
+                                                </span>
                                             </div>
-                                            <div className="flex items-center justify-between text-xs">
+                                            <div className="flex items-center justify-between text-xs text-left">
                                                 <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Mobile/Work</span>
-                                                {isPaid ? <span className="font-bold">{res.mobile || res.phone || 'N/A'}</span> : <span className="blur-sm bg-slate-300 rounded px-4 text-transparent">LOCKED</span>}
+                                                <span className={cn("font-bold", !isPaid && "blur-sm bg-slate-300 rounded px-4 text-transparent")}>
+                                                    {res.mobile || res.phone || 'N/A'}
+                                                </span>
                                             </div>
                                         </div>
                                     </CardContent>
-                                    <CardFooter className="pt-0 border-t bg-slate-50/50 flex flex-col gap-2 p-4">
+                                    <CardFooter className="pt-0 border-t bg-slate-50/50 flex flex-col gap-2 p-4 text-left">
                                         {!isPaid ? (
                                             <Button asChild className="w-full h-11 font-black uppercase text-xs tracking-widest" variant="secondary">
-                                                <Link href="/pricing"><Lock className="h-3 w-3 mr-2" /> Unlock Contact Intelligence</Link>
+                                                <Link href="/pricing"><Lock className="h-3 w-3 mr-2" /> Unlock Contact intelligence</Link>
                                             </Button>
                                         ) : (
                                             <div className="w-full flex gap-2 pt-2">

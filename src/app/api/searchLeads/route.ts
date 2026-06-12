@@ -61,13 +61,11 @@ export async function POST(req: NextRequest) {
         }
 
         // 3. Execute Registry Scan
-        // Strategy: Pull broader set and filter in memory to bypass complex index requirements
         let collectionName = 'leads';
-        if (type === 'driver') collectionName = 'partners'; // Drivers stored in partners for now
+        if (type === 'driver') collectionName = 'partners';
         
         let firestoreQuery: any = db.collection(collectionName);
         
-        // Filter by role/type
         if (type === 'supplier') {
             firestoreQuery = firestoreQuery.where('role', 'in', ['Vendors', 'Vendor', 'Supplier', 'Suppliers']);
         } else if (type === 'transporter') {
@@ -89,21 +87,20 @@ export async function POST(req: NextRequest) {
                 region: lead.region || lead.operational_hub || '',
             };
 
-            // Intelligence Data Masking Logic
             if (isPaid) {
                 return {
                     ...normalized,
-                    contactPerson: lead.contactPerson || lead.firstName + ' ' + lead.lastName,
-                    email: lead.email || lead.email_address,
-                    phone: lead.phone || lead.telephone_number,
-                    mobile: lead.mobile || lead.registry_line,
-                    website: lead.website || lead.url,
+                    contactPerson: lead.contactPerson || (lead.firstName ? `${lead.firstName} ${lead.lastName}` : 'N/A'),
+                    email: lead.email || lead.email_address || 'N/A',
+                    phone: lead.phone || lead.telephone_number || 'N/A',
+                    mobile: lead.mobile || lead.registry_line || 'N/A',
+                    website: lead.website || lead.url || 'N/A',
                 };
             } else {
                 return {
                     ...normalized,
-                    contactPerson: 'Locked: Upgrade Tier',
-                    email: 'Locked: Upgrade Tier',
+                    contactPerson: 'Locked',
+                    email: 'Locked',
                     phone: 'Locked',
                     mobile: 'Locked',
                     website: 'Locked',
@@ -112,7 +109,7 @@ export async function POST(req: NextRequest) {
             }
         });
 
-        // 4. Memory Filter (Region/Category/Search)
+        // 4. Memory Filter
         if (searchTerm || service || city || suburb || province || category) {
             const lowSearch = searchTerm?.toLowerCase() || '';
             const lowProv = province?.toLowerCase() || '';
@@ -132,15 +129,20 @@ export async function POST(req: NextRequest) {
             });
         }
 
-        // 5. Final Quota Cap
         const finalResults = results.slice(0, 100);
 
-        // 6. Log Search (For History & Limit Enforcement)
+        // 5. Log Search (Safely handle undefined values)
         await companyRef.collection('searchLogs').add({
             userId: uid,
             type,
             searchTerm: searchTerm || '',
-            variables: { province, city, suburb, category, service },
+            variables: { 
+                province: province || null, 
+                city: city || null, 
+                suburb: suburb || null, 
+                category: category || null, 
+                service: service || null 
+            },
             resultCount: finalResults.length,
             timestamp: FieldValue.serverTimestamp(),
             tier: membershipId
