@@ -47,7 +47,6 @@ export async function POST(req: NextRequest) {
         switch (action) {
             case 'getMembers': {
                 const snap = await db.collection('companies').orderBy('createdAt', 'desc').limit(MAX_LOAD).get();
-                if (snap.empty) return NextResponse.json({ success: true, data: [] });
                 const data = snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) }));
                 return NextResponse.json({ success: true, data });
             }
@@ -82,9 +81,10 @@ export async function POST(req: NextRequest) {
 
                     const ref = db.collection(collectionName).doc(docId);
                     
+                    // Robust Name Parsing
                     let firstName = p.firstName || '';
                     let lastName = p.lastName || '';
-                    const contactName = p.contact_person || p.contactPerson || p.contact_name;
+                    const contactName = p.contact_person || p.contactPerson || p.contact_name || p.human_identity;
 
                     if (contactName && (!firstName || firstName === 'Unknown')) {
                         const parts = contactName.split(' ');
@@ -92,18 +92,22 @@ export async function POST(req: NextRequest) {
                         lastName = parts.slice(1).join(' ') || 'Partner';
                     }
 
+                    // Robust Data Mapping for enriched technical fields
+                    const technicalNotes = p.primary_services || p.services || p.about || p.home || p.notes || p.description || '';
+                    const website = p.website || p.url || p.official_website || '';
+
                     const dataToSave: any = {
                         ...p,
-                        firstName: firstName || p.firstName || 'Unknown',
-                        lastName: lastName || p.lastName || 'Partner',
+                        firstName: firstName || 'Unknown',
+                        lastName: lastName || 'Partner',
                         companyName: p.company_name || p.companyName || p.trading_name || '',
                         contactPerson: contactName || '',
                         email: p.email_address || p.email || '',
                         phone: p.telephone_number || p.phone || '',
                         mobile: p.registry_line || p.mobile || '',
-                        website: p.website || p.url || '',
+                        website: website,
                         address: p.physical_address || p.address || '',
-                        notes: p.primary_services || p.notes || p.description || '',
+                        notes: technicalNotes,
                         updatedAt: FieldValue.serverTimestamp()
                     };
                     
@@ -114,6 +118,53 @@ export async function POST(req: NextRequest) {
                 
                 await batch.commit();
                 return NextResponse.json({ success: true, count: partners.length });
+            }
+
+            case 'savePartner': {
+                const { partner } = payload;
+                const collectionName = partner.type === 'lead' ? 'leads' : 'partners';
+                const ref = partner.id ? db.collection(collectionName).doc(partner.id) : db.collection(collectionName).doc();
+                const data = { ...partner, id: ref.id, updatedAt: FieldValue.serverTimestamp() };
+                if (!partner.id) data.createdAt = FieldValue.serverTimestamp();
+                await ref.set(data, { merge: true });
+                return NextResponse.json({ success: true, id: ref.id });
+            }
+
+            case 'logCommunication': {
+                const { partnerId, type, subject, notes } = payload;
+                const ref = db.collection('partners').doc(partnerId).collection('communications').doc();
+                await ref.set({
+                    type,
+                    subject,
+                    notes,
+                    timestamp: FieldValue.serverTimestamp()
+                });
+                return NextResponse.json({ success: true });
+            }
+
+            case 'getPlatformStaff': {
+                const snap = await db.collection('platformStaff').get();
+                const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
+                return NextResponse.json({ success: true, data });
+            }
+
+            case 'logForensicInitiated': {
+                const { partnerId, isLead } = payload;
+                const collectionName = isLead ? 'leads' : 'partners';
+                const ref = db.collection(collectionName).doc(partnerId);
+                await ref.set({ 
+                    status: 'contacted', 
+                    updatedAt: FieldValue.serverTimestamp() 
+                }, { merge: true });
+
+                const logRef = ref.collection('communications').doc();
+                await logRef.set({
+                    type: 'Meeting',
+                    subject: 'AI Forensic Mining Initiated',
+                    notes: 'Direct forensic gap-analysis command generated for individual record verification.',
+                    timestamp: FieldValue.serverTimestamp()
+                });
+                return NextResponse.json({ success: true });
             }
 
             case 'bulkLogForensicInitiated': {
@@ -138,28 +189,6 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true });
             }
 
-            case 'getAuditLogs': {
-                const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(MAX_LOAD).get();
-                const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
-                return NextResponse.json({ success: true, data });
-            }
-
-            case 'getPlatformStaff': {
-                const snap = await db.collection('platformStaff').get();
-                const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
-                return NextResponse.json({ success: true, data });
-            }
-
-            case 'savePartner': {
-                const { partner } = payload;
-                const collectionName = partner.type === 'lead' ? 'leads' : 'partners';
-                const ref = partner.id ? db.collection(collectionName).doc(partner.id) : db.collection(collectionName).doc();
-                const data = { ...partner, id: ref.id, updatedAt: FieldValue.serverTimestamp() };
-                if (!partner.id) data.createdAt = FieldValue.serverTimestamp();
-                await ref.set(data, { merge: true });
-                return NextResponse.json({ success: true, id: ref.id });
-            }
-
             case 'deleteLeads': {
                 const { leadIds } = payload;
                 const batch = db.batch();
@@ -172,43 +201,6 @@ export async function POST(req: NextRequest) {
 
             case 'deletePartner': {
                 await db.collection('partners').doc(payload.partnerId).delete();
-                return NextResponse.json({ success: true });
-            }
-
-            case 'getPlatformStaff': {
-                const snap = await db.collection('platformStaff').get();
-                const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
-                return NextResponse.json({ success: true, data });
-            }
-            
-            case 'logCommunication': {
-                const { partnerId, type, subject, notes } = payload;
-                const ref = db.collection('partners').doc(partnerId).collection('communications').doc();
-                await ref.set({
-                    type,
-                    subject,
-                    notes,
-                    timestamp: FieldValue.serverTimestamp()
-                });
-                return NextResponse.json({ success: true });
-            }
-
-            case 'logForensicInitiated': {
-                const { partnerId, isLead } = payload;
-                const collectionName = isLead ? 'leads' : 'partners';
-                const ref = db.collection(collectionName).doc(partnerId);
-                await ref.set({ 
-                    status: 'contacted', 
-                    updatedAt: FieldValue.serverTimestamp() 
-                }, { merge: true });
-
-                const logRef = ref.collection('communications').doc();
-                await logRef.set({
-                    type: 'Meeting',
-                    subject: 'AI Forensic Mining Initiated',
-                    notes: 'Direct forensic gap-analysis command generated for individual record verification.',
-                    timestamp: FieldValue.serverTimestamp()
-                });
                 return NextResponse.json({ success: true });
             }
 

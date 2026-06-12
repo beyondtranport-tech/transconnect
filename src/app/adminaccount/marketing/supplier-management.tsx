@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -6,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
-  Loader2, PlusCircle, Building, Edit, Trash2, Send, Download, Save, Upload, Search, Filter, Users, Globe
+  Loader2, PlusCircle, Building, Edit, Trash2, Send, Download, Save, Upload, Search, Filter, Users, Globe, Zap
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
@@ -27,6 +28,7 @@ import { PartnerOversightDialog } from './PartnerOversightDialog';
 import { downloadDataAsCSV } from '@/lib/utils';
 import { EnrichPartnerButton } from './EnrichPartnerButton';
 import { BulkImportDialog } from './BulkImportDialog';
+import { BatchResearchDialog } from './BatchResearchDialog';
 import { Label } from '@/components/ui/label';
 
 async function performAdminAction(token: string, action: string, payload: any) {
@@ -104,18 +106,18 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4 text-left">
               <FormField control={form.control} name="firstName" render={({ field }) => (<FormItem><FormLabel>First Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="lastName" render={({ field }) => (<FormItem><FormLabel>Last Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
             <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem className="text-left"><FormLabel>Entity Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="website" render={({ field }) => (<FormItem className="text-left"><FormLabel>Official Website</FormLabel><FormControl><Input placeholder="https://..." {...field} /></FormControl><FormMessage /></FormItem>)} />
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4 text-left">
               <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" /></FormControl><FormMessage /></FormItem>)} />
-              <FormField control={form.control} name="mobile" render={({ field }) => (<FormItem><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} /></FormControl><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="mobile" render={({ field }) => (<FormItem className="text-left"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
             <FormField control={form.control} name="address" render={({ field }) => (<FormItem className="text-left"><FormLabel>Physical Address</FormLabel><FormControl><Textarea placeholder="Enter full address..." {...field} /></FormControl><FormMessage /></FormItem>)} />
-            <FormField control={form.control} name="notes" render={({ field }) => (<FormItem className="text-left"><FormLabel>Service Wording / Notes</FormLabel><FormControl><Textarea placeholder="AI extracted service details..." {...field} className="min-h-[120px]" /></FormControl><FormMessage /></FormItem>)} />
+            <FormField control={form.control} name="notes" render={({ field }) => (<FormItem className="text-left"><FormLabel>Technical Service Summary (AI Mined)</FormLabel><FormControl><Textarea placeholder="AI extracted service details..." {...field} className="min-h-[120px]" /></FormControl><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="status" render={({ field }) => (
                 <FormItem className="text-left">
                     <FormLabel>Status</FormLabel>
@@ -147,10 +149,11 @@ export default function SupplierManagement() {
   const [allRecords, setAllRecords] = useState<any[]>([]);
   const [staff, setStaff] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | null, data?: any }>({ type: null });
+  const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | 'batch' | null, data?: any }>({ type: null });
 
   const [statusFilter, setStatusFilter] = useState('all');
   const [assigneeFilter, setAssigneeFilter] = useState('all');
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
@@ -179,6 +182,10 @@ export default function SupplierManagement() {
         return matchesStatus && matchesAssignee;
     });
   }, [allRecords, statusFilter, assigneeFilter]);
+
+  const selectedLeads = useMemo(() => {
+      return allRecords.filter(r => selectedIds.includes(r.id));
+  }, [allRecords, selectedIds]);
 
   async function handleDelete() {
     try {
@@ -226,6 +233,7 @@ export default function SupplierManagement() {
 
   return (
     <>
+      <BatchResearchDialog open={dialog.type === 'batch'} onOpenChange={(o) => !o && setDialog({ type: null })} selectedLeads={selectedLeads} onComplete={fetchData} />
       <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.data} audience="suppliers" onEngageSuccess={fetchData} />
       <SupplierDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={fetchData} />
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
@@ -241,6 +249,11 @@ export default function SupplierManagement() {
                 <CardDescription>High-capacity registry view ({allRecords.length} records).</CardDescription>
             </div>
             <div className="flex items-center gap-2 text-left">
+                {selectedIds.length > 0 && (
+                    <Button variant="secondary" onClick={() => setDialog({ type: 'batch' })}>
+                        <Zap className="mr-2 h-4 w-4" /> Batch Research ({selectedIds.length})
+                    </Button>
+                )}
                 <Button variant="outline" onClick={() => downloadDataAsCSV(allRecords, 'suppliers-export.csv')} disabled={isLoading}>
                     <Download className="mr-2 h-4 w-4" /> Export CSV
                 </Button>
@@ -276,7 +289,7 @@ export default function SupplierManagement() {
                         </Select>
                     </div>
                 </div>
-                {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredRecords} />}
+                {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />}
             </CardContent>
         </Card>
       </div>
