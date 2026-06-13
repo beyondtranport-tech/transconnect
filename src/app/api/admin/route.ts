@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
 
             case 'bulkSavePartners': {
                 const { partners, type } = payload;
-                if (!Array.isArray(partners)) throw new Error("Invalid payload: 'partners' must be an array.");
+                if (!Array.isArray(partners)) throw new Error("Invalid payload.");
                 
                 const collectionName = type === 'lead' ? 'leads' : 'partners';
                 const batch = db.batch();
@@ -87,37 +87,36 @@ export async function POST(req: NextRequest) {
                         normalizedP[cleanKey] = p[k];
                     });
 
-                    // Forensic Strategic Mapping
-                    const technicalNotes = normalizedP.notes || normalizedP.primaryservices || normalizedP.aboutus || normalizedP.services || normalizedP.technicalfocus || '';
+                    const technicalNotes = normalizedP.notes || normalizedP.primaryservices || normalizedP.aboutus || normalizedP.services || '';
                     const website = normalizedP.website || normalizedP.officialwebsite || normalizedP.url || '';
-                    const physicalAddress = normalizedP.address || normalizedP.physicaladdress || normalizedP.location || normalizedP.headquarters || '';
-                    const contactName = normalizedP.contactperson || normalizedP.humanname || normalizedP.name || '';
+                    const address = normalizedP.address || normalizedP.physicaladdress || '';
+                    const contactName = normalizedP.contactperson || normalizedP.humanname || '';
 
                     const updateData: any = { 
-                        updatedAt: FieldValue.serverTimestamp(),
-                        researchStatus: 'completed' // Mark as Enriched
+                        updatedAt: FieldValue.serverTimestamp()
                     };
 
-                    if (technicalNotes && technicalNotes !== 'null' && technicalNotes !== 'N/A') updateData.notes = technicalNotes;
-                    if (website && website !== 'null' && website !== 'N/A') updateData.website = website;
-                    if (physicalAddress && physicalAddress !== 'null' && physicalAddress !== 'N/A') updateData.address = physicalAddress;
+                    // Only set enriched status if meaningful data is actually provided
+                    const hasData = (technicalNotes && technicalNotes !== 'null') || (website && website !== 'null');
+                    if (hasData) {
+                        updateData.researchStatus = 'completed';
+                        updateData.enrichedAt = FieldValue.serverTimestamp();
+                    }
+
+                    if (technicalNotes && technicalNotes !== 'null') updateData.notes = technicalNotes;
+                    if (website && website !== 'null') updateData.website = website;
+                    if (address && address !== 'null') updateData.address = address;
                     
-                    if (contactName && contactName !== 'null' && contactName !== 'N/A') {
+                    if (contactName && contactName !== 'null') {
                         updateData.contactPerson = contactName;
                         const parts = contactName.split(' ');
                         updateData.firstName = parts[0];
                         if (parts.length > 1) updateData.lastName = parts.slice(1).join(' ');
                     }
 
-                    if ((normalizedP.emailaddress || normalizedP.email) && (normalizedP.emailaddress || normalizedP.email) !== 'null') {
-                        updateData.email = normalizedP.emailaddress || normalizedP.email;
-                    }
-                    if ((normalizedP.mobile || normalizedP.cell) && (normalizedP.mobile || normalizedP.cell) !== 'null') {
-                        updateData.mobile = normalizedP.mobile || normalizedP.cell;
-                    }
-                    if ((normalizedP.phone || normalizedP.landline) && (normalizedP.phone || normalizedP.landline) !== 'null') {
-                        updateData.phone = normalizedP.phone || normalizedP.landline;
-                    }
+                    if (normalizedP.email && normalizedP.email !== 'null') updateData.email = normalizedP.email;
+                    if (normalizedP.mobile && normalizedP.mobile !== 'null') updateData.mobile = normalizedP.mobile;
+                    if (normalizedP.phone && normalizedP.phone !== 'null') updateData.phone = normalizedP.phone;
                     
                     batch.set(ref, updateData, { merge: true });
                 });
@@ -154,29 +153,32 @@ export async function POST(req: NextRequest) {
                 const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
                 return NextResponse.json({ success: true, data });
             }
-            
-            case 'bulkLogForensicInitiated': {
-                const { leadIds, type } = payload;
-                const collectionName = type === 'lead' ? 'leads' : 'partners';
-                const batch = db.batch();
-                
-                leadIds.forEach((id: string) => {
-                    const logRef = db.collection(collectionName).doc(id).collection('communications').doc();
-                    batch.set(logRef, {
-                        type: 'Email',
-                        subject: 'Batch Research Initiated',
-                        notes: 'AI Agent commanded to perform technical forensic mapping for website, address and services.',
-                        timestamp: FieldValue.serverTimestamp()
-                    });
-                    
-                    batch.update(db.collection(collectionName).doc(id), {
-                        status: 'contacted',
-                        researchStatus: 'searching',
-                        updatedAt: FieldValue.serverTimestamp()
-                    });
+
+            case 'refreshSupplierCategoryCounts':
+            case 'refreshTransporterCategoryCounts':
+            case 'refreshFinanceCategoryCounts':
+            case 'refreshDriverCategoryCounts': {
+                const typeMap: any = {
+                    'refreshSupplierCategoryCounts': 'supplier',
+                    'refreshTransporterCategoryCounts': 'transporter',
+                    'refreshFinanceCategoryCounts': 'finance',
+                    'refreshDriverCategoryCounts': 'driver'
+                };
+                const pType = typeMap[action];
+                const snap = await db.collection('partners').where('type', '==', pType).get();
+                const counts: any = {};
+                snap.docs.forEach(d => {
+                    const cat = d.data().industrial_category || d.data().category || 'General';
+                    counts[cat] = (counts[cat] || 0) + 1;
                 });
+                const configId = action.includes('Supplier') ? 'supplierDiscoveryStats' : 
+                                 action.includes('Transporter') ? 'transporterDiscoveryStats' :
+                                 action.includes('Finance') ? 'financeDiscoveryStats' : 'driverDiscoveryStats';
                 
-                await batch.commit();
+                await db.collection('configuration').doc(configId).set({
+                    counts,
+                    lastUpdated: FieldValue.serverTimestamp()
+                }, { merge: true });
                 return NextResponse.json({ success: true });
             }
 

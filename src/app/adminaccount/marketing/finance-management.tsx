@@ -38,7 +38,7 @@ import { PartnerOversightDialog } from './PartnerOversightDialog';
 import { EngageDialog } from './EngageDialog';
 import { CommunicationLogDialog } from './CommunicationLogDialog';
 import { PartnerTasksDialog } from './PartnerTasksDialog';
-import { downloadDataAsCSV } from '@/lib/utils';
+import { downloadDataAsCSV, formatDateSafe } from '@/lib/utils';
 import { EnrichPartnerButton } from './EnrichPartnerButton';
 import { BulkImportDialog } from './BulkImportDialog';
 import { Label } from '@/components/ui/label';
@@ -234,12 +234,17 @@ export default function FinanceManagement() {
     { 
         header: 'Status', 
         cell: ({ row }) => {
-            const isEnriched = row.original.researchStatus === 'completed';
+            const isEnriched = row.original.researchStatus === 'completed' && !!(row.original.notes || row.original.website);
             const isSearching = row.original.researchStatus === 'searching';
             return (
-                <div className="flex flex-col gap-1">
+                <div className="flex flex-col gap-1 items-center">
                     <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge>
-                    {isEnriched && <Badge className="bg-green-100 text-green-700 border-none text-[9px] h-4 uppercase">Enriched</Badge>}
+                    {isEnriched && (
+                         <div className="flex flex-col items-center">
+                            <Badge className="bg-green-100 text-green-700 border-none text-[9px] h-4 uppercase">Enriched</Badge>
+                            <span className="text-[8px] text-muted-foreground mt-0.5">{formatDateSafe(row.original.enrichedAt, "dd/MM")}</span>
+                        </div>
+                    )}
                     {isSearching && <Badge className="bg-amber-100 text-amber-700 border-none text-[9px] h-4 uppercase animate-pulse">Searching</Badge>}
                 </div>
             );

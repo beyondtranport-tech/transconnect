@@ -25,7 +25,7 @@ import { PartnerTasksDialog } from './PartnerTasksDialog';
 import { CommunicationLogDialog } from './CommunicationLogDialog';
 import { EngageDialog } from './EngageDialog';
 import { PartnerOversightDialog } from './PartnerOversightDialog';
-import { downloadDataAsCSV } from '@/lib/utils';
+import { downloadDataAsCSV, formatDateSafe } from '@/lib/utils';
 import { EnrichPartnerButton } from './EnrichPartnerButton';
 import { BulkImportDialog } from './BulkImportDialog';
 import { BatchResearchDialog } from './BatchResearchDialog';
@@ -113,7 +113,7 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
             </div>
             <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem className="text-left"><FormLabel>Entity Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="website" render={({ field }) => (<FormItem className="text-left"><FormLabel>Official Website</FormLabel><FormControl><Input placeholder="https://..." {...field} /></FormControl><FormMessage /></FormItem>)} />
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4 text-left">
               <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="mobile" render={({ field }) => (<FormItem className="text-left"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
@@ -224,12 +224,17 @@ export default function SupplierManagement() {
     { 
         header: 'Status', 
         cell: ({ row }) => {
-            const isEnriched = row.original.researchStatus === 'completed';
+            const isEnriched = row.original.researchStatus === 'completed' && !!(row.original.notes || row.original.website);
             const isSearching = row.original.researchStatus === 'searching';
             return (
-                <div className="flex flex-col gap-1">
+                <div className="flex flex-col gap-1 items-center">
                     <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge>
-                    {isEnriched && <Badge className="bg-green-100 text-green-700 border-none text-[9px] h-4 uppercase">Enriched</Badge>}
+                    {isEnriched && (
+                        <div className="flex flex-col items-center">
+                            <Badge className="bg-green-100 text-green-700 border-none text-[9px] h-4 uppercase">Enriched</Badge>
+                            <span className="text-[8px] text-muted-foreground mt-0.5">{formatDateSafe(row.original.enrichedAt, "dd/MM")}</span>
+                        </div>
+                    )}
                     {isSearching && <Badge className="bg-amber-100 text-amber-700 border-none text-[9px] h-4 uppercase animate-pulse">Searching</Badge>}
                 </div>
             );
