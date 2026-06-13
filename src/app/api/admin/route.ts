@@ -91,6 +91,7 @@ export async function POST(req: NextRequest) {
                     const technicalNotes = normalizedP.notes || normalizedP.primaryservices || normalizedP.services || normalizedP.aboutus || normalizedP.about || normalizedP.description || '';
                     const website = normalizedP.website || normalizedP.officialwebsite || normalizedP.url || '';
                     const contactName = normalizedP.contactperson || normalizedP.humanidentity || normalizedP.humanname || normalizedP.name || '';
+                    const physicalAddress = normalizedP.address || normalizedP.physicaladdress || normalizedP.location || normalizedP.headquarters || '';
 
                     let firstName = normalizedP.firstname || '';
                     let lastName = normalizedP.lastname || '';
@@ -111,7 +112,7 @@ export async function POST(req: NextRequest) {
                     if (normalizedP.phone || normalizedP.landline) updateData.phone = normalizedP.phone || normalizedP.landline;
                     if (normalizedP.mobile || normalizedP.cell) updateData.mobile = normalizedP.mobile || normalizedP.cell;
                     if (website) updateData.website = website;
-                    if (normalizedP.physicaladdress || normalizedP.address) updateData.address = normalizedP.physicaladdress || normalizedP.address;
+                    if (physicalAddress) updateData.address = physicalAddress;
                     if (technicalNotes) updateData.notes = technicalNotes;
                     
                     batch.set(ref, updateData, { merge: true });
@@ -133,7 +134,9 @@ export async function POST(req: NextRequest) {
 
             case 'logCommunication': {
                 const { partnerId, type, subject, notes } = payload;
-                const ref = db.collection('partners').doc(partnerId).collection('communications').doc();
+                // Unified mirror logging for leads vs partners
+                const parentType = payload.isLead ? 'leads' : 'partners';
+                const ref = db.collection(parentType).doc(partnerId).collection('communications').doc();
                 await ref.set({
                     type,
                     subject,
@@ -158,7 +161,7 @@ export async function POST(req: NextRequest) {
                     batch.set(logRef, {
                         type: 'Email',
                         subject: 'Batch Research Initiated',
-                        notes: 'AI Agent commanded to perform technical forensic mapping of website and services.',
+                        notes: 'AI Agent commanded to perform technical forensic mapping of website, physical address, and services.',
                         timestamp: FieldValue.serverTimestamp()
                     });
                     
@@ -169,6 +172,26 @@ export async function POST(req: NextRequest) {
                 });
                 
                 await batch.commit();
+                return NextResponse.json({ success: true });
+            }
+            
+            case 'logForensicInitiated': {
+                const { partnerId, isLead } = payload;
+                const collectionName = isLead ? 'leads' : 'partners';
+                
+                const logRef = db.collection(collectionName).doc(partnerId).collection('communications').doc();
+                await logRef.set({
+                    type: 'Email',
+                    subject: 'Forensic Research Triggered',
+                    notes: 'Manual request for technical gap-analysis initiated.',
+                    timestamp: FieldValue.serverTimestamp()
+                });
+                
+                await db.collection(collectionName).doc(partnerId).update({
+                    status: 'contacted',
+                    updatedAt: FieldValue.serverTimestamp()
+                });
+                
                 return NextResponse.json({ success: true });
             }
 

@@ -87,6 +87,7 @@ function ISADialog({ open, onOpenChange, partner, onSave }: { open: boolean; onO
           ...partner,
           website: partner.website || '',
           notes: partner.notes || '',
+          address: partner.address || '',
         });
       } else {
         form.reset({ firstName: '', lastName: '', email: '', phone: '', mobile: '', contactPerson: '', companyName: '', website: '', notes: '', address: '', status: 'new', type: 'isa' });

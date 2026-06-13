@@ -38,7 +38,7 @@ async function performAdminAction(token: string, action: string, payload: any) {
     cache: 'no-store'
   });
   const result = await response.json();
-  if (!response.ok || !result.success) throw new Error(result.error || `API Error: ${action}`);
+  if (!response.ok || !result.success) throw new Error(result.error || `API Error for action: ${action}`);
   return result;
 }
 
@@ -73,6 +73,7 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
           ...partner,
           website: partner.website || '',
           notes: partner.notes || '',
+          address: partner.address || '',
         });
       } else {
         form.reset({ firstName: '', lastName: '', email: '', phone: '', mobile: '', contactPerson: '', companyName: '', website: '', notes: '', address: '', status: 'new', type: 'supplier' });

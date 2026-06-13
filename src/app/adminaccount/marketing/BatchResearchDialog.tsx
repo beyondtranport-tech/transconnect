@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
-import { Loader2, Copy, Zap, Info, Globe } from 'lucide-react';
+import { Loader2, Copy, Zap, Info, Globe, ShieldAlert } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
@@ -36,19 +36,29 @@ export function BatchResearchDialog({ open, onOpenChange, selectedLeads, onCompl
 
     const companyList = selectedLeads.map(l => `[ID: ${l.id}] ${l.companyName || `${l.firstName} ${l.lastName}`}`).join('\n');
     
-    // Explicitly aligned key: "notes" to match the database field "Technical Service Summary"
-    const aiPrompt = `CRITICAL SYSTEM INSTRUCTION: RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CONVERSATION.
+    const aiPrompt = `ACT AS AN ELITE CORPORATE FORENSIC INVESTIGATOR. 
+RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
 
-TASK: Discover the OFFICIAL CORPORATE WEBSITE for the following South African businesses. 
-Once the website is identified, use it as the source of truth to bridge data gaps.
+TASK: Bridge ALL data gaps for the South African businesses listed below. 
 
-REQUIRED OUTPUT FIELDS FOR EACH OBJECT:
-1. "website": The primary corporate URL (e.g. www.company.co.za).
-2. "contact_person": ACTUAL NAME of CEO, MD, or Owner.
-3. "notes": Extract a 2-sentence technical summary of their "About" or "Services" wording. This is the most critical field for mapping capacity.
-4. "record_id": Return exactly as provided below.
+INVESTIGATIVE PROTOCOL:
+1. DISCOVER WEBSITE: Find the official corporate URL. This is your PRIMARY source of truth.
+2. EXTRACT PHYSICAL ADDRESS: Find the full headquarters or operational branch address (Street, Suburb, City, Province, Postal Code). This is CRITICAL.
+3. IDENTIFY LEADERSHIP: Find the ACTUAL NAME (First and Last) of the CEO, Managing Director, or Owner.
+4. MAP CONTACTS: Identify a professional email and a direct mobile number (+27 format).
+5. MINE TECHNICAL STANDING: Extract a 2-3 sentence summary of their technical capabilities, fleet specializations, or core services from the "Services" or "About" wording.
 
-COMPANIES TO INVESTIGATE:
+REQUIRED JSON FIELDS FOR EACH OBJECT:
+- "record_id": (Return exactly as provided in the list below)
+- "website": (Official URL)
+- "address": (Full Physical Address - MUST NOT BE NULL)
+- "contact_person": (Full Human Name of Decision Maker)
+- "email": (Professional Email)
+- "phone": (Landline)
+- "mobile": (Direct Cell)
+- "notes": (Technical Service Summary / Wording)
+
+LIST TO INVESTIGATE:
 ${companyList}`;
 
     const handleCopyAndLogBatch = async () => {
@@ -63,7 +73,7 @@ ${companyList}`;
             const leadIds = selectedLeads.map(l => l.id);
             await performAdminAction(token, 'bulkLogForensicInitiated', { leadIds });
 
-            toast({ title: "Batch Logged & Copied", description: `${leadIds.length} records marked as 'Searching' in Oversight.` });
+            toast({ title: "Forensic Prompt Ready", description: `${leadIds.length} records marked as 'Searching' in Oversight.` });
             
             setTimeout(() => {
                 onOpenChange(false);
@@ -83,19 +93,19 @@ ${companyList}`;
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <Globe className="h-5 w-5 text-primary" />
-                        Website & Asset Discovery ({selectedLeads.length})
+                        Deep Forensic Discovery ({selectedLeads.length})
                     </DialogTitle>
                     <DialogDescription>
-                        Copy the command to bridge gaps. The primary focus is finding official corporate URLs and technical service wording.
+                        Copy this broad forensic command to bridge gaps for addresses, websites, and technical wording.
                     </DialogDescription>
                 </DialogHeader>
                 
                 <div className="space-y-4 py-4 text-left">
                     <Alert className="bg-primary/5 border-primary/20 text-left">
-                        <Info className="h-4 w-4 text-primary" />
-                        <AlertTitle className="text-left font-bold text-foreground">Aligned Data Mapping</AlertTitle>
+                        <ShieldCheck className="h-4 w-4 text-primary" />
+                        <AlertTitle className="text-left font-bold text-foreground">High-Fidelity Discovery</AlertTitle>
                         <AlertDescription className="text-xs text-left">
-                            This prompt is synchronized with our database. Mined service descriptions using the "notes" key will populate the "Technical Service Summary" field automatically.
+                            This prompt is aligned with our database schema. It explicitly requests the <strong>Physical Address</strong> and <strong>Technical Service Wording</strong>. 
                         </AlertDescription>
                     </Alert>
 
