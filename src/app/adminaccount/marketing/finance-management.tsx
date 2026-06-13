@@ -86,6 +86,7 @@ function FinanceDialog({ open, onOpenChange, partner, onSave }: { open: boolean;
           ...partner,
           website: partner.website || '',
           notes: partner.notes || '',
+          address: partner.address || '',
         });
       } else {
         form.reset({ firstName: '', lastName: '', email: '', phone: '', mobile: '', contactPerson: '', companyName: '', website: '', notes: '', address: '', status: 'new', type: 'finance' });

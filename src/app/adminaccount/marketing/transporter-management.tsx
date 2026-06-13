@@ -87,6 +87,7 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
           ...partner,
           website: partner.website || '',
           notes: partner.notes || '',
+          address: partner.address || '',
         });
       } else {
         form.reset({ firstName: '', lastName: '', email: '', phone: '', mobile: '', contactPerson: '', companyName: '', website: '', notes: '', address: '', status: 'new', type: 'transporter' });
@@ -138,7 +139,7 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
                         <FormControl><SelectTrigger><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
                         <SelectContent>
                             <SelectItem value="new">New</SelectItem>
-                            <SelectItem value="contacted">Researching</SelectItem>
+                            <SelectItem value="contacted">Searching</SelectItem>
                             <SelectItem value="qualified">Qualified</SelectItem>
                             <SelectItem value="active">Active</SelectItem>
                         </SelectContent>

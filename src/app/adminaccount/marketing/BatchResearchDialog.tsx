@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
-import { Loader2, Copy, Zap, Info, Globe, ShieldAlert } from 'lucide-react';
+import { Loader2, Copy, Zap, Info, Globe, ShieldCheck } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
@@ -37,21 +37,21 @@ export function BatchResearchDialog({ open, onOpenChange, selectedLeads, onCompl
     const companyList = selectedLeads.map(l => `[ID: ${l.id}] ${l.companyName || `${l.firstName} ${l.lastName}`}`).join('\n');
     
     const aiPrompt = `ACT AS AN ELITE CORPORATE FORENSIC INVESTIGATOR. 
-RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
+RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION. NO EXPLANATORY TEXT.
 
 TASK: Bridge ALL data gaps for the South African businesses listed below. 
 
-INVESTIGATIVE PROTOCOL:
+INVESTIGATIVE PROTOCOL (SEARCH GOOGLE, LINKEDIN, AND MAPS):
 1. DISCOVER WEBSITE: Find the official corporate URL. This is your PRIMARY source of truth.
-2. EXTRACT PHYSICAL ADDRESS: Find the full headquarters or operational branch address (Street, Suburb, City, Province, Postal Code). This is CRITICAL.
-3. IDENTIFY LEADERSHIP: Find the ACTUAL NAME (First and Last) of the CEO, Managing Director, or Owner.
+2. EXTRACT PHYSICAL ADDRESS: Find the EXACT OPERATIONAL ADDRESS (Street Number, Street Name, Suburb, City, Province, Postal Code). THIS IS THE MOST CRITICAL STEP. DO NOT LEAVE NULL. If necessary, search Google Maps to verify the physical location.
+3. IDENTIFY LEADERSHIP: Find the ACTUAL NAME (First and Last) of the CEO, Managing Director, or Owner via LinkedIn.
 4. MAP CONTACTS: Identify a professional email and a direct mobile number (+27 format).
-5. MINE TECHNICAL STANDING: Extract a 2-3 sentence summary of their technical capabilities, fleet specializations, or core services from the "Services" or "About" wording.
+5. MINE TECHNICAL STANDING: Extract a 2-3 sentence summary of their technical capabilities, fleet specializations, or core services from the "Services" or "About" wording on their website.
 
 REQUIRED JSON FIELDS FOR EACH OBJECT:
 - "record_id": (Return exactly as provided in the list below)
 - "website": (Official URL)
-- "address": (Full Physical Address - MUST NOT BE NULL)
+- "address": (FULL Verified Physical Address - MUST NOT BE NULL)
 - "contact_person": (Full Human Name of Decision Maker)
 - "email": (Professional Email)
 - "phone": (Landline)
@@ -96,16 +96,16 @@ ${companyList}`;
                         Deep Forensic Discovery ({selectedLeads.length})
                     </DialogTitle>
                     <DialogDescription>
-                        Copy this broad forensic command to bridge gaps for addresses, websites, and technical wording.
+                        Copy this high-intensity forensic command to bridge gaps for physical addresses, websites, and technical wording.
                     </DialogDescription>
                 </DialogHeader>
                 
                 <div className="space-y-4 py-4 text-left">
                     <Alert className="bg-primary/5 border-primary/20 text-left">
                         <ShieldCheck className="h-4 w-4 text-primary" />
-                        <AlertTitle className="text-left font-bold text-foreground">High-Fidelity Discovery</AlertTitle>
+                        <AlertTitle className="text-left font-bold text-foreground">Address-First Discovery</AlertTitle>
                         <AlertDescription className="text-xs text-left">
-                            This prompt is aligned with our database schema. It explicitly requests the <strong>Physical Address</strong> and <strong>Technical Service Wording</strong>. 
+                            This prompt explicitly commands the AI to search Google Maps and local registries to verify physical street addresses for your records.
                         </AlertDescription>
                     </Alert>
 
