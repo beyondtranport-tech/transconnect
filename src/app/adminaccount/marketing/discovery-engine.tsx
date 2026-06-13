@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -174,7 +173,7 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
             
             if (!response.ok) {
                 const errMessage = result.error || "Automation failed.";
-                if (errMessage.includes('dunning') || errMessage.includes('403') || errMessage.includes('denied')) {
+                if (errMessage.includes('dunning') || errMessage.includes('403') || errMessage.includes('denied') || errMessage.includes('429')) {
                     setConfigError(errMessage);
                 }
                 throw new Error(errMessage);
@@ -193,13 +192,22 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
             {configError && (
                 <Alert variant="destructive">
                     <AlertTriangle className="h-4 w-4" />
-                    <AlertTitle>Cloud API Error</AlertTitle>
+                    <AlertTitle>{configError.includes('429') ? 'Rate Limit Reached' : 'Cloud API Error'}</AlertTitle>
                     <AlertDescription className="space-y-3">
                         <p className="font-mono text-[10px] bg-black/10 p-2 rounded">{configError}</p>
-                        <p className="text-xs">This usually indicates the Generative Language API is disabled or there is a billing issue in your Google Cloud Project.</p>
-                        <Button variant="outline" size="sm" asChild className="text-destructive-foreground border-destructive/20 hover:bg-destructive/10">
-                            <Link href="/docs/enable-gemini-api.md" target="_blank">AI Setup Guide</Link>
-                        </Button>
+                        {configError.includes('429') ? (
+                            <p className="text-xs">Gemini free tier allows 15 requests per minute. Please wait 60 seconds before trying the next batch.</p>
+                        ) : (
+                            <p className="text-xs">Ensure the Generative Language API is enabled and billing is active in your Google Cloud Project.</p>
+                        )}
+                        <div className="flex gap-2">
+                             <Button variant="outline" size="sm" asChild className="text-destructive-foreground border-destructive/20 hover:bg-destructive/10">
+                                <Link href="/docs/enable-gemini-api.md" target="_blank">AI Setup Guide</Link>
+                            </Button>
+                            <Button variant="outline" size="sm" asChild className="text-destructive-foreground border-destructive/20 hover:bg-destructive/10">
+                                <Link href="/docs/quota-increase-guide.md" target="_blank">Quota Limits</Link>
+                            </Button>
+                        </div>
                     </AlertDescription>
                 </Alert>
             )}
