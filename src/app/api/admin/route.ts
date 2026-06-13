@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -41,7 +42,7 @@ export async function POST(req: NextRequest) {
         const isAdmin = decodedToken.email === 'beyondtransport@gmail.com' || decodedToken.email === 'mkoton100@gmail.com';
         if (!isAdmin) throw new Error("Forbidden: Admin access required.");
 
-        const MAX_LOAD = 100;
+        const MAX_LOAD = 500; // Increased load for better pagination depth
 
         switch (action) {
             case 'getMembers': {
@@ -80,7 +81,7 @@ export async function POST(req: NextRequest) {
 
                     const ref = db.collection(collectionName).doc(docId);
                     
-                    // NORMALIZATION ENGINE - Converts variations into stable slug-format
+                    // NORMALIZATION ENGINE
                     const normalizedP: any = {};
                     Object.keys(p).forEach(k => {
                         const cleanKey = k.toLowerCase().trim().replace(/[\s_-]+/g, '');
@@ -102,8 +103,12 @@ export async function POST(req: NextRequest) {
                         lastName = parts.slice(1).join(' ') || 'Partner';
                     }
 
-                    // Strategic Merge: Preserve existing data if AI output is empty
-                    const updateData: any = { updatedAt: FieldValue.serverTimestamp() };
+                    // Merging data and marking as Enriched/Completed
+                    const updateData: any = { 
+                        updatedAt: FieldValue.serverTimestamp(),
+                        researchStatus: 'completed'
+                    };
+
                     if (firstName && firstName !== 'null') updateData.firstName = firstName;
                     if (lastName && lastName !== 'null') updateData.lastName = lastName;
                     if (normalizedP.companyname && normalizedP.companyname !== 'null') updateData.companyName = normalizedP.companyname;
@@ -160,12 +165,13 @@ export async function POST(req: NextRequest) {
                     batch.set(logRef, {
                         type: 'Email',
                         subject: 'Batch Research Initiated',
-                        notes: 'AI Agent commanded to perform technical forensic mapping of website, physical address, and services.',
+                        notes: 'AI Agent commanded to perform technical forensic mapping.',
                         timestamp: FieldValue.serverTimestamp()
                     });
                     
                     batch.update(db.collection('leads').doc(id), {
                         status: 'contacted',
+                        researchStatus: 'searching',
                         updatedAt: FieldValue.serverTimestamp()
                     });
                 });
@@ -188,6 +194,7 @@ export async function POST(req: NextRequest) {
                 
                 await db.collection(collectionName).doc(partnerId).update({
                     status: 'contacted',
+                    researchStatus: 'searching',
                     updatedAt: FieldValue.serverTimestamp()
                 });
                 

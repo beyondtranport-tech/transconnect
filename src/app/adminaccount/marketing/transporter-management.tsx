@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -231,27 +232,32 @@ export default function TransporterManagement() {
         cell: ({ row }) => (
             <div className="flex flex-col text-sm text-left">
                 <span className="font-bold text-left">{row.original.companyName}</span>
-                <div className="flex items-center gap-2 mt-1 text-left">
-                    <span className="text-[10px] text-muted-foreground uppercase font-black text-left">{row.original.address || 'Operational Hub Verified'}</span>
+                <div className="flex items-center gap-2 mt-1">
+                    <span className="text-[10px] text-muted-foreground uppercase font-black">{row.original.address || 'Operational Hub Verified'}</span>
                     {row.original.website && <Globe className="h-3 w-3 text-primary" />}
                 </div>
             </div>
         )
     },
-    { 
-        header: 'Human Contact', 
-        cell: ({ row }) => (
-            <div className="flex flex-col text-sm text-left">
-                <span className="font-bold text-left">{row.original.contactPerson || `${row.original.firstName || ''} ${row.original.lastName || ''}`.trim() || 'N/A'}</span>
-                <span className="text-xs text-muted-foreground text-left">{row.original.email}</span>
-            </div>
-        )
-    },
     { accessorKey: 'phone', header: 'Landline' },
     { accessorKey: 'mobile', header: 'Mobile' },
-    { accessorKey: 'status', header: 'Status', cell: ({ row }) => <Badge variant="outline" className="capitalize text-[10px] text-left">{row.original.status}</Badge> },
+    { accessorKey: 'email', header: 'Email' },
+    { 
+        header: 'Status', 
+        cell: ({ row }) => {
+            const isEnriched = row.original.researchStatus === 'completed';
+            const isSearching = row.original.researchStatus === 'searching';
+            return (
+                <div className="flex flex-col gap-1">
+                    <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge>
+                    {isEnriched && <Badge className="bg-green-100 text-green-700 border-none text-[9px] h-4 uppercase">Enriched</Badge>}
+                    {isSearching && <Badge className="bg-amber-100 text-amber-700 border-none text-[9px] h-4 uppercase animate-pulse">Searching</Badge>}
+                </div>
+            );
+        }
+    },
     { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
-      <div className="flex justify-end gap-1 text-left">
+      <div className="flex justify-end gap-1">
         <EnrichPartnerButton partner={row.original} onUpdate={fetchData} />
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'engage', data: row.original })} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
         <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.companyName} />
@@ -275,47 +281,45 @@ export default function TransporterManagement() {
         </AlertDialogContent>
       </AlertDialog>
       
-      <div className="space-y-6 text-left">
-        <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
-            <div className="text-left">
-                <CardTitle className="flex items-center gap-2 text-left"><Truck /> Transporter Registry</CardTitle>
-                <CardDescription>High-capacity view of verified hauliers ({allRecords.length} records).</CardDescription>
+      <div className="space-y-6">
+        <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+                <CardTitle className="flex items-center gap-2"><Truck /> Transporter Registry</CardTitle>
+                <CardDescription>High-capacity view - 25 records per batch.</CardDescription>
             </div>
-            <div className="flex flex-wrap items-center gap-2 text-left">
+            <div className="flex flex-wrap items-center gap-2">
                 {selectedIds.length > 0 && (
                     <Button variant="secondary" onClick={() => setDialog({ type: 'batch' })}>
                         <Zap className="mr-2 h-4 w-4" /> Batch Research ({selectedIds.length})
                     </Button>
                 )}
-                <div className="relative w-64 text-left">
+                <div className="relative w-64">
                     <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input placeholder="Filter registry..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8" />
                 </div>
-                <Button variant="outline" onClick={() => downloadDataAsCSV(allRecords, 'transporters-export.csv')} disabled={isLoading}>
-                    <Download className="mr-2 h-4 w-4" /> Export CSV
-                </Button>
+                <Button variant="outline" onClick={() => downloadDataAsCSV(allRecords, 'transporters-export.csv')} disabled={isLoading}><Download className="mr-2 h-4 w-4" /> Export CSV</Button>
                 <BulkImportDialog type="transporter" onComplete={fetchData}><Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
                 <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Record</Button>
             </div>
         </CardHeader>
 
         <Card>
-            <CardContent className="pt-6 text-left">
+            <CardContent className="pt-6">
                 <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left">
-                    <div className="flex-1 space-y-2 text-left">
+                    <div className="flex-1 space-y-2">
                         <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status</Label>
                         <Select value={statusFilter} onValueChange={setStatusFilter}>
                             <SelectTrigger className="bg-white"><SelectValue /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Statuses</SelectItem>
                                 <SelectItem value="new">New</SelectItem>
-                                <SelectItem value="contacted">Searching</SelectItem>
+                                <SelectItem value="contacted">Researching</SelectItem>
                                 <SelectItem value="qualified">Qualified</SelectItem>
                                 <SelectItem value="active">Active</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
-                    <div className="flex-1 space-y-2 text-left">
+                    <div className="flex-1 space-y-2">
                         <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Users className="h-3 w-3"/> Assignee</Label>
                         <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
                             <SelectTrigger className="bg-white"><SelectValue /></SelectTrigger>

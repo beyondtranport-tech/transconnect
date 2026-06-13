@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -19,7 +20,8 @@ export function useDataTable<TData>(data: TData[], columns: ColumnDef<TData>[]) 
   const [globalFilter, setGlobalFilter] = useState('');
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
   const [pageIndex, setPageIndex] = useState(0);
-  const pageSize = 50;
+  // Set to 25 to align with recommended AI batch sizes
+  const pageSize = 25;
 
   const getNestedValue = (obj: any, path?: string): any => {
     if (!path || obj === null || obj === undefined) return undefined;
@@ -70,8 +72,8 @@ export function useDataTable<TData>(data: TData[], columns: ColumnDef<TData>[]) 
   const toggleAll = (checked: boolean) => {
       const newSelection: Record<string, boolean> = {};
       if (checked) {
-          filteredRows.forEach((item: any) => {
-              const id = item.id;
+          pagedRows.forEach((row: any) => {
+              const id = row.original.id;
               if (id) newSelection[id] = true;
           });
       }
@@ -87,7 +89,8 @@ export function useDataTable<TData>(data: TData[], columns: ColumnDef<TData>[]) 
       });
   };
 
-  const canNextPage = (pageIndex + 1) * pageSize < filteredRows.length;
+  const pageCount = Math.ceil(filteredRows.length / pageSize);
+  const canNextPage = pageIndex < pageCount - 1;
   const canPrevPage = pageIndex > 0;
   
   const nextPage = () => { if (canNextPage) setPageIndex(prev => prev + 1); };
@@ -105,7 +108,7 @@ export function useDataTable<TData>(data: TData[], columns: ColumnDef<TData>[]) 
     toggleAll,
     toggleRow,
     pageIndex,
-    pageCount: Math.ceil(filteredRows.length / pageSize),
+    pageCount,
     pageSize,
     nextPage,
     prevPage,
