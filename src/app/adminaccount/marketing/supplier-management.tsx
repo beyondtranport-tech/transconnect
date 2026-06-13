@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -132,7 +133,7 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
                     </Select>
                 </FormItem>
             )} />
-            <DialogFooter className="pt-4 border-t">
+            <DialogFooter className="pt-4 border-t text-left">
               <Button type="submit" disabled={isLoading}>
                 {isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />} 
                 Save Supplier
@@ -190,6 +191,7 @@ export default function SupplierManagement() {
   }, [allRecords, selectedIds]);
 
   async function handleDelete() {
+    if (!dialog.data) return;
     try {
       const token = await getClientSideAuthToken();
       if (!token) return;
@@ -247,7 +249,7 @@ export default function SupplierManagement() {
   ];
 
   return (
-    <>
+    <div className="space-y-6 text-left">
       <BatchResearchDialog open={dialog.type === 'batch'} onOpenChange={(o) => !o && setDialog({ type: null })} selectedLeads={selectedLeads} onComplete={fetchData} />
       <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.data} audience="suppliers" onEngageSuccess={fetchData} />
       <SupplierDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={fetchData} />
@@ -259,9 +261,9 @@ export default function SupplierManagement() {
       </AlertDialog>
       <div className="space-y-6 text-left">
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-                <CardTitle><Building /> Supplier Registry</CardTitle>
-                <CardDescription>Managed view - 25 records per batch.</CardDescription>
+            <div className="text-left">
+                <CardTitle className="text-left"><Building /> Supplier Registry</CardTitle>
+                <CardDescription className="text-left">Managed view - 25 records per batch.</CardDescription>
             </div>
             <div className="flex flex-wrap items-center gap-2">
                 {selectedIds.length > 0 && (
@@ -269,6 +271,10 @@ export default function SupplierManagement() {
                         <Zap className="mr-2 h-4 w-4" /> Batch Research ({selectedIds.length})
                     </Button>
                 )}
+                <div className="relative w-64 text-left">
+                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input placeholder="Filter registry..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8" />
+                </div>
                 <Button variant="outline" onClick={() => downloadDataAsCSV(allRecords, 'suppliers-export.csv')} disabled={isLoading}>
                     <Download className="mr-2 h-4 w-4" /> Export CSV
                 </Button>
@@ -279,7 +285,7 @@ export default function SupplierManagement() {
         <Card>
             <CardContent className="pt-6 text-left">
                 <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left">
-                    <div className="flex-1 space-y-2">
+                    <div className="flex-1 space-y-2 text-left">
                         <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status</Label>
                         <Select value={statusFilter} onValueChange={setStatusFilter}>
                             <SelectTrigger className="bg-white"><SelectValue /></SelectTrigger>
@@ -292,7 +298,7 @@ export default function SupplierManagement() {
                             </SelectContent>
                         </Select>
                     </div>
-                    <div className="flex-1 space-y-2">
+                    <div className="flex-1 space-y-2 text-left">
                         <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Users className="h-3 w-3"/> Assignee</Label>
                         <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
                             <SelectTrigger className="bg-white"><SelectValue /></SelectTrigger>
@@ -308,6 +314,6 @@ export default function SupplierManagement() {
             </CardContent>
         </Card>
       </div>
-    </>
+    </div>
   );
 }

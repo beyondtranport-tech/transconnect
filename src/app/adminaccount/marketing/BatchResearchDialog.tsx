@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState } from 'react';
@@ -118,9 +119,9 @@ ${companyList}`;
 
                     <Alert className="bg-primary/5 border-primary/20 text-left">
                         <ShieldCheck className="h-4 w-4 text-primary" />
-                        <AlertTitle className="text-left font-bold text-foreground">Schema-Aligned Command</AlertTitle>
+                        <AlertTitle className="text-left font-bold text-foreground">High-Fidelity Discovery</AlertTitle>
                         <AlertDescription className="text-xs text-left">
-                            This prompt is mapped to the <strong>Physical Address</strong> and <strong>Technical Summary</strong> fields in your CRM.
+                            This prompt is aligned with our database schema. It explicitly requests the <strong>Physical Address</strong> and <strong>Technical Service Wording</strong>. 
                         </AlertDescription>
                     </Alert>
 
