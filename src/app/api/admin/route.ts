@@ -80,14 +80,14 @@ export async function POST(req: NextRequest) {
 
                     const ref = db.collection(collectionName).doc(docId);
                     
-                    // NORMALIZATION ENGINE - Converts CamelCase and Spaced keys to slug-format
+                    // NORMALIZATION ENGINE - Converts variations into stable slug-format
                     const normalizedP: any = {};
                     Object.keys(p).forEach(k => {
                         const cleanKey = k.toLowerCase().trim().replace(/[\s_-]+/g, '');
                         normalizedP[cleanKey] = p[k];
                     });
 
-                    // Technical Mapping Prioritization
+                    // Strategic Technical Mapping
                     const technicalNotes = normalizedP.notes || normalizedP.primaryservices || normalizedP.services || normalizedP.aboutus || normalizedP.about || normalizedP.description || '';
                     const website = normalizedP.website || normalizedP.officialwebsite || normalizedP.url || '';
                     const contactName = normalizedP.contactperson || normalizedP.humanidentity || normalizedP.humanname || normalizedP.name || '';
@@ -102,18 +102,18 @@ export async function POST(req: NextRequest) {
                         lastName = parts.slice(1).join(' ') || 'Partner';
                     }
 
-                    // Strategic Merge: Only update fields that have meaningful values from the AI
+                    // Strategic Merge: Preserve existing data if AI output is empty
                     const updateData: any = { updatedAt: FieldValue.serverTimestamp() };
-                    if (firstName) updateData.firstName = firstName;
-                    if (lastName) updateData.lastName = lastName;
-                    if (normalizedP.companyname) updateData.companyName = normalizedP.companyname;
-                    if (contactName) updateData.contactPerson = contactName;
-                    if (normalizedP.emailaddress || normalizedP.email) updateData.email = normalizedP.emailaddress || normalizedP.email;
-                    if (normalizedP.phone || normalizedP.landline) updateData.phone = normalizedP.phone || normalizedP.landline;
-                    if (normalizedP.mobile || normalizedP.cell) updateData.mobile = normalizedP.mobile || normalizedP.cell;
-                    if (website) updateData.website = website;
-                    if (physicalAddress) updateData.address = physicalAddress;
-                    if (technicalNotes) updateData.notes = technicalNotes;
+                    if (firstName && firstName !== 'null') updateData.firstName = firstName;
+                    if (lastName && lastName !== 'null') updateData.lastName = lastName;
+                    if (normalizedP.companyname && normalizedP.companyname !== 'null') updateData.companyName = normalizedP.companyname;
+                    if (contactName && contactName !== 'null') updateData.contactPerson = contactName;
+                    if ((normalizedP.emailaddress || normalizedP.email) && (normalizedP.emailaddress || normalizedP.email) !== 'null') updateData.email = normalizedP.emailaddress || normalizedP.email;
+                    if ((normalizedP.phone || normalizedP.landline) && (normalizedP.phone || normalizedP.landline) !== 'null') updateData.phone = normalizedP.phone || normalizedP.landline;
+                    if ((normalizedP.mobile || normalizedP.cell) && (normalizedP.mobile || normalizedP.cell) !== 'null') updateData.mobile = normalizedP.mobile || normalizedP.cell;
+                    if (website && website !== 'null') updateData.website = website;
+                    if (physicalAddress && physicalAddress !== 'null') updateData.address = physicalAddress;
+                    if (technicalNotes && technicalNotes !== 'null') updateData.notes = technicalNotes;
                     
                     batch.set(ref, updateData, { merge: true });
                 });
@@ -134,7 +134,6 @@ export async function POST(req: NextRequest) {
 
             case 'logCommunication': {
                 const { partnerId, type, subject, notes } = payload;
-                // Unified mirror logging for leads vs partners
                 const parentType = payload.isLead ? 'leads' : 'partners';
                 const ref = db.collection(parentType).doc(partnerId).collection('communications').doc();
                 await ref.set({

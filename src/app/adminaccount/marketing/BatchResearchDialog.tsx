@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
-import { Loader2, Copy, Zap, Info, Globe, ShieldCheck } from 'lucide-react';
+import { Loader2, Copy, Zap, Info, Globe, ShieldCheck, AlertTriangle } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
@@ -43,20 +43,20 @@ TASK: Bridge ALL data gaps for the South African businesses listed below.
 
 INVESTIGATIVE PROTOCOL (SEARCH GOOGLE, LINKEDIN, AND MAPS):
 1. DISCOVER WEBSITE: Find the official corporate URL. This is your PRIMARY source of truth.
-2. EXTRACT PHYSICAL ADDRESS: Find the EXACT OPERATIONAL ADDRESS (Street Number, Street Name, Suburb, City, Province, Postal Code). THIS IS THE MOST CRITICAL STEP. DO NOT LEAVE NULL. If necessary, search Google Maps to verify the physical location.
+2. EXTRACT PHYSICAL ADDRESS: Find the EXACT OPERATIONAL ADDRESS (Street Number, Street Name, Suburb, City, Province, Postal Code). THIS IS CRITICAL. DO NOT LEAVE NULL. Use Google Maps to verify the physical location.
 3. IDENTIFY LEADERSHIP: Find the ACTUAL NAME (First and Last) of the CEO, Managing Director, or Owner via LinkedIn.
 4. MAP CONTACTS: Identify a professional email and a direct mobile number (+27 format).
-5. MINE TECHNICAL STANDING: Extract a 2-3 sentence summary of their technical capabilities, fleet specializations, or core services from the "Services" or "About" wording on their website.
+5. MINE TECHNICAL STANDING: Use the key "notes" to provide a 2-3 sentence summary of their technical capabilities, fleet specializations, or core services from their "About" wording.
 
 REQUIRED JSON FIELDS FOR EACH OBJECT:
 - "record_id": (Return exactly as provided in the list below)
 - "website": (Official URL)
-- "address": (FULL Verified Physical Address - MUST NOT BE NULL)
+- "address": (FULL Verified Physical Address)
 - "contact_person": (Full Human Name of Decision Maker)
 - "email": (Professional Email)
 - "phone": (Landline)
 - "mobile": (Direct Cell)
-- "notes": (Technical Service Summary / Wording)
+- "notes": (Technical Service Summary)
 
 LIST TO INVESTIGATE:
 ${companyList}`;
@@ -93,19 +93,29 @@ ${companyList}`;
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <Globe className="h-5 w-5 text-primary" />
-                        Deep Forensic Discovery ({selectedLeads.length})
+                        Forensic Batch Discovery ({selectedLeads.length})
                     </DialogTitle>
                     <DialogDescription>
-                        Copy this high-intensity forensic command to bridge gaps for physical addresses, websites, and technical wording.
+                        Copy this forensic command to bridge gaps for addresses, websites, and technical wording.
                     </DialogDescription>
                 </DialogHeader>
                 
                 <div className="space-y-4 py-4 text-left">
+                    {selectedLeads.length > 30 && (
+                        <Alert variant="destructive" className="bg-destructive/10">
+                            <AlertTriangle className="h-4 w-4" />
+                            <AlertTitle>Large Batch Warning</AlertTitle>
+                            <AlertDescription className="text-xs">
+                                You have selected {selectedLeads.length} records. AI output may cut off mid-way. For best results, we recommend batches of <strong>20-30</strong>.
+                            </AlertDescription>
+                        </Alert>
+                    )}
+
                     <Alert className="bg-primary/5 border-primary/20 text-left">
                         <ShieldCheck className="h-4 w-4 text-primary" />
-                        <AlertTitle className="text-left font-bold text-foreground">Address-First Discovery</AlertTitle>
+                        <AlertTitle className="text-left font-bold text-foreground">Schema-Aligned Command</AlertTitle>
                         <AlertDescription className="text-xs text-left">
-                            This prompt explicitly commands the AI to search Google Maps and local registries to verify physical street addresses for your records.
+                            This prompt is mapped to the <strong>Physical Address</strong> and <strong>Technical Summary</strong> fields in your CRM.
                         </AlertDescription>
                     </Alert>
 
@@ -120,7 +130,7 @@ ${companyList}`;
                 <DialogFooter>
                     <Button onClick={handleCopyAndLogBatch} disabled={isLoading} className="w-full h-12 text-lg font-bold">
                         {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Zap className="mr-2 h-4 w-4" />}
-                        {isCopied ? 'Prompt Ready!' : 'Copy Forensic Prompt & Start Batch'}
+                        {isCopied ? 'Prompt Ready!' : 'Copy Prompt & Update Oversight'}
                     </Button>
                 </DialogFooter>
             </DialogContent>
