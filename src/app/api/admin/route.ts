@@ -81,10 +81,16 @@ export async function POST(req: NextRequest) {
 
                     const ref = db.collection(collectionName).doc(docId);
                     
+                    // Normalize keys to lowercase for resilient mapping
+                    const normalizedP: any = {};
+                    Object.keys(p).forEach(k => {
+                        normalizedP[k.toLowerCase().replace(/\s/g, '_')] = p[k];
+                    });
+
                     // Robust Name Parsing
-                    let firstName = p.firstName || '';
-                    let lastName = p.lastName || '';
-                    const contactName = p.contact_person || p.contactPerson || p.contact_name || p.human_identity;
+                    let firstName = normalizedP.firstname || '';
+                    let lastName = normalizedP.lastname || '';
+                    const contactName = normalizedP.contact_person || normalizedP.contactperson || normalizedP.contact_name || normalizedP.human_identity || normalizedP.human_name;
 
                     if (contactName && (!firstName || firstName === 'Unknown')) {
                         const parts = contactName.split(' ');
@@ -93,20 +99,22 @@ export async function POST(req: NextRequest) {
                     }
 
                     // Strategic mapping for technical wording and website
-                    const technicalNotes = p.primary_services || p.services || p.about || p.about_us || p.home || p.notes || p.description || '';
-                    const website = p.website || p.url || p.official_website || '';
+                    const technicalNotes = normalizedP.primary_services || normalizedP.services || normalizedP.about || normalizedP.about_us || normalizedP.home || normalizedP.notes || normalizedP.description || '';
+                    const website = normalizedP.website || normalizedP.url || normalizedP.official_website || '';
+                    const mobile = normalizedP.mobile || normalizedP.cell || normalizedP.registry_line || '';
+                    const phone = normalizedP.phone || normalizedP.telephone_number || normalizedP.landline || '';
 
                     const dataToSave: any = {
                         ...p,
                         firstName: firstName || 'Unknown',
                         lastName: lastName || 'Partner',
-                        companyName: p.company_name || p.companyName || p.trading_name || '',
+                        companyName: normalizedP.company_name || normalizedP.companyname || normalizedP.trading_name || '',
                         contactPerson: contactName || '',
-                        email: p.email_address || p.email || '',
-                        phone: p.telephone_number || p.phone || '',
-                        mobile: p.registry_line || p.mobile || '',
+                        email: normalizedP.email_address || normalizedP.email || '',
+                        phone: phone,
+                        mobile: mobile,
                         website: website,
-                        address: p.physical_address || p.address || '',
+                        address: normalizedP.physical_address || normalizedP.address || '',
                         notes: technicalNotes,
                         updatedAt: FieldValue.serverTimestamp()
                     };
