@@ -81,35 +81,34 @@ export async function POST(req: NextRequest) {
 
                     const ref = db.collection(collectionName).doc(docId);
                     
-                    // Normalize keys to lowercase for resilient mapping
+                    // NORMALIZATION ENGINE: Handle "PRIMARY SERVICES", "WEBSITE", etc.
                     const normalizedP: any = {};
                     Object.keys(p).forEach(k => {
-                        normalizedP[k.toLowerCase().replace(/\s/g, '_')] = p[k];
+                        const cleanKey = k.toLowerCase().trim().replace(/\s+/g, '_');
+                        normalizedP[cleanKey] = p[k];
                     });
 
-                    // Robust Name Parsing
+                    // Strategic Mapping
+                    const technicalNotes = normalizedP.primary_services || normalizedP.services || normalizedP.about || normalizedP.notes || normalizedP.description || '';
+                    const website = normalizedP.website || normalizedP.official_website || normalizedP.url || '';
+                    const mobile = normalizedP.mobile || normalizedP.cell || normalizedP.registry_line || '';
+                    const phone = normalizedP.phone || normalizedP.telephone_number || normalizedP.landline || '';
+                    const contactName = normalizedP.contact_person || normalizedP.human_identity || normalizedP.human_name || normalizedP.name || '';
+
                     let firstName = normalizedP.firstname || '';
                     let lastName = normalizedP.lastname || '';
-                    const contactName = normalizedP.contact_person || normalizedP.contactperson || normalizedP.contact_name || normalizedP.human_identity || normalizedP.human_name;
 
-                    if (contactName && (!firstName || firstName === 'Unknown')) {
+                    if (contactName && !firstName) {
                         const parts = contactName.split(' ');
-                        firstName = parts[0] || 'Unknown';
+                        firstName = parts[0];
                         lastName = parts.slice(1).join(' ') || 'Partner';
                     }
 
-                    // Strategic mapping for technical wording and website
-                    const technicalNotes = normalizedP.primary_services || normalizedP.services || normalizedP.about || normalizedP.about_us || normalizedP.home || normalizedP.notes || normalizedP.description || '';
-                    const website = normalizedP.website || normalizedP.url || normalizedP.official_website || '';
-                    const mobile = normalizedP.mobile || normalizedP.cell || normalizedP.registry_line || '';
-                    const phone = normalizedP.phone || normalizedP.telephone_number || normalizedP.landline || '';
-
                     const dataToSave: any = {
-                        ...p,
                         firstName: firstName || 'Unknown',
                         lastName: lastName || 'Partner',
-                        companyName: normalizedP.company_name || normalizedP.companyname || normalizedP.trading_name || '',
-                        contactPerson: contactName || '',
+                        companyName: normalizedP.company_name || normalizedP.trading_name || '',
+                        contactPerson: contactName,
                         email: normalizedP.email_address || normalizedP.email || '',
                         phone: phone,
                         mobile: mobile,

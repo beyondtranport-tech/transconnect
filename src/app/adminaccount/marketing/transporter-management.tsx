@@ -227,7 +227,6 @@ export default function TransporterManagement() {
 
   const columns: ColumnDef<any>[] = [
     { 
-        accessorKey: 'companyName', 
         header: 'Transporter Name', 
         cell: ({ row }) => (
             <div className="flex flex-col text-sm text-left">
