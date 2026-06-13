@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -81,19 +80,18 @@ export async function POST(req: NextRequest) {
 
                     const ref = db.collection(collectionName).doc(docId);
                     
-                    // NORMALIZATION ENGINE: Handle "PRIMARY SERVICES", "WEBSITE", etc.
+                    // NORMALIZATION ENGINE
                     const normalizedP: any = {};
                     Object.keys(p).forEach(k => {
-                        const cleanKey = k.toLowerCase().trim().replace(/\s+/g, '_');
+                        const cleanKey = k.toLowerCase().trim().replace(/[\s_-]+/g, '');
                         normalizedP[cleanKey] = p[k];
                     });
 
-                    // Strategic Mapping
-                    const technicalNotes = normalizedP.primary_services || normalizedP.services || normalizedP.about || normalizedP.notes || normalizedP.description || '';
-                    const website = normalizedP.website || normalizedP.official_website || normalizedP.url || '';
-                    const mobile = normalizedP.mobile || normalizedP.cell || normalizedP.registry_line || '';
-                    const phone = normalizedP.phone || normalizedP.telephone_number || normalizedP.landline || '';
-                    const contactName = normalizedP.contact_person || normalizedP.human_identity || normalizedP.human_name || normalizedP.name || '';
+                    // Comprehensive technical mapping
+                    // Aggressively map various AI keys to the "notes" field
+                    const technicalNotes = normalizedP.notes || normalizedP.primaryservices || normalizedP.services || normalizedP.aboutus || normalizedP.about || normalizedP.description || '';
+                    const website = normalizedP.website || normalizedP.officialwebsite || normalizedP.url || '';
+                    const contactName = normalizedP.contactperson || normalizedP.humanidentity || normalizedP.humanname || normalizedP.name || '';
 
                     let firstName = normalizedP.firstname || '';
                     let lastName = normalizedP.lastname || '';
@@ -107,13 +105,13 @@ export async function POST(req: NextRequest) {
                     const dataToSave: any = {
                         firstName: firstName || 'Unknown',
                         lastName: lastName || 'Partner',
-                        companyName: normalizedP.company_name || normalizedP.trading_name || '',
+                        companyName: normalizedP.companyname || normalizedP.tradingname || '',
                         contactPerson: contactName,
-                        email: normalizedP.email_address || normalizedP.email || '',
-                        phone: phone,
-                        mobile: mobile,
+                        email: normalizedP.emailaddress || normalizedP.email || '',
+                        phone: normalizedP.phone || normalizedP.telephonenumber || normalizedP.landline || '',
+                        mobile: normalizedP.mobile || normalizedP.cell || normalizedP.registryline || '',
                         website: website,
-                        address: normalizedP.physical_address || normalizedP.address || '',
+                        address: normalizedP.physicaladdress || normalizedP.address || '',
                         notes: technicalNotes,
                         updatedAt: FieldValue.serverTimestamp()
                     };
@@ -153,6 +151,29 @@ export async function POST(req: NextRequest) {
                 const snap = await db.collection('platformStaff').get();
                 const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
                 return NextResponse.json({ success: true, data });
+            }
+            
+            case 'bulkLogForensicInitiated': {
+                const { leadIds } = payload;
+                const batch = db.batch();
+                
+                leadIds.forEach((id: string) => {
+                    const logRef = db.collection('leads').doc(id).collection('communications').doc();
+                    batch.set(logRef, {
+                        type: 'Email',
+                        subject: 'Batch Research Initiated',
+                        notes: 'AI Agent commanded to perform technical forensic mapping of website and services.',
+                        timestamp: FieldValue.serverTimestamp()
+                    });
+                    
+                    batch.update(db.collection('leads').doc(id), {
+                        status: 'contacted',
+                        updatedAt: FieldValue.serverTimestamp()
+                    });
+                });
+                
+                await batch.commit();
+                return NextResponse.json({ success: true });
             }
 
             default:

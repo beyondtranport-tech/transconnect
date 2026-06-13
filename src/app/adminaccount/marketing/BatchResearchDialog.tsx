@@ -36,15 +36,17 @@ export function BatchResearchDialog({ open, onOpenChange, selectedLeads, onCompl
 
     const companyList = selectedLeads.map(l => `[ID: ${l.id}] ${l.companyName || `${l.firstName} ${l.lastName}`}`).join('\n');
     
+    // Aligned prompt keys: "notes" and "website"
     const aiPrompt = `CRITICAL SYSTEM INSTRUCTION: RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CONVERSATION.
 
 TASK: Discover the OFFICIAL CORPORATE WEBSITE for the following South African businesses. 
-Once the website is identified, use it as the source of truth to bridge the following gaps:
+Once the website is identified, use it as the source of truth to bridge data gaps.
 
-1. WEBSITE: Find the primary URL (e.g., www.company.co.za).
-2. HUMAN IDENTITY: Find ACTUAL NAME of CEO, MD, or Owner.
-3. PRIMARY SERVICES: Extract a 2-sentence summary of their "About" or "Services" wording.
-4. PERSISTENCE: Return "record_id" exactly as provided.
+REQUIRED OUTPUT FIELDS FOR EACH OBJECT:
+1. "website": The primary corporate URL (e.g. www.company.co.za).
+2. "contact_person": ACTUAL NAME of CEO, MD, or Owner.
+3. "notes": Extract a 2-sentence technical summary of their "About" or "Services" wording. This is the most critical field for mapping capacity.
+4. "record_id": Return exactly as provided below.
 
 COMPANIES TO INVESTIGATE:
 ${companyList}`;
@@ -55,11 +57,9 @@ ${companyList}`;
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Auth failed");
 
-            // 1. Copy refined prompt
             await navigator.clipboard.writeText(aiPrompt);
             setIsCopied(true);
 
-            // 2. Automate logging for the batch
             const leadIds = selectedLeads.map(l => l.id);
             await performAdminAction(token, 'bulkLogForensicInitiated', { leadIds });
 
@@ -86,16 +86,16 @@ ${companyList}`;
                         Website & Asset Discovery ({selectedLeads.length})
                     </DialogTitle>
                     <DialogDescription>
-                        Copy the command to bridge gaps for these records. The primary focus is finding official corporate URLs.
+                        Copy the command to bridge gaps. The primary focus is finding official corporate URLs and technical service wording.
                     </DialogDescription>
                 </DialogHeader>
                 
                 <div className="space-y-4 py-4 text-left">
                     <Alert className="bg-primary/5 border-primary/20 text-left">
                         <Info className="h-4 w-4 text-primary" />
-                        <AlertTitle className="text-left font-bold">Refined Discovery Logic</AlertTitle>
+                        <AlertTitle className="text-left font-bold text-foreground">Aligned Data Mapping</AlertTitle>
                         <AlertDescription className="text-xs text-left">
-                            This prompt prioritizes website discovery as the key to unlocking MD names and service wording.
+                            This prompt is now synchronized with our internal registry. Mined service descriptions will be saved to the "Notes" field automatically.
                         </AlertDescription>
                     </Alert>
 
@@ -110,7 +110,7 @@ ${companyList}`;
                 <DialogFooter>
                     <Button onClick={handleCopyAndLogBatch} disabled={isLoading} className="w-full h-12 text-lg font-bold">
                         {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Zap className="mr-2 h-4 w-4" />}
-                        {isCopied ? 'Batch Logged!' : 'Copy & Start Discovery Batch'}
+                        {isCopied ? 'Prompt Ready!' : 'Copy Forensic Prompt & Start Batch'}
                     </Button>
                 </DialogFooter>
             </DialogContent>
