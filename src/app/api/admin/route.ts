@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -125,7 +124,7 @@ export async function POST(req: NextRequest) {
                         updatedAt: FieldValue.serverTimestamp()
                     };
 
-                    const hasRealData = (technicalNotes && technicalNotes !== 'null') || (website && website !== 'null');
+                    const hasRealData = (technicalNotes && technicalNotes !== 'null' && technicalNotes.length > 5) || (website && website !== 'null' && website.length > 5);
                     if (hasRealData) {
                         updateData.researchStatus = 'completed';
                         updateData.enrichedAt = FieldValue.serverTimestamp();
