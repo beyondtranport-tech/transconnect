@@ -121,7 +121,7 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4 text-left">
               <FormField control={form.control} name="firstName" render={({ field }) => (<FormItem><FormLabel>First Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="lastName" render={({ field }) => (<FormItem><FormLabel>Last Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
@@ -282,12 +282,12 @@ export default function TransporterManagement() {
       </AlertDialog>
       
       <div className="space-y-6">
-        <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
+        <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
+            <div className="text-left">
                 <CardTitle className="flex items-center gap-2"><Truck /> Transporter Registry</CardTitle>
                 <CardDescription>High-capacity view - 25 records per batch.</CardDescription>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2 text-left">
                 {selectedIds.length > 0 && (
                     <Button variant="secondary" onClick={() => setDialog({ type: 'batch' })}>
                         <Zap className="mr-2 h-4 w-4" /> Batch Research ({selectedIds.length})
@@ -304,9 +304,9 @@ export default function TransporterManagement() {
         </CardHeader>
 
         <Card>
-            <CardContent className="pt-6">
+            <CardContent className="pt-6 text-left">
                 <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left">
-                    <div className="flex-1 space-y-2">
+                    <div className="flex-1 space-y-2 text-left">
                         <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status</Label>
                         <Select value={statusFilter} onValueChange={setStatusFilter}>
                             <SelectTrigger className="bg-white"><SelectValue /></SelectTrigger>
@@ -319,7 +319,7 @@ export default function TransporterManagement() {
                             </SelectContent>
                         </Select>
                     </div>
-                    <div className="flex-1 space-y-2">
+                    <div className="flex-1 space-y-2 text-left">
                         <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Users className="h-3 w-3"/> Assignee</Label>
                         <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
                             <SelectTrigger className="bg-white"><SelectValue /></SelectTrigger>

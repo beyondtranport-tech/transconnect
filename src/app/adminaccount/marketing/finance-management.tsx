@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -132,8 +133,8 @@ function FinanceDialog({ open, onOpenChange, partner, onSave }: { open: boolean;
               <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem className="text-left"><FormLabel>Entity Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
             <FormField control={form.control} name="website" render={({ field }) => (<FormItem className="text-left"><FormLabel>Official Website</FormLabel><FormControl><Input placeholder="https://..." {...field} /></FormControl><FormMessage /></FormItem>)} />
-            <FormField control={form.control} name="address" render={({ field }) => (<FormItem><FormLabel>Physical Address</FormLabel><FormControl><Textarea placeholder="Enter physical address..." {...field} /></FormControl><FormMessage /></FormItem>)} />
-            <FormField control={form.control} name="notes" render={({ field }) => (<FormItem><FormLabel>Technical Focus / Notes</FormLabel><FormControl><Textarea placeholder="AI extracted service details..." {...field} className="min-h-[120px]" /></FormControl><FormMessage /></FormItem>)} />
+            <FormField control={form.control} name="address" render={({ field }) => (<FormItem className="text-left"><FormLabel>Physical Address</FormLabel><FormControl><Textarea placeholder="Enter physical address..." {...field} /></FormControl><FormMessage /></FormItem>)} />
+            <FormField control={form.control} name="notes" render={({ field }) => (<FormItem className="text-left"><FormLabel>Technical Focus / Notes</FormLabel><FormControl><Textarea placeholder="AI extracted service details..." {...field} className="min-h-[120px]" /></FormControl><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="status" render={({ field }) => (
                 <FormItem className="text-left">
                     <FormLabel>Status</FormLabel>
@@ -230,7 +231,20 @@ export default function FinanceManagement() {
     { accessorKey: 'phone', header: 'Landline' },
     { accessorKey: 'mobile', header: 'Mobile' },
     { accessorKey: 'email', header: 'Email' },
-    { accessorKey: 'status', header: 'Status', cell: ({ row }) => <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge> },
+    { 
+        header: 'Status', 
+        cell: ({ row }) => {
+            const isEnriched = row.original.researchStatus === 'completed';
+            const isSearching = row.original.researchStatus === 'searching';
+            return (
+                <div className="flex flex-col gap-1">
+                    <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge>
+                    {isEnriched && <Badge className="bg-green-100 text-green-700 border-none text-[9px] h-4 uppercase">Enriched</Badge>}
+                    {isSearching && <Badge className="bg-amber-100 text-amber-700 border-none text-[9px] h-4 uppercase animate-pulse">Searching</Badge>}
+                </div>
+            );
+        }
+    },
     { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
       <div className="flex justify-end gap-1 text-left">
         <EnrichPartnerButton partner={row.original} onUpdate={fetchData} />
@@ -245,7 +259,7 @@ export default function FinanceManagement() {
   ];
 
   return (
-    <>
+    <div className="space-y-6 text-left">
       <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.data} audience="finance" onEngageSuccess={fetchData} />
       <FinanceDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={fetchData} />
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
@@ -301,6 +315,6 @@ export default function FinanceManagement() {
             </CardContent>
         </Card>
       </div>
-    </>
+    </div>
   );
 }

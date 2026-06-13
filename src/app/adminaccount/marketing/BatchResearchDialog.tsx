@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState } from 'react';
@@ -5,7 +6,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
-import { Loader2, Copy, Zap, Info, Globe, ShieldCheck, AlertTriangle } from 'lucide-react';
+import { Loader2, Copy, Zap, Globe, ShieldCheck, AlertTriangle } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
@@ -71,7 +72,12 @@ ${companyList}`;
             setIsCopied(true);
 
             const leadIds = selectedLeads.map(l => l.id);
-            await performAdminAction(token, 'bulkLogForensicInitiated', { leadIds });
+            const isLeadBatch = selectedLeads.length > 0 && (!selectedLeads[0].type || selectedLeads[0].type === 'lead');
+            
+            await performAdminAction(token, 'bulkLogForensicInitiated', { 
+                leadIds,
+                type: isLeadBatch ? 'lead' : 'partner'
+            });
 
             toast({ title: "Forensic Prompt Ready", description: `${leadIds.length} records marked as 'Searching' in Oversight.` });
             

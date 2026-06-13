@@ -39,7 +39,7 @@ async function performAdminAction(token: string, action: string, payload: any) {
     cache: 'no-store'
   });
   const result = await response.json();
-  if (!response.ok || !result.success) throw new Error(result.error || `API Error: ${action}`);
+  if (!response.ok || !result.success) throw new Error(result.error || `API Error for action: ${action}`);
   return result;
 }
 
@@ -278,7 +278,7 @@ export default function SupplierManagement() {
             </div>
         </CardHeader>
         <Card>
-            <CardContent className="pt-6">
+            <CardContent className="pt-6 text-left">
                 <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left">
                     <div className="flex-1 space-y-2">
                         <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status</Label>

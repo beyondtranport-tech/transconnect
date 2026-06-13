@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
         const isAdmin = decodedToken.email === 'beyondtransport@gmail.com' || decodedToken.email === 'mkoton100@gmail.com';
         if (!isAdmin) throw new Error("Forbidden: Admin access required.");
 
-        const MAX_LOAD = 500; // Increased load for better pagination depth
+        const MAX_LOAD = 500;
 
         switch (action) {
             case 'getMembers': {
@@ -81,44 +81,43 @@ export async function POST(req: NextRequest) {
 
                     const ref = db.collection(collectionName).doc(docId);
                     
-                    // NORMALIZATION ENGINE
                     const normalizedP: any = {};
                     Object.keys(p).forEach(k => {
                         const cleanKey = k.toLowerCase().trim().replace(/[\s_-]+/g, '');
                         normalizedP[cleanKey] = p[k];
                     });
 
-                    // Strategic Technical Mapping
-                    const technicalNotes = normalizedP.notes || normalizedP.primaryservices || normalizedP.services || normalizedP.aboutus || normalizedP.about || normalizedP.description || '';
+                    // Forensic Strategic Mapping
+                    const technicalNotes = normalizedP.notes || normalizedP.primaryservices || normalizedP.aboutus || normalizedP.services || normalizedP.technicalfocus || '';
                     const website = normalizedP.website || normalizedP.officialwebsite || normalizedP.url || '';
-                    const contactName = normalizedP.contactperson || normalizedP.humanidentity || normalizedP.humanname || normalizedP.name || '';
                     const physicalAddress = normalizedP.address || normalizedP.physicaladdress || normalizedP.location || normalizedP.headquarters || '';
+                    const contactName = normalizedP.contactperson || normalizedP.humanname || normalizedP.name || '';
 
-                    let firstName = normalizedP.firstname || '';
-                    let lastName = normalizedP.lastname || '';
-
-                    if (contactName && !firstName) {
-                        const parts = contactName.split(' ');
-                        firstName = parts[0];
-                        lastName = parts.slice(1).join(' ') || 'Partner';
-                    }
-
-                    // Merging data and marking as Enriched/Completed
                     const updateData: any = { 
                         updatedAt: FieldValue.serverTimestamp(),
-                        researchStatus: 'completed'
+                        researchStatus: 'completed' // Mark as Enriched
                     };
 
-                    if (firstName && firstName !== 'null') updateData.firstName = firstName;
-                    if (lastName && lastName !== 'null') updateData.lastName = lastName;
-                    if (normalizedP.companyname && normalizedP.companyname !== 'null') updateData.companyName = normalizedP.companyname;
-                    if (contactName && contactName !== 'null') updateData.contactPerson = contactName;
-                    if ((normalizedP.emailaddress || normalizedP.email) && (normalizedP.emailaddress || normalizedP.email) !== 'null') updateData.email = normalizedP.emailaddress || normalizedP.email;
-                    if ((normalizedP.phone || normalizedP.landline) && (normalizedP.phone || normalizedP.landline) !== 'null') updateData.phone = normalizedP.phone || normalizedP.landline;
-                    if ((normalizedP.mobile || normalizedP.cell) && (normalizedP.mobile || normalizedP.cell) !== 'null') updateData.mobile = normalizedP.mobile || normalizedP.cell;
-                    if (website && website !== 'null') updateData.website = website;
-                    if (physicalAddress && physicalAddress !== 'null') updateData.address = physicalAddress;
-                    if (technicalNotes && technicalNotes !== 'null') updateData.notes = technicalNotes;
+                    if (technicalNotes && technicalNotes !== 'null' && technicalNotes !== 'N/A') updateData.notes = technicalNotes;
+                    if (website && website !== 'null' && website !== 'N/A') updateData.website = website;
+                    if (physicalAddress && physicalAddress !== 'null' && physicalAddress !== 'N/A') updateData.address = physicalAddress;
+                    
+                    if (contactName && contactName !== 'null' && contactName !== 'N/A') {
+                        updateData.contactPerson = contactName;
+                        const parts = contactName.split(' ');
+                        updateData.firstName = parts[0];
+                        if (parts.length > 1) updateData.lastName = parts.slice(1).join(' ');
+                    }
+
+                    if ((normalizedP.emailaddress || normalizedP.email) && (normalizedP.emailaddress || normalizedP.email) !== 'null') {
+                        updateData.email = normalizedP.emailaddress || normalizedP.email;
+                    }
+                    if ((normalizedP.mobile || normalizedP.cell) && (normalizedP.mobile || normalizedP.cell) !== 'null') {
+                        updateData.mobile = normalizedP.mobile || normalizedP.cell;
+                    }
+                    if ((normalizedP.phone || normalizedP.landline) && (normalizedP.phone || normalizedP.landline) !== 'null') {
+                        updateData.phone = normalizedP.phone || normalizedP.landline;
+                    }
                     
                     batch.set(ref, updateData, { merge: true });
                 });
@@ -157,19 +156,20 @@ export async function POST(req: NextRequest) {
             }
             
             case 'bulkLogForensicInitiated': {
-                const { leadIds } = payload;
+                const { leadIds, type } = payload;
+                const collectionName = type === 'lead' ? 'leads' : 'partners';
                 const batch = db.batch();
                 
                 leadIds.forEach((id: string) => {
-                    const logRef = db.collection('leads').doc(id).collection('communications').doc();
+                    const logRef = db.collection(collectionName).doc(id).collection('communications').doc();
                     batch.set(logRef, {
                         type: 'Email',
                         subject: 'Batch Research Initiated',
-                        notes: 'AI Agent commanded to perform technical forensic mapping.',
+                        notes: 'AI Agent commanded to perform technical forensic mapping for website, address and services.',
                         timestamp: FieldValue.serverTimestamp()
                     });
                     
-                    batch.update(db.collection('leads').doc(id), {
+                    batch.update(db.collection(collectionName).doc(id), {
                         status: 'contacted',
                         researchStatus: 'searching',
                         updatedAt: FieldValue.serverTimestamp()
@@ -177,27 +177,6 @@ export async function POST(req: NextRequest) {
                 });
                 
                 await batch.commit();
-                return NextResponse.json({ success: true });
-            }
-            
-            case 'logForensicInitiated': {
-                const { partnerId, isLead } = payload;
-                const collectionName = isLead ? 'leads' : 'partners';
-                
-                const logRef = db.collection(collectionName).doc(partnerId).collection('communications').doc();
-                await logRef.set({
-                    type: 'Email',
-                    subject: 'Forensic Research Triggered',
-                    notes: 'Manual request for technical gap-analysis initiated.',
-                    timestamp: FieldValue.serverTimestamp()
-                });
-                
-                await db.collection(collectionName).doc(partnerId).update({
-                    status: 'contacted',
-                    researchStatus: 'searching',
-                    updatedAt: FieldValue.serverTimestamp()
-                });
-                
                 return NextResponse.json({ success: true });
             }
 
