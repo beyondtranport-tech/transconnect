@@ -29,7 +29,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, Landmark, Edit, Trash2, Send, Download, Save, Search, Upload, Filter, Users, Zap, Globe } from 'lucide-react';
+import { Loader2, PlusCircle, Landmark, Edit, Trash2, Send, Download, Save, Search, Upload, Filter, Users, Globe, ListOrdered } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -166,6 +166,7 @@ export default function FinanceManagement() {
   const [partners, setPartners] = useState<any[]>([]);
   const [staff, setStaff] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [segment, setSegment] = useState('0'); // Offset for pagination
   const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | null, data?: any }>({ type: null });
 
   const [statusFilter, setStatusFilter] = useState('all');
@@ -177,7 +178,7 @@ export default function FinanceManagement() {
       const token = await getClientSideAuthToken();
       if (!token) return;
       const [res, staffRes] = await Promise.all([
-        performAdminAction(token, 'getPartnersByType', { type: 'finance' }),
+        performAdminAction(token, 'getPartnersByType', { type: 'finance', offset: Number(segment) }),
         performAdminAction(token, 'getPlatformStaff', {})
       ]);
       setPartners(res.data || []);
@@ -187,7 +188,7 @@ export default function FinanceManagement() {
     } finally {
       setIsLoading(false);
     }
-  }, [toast]);
+  }, [segment, toast]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
@@ -277,7 +278,7 @@ export default function FinanceManagement() {
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
             <div className="text-left">
                 <CardTitle className="flex items-center gap-2 text-left"><Landmark /> Capital Intelligence Registry</CardTitle>
-                <CardDescription>Full registry view ({partners.length} records).</CardDescription>
+                <CardDescription>Full registry view - 500 records per segment.</CardDescription>
             </div>
             <div className="flex items-center gap-2 text-left">
                 <Button variant="outline" onClick={() => downloadDataAsCSV(partners, 'finance-export.csv')} disabled={isLoading}>
@@ -291,6 +292,19 @@ export default function FinanceManagement() {
         <Card>
             <CardContent className="pt-6 text-left">
                 <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left">
+                    <div className="flex-1 space-y-2 text-left">
+                        <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><ListOrdered className="h-3 w-3"/> Registry Segment</Label>
+                        <Select value={segment} onValueChange={setSegment}>
+                            <SelectTrigger className="bg-white"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="0">Records 1 - 500</SelectItem>
+                                <SelectItem value="500">Records 501 - 1000</SelectItem>
+                                <SelectItem value="1000">Records 1001 - 1500</SelectItem>
+                                <SelectItem value="1500">Records 1501 - 2000</SelectItem>
+                                <SelectItem value="2000">Records 2001 - 2500</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
                     <div className="flex-1 space-y-2 text-left">
                         <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status</Label>
                         <Select value={statusFilter} onValueChange={setStatusFilter}>

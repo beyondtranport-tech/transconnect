@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -41,20 +42,21 @@ export async function POST(req: NextRequest) {
         const isAdmin = decodedToken.email === 'beyondtransport@gmail.com' || decodedToken.email === 'mkoton100@gmail.com';
         if (!isAdmin) throw new Error("Forbidden: Admin access required.");
 
-        const MAX_LOAD = 500;
+        const limit = 500;
+        const offset = Number(payload?.offset) || 0;
 
         switch (action) {
             case 'getMembers': {
-                const snap = await db.collection('companies').orderBy('createdAt', 'desc').limit(MAX_LOAD).get();
+                const snap = await db.collection('companies').orderBy('createdAt', 'desc').limit(limit).offset(offset).get();
                 const data = snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) }));
                 return NextResponse.json({ success: true, data });
             }
 
             case 'getPartnersByType': {
                 const { type } = payload;
-                let q = db.collection('partners').orderBy('updatedAt', 'desc').limit(MAX_LOAD);
+                let q = db.collection('partners').orderBy('updatedAt', 'desc').limit(limit).offset(offset);
                 if (type && type !== 'all') {
-                    q = db.collection('partners').where('type', '==', type).orderBy('updatedAt', 'desc').limit(MAX_LOAD);
+                    q = db.collection('partners').where('type', '==', type).orderBy('updatedAt', 'desc').limit(limit).offset(offset);
                 }
                 const snap = await q.get();
                 const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
@@ -62,7 +64,7 @@ export async function POST(req: NextRequest) {
             }
 
             case 'getLeads': {
-                const snap = await db.collection('leads').orderBy('updatedAt', 'desc').limit(MAX_LOAD).get();
+                const snap = await db.collection('leads').orderBy('updatedAt', 'desc').limit(limit).offset(offset).get();
                 const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
                 return NextResponse.json({ success: true, data });
             }
@@ -112,7 +114,8 @@ export async function POST(req: NextRequest) {
 
                     // Anti-Falsing logic for Websites
                     let website = normalizedP.website || normalizedP.officialwebsite || normalizedP.url || '';
-                    if (website.toLowerCase().includes('sars.gov.za') || website.toLowerCase().includes('gov.za') || website.toLowerCase().includes('infoisinfo')) {
+                    const badDomains = ['sars.gov.za', 'gov.za', 'linkedin.com', 'facebook.com', 'infoisinfo', 'sayellow', 'yellosa'];
+                    if (badDomains.some(d => website.toLowerCase().includes(d))) {
                         website = '';
                     }
 
@@ -136,9 +139,6 @@ export async function POST(req: NextRequest) {
                     
                     if (contactName && contactName !== 'null') {
                         updateData.contactPerson = contactName;
-                        const parts = contactName.split(' ');
-                        updateData.firstName = parts[0];
-                        if (parts.length > 1) updateData.lastName = parts.slice(1).join(' ');
                     }
 
                     if (normalizedP.email && normalizedP.email !== 'null') updateData.email = normalizedP.email;
@@ -168,31 +168,17 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data });
             }
 
-            case 'refreshSupplierCategoryCounts':
-            case 'refreshTransporterCategoryCounts':
-            case 'refreshFinanceCategoryCounts':
-            case 'refreshDriverCategoryCounts': {
-                const typeMap: any = {
-                    'refreshSupplierCategoryCounts': 'supplier',
-                    'refreshTransporterCategoryCounts': 'transporter',
-                    'refreshFinanceCategoryCounts': 'finance',
-                    'refreshDriverCategoryCounts': 'driver'
-                };
-                const pType = typeMap[action];
-                const snap = await db.collection('partners').where('type', '==', pType).get();
-                const counts: any = {};
-                snap.docs.forEach(d => {
-                    const cat = d.data().industrial_category || d.data().category || 'General';
-                    counts[cat] = (counts[cat] || 0) + 1;
+            case 'logCommunication': {
+                const { partnerId, type, subject, notes } = payload;
+                const col = payload.isLead ? 'leads' : 'partners';
+                const ref = db.collection(col).doc(partnerId).collection('communications').doc();
+                await ref.set({
+                    id: ref.id,
+                    type,
+                    subject,
+                    notes: notes || '',
+                    timestamp: FieldValue.serverTimestamp(),
                 });
-                const configId = action.includes('Supplier') ? 'supplierDiscoveryStats' : 
-                                 action.includes('Transporter') ? 'transporterDiscoveryStats' :
-                                 action.includes('Finance') ? 'financeDiscoveryStats' : 'driverDiscoveryStats';
-                
-                await db.collection('configuration').doc(configId).set({
-                    counts,
-                    lastUpdated: FieldValue.serverTimestamp()
-                }, { merge: true });
                 return NextResponse.json({ success: true });
             }
 

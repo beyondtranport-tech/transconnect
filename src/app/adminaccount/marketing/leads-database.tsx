@@ -26,7 +26,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { getClientSideAuthToken } from '@/firebase';
-import { Loader2, PlusCircle, Users, Edit, Trash2, Search, Send, Download, Upload, Save, RefreshCcw } from 'lucide-react';
+import { Loader2, PlusCircle, Users, Edit, Trash2, Search, Send, Download, Upload, Save, RefreshCcw, ListOrdered, Filter } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -43,6 +43,7 @@ import { CommunicationLogDialog } from '@/app/adminaccount/marketing/Communicati
 import { EngageDialog } from './EngageDialog';
 import { BulkImportDialog } from './BulkImportDialog';
 import { PartnerOversightDialog } from './PartnerOversightDialog';
+import { Label } from '@/components/ui/label';
 
 async function performAdminAction(token: string, action: string, payload?: any) {
   const response = await fetch('/api/admin', {
@@ -140,9 +141,11 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
 function LeadsDatabaseComponent() {
   const { toast } = useToast();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [allRecords, setAllRecords] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [segment, setSegment] = useState('0'); // Offset for pagination
   
   const [isAddLeadOpen, setIsAddLeadOpen] = useState(false);
   const [editLead, setEditLead] = useState<any | null>(null);
@@ -154,14 +157,14 @@ function LeadsDatabaseComponent() {
     try {
       const token = await getClientSideAuthToken();
       if (!token) return;
-      const res = await performAdminAction(token, 'getLeads', {});
+      const res = await performAdminAction(token, 'getLeads', { offset: Number(segment) });
       setAllRecords(res.data || []);
     } catch (e: any) {
         toast({ variant: 'destructive', title: 'Fetch Error', description: e.message });
     } finally {
       setIsLoading(false);
     }
-  }, [toast]);
+  }, [segment, toast]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
@@ -231,7 +234,7 @@ function LeadsDatabaseComponent() {
       
       <div className="space-y-6 text-left">
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
-          <div><CardTitle><Users /> Lead Database</CardTitle><CardDescription>High-capacity registry view ({allRecords.length} records).</CardDescription></div>
+          <div><CardTitle><Users /> Lead Database</CardTitle><CardDescription>High-capacity registry view - 500 records per segment.</CardDescription></div>
           <div className="flex gap-2">
             <div className="relative w-64">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -244,6 +247,18 @@ function LeadsDatabaseComponent() {
         </CardHeader>
         <Card>
             <CardContent className="pt-6">
+                <div className="mb-6 p-4 bg-muted/30 rounded-lg max-w-sm text-left">
+                    <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><ListOrdered className="h-3 w-3"/> Registry Segment</Label>
+                    <Select value={segment} onValueChange={setSegment}>
+                        <SelectTrigger className="bg-white mt-1.5"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="0">Records 1 - 500</SelectItem>
+                            <SelectItem value="500">Records 501 - 1000</SelectItem>
+                            <SelectItem value="1000">Records 1001 - 1500</SelectItem>
+                            <SelectItem value="1500">Records 1501 - 2000</SelectItem>
+                        </SelectItem>
+                    </Select>
+                </div>
                 {isLoading ? <div className="flex justify-center p-10"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredLeads} />}
             </CardContent>
         </Card>

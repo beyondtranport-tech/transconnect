@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -28,7 +29,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, Bot, Edit, Trash2, Send, Download, Save, Search, Users, Filter, Globe, Zap } from 'lucide-react';
+import { Loader2, PlusCircle, Bot, Edit, Trash2, Send, Download, Save, Search, Users, Filter, Globe, Zap, ListOrdered } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -163,6 +164,7 @@ export default function ISAManagement() {
   const [staff, setStaff] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [segment, setSegment] = useState('0'); // Offset for pagination
   const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | 'batch' | null, data?: any }>({ type: null });
 
   const [statusFilter, setStatusFilter] = useState('all');
@@ -175,7 +177,7 @@ export default function ISAManagement() {
       const token = await getClientSideAuthToken();
       if (!token) return;
       const [res, staffRes] = await Promise.all([
-        performAdminAction(token, 'getPartnersByType', { type: 'isa' }),
+        performAdminAction(token, 'getPartnersByType', { type: 'isa', offset: Number(segment) }),
         performAdminAction(token, 'getPlatformStaff', {})
       ]);
       setAllRecords(res.data || []);
@@ -185,7 +187,7 @@ export default function ISAManagement() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [segment]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
@@ -286,7 +288,7 @@ export default function ISAManagement() {
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
             <div>
                 <CardTitle className="flex items-center gap-2 text-left"><Bot /> ISA Management</CardTitle>
-                <CardDescription className="text-left">Registry view - 25 records per batch.</CardDescription>
+                <CardDescription className="text-left">Registry view - 500 records per segment.</CardDescription>
             </div>
             <div className="flex flex-wrap items-center gap-2 text-left">
                 {selectedIds.length > 0 && (
@@ -305,6 +307,19 @@ export default function ISAManagement() {
         <Card>
             <CardContent className="pt-6 text-left">
                 <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left">
+                    <div className="flex-1 space-y-2 text-left">
+                        <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><ListOrdered className="h-3 w-3"/> Registry Segment</Label>
+                        <Select value={segment} onValueChange={setSegment}>
+                            <SelectTrigger className="bg-white"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="0">Records 1 - 500</SelectItem>
+                                <SelectItem value="500">Records 501 - 1000</SelectItem>
+                                <SelectItem value="1000">Records 1001 - 1500</SelectItem>
+                                <SelectItem value="1500">Records 1501 - 2000</SelectItem>
+                                <SelectItem value="2000">Records 2001 - 2500</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
                     <div className="flex-1 space-y-2 text-left">
                         <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status</Label>
                         <Select value={statusFilter} onValueChange={setStatusFilter}>
