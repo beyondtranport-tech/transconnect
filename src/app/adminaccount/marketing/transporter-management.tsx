@@ -28,8 +28,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { getClientSideAuthToken } from '@/firebase';
-import { Loader2, PlusCircle, Truck, Edit, Trash2, Send, Download, Save, Search, Upload, Filter, Users, Zap, Globe } from 'lucide-react';
+import { getClientSideAuthToken, useUser } from '@/firebase';
+import { Loader2, PlusCircle, Truck, Edit, Trash2, Send, Download, Save, Search, Upload, Filter, Users, Zap, Globe } from 'lucide-disable-icons';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -232,8 +232,8 @@ export default function TransporterManagement() {
         cell: ({ row }) => (
             <div className="flex flex-col text-sm text-left">
                 <span className="font-bold text-left">{row.original.companyName}</span>
-                <div className="flex items-center gap-2 mt-1">
-                    <span className="text-[10px] text-muted-foreground uppercase font-black">{row.original.address || 'Operational Hub Verified'}</span>
+                <div className="flex items-center gap-2 mt-1 text-left">
+                    <span className="text-[10px] text-muted-foreground uppercase font-black text-left">{row.original.address || 'Operational Hub Verified'}</span>
                     {row.original.website && <Globe className="h-3 w-3 text-primary" />}
                 </div>
             </div>
@@ -262,7 +262,7 @@ export default function TransporterManagement() {
         }
     },
     { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
-      <div className="flex justify-end gap-1">
+      <div className="flex justify-end gap-1 text-left">
         <EnrichPartnerButton partner={row.original} onUpdate={fetchData} />
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'engage', data: row.original })} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
         <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.companyName} />
@@ -288,9 +288,9 @@ export default function TransporterManagement() {
       
       <div className="space-y-6">
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
-            <div className="text-left">
-                <CardTitle className="flex items-center gap-2"><Truck /> Transporter Registry</CardTitle>
-                <CardDescription>High-capacity view - 25 records per batch.</CardDescription>
+            <div>
+                <CardTitle className="flex items-center gap-2 text-left"><Truck /> Transporter Registry</CardTitle>
+                <CardDescription className="text-left">High-capacity view - 25 records per batch.</CardDescription>
             </div>
             <div className="flex flex-wrap items-center gap-2 text-left">
                 {selectedIds.length > 0 && (
@@ -298,7 +298,7 @@ export default function TransporterManagement() {
                         <Zap className="mr-2 h-4 w-4" /> Batch Research ({selectedIds.length})
                     </Button>
                 )}
-                <div className="relative w-64">
+                <div className="relative w-64 text-left">
                     <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input placeholder="Filter registry..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8" />
                 </div>

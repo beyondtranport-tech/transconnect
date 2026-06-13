@@ -230,7 +230,7 @@ export default function ISAManagement() {
         cell: ({ row }) => (
             <div className="flex flex-col text-sm text-left">
                 <span className="font-bold text-left">{row.original.companyName || row.original.contactPerson || `${row.original.firstName} ${row.original.lastName}`}</span>
-                <div className="flex items-center gap-2 mt-1">
+                <div className="flex items-center gap-2 mt-1 text-left">
                     <span className="text-[10px] text-muted-foreground uppercase font-black text-left">{row.original.firstName} {row.original.lastName}</span>
                     {row.original.website && <Globe className="h-3 w-3 text-primary" />}
                 </div>
@@ -286,8 +286,8 @@ export default function ISAManagement() {
       <div className="space-y-6">
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
             <div>
-                <CardTitle className="flex items-center gap-2"><Bot /> ISA Management</CardTitle>
-                <CardDescription>Registry view - 25 records per batch.</CardDescription>
+                <CardTitle className="flex items-center gap-2 text-left"><Bot /> ISA Management</CardTitle>
+                <CardDescription className="text-left">Registry view - 25 records per batch.</CardDescription>
             </div>
             <div className="flex flex-wrap items-center gap-2 text-left">
                 {selectedIds.length > 0 && (
@@ -295,7 +295,7 @@ export default function ISAManagement() {
                         <Zap className="mr-2 h-4 w-4" /> Batch Research ({selectedIds.length})
                     </Button>
                 )}
-                <div className="relative w-64">
+                <div className="relative w-64 text-left">
                     <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input placeholder="Filter registry..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8" />
                 </div>

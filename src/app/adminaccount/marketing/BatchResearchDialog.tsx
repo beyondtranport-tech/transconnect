@@ -42,16 +42,17 @@ RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION. NO E
 
 TASK: Bridge ALL data gaps for the South African businesses listed below. 
 
-INVESTIGATIVE PROTOCOL (SEARCH GOOGLE, LINKEDIN, AND MAPS):
-1. DISCOVER WEBSITE: Find the official corporate URL. This is your PRIMARY source of truth.
-2. EXTRACT PHYSICAL ADDRESS: Find the EXACT OPERATIONAL ADDRESS (Street Number, Street Name, Suburb, City, Province, Postal Code). THIS IS CRITICAL. DO NOT LEAVE NULL. Use Google Maps to verify the physical location.
+INVESTIGATIVE PROTOCOL:
+1. DISCOVER OFFICIAL WEBSITE: Find the OFFICIAL CORPORATE DOMAIN (e.g. www.companyname.co.za). 
+   STRICT EXCLUSION: DO NOT return "sars.gov.za", "gov.za", "linkedin.com", "facebook.com", "infoisinfo", or any directory sites as the official website. If an official site does not exist, return null.
+2. EXTRACT PHYSICAL ADDRESS: Find the EXACT OPERATIONAL ADDRESS (Street, Suburb, City, Province, Post Code). DO NOT LEAVE NULL.
 3. IDENTIFY LEADERSHIP: Find the ACTUAL NAME (First and Last) of the CEO, Managing Director, or Owner via LinkedIn.
 4. MAP CONTACTS: Identify a professional email and a direct mobile number (+27 format).
-5. MINE TECHNICAL STANDING: Use the key "notes" to provide a 2-3 sentence summary of their technical capabilities, fleet specializations, or core services from their "About" wording.
+5. MINE TECHNICAL STANDING: Use the key "notes" to provide a 2-3 sentence summary of their specific technical capabilities, fleet types, or industrial specializations from their site.
 
-REQUIRED JSON FIELDS FOR EACH OBJECT:
+REQUIRED JSON FIELDS:
 - "record_id": (Return exactly as provided in the list below)
-- "website": (Official URL)
+- "website": (OFFICIAL CORPORATE URL ONLY, NO DIRECTORIES)
 - "address": (FULL Verified Physical Address)
 - "contact_person": (Full Human Name of Decision Maker)
 - "email": (Professional Email)
@@ -112,7 +113,7 @@ ${companyList}`;
                             <AlertTriangle className="h-4 w-4" />
                             <AlertTitle>Large Batch Warning</AlertTitle>
                             <AlertDescription className="text-xs">
-                                You have selected {selectedLeads.length} records. AI output may cut off mid-way. For best results, we recommend batches of <strong>20-30</strong>.
+                                You have selected {selectedLeads.length} records. For best results, process in batches of <strong>20-30</strong>.
                             </AlertDescription>
                         </Alert>
                     )}
@@ -121,7 +122,7 @@ ${companyList}`;
                         <ShieldCheck className="h-4 w-4 text-primary" />
                         <AlertTitle className="text-left font-bold text-foreground">High-Fidelity Discovery</AlertTitle>
                         <AlertDescription className="text-xs text-left">
-                            This prompt is aligned with our database schema. It explicitly requests the <strong>Physical Address</strong> and <strong>Technical Service Wording</strong>. 
+                            This prompt explicitly excludes aggregate sites like SARS to ensure you get the actual corporate website.
                         </AlertDescription>
                     </Alert>
 

@@ -210,9 +210,9 @@ export default function SupplierManagement() {
         header: 'Supplier Name', 
         cell: ({ row }) => (
             <div className="flex flex-col text-left">
-                <span className="font-bold">{row.original.companyName || row.original.contactPerson || `${row.original.firstName || ''} ${row.original.lastName || ''}`.trim()}</span>
-                <div className="flex items-center gap-2 mt-1">
-                    <span className="text-[10px] text-muted-foreground uppercase font-black">{row.original.address || 'Operational Hub Verified'}</span>
+                <span className="font-bold text-left">{row.original.companyName || row.original.contactPerson || `${row.original.firstName || ''} ${row.original.lastName || ''}`.trim()}</span>
+                <div className="flex items-center gap-2 mt-1 text-left">
+                    <span className="text-[10px] text-muted-foreground uppercase font-black text-left">{row.original.address || 'Operational Hub Verified'}</span>
                     {row.original.website && <Globe className="h-3 w-3 text-primary" />}
                 </div>
             </div>
@@ -265,7 +265,7 @@ export default function SupplierManagement() {
         </AlertDialogContent>
       </AlertDialog>
       <div className="space-y-6 text-left">
-        <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
             <div className="text-left">
                 <CardTitle className="text-left"><Building /> Supplier Registry</CardTitle>
                 <CardDescription className="text-left">Managed view - 25 records per batch.</CardDescription>

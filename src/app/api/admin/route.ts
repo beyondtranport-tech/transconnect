@@ -111,8 +111,13 @@ export async function POST(req: NextRequest) {
                         normalizedP[cleanKey] = p[k];
                     });
 
+                    // Anti-Falsing logic for Websites
+                    let website = normalizedP.website || normalizedP.officialwebsite || normalizedP.url || '';
+                    if (website.toLowerCase().includes('sars.gov.za') || website.toLowerCase().includes('gov.za') || website.toLowerCase().includes('infoisinfo')) {
+                        website = '';
+                    }
+
                     const technicalNotes = normalizedP.notes || normalizedP.primaryservices || normalizedP.aboutus || normalizedP.services || '';
-                    const website = normalizedP.website || normalizedP.officialwebsite || normalizedP.url || '';
                     const address = normalizedP.address || normalizedP.physicaladdress || '';
                     const contactName = normalizedP.contactperson || normalizedP.humanname || '';
 
@@ -120,8 +125,8 @@ export async function POST(req: NextRequest) {
                         updatedAt: FieldValue.serverTimestamp()
                     };
 
-                    const hasData = (technicalNotes && technicalNotes !== 'null') || (website && website !== 'null');
-                    if (hasData) {
+                    const hasRealData = (technicalNotes && technicalNotes !== 'null') || (website && website !== 'null');
+                    if (hasRealData) {
                         updateData.researchStatus = 'completed';
                         updateData.enrichedAt = FieldValue.serverTimestamp();
                     }
@@ -156,19 +161,6 @@ export async function POST(req: NextRequest) {
                 if (!partner.id) data.createdAt = FieldValue.serverTimestamp();
                 await ref.set(data, { merge: true });
                 return NextResponse.json({ success: true, id: ref.id });
-            }
-
-            case 'logCommunication': {
-                const { partnerId, type, subject, notes } = payload;
-                const parentType = payload.isLead ? 'leads' : 'partners';
-                const ref = db.collection(parentType).doc(partnerId).collection('communications').doc();
-                await ref.set({
-                    type,
-                    subject,
-                    notes,
-                    timestamp: FieldValue.serverTimestamp()
-                });
-                return NextResponse.json({ success: true });
             }
 
             case 'getPlatformStaff': {
