@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -112,9 +111,13 @@ export async function POST(req: NextRequest) {
                         normalizedP[cleanKey] = p[k];
                     });
 
-                    // Anti-Falsing logic for Websites
+                    // Strict Anti-Falsing logic for Websites
                     let website = normalizedP.website || normalizedP.officialwebsite || normalizedP.url || '';
-                    const badDomains = ['sars.gov.za', 'gov.za', 'linkedin.com', 'facebook.com', 'infoisinfo', 'sayellow', 'yellosa'];
+                    const badDomains = [
+                        'sars.gov.za', 'gov.za', 'linkedin.com', 'facebook.com', 
+                        'infoisinfo', 'sayellow', 'yellosa', 'braby', 'easyinfo', 
+                        'hotfrog', 'cylex', 'yalwa', 'yelp'
+                    ];
                     if (badDomains.some(d => website.toLowerCase().includes(d))) {
                         website = '';
                     }
@@ -136,11 +139,7 @@ export async function POST(req: NextRequest) {
                     if (technicalNotes && technicalNotes !== 'null') updateData.notes = technicalNotes;
                     if (website && website !== 'null') updateData.website = website;
                     if (address && address !== 'null') updateData.address = address;
-                    
-                    if (contactName && contactName !== 'null') {
-                        updateData.contactPerson = contactName;
-                    }
-
+                    if (contactName && contactName !== 'null') updateData.contactPerson = contactName;
                     if (normalizedP.email && normalizedP.email !== 'null') updateData.email = normalizedP.email;
                     if (normalizedP.mobile && normalizedP.mobile !== 'null') updateData.mobile = normalizedP.mobile;
                     if (normalizedP.phone && normalizedP.phone !== 'null') updateData.phone = normalizedP.phone;
