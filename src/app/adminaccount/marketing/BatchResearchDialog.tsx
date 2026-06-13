@@ -36,7 +36,7 @@ export function BatchResearchDialog({ open, onOpenChange, selectedLeads, onCompl
 
     const companyList = selectedLeads.map(l => `[ID: ${l.id}] ${l.companyName || `${l.firstName} ${l.lastName}`}`).join('\n');
     
-    // Aligned prompt keys: "notes" and "website"
+    // Explicitly aligned key: "notes" to match the database field "Technical Service Summary"
     const aiPrompt = `CRITICAL SYSTEM INSTRUCTION: RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CONVERSATION.
 
 TASK: Discover the OFFICIAL CORPORATE WEBSITE for the following South African businesses. 
@@ -95,7 +95,7 @@ ${companyList}`;
                         <Info className="h-4 w-4 text-primary" />
                         <AlertTitle className="text-left font-bold text-foreground">Aligned Data Mapping</AlertTitle>
                         <AlertDescription className="text-xs text-left">
-                            This prompt is now synchronized with our internal registry. Mined service descriptions will be saved to the "Notes" field automatically.
+                            This prompt is synchronized with our database. Mined service descriptions using the "notes" key will populate the "Technical Service Summary" field automatically.
                         </AlertDescription>
                     </Alert>
 

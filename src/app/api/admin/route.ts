@@ -80,15 +80,14 @@ export async function POST(req: NextRequest) {
 
                     const ref = db.collection(collectionName).doc(docId);
                     
-                    // NORMALIZATION ENGINE
+                    // NORMALIZATION ENGINE - Converts CamelCase and Spaced keys to slug-format
                     const normalizedP: any = {};
                     Object.keys(p).forEach(k => {
                         const cleanKey = k.toLowerCase().trim().replace(/[\s_-]+/g, '');
                         normalizedP[cleanKey] = p[k];
                     });
 
-                    // Comprehensive technical mapping
-                    // Aggressively map various AI keys to the "notes" field
+                    // Technical Mapping Prioritization
                     const technicalNotes = normalizedP.notes || normalizedP.primaryservices || normalizedP.services || normalizedP.aboutus || normalizedP.about || normalizedP.description || '';
                     const website = normalizedP.website || normalizedP.officialwebsite || normalizedP.url || '';
                     const contactName = normalizedP.contactperson || normalizedP.humanidentity || normalizedP.humanname || normalizedP.name || '';
@@ -102,23 +101,20 @@ export async function POST(req: NextRequest) {
                         lastName = parts.slice(1).join(' ') || 'Partner';
                     }
 
-                    const dataToSave: any = {
-                        firstName: firstName || 'Unknown',
-                        lastName: lastName || 'Partner',
-                        companyName: normalizedP.companyname || normalizedP.tradingname || '',
-                        contactPerson: contactName,
-                        email: normalizedP.emailaddress || normalizedP.email || '',
-                        phone: normalizedP.phone || normalizedP.telephonenumber || normalizedP.landline || '',
-                        mobile: normalizedP.mobile || normalizedP.cell || normalizedP.registryline || '',
-                        website: website,
-                        address: normalizedP.physicaladdress || normalizedP.address || '',
-                        notes: technicalNotes,
-                        updatedAt: FieldValue.serverTimestamp()
-                    };
+                    // Strategic Merge: Only update fields that have meaningful values from the AI
+                    const updateData: any = { updatedAt: FieldValue.serverTimestamp() };
+                    if (firstName) updateData.firstName = firstName;
+                    if (lastName) updateData.lastName = lastName;
+                    if (normalizedP.companyname) updateData.companyName = normalizedP.companyname;
+                    if (contactName) updateData.contactPerson = contactName;
+                    if (normalizedP.emailaddress || normalizedP.email) updateData.email = normalizedP.emailaddress || normalizedP.email;
+                    if (normalizedP.phone || normalizedP.landline) updateData.phone = normalizedP.phone || normalizedP.landline;
+                    if (normalizedP.mobile || normalizedP.cell) updateData.mobile = normalizedP.mobile || normalizedP.cell;
+                    if (website) updateData.website = website;
+                    if (normalizedP.physicaladdress || normalizedP.address) updateData.address = normalizedP.physicaladdress || normalizedP.address;
+                    if (technicalNotes) updateData.notes = technicalNotes;
                     
-                    if (type !== 'lead') dataToSave.type = type;
-
-                    batch.set(ref, dataToSave, { merge: true });
+                    batch.set(ref, updateData, { merge: true });
                 });
                 
                 await batch.commit();
