@@ -92,8 +92,8 @@ export async function POST(req: NextRequest) {
                         lastName = parts.slice(1).join(' ') || 'Partner';
                     }
 
-                    // Robust Data Mapping for enriched technical fields
-                    const technicalNotes = p.primary_services || p.services || p.about || p.home || p.notes || p.description || '';
+                    // Strategic mapping for technical wording and website
+                    const technicalNotes = p.primary_services || p.services || p.about || p.about_us || p.home || p.notes || p.description || '';
                     const website = p.website || p.url || p.official_website || '';
 
                     const dataToSave: any = {
@@ -146,62 +146,6 @@ export async function POST(req: NextRequest) {
                 const snap = await db.collection('platformStaff').get();
                 const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
                 return NextResponse.json({ success: true, data });
-            }
-
-            case 'logForensicInitiated': {
-                const { partnerId, isLead } = payload;
-                const collectionName = isLead ? 'leads' : 'partners';
-                const ref = db.collection(collectionName).doc(partnerId);
-                await ref.set({ 
-                    status: 'contacted', 
-                    updatedAt: FieldValue.serverTimestamp() 
-                }, { merge: true });
-
-                const logRef = ref.collection('communications').doc();
-                await logRef.set({
-                    type: 'Meeting',
-                    subject: 'AI Forensic Mining Initiated',
-                    notes: 'Direct forensic gap-analysis command generated for individual record verification.',
-                    timestamp: FieldValue.serverTimestamp()
-                });
-                return NextResponse.json({ success: true });
-            }
-
-            case 'bulkLogForensicInitiated': {
-                const { leadIds } = payload;
-                const batch = db.batch();
-                leadIds.forEach((id: string) => {
-                    const ref = db.collection('leads').doc(id);
-                    batch.set(ref, { 
-                        status: 'contacted', 
-                        updatedAt: FieldValue.serverTimestamp() 
-                    }, { merge: true });
-
-                    const logRef = ref.collection('communications').doc();
-                    batch.set(logRef, {
-                        type: 'Meeting',
-                        subject: 'AI Forensic Mining Initiated',
-                        notes: 'Automated batch research command generated for external AI verification.',
-                        timestamp: FieldValue.serverTimestamp()
-                    });
-                });
-                await batch.commit();
-                return NextResponse.json({ success: true });
-            }
-
-            case 'deleteLeads': {
-                const { leadIds } = payload;
-                const batch = db.batch();
-                leadIds.forEach((id: string) => {
-                    batch.delete(db.collection('leads').doc(id));
-                });
-                await batch.commit();
-                return NextResponse.json({ success: true });
-            }
-
-            case 'deletePartner': {
-                await db.collection('partners').doc(payload.partnerId).delete();
-                return NextResponse.json({ success: true });
             }
 
             default:
