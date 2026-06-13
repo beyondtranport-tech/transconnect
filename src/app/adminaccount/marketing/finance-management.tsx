@@ -222,7 +222,7 @@ export default function FinanceManagement() {
                 {row.original.website && (
                     <div className="flex items-center gap-1.5 mt-1 text-left">
                         <Globe className="h-3 w-3 text-primary" />
-                        <span className="text-[10px] text-muted-foreground truncate max-w-[150px]">{row.original.website}</span>
+                        <span className="text-[10px] text-muted-foreground truncate max-w-[150px] text-left">{row.original.website}</span>
                     </div>
                 )}
             </div>

@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -37,7 +38,7 @@ import { PartnerOversightDialog } from './PartnerOversightDialog';
 import { EngageDialog } from './EngageDialog';
 import { CommunicationLogDialog } from './CommunicationLogDialog';
 import { PartnerTasksDialog } from './PartnerTasksDialog';
-import { downloadDataAsCSV } from '@/lib/utils';
+import { downloadDataAsCSV, formatDateSafe } from '@/lib/utils';
 import { EnrichPartnerButton } from './EnrichPartnerButton';
 import { BulkImportDialog } from './BulkImportDialog';
 import { Label } from '@/components/ui/label';
@@ -107,7 +108,7 @@ function DriverDialog({ open, onOpenChange, partner, onSave }: { open: boolean; 
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4 text-left">
               <FormField control={form.control} name="firstName" render={({ field }) => (<FormItem><FormLabel>First Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="lastName" render={({ field }) => (<FormItem><FormLabel>Last Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
@@ -205,20 +206,38 @@ export default function DriverManagement() {
     }
   };
 
-  const columns: ColumnDef<any>[] = useMemo(() => [
+  const columns: ColumnDef<any>[] = [
     { 
         header: 'Driver Identity', 
         cell: ({ row }) => (
             <div className="flex flex-col text-sm text-left">
                 <span className="font-bold text-left">{row.original.service_handle || row.original.contactPerson || `${row.original.firstName} ${row.original.lastName}`}</span>
-                <span className="text-[10px] text-muted-foreground uppercase font-black">{row.original.operational_hub || 'SA Region'}</span>
+                <span className="text-[10px] text-muted-foreground uppercase font-black text-left">{row.original.operational_hub || 'SA Region'}</span>
             </div>
         )
     },
     { accessorKey: 'phone', header: 'Landline' },
     { accessorKey: 'mobile', header: 'Mobile' },
     { accessorKey: 'email', header: 'Email' },
-    { accessorKey: 'status', header: 'Status', cell: ({ row }) => <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge> },
+    { 
+        header: 'Status', 
+        cell: ({ row }) => {
+            const isEnriched = row.original.researchStatus === 'completed' && !!(row.original.notes || row.original.website);
+            const isSearching = row.original.researchStatus === 'searching';
+            return (
+                <div className="flex flex-col gap-1 items-center">
+                    <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge>
+                    {isEnriched && (
+                         <div className="flex flex-col items-center">
+                            <Badge className="bg-green-100 text-green-700 border-none text-[9px] h-4 uppercase">Enriched</Badge>
+                            <span className="text-[8px] text-muted-foreground mt-0.5">{formatDateSafe(row.original.enrichedAt, "dd/MM")}</span>
+                        </div>
+                    )}
+                    {isSearching && <Badge className="bg-amber-100 text-amber-700 border-none text-[9px] h-4 uppercase animate-pulse">Searching</Badge>}
+                </div>
+            );
+        }
+    },
     { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
       <div className="flex justify-end gap-1 text-left">
         <EnrichPartnerButton partner={row.original} onUpdate={fetchData} />
@@ -230,7 +249,7 @@ export default function DriverManagement() {
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'delete', data: row.original })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
       </div>
     )},
-  ], [fetchData]);
+  ];
 
   return (
     <div className="space-y-6 text-left">
@@ -244,13 +263,13 @@ export default function DriverManagement() {
       </AlertDialog>
       
       <div className="space-y-6 text-left">
-        <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
             <div className="text-left">
                 <CardTitle className="flex items-center gap-2"><Users /> Driver Registry</CardTitle>
                 <CardDescription>High-capacity registry view ({allRecords.length} records).</CardDescription>
             </div>
             <div className="flex items-center gap-2 text-left">
-                <div className="relative w-64 text-left">
+                <div className="relative w-64">
                     <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input placeholder="Filter registry..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8" />
                 </div>

@@ -68,6 +68,30 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data });
             }
 
+            case 'logForensicInitiated': {
+                const { partnerId, isLead } = payload;
+                const collectionName = isLead ? 'leads' : 'partners';
+                await db.collection(collectionName).doc(partnerId).set({
+                    researchStatus: 'searching',
+                    updatedAt: FieldValue.serverTimestamp()
+                }, { merge: true });
+                return NextResponse.json({ success: true });
+            }
+
+            case 'bulkLogForensicInitiated': {
+                const { leadIds, type } = payload;
+                const collectionName = type === 'lead' ? 'leads' : 'partners';
+                const batch = db.batch();
+                leadIds.forEach((id: string) => {
+                    batch.set(db.collection(collectionName).doc(id), {
+                        researchStatus: 'searching',
+                        updatedAt: FieldValue.serverTimestamp()
+                    }, { merge: true });
+                });
+                await batch.commit();
+                return NextResponse.json({ success: true });
+            }
+
             case 'bulkSavePartners': {
                 const { partners, type } = payload;
                 if (!Array.isArray(partners)) throw new Error("Invalid payload.");
@@ -96,7 +120,6 @@ export async function POST(req: NextRequest) {
                         updatedAt: FieldValue.serverTimestamp()
                     };
 
-                    // Only set enriched status if meaningful data is actually provided
                     const hasData = (technicalNotes && technicalNotes !== 'null') || (website && website !== 'null');
                     if (hasData) {
                         updateData.researchStatus = 'completed';
