@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
 
             case 'getPartnersByType': {
                 const { type } = payload;
-                // Load high-capacity unified registry (10k limit)
+                // Unified High-Capacity Query (10,000 records)
                 let q = db.collection('partners').orderBy('updatedAt', 'desc').limit(10000);
                 if (type && type !== 'all') {
                     q = db.collection('partners').where('type', '==', type).orderBy('updatedAt', 'desc').limit(10000);
@@ -64,6 +64,7 @@ export async function POST(req: NextRequest) {
             }
 
             case 'getLeads': {
+                // Unified High-Capacity Query (10,000 records)
                 const snap = await db.collection('leads').orderBy('updatedAt', 'desc').limit(10000).get();
                 const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
                 return NextResponse.json({ success: true, data });
@@ -76,79 +77,9 @@ export async function POST(req: NextRequest) {
             }
 
             case 'getContributions': {
-                const snap = await db.collection('contributions').orderBy('createdAt', 'desc').limit(100).get();
+                const snap = await db.collection('contributions').orderBy('createdAt', 'desc').limit(500).get();
                 const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
                 return NextResponse.json({ success: true, data });
-            }
-
-            case 'bulkLogForensicInitiated': {
-                const { leadIds, type } = payload;
-                const collectionName = type === 'lead' ? 'leads' : 'partners';
-                const batch = db.batch();
-                leadIds.forEach((id: string) => {
-                    batch.set(db.collection(collectionName).doc(id), {
-                        researchStatus: 'searching',
-                        updatedAt: FieldValue.serverTimestamp()
-                    }, { merge: true });
-                });
-                await batch.commit();
-                return NextResponse.json({ success: true });
-            }
-
-            case 'bulkSavePartners': {
-                const { partners, type } = payload;
-                if (!Array.isArray(partners)) throw new Error("Invalid payload.");
-                
-                const collectionName = type === 'lead' ? 'leads' : 'partners';
-                const batch = db.batch();
-                
-                partners.forEach((p: any) => {
-                    const normalizedP: any = {};
-                    Object.keys(p).forEach(k => {
-                        const cleanKey = k.toLowerCase().trim().replace(/[\s_-]+/g, '');
-                        normalizedP[cleanKey] = p[k];
-                    });
-
-                    const docId = normalizedP.recordid || normalizedP.id;
-                    if (!docId) return;
-
-                    const ref = db.collection(collectionName).doc(docId);
-                    
-                    let website = normalizedP.website || normalizedP.officialwebsite || normalizedP.url || '';
-                    const blacklist = ['sars.gov.za', 'gov.za', 'linkedin.com', 'facebook.com', 'infoisinfo', 'sayellow', 'yellosa', 'braby', 'easyinfo', 'hotfrog', 'cylex', 'yalwa', 'yelp'];
-                    if (blacklist.some(d => website.toLowerCase().includes(d))) {
-                        website = '';
-                    }
-
-                    const technicalNotes = normalizedP.notes || normalizedP.technicalsummary || normalizedP.primaryservices || '';
-                    const address = normalizedP.address || normalizedP.physicaladdress || '';
-                    const contactName = normalizedP.contactperson || normalizedP.humanname || '';
-
-                    const updateData: any = { 
-                        updatedAt: FieldValue.serverTimestamp()
-                    };
-
-                    const hasRealData = (technicalNotes && technicalNotes !== 'null' && technicalNotes.length > 5) || 
-                                      (website && website !== 'null' && website.length > 5);
-                    
-                    if (hasRealData) {
-                        updateData.researchStatus = 'completed';
-                        updateData.enrichedAt = FieldValue.serverTimestamp();
-                    }
-
-                    if (technicalNotes && technicalNotes !== 'null') updateData.notes = technicalNotes;
-                    if (website && website !== 'null') updateData.website = website;
-                    if (address && address !== 'null') updateData.address = address;
-                    if (contactName && contactName !== 'null') updateData.contactPerson = contactName;
-                    if (normalizedP.email && normalizedP.email !== 'null') updateData.email = normalizedP.email;
-                    if (normalizedP.mobile && normalizedP.mobile !== 'null') updateData.mobile = normalizedP.mobile;
-                    if (normalizedP.phone && normalizedP.phone !== 'null') updateData.phone = normalizedP.phone;
-                    
-                    batch.set(ref, updateData, { merge: true });
-                });
-                
-                await batch.commit();
-                return NextResponse.json({ success: true, count: partners.length });
             }
 
             case 'refreshTransporterCategoryCounts':
@@ -194,17 +125,20 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data });
             }
 
-            case 'logCommunication': {
-                const { partnerId, type, subject, notes } = payload;
-                const col = payload.isLead ? 'leads' : 'partners';
-                const ref = db.collection(col).doc(partnerId).collection('communications').doc();
-                await ref.set({
-                    id: ref.id,
-                    type,
-                    subject,
-                    notes: notes || '',
-                    timestamp: FieldValue.serverTimestamp(),
-                });
+            case 'savePartner': {
+                const { partner } = payload;
+                if (!partner.id) {
+                    const ref = db.collection('partners').doc();
+                    await ref.set({ ...partner, id: ref.id, createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
+                } else {
+                    await db.collection('partners').doc(partner.id).update({ ...partner, updatedAt: FieldValue.serverTimestamp() });
+                }
+                return NextResponse.json({ success: true });
+            }
+
+            case 'deletePartner': {
+                const { partnerId } = payload;
+                await db.collection('partners').doc(partnerId).delete();
                 return NextResponse.json({ success: true });
             }
 
