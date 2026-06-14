@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -111,7 +110,7 @@ ${listToClassify}`;
                     <DialogDescription>Classify existing records using AI analysis.</DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4 text-left">
-                    <div className="p-3 bg-primary/5 border rounded-lg flex items-center justify-between">
+                    <div className="p-3 bg-primary/5 border rounded-lg flex items-center justify-between text-left">
                         <span className="text-sm font-bold text-foreground">Records to Analyze: <span className="text-primary">{unclassifiedCount}</span></span>
                     </div>
                     <ScrollArea className="h-48 border rounded-md p-3 bg-muted/30 text-[10px] font-mono leading-tight">
@@ -193,7 +192,7 @@ function ISADialog({ open, onOpenChange, partner, onSave }: { open: boolean; onO
                 <FormItem className="text-left text-foreground">
                     <FormLabel>Status</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl><SelectTrigger><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
+                        <FormControl><SelectTrigger className="bg-white"><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
                         <SelectContent>
                             <SelectItem value="new">New Lead</SelectItem>
                             <SelectItem value="contacted">Researching</SelectItem>
@@ -347,11 +346,11 @@ export default function ISAManagement() {
       </AlertDialog>
       <div className="space-y-6 text-left">
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left text-foreground">
-            <div className="text-left">
+            <div className="text-left text-foreground">
                 <CardTitle className="flex items-center gap-2 text-left text-2xl font-black font-headline text-foreground"><Bot /> ISA Management</CardTitle>
                 <CardDescription className="text-left text-foreground">Full database of Independent Sales Agents ({allRecords.length} records).</CardDescription>
             </div>
-            <div className="flex flex-wrap items-center gap-2 text-left">
+            <div className="flex flex-wrap items-center gap-2 text-left text-foreground">
                 {selectedIds.length > 0 && (
                     <Button variant="secondary" onClick={() => setDialog({ type: 'batch' })}>
                         <Zap className="mr-2 h-4 w-4" /> Batch Research ({selectedIds.length})

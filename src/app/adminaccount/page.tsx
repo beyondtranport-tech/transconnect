@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -24,9 +23,6 @@ import {
   UserPlus,
   BookOpen,
   DollarSign,
-  Star,
-  Award,
-  Gift,
   Handshake,
   Truck,
   Building,
@@ -36,8 +32,9 @@ import {
   Sparkles,
   TrendingUp,
   Settings,
-  Lock,
-  Banknote,
+  Star,
+  Award,
+  Gift,
   Wrench,
   Share2,
   Facebook,
@@ -104,7 +101,7 @@ function AdminAuthGuard({ children }: { children: React.ReactNode }) {
         return (
             <div className="flex flex-col justify-center items-center min-h-[calc(100vh-8rem)]">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                <p className="mt-4 text-muted-foreground">Verifying admin credentials...</p>
+                <p className="mt-4 text-muted-foreground text-sm font-bold uppercase tracking-widest">Verifying Admin Permissions...</p>
             </div>
         );
     }
@@ -131,7 +128,7 @@ function AdminAccountContent() {
 
   const renderContent = useCallback(() => {
     if (activeView.startsWith('marketing-')) {
-        const audience = activeView.split('-')[1] as "partners" | "isa" | "transporters" | "suppliers" | "finance" | "investors" | "developers" | "drivers";
+        const audience = activeView.split('-')[1] as any;
         return <MarketingPage audience={audience} />;
     }
     if (activeView.startsWith('social-')) {
@@ -214,15 +211,17 @@ function AdminAccountContent() {
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-investors'} onClick={() => navigate('marketing-investors')}>Investors</SidebarMenuSubButton></SidebarMenuSubItem>
                   </SidebarMenuSub>
               </SidebarMenuItem>
+              
               <SidebarMenuItem>
-                  <SidebarMenuButton tooltip="Social" isActive={isSocialActive}><Share2 /><span>Social Engagement</span></SidebarMenuButton>
+                  <SidebarMenuButton tooltip="Social" isActive={isSocialActive}><Share2 /><span>Social</span></SidebarMenuButton>
                   <SidebarMenuSub>
-                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'social-facebook'} onClick={() => navigate('social-facebook')}><Facebook className="h-4 w-4"/>Facebook</SidebarMenuSubButton></SidebarMenuSubItem>
-                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'social-linkedin'} onClick={() => navigate('social-linkedin')}><Linkedin className="h-4 w-4"/>LinkedIn</SidebarMenuSubButton></SidebarMenuSubItem>
-                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'social-instagram'} onClick={() => navigate('social-instagram')}><Instagram className="h-4 w-4"/>Instagram</SidebarMenuSubButton></SidebarMenuSubItem>
-                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'social-tiktok'} onClick={() => navigate('social-tiktok')}><Music className="h-4 w-4"/>TikTok</SidebarMenuSubButton></SidebarMenuSubItem>
+                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'social-facebook'} onClick={() => navigate('social-facebook')}><Facebook className="h-4 w-4"/>Engagement: Facebook</SidebarMenuSubButton></SidebarMenuSubItem>
+                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'social-linkedin'} onClick={() => navigate('social-linkedin')}><Linkedin className="h-4 w-4"/>Engagement: LinkedIn</SidebarMenuSubButton></SidebarMenuSubItem>
+                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'social-instagram'} onClick={() => navigate('social-instagram')}><Instagram className="h-4 w-4"/>Engagement: Instagram</SidebarMenuSubButton></SidebarMenuSubItem>
+                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'social-tiktok'} onClick={() => navigate('social-tiktok')}><Music className="h-4 w-4"/>Engagement: TikTok</SidebarMenuSubButton></SidebarMenuSubItem>
                   </SidebarMenuSub>
               </SidebarMenuItem>
+
               <SidebarMenuItem>
                   <SidebarMenuButton tooltip="Leads" isActive={activeView.includes('leads') || activeView === 'unified-directory'}><UserPlus /><span>Leads & CRM</span></SidebarMenuButton>
                   <SidebarMenuSub>

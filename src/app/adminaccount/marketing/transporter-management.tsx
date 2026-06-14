@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -91,11 +90,6 @@ TASK: Classify the following South African transport companies into their correc
 
 VALID CATEGORIES: ${categoryList}
 
-CLASSIFICATION LOGIC:
-1. Identify the primary service based on the company name.
-2. If unsure, default to "Long Haul".
-3. PERSISTENCE: Return the exact "record_id" provided.
-
 REQUIRED FORMAT:
 [
   { "record_id": "...", "industrial_category": "Selected Category" }
@@ -119,14 +113,13 @@ ${listToClassify}`;
             <DialogContent className="sm:max-w-2xl text-left text-foreground">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2"><Tag className="h-5 w-5 text-primary" /> Forensic Registry Categorizer</DialogTitle>
-                    <DialogDescription>Fix the 0-tally issue by classifying your existing records into their correct industrial category.</DialogDescription>
+                    <DialogDescription>Classify existing records using AI to populate tally badges.</DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4 text-left">
-                    <div className="p-3 bg-primary/5 border rounded-lg flex items-center justify-between">
-                        <span className="text-sm font-bold text-foreground">Unclassified Records Identified: <span className="text-primary">{unclassifiedCount}</span></span>
-                        <Badge variant="outline" className="bg-white">Batch Size: 100</Badge>
+                    <div className="p-3 bg-primary/5 border rounded-lg flex items-center justify-between text-left">
+                        <span className="text-sm font-bold text-foreground">Unclassified: <span className="text-primary">{unclassifiedCount}</span></span>
                     </div>
-                    <ScrollArea className="h-48 border rounded-md p-3 bg-muted/30 text-[10px] font-mono leading-tight">
+                    <ScrollArea className="h-48 border rounded-md p-3 bg-muted/30 text-[10px] font-mono leading-tight text-left">
                         <pre className="text-foreground">{prompt}</pre>
                     </ScrollArea>
                 </div>
@@ -194,14 +187,9 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
               <FormField control={form.control} name="lastName" render={({ field }) => (<FormItem><FormLabel>Last Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
             <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Entity Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-            <FormField control={form.control} name="website" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Official Website</FormLabel><FormControl><Input placeholder="https://..." {...field} /></FormControl><FormMessage /></FormItem>)} />
             <div className="grid grid-cols-2 gap-4 text-left">
               <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" /></FormControl><FormMessage /></FormItem>)} />
-              <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Landline</FormLabel><FormControl><Input placeholder="+27 11..." {...field} /></FormControl><FormMessage /></FormItem>)} />
-            </div>
-            <div className="grid grid-cols-2 gap-4 text-left">
-                <FormField control={form.control} name="mobile" render={({ field }) => (<FormItem className="text-left"><FormLabel>Mobile (Direct Cell)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} /></FormControl><FormMessage /></FormItem>)} />
-                <FormField control={form.control} name="industrial_category" render={({ field }) => (
+              <FormField control={form.control} name="industrial_category" render={({ field }) => (
                     <FormItem className="text-left text-foreground">
                         <FormLabel>Industrial Category</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
@@ -213,8 +201,6 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
                     </FormItem>
                 )} />
             </div>
-            <FormField control={form.control} name="address" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Physical Address</FormLabel><FormControl><Textarea placeholder="Enter address..." {...field} /></FormControl><FormMessage /></FormItem>)} />
-            <FormField control={form.control} name="notes" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Service Summary</FormLabel><FormControl><Textarea placeholder="Technical wording..." {...field} className="min-h-[120px]" /></FormControl><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="status" render={({ field }) => (
                 <FormItem className="text-left">
                     <FormLabel>Status</FormLabel>
@@ -347,30 +333,11 @@ export default function TransporterManagement() {
         header: 'Category',
         cell: ({ row }) => {
             const cat = row.original.industrial_category || row.original.category || row.original.entryType;
-            return cat ? <Badge variant="secondary" className="text-[9px] uppercase font-bold">{cat}</Badge> : <span className="text-[10px] text-muted-foreground italic">Unclassified</span>;
+            return cat ? <Badge variant="secondary" className="text-[9px] uppercase font-bold">{cat}</Badge> : <span className="text-[10px] text-muted-foreground italic text-left">Unclassified</span>;
         }
     },
     { accessorKey: 'mobile', header: 'Mobile' },
     { accessorKey: 'email', header: 'Email' },
-    { 
-        header: 'Status', 
-        cell: ({ row }) => {
-            const isEnriched = !!(row.original.notes || row.original.website);
-            const isSearching = row.original.researchStatus === 'searching';
-            return (
-                <div className="flex flex-col gap-1 items-center">
-                    <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge>
-                    {isEnriched && (
-                        <div className="flex flex-col items-center">
-                            <Badge className="bg-green-100 text-green-700 border-none text-[9px] h-4 uppercase">Enriched</Badge>
-                            <span className="text-[8px] text-muted-foreground mt-0.5">{formatDateSafe(row.original.enrichedAt, "dd/MM")}</span>
-                        </div>
-                    )}
-                    {isSearching && <Badge className="bg-amber-100 text-amber-700 border-none text-[9px] h-4 uppercase animate-pulse">Searching</Badge>}
-                </div>
-            );
-        }
-    },
     { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
       <div className="flex justify-end gap-1 text-left">
         <EnrichPartnerButton partner={row.original} onUpdate={fetchData} />
@@ -439,7 +406,7 @@ export default function TransporterManagement() {
                 </div>
                 <div className="flex flex-wrap gap-2 mt-3 text-left">
                     {transporterCategories.map(cat => (
-                        <div key={cat} className="flex items-center bg-white border rounded-full pl-3 pr-1 py-0.5 shadow-sm">
+                        <div key={cat} className="flex items-center bg-white border rounded-full pl-3 pr-1 py-0.5 shadow-sm text-left">
                             <span className="text-[9px] font-bold text-slate-600 mr-2">{cat}</span>
                             <Badge className="bg-primary/10 text-primary border-none text-[9px] font-black h-4 px-1.5 min-w-[20px] justify-center">
                                 {counts[cat] || 0}

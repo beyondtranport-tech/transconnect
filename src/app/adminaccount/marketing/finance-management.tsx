@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -267,7 +266,7 @@ export default function FinanceManagement() {
                 <div className="flex flex-col gap-1 items-center text-foreground">
                     <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge>
                     {isEnriched && (
-                         <div className="flex flex-col items-center">
+                         <div className="flex flex-col items-center text-left">
                             <Badge className="bg-green-100 text-green-700 border-none text-[9px] h-4 uppercase">Enriched</Badge>
                             <span className="text-[8px] text-muted-foreground mt-0.5">{formatDateSafe(row.original.enrichedAt, "dd/MM")}</span>
                         </div>

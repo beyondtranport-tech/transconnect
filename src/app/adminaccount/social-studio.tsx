@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -9,15 +8,13 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { 
     Facebook, Linkedin, Instagram, Music, Sparkles, Loader2, Copy, ExternalLink, 
-    ShieldCheck, Zap, Truck, Landmark, Users, Handshake, Gift, Star, Link as LinkIcon,
-    Building, Award, DollarSign, Rocket, Search, Info, BarChart3, MessageSquare, 
-    FileText, Video, ImageIcon
+    ShieldCheck, Search, BarChart3, ImageIcon, Video, Rocket, Link as LinkIcon
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { generateSocialCopy } from '@/ai/flows/social-copy-flow';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { cn, copyHtmlToClipboard } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import { getClientSideAuthToken } from '@/firebase';
 import { Textarea } from '@/components/ui/textarea';
 
@@ -27,7 +24,7 @@ import VideoGeneratorCard from "@/app/backend/video-generator-card";
 
 type Platform = 'facebook' | 'linkedin' | 'instagram' | 'tiktok';
 
-const platformConfig: Record<Platform, { label: string, icon: any, color: string, targetLabel: string, defaultDest: string, defaultPage: string }> = {
+const platformConfig: Record<string, { label: string, icon: any, color: string, targetLabel: string, defaultDest: string, defaultPage: string }> = {
     facebook: { label: 'Facebook', icon: Facebook, color: 'text-blue-600', targetLabel: 'Target Group URL', defaultDest: 'https://facebook.com/groups/feed/', defaultPage: 'https://facebook.com/LogisticsFlow' },
     linkedin: { label: 'LinkedIn', icon: Linkedin, color: 'text-blue-800', targetLabel: 'Target Community URL', defaultDest: 'https://linkedin.com/feed/', defaultPage: 'https://www.linkedin.com/company/127864195' },
     instagram: { label: 'Instagram', icon: Instagram, color: 'text-pink-600', targetLabel: 'Target Profile URL', defaultDest: 'https://instagram.com/', defaultPage: 'https://instagram.com/LogisticsFlow' },
@@ -37,8 +34,9 @@ const platformConfig: Record<Platform, { label: string, icon: any, color: string
 /**
  * Funnel-based social templates for high-traction engagement
  */
-const socialTemplates = (platform: Platform) => {
-    const platformName = platformConfig[platform].label;
+const socialTemplates = (platform: string) => {
+    const config = platformConfig[platform] || platformConfig['facebook'];
+    const platformName = config.label;
     
     return {
         'app-launch': {
@@ -68,15 +66,6 @@ const socialTemplates = (platform: Platform) => {
             imagePrompt: 'Rows of heavy commercial truck tires stacked neatly in a modern warehouse, industrial lighting.',
             videoPrompt: 'A high-speed time-lapse of a truck being fitted with new tires in a clean, modern workshop. Floating digital tags show prices dropping as a "Community Syndicate" discount is applied.'
         },
-        'value-funding-registry': {
-            group: 'Value',
-            label: 'Funder Registry',
-            icon: Building,
-            headline: '🏦 Access 85+ Specialized Funders',
-            body: "One application. 85+ Potential Funders. We've mapped the entire niche lending landscape in SA to bring the best asset finance and working capital deals directly to your dashboard.\n\nFollow us for more updates.\n\nClick the link below to access the app for free.",
-            imagePrompt: 'A sleek modern bank building exterior in Sandton, morning light, professional and clean.',
-            videoPrompt: 'An animation showing a map of South Africa. 85+ light nodes pulse across the country, all connecting back to a central "Logistics Flow" hub. A "Funded" seal appears over a new truck.'
-        },
         'revenue-membership': {
             group: 'Revenue',
             label: 'Membership Comms',
@@ -85,22 +74,13 @@ const socialTemplates = (platform: Platform) => {
             body: "Refer a member, earn a commission. Every single month. When your network signs up for a paid plan, you earn a percentage of their fee for as long as they remain active. Build your own monthly income engine.\n\nFollow us for more updates on group deals.\n\nClick the link below to access the app for free.",
             imagePrompt: 'A calendar showing recurring monthly payments with a green growth arrow.',
             videoPrompt: 'A clean 3D animation showing a "Member" icon joining the network, which triggers a "Commission" coin to flow into a digital wallet. The cycle repeats and scales up as more icons join.'
-        },
-        'howto-matcher': {
-            group: 'Education',
-            label: 'Freight Matcher',
-            icon: Search,
-            headline: '📍 How-To: Eliminate Empty Miles',
-            body: "Our AI Freight Matcher is a game-changer. Simply enter your origin and destination, and let our intelligence engine find the highest-paying loads for your return leg.\n\nFollow us for more updates on group deals.\n\nClick the link below to access the app for free.",
-            imagePrompt: 'A map of South Africa with blinking nodes being connected by an AI intelligence line.',
-            videoPrompt: 'A screen recording of the Logistics Flow app. A user enters "Durban to JHB". The AI pulses and reveals 12 matching loads with high rates. The user clicks "Accept Match".'
         }
     };
 };
 
 export default function SocialStudio({ platform = 'facebook' }: { platform?: Platform }) {
     const { toast } = useToast();
-    const config = platformConfig[platform];
+    const config = platformConfig[platform] || platformConfig['facebook'];
     const templates = socialTemplates(platform);
     
     const [activeTab, setActiveTab] = useState<string>('app-launch');
@@ -202,7 +182,7 @@ export default function SocialStudio({ platform = 'facebook' }: { platform?: Pla
     return (
         <div className="space-y-6 text-left">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-4 text-left">
                     <div className="bg-muted p-3 rounded-xl">
                         {React.createElement(config.icon, { className: cn("h-8 w-8", config.color) })}
                     </div>
@@ -220,7 +200,6 @@ export default function SocialStudio({ platform = 'facebook' }: { platform?: Pla
                     <div className="space-y-1 text-left">
                         <Label className="text-[10px] font-black uppercase text-muted-foreground px-2 tracking-widest">{config.targetLabel}</Label>
                         <Input placeholder="Link to group or profile..." value={groupUrl} onChange={e => setGroupUrl(e.target.value)} className="h-8 w-64 bg-white border-none shadow-none text-xs font-mono" />
-                        <p className="text-[9px] text-muted-foreground px-2 italic">The external page where you want to post or engage.</p>
                     </div>
                 </div>
             </div>
@@ -260,7 +239,6 @@ export default function SocialStudio({ platform = 'facebook' }: { platform?: Pla
                                     <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Follow Link: {config.label} Profile URL</Label>
                                     <Input value={pageUrl} onChange={e => setPageUrl(e.target.value)} className="h-7 w-80 border-none shadow-none text-right font-mono" />
                                 </div>
-                                <p className="text-[9px] text-muted-foreground text-right italic">Your official company page URL. Added to the post to drive followers.</p>
                             </div>
 
                             {activeTab === 'creator' && (
@@ -268,10 +246,12 @@ export default function SocialStudio({ platform = 'facebook' }: { platform?: Pla
                                     <CardHeader>
                                         <CardTitle className="text-lg flex items-center gap-2"><Sparkles className="h-5 w-5 text-amber-500" /> AI Creative Assistant</CardTitle>
                                     </CardHeader>
-                                    <CardContent className="space-y-4">
-                                        <div className="space-y-2"><Label>Topic</Label><Input placeholder="e.g. Scaling a small fleet" value={creatorParams.topic} onChange={e => setCreatorParams({...creatorParams, topic: e.target.value})} /></div>
-                                        <div className="space-y-2"><Label>Critical Points</Label><Textarea placeholder="Point 1&#10;Point 2..." value={creatorParams.criticalPoints} onChange={e => setCreatorParams({...creatorParams, criticalPoints: e.target.value})} /></div>
-                                        <Button className="w-full font-bold bg-amber-600" onClick={handleGenerateCustom} disabled={isGenerating}>{isGenerating ? <Loader2 className="h-4 w-4 animate-spin"/> : <Sparkles className="h-4 w-4" />} Generate Copy</Button>
+                                    <CardContent className="space-y-4 text-left">
+                                        <div className="space-y-2 text-left"><Label>Topic</Label><Input placeholder="e.g. Scaling a small fleet" value={creatorParams.topic} onChange={e => setCreatorParams({...creatorParams, topic: e.target.value})} /></div>
+                                        <div className="space-y-2 text-left"><Label>Critical Points</Label><Textarea placeholder="Point 1&#10;Point 2..." value={creatorParams.criticalPoints} onChange={e => setCreatorParams({...creatorParams, criticalPoints: e.target.value})} /></div>
+                                        <Button className="w-full font-bold bg-amber-600" onClick={handleGenerateCustom} disabled={isGenerating}>
+                                            {isGenerating ? <Loader2 className="h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4" />} Generate Copy
+                                        </Button>
                                     </CardContent>
                                 </Card>
                             )}
@@ -280,9 +260,7 @@ export default function SocialStudio({ platform = 'facebook' }: { platform?: Pla
                                 <>
                                     <Card className="border-none shadow-xl border-l-4 border-l-primary text-left">
                                         <CardHeader>
-                                            <div className="flex justify-between items-center">
-                                                <CardTitle className="text-xl font-black">{activePost.headline}</CardTitle>
-                                            </div>
+                                            <CardTitle className="text-xl font-black">{activePost.headline}</CardTitle>
                                             <CardDescription>Review and finalize your {config.label} post.</CardDescription>
                                         </CardHeader>
                                         <CardContent className="p-0 border-t">
@@ -300,7 +278,7 @@ export default function SocialStudio({ platform = 'facebook' }: { platform?: Pla
                                         </CardContent>
                                         <CardFooter className="bg-muted/10 border-t flex justify-end p-4">
                                             <Button size="lg" className="bg-blue-600 hover:bg-blue-700 font-black uppercase text-xs gap-2 shadow-lg" onClick={handleLogAndLaunch}>
-                                                {isLogging ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <ExternalLink className="mr-2 h-4 w-4" />}
+                                                <ExternalLink className="mr-2 h-4 w-4" />
                                                 Copy & Launch to {config.label}
                                             </Button>
                                         </CardFooter>
@@ -319,7 +297,7 @@ export default function SocialStudio({ platform = 'facebook' }: { platform?: Pla
                                                 <h4 className="font-bold uppercase text-[10px] tracking-widest text-amber-500 flex items-center gap-2"><Video className="h-3 w-3"/> AI Video Command</h4>
                                                 <Button variant="outline" size="sm" className="h-7 text-[9px] uppercase bg-white/10" onClick={() => handleCopyPrompt('video')}><Copy className="mr-1 h-3 w-3" /> Copy</Button>
                                             </div>
-                                            <p className="text-xs italic font-mono opacity-90 border-l border-amber-500/20 pl-4">{activePost.videoPrompt || 'A slow cinematic 4k video of the subject moving towards the camera with high-tech overlays.'}</p>
+                                            <p className="text-xs italic font-mono opacity-90 border-l border-amber-500/20 pl-4">{activePost.videoPrompt || 'A slow cinematic 4k video of the subject moving towards the camera.'}</p>
                                         </div>
                                     </div>
 
