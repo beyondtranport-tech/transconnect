@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -53,7 +52,6 @@ export async function POST(req: NextRequest) {
 
             case 'getPartnersByType': {
                 const { type } = payload;
-                // Unified High-Capacity Query
                 let q = db.collection('partners').orderBy('updatedAt', 'desc').limit(10000);
                 if (type && type !== 'all') {
                     q = db.collection('partners').where('type', '==', type).orderBy('updatedAt', 'desc').limit(10000);
@@ -64,7 +62,6 @@ export async function POST(req: NextRequest) {
             }
 
             case 'getLeads': {
-                // Unified High-Capacity Query
                 const snap = await db.collection('leads').orderBy('updatedAt', 'desc').limit(10000).get();
                 const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
                 return NextResponse.json({ success: true, data });
@@ -107,6 +104,7 @@ export async function POST(req: NextRequest) {
                 
                 snap.docs.forEach(doc => {
                     const data = doc.data();
+                    // Smarter count: Check industrial_category, category, then entryType
                     const category = data.industrial_category || data.category || data.entryType || 'General';
                     counts[category] = (counts[category] || 0) + 1;
                 });
@@ -154,9 +152,43 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, count: partners.length });
             }
 
+            case 'logForensicInitiated': {
+                const { partnerId, isLead } = payload;
+                const coll = isLead ? 'leads' : 'partners';
+                await db.collection(coll).doc(partnerId).update({
+                    researchStatus: 'searching',
+                    updatedAt: FieldValue.serverTimestamp()
+                });
+                return NextResponse.json({ success: true });
+            }
+
+            case 'bulkLogForensicInitiated': {
+                const { leadIds, type } = payload;
+                const coll = type === 'lead' ? 'leads' : 'partners';
+                const batch = db.batch();
+                leadIds.forEach((id: string) => {
+                    batch.update(db.collection(coll).doc(id), {
+                        researchStatus: 'searching',
+                        updatedAt: FieldValue.serverTimestamp()
+                    });
+                });
+                await batch.commit();
+                return NextResponse.json({ success: true });
+            }
+
             case 'deletePartner': {
                 const { partnerId } = payload;
                 await db.collection('partners').doc(partnerId).delete();
+                return NextResponse.json({ success: true });
+            }
+
+            case 'deleteLeads': {
+                const { leadIds } = payload;
+                const batch = db.batch();
+                leadIds.forEach((id: string) => {
+                    batch.delete(db.collection('leads').doc(id));
+                });
+                await batch.commit();
                 return NextResponse.json({ success: true });
             }
 

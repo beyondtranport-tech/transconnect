@@ -28,7 +28,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, Truck, Edit, Trash2, Send, Download, Save, Search, Filter, Users, Zap, Globe, RefreshCcw, Database, Upload } from 'lucide-react';
+import { Loader2, PlusCircle, Truck, Edit, Trash2, Send, Download, Save, Search, Filter, Users, Zap, Globe, RefreshCcw, Database, Upload, Tag } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -40,10 +40,12 @@ import { PartnerTasksDialog } from './PartnerTasksDialog';
 import { downloadDataAsCSV, formatDateSafe, cn } from '@/lib/utils';
 import { EnrichPartnerButton } from './EnrichPartnerButton';
 import { BulkImportDialog } from './BulkImportDialog';
+import { BatchResearchDialog } from './BatchResearchDialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useConfig } from '@/hooks/use-config';
 import { transporterCategories } from './transporter-discovery';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 async function performAdminAction(token: string, action: string, payload: any) {
   const response = await fetch('/api/admin', {
@@ -68,10 +70,75 @@ const partnerSchema = z.object({
   website: z.string().url("Invalid URL").optional().or(z.literal('')),
   address: z.string().optional(),
   notes: z.string().optional(),
+  industrial_category: z.string().optional(),
   status: z.enum(['active', 'inactive', 'contacted', 'new', 'qualified', 'invited', 'registered']),
   type: z.literal('transporter'),
 });
 type PartnerFormValues = z.infer<typeof partnerSchema>;
+
+function CategorizationDialog({ open, onOpenChange, unclassifiedCount, records }: { open: boolean, onOpenChange: (o: boolean) => void, unclassifiedCount: number, records: any[] }) {
+    const { toast } = useToast();
+    const [isCopied, setIsCopied] = useState(false);
+
+    const listToClassify = records.slice(0, 100).map(r => `[KEY: ${r.id}] ${r.companyName}`).join('\n');
+    const categoryList = transporterCategories.join(', ');
+
+    const prompt = `ACT AS AN INDUSTRIAL DATA ARCHITECT. 
+RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CONVERSATION.
+
+TASK: Classify the following South African transport companies into their correct industrial category.
+
+VALID CATEGORIES: ${categoryList}
+
+CLASSIFICATION LOGIC:
+1. Identify the primary service based on the company name.
+2. If unsure, default to "Long Haul".
+3. PERSISTENCE: Return the exact "record_id" provided.
+
+REQUIRED FORMAT:
+[
+  { "record_id": "...", "industrial_category": "Selected Category" }
+]
+
+LIST TO CLASSIFY:
+${listToClassify}`;
+
+    const handleCopy = async () => {
+        await navigator.clipboard.writeText(prompt);
+        setIsCopied(true);
+        toast({ title: "Categorization Prompt Ready" });
+        setTimeout(() => {
+            setIsCopied(false);
+            onOpenChange(false);
+        }, 1000);
+    };
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-2xl text-left">
+                <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2"><Tag className="h-5 w-5 text-primary" /> Forensic Registry Categorizer</DialogTitle>
+                    <DialogDescription>Fix the 0-tally issue by classifying your existing 9,000+ records. This generates a prompt for AI Studio to categorize the first 100 unclassified records.</DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4 text-left">
+                    <div className="p-3 bg-primary/5 border rounded-lg flex items-center justify-between">
+                        <span className="text-sm font-bold">Unclassified Records: <span className="text-primary">{unclassifiedCount}</span></span>
+                        <Badge variant="outline" className="bg-white">Batch Size: 100</Badge>
+                    </div>
+                    <ScrollArea className="h-48 border rounded-md p-3 bg-muted/30 text-[10px] font-mono leading-tight">
+                        <pre>{prompt}</pre>
+                    </ScrollArea>
+                </div>
+                <DialogFooter>
+                    <Button onClick={handleCopy} className="w-full h-12 font-black uppercase tracking-widest gap-2">
+                        {isCopied ? <Loader2 className="animate-spin h-4 w-4"/> : <Copy className="h-4 w-4" />}
+                        Copy Categorization Command
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
 
 function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: boolean; onOpenChange: (open: boolean) => void; partner?: any; onSave: () => void; }) {
   const [isLoading, setIsLoading] = useState(false);
@@ -118,13 +185,26 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
               <FormField control={form.control} name="lastName" render={({ field }) => (<FormItem><FormLabel>Last Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
             <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem className="text-left"><FormLabel>Entity Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-            <FormField control={form.control} name="website" render={({ field }) => (<FormItem className="text-left"><FormLabel>Official Website</FormLabel><FormControl><Input placeholder="https://..." {...field} /></FormControl><FormMessage /></FormItem>)} />
+            <FormField control={form.control} name="website" render={({ field }) => (<FormItem className="text-left"><FormLabel>Official Website</Label><FormControl><Input placeholder="https://..." {...field} /></FormControl><FormMessage /></FormItem>)} />
             <div className="grid grid-cols-2 gap-4 text-left">
               <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Landline</FormLabel><FormControl><Input placeholder="+27 11..." {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
-            <FormField control={form.control} name="mobile" render={({ field }) => (<FormItem className="text-left"><FormLabel>Mobile (Direct Cell)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} /></FormControl><FormMessage /></FormItem>)} />
-            <FormField control={form.control} name="address" render={({ field }) => (<FormItem className="text-left"><FormLabel>Physical Address</Label><FormControl><Textarea placeholder="Enter full operational address..." {...field} /></FormControl><FormMessage /></FormItem>)} />
+            <div className="grid grid-cols-2 gap-4 text-left">
+                <FormField control={form.control} name="mobile" render={({ field }) => (<FormItem className="text-left"><FormLabel>Mobile (Direct Cell)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={form.control} name="industrial_category" render={({ field }) => (
+                    <FormItem className="text-left">
+                        <FormLabel>Industrial Category</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl><SelectTrigger><SelectValue placeholder="Classify..." /></SelectTrigger></FormControl>
+                            <SelectContent>
+                                {transporterCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                    </FormItem>
+                )} />
+            </div>
+            <FormField control={form.control} name="address" render={({ field }) => (<FormItem className="text-left"><FormLabel>Physical Address</FormLabel><FormControl><Textarea placeholder="Enter full operational address..." {...field} /></FormControl><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="notes" render={({ field }) => (<FormItem className="text-left"><FormLabel>Technical Service Summary</FormLabel><FormControl><Textarea placeholder="Technical wording mined from website..." {...field} className="min-h-[120px]" /></FormControl><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="status" render={({ field }) => (
                 <FormItem className="text-left">
@@ -160,10 +240,11 @@ export default function TransporterManagement() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | null, data?: any }>({ type: null });
+  const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | 'batch' | 'categorize' | null, data?: any }>({ type: null });
 
   const [statusFilter, setStatusFilter] = useState('all');
   const [assigneeFilter, setAssigneeFilter] = useState('all');
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const { data: statsData, forceRefresh: refreshStats } = useConfig<any>('transporterDiscoveryStats');
   const counts = statsData?.counts || {};
@@ -187,6 +268,10 @@ export default function TransporterManagement() {
   }, []);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  const unclassifiedRecords = useMemo(() => {
+      return allRecords.filter(r => !r.industrial_category && !r.category && !r.entryType);
+  }, [allRecords]);
 
   const handleRefreshTally = async () => {
     setIsRefreshing(true);
@@ -219,6 +304,10 @@ export default function TransporterManagement() {
     });
   }, [allRecords, searchTerm, statusFilter, assigneeFilter]);
 
+  const selectedLeads = useMemo(() => {
+      return allRecords.filter(r => selectedIds.includes(r.id));
+  }, [allRecords, selectedIds]);
+
   const handleDelete = async () => {
     if (!dialog.data) return;
     try {
@@ -246,7 +335,13 @@ export default function TransporterManagement() {
             </div>
         )
     },
-    { accessorKey: 'phone', header: 'Landline' },
+    { 
+        header: 'Category',
+        cell: ({ row }) => {
+            const cat = row.original.industrial_category || row.original.category || row.original.entryType;
+            return cat ? <Badge variant="secondary" className="text-[9px] uppercase font-bold">{cat}</Badge> : <span className="text-[10px] text-muted-foreground italic">Unclassified</span>;
+        }
+    },
     { accessorKey: 'mobile', header: 'Mobile' },
     { accessorKey: 'email', header: 'Email' },
     { 
@@ -283,8 +378,11 @@ export default function TransporterManagement() {
 
   return (
     <div className="space-y-6 text-left">
+      <BatchResearchDialog open={dialog.type === 'batch'} onOpenChange={(o) => !o && setDialog({ type: null })} selectedLeads={selectedLeads} onComplete={fetchData} />
+      <CategorizationDialog open={dialog.type === 'categorize'} onOpenChange={(o) => !o && setDialog({ type: null })} unclassifiedCount={unclassifiedRecords.length} records={unclassifiedRecords} />
       <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.data} audience="transporters" onEngageSuccess={fetchData} />
       <TransporterDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={fetchData} />
+      
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
         <AlertDialogContent>
           <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Delete haulier record?</AlertDialogDescription></AlertDialogHeader>
@@ -296,15 +394,25 @@ export default function TransporterManagement() {
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
             <div className="text-left">
                 <CardTitle className="flex items-center gap-2 text-left text-2xl font-black font-headline"><Truck /> Transporter Registry</CardTitle>
-                <CardDescription className="text-left">Full database of South African hauliers ({allRecords.length} records).</CardDescription>
+                <CardDescription className="text-left">Unified database view ({allRecords.length} records).</CardDescription>
             </div>
             <div className="flex flex-wrap items-center gap-2 text-left">
+                {selectedIds.length > 0 && (
+                    <Button variant="secondary" onClick={() => setDialog({ type: 'batch' })}>
+                        <Zap className="mr-2 h-4 w-4" /> Batch Research ({selectedIds.length})
+                    </Button>
+                )}
+                {unclassifiedRecords.length > 0 && (
+                    <Button variant="outline" onClick={() => setDialog({ type: 'categorize' })} className="border-primary text-primary hover:bg-primary/5">
+                        <Tag className="mr-2 h-4 w-4" /> Categorize Existing ({unclassifiedRecords.length})
+                    </Button>
+                )}
                 <div className="relative w-64 text-left">
                     <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input placeholder="Search registry..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8" />
                 </div>
                 <Button variant="outline" onClick={() => downloadDataAsCSV(allRecords, 'transporters-export.csv')} disabled={isLoading}>
-                    <Download className="mr-2 h-4 w-4" /> Export CSV
+                    <Download className="mr-2 h-4 w-4" /> Export
                 </Button>
                 <BulkImportDialog type="transporter" onComplete={fetchData}><Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
                 <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Record</Button>
@@ -359,7 +467,7 @@ export default function TransporterManagement() {
                         </Select>
                     </div>
                 </div>
-                {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredRecords} />}
+                {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />}
             </CardContent>
         </Card>
       </div>

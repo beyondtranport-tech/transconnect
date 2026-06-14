@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState } from 'react';
@@ -9,6 +8,7 @@ import { getClientSideAuthToken } from '@/firebase';
 import { Loader2, Zap, Globe, ShieldCheck, AlertTriangle } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { transporterCategories } from './transporter-discovery';
 
 interface BatchResearchDialogProps {
     open: boolean;
@@ -37,6 +37,9 @@ export function BatchResearchDialog({ open, onOpenChange, selectedLeads, onCompl
 
     const companyList = selectedLeads.map(l => `[KEY: ${l.id}] ${l.companyName || `${l.firstName} ${l.lastName}`}`).join('\n');
     
+    // Explicit list for the AI to pick from
+    const validCategories = transporterCategories.join(', ');
+
     const aiPrompt = `ACT AS AN ELITE CORPORATE FORENSIC INVESTIGATOR. 
 RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION. NO EXPLANATORY TEXT.
 
@@ -47,14 +50,15 @@ TASK: Bridge ALL data gaps for the South African businesses listed below.
 
 INVESTIGATIVE PROTOCOL:
 1. DISCOVER OFFICIAL WEBSITE: Find the OFFICIAL CORPORATE DOMAIN (e.g. www.companyname.co.za). 
-   STRICT EXCLUSION: DO NOT return "sars.gov.za", "gov.za", "linkedin.com", "facebook.com", "infoisinfo", or directory sites. If an official site does not exist, return null.
-2. EXTRACT PHYSICAL ADDRESS: Find the EXACT OPERATIONAL ADDRESS (Street, Suburb, City, Province, Post Code).
-3. IDENTIFY LEADERSHIP: Find the ACTUAL NAME (First and Last) of the CEO, MD, or Owner via LinkedIn.
-4. MAP CONTACTS: Identify professional email and a direct mobile number (+27 format).
-5. MINE TECHNICAL STANDING: In "notes", provide a 2-3 sentence summary of their SPECIFIC TECHNICAL CAPABILITIES. Include truck makes (e.g. Scania/Volvo), trailer types (e.g. 34t Side-Tippers, Reefer Superlinks), or specific SADC corridors they service.
+2. CLASSIFY INDUSTRIAL CATEGORY: Pick the MOST ACCURATE category from this specific list: [${validCategories}].
+3. EXTRACT PHYSICAL ADDRESS: Find the EXACT OPERATIONAL ADDRESS (Street, Suburb, City, Province, Post Code).
+4. IDENTIFY LEADERSHIP: Find the ACTUAL NAME (First and Last) of the CEO, MD, or Owner via LinkedIn.
+5. MAP CONTACTS: Identify professional email and a direct mobile number (+27 format).
+6. MINE TECHNICAL STANDING: In "notes", provide a 2-3 sentence summary of their SPECIFIC TECHNICAL CAPABILITIES. Include truck makes (e.g. Scania/Volvo) or specific SADC corridors they service.
 
 REQUIRED JSON FIELDS:
 - "record_id": (Return exactly the KEY provided in the list below)
+- "industrial_category": (Select from the valid list provided above)
 - "website": (OFFICIAL CORPORATE URL ONLY)
 - "address": (FULL Verified Physical Address)
 - "contact_person": (Full Human Name of Decision Maker)
@@ -106,13 +110,13 @@ ${companyList}`;
                         Forensic Batch Discovery ({selectedLeads.length})
                     </DialogTitle>
                     <DialogDescription>
-                        Copy this forensic command to bridge gaps for addresses, websites, and technical wording using the provided record keys.
+                        Copy this forensic command to bridge gaps for addresses, websites, and technical categories using the provided record keys.
                     </DialogDescription>
                 </DialogHeader>
                 
                 <div className="space-y-4 py-4 text-left">
                     {selectedLeads.length > 30 && (
-                        <Alert variant="destructive" className="bg-destructive/10">
+                        <Alert variant="destructive" className="bg-destructive/10 text-left">
                             <AlertTriangle className="h-4 w-4" />
                             <AlertTitle>Large Batch Warning</AlertTitle>
                             <AlertDescription className="text-xs">
@@ -123,9 +127,9 @@ ${companyList}`;
 
                     <Alert className="bg-primary/5 border-primary/20 text-left">
                         <ShieldCheck className="h-4 w-4 text-primary" />
-                        <AlertTitle className="text-left font-bold text-foreground">Identity Persistence</AlertTitle>
+                        <AlertTitle className="text-left font-bold text-foreground">Classification Engine</AlertTitle>
                         <AlertDescription className="text-xs text-left">
-                            This prompt provides the database KEY to the AI. When you import the JSON, the system will use this key to match and update the correct record.
+                            This prompt now forces the AI to select an industrial category from your defined list, ensuring your tally badges update correctly.
                         </AlertDescription>
                     </Alert>
 

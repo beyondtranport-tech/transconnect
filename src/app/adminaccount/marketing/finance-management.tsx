@@ -340,7 +340,7 @@ export default function FinanceManagement() {
         </CardHeader>
 
         <Card className="border-primary/10 shadow-sm overflow-hidden">
-            <CardHeader className="bg-muted/30 border-b">
+            <CardHeader className="bg-muted/30 border-b text-left">
                  <div className="flex items-center justify-between">
                     <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
                         <Database className="h-3 w-3" /> Category Tally
@@ -349,7 +349,7 @@ export default function FinanceManagement() {
                         {isRefreshing ? <Loader2 className="mr-1 h-2.5 w-2.5 animate-spin"/> : <RefreshCcw className="mr-1 h-2.5 w-2.5"/>} Refresh Counts
                     </Button>
                 </div>
-                <div className="flex flex-wrap gap-2 mt-3 text-foreground">
+                <div className="flex flex-wrap gap-2 mt-3 text-left">
                     {financeCategories.map(cat => (
                         <div key={cat} className="flex items-center bg-white border rounded-full pl-3 pr-1 py-0.5 shadow-sm">
                             <span className="text-[9px] font-bold text-slate-600 mr-2">{cat}</span>
