@@ -42,7 +42,7 @@ import {
   Instagram,
   Music,
 } from 'lucide-react';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect, Suspense, useCallback } from 'react';
@@ -99,9 +99,9 @@ function AdminAuthGuard({ children }: { children: React.ReactNode }) {
 
     if (isUserLoading || !user || (user.email !== 'mkoton100@gmail.com' && user.email !== 'beyondtransport@gmail.com')) {
         return (
-            <div className="flex flex-col justify-center items-center min-h-[calc(100vh-8rem)]">
+            <div className="flex flex-col justify-center items-center min-h-[calc(100vh-8rem)] text-left">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                <p className="mt-4 text-muted-foreground text-sm font-bold uppercase tracking-widest">Verifying Admin Permissions...</p>
+                <p className="mt-4 text-muted-foreground text-sm font-bold uppercase tracking-widest text-left">Verifying Admin Permissions...</p>
             </div>
         );
     }
@@ -127,13 +127,13 @@ function AdminAccountContent() {
   };
 
   const renderContent = useCallback(() => {
-    if (activeView.startsWith('marketing-')) {
-        const audience = activeView.split('-')[1] as any;
-        return <MarketingPage audience={audience} />;
-    }
     if (activeView.startsWith('social-')) {
         const platform = activeView.split('-')[1] as any;
         return <SocialStudio platform={platform} />;
+    }
+    if (activeView.startsWith('marketing-')) {
+        const audience = activeView.split('-')[1] as any;
+        return <MarketingPage audience={audience} />;
     }
     switch (activeView) {
       case 'dashboard': return <AdminDashboardContent />;
@@ -175,16 +175,16 @@ function AdminAccountContent() {
   };
 
   const navigate = (view: string) => router.push(`/adminaccount?view=${view}`, { scroll: false });
-  const isMarketingActive = activeView.startsWith('marketing-');
   const isSocialActive = activeView.startsWith('social-');
+  const isMarketingActive = activeView.startsWith('marketing-');
 
   return (
     <SidebarProvider>
       <Sidebar>
         <SidebarHeader>
-          <div className="flex items-center gap-2 p-2">
+          <div className="flex items-center gap-2 p-2 text-left">
             <Shield className="h-6 w-6 text-primary" />
-            <h2 className="text-lg font-semibold text-sidebar-foreground">Admin Portal</h2>
+            <h2 className="text-lg font-semibold text-sidebar-foreground text-left">Admin Portal</h2>
           </div>
         </SidebarHeader>
         <SidebarContent>
@@ -199,6 +199,17 @@ function AdminAccountContent() {
                       <Activity /><span>Activity</span>
                   </SidebarMenuButton>
               </SidebarMenuItem>
+              
+              <SidebarMenuItem>
+                  <SidebarMenuButton tooltip="Social" isActive={isSocialActive}><Share2 /><span>Social</span></SidebarMenuButton>
+                  <SidebarMenuSub>
+                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'social-facebook'} onClick={() => navigate('social-facebook')}><Facebook className="h-4 w-4"/>Facebook</SidebarMenuSubButton></SidebarMenuSubItem>
+                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'social-linkedin'} onClick={() => navigate('social-linkedin')}><Linkedin className="h-4 w-4"/>LinkedIn</SidebarMenuSubButton></SidebarMenuSubItem>
+                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'social-instagram'} onClick={() => navigate('social-instagram')}><Instagram className="h-4 w-4"/>Instagram</SidebarMenuSubButton></SidebarMenuSubItem>
+                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'social-tiktok'} onClick={() => navigate('social-tiktok')}><Music className="h-4 w-4"/>TikTok</SidebarMenuSubButton></SidebarMenuSubItem>
+                  </SidebarMenuSub>
+              </SidebarMenuItem>
+
               <SidebarMenuItem>
                   <SidebarMenuButton tooltip="Marketing" isActive={isMarketingActive}><BookOpen /><span>Marketing Library</span></SidebarMenuButton>
                   <SidebarMenuSub>
@@ -206,19 +217,9 @@ function AdminAccountContent() {
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-isa'} onClick={() => navigate('marketing-isa')}>ISA Agents</SidebarMenuSubButton></SidebarMenuSubItem>
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-suppliers'} onClick={() => navigate('marketing-suppliers')}>Suppliers</SidebarMenuSubButton></SidebarMenuSubItem>
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-transporters'} onClick={() => navigate('marketing-transporters')}>Transporters</SidebarMenuSubButton></SidebarMenuSubItem>
-                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-finance'} onClick={() => navigate('marketing-finance')}>Finance Companies</SidebarMenuSubButton></SidebarMenuSubItem>
+                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-finance'} onClick={() => navigate('marketing-finance')}>Finance Co</SidebarMenuSubButton></SidebarMenuSubItem>
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-drivers'} onClick={() => navigate('marketing-drivers')}>Drivers</SidebarMenuSubButton></SidebarMenuSubItem>
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-investors'} onClick={() => navigate('marketing-investors')}>Investors</SidebarMenuSubButton></SidebarMenuSubItem>
-                  </SidebarMenuSub>
-              </SidebarMenuItem>
-              
-              <SidebarMenuItem>
-                  <SidebarMenuButton tooltip="Social" isActive={isSocialActive}><Share2 /><span>Social</span></SidebarMenuButton>
-                  <SidebarMenuSub>
-                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'social-facebook'} onClick={() => navigate('social-facebook')}><Facebook className="h-4 w-4"/>Engagement: Facebook</SidebarMenuSubButton></SidebarMenuSubItem>
-                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'social-linkedin'} onClick={() => navigate('social-linkedin')}><Linkedin className="h-4 w-4"/>Engagement: LinkedIn</SidebarMenuSubButton></SidebarMenuSubItem>
-                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'social-instagram'} onClick={() => navigate('social-instagram')}><Instagram className="h-4 w-4"/>Engagement: Instagram</SidebarMenuSubButton></SidebarMenuSubItem>
-                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'social-tiktok'} onClick={() => navigate('social-tiktok')}><Music className="h-4 w-4"/>Engagement: TikTok</SidebarMenuSubButton></SidebarMenuSubItem>
                   </SidebarMenuSub>
               </SidebarMenuItem>
 
@@ -256,13 +257,13 @@ function AdminAccountContent() {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
-          <div className="flex items-center gap-3 p-2 rounded-md bg-sidebar-accent">
+          <div className="flex items-center gap-3 p-2 rounded-md bg-sidebar-accent text-left">
             <Avatar className="h-10 w-10">
                 <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
             </Avatar>
             <div className="flex flex-col truncate text-left">
-                <span className="text-sm font-medium text-sidebar-foreground truncate">{user?.displayName || 'Admin'}</span>
-                <span className="text-xs text-sidebar-foreground/70 truncate">{user?.email}</span>
+                <span className="text-sm font-medium text-sidebar-foreground truncate text-left">{user?.displayName || 'Admin'}</span>
+                <span className="text-xs text-sidebar-foreground/70 truncate text-left">{user?.email}</span>
             </div>
             <Button variant="ghost" size="icon" className="ml-auto" onClick={onLogout} title="Sign Out">
                 <LogOut className="h-5 w-5" />
@@ -271,7 +272,7 @@ function AdminAccountContent() {
       </SidebarFooter>
     </Sidebar>
     <SidebarInset>
-        <div className="p-6">
+        <div className="p-6 text-left">
             {renderContent()}
         </div>
     </SidebarInset>
@@ -282,7 +283,7 @@ function AdminAccountContent() {
 export default function AdminAccountPage() {
   return (
     <AdminAuthGuard>
-        <Suspense fallback={<div className="flex justify-center items-center min-h-[calc(100vh-8rem)]"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>}>
+        <Suspense fallback={<div className="flex justify-center items-center min-h-[calc(100vh-8rem)] text-left"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>}>
             <AdminAccountContent />
         </Suspense>
     </AdminAuthGuard>
