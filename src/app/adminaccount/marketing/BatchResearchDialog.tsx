@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
-import { Loader2, Copy, Zap, Globe, ShieldCheck, AlertTriangle } from 'lucide-react';
+import { Loader2, Zap, Globe, ShieldCheck, AlertTriangle } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
@@ -39,19 +39,22 @@ export function BatchResearchDialog({ open, onOpenChange, selectedLeads, onCompl
     const aiPrompt = `ACT AS AN ELITE CORPORATE FORENSIC INVESTIGATOR. 
 RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION. NO EXPLANATORY TEXT.
 
+STRICT INSTRUCTION: DO NOT USE SYNTHETIC LANGUAGE OR CORPORATE FLUFF.
+FORBIDDEN WORDS: "Spearheads", "Ecosystem", "Backbone", "Solutions", "Innovative", "Commitment".
+
 TASK: Bridge ALL data gaps for the South African businesses listed below. 
 
 INVESTIGATIVE PROTOCOL:
 1. DISCOVER OFFICIAL WEBSITE: Find the OFFICIAL CORPORATE DOMAIN (e.g. www.companyname.co.za). 
-   STRICT EXCLUSION: DO NOT return "sars.gov.za", "gov.za", "linkedin.com", "facebook.com", "infoisinfo", or any directory sites as the official website. If an official site does not exist, return null.
-2. EXTRACT PHYSICAL ADDRESS: Find the EXACT OPERATIONAL ADDRESS (Street, Suburb, City, Province, Post Code). DO NOT LEAVE NULL.
-3. IDENTIFY LEADERSHIP: Find the ACTUAL NAME (First and Last) of the CEO, Managing Director, or Owner via LinkedIn.
-4. MAP CONTACTS: Identify a professional email and a direct mobile number (+27 format).
-5. MINE TECHNICAL STANDING: Use the key "notes" to provide a 2-3 sentence summary of their specific technical capabilities, fleet types, or industrial specializations from their site.
+   STRICT EXCLUSION: DO NOT return "sars.gov.za", "gov.za", "linkedin.com", "facebook.com", "infoisinfo", or directory sites. If an official site does not exist, return null.
+2. EXTRACT PHYSICAL ADDRESS: Find the EXACT OPERATIONAL ADDRESS (Street, Suburb, City, Province, Post Code).
+3. IDENTIFY LEADERSHIP: Find the ACTUAL NAME (First and Last) of the CEO, MD, or Owner via LinkedIn.
+4. MAP CONTACTS: Identify professional email and a direct mobile number (+27 format).
+5. MINE TECHNICAL STANDING: In "notes", provide a 2-3 sentence summary of their SPECIFIC TECHNICAL CAPABILITIES. Include truck makes (e.g. Scania/Volvo), trailer types (e.g. 34t Side-Tippers, Reefer Superlinks), or specific SADC corridors they service.
 
 REQUIRED JSON FIELDS:
 - "record_id": (Return exactly as provided in the list below)
-- "website": (OFFICIAL CORPORATE URL ONLY, NO DIRECTORIES)
+- "website": (OFFICIAL CORPORATE URL ONLY)
 - "address": (FULL Verified Physical Address)
 - "contact_person": (Full Human Name of Decision Maker)
 - "email": (Professional Email)

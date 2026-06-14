@@ -41,39 +41,21 @@ export async function POST(req: NextRequest) {
         const isAdmin = decodedToken.email === 'beyondtransport@gmail.com' || decodedToken.email === 'mkoton100@gmail.com';
         if (!isAdmin) throw new Error("Forbidden: Admin access required.");
 
-        const limit = 500;
-        const offset = Number(payload?.offset) || 0;
+        const limitSize = 500;
+        const offsetVal = Number(payload?.offset) || 0;
 
         switch (action) {
             case 'getMembers': {
-                const snap = await db.collection('companies').orderBy('createdAt', 'desc').limit(limit).offset(offset).get();
-                const data = snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) }));
-                return NextResponse.json({ success: true, data });
-            }
-
-            case 'getShops': {
-                const snap = await db.collectionGroup('shops').orderBy('updatedAt', 'desc').limit(limit).get();
-                const data = snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) }));
-                return NextResponse.json({ success: true, data });
-            }
-
-            case 'getContributions': {
-                const snap = await db.collection('contributions').orderBy('createdAt', 'desc').limit(limit).get();
-                const data = snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) }));
-                return NextResponse.json({ success: true, data });
-            }
-
-            case 'getAuditLogs': {
-                const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(limit).get();
+                const snap = await db.collection('companies').orderBy('createdAt', 'desc').limit(limitSize).offset(offsetVal).get();
                 const data = snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) }));
                 return NextResponse.json({ success: true, data });
             }
 
             case 'getPartnersByType': {
                 const { type } = payload;
-                let q = db.collection('partners').orderBy('updatedAt', 'desc').limit(limit).offset(offset);
+                let q = db.collection('partners').orderBy('updatedAt', 'desc').limit(limitSize).offset(offsetVal);
                 if (type && type !== 'all') {
-                    q = db.collection('partners').where('type', '==', type).orderBy('updatedAt', 'desc').limit(limit).offset(offset);
+                    q = db.collection('partners').where('type', '==', type).orderBy('updatedAt', 'desc').limit(limitSize).offset(offsetVal);
                 }
                 const snap = await q.get();
                 const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
@@ -81,7 +63,7 @@ export async function POST(req: NextRequest) {
             }
 
             case 'getLeads': {
-                const snap = await db.collection('leads').orderBy('updatedAt', 'desc').limit(limit).offset(offset).get();
+                const snap = await db.collection('leads').orderBy('updatedAt', 'desc').limit(limitSize).offset(offsetVal).get();
                 const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
                 return NextResponse.json({ success: true, data });
             }
@@ -120,17 +102,17 @@ export async function POST(req: NextRequest) {
                 const batch = db.batch();
                 
                 partners.forEach((p: any) => {
-                    const docId = p.record_id || p.id || p.seq?.toString();
-                    if (!docId) return;
-
-                    const ref = db.collection(collectionName).doc(docId);
-                    
                     const normalizedP: any = {};
                     Object.keys(p).forEach(k => {
                         const cleanKey = k.toLowerCase().trim().replace(/[\s_-]+/g, '');
                         normalizedP[cleanKey] = p[k];
                     });
 
+                    const docId = normalizedP.recordid || normalizedP.id || normalizedP.seq?.toString();
+                    if (!docId) return;
+
+                    const ref = db.collection(collectionName).doc(docId);
+                    
                     let website = normalizedP.website || normalizedP.officialwebsite || normalizedP.url || '';
                     const badDomains = [
                         'sars.gov.za', 'gov.za', 'linkedin.com', 'facebook.com', 
@@ -172,7 +154,7 @@ export async function POST(req: NextRequest) {
 
             case 'savePartner': {
                 const { partner } = payload;
-                const collectionName = partner.type === 'lead' ? 'leads' : 'partners';
+                const collectionName = (partner.type === 'lead' || !partner.type) ? 'leads' : 'partners';
                 const ref = partner.id ? db.collection(collectionName).doc(partner.id) : db.collection(collectionName).doc();
                 const data = { ...partner, id: ref.id, updatedAt: FieldValue.serverTimestamp() };
                 if (!partner.id) data.createdAt = FieldValue.serverTimestamp();

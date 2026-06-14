@@ -136,7 +136,7 @@ function FinanceDialog({ open, onOpenChange, partner, onSave }: { open: boolean;
             <FormField control={form.control} name="notes" render={({ field }) => (<FormItem className="text-left"><FormLabel>Technical Focus / Notes</FormLabel><FormControl><Textarea placeholder="AI extracted service details..." {...field} className="min-h-[120px]" /></FormControl><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="status" render={({ field }) => (
                 <FormItem className="text-left">
-                    <FormLabel>Status</FormLabel>
+                    <FormLabel>Status</Label>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl><SelectTrigger><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
                         <SelectContent>
