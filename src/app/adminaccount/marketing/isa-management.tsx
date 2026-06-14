@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -204,8 +203,7 @@ function ISADialog({ open, onOpenChange, partner, onSave }: { open: boolean; onO
             )} />
             <DialogFooter className="pt-4 border-t text-left">
               <Button type="submit" disabled={isLoading}>
-                {isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />} 
-                Save ISA
+                {isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />} Save ISA
               </Button>
             </DialogFooter>
           </form>
