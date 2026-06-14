@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState } from 'react';
@@ -34,7 +35,7 @@ export function BatchResearchDialog({ open, onOpenChange, selectedLeads, onCompl
     const [isCopied, setIsCopied] = useState(false);
     const { toast } = useToast();
 
-    const companyList = selectedLeads.map(l => `[ID: ${l.id}] ${l.companyName || `${l.firstName} ${l.lastName}`}`).join('\n');
+    const companyList = selectedLeads.map(l => `[KEY: ${l.id}] ${l.companyName || `${l.firstName} ${l.lastName}`}`).join('\n');
     
     const aiPrompt = `ACT AS AN ELITE CORPORATE FORENSIC INVESTIGATOR. 
 RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION. NO EXPLANATORY TEXT.
@@ -53,7 +54,7 @@ INVESTIGATIVE PROTOCOL:
 5. MINE TECHNICAL STANDING: In "notes", provide a 2-3 sentence summary of their SPECIFIC TECHNICAL CAPABILITIES. Include truck makes (e.g. Scania/Volvo), trailer types (e.g. 34t Side-Tippers, Reefer Superlinks), or specific SADC corridors they service.
 
 REQUIRED JSON FIELDS:
-- "record_id": (Return exactly the ID provided in the list below)
+- "record_id": (Return exactly the KEY provided in the list below)
 - "website": (OFFICIAL CORPORATE URL ONLY)
 - "address": (FULL Verified Physical Address)
 - "contact_person": (Full Human Name of Decision Maker)
@@ -105,7 +106,7 @@ ${companyList}`;
                         Forensic Batch Discovery ({selectedLeads.length})
                     </DialogTitle>
                     <DialogDescription>
-                        Copy this forensic command to bridge gaps for addresses, websites, and technical wording.
+                        Copy this forensic command to bridge gaps for addresses, websites, and technical wording using the provided record keys.
                     </DialogDescription>
                 </DialogHeader>
                 
@@ -122,9 +123,9 @@ ${companyList}`;
 
                     <Alert className="bg-primary/5 border-primary/20 text-left">
                         <ShieldCheck className="h-4 w-4 text-primary" />
-                        <AlertTitle className="text-left font-bold text-foreground">High-Fidelity Discovery</AlertTitle>
+                        <AlertTitle className="text-left font-bold text-foreground">Identity Persistence</AlertTitle>
                         <AlertDescription className="text-xs text-left">
-                            This prompt explicitly excludes aggregate sites like SARS to ensure you get the actual corporate website.
+                            This prompt provides the database KEY to the AI. When you import the JSON, the system will use this key to match and update the correct record.
                         </AlertDescription>
                     </Alert>
 

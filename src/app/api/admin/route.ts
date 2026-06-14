@@ -121,7 +121,6 @@ export async function POST(req: NextRequest) {
                         normalizedP[cleanKey] = p[k];
                     });
 
-                    // Match logic: Use recordid (the key) as the document ID
                     const docId = normalizedP.recordid || normalizedP.id || normalizedP.seq?.toString();
                     if (!docId) return;
 
@@ -145,7 +144,6 @@ export async function POST(req: NextRequest) {
                         updatedAt: FieldValue.serverTimestamp()
                     };
 
-                    // Only mark as Enriched if we actually got non-placeholder data
                     const hasRealData = (technicalNotes && technicalNotes !== 'null' && technicalNotes.length > 5) || 
                                       (website && website !== 'null' && website.length > 5);
                     
@@ -169,14 +167,42 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, count: partners.length });
             }
 
-            case 'savePartner': {
-                const { partner } = payload;
-                const collectionName = (partner.type === 'lead' || !partner.type) ? 'leads' : 'partners';
-                const ref = partner.id ? db.collection(collectionName).doc(partner.id) : db.collection(collectionName).doc();
-                const data = { ...partner, id: ref.id, updatedAt: FieldValue.serverTimestamp() };
-                if (!partner.id) data.createdAt = FieldValue.serverTimestamp();
-                await ref.set(data, { merge: true });
-                return NextResponse.json({ success: true, id: ref.id });
+            case 'refreshTransporterCategoryCounts':
+            case 'refreshSupplierCategoryCounts':
+            case 'refreshFinanceCategoryCounts':
+            case 'refreshDriverCategoryCounts': {
+                const typeMap: Record<string, string> = {
+                    refreshTransporterCategoryCounts: 'transporter',
+                    refreshSupplierCategoryCounts: 'supplier',
+                    refreshFinanceCategoryCounts: 'finance',
+                    refreshDriverCategoryCounts: 'driver'
+                };
+                const configIdMap: Record<string, string> = {
+                    refreshTransporterCategoryCounts: 'transporterDiscoveryStats',
+                    refreshSupplierCategoryCounts: 'supplierDiscoveryStats',
+                    refreshFinanceCategoryCounts: 'financeDiscoveryStats',
+                    refreshDriverCategoryCounts: 'driverDiscoveryStats'
+                };
+                
+                const targetType = typeMap[action];
+                const configId = configIdMap[action];
+                const collectionName = targetType === 'driver' ? 'partners' : 'leads';
+
+                const snap = await db.collection(collectionName).where('type', '==', targetType).get();
+                const counts: Record<string, number> = {};
+                
+                snap.docs.forEach(doc => {
+                    const data = doc.data();
+                    const category = data.industrial_category || data.category || data.entryType || 'General';
+                    counts[category] = (counts[category] || 0) + 1;
+                });
+
+                await db.collection('configuration').doc(configId).set({
+                    counts,
+                    lastUpdated: FieldValue.serverTimestamp()
+                }, { merge: true });
+
+                return NextResponse.json({ success: true });
             }
 
             case 'getPlatformStaff': {
