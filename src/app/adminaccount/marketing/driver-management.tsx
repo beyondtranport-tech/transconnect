@@ -38,10 +38,11 @@ import { PartnerOversightDialog } from './PartnerOversightDialog';
 import { EngageDialog } from './EngageDialog';
 import { CommunicationLogDialog } from './CommunicationLogDialog';
 import { PartnerTasksDialog } from './PartnerTasksDialog';
-import { downloadDataAsCSV, formatDateSafe } from '@/lib/utils';
+import { downloadDataAsCSV, formatDateSafe, cn } from '@/lib/utils';
 import { EnrichPartnerButton } from './EnrichPartnerButton';
 import { BulkImportDialog } from './BulkImportDialog';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 
 async function performAdminAction(token: string, action: string, payload: any) {
   const response = await fetch('/api/admin', {

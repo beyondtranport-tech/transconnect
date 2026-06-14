@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -134,7 +135,7 @@ function FinanceDialog({ open, onOpenChange, partner, onSave }: { open: boolean;
               <FormField control={form.control} name="mobile" render={({ field }) => (<FormItem className="text-left"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem className="text-left"><FormLabel>Entity Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
-            <FormField control={form.control} name="website" render={({ field }) => (<FormItem className="text-left"><FormLabel>Official Website</FormLabel><FormControl><Input placeholder="https://..." {...field} /></FormControl><FormMessage /></FormItem>)} />
+            <FormField control={form.control} name="website" render={({ field }) => (<FormItem className="text-left"><FormLabel>Official Website</Label><FormControl><Input placeholder="https://..." {...field} /></FormControl><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="address" render={({ field }) => (<FormItem className="text-left"><FormLabel>Physical Address</FormLabel><FormControl><Textarea placeholder="Enter physical address..." {...field} /></FormControl><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="notes" render={({ field }) => (<FormItem className="text-left"><FormLabel>Technical Focus / Notes</FormLabel><FormControl><Textarea placeholder="AI extracted service details..." {...field} className="min-h-[120px]" /></FormControl><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="status" render={({ field }) => (
