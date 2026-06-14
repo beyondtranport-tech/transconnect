@@ -27,7 +27,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { getClientSideAuthToken } from '@/firebase';
+import { getClientSideAuthToken, useUser } from '@/firebase';
 import { Loader2, PlusCircle, Landmark, Edit, Trash2, Send, Download, Save, Search, Globe, RefreshCcw, Database, Filter, Users, Upload, Copy, Tag } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
@@ -155,7 +155,7 @@ function FinanceDialog({ open, onOpenChange, partner, onSave }: { open: boolean;
     }
   }, [open, partner, form]);
 
-  async function handleFormSubmit(values: PartnerFormValues) {
+  const handleFormSubmit = async (values: PartnerFormValues) => {
     setIsLoading(true);
     try {
       const token = await getClientSideAuthToken();
@@ -169,7 +169,7 @@ function FinanceDialog({ open, onOpenChange, partner, onSave }: { open: boolean;
     } finally {
       setIsLoading(false);
     }
-  }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -308,7 +308,8 @@ export default function FinanceManagement() {
     });
   }, [partners, statusFilter, assigneeFilter, searchTerm]);
 
-  async function handleDelete() {
+  const handleDelete = async () => {
+    if (!dialog.data) return;
     try {
       const token = await getClientSideAuthToken();
       if (!token) return;
@@ -319,9 +320,9 @@ export default function FinanceManagement() {
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Error', description: e.message });
     }
-  }
+  };
 
-  const columns: ColumnDef<any>[] = [
+  const columns: ColumnDef<any>[] = useMemo(() => [
     { 
         accessorKey: 'companyName', 
         header: 'Entity Name', 
@@ -370,7 +371,7 @@ export default function FinanceManagement() {
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'delete', data: row.original })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
       </div>
     )},
-  ];
+  ], [fetchData]);
 
   return (
     <div className="space-y-6 text-left">

@@ -163,7 +163,7 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
     }
   }, [open, partner, form]);
 
-  async function handleFormSubmit(values: PartnerFormValues) {
+  const handleFormSubmit = async (values: PartnerFormValues) => {
     setIsLoading(true);
     try {
       const token = await getClientSideAuthToken();
@@ -177,7 +177,7 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
     } finally {
       setIsLoading(false);
     }
-  }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -315,7 +315,7 @@ export default function TransporterManagement() {
       return allRecords.filter(r => selectedIds.includes(r.id));
   }, [allRecords, selectedIds]);
 
-  async function handleDelete() {
+  const handleDelete = async () => {
     if (!dialog.data) return;
     try {
       const token = await getClientSideAuthToken();
@@ -327,9 +327,9 @@ export default function TransporterManagement() {
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Error', description: e.message });
     }
-  }
+  };
 
-  const columns: ColumnDef<any>[] = [
+  const columns: ColumnDef<any>[] = useMemo(() => [
     { 
         header: 'Transporter Name', 
         cell: ({ row }) => (
@@ -381,7 +381,7 @@ export default function TransporterManagement() {
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'delete', data: row.original })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
       </div>
     )},
-  ];
+  ], [fetchData]);
 
   return (
     <div className="space-y-6 text-left">
