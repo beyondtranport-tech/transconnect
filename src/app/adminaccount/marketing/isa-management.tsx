@@ -243,7 +243,7 @@ export default function ISAManagement() {
     { 
         header: 'Status', 
         cell: ({ row }) => {
-            const isEnriched = row.original.researchStatus === 'completed' && !!(row.original.notes || row.original.website);
+            const isEnriched = !!(row.original.notes || row.original.website);
             const isSearching = row.original.researchStatus === 'searching';
             return (
                 <div className="flex flex-col gap-1 items-center">

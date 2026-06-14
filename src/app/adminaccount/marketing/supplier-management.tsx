@@ -24,7 +24,7 @@ import { PartnerTasksDialog } from './PartnerTasksDialog';
 import { CommunicationLogDialog } from './CommunicationLogDialog';
 import { EngageDialog } from './EngageDialog';
 import { PartnerOversightDialog } from './PartnerOversightDialog';
-import { downloadDataAsCSV, formatDateSafe } from '@/lib/utils';
+import { downloadDataAsCSV, formatDateSafe, cn } from '@/lib/utils';
 import { EnrichPartnerButton } from './EnrichPartnerButton';
 import { BulkImportDialog } from './BulkImportDialog';
 import { BatchResearchDialog } from './BatchResearchDialog';
@@ -209,7 +209,7 @@ export default function SupplierManagement() {
         accessorKey: 'companyName', 
         header: 'Supplier Name', 
         cell: ({ row }) => (
-            <div className="flex flex-col text-left">
+            <div className="flex flex-col text-sm text-left">
                 <span className="font-bold text-left">{row.original.companyName || row.original.contactPerson || `${row.original.firstName || ''} ${row.original.lastName || ''}`.trim()}</span>
                 <div className="flex items-center gap-2 mt-1 text-left">
                     <span className="text-[10px] text-muted-foreground uppercase font-black text-left">{row.original.address || 'Operational Hub Verified'}</span>
@@ -224,7 +224,7 @@ export default function SupplierManagement() {
     { 
         header: 'Status', 
         cell: ({ row }) => {
-            const isEnriched = row.original.researchStatus === 'completed' && !!(row.original.notes || row.original.website);
+            const isEnriched = !!(row.original.notes || row.original.website);
             const isSearching = row.original.researchStatus === 'searching';
             return (
                 <div className="flex flex-col gap-1 items-center">

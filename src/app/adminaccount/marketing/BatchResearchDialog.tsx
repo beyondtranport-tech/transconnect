@@ -53,7 +53,7 @@ INVESTIGATIVE PROTOCOL:
 5. MINE TECHNICAL STANDING: In "notes", provide a 2-3 sentence summary of their SPECIFIC TECHNICAL CAPABILITIES. Include truck makes (e.g. Scania/Volvo), trailer types (e.g. 34t Side-Tippers, Reefer Superlinks), or specific SADC corridors they service.
 
 REQUIRED JSON FIELDS:
-- "record_id": (Return exactly as provided in the list below)
+- "record_id": (Return exactly the ID provided in the list below)
 - "website": (OFFICIAL CORPORATE URL ONLY)
 - "address": (FULL Verified Physical Address)
 - "contact_person": (Full Human Name of Decision Maker)

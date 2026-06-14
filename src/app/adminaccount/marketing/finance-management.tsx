@@ -37,7 +37,7 @@ import { PartnerOversightDialog } from './PartnerOversightDialog';
 import { EngageDialog } from './EngageDialog';
 import { CommunicationLogDialog } from './CommunicationLogDialog';
 import { PartnerTasksDialog } from './PartnerTasksDialog';
-import { downloadDataAsCSV, formatDateSafe } from '@/lib/utils';
+import { downloadDataAsCSV, formatDateSafe, cn } from '@/lib/utils';
 import { EnrichPartnerButton } from './EnrichPartnerButton';
 import { BulkImportDialog } from './BulkImportDialog';
 import { Label } from '@/components/ui/label';
@@ -136,7 +136,7 @@ function FinanceDialog({ open, onOpenChange, partner, onSave }: { open: boolean;
             <FormField control={form.control} name="notes" render={({ field }) => (<FormItem className="text-left"><FormLabel>Technical Focus / Notes</FormLabel><FormControl><Textarea placeholder="AI extracted service details..." {...field} className="min-h-[120px]" /></FormControl><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="status" render={({ field }) => (
                 <FormItem className="text-left">
-                    <FormLabel>Status</Label>
+                    <FormLabel>Status</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl><SelectTrigger><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
                         <SelectContent>
@@ -234,7 +234,7 @@ export default function FinanceManagement() {
     { 
         header: 'Status', 
         cell: ({ row }) => {
-            const isEnriched = row.original.researchStatus === 'completed' && !!(row.original.notes || row.original.website);
+            const isEnriched = !!(row.original.notes || row.original.website);
             const isSearching = row.original.researchStatus === 'searching';
             return (
                 <div className="flex flex-col gap-1 items-center">

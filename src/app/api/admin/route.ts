@@ -68,6 +68,18 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data });
             }
 
+            case 'getShops': {
+                const snap = await db.collectionGroup('shops').orderBy('updatedAt', 'desc').get();
+                const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
+                return NextResponse.json({ success: true, data });
+            }
+
+            case 'getContributions': {
+                const snap = await db.collection('contributions').orderBy('createdAt', 'desc').limit(100).get();
+                const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
+                return NextResponse.json({ success: true, data });
+            }
+
             case 'logForensicInitiated': {
                 const { partnerId, isLead } = payload;
                 const collectionName = isLead ? 'leads' : 'partners';
