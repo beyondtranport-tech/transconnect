@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -124,7 +125,7 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
               <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Landline</FormLabel><FormControl><Input placeholder="+27 11..." {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
             <FormField control={form.control} name="mobile" render={({ field }) => (<FormItem className="text-left"><FormLabel>Mobile (Direct Cell)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} /></FormControl><FormMessage /></FormItem>)} />
-            <FormField control={form.control} name="address" render={({ field }) => (<FormItem className="text-left"><FormLabel>Physical Address</FormLabel><FormControl><Textarea placeholder="Enter full operational address..." {...field} /></FormControl><FormMessage /></FormItem>)} />
+            <FormField control={form.control} name="address" render={({ field }) => (<FormItem className="text-left"><FormLabel>Physical Address</Label><FormControl><Textarea placeholder="Enter full operational address..." {...field} /></FormControl><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="notes" render={({ field }) => (<FormItem className="text-left"><FormLabel>Technical Service Summary</FormLabel><FormControl><Textarea placeholder="Technical wording mined from website..." {...field} className="min-h-[120px]" /></FormControl><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="status" render={({ field }) => (
                 <FormItem className="text-left">
@@ -278,7 +279,7 @@ export default function TransporterManagement() {
   ];
 
   return (
-    <div className="space-y-6 text-left text-foreground">
+    <div className="space-y-6 text-left">
       <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.data} audience="transporters" onEngageSuccess={fetchData} />
       <TransporterDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={fetchData} />
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
@@ -299,7 +300,9 @@ export default function TransporterManagement() {
                     <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input placeholder="Search registry..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8 text-foreground" />
                 </div>
-                <Button variant="outline" onClick={() => downloadDataAsCSV(allRecords, 'transporters-export.csv')} disabled={isLoading}><Download className="mr-2 h-4 w-4" /> Export CSV</Button>
+                <Button variant="outline" onClick={() => downloadDataAsCSV(allRecords, 'transporters-export.csv')} disabled={isLoading}>
+                    <Download className="mr-2 h-4 w-4" /> Export CSV
+                </Button>
                 <BulkImportDialog type="transporter" onComplete={fetchData}><Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
                 <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Record</Button>
             </div>
