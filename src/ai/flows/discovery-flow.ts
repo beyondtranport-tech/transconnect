@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview Automated industrial discovery agent.
@@ -59,29 +58,24 @@ const discoveryFlow = ai.defineFlow(
         let systemPrompt = "";
 
         if (type === 'driver') {
-            searchContext = `Focus on mapping PUBLICLY ADVERTISED commercial service availability in South Africa for "${category}". Source data from industrial logistics noticeboards and professional recruitment registers where service units have published their commercial credentials.`;
-            systemPrompt = `You are an elite workforce intelligence strategist cataloguing commercial service availability for the South African transport industry.
+            searchContext = `Focus on mapping PUBLICLY ADVERTISED commercial service availability in South Africa for "${category}". Source data from industrial logistics noticeboards.`;
+            systemPrompt = `ACT AS AN ELITE INDUSTRIAL RECRUITMENT STRATEGIST.
             Your goal is to MAP PUBLIC COMMERCIAL SERVICE NODES for: "${category}".
             
-            ${searchContext}
-
             STRICT RESEARCH RULES:
-            1. COMMERCIAL UNITS ONLY: Focus on entities (Independent Contractors) that have actively published their service availability on public industry noticeboards.
-            2. SERVICE HANDLE: Identify the EXPLICIT IDENTITY (Full Professional Name) as listed in the professional public notice.
-            3. CERTIFICATION AUDIT: Prioritize entries showing industrial signals: Code 14/EC, Code 10, valid PrDP, or NBCRFLI compliance.
-            4. REGISTRY LINE: Extract the public commercial contact line as listed in the advertisement.
-            5. ID: Generate a unique ID starting with 'LOG_NODE_'.`;
+            1. REAL DATA ONLY: Do not use synthetic or generic descriptions.
+            2. SERVICE HANDLE: Identify the EXPLICIT IDENTITY as listed in the professional public notice.
+            3. FORBIDDEN WORDS: innovative, leading, spearheading, ecosystem, backbone.
+            4. ID: Generate a unique ID starting with 'LOG_NODE_'.`;
         } else if (type === 'finance') {
-            searchContext = `Focus on the National Credit Regulator (NCR) South Africa. Target registry pages starting at Page ${startPage}. Discover and extract unique ${category} providers. Utilize LinkedIn for specific head-of-finance names.`;
-            systemPrompt = `You are an elite capital intelligence agent.
+            searchContext = `Focus on the National Credit Regulator (NCR) South Africa and official LinkedIn leadership pages.`;
+            systemPrompt = `ACT AS AN ELITE CAPITAL INTELLIGENCE AGENT.
             Your goal is to EXTRACT unique verified business records for: "${category}" credit providers.
             
-            ${searchContext}
-
             STRICT FORENSIC RULES:
-            1. HUMAN IDENTITY FIRST: You MUST find the ACTUAL NAME of the CEO, MD, or Owner.
-            2. CONTACTS: Prioritize verified professional emails and direct lines.
-            3. SOURCE: Use LinkedIn and the official industrial registers for verification.
+            1. HUMAN IDENTITY FIRST: You MUST find the ACTUAL NAME of the CEO, MD, or Head of Credit.
+            2. OFFICIAL WEBSITE ONLY: Do not return aggregate registry sites.
+            3. FORBIDDEN WORDS: innovative, leading, spearheading, solutions.
             4. ID: Generate a unique ID starting with 'AUTO_FINANCE_'.`;
         } else {
             const prefix = type === 'transporter' ? 'TRANS' : 'SUPPLIER';
@@ -89,22 +83,21 @@ const discoveryFlow = ai.defineFlow(
                 ? `Focus on South African logistics hubs and industrial zoning registries. Discover unique professional ${category} transport companies.`
                 : `Focus on industrial hubs in South Africa for ${category}. Discover unique independent suppliers.`;
             
-            systemPrompt = `You are an elite market intelligence agent.
-            Your goal is to DISCOVER and EXTRACT unique verified business records for: "${category}".
+            systemPrompt = `ACT AS AN ELITE MARKET INTELLIGENCE AGENT SPECIALIZING IN THE SOUTH AFRICAN TRANSPORT ECOSYSTEM.
+            Your goal is to DISCOVER and EXTRACT verified business records for: "${category}".
             
-            ${searchContext}
-
             STRICT FORENSIC RULES:
-            1. HUMAN IDENTITY FIRST: Find the ACTUAL NAME of the MD or Owner.
-            2. CONTACTS: Prioritize verified professional emails and direct lines.
-            3. ID: Generate a unique ID starting with 'AUTO_${prefix}_'.`;
+            1. TECHNICAL SERVICE SUMMARY: In the notes field, provide a 2-sentence summary of SPECIFIC fleet or parts capabilities.
+            2. FORBIDDEN WORDS: innovative, leading, spearheading, ecosystem, backbone. DO NOT use corporate fluff.
+            3. OFFICIAL WEBSITE ONLY: If you cannot find a corporate domain (www.company.co.za), return null.
+            4. ID: Generate a unique ID starting with 'AUTO_${prefix}_'.`;
         }
 
         const response = await ai.generate({
             model: geminiModel,
             tools: [googleSearchTool],
             system: systemPrompt,
-            prompt: `Map ${batchSize} professional service nodes for ${category} in South Africa. Focus on publicly published certifications and commercial handles.`,
+            prompt: `Extract ${batchSize} verified professional records for ${category} in South Africa. Focus on publicly published certifications and commercial handles. Return RAW JSON ONLY.`,
             output: {
                 schema: DiscoveryOutputSchema
             }

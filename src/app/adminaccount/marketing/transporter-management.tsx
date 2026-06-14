@@ -40,7 +40,6 @@ import { PartnerTasksDialog } from './PartnerTasksDialog';
 import { downloadDataAsCSV, formatDateSafe, cn } from '@/lib/utils';
 import { EnrichPartnerButton } from './EnrichPartnerButton';
 import { BulkImportDialog } from './BulkImportDialog';
-import { BatchResearchDialog } from './BatchResearchDialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 
@@ -166,11 +165,10 @@ export default function TransporterManagement() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [segment, setSegment] = useState('0'); 
-  const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | 'batch' | null, data?: any }>({ type: null });
+  const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | null, data?: any }>({ type: null });
 
   const [statusFilter, setStatusFilter] = useState('all');
   const [assigneeFilter, setAssigneeFilter] = useState('all');
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
@@ -207,10 +205,6 @@ export default function TransporterManagement() {
         return matchesSearch && matchesStatus && matchesAssignee;
     });
   }, [allRecords, searchTerm, statusFilter, assigneeFilter]);
-
-  const selectedLeads = useMemo(() => {
-      return allRecords.filter(r => selectedIds.includes(r.id));
-  }, [allRecords, selectedIds]);
 
   const handleDelete = async () => {
     if (!dialog.data) return;
@@ -276,7 +270,6 @@ export default function TransporterManagement() {
 
   return (
     <div className="space-y-6 text-left">
-      <BatchResearchDialog open={dialog.type === 'batch'} onOpenChange={(o) => !o && setDialog({ type: null })} selectedLeads={selectedLeads} onComplete={fetchData} />
       <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.data} audience="transporters" onEngageSuccess={fetchData} />
       <TransporterDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={fetchData} />
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
@@ -293,11 +286,6 @@ export default function TransporterManagement() {
                 <CardDescription className="text-left">High-capacity view - 500 records per segment.</CardDescription>
             </div>
             <div className="flex flex-wrap items-center gap-2 text-left">
-                {selectedIds.length > 0 && (
-                    <Button variant="secondary" onClick={() => setDialog({ type: 'batch' })}>
-                        <Zap className="mr-2 h-4 w-4" /> Batch Research ({selectedIds.length})
-                    </Button>
-                )}
                 <div className="relative w-64 text-left">
                     <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input placeholder="Filter registry..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8" />
@@ -349,7 +337,7 @@ export default function TransporterManagement() {
                         </Select>
                     </div>
                 </div>
-                {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />}
+                {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredRecords} />}
             </CardContent>
         </Card>
       </div>
