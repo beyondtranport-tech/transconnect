@@ -53,6 +53,7 @@ export async function POST(req: NextRequest) {
 
             case 'getPartnersByType': {
                 const { type } = payload;
+                // Unified High-Capacity Query
                 let q = db.collection('partners').orderBy('updatedAt', 'desc').limit(10000);
                 if (type && type !== 'all') {
                     q = db.collection('partners').where('type', '==', type).orderBy('updatedAt', 'desc').limit(10000);
@@ -63,6 +64,7 @@ export async function POST(req: NextRequest) {
             }
 
             case 'getLeads': {
+                // Unified High-Capacity Query
                 const snap = await db.collection('leads').orderBy('updatedAt', 'desc').limit(10000).get();
                 const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
                 return NextResponse.json({ success: true, data });
@@ -74,8 +76,8 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data });
             }
 
-            case 'getContributions': {
-                const snap = await db.collection('contributions').orderBy('createdAt', 'desc').limit(500).get();
+            case 'getPlatformStaff': {
+                const snap = await db.collection('platformStaff').get();
                 const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
                 return NextResponse.json({ success: true, data });
             }
@@ -117,12 +119,6 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true });
             }
 
-            case 'getPlatformStaff': {
-                const snap = await db.collection('platformStaff').get();
-                const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
-                return NextResponse.json({ success: true, data });
-            }
-
             case 'savePartner': {
                 const { partner } = payload;
                 if (!partner.id) {
@@ -137,13 +133,6 @@ export async function POST(req: NextRequest) {
             case 'bulkSavePartners': {
                 const { partners, type } = payload;
                 const batch = db.batch();
-                
-                const forbiddenDomains = [
-                    'sars.gov.za', 'gov.za', 'linkedin.com', 'facebook.com', 
-                    'infoisinfo', 'sayellow', 'yep.co.za', 'yellosa.co.za', 
-                    'braby.com', 'southafricayp.co.za', 'easyinfo.co.za'
-                ];
-
                 for (const p of partners) {
                     let ref;
                     if (p.record_id) {
@@ -152,21 +141,13 @@ export async function POST(req: NextRequest) {
                         const safeId = (p.companyName || p.company_name).replace(/[^a-z0-9]/gi, '_').toLowerCase();
                         ref = db.collection('partners').doc(`${type}_${safeId}`);
                     }
-
-                    let website = p.website || p.email_address || null;
-                    if (website && forbiddenDomains.some(d => website.toLowerCase().includes(d))) {
-                        website = null;
-                    }
-
                     const data = {
                         ...p,
                         type,
-                        website,
                         updatedAt: FieldValue.serverTimestamp(),
-                        enrichedAt: p.notes || website ? FieldValue.serverTimestamp() : null
+                        enrichedAt: p.notes || p.website ? FieldValue.serverTimestamp() : null
                     };
                     delete (data as any).seq;
-                    
                     batch.set(ref, data, { merge: true });
                 }
                 await batch.commit();

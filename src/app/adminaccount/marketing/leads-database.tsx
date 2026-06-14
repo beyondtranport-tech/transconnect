@@ -26,7 +26,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { getClientSideAuthToken } from '@/firebase';
-import { Loader2, PlusCircle, Users, Edit, Trash2, Search, Send, Download, Upload, Save, RefreshCcw, ListOrdered, Filter } from 'lucide-react';
+import { Loader2, PlusCircle, Users, Edit, Trash2, Search, Send, Download, Upload, Save, RefreshCcw, Filter, RotateCcw, Tag } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -107,7 +107,7 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
       <DialogContent className="sm:max-w-xl text-left">
         <DialogHeader><DialogTitle>{lead ? 'Edit' : 'Add New'} Lead</DialogTitle></DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[60vh] overflow-y-auto pr-2">
+          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[60vh] overflow-y-auto pr-2 text-left">
             <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Company Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             <div className="grid grid-cols-2 gap-4">
               <FormField control={form.control} name="firstName" render={({ field }) => (<FormItem><FormLabel>First Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
@@ -142,45 +142,86 @@ function LeadsDatabaseComponent() {
   const { toast } = useToast();
   const searchParams = useSearchParams();
   const router = useRouter();
+  
   const [allRecords, setAllRecords] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasLoaded, setHasLoaded] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [segment, setSegment] = useState('0'); // Offset for pagination
+  
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [dataFilter, setDataFilter] = useState('all');
   
   const [isAddLeadOpen, setIsAddLeadOpen] = useState(false);
   const [editLead, setEditLead] = useState<any | null>(null);
   const [deleteLead, setDeleteLead] = useState<any | null>(null);
   const [engageLead, setEngageLead] = useState<any | null>(null);
 
-  const fetchData = useCallback(async () => {
+  const forceRefresh = useCallback(async () => {
     setIsLoading(true);
     try {
       const token = await getClientSideAuthToken();
       if (!token) return;
-      const res = await performAdminAction(token, 'getLeads', { offset: Number(segment) });
+      const res = await performAdminAction(token, 'getLeads', { limit: 10000 });
       setAllRecords(res.data || []);
+      setHasLoaded(true);
     } catch (e: any) {
         toast({ variant: 'destructive', title: 'Fetch Error', description: e.message });
     } finally {
       setIsLoading(false);
     }
-  }, [segment, toast]);
+  }, [toast]);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  const handleInitialSearch = async () => {
+    if (!searchTerm || searchTerm.length < 3) {
+        if (searchTerm.length === 0) forceRefresh();
+        else toast({ title: "Min 3 characters required" });
+        return;
+    }
+    forceRefresh();
+  };
+
+  const newLeadDefaults = useMemo(() => {
+    const companyName = searchParams.get('newCompanyName');
+    if (companyName) {
+      return { 
+        companyName, 
+        role: searchParams.get('newRole') || '', 
+        address: searchParams.get('newAddress') || '', 
+        website: searchParams.get('newWebsite') || '',
+        phone: searchParams.get('newPhone') || '',
+        email: searchParams.get('newEmail') || '',
+        contactPerson: searchParams.get('newContactPerson') || '',
+      };
+    }
+    return undefined;
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (searchParams.get('action') === 'add-member' || newLeadDefaults) {
+      setIsAddLeadOpen(true);
+    }
+  }, [searchParams, newLeadDefaults]);
 
   const filteredLeads = useMemo(() => {
-    if (!searchTerm) return allRecords;
-    const term = searchTerm.toLowerCase();
-    return allRecords.filter(r => 
-        (r.companyName?.toLowerCase().includes(term)) ||
-        (r.contactPerson?.toLowerCase().includes(term)) ||
-        (r.firstName?.toLowerCase().includes(term)) ||
-        (r.lastName?.toLowerCase().includes(term)) ||
-        (r.email?.toLowerCase().includes(term)) ||
-        (r.phone?.toLowerCase().includes(term)) ||
-        (r.mobile?.toLowerCase().includes(term))
-    );
-  }, [allRecords, searchTerm]);
+    return allRecords.filter(r => {
+        const term = searchTerm.toLowerCase();
+        const matchesSearch = !searchTerm || 
+            (r.companyName?.toLowerCase().includes(term)) ||
+            (r.contactPerson?.toLowerCase().includes(term)) ||
+            (r.firstName?.toLowerCase().includes(term)) ||
+            (r.lastName?.toLowerCase().includes(term)) ||
+            (r.email?.toLowerCase().includes(term)) ||
+            (r.phone?.toLowerCase().includes(term));
+            
+        const matchesStatus = statusFilter === 'all' || r.status === statusFilter;
+        
+        let matchesData = true;
+        if (dataFilter === 'no-email') matchesData = !r.email;
+        else if (dataFilter === 'has-email') matchesData = !!r.email;
+
+        return matchesSearch && matchesStatus && matchesData;
+    });
+  }, [allRecords, searchTerm, statusFilter, dataFilter]);
 
   const handleDelete = async () => {
     if (!deleteLead) return;
@@ -189,7 +230,7 @@ function LeadsDatabaseComponent() {
       if (!token) throw new Error("Auth failed");
       await performAdminAction(token, 'deleteLeads', { leadIds: [deleteLead.id] });
       toast({ title: 'Lead Deleted' });
-      fetchData();
+      forceRefresh();
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Delete Failed', description: e.message });
     } finally {
@@ -211,57 +252,86 @@ function LeadsDatabaseComponent() {
     { accessorKey: 'phone', header: 'Landline' },
     { accessorKey: 'mobile', header: 'Mobile' },
     {
+        accessorKey: 'status',
+        header: 'Status',
+        cell: ({ row }) => <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge>
+    },
+    {
       id: 'actions',
       header: <div className="text-right">Actions</div>,
       cell: ({ row }) => (
         <div className="text-right flex items-center justify-end gap-1">
-          <EnrichPartnerButton partner={row.original} onUpdate={fetchData} />
+          <EnrichPartnerButton partner={row.original} onUpdate={forceRefresh} />
           <Button variant="ghost" size="icon" onClick={() => setEngageLead(row.original)}><Send className="h-4 w-4 text-primary" /></Button>
           <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.companyName} />
           <PartnerTasksDialog partner={row.original} />
-          <PartnerOversightDialog partner={row.original} onUpdate={fetchData} />
+          <PartnerOversightDialog partner={row.original} onUpdate={forceRefresh} />
           <Button variant="ghost" size="icon" onClick={() => { setEditLead(row.original); }}><Edit className="h-4 w-4" /></Button>
           <Button variant="ghost" size="icon" onClick={() => { setDeleteLead(row.original); }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
         </div>
       )
     },
-  ], [fetchData]);
+  ], [forceRefresh]);
 
   return (
     <>
-      <EngageDialog open={!!engageLead} onOpenChange={(o) => !o && setEngageLead(null)} partner={engageLead} audience="suppliers" onEngageSuccess={fetchData} />
-      <LeadDialog open={isAddLeadOpen || !!editLead} onOpenChange={(o) => { if(!o) { setEditLead(null); setIsAddLeadOpen(false); } }} lead={editLead} onSave={fetchData} />
+      <EngageDialog open={!!engageLead} onOpenChange={(o) => !o && setEngageLead(null)} partner={engageLead} audience="suppliers" onEngageSuccess={forceRefresh} />
+      <LeadDialog open={isAddLeadOpen || !!editLead} onOpenChange={(o) => { if(!o) { setEditLead(null); setIsAddLeadOpen(false); } }} lead={editLead} onSave={forceRefresh} defaultValues={newLeadDefaults} />
       
       <div className="space-y-6 text-left">
-        <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
-          <div><CardTitle><Users /> Lead Database</CardTitle><CardDescription>High-capacity registry view - 500 records per segment.</CardDescription></div>
-          <div className="flex gap-2">
-            <div className="relative w-64">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Filter registry..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8" />
-            </div>
-            <Button variant="outline" onClick={() => downloadDataAsCSV(allRecords, 'leads-backup.csv')} disabled={isLoading}><Download className="mr-2 h-4 w-4" /> Export CSV</Button>
-            <BulkImportDialog type="lead" onComplete={fetchData}><Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
-            <Button onClick={() => setIsAddLeadOpen(true)}><PlusCircle className="mr-2 h-4 w-4" />Add Lead</Button>
-          </div>
-        </CardHeader>
-        <Card>
-            <CardContent className="pt-6">
-                <div className="mb-6 p-4 bg-muted/30 rounded-lg max-w-sm text-left">
-                    <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><ListOrdered className="h-3 w-3"/> Registry Segment</Label>
-                    <Select value={segment} onValueChange={setSegment}>
-                        <SelectTrigger className="bg-white mt-1.5"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="0">Records 1 - 500</SelectItem>
-                            <SelectItem value="500">Records 501 - 1000</SelectItem>
-                            <SelectItem value="1000">Records 1001 - 1500</SelectItem>
-                            <SelectItem value="1500">Records 1501 - 2000</SelectItem>
-                        </SelectItem>
-                    </Select>
+        {!hasLoaded ? (
+            <Card className="bg-primary/5 border-primary/20 p-12 text-center">
+                <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
+                <h2 className="text-2xl font-black font-headline mb-2 text-foreground">Registry Search Variables</h2>
+                <p className="text-muted-foreground max-w-sm mx-auto mb-8">Enter your search criteria to load the master registry. This targets your session to preserve your daily data quota.</p>
+                <div className="flex flex-col md:flex-row justify-center gap-4 max-w-2xl mx-auto">
+                    <Input placeholder="Type company name, ID or email to search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleInitialSearch()} className="h-12 text-lg bg-white" />
+                    <Button size="lg" onClick={handleInitialSearch} disabled={isLoading} className="h-12 px-8">
+                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4" />}
+                        Load Master Registry
+                    </Button>
                 </div>
-                {isLoading ? <div className="flex justify-center p-10"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredLeads} />}
-            </CardContent>
-        </Card>
+            </Card>
+        ) : (
+            <div className="space-y-6">
+                <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left text-foreground">
+                <div><CardTitle><Users /> Lead Database</CardTitle><CardDescription>Unified registry view of prospective members ({allRecords.length} records).</CardDescription></div>
+                <div className="flex gap-2">
+                    <Button variant="outline" onClick={() => downloadDataAsCSV(allRecords, 'leads-backup.csv')} disabled={isLoading}><Download className="mr-2 h-4 w-4" /> Export CSV</Button>
+                    <BulkImportDialog type="lead" onComplete={forceRefresh}><Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
+                    <Button onClick={() => setIsAddLeadOpen(true)}><PlusCircle className="mr-2 h-4 w-4" />Add Lead</Button>
+                </div>
+                </CardHeader>
+                <Card>
+                    <CardContent className="pt-6 text-left">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left">
+                            <div className="md:col-span-2 space-y-2 text-left">
+                                <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Search className="h-3 w-3"/> Registry Search</Label>
+                                <div className="flex gap-2 text-left">
+                                    <Input placeholder="Refine your search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                                    <Button onClick={forceRefresh} disabled={isLoading}><Search className="h-4 w-4"/></Button>
+                                </div>
+                            </div>
+                            <div className="space-y-2 text-left">
+                                <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Tag className="h-3 w-3"/> Data Filter</Label>
+                                <Select value={dataFilter} onValueChange={setDataFilter}>
+                                    <SelectTrigger className="h-10 text-xs bg-white text-foreground"><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All Records</SelectItem>
+                                        <SelectItem value="has-email">Has Email</SelectItem>
+                                        <SelectItem value="no-email">Missing Email</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="flex items-end">
+                                <Button variant="outline" onClick={() => setHasLoaded(false)} className="h-10 w-full text-foreground"><RotateCcw className="mr-1 h-3 w-3" /> Reset Variables</Button>
+                            </div>
+                        </div>
+                        {isLoading ? <div className="flex justify-center p-10"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredLeads} />}
+                    </CardContent>
+                </Card>
+            </div>
+        )}
       </div>
       <AlertDialog open={!!deleteLead} onOpenChange={(o) => !o && setDeleteLead(null)}>
         <AlertDialogContent>

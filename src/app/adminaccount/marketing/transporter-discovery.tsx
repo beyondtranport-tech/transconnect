@@ -105,9 +105,6 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                             <Search className="h-6 w-6 text-primary" />
                             Forensic Hub: {category}
                         </h2>
-                        <Badge variant="outline" className="font-mono text-sm bg-muted/30">
-                            {currentCount} In Database
-                        </Badge>
                     </div>
                     
                     <div className="p-4 bg-primary/5 border rounded-xl space-y-4">
@@ -116,7 +113,7 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                             <Badge variant="outline" className="bg-white border-primary/20 text-primary text-[10px] font-black uppercase">SYNC TARGET: PAGE {startPage}</Badge>
                         </div>
                         <div className="flex items-center gap-3">
-                            <div className="flex-1 space-y-1.5">
+                            <div className="flex-1 space-y-1.5 text-left">
                                 <Label className="text-xs font-bold">Start from Page #</Label>
                                 <Input 
                                     type="number" 
@@ -144,7 +141,7 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                 </div>
 
                 <div className="space-y-2">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5 text-left">
                         <Terminal className="h-3 w-3"/> Forensic Haulier Command
                     </Label>
                     <ScrollArea className="h-[400px] border rounded-lg bg-slate-900 p-4 shadow-inner">
@@ -170,7 +167,7 @@ export default function TransporterDiscoveryEngine() {
             const token = await getClientSideAuthToken();
             if (!token) return;
             await performAdminAction(token, 'refreshTransporterCategoryCounts', {});
-            toast({ title: "Registry Tally Complete", description: "All category counts have been updated." });
+            toast({ title: "Registry Tally Complete" });
             refreshStats();
         } catch (e: any) {
             toast({ variant: 'destructive', title: "Refresh Failed", description: e.message });
@@ -182,8 +179,8 @@ export default function TransporterDiscoveryEngine() {
     return (
         <Card className="shadow-none border-none">
             <Tabs defaultValue="Long Haul" className="w-full">
-                <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div className="space-y-1 text-left">
+                <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
+                    <div className="space-y-1">
                         <CardTitle className="flex items-center gap-2 text-left">
                             <Database className="h-6 w-6 text-primary" />
                             Forensic Haulier Discovery
@@ -208,12 +205,6 @@ export default function TransporterDiscoveryEngine() {
                         {transporterCategories.map(category => (
                             <TabsTrigger key={category} value={category} className="text-xs px-4 py-2 gap-1.5">
                                 {category}
-                                <span className={cn(
-                                    "px-1.5 rounded-full text-[10px] font-black",
-                                    (counts[category] || 0) > 0 ? "bg-primary/20 text-primary" : "bg-amber-100 text-amber-700"
-                                )}>
-                                    {isRefreshing ? '...' : (counts[category] || 0)}
-                                </span>
                             </TabsTrigger>
                         ))}
                     </TabsList>

@@ -64,7 +64,7 @@ function generateDiscoveryPrompt(category: string, focusHubs: string[], startSeq
     const technicalFocus = getTechnicalFocus(category);
 
     return `ACT AS AN ELITE INDUSTRIAL FORENSIC INVESTIGATOR. 
-RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
+RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION. NO EXPLANATORY TEXT.
 
 STRICT INSTRUCTION: DO NOT USE SYNTHETIC LANGUAGE OR CORPORATE FLUFF.
 FORBIDDEN WORDS: "innovative", "solutions", "leading", "spearheading", "ecosystem", "backbone".
