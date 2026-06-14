@@ -151,7 +151,7 @@ function ISADialog({ open, onOpenChange, partner, onSave }: { open: boolean; onO
     }
   }, [open, partner, form]);
 
-  async function handleFormSubmit(values: PartnerFormValues) {
+  const handleFormSubmit = async (values: PartnerFormValues) => {
     setIsLoading(true);
     try {
       const token = await getClientSideAuthToken();
@@ -165,7 +165,7 @@ function ISADialog({ open, onOpenChange, partner, onSave }: { open: boolean; onO
     } finally {
       setIsLoading(false);
     }
-  }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -409,7 +409,6 @@ export default function ISAManagement() {
                 {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />}
             </CardContent>
         </Card>
-      </div>
     </div>
   );
 }

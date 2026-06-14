@@ -38,6 +38,7 @@ import {
   Lock,
   Banknote,
   Wrench,
+  Share2,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -57,6 +58,7 @@ import MarketingPage from '@/app/adminaccount/marketing/MarketingPage';
 import BrandingStudio from '@/app/adminaccount/branding-studio';
 import TTSStudio from '@/app/adminaccount/tts-studio';
 import AssetGallery from '@/app/adminaccount/asset-gallery';
+import SocialStudio from '@/app/adminaccount/social-studio';
 import SalesRoadmap from '@/app/account/sales-roadmap';
 import TargetsPage from '@/app/account/targets';
 import FinancialProjections from '@/app/backend/financial-projections';
@@ -136,6 +138,7 @@ function AdminAccountContent() {
       case 'branding-studio': return <BrandingStudio />;
       case 'tts-studio': return <TTSStudio />;
       case 'asset-gallery': return <AssetGallery />;
+      case 'social-studio': return <SocialStudio />;
       case 'sales-roadmap': return <SalesRoadmap />;
       case 'targets': return <TargetsPage />;
       case 'financial-projections': return <FinancialProjections />;
@@ -168,6 +171,7 @@ function AdminAccountContent() {
 
   const navigate = (view: string) => router.push(`/adminaccount?view=${view}`, { scroll: false });
   const isMarketingActive = activeView.startsWith('marketing-');
+  const isContentActive = ['branding-studio', 'tts-studio', 'asset-gallery', 'social-studio'].includes(activeView);
 
   return (
     <SidebarProvider>
@@ -212,10 +216,12 @@ function AdminAccountContent() {
                   </SidebarMenuSub>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                  <SidebarMenuButton tooltip="Content" isActive={activeView === 'branding-studio' || activeView === 'tts-studio'}><Sparkles /><span>Content Studio</span></SidebarMenuButton>
+                  <SidebarMenuButton tooltip="Content" isActive={isContentActive}><Sparkles /><span>Content Studio</span></SidebarMenuButton>
                   <SidebarMenuSub>
+                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'social-studio'} onClick={() => navigate('social-studio')}><Share2 className="h-4 w-4 mr-2" />Social Studio</SidebarMenuSubButton></SidebarMenuSubItem>
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'branding-studio'} onClick={() => navigate('branding-studio')}>Branding Studio</SidebarMenuSubButton></SidebarMenuSubItem>
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'tts-studio'} onClick={() => navigate('tts-studio')}>TTS Studio</SidebarMenuSubButton></SidebarMenuSubItem>
+                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'asset-gallery'} onClick={() => navigate('asset-gallery')}>Asset Gallery</SidebarMenuSubButton></SidebarMenuSubItem>
                   </SidebarMenuSub>
               </SidebarMenuItem>
               <SidebarMenuItem>
