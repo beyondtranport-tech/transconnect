@@ -36,7 +36,9 @@ export async function POST(req: NextRequest) {
         const adminAuth = getAuth(app);
         const decodedToken = await adminAuth.verifyIdToken(token);
         
-        const { action, payload } = await req.json();
+        const body = await req.json();
+        const action = (body.action || '').trim();
+        const payload = body.payload || {};
         const db = getFirestore(app);
         
         const isAdmin = decodedToken.email === 'beyondtransport@gmail.com' || decodedToken.email === 'mkoton100@gmail.com';
@@ -71,7 +73,7 @@ export async function POST(req: NextRequest) {
 
             case 'getShops': {
                 const snap = await db.collectionGroup('shops').orderBy('updatedAt', 'desc').get();
-                const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
+                const data = snap.docs.map(doc => ({ id: doc.id, companyId: doc.ref.parent.parent?.id, ...serializeTimestamps(doc.data()) }));
                 return NextResponse.json({ success: true, data });
             }
 
@@ -86,7 +88,6 @@ export async function POST(req: NextRequest) {
                 const collectionName = isLead ? 'leads' : 'partners';
                 await db.collection(collectionName).doc(partnerId).set({
                     researchStatus: 'searching',
-                    enrichedAt: FieldValue.serverTimestamp(),
                     updatedAt: FieldValue.serverTimestamp()
                 }, { merge: true });
                 return NextResponse.json({ success: true });
@@ -99,7 +100,6 @@ export async function POST(req: NextRequest) {
                 leadIds.forEach((id: string) => {
                     batch.set(db.collection(collectionName).doc(id), {
                         researchStatus: 'searching',
-                        enrichedAt: FieldValue.serverTimestamp(),
                         updatedAt: FieldValue.serverTimestamp()
                     }, { merge: true });
                 });
@@ -121,22 +121,18 @@ export async function POST(req: NextRequest) {
                         normalizedP[cleanKey] = p[k];
                     });
 
-                    const docId = normalizedP.recordid || normalizedP.id || normalizedP.seq?.toString();
+                    const docId = normalizedP.recordid || normalizedP.id;
                     if (!docId) return;
 
                     const ref = db.collection(collectionName).doc(docId);
                     
                     let website = normalizedP.website || normalizedP.officialwebsite || normalizedP.url || '';
-                    const badDomains = [
-                        'sars.gov.za', 'gov.za', 'linkedin.com', 'facebook.com', 
-                        'infoisinfo', 'sayellow', 'yellosa', 'braby', 'easyinfo', 
-                        'hotfrog', 'cylex', 'yalwa', 'yelp'
-                    ];
-                    if (badDomains.some(d => website.toLowerCase().includes(d))) {
+                    const blacklist = ['sars.gov.za', 'gov.za', 'linkedin.com', 'facebook.com', 'infoisinfo', 'sayellow', 'yellosa', 'braby', 'easyinfo', 'hotfrog', 'cylex', 'yalwa', 'yelp'];
+                    if (blacklist.some(d => website.toLowerCase().includes(d))) {
                         website = '';
                     }
 
-                    const technicalNotes = normalizedP.notes || normalizedP.primaryservices || normalizedP.aboutus || normalizedP.services || '';
+                    const technicalNotes = normalizedP.notes || normalizedP.technicalsummary || normalizedP.primaryservices || '';
                     const address = normalizedP.address || normalizedP.physicaladdress || '';
                     const contactName = normalizedP.contactperson || normalizedP.humanname || '';
 
