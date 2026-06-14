@@ -29,7 +29,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, Bot, Edit, Trash2, Send, Download, Save, Search, Users, Filter, Globe, Zap } from 'lucide-react';
+import { Loader2, PlusCircle, Bot, Edit, Trash2, Send, Download, Save, Search, Users, Filter, Globe, Zap, RefreshCcw, Database } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -134,7 +134,7 @@ function ISADialog({ open, onOpenChange, partner, onSave }: { open: boolean; onO
             <FormField control={form.control} name="notes" render={({ field }) => (<FormItem className="text-left"><FormLabel>Technical Service Summary (AI Mined)</FormLabel><FormControl><Textarea placeholder="Details about the agent and mined service wording..." {...field} className="min-h-[120px]" /></FormControl><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="status" render={({ field }) => (
                 <FormItem className="text-left">
-                    <FormLabel>Status</Label>
+                    <FormLabel>Status</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl><SelectTrigger><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
                         <SelectContent>
@@ -191,9 +191,9 @@ export default function ISAManagement() {
   useEffect(() => { fetchData(); }, [fetchData]);
 
   const filteredRecords = useMemo(() => {
+    const term = searchTerm.toLowerCase();
     return allRecords.filter(r => {
-        const term = searchTerm.toLowerCase();
-        const matchesSearch = !searchTerm || 
+        const matchesText = !searchTerm || 
             (r.companyName?.toLowerCase().includes(term)) ||
             (r.firstName?.toLowerCase().includes(term)) ||
             (r.lastName?.toLowerCase().includes(term)) ||
@@ -202,7 +202,7 @@ export default function ISAManagement() {
         const matchesStatus = statusFilter === 'all' || r.status === statusFilter;
         const matchesAssignee = assigneeFilter === 'all' || r.assigneeId === assigneeFilter;
 
-        return matchesSearch && matchesStatus && matchesAssignee;
+        return matchesText && matchesStatus && matchesAssignee;
     });
   }, [allRecords, searchTerm, statusFilter, assigneeFilter]);
 
@@ -287,7 +287,7 @@ export default function ISAManagement() {
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
             <div className="text-left">
                 <CardTitle className="flex items-center gap-2 text-left text-2xl font-black font-headline"><Bot /> ISA Management</CardTitle>
-                <CardDescription className="text-left">Full database of Independent Sales Agents.</CardDescription>
+                <CardDescription className="text-left">Full database of Independent Sales Agents ({allRecords.length} records).</CardDescription>
             </div>
             <div className="flex flex-wrap items-center gap-2 text-left">
                 {selectedIds.length > 0 && (
@@ -297,7 +297,7 @@ export default function ISAManagement() {
                 )}
                 <div className="relative w-64 text-left">
                     <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input placeholder="Filter registry..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8" />
+                    <Input placeholder="Search registry..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8" />
                 </div>
                 <Button variant="outline" onClick={() => downloadDataAsCSV(allRecords, 'isa-export.csv')} disabled={isLoading}><Download className="mr-2 h-4 w-4" /> Export CSV</Button>
                 <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4" /> Add ISA</Button>

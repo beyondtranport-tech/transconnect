@@ -29,7 +29,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, Landmark, Edit, Trash2, Send, Download, Save, Search, Upload, Filter, Users, Globe, RefreshCcw, Database } from 'lucide-react';
+import { Loader2, PlusCircle, Landmark, Edit, Trash2, Send, Download, Save, Search, Globe, RefreshCcw, Database, Filter, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -72,6 +72,7 @@ const partnerSchema = z.object({
   status: z.enum(['active', 'inactive', 'contacted', 'new', 'qualified', 'invited']),
   type: z.literal('finance'),
 });
+
 type PartnerFormValues = z.infer<typeof partnerSchema>;
 
 function FinanceDialog({ open, onOpenChange, partner, onSave }: { open: boolean; onOpenChange: (open: boolean) => void; partner?: any; onSave: () => void; }) {
@@ -168,6 +169,7 @@ export default function FinanceManagement() {
   const [partners, setPartners] = useState<any[]>([]);
   const [staff, setStaff] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
   const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | null, data?: any }>({ type: null });
 
   const [statusFilter, setStatusFilter] = useState('all');
@@ -209,12 +211,19 @@ export default function FinanceManagement() {
   };
 
   const filteredRecords = useMemo(() => {
+    const term = searchTerm.toLowerCase();
     return partners.filter(p => {
+        const matchesText = !searchTerm || 
+            (p.companyName?.toLowerCase().includes(term)) ||
+            (p.firstName?.toLowerCase().includes(term)) ||
+            (p.lastName?.toLowerCase().includes(term)) ||
+            (p.email?.toLowerCase().includes(term));
+
         const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
         const matchesAssignee = assigneeFilter === 'all' || p.assigneeId === assigneeFilter;
-        return matchesStatus && matchesAssignee;
+        return matchesStatus && matchesAssignee && matchesText;
     });
-  }, [partners, statusFilter, assigneeFilter]);
+  }, [partners, statusFilter, assigneeFilter, searchTerm]);
 
   async function handleDelete() {
     try {
@@ -294,9 +303,13 @@ export default function FinanceManagement() {
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
             <div className="text-left">
                 <CardTitle className="flex items-center gap-2 text-left text-2xl font-black font-headline"><Landmark /> Capital Intelligence Registry</CardTitle>
-                <CardDescription>Full registry view of lending and finance entities.</CardDescription>
+                <CardDescription>Full registry view of lending and finance entities ({partners.length} records).</CardDescription>
             </div>
             <div className="flex items-center gap-2 text-left">
+                <div className="relative w-64">
+                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input placeholder="Search registry..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8" />
+                </div>
                 <Button variant="outline" onClick={() => downloadDataAsCSV(partners, 'finance-export.csv')} disabled={isLoading}>
                     <Download className="mr-2 h-4 w-4" /> Export CSV
                 </Button>

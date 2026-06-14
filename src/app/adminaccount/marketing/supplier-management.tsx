@@ -196,9 +196,9 @@ export default function SupplierManagement() {
   };
 
   const filteredRecords = useMemo(() => {
+    const term = searchTerm.toLowerCase();
     return allRecords.filter(p => {
-        const term = searchTerm.toLowerCase();
-        const matchesSearch = !searchTerm || 
+        const matchesText = !searchTerm || 
             (p.companyName?.toLowerCase().includes(term)) ||
             (p.firstName?.toLowerCase().includes(term)) ||
             (p.lastName?.toLowerCase().includes(term)) ||
@@ -206,7 +206,7 @@ export default function SupplierManagement() {
 
         const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
         const matchesAssignee = assigneeFilter === 'all' || p.assigneeId === assigneeFilter;
-        return matchesStatus && matchesAssignee && matchesSearch;
+        return matchesStatus && matchesAssignee && matchesText;
     });
   }, [allRecords, searchTerm, statusFilter, assigneeFilter]);
 
@@ -292,7 +292,7 @@ export default function SupplierManagement() {
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
             <div className="text-left">
                 <CardTitle className="text-left text-2xl font-black font-headline flex items-center gap-2"><Building /> Supplier Registry</CardTitle>
-                <CardDescription className="text-left">Unified industrial supply directory.</CardDescription>
+                <CardDescription className="text-left">Unified industrial supply directory ({allRecords.length} records).</CardDescription>
             </div>
             <div className="flex flex-wrap items-center gap-2">
                 {selectedIds.length > 0 && (
@@ -302,7 +302,7 @@ export default function SupplierManagement() {
                 )}
                 <div className="relative w-64 text-left">
                     <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input placeholder="Filter registry..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8" />
+                    <Input placeholder="Search registry..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8" />
                 </div>
                 <Button variant="outline" onClick={() => downloadDataAsCSV(allRecords, 'suppliers-export.csv')} disabled={isLoading}>
                     <Download className="mr-2 h-4 w-4" /> Export CSV

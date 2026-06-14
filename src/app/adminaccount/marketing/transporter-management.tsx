@@ -29,7 +29,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, Truck, Edit, Trash2, Send, Download, Save, Search, Filter, Users, Zap, Globe, RefreshCcw } from 'lucide-react';
+import { Loader2, PlusCircle, Truck, Edit, Trash2, Send, Download, Save, Search, Filter, Users, Zap, Globe, RefreshCcw, Database } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -85,8 +85,16 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
 
   useEffect(() => {
     if (open) {
-      if (partner) form.reset(partner);
-      else form.reset({ firstName: '', lastName: '', email: '', phone: '', mobile: '', contactPerson: '', companyName: '', website: '', notes: '', address: '', status: 'new', type: 'transporter' });
+      if (partner) {
+        form.reset({
+          ...partner,
+          website: partner.website || '',
+          notes: partner.notes || '',
+          address: partner.address || '',
+        });
+      } else {
+        form.reset({ firstName: '', lastName: '', email: '', phone: '', mobile: '', contactPerson: '', companyName: '', website: '', notes: '', address: '', status: 'new', type: 'transporter' });
+      }
     }
   }, [open, partner, form]);
 
@@ -202,9 +210,9 @@ export default function TransporterManagement() {
   };
 
   const filteredRecords = useMemo(() => {
+    const term = searchTerm.toLowerCase();
     return allRecords.filter(r => {
-        const term = searchTerm.toLowerCase();
-        const matchesSearch = !searchTerm || 
+        const matchesText = !searchTerm || 
             (r.companyName?.toLowerCase().includes(term)) ||
             (r.firstName?.toLowerCase().includes(term)) ||
             (r.lastName?.toLowerCase().includes(term)) ||
@@ -213,7 +221,7 @@ export default function TransporterManagement() {
         const matchesStatus = statusFilter === 'all' || r.status === statusFilter;
         const matchesAssignee = assigneeFilter === 'all' || r.assigneeId === assigneeFilter;
 
-        return matchesSearch && matchesStatus && matchesAssignee;
+        return matchesText && matchesStatus && matchesAssignee;
     });
   }, [allRecords, searchTerm, statusFilter, assigneeFilter]);
 
@@ -297,9 +305,9 @@ export default function TransporterManagement() {
       
       <div className="space-y-6 text-left">
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
-            <div>
+            <div className="text-left">
                 <CardTitle className="flex items-center gap-2 text-left text-2xl font-black font-headline"><Truck /> Transporter Registry</CardTitle>
-                <CardDescription className="text-left">Full forensic database of South African hauliers.</CardDescription>
+                <CardDescription className="text-left">Full database of South African hauliers ({allRecords.length} records).</CardDescription>
             </div>
             <div className="flex flex-wrap items-center gap-2 text-left">
                 {selectedIds.length > 0 && (
@@ -309,7 +317,7 @@ export default function TransporterManagement() {
                 )}
                 <div className="relative w-64 text-left">
                     <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input placeholder="Filter registry..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8" />
+                    <Input placeholder="Search registry..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8" />
                 </div>
                 <Button variant="outline" onClick={() => downloadDataAsCSV(allRecords, 'transporters-export.csv')} disabled={isLoading}><Download className="mr-2 h-4 w-4" /> Export CSV</Button>
                 <BulkImportDialog type="transporter" onComplete={fetchData}><Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>

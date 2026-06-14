@@ -53,9 +53,10 @@ export async function POST(req: NextRequest) {
 
             case 'getPartnersByType': {
                 const { type } = payload;
-                let q = db.collection('partners').orderBy('updatedAt', 'desc');
+                // Unified: Load full dataset up to 10k to prevent segmentation issues
+                let q = db.collection('partners').orderBy('updatedAt', 'desc').limit(10000);
                 if (type && type !== 'all') {
-                    q = db.collection('partners').where('type', '==', type).orderBy('updatedAt', 'desc');
+                    q = db.collection('partners').where('type', '==', type).orderBy('updatedAt', 'desc').limit(10000);
                 }
                 const snap = await q.get();
                 const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
@@ -63,7 +64,7 @@ export async function POST(req: NextRequest) {
             }
 
             case 'getLeads': {
-                const snap = await db.collection('leads').orderBy('updatedAt', 'desc').get();
+                const snap = await db.collection('leads').orderBy('updatedAt', 'desc').limit(10000).get();
                 const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
                 return NextResponse.json({ success: true, data });
             }
@@ -84,16 +85,6 @@ export async function POST(req: NextRequest) {
                 const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(100).get();
                 const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
                 return NextResponse.json({ success: true, data });
-            }
-
-            case 'logForensicInitiated': {
-                const { partnerId, isLead } = payload;
-                const collectionName = isLead ? 'leads' : 'partners';
-                await db.collection(collectionName).doc(partnerId).set({
-                    researchStatus: 'searching',
-                    updatedAt: FieldValue.serverTimestamp()
-                }, { merge: true });
-                return NextResponse.json({ success: true });
             }
 
             case 'bulkLogForensicInitiated': {
