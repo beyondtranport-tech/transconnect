@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -29,7 +28,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, Landmark, Edit, Trash2, Send, Download, Save, Search, Globe, RefreshCcw, Database, Filter, Users } from 'lucide-react';
+import { Loader2, PlusCircle, Landmark, Edit, Trash2, Send, Download, Save, Search, Globe, RefreshCcw, Database, Filter, Users, Upload } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -306,7 +305,7 @@ export default function FinanceManagement() {
                 <CardDescription>Full registry view of lending and finance entities ({partners.length} records).</CardDescription>
             </div>
             <div className="flex items-center gap-2 text-left">
-                <div className="relative w-64">
+                <div className="relative w-64 text-left">
                     <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input placeholder="Search registry..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8" />
                 </div>

@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -29,7 +28,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, Bot, Edit, Trash2, Send, Download, Save, Search, Users, Filter, Globe, Zap, RefreshCcw, Database } from 'lucide-react';
+import { Loader2, PlusCircle, Bot, Edit, Trash2, Send, Download, Save, Search, Users, Filter, Globe, Zap, RefreshCcw, Database, Upload } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -43,6 +42,7 @@ import { EnrichPartnerButton } from './EnrichPartnerButton';
 import { BatchResearchDialog } from './BatchResearchDialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { BulkImportDialog } from './BulkImportDialog';
 
 async function performAdminAction(token: string, action: string, payload: any) {
   const response = await fetch('/api/admin', {
@@ -300,6 +300,7 @@ export default function ISAManagement() {
                     <Input placeholder="Search registry..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8" />
                 </div>
                 <Button variant="outline" onClick={() => downloadDataAsCSV(allRecords, 'isa-export.csv')} disabled={isLoading}><Download className="mr-2 h-4 w-4" /> Export CSV</Button>
+                <BulkImportDialog type="isa" onComplete={fetchData}><Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
                 <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4" /> Add ISA</Button>
             </div>
         </CardHeader>

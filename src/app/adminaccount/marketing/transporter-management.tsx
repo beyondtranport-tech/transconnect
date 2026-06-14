@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -29,7 +28,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, Truck, Edit, Trash2, Send, Download, Save, Search, Filter, Users, Zap, Globe, RefreshCcw, Database } from 'lucide-react';
+import { Loader2, PlusCircle, Truck, Edit, Trash2, Send, Download, Save, Search, Filter, Users, Zap, Globe, RefreshCcw, Database, Upload } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -41,7 +40,6 @@ import { PartnerTasksDialog } from './PartnerTasksDialog';
 import { downloadDataAsCSV, formatDateSafe, cn } from '@/lib/utils';
 import { EnrichPartnerButton } from './EnrichPartnerButton';
 import { BulkImportDialog } from './BulkImportDialog';
-import { BatchResearchDialog } from './BatchResearchDialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useConfig } from '@/hooks/use-config';
@@ -131,8 +129,9 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
             <FormField control={form.control} name="website" render={({ field }) => (<FormItem className="text-left"><FormLabel>Official Website</FormLabel><FormControl><Input placeholder="https://..." {...field} /></FormControl><FormMessage /></FormItem>)} />
             <div className="grid grid-cols-2 gap-4 text-left">
               <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" /></FormControl><FormMessage /></FormItem>)} />
-              <FormField control={form.control} name="mobile" render={({ field }) => (<FormItem className="text-left"><FormLabel>Mobile (Direct Cell)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} /></FormControl><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Landline</FormLabel><FormControl><Input placeholder="+27 11..." {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
+            <FormField control={form.control} name="mobile" render={({ field }) => (<FormItem className="text-left"><FormLabel>Mobile (Direct Cell)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} /></FormControl><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="address" render={({ field }) => (<FormItem className="text-left"><FormLabel>Physical Address</FormLabel><FormControl><Textarea placeholder="Enter full operational address..." {...field} /></FormControl><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="notes" render={({ field }) => (<FormItem className="text-left"><FormLabel>Technical Service Summary (AI Mined)</FormLabel><FormControl><Textarea placeholder="AI extracted service details..." {...field} className="min-h-[120px]" /></FormControl><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="status" render={({ field }) => (
@@ -168,11 +167,10 @@ export default function TransporterManagement() {
   const [staff, setStaff] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | 'batch' | null, data?: any }>({ type: null });
+  const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | null, data?: any }>({ type: null });
 
   const [statusFilter, setStatusFilter] = useState('all');
   const [assigneeFilter, setAssigneeFilter] = useState('all');
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const { data: statsData, forceRefresh: refreshStats } = useConfig<any>('transporterDiscoveryStats');
   const counts = statsData?.counts || {};
@@ -224,10 +222,6 @@ export default function TransporterManagement() {
         return matchesText && matchesStatus && matchesAssignee;
     });
   }, [allRecords, searchTerm, statusFilter, assigneeFilter]);
-
-  const selectedLeads = useMemo(() => {
-      return allRecords.filter(r => selectedIds.includes(r.id));
-  }, [allRecords, selectedIds]);
 
   const handleDelete = async () => {
     if (!dialog.data) return;
@@ -293,7 +287,6 @@ export default function TransporterManagement() {
 
   return (
     <div className="space-y-6 text-left">
-      <BatchResearchDialog open={dialog.type === 'batch'} onOpenChange={(o) => !o && setDialog({ type: null })} selectedLeads={selectedLeads} onComplete={fetchData} />
       <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.data} audience="transporters" onEngageSuccess={fetchData} />
       <TransporterDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={fetchData} />
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
@@ -310,11 +303,6 @@ export default function TransporterManagement() {
                 <CardDescription className="text-left">Full database of South African hauliers ({allRecords.length} records).</CardDescription>
             </div>
             <div className="flex flex-wrap items-center gap-2 text-left">
-                {selectedIds.length > 0 && (
-                    <Button variant="secondary" onClick={() => setDialog({ type: 'batch' })}>
-                        <Zap className="mr-2 h-4 w-4" /> Batch Research ({selectedIds.length})
-                    </Button>
-                )}
                 <div className="relative w-64 text-left">
                     <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input placeholder="Search registry..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8" />
@@ -373,7 +361,7 @@ export default function TransporterManagement() {
                         </Select>
                     </div>
                 </div>
-                {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />}
+                {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredRecords} />}
             </CardContent>
         </Card>
       </div>
