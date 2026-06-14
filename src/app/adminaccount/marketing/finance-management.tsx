@@ -28,7 +28,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, Landmark, Edit, Trash2, Send, Download, Save, Search, Globe, RefreshCcw, Database, Filter, Users, Upload, Copy } from 'lucide-react';
+import { Loader2, PlusCircle, Landmark, Edit, Trash2, Send, Download, Save, Search, Globe, RefreshCcw, Database, Filter, Users, Upload, Copy, Tag } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -44,6 +44,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useConfig } from '@/hooks/use-config';
 import { financeCategories } from './finance-discovery';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 async function performAdminAction(token: string, action: string, payload: any) {
   const response = await fetch('/api/admin', {
@@ -73,7 +74,65 @@ const partnerSchema = z.object({
 });
 type PartnerFormValues = z.infer<typeof partnerSchema>;
 
-const FinanceDialog = ({ open, onOpenChange, partner, onSave }: { open: boolean; onOpenChange: (open: boolean) => void; partner?: any; onSave: () => void; }) => {
+function CategorizationDialog({ open, onOpenChange, unclassifiedCount, records }: { open: boolean, onOpenChange: (o: boolean) => void, unclassifiedCount: number, records: any[] }) {
+    const { toast } = useToast();
+    const [isCopied, setIsCopied] = useState(false);
+
+    const listToClassify = records.slice(0, 100).map(r => `[KEY: ${r.id}] ${r.companyName}`).join('\n');
+    const categoryList = financeCategories.join(', ');
+
+    const prompt = `ACT AS A CAPITAL DATA ARCHITECT. 
+RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
+
+TASK: Classify the following South African credit providers into their correct industrial category.
+
+VALID CATEGORIES: ${categoryList}
+
+REQUIRED FORMAT:
+[
+  { "record_id": "...", "industrial_category": "Selected Category" }
+]
+
+LIST TO CLASSIFY:
+${listToClassify}`;
+
+    const handleCopy = async () => {
+        await navigator.clipboard.writeText(prompt);
+        setIsCopied(true);
+        toast({ title: "Categorization Prompt Ready" });
+        setTimeout(() => {
+            setIsCopied(false);
+            onOpenChange(false);
+        }, 1000);
+    };
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-2xl text-left text-foreground">
+                <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2"><Tag className="h-5 w-5 text-primary" /> Finance Registry Categorizer</DialogTitle>
+                    <DialogDescription>Classify existing records to populate tally badges.</DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4 text-left">
+                    <div className="p-3 bg-primary/5 border rounded-lg flex items-center justify-between">
+                        <span className="text-sm font-bold text-foreground">Unclassified: <span className="text-primary">{unclassifiedCount}</span></span>
+                    </div>
+                    <ScrollArea className="h-48 border rounded-md p-3 bg-muted/30 text-[10px] font-mono leading-tight">
+                        <pre className="text-foreground">{prompt}</pre>
+                    </ScrollArea>
+                </div>
+                <DialogFooter>
+                    <Button onClick={handleCopy} className="w-full h-12 font-black uppercase tracking-widest gap-2">
+                        {isCopied ? <Loader2 className="animate-spin h-4 w-4"/> : <Copy className="h-4 w-4" />}
+                        Copy Categorization Command
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+function FinanceDialog({ open, onOpenChange, partner, onSave }: { open: boolean; onOpenChange: (open: boolean) => void; partner?: any; onSave: () => void; }) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const form = useForm<PartnerFormValues>({ 
@@ -96,7 +155,7 @@ const FinanceDialog = ({ open, onOpenChange, partner, onSave }: { open: boolean;
     }
   }, [open, partner, form]);
 
-  const handleFormSubmit = async (values: PartnerFormValues) => {
+  async function handleFormSubmit(values: PartnerFormValues) {
     setIsLoading(true);
     try {
       const token = await getClientSideAuthToken();
@@ -110,7 +169,7 @@ const FinanceDialog = ({ open, onOpenChange, partner, onSave }: { open: boolean;
     } finally {
       setIsLoading(false);
     }
-  };
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -120,7 +179,7 @@ const FinanceDialog = ({ open, onOpenChange, partner, onSave }: { open: boolean;
           <DialogDescription>Enter verified record for the capital partner.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2">
+          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left">
             <div className="grid grid-cols-2 gap-4 text-left">
               <FormField control={form.control} name="firstName" render={({ field }) => (
                 <FormItem><FormLabel>First Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
@@ -142,7 +201,7 @@ const FinanceDialog = ({ open, onOpenChange, partner, onSave }: { open: boolean;
                 <FormItem className="text-left text-foreground"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} /></FormControl><FormMessage /></FormItem>
               )} />
               <FormField control={form.control} name="companyName" render={({ field }) => (
-                <FormItem className="text-left text-foreground"><FormLabel>Entity Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                <FormItem className="text-left text-foreground"><FormLabel>Entity Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormMessage /></FormItem>
               )} />
             </div>
             <FormField control={form.control} name="website" render={({ field }) => (
@@ -178,7 +237,7 @@ const FinanceDialog = ({ open, onOpenChange, partner, onSave }: { open: boolean;
       </DialogContent>
     </Dialog>
   );
-};
+}
 
 export default function FinanceManagement() {
   const { toast } = useToast();
@@ -187,7 +246,7 @@ export default function FinanceManagement() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | null, data?: any }>({ type: null });
+  const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | 'categorize' | null, data?: any }>({ type: null });
 
   const [statusFilter, setStatusFilter] = useState('all');
   const [assigneeFilter, setAssigneeFilter] = useState('all');
@@ -214,6 +273,10 @@ export default function FinanceManagement() {
   }, [toast]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  const unclassifiedRecords = useMemo(() => {
+      return partners.filter(r => !r.industrial_category && !r.category && !r.entryType);
+  }, [partners]);
 
   const handleRefreshTally = async () => {
     setIsRefreshing(true);
@@ -313,6 +376,8 @@ export default function FinanceManagement() {
     <div className="space-y-6 text-left">
       <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.data} audience="finance" onEngageSuccess={fetchData} />
       <FinanceDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={fetchData} />
+      <CategorizationDialog open={dialog.type === 'categorize'} onOpenChange={(o) => !o && setDialog({ type: null })} unclassifiedCount={unclassifiedRecords.length} records={unclassifiedRecords} />
+      
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
         <AlertDialogContent>
           <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Delete Record?</AlertDialogDescription></AlertDialogHeader>
@@ -326,6 +391,11 @@ export default function FinanceManagement() {
                 <CardDescription className="text-left text-foreground">Full registry view of lending and finance entities ({partners.length} records).</CardDescription>
             </div>
             <div className="flex items-center gap-2 text-left text-foreground">
+                {unclassifiedRecords.length > 0 && (
+                    <Button variant="outline" onClick={() => setDialog({ type: 'categorize' })} className="border-primary text-primary hover:bg-primary/5">
+                        <Tag className="mr-2 h-4 w-4" /> Categorize ({unclassifiedRecords.length})
+                    </Button>
+                )}
                 <div className="relative w-64 text-left text-foreground">
                     <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input placeholder="Search registry..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8 bg-white text-foreground" />

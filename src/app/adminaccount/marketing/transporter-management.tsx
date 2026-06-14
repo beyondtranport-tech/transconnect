@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
-import { useForm, FormProvider, useFormContext } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -76,7 +76,7 @@ const partnerSchema = z.object({
 });
 type PartnerFormValues = z.infer<typeof partnerSchema>;
 
-const CategorizationDialog = ({ open, onOpenChange, unclassifiedCount, records }: { open: boolean, onOpenChange: (o: boolean) => void, unclassifiedCount: number, records: any[] }) => {
+function CategorizationDialog({ open, onOpenChange, unclassifiedCount, records }: { open: boolean, onOpenChange: (o: boolean) => void, unclassifiedCount: number, records: any[] }) {
     const { toast } = useToast();
     const [isCopied, setIsCopied] = useState(false);
 
@@ -118,11 +118,11 @@ ${listToClassify}`;
             <DialogContent className="sm:max-w-2xl text-left text-foreground">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2"><Tag className="h-5 w-5 text-primary" /> Forensic Registry Categorizer</DialogTitle>
-                    <DialogDescription>Fix the 0-tally issue by classifying your existing 9,000+ records into their correct industrial category.</DialogDescription>
+                    <DialogDescription>Fix the 0-tally issue by classifying your existing records into their correct industrial category.</DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4 text-left">
                     <div className="p-3 bg-primary/5 border rounded-lg flex items-center justify-between">
-                        <span className="text-sm font-bold text-foreground">Unclassified Records: <span className="text-primary">{unclassifiedCount}</span></span>
+                        <span className="text-sm font-bold text-foreground">Unclassified Records Identified: <span className="text-primary">{unclassifiedCount}</span></span>
                         <Badge variant="outline" className="bg-white">Batch Size: 100</Badge>
                     </div>
                     <ScrollArea className="h-48 border rounded-md p-3 bg-muted/30 text-[10px] font-mono leading-tight">
@@ -138,9 +138,9 @@ ${listToClassify}`;
             </DialogContent>
         </Dialog>
     );
-};
+}
 
-const TransporterDialog = ({ open, onOpenChange, partner, onSave }: { open: boolean; onOpenChange: (open: boolean) => void; partner?: any; onSave: () => void; }) => {
+function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: boolean; onOpenChange: (open: boolean) => void; partner?: any; onSave: () => void; }) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const form = useForm<PartnerFormValues>({ 
@@ -162,7 +162,7 @@ const TransporterDialog = ({ open, onOpenChange, partner, onSave }: { open: bool
     }
   }, [open, partner, form]);
 
-  const handleFormSubmit = async (values: PartnerFormValues) => {
+  async function onSubmit(values: PartnerFormValues) {
     setIsLoading(true);
     try {
       const token = await getClientSideAuthToken();
@@ -176,7 +176,7 @@ const TransporterDialog = ({ open, onOpenChange, partner, onSave }: { open: bool
     } finally {
       setIsLoading(false);
     }
-  };
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -186,7 +186,7 @@ const TransporterDialog = ({ open, onOpenChange, partner, onSave }: { open: bool
           <DialogDescription>Manage haulier record and technical descriptions.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left">
             <div className="grid grid-cols-2 gap-4 text-left">
               <FormField control={form.control} name="firstName" render={({ field }) => (<FormItem><FormLabel>First Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="lastName" render={({ field }) => (<FormItem><FormLabel>Last Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
@@ -237,7 +237,7 @@ const TransporterDialog = ({ open, onOpenChange, partner, onSave }: { open: bool
       </DialogContent>
     </Dialog>
   );
-};
+}
 
 export default function TransporterManagement() {
   const { toast } = useToast();

@@ -28,7 +28,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, Bot, Edit, Trash2, Send, Download, Save, Search, Users, Filter, Globe, Zap, RefreshCcw, Database, Upload, Copy } from 'lucide-react';
+import { Loader2, PlusCircle, Bot, Edit, Trash2, Send, Download, Save, Search, Users, Filter, Globe, Zap, RefreshCcw, Database, Upload, Copy, Tag } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -43,6 +43,7 @@ import { BatchResearchDialog } from './BatchResearchDialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { BulkImportDialog } from './BulkImportDialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 async function performAdminAction(token: string, action: string, payload: any) {
   const response = await fetch('/api/admin', {
@@ -72,7 +73,7 @@ const partnerSchema = z.object({
 });
 type PartnerFormValues = z.infer<typeof partnerSchema>;
 
-const ISADialog = ({ open, onOpenChange, partner, onSave }: { open: boolean; onOpenChange: (open: boolean) => void; partner?: any; onSave: () => void; }) => {
+function ISADialog({ open, onOpenChange, partner, onSave }: { open: boolean; onOpenChange: (open: boolean) => void; partner?: any; onSave: () => void; }) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const form = useForm<PartnerFormValues>({ 
@@ -95,7 +96,7 @@ const ISADialog = ({ open, onOpenChange, partner, onSave }: { open: boolean; onO
     }
   }, [open, partner, form]);
 
-  const handleFormSubmit = async (values: PartnerFormValues) => {
+  async function handleFormSubmit(values: PartnerFormValues) {
     setIsLoading(true);
     try {
       const token = await getClientSideAuthToken();
@@ -109,7 +110,7 @@ const ISADialog = ({ open, onOpenChange, partner, onSave }: { open: boolean; onO
     } finally {
       setIsLoading(false);
     }
-  };
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -124,8 +125,8 @@ const ISADialog = ({ open, onOpenChange, partner, onSave }: { open: boolean; onO
               <FormField control={form.control} name="firstName" render={({ field }) => (<FormItem><FormLabel>First Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="lastName" render={({ field }) => (<FormItem><FormLabel>Last Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
-            <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem className="text-left"><FormLabel>Agency / Company Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-            <FormField control={form.control} name="website" render={({ field }) => (<FormItem className="text-left"><FormLabel>Official Website</FormLabel><FormControl><Input placeholder="https://..." {...field} /></FormControl><FormMessage /></FormItem>)} />
+            <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Agency / Company Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+            <FormField control={form.control} name="website" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Official Website</FormLabel><FormControl><Input placeholder="https://..." {...field} /></FormControl><FormMessage /></FormItem>)} />
             <div className="grid grid-cols-2 gap-4 text-left">
               <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="mobile" render={({ field }) => (<FormItem className="text-left"><FormLabel>Mobile (Direct Cell)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} /></FormControl><FormMessage /></FormItem>)} />
@@ -136,7 +137,7 @@ const ISADialog = ({ open, onOpenChange, partner, onSave }: { open: boolean; onO
                 <FormItem className="text-left text-foreground">
                     <FormLabel>Status</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl><SelectTrigger className="bg-white"><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
+                        <FormControl><SelectTrigger><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
                         <SelectContent>
                             <SelectItem value="new">New Lead</SelectItem>
                             <SelectItem value="contacted">Researching</SelectItem>
@@ -156,7 +157,62 @@ const ISADialog = ({ open, onOpenChange, partner, onSave }: { open: boolean; onO
       </DialogContent>
     </Dialog>
   );
-};
+}
+
+function CategorizationDialog({ open, onOpenChange, unclassifiedCount, records }: { open: boolean, onOpenChange: (o: boolean) => void, unclassifiedCount: number, records: any[] }) {
+    const { toast } = useToast();
+    const [isCopied, setIsCopied] = useState(false);
+
+    const listToClassify = records.slice(0, 100).map(r => `[KEY: ${r.id}] ${r.companyName}`).join('\n');
+
+    const prompt = `ACT AS AN ISA DATA ARCHITECT. 
+RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
+
+TASK: Classify these agents into their correct status and categorization using the provided keys.
+
+REQUIRED FORMAT:
+[
+  { "record_id": "...", "notes": "Classification details extracted" }
+]
+
+LIST TO CLASSIFY:
+${listToClassify}`;
+
+    const handleCopy = async () => {
+        await navigator.clipboard.writeText(prompt);
+        setIsCopied(true);
+        toast({ title: "Categorization Prompt Ready" });
+        setTimeout(() => {
+            setIsCopied(false);
+            onOpenChange(false);
+        }, 1000);
+    };
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-2xl text-left text-foreground">
+                <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2"><Tag className="h-5 w-5 text-primary" /> ISA Registry Categorizer</DialogTitle>
+                    <DialogDescription>Classify existing records using AI analysis.</DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4 text-left">
+                    <div className="p-3 bg-primary/5 border rounded-lg flex items-center justify-between">
+                        <span className="text-sm font-bold text-foreground">Records to Analyze: <span className="text-primary">{unclassifiedCount}</span></span>
+                    </div>
+                    <ScrollArea className="h-48 border rounded-md p-3 bg-muted/30 text-[10px] font-mono leading-tight">
+                        <pre className="text-foreground">{prompt}</pre>
+                    </ScrollArea>
+                </div>
+                <DialogFooter>
+                    <Button onClick={handleCopy} className="w-full h-12 font-black uppercase tracking-widest gap-2">
+                        {isCopied ? <Loader2 className="animate-spin h-4 w-4"/> : <Copy className="h-4 w-4" />}
+                        Copy Categorization Command
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
 
 export default function ISAManagement() {
   const { toast } = useToast();
@@ -164,7 +220,7 @@ export default function ISAManagement() {
   const [staff, setStaff] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | 'batch' | null, data?: any }>({ type: null });
+  const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | 'batch' | 'categorize' | null, data?: any }>({ type: null });
 
   const [statusFilter, setStatusFilter] = useState('all');
   const [assigneeFilter, setAssigneeFilter] = useState('all');
@@ -189,6 +245,10 @@ export default function ISAManagement() {
   }, []);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  const unclassifiedRecords = useMemo(() => {
+      return allRecords.filter(r => !r.notes && !r.status);
+  }, [allRecords]);
 
   const filteredRecords = useMemo(() => {
     const term = searchTerm.toLowerCase();
@@ -277,6 +337,8 @@ export default function ISAManagement() {
       <BatchResearchDialog open={dialog.type === 'batch'} onOpenChange={(o) => !o && setDialog({ type: null })} selectedLeads={selectedLeads} onComplete={fetchData} />
       <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.data} audience="isa" onEngageSuccess={fetchData} />
       <ISADialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={fetchData} />
+      <CategorizationDialog open={dialog.type === 'categorize'} onOpenChange={(o) => !o && setDialog({ type: null })} unclassifiedCount={unclassifiedRecords.length} records={unclassifiedRecords} />
+      
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
         <AlertDialogContent>
           <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Delete ISA record?</AlertDialogDescription></AlertDialogHeader>
@@ -286,13 +348,18 @@ export default function ISAManagement() {
       <div className="space-y-6 text-left">
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left text-foreground">
             <div className="text-left">
-                <CardTitle className="flex items-center gap-2 text-left text-2xl font-black font-headline"><Bot /> ISA Management</CardTitle>
-                <CardDescription className="text-left">Full database of Independent Sales Agents ({allRecords.length} records).</CardDescription>
+                <CardTitle className="flex items-center gap-2 text-left text-2xl font-black font-headline text-foreground"><Bot /> ISA Management</CardTitle>
+                <CardDescription className="text-left text-foreground">Full database of Independent Sales Agents ({allRecords.length} records).</CardDescription>
             </div>
             <div className="flex flex-wrap items-center gap-2 text-left">
                 {selectedIds.length > 0 && (
                     <Button variant="secondary" onClick={() => setDialog({ type: 'batch' })}>
                         <Zap className="mr-2 h-4 w-4" /> Batch Research ({selectedIds.length})
+                    </Button>
+                )}
+                {unclassifiedRecords.length > 0 && (
+                    <Button variant="outline" onClick={() => setDialog({ type: 'categorize' })} className="border-primary text-primary hover:bg-primary/5">
+                        <Tag className="mr-2 h-4 w-4" /> Categorize ({unclassifiedRecords.length})
                     </Button>
                 )}
                 <div className="relative w-64 text-left">
@@ -305,8 +372,8 @@ export default function ISAManagement() {
             </div>
         </CardHeader>
         <Card className="border-primary/10 shadow-sm overflow-hidden text-foreground">
-            <CardHeader className="bg-muted/30 border-b text-left">
-                 <div className="flex items-center justify-between">
+            <CardHeader className="bg-muted/30 border-b text-left text-foreground">
+                 <div className="flex items-center justify-between text-left text-foreground">
                     <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
                         <Database className="h-3 w-3" /> Category Tally
                     </Label>
