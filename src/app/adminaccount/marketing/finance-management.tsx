@@ -28,7 +28,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { getClientSideAuthToken, useUser, useFirestore } from '@/firebase';
+import { getClientSideAuthToken, useUser } from '@/firebase';
 import { Loader2, PlusCircle, Landmark, Edit, Trash2, Send, Download, Save, Search, Globe, RefreshCcw, Database, Filter, Users, Upload } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
@@ -116,7 +116,7 @@ function FinanceDialog({ open, onOpenChange, partner, onSave }: { open: boolean;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl text-left">
+      <DialogContent className="sm:max-w-2xl text-left text-foreground">
         <DialogHeader>
           <DialogTitle>{partner ? 'Edit' : 'Add'} Finance Entity</DialogTitle>
           <DialogDescription>Enter verified record for the capital partner.</DialogDescription>
@@ -290,7 +290,7 @@ export default function FinanceManagement() {
   ];
 
   return (
-    <div className="space-y-6 text-left">
+    <div className="space-y-6 text-left text-foreground">
       <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.data} audience="finance" onEngageSuccess={fetchData} />
       <FinanceDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={fetchData} />
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
@@ -302,8 +302,8 @@ export default function FinanceManagement() {
       <div className="space-y-6 text-left">
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
             <div className="text-left">
-                <CardTitle className="flex items-center gap-2 text-left text-2xl font-black font-headline"><Landmark /> Capital Intelligence Registry</CardTitle>
-                <CardDescription>Full registry view of lending and finance entities ({partners.length} records).</CardDescription>
+                <CardTitle className="flex items-center gap-2 text-left text-2xl font-black font-headline text-foreground"><Landmark /> Capital Intelligence Registry</CardTitle>
+                <CardDescription className="text-left">Full registry view of lending and finance entities ({partners.length} records).</CardDescription>
             </div>
             <div className="flex items-center gap-2 text-left">
                 <div className="relative w-64 text-left">
@@ -318,7 +318,7 @@ export default function FinanceManagement() {
             </div>
         </CardHeader>
 
-        <Card className="border-primary/10">
+        <Card className="border-primary/10 shadow-sm overflow-hidden">
             <CardHeader className="bg-muted/30 border-b">
                  <div className="flex items-center justify-between">
                     <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">

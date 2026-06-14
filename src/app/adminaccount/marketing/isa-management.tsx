@@ -28,7 +28,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { getClientSideAuthToken, useUser, useFirestore } from '@/firebase';
+import { getClientSideAuthToken, useUser } from '@/firebase';
 import { Loader2, PlusCircle, Bot, Edit, Trash2, Send, Download, Save, Search, Users, Filter, Globe, Zap, RefreshCcw, Database, Upload } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
@@ -114,7 +114,7 @@ function ISADialog({ open, onOpenChange, partner, onSave }: { open: boolean; onO
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl text-left">
+      <DialogContent className="sm:max-w-2xl text-left text-foreground">
         <DialogHeader>
           <DialogTitle>{partner ? 'Edit' : 'Add'} ISA</DialogTitle>
           <DialogDescription>Enter details for the Independent Sales Agent.</DialogDescription>
@@ -131,7 +131,7 @@ function ISADialog({ open, onOpenChange, partner, onSave }: { open: boolean; onO
               <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="mobile" render={({ field }) => (<FormItem className="text-left"><FormLabel>Mobile (Direct Cell)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
-            <FormField control={form.control} name="address" render={({ field }) => (<FormItem className="text-left"><FormLabel>Physical Address</FormLabel><FormControl><Textarea placeholder="Enter physical address..." {...field} /></FormControl><FormMessage /></FormItem>)} />
+            <FormField control={form.control} name="address" render={({ field }) => (<FormItem className="text-left"><FormLabel>Physical Address</Label><FormControl><Textarea placeholder="Enter physical address..." {...field} /></FormControl><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="notes" render={({ field }) => (<FormItem className="text-left"><FormLabel>Notes</FormLabel><FormControl><Textarea placeholder="Details about the agent..." {...field} className="min-h-[120px]" /></FormControl><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="status" render={({ field }) => (
                 <FormItem className="text-left">
@@ -287,7 +287,7 @@ export default function ISAManagement() {
       <div className="space-y-6 text-left">
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
             <div className="text-left">
-                <CardTitle className="flex items-center gap-2 text-left text-2xl font-black font-headline"><Bot /> ISA Management</CardTitle>
+                <CardTitle className="flex items-center gap-2 text-left text-2xl font-black font-headline text-foreground"><Bot /> ISA Management</CardTitle>
                 <CardDescription className="text-left">Full database of Independent Sales Agents ({allRecords.length} records).</CardDescription>
             </div>
             <div className="flex flex-wrap items-center gap-2 text-left">

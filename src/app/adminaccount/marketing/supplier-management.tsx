@@ -5,7 +5,7 @@ import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from '@/hooks/use-toast';
-import { getClientSideAuthToken, useUser, useFirestore } from '@/firebase';
+import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
   Loader2, PlusCircle, Building, Edit, Trash2, Send, Download, Save, Search, Filter, Users, Globe, Zap, Upload, RefreshCcw, Database
 } from 'lucide-react';
@@ -93,7 +93,7 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl text-left">
+      <DialogContent className="sm:max-w-2xl text-left text-foreground">
         <DialogHeader>
           <DialogTitle>{partner ? 'Edit' : 'Add'} Supplier</DialogTitle>
           <DialogDescription>Manage verified supplier record and technical details.</DialogDescription>
@@ -277,7 +277,7 @@ export default function SupplierManagement() {
       <div className="space-y-6 text-left">
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
             <div className="text-left">
-                <CardTitle className="text-left text-2xl font-black font-headline flex items-center gap-2"><Building /> Supplier Registry</CardTitle>
+                <CardTitle className="text-left text-2xl font-black font-headline text-foreground flex items-center gap-2"><Building /> Supplier Registry</CardTitle>
                 <CardDescription className="text-left">Unified industrial supply directory ({allRecords.length} records).</CardDescription>
             </div>
             <div className="flex flex-wrap items-center gap-2 text-left">
@@ -293,7 +293,7 @@ export default function SupplierManagement() {
             </div>
         </CardHeader>
 
-        <Card className="border-primary/10">
+        <Card className="border-primary/10 shadow-sm overflow-hidden">
             <CardHeader className="bg-muted/30 border-b">
                  <div className="flex items-center justify-between">
                     <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">

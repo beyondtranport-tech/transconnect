@@ -19,17 +19,10 @@
       "collectionId": "shops",
       "queryScope": "COLLECTION_GROUP",
       "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
         { "fieldPath": "updatedAt", "order": "DESCENDING" }
       ]
     }
   ],
-  "fieldOverrides": [
-    {
-      "collectionGroup": "walletPayments",
-      "fieldPath": "status",
-      "indexes": [
-        { "order": "ASCENDING", "queryScope": "COLLECTION_GROUP" }
-      ]
-    }
-  ]
+  "fieldOverrides": []
 }

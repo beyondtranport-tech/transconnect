@@ -43,7 +43,6 @@ import { EnrichPartnerButton } from './EnrichPartnerButton';
 import { BulkImportDialog } from './BulkImportDialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { useConfig } from '@/hooks/use-config';
 import { transporterCategories } from './transporter-discovery';
 
 async function performAdminAction(token: string, action: string, payload: any) {
@@ -107,7 +106,7 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl text-left">
+      <DialogContent className="sm:max-w-2xl text-left text-foreground">
         <DialogHeader>
           <DialogTitle>{partner ? 'Edit' : 'Add'} Transporter</DialogTitle>
           <DialogDescription>Manage verified haulier record and technical descriptions.</DialogDescription>
@@ -292,7 +291,7 @@ export default function TransporterManagement() {
       <div className="space-y-6 text-left">
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
             <div className="text-left">
-                <CardTitle className="flex items-center gap-2 text-left text-2xl font-black font-headline"><Truck /> Transporter Registry</CardTitle>
+                <CardTitle className="flex items-center gap-2 text-left text-2xl font-black font-headline text-foreground"><Truck /> Transporter Registry</CardTitle>
                 <CardDescription className="text-left">Full database of South African hauliers ({allRecords.length} records).</CardDescription>
             </div>
             <div className="flex flex-wrap items-center gap-2 text-left">
