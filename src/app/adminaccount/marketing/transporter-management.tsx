@@ -286,7 +286,7 @@ export default function TransporterManagement() {
         </AlertDialogContent>
       </AlertDialog>
       
-      <div className="space-y-6 text-left">
+      <div className="space-y-6">
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
             <div>
                 <CardTitle className="flex items-center gap-2 text-left"><Truck /> Transporter Registry</CardTitle>

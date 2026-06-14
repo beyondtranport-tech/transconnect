@@ -51,6 +51,24 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data });
             }
 
+            case 'getShops': {
+                const snap = await db.collectionGroup('shops').orderBy('updatedAt', 'desc').limit(limit).get();
+                const data = snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) }));
+                return NextResponse.json({ success: true, data });
+            }
+
+            case 'getContributions': {
+                const snap = await db.collection('contributions').orderBy('createdAt', 'desc').limit(limit).get();
+                const data = snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) }));
+                return NextResponse.json({ success: true, data });
+            }
+
+            case 'getAuditLogs': {
+                const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(limit).get();
+                const data = snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) }));
+                return NextResponse.json({ success: true, data });
+            }
+
             case 'getPartnersByType': {
                 const { type } = payload;
                 let q = db.collection('partners').orderBy('updatedAt', 'desc').limit(limit).offset(offset);
@@ -73,6 +91,7 @@ export async function POST(req: NextRequest) {
                 const collectionName = isLead ? 'leads' : 'partners';
                 await db.collection(collectionName).doc(partnerId).set({
                     researchStatus: 'searching',
+                    enrichedAt: FieldValue.serverTimestamp(),
                     updatedAt: FieldValue.serverTimestamp()
                 }, { merge: true });
                 return NextResponse.json({ success: true });
@@ -85,6 +104,7 @@ export async function POST(req: NextRequest) {
                 leadIds.forEach((id: string) => {
                     batch.set(db.collection(collectionName).doc(id), {
                         researchStatus: 'searching',
+                        enrichedAt: FieldValue.serverTimestamp(),
                         updatedAt: FieldValue.serverTimestamp()
                     }, { merge: true });
                 });
@@ -111,7 +131,6 @@ export async function POST(req: NextRequest) {
                         normalizedP[cleanKey] = p[k];
                     });
 
-                    // Strict Anti-Falsing logic for Websites
                     let website = normalizedP.website || normalizedP.officialwebsite || normalizedP.url || '';
                     const badDomains = [
                         'sars.gov.za', 'gov.za', 'linkedin.com', 'facebook.com', 
