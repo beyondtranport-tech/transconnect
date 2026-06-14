@@ -28,7 +28,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, Bot, Edit, Trash2, Send, Download, Save, Search, Users, Filter, Globe, Zap, RefreshCcw, Database, Upload } from 'lucide-react';
+import { Loader2, PlusCircle, Bot, Edit, Trash2, Send, Download, Save, Search, Users, Filter, Globe, Zap, RefreshCcw, Database, Upload, Copy } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -210,7 +210,7 @@ export default function ISAManagement() {
       return allRecords.filter(r => selectedIds.includes(r.id));
   }, [allRecords, selectedIds]);
 
-  const handleDelete = async () => {
+  async function handleDelete() {
     if (!dialog.data) return;
     try {
       const token = await getClientSideAuthToken();
@@ -222,7 +222,7 @@ export default function ISAManagement() {
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Error', description: e.message });
     }
-  };
+  }
 
   const columns: ColumnDef<any>[] = [
     { 

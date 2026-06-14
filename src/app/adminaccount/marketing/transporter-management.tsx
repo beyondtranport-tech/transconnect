@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, FormProvider, useFormContext } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -27,8 +27,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { getClientSideAuthToken } from '@/firebase';
-import { Loader2, PlusCircle, Truck, Edit, Trash2, Send, Download, Save, Search, Filter, Users, Zap, Globe, RefreshCcw, Database, Upload, Tag } from 'lucide-react';
+import { getClientSideAuthToken, useUser } from '@/firebase';
+import { Loader2, PlusCircle, Truck, Edit, Trash2, Send, Download, Save, Search, Filter, Users, Zap, Globe, RefreshCcw, Database, Upload, Tag, Copy } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -39,10 +39,10 @@ import { CommunicationLogDialog } from './CommunicationLogDialog';
 import { PartnerTasksDialog } from './PartnerTasksDialog';
 import { downloadDataAsCSV, formatDateSafe, cn } from '@/lib/utils';
 import { EnrichPartnerButton } from './EnrichPartnerButton';
-import { BulkImportDialog } from './BulkImportDialog';
 import { BatchResearchDialog } from './BatchResearchDialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { BulkImportDialog } from './BulkImportDialog';
 import { useConfig } from '@/hooks/use-config';
 import { transporterCategories } from './transporter-discovery';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -84,7 +84,7 @@ const CategorizationDialog = ({ open, onOpenChange, unclassifiedCount, records }
     const categoryList = transporterCategories.join(', ');
 
     const prompt = `ACT AS AN INDUSTRIAL DATA ARCHITECT. 
-RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CONVERSATION.
+RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
 
 TASK: Classify the following South African transport companies into their correct industrial category.
 
@@ -183,7 +183,7 @@ const TransporterDialog = ({ open, onOpenChange, partner, onSave }: { open: bool
       <DialogContent className="sm:max-w-2xl text-left text-foreground">
         <DialogHeader>
           <DialogTitle>{partner ? 'Edit' : 'Add'} Transporter</DialogTitle>
-          <DialogDescription>Manage verified haulier record and technical descriptions.</DialogDescription>
+          <DialogDescription>Manage haulier record and technical descriptions.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left">
@@ -198,7 +198,7 @@ const TransporterDialog = ({ open, onOpenChange, partner, onSave }: { open: bool
               <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Landline</FormLabel><FormControl><Input placeholder="+27 11..." {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
             <div className="grid grid-cols-2 gap-4 text-left text-foreground">
-                <FormField control={form.control} name="mobile" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Mobile (Direct Cell)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={form.control} name="mobile" render={({ field }) => (<FormItem className="text-left"><FormLabel>Mobile (Direct Cell)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} /></FormControl><FormMessage /></FormItem>)} />
                 <FormField control={form.control} name="industrial_category" render={({ field }) => (
                     <FormItem className="text-left text-foreground">
                         <FormLabel>Industrial Category</FormLabel>
@@ -211,8 +211,8 @@ const TransporterDialog = ({ open, onOpenChange, partner, onSave }: { open: bool
                     </FormItem>
                 )} />
             </div>
-            <FormField control={form.control} name="address" render={({ field }) => (<FormItem className="text-left"><FormLabel>Physical Address</FormLabel><FormControl><Textarea placeholder="Enter full operational address..." {...field} /></FormControl><FormMessage /></FormItem>)} />
-            <FormField control={form.control} name="notes" render={({ field }) => (<FormItem className="text-left"><FormLabel>Technical Service Summary</FormLabel><FormControl><Textarea placeholder="Technical wording mined from website..." {...field} className="min-h-[120px]" /></FormControl><FormMessage /></FormItem>)} />
+            <FormField control={form.control} name="address" render={({ field }) => (<FormItem className="text-left"><FormLabel>Physical Address</FormLabel><FormControl><Textarea placeholder="Enter address..." {...field} /></FormControl><FormMessage /></FormItem>)} />
+            <FormField control={form.control} name="notes" render={({ field }) => (<FormItem className="text-left"><FormLabel>Service Summary</FormLabel><FormControl><Textarea placeholder="Technical wording..." {...field} className="min-h-[120px]" /></FormControl><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="status" render={({ field }) => (
                 <FormItem className="text-left">
                     <FormLabel>Status</FormLabel>
@@ -229,8 +229,7 @@ const TransporterDialog = ({ open, onOpenChange, partner, onSave }: { open: bool
             )} />
             <DialogFooter className="pt-4 border-t text-left">
               <Button type="submit" disabled={isLoading}>
-                {isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />} 
-                Save Haulier
+                {isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />} Save
               </Button>
             </DialogFooter>
           </form>
@@ -315,7 +314,7 @@ export default function TransporterManagement() {
       return allRecords.filter(r => selectedIds.includes(r.id));
   }, [allRecords, selectedIds]);
 
-  const handleDelete = async () => {
+  async function handleDelete() {
     if (!dialog.data) return;
     try {
       const token = await getClientSideAuthToken();
@@ -327,7 +326,7 @@ export default function TransporterManagement() {
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Error', description: e.message });
     }
-  };
+  }
 
   const columns: ColumnDef<any>[] = [
     { 
@@ -336,7 +335,7 @@ export default function TransporterManagement() {
             <div className="flex flex-col text-sm text-left text-foreground">
                 <span className="font-bold text-left">{row.original.companyName}</span>
                 <div className="flex items-center gap-2 mt-1 text-left">
-                    <span className="text-[10px] text-muted-foreground uppercase font-black text-left">{row.original.address || 'Operational Hub Verified'}</span>
+                    <span className="text-[10px] text-muted-foreground uppercase font-black text-left">{row.original.address || 'Location Verified'}</span>
                     {row.original.website && <Globe className="h-3 w-3 text-primary" />}
                 </div>
             </div>
@@ -392,7 +391,7 @@ export default function TransporterManagement() {
       
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
         <AlertDialogContent>
-          <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Delete haulier record?</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Delete record?</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter><AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
