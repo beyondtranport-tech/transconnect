@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
 
             case 'getPartnersByType': {
                 const { type } = payload;
-                // Unified: Load full dataset up to 10k to prevent segmentation issues
+                // Load high-capacity unified registry (10k limit)
                 let q = db.collection('partners').orderBy('updatedAt', 'desc').limit(10000);
                 if (type && type !== 'all') {
                     q = db.collection('partners').where('type', '==', type).orderBy('updatedAt', 'desc').limit(10000);
@@ -77,12 +77,6 @@ export async function POST(req: NextRequest) {
 
             case 'getContributions': {
                 const snap = await db.collection('contributions').orderBy('createdAt', 'desc').limit(100).get();
-                const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
-                return NextResponse.json({ success: true, data });
-            }
-
-            case 'getAuditLogs': {
-                const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(100).get();
                 const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
                 return NextResponse.json({ success: true, data });
             }
