@@ -175,7 +175,7 @@ export default function SupplierManagement() {
     } finally {
       setIsLoading(false);
     }
-  }, [segment, toast]);
+  }, [segment]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 

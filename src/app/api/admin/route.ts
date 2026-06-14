@@ -83,6 +83,12 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data });
             }
 
+            case 'getAuditLogs': {
+                const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(100).get();
+                const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
+                return NextResponse.json({ success: true, data });
+            }
+
             case 'logForensicInitiated': {
                 const { partnerId, isLead } = payload;
                 const collectionName = isLead ? 'leads' : 'partners';
@@ -182,7 +188,7 @@ export async function POST(req: NextRequest) {
                 
                 const targetType = typeMap[action];
                 const configId = configIdMap[action];
-                const collectionName = targetType === 'driver' ? 'partners' : 'leads';
+                const collectionName = (targetType === 'driver' || targetType === 'partner') ? 'partners' : 'leads';
 
                 const snap = await db.collection(collectionName).where('type', '==', targetType).get();
                 const counts: Record<string, number> = {};

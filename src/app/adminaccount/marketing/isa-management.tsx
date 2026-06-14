@@ -284,9 +284,9 @@ export default function ISAManagement() {
           <AlertDialogFooter><AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      <div className="space-y-6">
+      <div className="space-y-6 text-left">
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
-            <div>
+            <div className="text-left">
                 <CardTitle className="flex items-center gap-2 text-left"><Bot /> ISA Management</CardTitle>
                 <CardDescription className="text-left">Registry view - 500 records per segment.</CardDescription>
             </div>
