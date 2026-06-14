@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -69,7 +68,7 @@ export async function POST(req: NextRequest) {
             }
 
             case 'getShops': {
-                const snap = await db.collectionGroup('shops').orderBy('updatedAt', 'desc').get();
+                const snap = await db.collectionGroup('shops').where('status', '==', 'approved').orderBy('updatedAt', 'desc').get();
                 const data = snap.docs.map(doc => ({ id: doc.id, companyId: doc.ref.parent.parent?.id, ...serializeTimestamps(doc.data()) }));
                 return NextResponse.json({ success: true, data });
             }
@@ -138,7 +137,6 @@ export async function POST(req: NextRequest) {
                 const { partners, type } = payload;
                 const batch = db.batch();
                 
-                // Common aggregate/directory domains to filter out
                 const forbiddenDomains = [
                     'sars.gov.za', 'gov.za', 'linkedin.com', 'facebook.com', 
                     'infoisinfo', 'sayellow', 'yep.co.za', 'yellosa.co.za', 
@@ -147,7 +145,6 @@ export async function POST(req: NextRequest) {
 
                 for (const p of partners) {
                     let ref;
-                    // Use record_id as key if provided, otherwise companyName
                     if (p.record_id) {
                         ref = db.collection('partners').doc(p.record_id);
                     } else {
@@ -155,7 +152,6 @@ export async function POST(req: NextRequest) {
                         ref = db.collection('partners').doc(`${type}_${safeId}`);
                     }
 
-                    // Anti-Falsing: Clean website if it points to an aggregate site
                     let website = p.website || p.email_address || null;
                     if (website && forbiddenDomains.some(d => website.toLowerCase().includes(d))) {
                         website = null;

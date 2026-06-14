@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -243,7 +242,7 @@ export default function FinanceManagement() {
         accessorKey: 'companyName', 
         header: 'Entity Name', 
         cell: ({ row }) => (
-            <div className="flex flex-col text-left">
+            <div className="flex flex-col text-left text-foreground">
                 <span className="font-bold text-left">{row.original.companyName || `${row.original.firstName} ${row.original.lastName}`}</span>
                 {row.original.website && (
                     <div className="flex items-center gap-1.5 mt-1 text-left">
@@ -308,7 +307,7 @@ export default function FinanceManagement() {
             <div className="flex items-center gap-2 text-left">
                 <div className="relative w-64 text-left">
                     <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input placeholder="Search registry..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8" />
+                    <Input placeholder="Search registry..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8 text-foreground" />
                 </div>
                 <Button variant="outline" onClick={() => downloadDataAsCSV(partners, 'finance-export.csv')} disabled={isLoading}>
                     <Download className="mr-2 h-4 w-4" /> Export CSV
@@ -318,7 +317,7 @@ export default function FinanceManagement() {
             </div>
         </CardHeader>
 
-        <Card className="border-primary/10 shadow-sm overflow-hidden">
+        <Card className="border-primary/10 shadow-sm overflow-hidden text-foreground">
             <CardHeader className="bg-muted/30 border-b">
                  <div className="flex items-center justify-between">
                     <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
@@ -344,7 +343,7 @@ export default function FinanceManagement() {
                     <div className="flex-1 space-y-2 text-left">
                         <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status</Label>
                         <Select value={statusFilter} onValueChange={setStatusFilter}>
-                            <SelectTrigger className="bg-white"><SelectValue /></SelectTrigger>
+                            <SelectTrigger className="bg-white text-foreground"><SelectValue /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Statuses</SelectItem>
                                 <SelectItem value="new">New</SelectItem>
@@ -357,7 +356,7 @@ export default function FinanceManagement() {
                     <div className="flex-1 space-y-2 text-left">
                         <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Users className="h-3 w-3"/> Assignee</Label>
                         <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-                            <SelectTrigger className="bg-white"><SelectValue /></SelectTrigger>
+                            <SelectTrigger className="bg-white text-foreground"><SelectValue /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Staff</SelectItem>
                                 <SelectItem value="none">Unallocated</SelectItem>
