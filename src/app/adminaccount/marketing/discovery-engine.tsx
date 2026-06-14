@@ -92,7 +92,7 @@ function generateDiscoveryPrompt(category: string, focusHubs: string[], startSeq
     const technicalFocus = getTechnicalFocus(category);
 
     return `ACT AS AN ELITE INDUSTRIAL FORENSIC INVESTIGATOR. 
-RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
+RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION. NO EXPLANATORY TEXT.
 
 STRICT INSTRUCTION: DO NOT USE SYNTHETIC LANGUAGE OR CORPORATE FLUFF.
 FORBIDDEN WORDS: "innovative", "solutions", "leading", "spearheading", "ecosystem", "backbone".
@@ -219,18 +219,15 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                             <Search className="h-6 w-6 text-primary" />
                             Discovery Hub: {category}
                         </h2>
-                        <Badge variant="outline" className="font-mono text-sm bg-muted/30">
-                            {currentCount} In Database
-                        </Badge>
                     </div>
                     
                     <div className="p-4 bg-primary/5 border rounded-xl space-y-4">
                         <div className="flex items-center justify-between">
-                            <Label className="text-[10px] font-black uppercase tracking-widest text-primary">Sequence & Pagination Control</Label>
-                            <Badge variant="outline" className="bg-white border-primary/20 text-primary text-[10px] font-black">Sync Target: #{startSeq}</Badge>
+                            <Label className="text-[10px] font-black uppercase tracking-widest text-primary">Sequence Control</Label>
+                            <Badge variant="outline" className="bg-white border-primary/20 text-primary text-[10px] font-black uppercase">Next Sequence: #{startSeq}</Badge>
                         </div>
                         <div className="flex items-center gap-3">
-                            <div className="flex-1 space-y-1.5">
+                            <div className="flex-1 space-y-1.5 text-left">
                                 <Label className="text-xs font-bold">Start Sequence #</Label>
                                 <Input 
                                     type="number" 
@@ -266,7 +263,7 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                     </div>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-2 text-left">
                     <div className="flex items-center justify-between">
                          <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
                             <Terminal className="h-3 w-3"/> Compact Forensic Command
@@ -286,8 +283,6 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
 export default function DiscoveryEngine() {
     const { toast } = useToast();
     const [isRefreshing, setIsRefreshing] = useState(false);
-    
-    // Fetch CACHED counts immediately
     const { data: statsData, forceRefresh: refreshStats } = useConfig<any>('supplierDiscoveryStats');
     const counts = statsData?.counts || {};
 
@@ -309,44 +304,32 @@ export default function DiscoveryEngine() {
     return (
         <Card className="shadow-none border-none">
             <Tabs defaultValue="Accessories" className="w-full">
-                <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div className="space-y-1">
-                        <CardTitle className="flex items-center gap-2">
+                <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
+                    <div className="space-y-1 text-left">
+                        <CardTitle className="flex items-center gap-2 text-left">
                             <Database className="h-6 w-6 text-primary" />
                             AI Market Discovery Engine
                         </CardTitle>
-                        <CardDescription>
-                            Generate forensic prompts to identify heavy commercial suppliers across 20+ industrial categories.
+                        <CardDescription className="text-left">
+                            Identify heavy commercial suppliers across 20+ industrial categories.
                         </CardDescription>
                     </div>
-                    <div className="flex items-center gap-2">
-                         <div className="text-right mr-2 hidden md:block">
-                            <p className="text-[10px] font-black uppercase text-muted-foreground">Snapshot Taken</p>
-                            <p className="text-[10px] font-bold text-primary">{formatDateSafe(statsData?.lastUpdated, "dd MMM, HH:mm")}</p>
-                        </div>
-                        <Button 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={handleRefresh} 
-                            disabled={isRefreshing}
-                            className="bg-primary/5 border-primary/20 hover:bg-primary/10"
-                        >
-                            {isRefreshing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <RefreshCcw className="mr-2 h-4 w-4" />}
-                            Refresh Tally
-                        </Button>
-                    </div>
+                    <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={handleRefresh} 
+                        disabled={isRefreshing}
+                        className="bg-primary/5 border-primary/20 hover:bg-primary/10"
+                    >
+                        {isRefreshing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <RefreshCcw className="mr-2 h-4 w-4" />}
+                        Refresh Tally
+                    </Button>
                 </CardHeader>
                 <CardContent className="px-0">
                     <TabsList className="h-auto flex-wrap justify-start bg-muted/30 mb-8 p-1">
                         {supplierCategories.map(category => (
-                            <TabsTrigger key={category} value={category} className="text-xs px-4 py-2 gap-1.5">
+                            <TabsTrigger key={category} value={category} className="text-xs px-4 py-2">
                                 {category}
-                                <span className={cn(
-                                    "px-1.5 rounded-full text-[10px] font-black",
-                                    (counts[category] || 0) > 0 ? "bg-primary/20 text-primary" : "bg-amber-100 text-amber-700"
-                                )}>
-                                    {isRefreshing ? '...' : (counts[category] || 0)}
-                                </span>
                             </TabsTrigger>
                         ))}
                     </TabsList>

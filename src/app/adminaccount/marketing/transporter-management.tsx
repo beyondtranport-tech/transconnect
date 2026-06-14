@@ -28,8 +28,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { getClientSideAuthToken } from '@/firebase';
-import { Loader2, PlusCircle, Truck, Edit, Trash2, Send, Download, Save, Upload, Search, Filter, Users, Zap, Globe, ListOrdered } from 'lucide-react';
+import { getClientSideAuthToken, useUser } from '@/firebase';
+import { Loader2, PlusCircle, Truck, Edit, Trash2, Send, Download, Save, Search, Filter, Users, Zap, Globe, RefreshCcw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -44,6 +44,8 @@ import { BulkImportDialog } from './BulkImportDialog';
 import { BatchResearchDialog } from './BatchResearchDialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { useConfig } from '@/hooks/use-config';
+import { transporterCategories } from './transporter-discovery';
 
 async function performAdminAction(token: string, action: string, payload: any) {
   const response = await fetch('/api/admin', {
@@ -83,16 +85,8 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
 
   useEffect(() => {
     if (open) {
-      if (partner) {
-        form.reset({
-          ...partner,
-          website: partner.website || '',
-          notes: partner.notes || '',
-          address: partner.address || '',
-        });
-      } else {
-        form.reset({ firstName: '', lastName: '', email: '', phone: '', mobile: '', contactPerson: '', companyName: '', website: '', notes: '', address: '', status: 'new', type: 'transporter' });
-      }
+      if (partner) form.reset(partner);
+      else form.reset({ firstName: '', lastName: '', email: '', phone: '', mobile: '', contactPerson: '', companyName: '', website: '', notes: '', address: '', status: 'new', type: 'transporter' });
     }
   }, [open, partner, form]);
 
@@ -166,12 +160,14 @@ export default function TransporterManagement() {
   const [staff, setStaff] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [segment, setSegment] = useState('0'); 
   const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | 'batch' | null, data?: any }>({ type: null });
 
   const [statusFilter, setStatusFilter] = useState('all');
   const [assigneeFilter, setAssigneeFilter] = useState('all');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
+  const { data: statsData, forceRefresh: refreshStats } = useConfig<any>('transporterDiscoveryStats');
+  const counts = statsData?.counts || {};
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
@@ -179,7 +175,7 @@ export default function TransporterManagement() {
       const token = await getClientSideAuthToken();
       if (!token) return;
       const [res, staffRes] = await Promise.all([
-        performAdminAction(token, 'getPartnersByType', { type: 'transporter', offset: Number(segment) }),
+        performAdminAction(token, 'getPartnersByType', { type: 'transporter' }),
         performAdminAction(token, 'getPlatformStaff', {})
       ]);
       setAllRecords(res.data || []);
@@ -189,9 +185,21 @@ export default function TransporterManagement() {
     } finally {
       setIsLoading(false);
     }
-  }, [segment]);
+  }, []);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  const handleRefreshTally = async () => {
+    try {
+        const token = await getClientSideAuthToken();
+        if (!token) return;
+        await performAdminAction(token, 'refreshTransporterCategoryCounts', {});
+        toast({ title: "Tally Updated" });
+        refreshStats();
+    } catch (e: any) {
+        toast({ variant: 'destructive', title: "Tally Failed", description: e.message });
+    }
+  };
 
   const filteredRecords = useMemo(() => {
     return allRecords.filter(r => {
@@ -290,8 +298,8 @@ export default function TransporterManagement() {
       <div className="space-y-6 text-left">
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
             <div>
-                <CardTitle className="flex items-center gap-2 text-left"><Truck /> Transporter Registry</CardTitle>
-                <CardDescription className="text-left">High-capacity view - 500 records per segment.</CardDescription>
+                <CardTitle className="flex items-center gap-2 text-left text-2xl font-black font-headline"><Truck /> Transporter Registry</CardTitle>
+                <CardDescription className="text-left">Full forensic database of South African hauliers.</CardDescription>
             </div>
             <div className="flex flex-wrap items-center gap-2 text-left">
                 {selectedIds.length > 0 && (
@@ -304,26 +312,34 @@ export default function TransporterManagement() {
                     <Input placeholder="Filter registry..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8" />
                 </div>
                 <Button variant="outline" onClick={() => downloadDataAsCSV(allRecords, 'transporters-export.csv')} disabled={isLoading}><Download className="mr-2 h-4 w-4" /> Export CSV</Button>
+                <BulkImportDialog type="transporter" onComplete={fetchData}><Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
                 <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Record</Button>
             </div>
         </CardHeader>
 
-        <Card>
+        <Card className="border-primary/10">
+            <CardHeader className="bg-muted/30 border-b">
+                 <div className="flex items-center justify-between">
+                    <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
+                        <Database className="h-3 w-3" /> Category Tally
+                    </Label>
+                    <Button variant="ghost" size="sm" onClick={handleRefreshTally} className="h-6 text-[9px] uppercase font-black tracking-tighter">
+                        <RefreshCcw className="mr-1 h-2.5 w-2.5"/> Refresh Counts
+                    </Button>
+                </div>
+                <div className="flex flex-wrap gap-2 mt-3">
+                    {transporterCategories.map(cat => (
+                        <div key={cat} className="flex items-center bg-white border rounded-full pl-3 pr-1 py-0.5 shadow-sm">
+                            <span className="text-[9px] font-bold text-slate-600 mr-2">{cat}</span>
+                            <Badge className="bg-primary/10 text-primary border-none text-[9px] font-black h-4 px-1.5 min-w-[20px] justify-center">
+                                {counts[cat] || 0}
+                            </Badge>
+                        </div>
+                    ))}
+                </div>
+            </CardHeader>
             <CardContent className="pt-6 text-left">
                 <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left">
-                    <div className="flex-1 space-y-2 text-left">
-                        <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><ListOrdered className="h-3 w-3"/> Registry Segment</Label>
-                        <Select value={segment} onValueChange={setSegment}>
-                            <SelectTrigger className="bg-white"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="0">Records 1 - 500</SelectItem>
-                                <SelectItem value="500">Records 501 - 1000</SelectItem>
-                                <SelectItem value="1000">Records 1001 - 1500</SelectItem>
-                                <SelectItem value="1500">Records 1501 - 2000</SelectItem>
-                                <SelectItem value="2000">Records 2001 - 2500</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
                     <div className="flex-1 space-y-2 text-left">
                         <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status</Label>
                         <Select value={statusFilter} onValueChange={setStatusFilter}>

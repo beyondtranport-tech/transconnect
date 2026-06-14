@@ -44,21 +44,18 @@ export async function POST(req: NextRequest) {
         const isAdmin = decodedToken.email === 'beyondtransport@gmail.com' || decodedToken.email === 'mkoton100@gmail.com';
         if (!isAdmin) throw new Error("Forbidden: Admin access required.");
 
-        const limitSize = 500;
-        const offsetVal = Number(payload?.offset) || 0;
-
         switch (action) {
             case 'getMembers': {
-                const snap = await db.collection('companies').orderBy('createdAt', 'desc').limit(limitSize).offset(offsetVal).get();
+                const snap = await db.collection('companies').orderBy('createdAt', 'desc').get();
                 const data = snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) }));
                 return NextResponse.json({ success: true, data });
             }
 
             case 'getPartnersByType': {
                 const { type } = payload;
-                let q = db.collection('partners').orderBy('updatedAt', 'desc').limit(limitSize).offset(offsetVal);
+                let q = db.collection('partners').orderBy('updatedAt', 'desc');
                 if (type && type !== 'all') {
-                    q = db.collection('partners').where('type', '==', type).orderBy('updatedAt', 'desc').limit(limitSize).offset(offsetVal);
+                    q = db.collection('partners').where('type', '==', type).orderBy('updatedAt', 'desc');
                 }
                 const snap = await q.get();
                 const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
@@ -66,7 +63,7 @@ export async function POST(req: NextRequest) {
             }
 
             case 'getLeads': {
-                const snap = await db.collection('leads').orderBy('updatedAt', 'desc').limit(limitSize).offset(offsetVal).get();
+                const snap = await db.collection('leads').orderBy('updatedAt', 'desc').get();
                 const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
                 return NextResponse.json({ success: true, data });
             }
@@ -188,9 +185,8 @@ export async function POST(req: NextRequest) {
                 
                 const targetType = typeMap[action];
                 const configId = configIdMap[action];
-                const collectionName = (targetType === 'driver' || targetType === 'partner') ? 'partners' : 'partners'; // Corrected: Suppliers/Transporters are in Partners
 
-                const snap = await db.collection(collectionName).where('type', '==', targetType).get();
+                const snap = await db.collection('partners').where('type', '==', targetType).get();
                 const counts: Record<string, number> = {};
                 
                 snap.docs.forEach(doc => {

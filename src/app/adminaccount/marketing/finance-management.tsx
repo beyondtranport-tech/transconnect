@@ -29,7 +29,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, Landmark, Edit, Trash2, Send, Download, Save, Search, Upload, Filter, Users, Globe, ListOrdered } from 'lucide-react';
+import { Loader2, PlusCircle, Landmark, Edit, Trash2, Send, Download, Save, Search, Upload, Filter, Users, Globe, RefreshCcw, Database } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -43,6 +43,8 @@ import { EnrichPartnerButton } from './EnrichPartnerButton';
 import { BulkImportDialog } from './BulkImportDialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { useConfig } from '@/hooks/use-config';
+import { financeCategories } from './finance-discovery';
 
 async function performAdminAction(token: string, action: string, payload: any) {
   const response = await fetch('/api/admin', {
@@ -166,11 +168,13 @@ export default function FinanceManagement() {
   const [partners, setPartners] = useState<any[]>([]);
   const [staff, setStaff] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [segment, setSegment] = useState('0'); 
   const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | null, data?: any }>({ type: null });
 
   const [statusFilter, setStatusFilter] = useState('all');
   const [assigneeFilter, setAssigneeFilter] = useState('all');
+
+  const { data: statsData, forceRefresh: refreshStats } = useConfig<any>('financeDiscoveryStats');
+  const counts = statsData?.counts || {};
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
@@ -178,7 +182,7 @@ export default function FinanceManagement() {
       const token = await getClientSideAuthToken();
       if (!token) return;
       const [res, staffRes] = await Promise.all([
-        performAdminAction(token, 'getPartnersByType', { type: 'finance', offset: Number(segment) }),
+        performAdminAction(token, 'getPartnersByType', { type: 'finance' }),
         performAdminAction(token, 'getPlatformStaff', {})
       ]);
       setPartners(res.data || []);
@@ -188,9 +192,21 @@ export default function FinanceManagement() {
     } finally {
       setIsLoading(false);
     }
-  }, [segment, toast]);
+  }, [toast]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  const handleRefreshTally = async () => {
+    try {
+        const token = await getClientSideAuthToken();
+        if (!token) return;
+        await performAdminAction(token, 'refreshFinanceCategoryCounts', {});
+        toast({ title: "Tally Updated" });
+        refreshStats();
+    } catch (e: any) {
+        toast({ variant: 'destructive', title: "Tally Failed", description: e.message });
+    }
+  };
 
   const filteredRecords = useMemo(() => {
     return partners.filter(p => {
@@ -277,8 +293,8 @@ export default function FinanceManagement() {
       <div className="space-y-6 text-left">
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
             <div className="text-left">
-                <CardTitle className="flex items-center gap-2 text-left"><Landmark /> Capital Intelligence Registry</CardTitle>
-                <CardDescription>Full registry view - 500 records per segment.</CardDescription>
+                <CardTitle className="flex items-center gap-2 text-left text-2xl font-black font-headline"><Landmark /> Capital Intelligence Registry</CardTitle>
+                <CardDescription>Full registry view of lending and finance entities.</CardDescription>
             </div>
             <div className="flex items-center gap-2 text-left">
                 <Button variant="outline" onClick={() => downloadDataAsCSV(partners, 'finance-export.csv')} disabled={isLoading}>
@@ -289,22 +305,29 @@ export default function FinanceManagement() {
             </div>
         </CardHeader>
 
-        <Card>
+        <Card className="border-primary/10">
+            <CardHeader className="bg-muted/30 border-b">
+                 <div className="flex items-center justify-between">
+                    <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
+                        <Database className="h-3 w-3" /> Category Tally
+                    </Label>
+                    <Button variant="ghost" size="sm" onClick={handleRefreshTally} className="h-6 text-[9px] uppercase font-black tracking-tighter">
+                        <RefreshCcw className="mr-1 h-2.5 w-2.5"/> Refresh Counts
+                    </Button>
+                </div>
+                <div className="flex flex-wrap gap-2 mt-3">
+                    {financeCategories.map(cat => (
+                        <div key={cat} className="flex items-center bg-white border rounded-full pl-3 pr-1 py-0.5 shadow-sm">
+                            <span className="text-[9px] font-bold text-slate-600 mr-2">{cat}</span>
+                            <Badge className="bg-amber-600/10 text-amber-700 border-none text-[9px] font-black h-4 px-1.5 min-w-[20px] justify-center">
+                                {counts[cat] || 0}
+                            </Badge>
+                        </div>
+                    ))}
+                </div>
+            </CardHeader>
             <CardContent className="pt-6 text-left">
                 <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left">
-                    <div className="flex-1 space-y-2 text-left">
-                        <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><ListOrdered className="h-3 w-3"/> Registry Segment</Label>
-                        <Select value={segment} onValueChange={setSegment}>
-                            <SelectTrigger className="bg-white"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="0">Records 1 - 500</SelectItem>
-                                <SelectItem value="500">Records 501 - 1000</SelectItem>
-                                <SelectItem value="1000">Records 1001 - 1500</SelectItem>
-                                <SelectItem value="1500">Records 1501 - 2000</SelectItem>
-                                <SelectItem value="2000">Records 2001 - 2500</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
                     <div className="flex-1 space-y-2 text-left">
                         <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status</Label>
                         <Select value={statusFilter} onValueChange={setStatusFilter}>

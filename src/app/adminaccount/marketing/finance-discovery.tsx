@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -163,9 +164,6 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                             <Database className="h-6 w-6 text-amber-500" />
                             NCR Discovery: {category}
                         </h2>
-                        <Badge variant="outline" className="font-mono text-sm bg-muted/30">
-                            {currentCount} In DB
-                        </Badge>
                     </div>
                     
                     <div className="p-4 bg-primary/5 border rounded-xl space-y-4">
@@ -174,7 +172,7 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                             <Badge variant="default" className="bg-primary/20 text-primary border-none text-[10px] font-black uppercase">Suggested: Page {suggestedPage}</Badge>
                         </div>
                         <div className="flex items-center gap-3">
-                            <div className="flex-1 space-y-1.5">
+                            <div className="flex-1 space-y-1.5 text-left">
                                 <Label className="text-xs font-bold">Start from NCR Page #</Label>
                                 <Input 
                                     type="number" 
@@ -215,7 +213,7 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                     </div>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-2 text-left">
                     <div className="flex items-center justify-between">
                          <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
                             <Terminal className="h-3 w-3"/> AI Forensic Command
@@ -262,12 +260,12 @@ export default function FinanceDiscoveryEngine() {
             <Tabs defaultValue="Banks" className="w-full">
                 <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="space-y-1 text-left">
-                        <CardTitle className="flex items-center gap-2">
+                        <CardTitle className="flex items-center gap-2 text-left">
                             <Landmark className="h-6 w-6 text-amber-500" />
                             Capital Intelligence Discovery
                         </CardTitle>
-                        <CardDescription>
-                            Generate forensic prompts to extract credit providers from the NCR Register. Suggested page updates automatically after import.
+                        <CardDescription className="text-left">
+                            Identify credit providers from the NCR Register.
                         </CardDescription>
                     </div>
                     <Button 
@@ -284,14 +282,8 @@ export default function FinanceDiscoveryEngine() {
                 <CardContent className="px-0">
                     <TabsList className="h-auto flex-wrap justify-start bg-muted/30 mb-8 p-1">
                         {financeCategories.map(category => (
-                            <TabsTrigger key={category} value={category} className="text-xs px-4 py-2 gap-1.5">
+                            <TabsTrigger key={category} value={category} className="text-xs px-4 py-2">
                                 {category}
-                                <span className={cn(
-                                    "px-1.5 rounded-full text-[10px] font-black",
-                                    (counts[category] || 0) > 0 ? "bg-amber-600/20 text-amber-700" : "bg-slate-200 text-slate-500"
-                                )}>
-                                    {isRefreshing ? '...' : (counts[category] || 0)}
-                                </span>
                             </TabsTrigger>
                         ))}
                     </TabsList>
