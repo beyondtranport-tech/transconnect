@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -288,7 +289,7 @@ export default function SupplierManagement() {
     }
   };
 
-  const columns: ColumnDef<any>[] = useMemo(() => [
+  const columns: ColumnDef<any>[] = [
     { 
         accessorKey: 'companyName', 
         header: 'Supplier Name', 
@@ -335,7 +336,7 @@ export default function SupplierManagement() {
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'delete', data: row.original })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
       </div>
     )},
-  ], [fetchData]);
+  ];
 
   return (
     <div className="space-y-6 text-left text-foreground">

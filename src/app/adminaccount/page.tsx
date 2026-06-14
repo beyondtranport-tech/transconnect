@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -39,6 +40,10 @@ import {
   Banknote,
   Wrench,
   Share2,
+  Facebook,
+  Linkedin,
+  Instagram,
+  Music,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -129,6 +134,10 @@ function AdminAccountContent() {
         const audience = activeView.split('-')[1] as "partners" | "isa" | "transporters" | "suppliers" | "finance" | "investors" | "developers" | "drivers";
         return <MarketingPage audience={audience} />;
     }
+    if (activeView.startsWith('social-')) {
+        const platform = activeView.split('-')[1] as any;
+        return <SocialStudio platform={platform} />;
+    }
     switch (activeView) {
       case 'dashboard': return <AdminDashboardContent />;
       case 'unified-directory': return <UnifiedDirectory />;
@@ -138,7 +147,6 @@ function AdminAccountContent() {
       case 'branding-studio': return <BrandingStudio />;
       case 'tts-studio': return <TTSStudio />;
       case 'asset-gallery': return <AssetGallery />;
-      case 'social-studio': return <SocialStudio />;
       case 'sales-roadmap': return <SalesRoadmap />;
       case 'targets': return <TargetsPage />;
       case 'financial-projections': return <FinancialProjections />;
@@ -171,67 +179,77 @@ function AdminAccountContent() {
 
   const navigate = (view: string) => router.push(`/adminaccount?view=${view}`, { scroll: false });
   const isMarketingActive = activeView.startsWith('marketing-');
-  const isContentActive = ['branding-studio', 'tts-studio', 'asset-gallery', 'social-studio'].includes(activeView);
+  const isSocialActive = activeView.startsWith('social-');
+  const isContentActive = ['branding-studio', 'tts-studio', 'asset-gallery'].includes(activeView);
 
   return (
-    <SidebarProvider>
-      <Sidebar>
-        <SidebarHeader>
-          <div className="flex items-center gap-2 p-2">
-            <Shield className="h-6 w-6 text-primary" />
-            <h2 className="text-lg font-semibold text-sidebar-foreground">Admin Portal</h2>
-          </div>
-        </SidebarHeader>
-        <SidebarContent>
-          <SidebarGroup>
-              <SidebarMenuItem>
-                  <SidebarMenuButton tooltip="Dashboard" isActive={activeView === 'dashboard'} onClick={() => navigate('dashboard')}>
-                      <LayoutDashboard /><span>Dashboard</span>
-                  </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                  <SidebarMenuButton tooltip="Activity" isActive={activeView === 'activity'} onClick={() => navigate('activity')}>
-                      <Activity /><span>Activity</span>
-                  </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                  <SidebarMenuButton tooltip="Marketing" isActive={isMarketingActive}><BookOpen /><span>Marketing Library</span></SidebarMenuButton>
-                  <SidebarMenuSub>
-                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-partners'} onClick={() => navigate('marketing-partners')}>Partners</SidebarMenuSubButton></SidebarMenuSubItem>
-                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-isa'} onClick={() => navigate('marketing-isa')}>ISA Agents</SidebarMenuSubButton></SidebarMenuSubItem>
-                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-suppliers'} onClick={() => navigate('marketing-suppliers')}>Suppliers</SidebarMenuSubButton></SidebarMenuSubItem>
-                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-transporters'} onClick={() => navigate('marketing-transporters')}>Transporters</SidebarMenuSubButton></SidebarMenuSubItem>
-                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-finance'} onClick={() => navigate('marketing-finance')}>Finance Companies</SidebarMenuSubButton></SidebarMenuSubItem>
-                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-drivers'} onClick={() => navigate('marketing-drivers')}>Drivers</SidebarMenuSubButton></SidebarMenuSubItem>
-                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-investors'} onClick={() => navigate('marketing-investors')}>Investors</SidebarMenuSubButton></SidebarMenuSubItem>
-                  </SidebarMenuSub>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                  <SidebarMenuButton tooltip="Leads" isActive={activeView.includes('leads') || activeView === 'unified-directory'}><UserPlus /><span>Leads & CRM</span></SidebarMenuButton>
-                  <SidebarMenuSub>
-                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'unified-directory'} onClick={() => navigate('unified-directory')}>Unified Directory</SidebarMenuSubButton></SidebarMenuSubItem>
-                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'leads-agent'} onClick={() => navigate('leads-agent')}>Leads Agent</SidebarMenuSubButton></SidebarMenuSubItem>
-                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'leads-database'} onClick={() => navigate('leads-database')}>Leads Database</SidebarMenuSubButton></SidebarMenuSubItem>
-                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'platform-staff'} onClick={() => navigate('platform-staff')}>Platform Staff</SidebarMenuSubButton></SidebarMenuSubItem>
-                  </SidebarMenuSub>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                  <SidebarMenuButton tooltip="Content" isActive={isContentActive}><Sparkles /><span>Content Studio</span></SidebarMenuButton>
-                  <SidebarMenuSub>
-                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'social-studio'} onClick={() => navigate('social-studio')}><Share2 className="h-4 w-4" /><span>Social Studio</span></SidebarMenuSubButton></SidebarMenuSubItem>
-                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'branding-studio'} onClick={() => navigate('branding-studio')}>Branding Studio</SidebarMenuSubButton></SidebarMenuSubItem>
-                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'tts-studio'} onClick={() => navigate('tts-studio')}>TTS Studio</SidebarMenuSubButton></SidebarMenuSubItem>
-                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'asset-gallery'} onClick={() => navigate('asset-gallery')}>Asset Gallery</SidebarMenuSubButton></SidebarMenuSubItem>
-                  </SidebarMenuSub>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                  <SidebarMenuButton tooltip="Financials" isActive={activeView.includes('financial') || activeView === 'budget'}><FileText /><span>Financials</span></SidebarMenuButton>
-                  <SidebarMenuSub>
-                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'financial-projections'} onClick={() => navigate('financial-projections')}>Projections</SidebarMenuSubButton></SidebarMenuSubItem>
-                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'budget'} onClick={() => navigate('budget')}>Budget</SidebarMenuSubButton></SidebarMenuSubItem>
-                  </SidebarMenuSub>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
+    <AdminAuthGuard>
+      <SidebarProvider>
+        <Sidebar>
+          <SidebarHeader>
+            <div className="flex items-center gap-2 p-2">
+              <Shield className="h-6 w-6 text-primary" />
+              <h2 className="text-lg font-semibold text-sidebar-foreground">Admin Portal</h2>
+            </div>
+          </SidebarHeader>
+          <SidebarContent>
+            <SidebarGroup>
+                <SidebarMenuItem>
+                    <SidebarMenuButton tooltip="Dashboard" isActive={activeView === 'dashboard'} onClick={() => navigate('dashboard')}>
+                        <LayoutDashboard /><span>Dashboard</span>
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                    <SidebarMenuButton tooltip="Activity" isActive={activeView === 'activity'} onClick={() => navigate('activity')}>
+                        <Activity /><span>Activity</span>
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                    <SidebarMenuButton tooltip="Marketing" isActive={isMarketingActive}><BookOpen /><span>Marketing Library</span></SidebarMenuButton>
+                    <SidebarMenuSub>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-partners'} onClick={() => navigate('marketing-partners')}>Partners</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-isa'} onClick={() => navigate('marketing-isa')}>ISA Agents</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-suppliers'} onClick={() => navigate('marketing-suppliers')}>Suppliers</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-transporters'} onClick={() => navigate('marketing-transporters')}>Transporters</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-finance'} onClick={() => navigate('marketing-finance')}>Finance Companies</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-drivers'} onClick={() => navigate('marketing-drivers')}>Drivers</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-investors'} onClick={() => navigate('marketing-investors')}>Investors</SidebarMenuSubButton></SidebarMenuSubItem>
+                    </SidebarMenuSub>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                    <SidebarMenuButton tooltip="Social" isActive={isSocialActive}><Share2 /><span>Social Engagement</span></SidebarMenuButton>
+                    <SidebarMenuSub>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'social-facebook'} onClick={() => navigate('social-facebook')}><Facebook className="h-4 w-4"/>Facebook</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'social-linkedin'} onClick={() => navigate('social-linkedin')}><Linkedin className="h-4 w-4"/>LinkedIn</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'social-instagram'} onClick={() => navigate('social-instagram')}><Instagram className="h-4 w-4"/>Instagram</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'social-tiktok'} onClick={() => navigate('social-tiktok')}><Music className="h-4 w-4"/>TikTok</SidebarMenuSubButton></SidebarMenuSubItem>
+                    </SidebarMenuSub>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                    <SidebarMenuButton tooltip="Leads" isActive={activeView.includes('leads') || activeView === 'unified-directory'}><UserPlus /><span>Leads & CRM</span></SidebarMenuButton>
+                    <SidebarMenuSub>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'unified-directory'} onClick={() => navigate('unified-directory')}>Unified Directory</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'leads-agent'} onClick={() => navigate('leads-agent')}>Leads Agent</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'leads-database'} onClick={() => navigate('leads-database')}>Leads Database</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'platform-staff'} onClick={() => navigate('platform-staff')}>Platform Staff</SidebarMenuSubButton></SidebarMenuSubItem>
+                    </SidebarMenuSub>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                    <SidebarMenuButton tooltip="Content" isActive={isContentActive}><Sparkles /><span>Content Studio</span></SidebarMenuButton>
+                    <SidebarMenuSub>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'branding-studio'} onClick={() => navigate('branding-studio')}>Branding Studio</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'tts-studio'} onClick={() => navigate('tts-studio')}>TTS Studio</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'asset-gallery'} onClick={() => navigate('asset-gallery')}>Asset Gallery</SidebarMenuSubButton></SidebarMenuSubItem>
+                    </SidebarMenuSub>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                    <SidebarMenuButton tooltip="Financials" isActive={activeView.includes('financial') || activeView === 'budget'}><FileText /><span>Financials</span></SidebarMenuButton>
+                    <SidebarMenuSub>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'financial-projections'} onClick={() => navigate('financial-projections')}>Projections</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'budget'} onClick={() => navigate('budget')}>Budget</SidebarMenuSubButton></SidebarMenuSubItem>
+                    </SidebarMenuSub>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
                 <SidebarMenuButton tooltip="Platform Settings" isActive={activeView === 'settings-bank' || activeView === 'permissions'}><Settings /><span>Platform Settings</span></SidebarMenuButton>
                 <SidebarMenuSub>
                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'permissions'} onClick={() => navigate('permissions')}>Permissions</SidebarMenuSubButton></SidebarMenuSubItem>

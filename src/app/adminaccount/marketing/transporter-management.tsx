@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -329,7 +330,7 @@ export default function TransporterManagement() {
     }
   };
 
-  const columns: ColumnDef<any>[] = useMemo(() => [
+  const columns: ColumnDef<any>[] = [
     { 
         header: 'Transporter Name', 
         cell: ({ row }) => (
@@ -381,7 +382,7 @@ export default function TransporterManagement() {
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'delete', data: row.original })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
       </div>
     )},
-  ], [fetchData]);
+  ];
 
   return (
     <div className="space-y-6 text-left">

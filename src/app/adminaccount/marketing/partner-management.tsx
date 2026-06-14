@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -6,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
-  Loader2, PlusCircle, Handshake, Edit, Trash2, Send, Download, Save, RefreshCcw, Globe, Search, Filter, Users
+  Loader2, PlusCircle, Handshake, Edit, Trash2, Send, Download, Save, RefreshCcw, Globe, Search, Filter, Users, Tag, Copy
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
@@ -174,7 +175,7 @@ export default function PartnerManagement() {
     }
   }
 
-  const columns: ColumnDef<any>[] = useMemo(() => [
+  const columns: ColumnDef<any>[] = [
     { 
         accessorKey: 'companyName', 
         header: 'Partner Name', 
@@ -202,7 +203,7 @@ export default function PartnerManagement() {
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'delete', data: row.original })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
       </div>
     )},
-  ], [fetchData]);
+  ];
 
   return (
     <>

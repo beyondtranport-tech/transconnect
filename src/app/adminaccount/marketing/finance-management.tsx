@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -322,7 +323,7 @@ export default function FinanceManagement() {
     }
   };
 
-  const columns: ColumnDef<any>[] = useMemo(() => [
+  const columns: ColumnDef<any>[] = [
     { 
         accessorKey: 'companyName', 
         header: 'Entity Name', 
@@ -371,7 +372,7 @@ export default function FinanceManagement() {
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'delete', data: row.original })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
       </div>
     )},
-  ], [fetchData]);
+  ];
 
   return (
     <div className="space-y-6 text-left">
