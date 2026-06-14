@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -28,7 +29,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, Truck, Edit, Trash2, Send, Download, Save, Search, Upload, Filter, Users, Zap, Globe, ListOrdered } from 'lucide-react';
+import { Loader2, PlusCircle, Truck, Edit, Trash2, Send, Download, Save, Search, Upload, Filter, Users, Zap, Globe, ListOrdered, ShieldCheck } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -281,7 +282,7 @@ export default function TransporterManagement() {
       
       <div className="space-y-6">
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
-            <div>
+            <div className="text-left">
                 <CardTitle className="flex items-center gap-2 text-left"><Truck /> Transporter Registry</CardTitle>
                 <CardDescription className="text-left">High-capacity view - 500 records per segment.</CardDescription>
             </div>

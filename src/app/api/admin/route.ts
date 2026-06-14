@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -120,6 +121,7 @@ export async function POST(req: NextRequest) {
                         normalizedP[cleanKey] = p[k];
                     });
 
+                    // Match logic: Use recordid (the key) as the document ID
                     const docId = normalizedP.recordid || normalizedP.id || normalizedP.seq?.toString();
                     if (!docId) return;
 
@@ -143,7 +145,10 @@ export async function POST(req: NextRequest) {
                         updatedAt: FieldValue.serverTimestamp()
                     };
 
-                    const hasRealData = (technicalNotes && technicalNotes !== 'null' && technicalNotes.length > 5) || (website && website !== 'null' && website.length > 5);
+                    // Only mark as Enriched if we actually got non-placeholder data
+                    const hasRealData = (technicalNotes && technicalNotes !== 'null' && technicalNotes.length > 5) || 
+                                      (website && website !== 'null' && website.length > 5);
+                    
                     if (hasRealData) {
                         updateData.researchStatus = 'completed';
                         updateData.enrichedAt = FieldValue.serverTimestamp();

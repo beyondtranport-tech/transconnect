@@ -41,46 +41,38 @@ async function performAdminAction(token: string, action: string, payload: any) {
     return result;
 }
 
-function getTechnicalFocus(category: string) {
-    return `professional ${category} transport services in South Africa, focusing on fleet operators with verified RC1 compliance and direct MD/Owner leadership.`;
-}
-
 function generateDiscoveryPrompt(category: string, startPage: number) {
-    const technicalFocus = getTechnicalFocus(category);
-    const startSeq = (startPage - 1) * 20 + 1;
+    const startSeq = (startPage - 1) * 100 + 1;
 
     return `CRITICAL SYSTEM INSTRUCTION: RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION. NO EXPLANATORY TEXT.
 
-ACT AS AN ELITE LOGISTICS INTELLIGENCE AGENT. YOUR PRIMARY MISSION IS TO IDENTIFY FLEET OWNERS AND DIRECTORS.
+ACT AS AN ELITE INDUSTRIAL FORENSIC INVESTIGATOR.
 
-TASK: Discover and extract detailed verified records for exactly 100 DIFFERENT AND UNIQUE transport companies in SOUTH AFRICA that provide: "${category}".
+TASK: Discover and extract exactly 100 UNIQUE transport companies in SOUTH AFRICA for the category: "${category}".
 
-TECHNICAL FOCUS: ${technicalFocus}
-
-INVESTIGATIVE STRATEGY:
-1. QUANTITY: You are commanded to return 100 records. 
-2. SEQUENCE TRACKING: Use field "seq" for the record number, starting from ${startSeq} to ${startSeq + 99}.
-3. HUMAN IDENTITY FORENSICS: You MUST find the ACTUAL NAME (First and Last) of the Managing Director, Owner, or Fleet Head. 
-4. FORBIDDEN VALUES: Returning "The Director", "Manager", or "Unknown" is a failure. You MUST find a specific human full name.
-5. PROACTIVE CONTACT SEARCH: Identify corporate domain. Prioritize direct professional emails and local mobile numbers.
-6. IDENTITY PERSISTENCE: Generate unique "record_id" starting with "DISC_TRANS_${category.toUpperCase().replace(/\s/g, '_')}_".
+STRICT FORENSIC PROTOCOL:
+1. DATA MINING: Find the OFFICIAL CORPORATE WEBSITE. You must SCRAPE/EXTRACT the technical service wording from the site.
+2. TECHNICAL FOCUS: In the "notes" field, provide a 2-3 sentence summary of SPECIFIC fleet capabilities (e.g. 34t Side-Tippers, tri-axle tautliners, SADC corridors, reefer temperature zones).
+3. FORBIDDEN WORDS (BLACKLIST): innovative, leading, spearheading, solutions, backbone, ecosystem, commitment. Use only FACTUAL, TECHNICAL descriptors.
+4. IDENTITY: Find the ACTUAL NAME (First and Last) of the Managing Director, Owner, or CEO.
+5. RECORD KEY (UNIQUE ID): Generate a unique "record_id" starting with "DISC_TRANS_${category.toUpperCase().replace(/\s/g, '_')}_[HASH]". Use a deterministic hash of the company name to avoid duplicates.
+6. WEBSITE VERIFICATION: Exclude sars.gov.za, gov.za, linkedin, and directories. Return only direct corporate domains.
 
 REQUIRED OUTPUT FORMAT (RAW JSON ARRAY ONLY):
 [
   {
     "seq": ${startSeq},
-    "record_id": "DISC_TRANS_${category.toUpperCase().replace(/\s/g, '_')}_[RAND_ID]",
-    "company_name": "...",
+    "record_id": "STABLE_UNIQUE_ID",
+    "company_name": "FULL LEGAL NAME",
     "industrial_category": "${category}",
     "contact_person": "ACTUAL HUMAN FULL NAME",
-    "email_address": "...",
+    "email_address": "Verified Professional Email",
     "telephone_number": "...",
-    "website": "...",
-    "physical_address": "..."
+    "website": "OFFICIAL CORPORATE URL ONLY",
+    "physical_address": "FULL Street, Suburb, City, Province",
+    "notes": "TECHNICAL SERVICE SUMMARY (NO FLUFF)"
   }
-]
-
-HUNTING GROUNDS: Search LinkedIn, Google Maps, local logistics directories, and industrial zoning registries.`;
+]`;
 }
 
 const DiscoveryTab = ({ category, currentCount }: { category: string, currentCount: number }) => {
@@ -88,7 +80,7 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
     const [isCopied, setIsCopied] = useState(false);
     const [pageOverride, setPageOverride] = useState<number | ''>('');
     
-    const suggestedPage = Math.floor(currentCount / 20) + 1;
+    const suggestedPage = Math.floor(currentCount / 100) + 1;
     const startPage = pageOverride !== '' ? Number(pageOverride) : suggestedPage;
 
     const prompt = useMemo(() => generateDiscoveryPrompt(category, startPage), [category, startPage]);
@@ -109,9 +101,9 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
             <div className="grid md:grid-cols-2 gap-6">
                 <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                        <h2 className="text-2xl font-bold font-headline flex items-center gap-2">
+                        <h2 className="text-2xl font-bold font-headline flex items-center gap-2 text-left">
                             <Search className="h-6 w-6 text-primary" />
-                            Haulier Discovery: {category}
+                            Forensic Hub: {category}
                         </h2>
                         <Badge variant="outline" className="font-mono text-sm bg-muted/30">
                             {currentCount} In Database
@@ -143,10 +135,11 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                     </div>
 
                     <div className="pt-2 flex flex-col gap-2">
-                        <Button onClick={handleCopy} size="lg" className="w-full gap-2 shadow-sm">
-                            {isCopied ? <ClipboardCheck className="h-5 w-5 text-green-600" /> : <Copy className="h-5 w-5" />}
-                            {isCopied ? "Prompt Copied" : "Copy Manual Prompt"}
+                        <Button onClick={handleCopy} size="lg" className="w-full gap-2 shadow-lg h-14 bg-primary hover:bg-primary/90">
+                            {isCopied ? <ClipboardCheck className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
+                            {isCopied ? "Prompt Ready" : "Copy Forensic Discovery Prompt"}
                         </Button>
+                        <p className="text-[10px] text-muted-foreground text-center italic">Includes automated forensic mining and technical summary commands.</p>
                     </div>
                 </div>
 
@@ -177,7 +170,7 @@ export default function TransporterDiscoveryEngine() {
             const token = await getClientSideAuthToken();
             if (!token) return;
             await performAdminAction(token, 'refreshTransporterCategoryCounts', {});
-            toast({ title: "Database Tally Complete", description: "All category counts have been updated." });
+            toast({ title: "Registry Tally Complete", description: "All category counts have been updated." });
             refreshStats();
         } catch (e: any) {
             toast({ variant: 'destructive', title: "Refresh Failed", description: e.message });
@@ -190,13 +183,13 @@ export default function TransporterDiscoveryEngine() {
         <Card className="shadow-none border-none">
             <Tabs defaultValue="Long Haul" className="w-full">
                 <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div className="space-y-1">
+                    <div className="space-y-1 text-left">
                         <CardTitle className="flex items-center gap-2 text-left">
                             <Database className="h-6 w-6 text-primary" />
-                            Haulier Discovery Engine
+                            Forensic Haulier Discovery
                         </CardTitle>
                         <CardDescription className="text-left">
-                            Locate and extract high-capacity transport partners using manual forensic prompts.
+                            Identify transport partners and automatically mine their technical profiles using high-fidelity prompts.
                         </CardDescription>
                     </div>
                     <Button 
