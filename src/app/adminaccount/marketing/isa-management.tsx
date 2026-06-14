@@ -28,7 +28,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { getClientSideAuthToken, useUser } from '@/firebase';
+import { getClientSideAuthToken } from '@/firebase';
 import { Loader2, PlusCircle, Bot, Edit, Trash2, Send, Download, Save, Search, Users, Filter, Globe, Zap, RefreshCcw, Database, Upload, Copy, Tag } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
@@ -374,13 +374,6 @@ export default function ISAManagement() {
             </div>
         </CardHeader>
         <Card className="border-primary/10 shadow-sm overflow-hidden text-foreground">
-            <CardHeader className="bg-muted/30 border-b text-left text-foreground">
-                 <div className="flex items-center justify-between text-left text-foreground">
-                    <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
-                        <Database className="h-3 w-3" /> Category Tally
-                    </Label>
-                </div>
-            </CardHeader>
             <CardContent className="pt-6 text-left text-foreground">
                 <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
                     <div className="flex-1 space-y-2 text-left text-foreground">

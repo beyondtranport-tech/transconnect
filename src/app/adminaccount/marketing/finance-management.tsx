@@ -43,9 +43,6 @@ import { EnrichPartnerButton } from './EnrichPartnerButton';
 import { BulkImportDialog } from './BulkImportDialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { useConfig } from '@/hooks/use-config';
-import { financeCategories } from './finance-discovery';
-import { ScrollArea } from '@/components/ui/scroll-area';
 
 async function performAdminAction(token: string, action: string, payload: any) {
   const response = await fetch('/api/admin', {
@@ -74,64 +71,6 @@ const partnerSchema = z.object({
   type: z.literal('finance'),
 });
 type PartnerFormValues = z.infer<typeof partnerSchema>;
-
-function CategorizationDialog({ open, onOpenChange, unclassifiedCount, records }: { open: boolean, onOpenChange: (o: boolean) => void, unclassifiedCount: number, records: any[] }) {
-    const { toast } = useToast();
-    const [isCopied, setIsCopied] = useState(false);
-
-    const listToClassify = records.slice(0, 100).map(r => `[KEY: ${r.id}] ${r.companyName}`).join('\n');
-    const categoryList = financeCategories.join(', ');
-
-    const prompt = `ACT AS A CAPITAL DATA ARCHITECT. 
-RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
-
-TASK: Classify the following South African credit providers into their correct industrial category.
-
-VALID CATEGORIES: ${categoryList}
-
-REQUIRED FORMAT:
-[
-  { "record_id": "...", "industrial_category": "Selected Category" }
-]
-
-LIST TO CLASSIFY:
-${listToClassify}`;
-
-    const handleCopy = async () => {
-        await navigator.clipboard.writeText(prompt);
-        setIsCopied(true);
-        toast({ title: "Categorization Prompt Ready" });
-        setTimeout(() => {
-            setIsCopied(false);
-            onOpenChange(false);
-        }, 1000);
-    };
-
-    return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-2xl text-left text-foreground">
-                <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2"><Tag className="h-5 w-5 text-primary" /> Finance Registry Categorizer</DialogTitle>
-                    <DialogDescription>Classify existing records to populate tally badges.</DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4 py-4 text-left">
-                    <div className="p-3 bg-primary/5 border rounded-lg flex items-center justify-between">
-                        <span className="text-sm font-bold text-foreground">Unclassified: <span className="text-primary">{unclassifiedCount}</span></span>
-                    </div>
-                    <ScrollArea className="h-48 border rounded-md p-3 bg-muted/30 text-[10px] font-mono leading-tight">
-                        <pre className="text-foreground">{prompt}</pre>
-                    </ScrollArea>
-                </div>
-                <DialogFooter>
-                    <Button onClick={handleCopy} className="w-full h-12 font-black uppercase tracking-widest gap-2">
-                        {isCopied ? <Loader2 className="animate-spin h-4 w-4"/> : <Copy className="h-4 w-4" />}
-                        Copy Categorization Command
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-    );
-}
 
 function FinanceDialog({ open, onOpenChange, partner, onSave }: { open: boolean; onOpenChange: (open: boolean) => void; partner?: any; onSave: () => void; }) {
   const [isLoading, setIsLoading] = useState(false);
@@ -181,7 +120,7 @@ function FinanceDialog({ open, onOpenChange, partner, onSave }: { open: boolean;
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left">
-            <div className="grid grid-cols-2 gap-4 text-left">
+            <div className="grid grid-cols-2 gap-4 text-left text-foreground">
               <FormField control={form.control} name="firstName" render={({ field }) => (
                 <FormItem><FormLabel>First Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
               )} />
@@ -189,7 +128,7 @@ function FinanceDialog({ open, onOpenChange, partner, onSave }: { open: boolean;
                 <FormItem><FormLabel>Last Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
               )} />
             </div>
-            <div className="grid grid-cols-2 gap-4 text-left">
+            <div className="grid grid-cols-2 gap-4 text-left text-foreground">
               <FormField control={form.control} name="email" render={({ field }) => (
                 <FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" /></FormControl><FormMessage /></FormItem>
               )} />
@@ -197,7 +136,7 @@ function FinanceDialog({ open, onOpenChange, partner, onSave }: { open: boolean;
                 <FormItem><FormLabel>Work Phone</FormLabel><FormControl><Input placeholder="+27 11..." {...field} /></FormControl><FormMessage /></FormItem>
               )} />
             </div>
-            <div className="grid grid-cols-2 gap-4 text-left">
+            <div className="grid grid-cols-2 gap-4 text-left text-foreground">
               <FormField control={form.control} name="mobile" render={({ field }) => (
                 <FormItem className="text-left text-foreground"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} /></FormControl><FormMessage /></FormItem>
               )} />
@@ -245,15 +184,11 @@ export default function FinanceManagement() {
   const [partners, setPartners] = useState<any[]>([]);
   const [staff, setStaff] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | 'categorize' | null, data?: any }>({ type: null });
+  const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | null, data?: any }>({ type: null });
 
   const [statusFilter, setStatusFilter] = useState('all');
   const [assigneeFilter, setAssigneeFilter] = useState('all');
-
-  const { data: statsData, forceRefresh: refreshStats } = useConfig<any>('financeDiscoveryStats');
-  const counts = statsData?.counts || {};
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
@@ -274,25 +209,6 @@ export default function FinanceManagement() {
   }, [toast]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
-
-  const unclassifiedRecords = useMemo(() => {
-      return partners.filter(r => !r.industrial_category && !r.category && !r.entryType);
-  }, [partners]);
-
-  const handleRefreshTally = async () => {
-    setIsRefreshing(true);
-    try {
-        const token = await getClientSideAuthToken();
-        if (!token) return;
-        await performAdminAction(token, 'refreshFinanceCategoryCounts', {});
-        toast({ title: "Tally Updated" });
-        refreshStats();
-    } catch (e: any) {
-        toast({ variant: 'destructive', title: "Tally Failed", description: e.message });
-    } finally {
-        setIsRefreshing(false);
-    }
-  };
 
   const filteredRecords = useMemo(() => {
     const term = searchTerm.toLowerCase();
@@ -348,10 +264,10 @@ export default function FinanceManagement() {
             const isEnriched = !!(row.original.notes || row.original.website);
             const isSearching = row.original.researchStatus === 'searching';
             return (
-                <div className="flex flex-col gap-1 items-center">
+                <div className="flex flex-col gap-1 items-center text-foreground">
                     <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge>
                     {isEnriched && (
-                         <div className="flex flex-col items-center text-foreground">
+                         <div className="flex flex-col items-center">
                             <Badge className="bg-green-100 text-green-700 border-none text-[9px] h-4 uppercase">Enriched</Badge>
                             <span className="text-[8px] text-muted-foreground mt-0.5">{formatDateSafe(row.original.enrichedAt, "dd/MM")}</span>
                         </div>
@@ -375,10 +291,9 @@ export default function FinanceManagement() {
   ];
 
   return (
-    <div className="space-y-6 text-left">
+    <div className="space-y-6 text-left text-foreground">
       <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.data} audience="finance" onEngageSuccess={fetchData} />
       <FinanceDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={fetchData} />
-      <CategorizationDialog open={dialog.type === 'categorize'} onOpenChange={(o) => !o && setDialog({ type: null })} unclassifiedCount={unclassifiedRecords.length} records={unclassifiedRecords} />
       
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
         <AlertDialogContent>
@@ -386,6 +301,7 @@ export default function FinanceManagement() {
           <AlertDialogFooter><AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
       <div className="space-y-6 text-left text-foreground">
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left text-foreground">
             <div className="text-left text-foreground">
@@ -393,11 +309,6 @@ export default function FinanceManagement() {
                 <CardDescription className="text-left text-foreground">Full registry view of lending and finance entities ({partners.length} records).</CardDescription>
             </div>
             <div className="flex items-center gap-2 text-left text-foreground">
-                {unclassifiedRecords.length > 0 && (
-                    <Button variant="outline" onClick={() => setDialog({ type: 'categorize' })} className="border-primary text-primary hover:bg-primary/5">
-                        <Tag className="mr-2 h-4 w-4" /> Categorize ({unclassifiedRecords.length})
-                    </Button>
-                )}
                 <div className="relative w-64 text-left text-foreground">
                     <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input placeholder="Search registry..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8 bg-white text-foreground" />
@@ -411,32 +322,12 @@ export default function FinanceManagement() {
         </CardHeader>
 
         <Card className="border-primary/10 shadow-sm overflow-hidden text-foreground">
-            <CardHeader className="bg-muted/30 border-b text-left text-foreground">
-                 <div className="flex items-center justify-between text-left text-foreground">
-                    <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
-                        <Database className="h-3 w-3" /> Category Tally
-                    </Label>
-                    <Button variant="ghost" size="sm" onClick={handleRefreshTally} className="h-6 text-[9px] uppercase font-black tracking-tighter" disabled={isRefreshing}>
-                        {isRefreshing ? <Loader2 className="mr-1 h-2.5 w-2.5 animate-spin"/> : <RefreshCcw className="mr-1 h-2.5 w-2.5"/>} Refresh Counts
-                    </Button>
-                </div>
-                <div className="flex flex-wrap gap-2 mt-3 text-left">
-                    {financeCategories.map(cat => (
-                        <div key={cat} className="flex items-center bg-white border rounded-full pl-3 pr-1 py-0.5 shadow-sm">
-                            <span className="text-[9px] font-bold text-slate-600 mr-2">{cat}</span>
-                            <Badge className="bg-amber-600/10 text-amber-700 border-none text-[9px] font-black h-4 px-1.5 min-w-[20px] justify-center">
-                                {counts[cat] || 0}
-                            </Badge>
-                        </div>
-                    ))}
-                </div>
-            </CardHeader>
             <CardContent className="pt-6 text-left text-foreground">
                 <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
                     <div className="flex-1 space-y-2 text-left text-foreground">
                         <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status</Label>
                         <Select value={statusFilter} onValueChange={setStatusFilter}>
-                            <SelectTrigger className="bg-white"><SelectValue /></SelectTrigger>
+                            <SelectTrigger className="bg-white text-foreground"><SelectValue /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Statuses</SelectItem>
                                 <SelectItem value="new">New</SelectItem>
@@ -449,7 +340,7 @@ export default function FinanceManagement() {
                     <div className="flex-1 space-y-2 text-left text-foreground">
                         <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Users className="h-3 w-3"/> Assignee</Label>
                         <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-                            <SelectTrigger className="bg-white"><SelectValue /></SelectTrigger>
+                            <SelectTrigger className="bg-white text-foreground"><SelectValue /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Staff</SelectItem>
                                 <SelectItem value="none">Unallocated</SelectItem>
