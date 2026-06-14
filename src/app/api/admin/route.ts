@@ -188,7 +188,7 @@ export async function POST(req: NextRequest) {
                 
                 const targetType = typeMap[action];
                 const configId = configIdMap[action];
-                const collectionName = (targetType === 'driver' || targetType === 'partner') ? 'partners' : 'leads';
+                const collectionName = (targetType === 'driver' || targetType === 'partner') ? 'partners' : 'partners'; // Corrected: Suppliers/Transporters are in Partners
 
                 const snap = await db.collection(collectionName).where('type', '==', targetType).get();
                 const counts: Record<string, number> = {};

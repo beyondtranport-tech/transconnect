@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -90,40 +91,39 @@ function getTechnicalFocus(category: string) {
 function generateDiscoveryPrompt(category: string, focusHubs: string[], startSeq: number = 1) {
     const technicalFocus = getTechnicalFocus(category);
 
-    return `CRITICAL SYSTEM INSTRUCTION: RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION. NO EXPLANATORY TEXT.
+    return `ACT AS AN ELITE INDUSTRIAL FORENSIC INVESTIGATOR. 
+RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
 
-ACT AS AN ELITE MARKET INTELLIGENCE AGENT SPECIALIZING IN THE SOUTH AFRICAN TRANSPORT ECOSYSTEM. 
+STRICT INSTRUCTION: DO NOT USE SYNTHETIC LANGUAGE OR CORPORATE FLUFF.
+FORBIDDEN WORDS: "innovative", "solutions", "leading", "spearheading", "ecosystem", "backbone".
 
-TASK: Discover and extract detailed verified records for exactly 100 DIFFERENT AND UNIQUE businesses in SOUTH AFRICA that provide: "${category}".
-
-INDUSTRY CONTEXT: These suppliers MUST serve the heavy commercial transport industry (${technicalFocus}).
-
-GEOGRAPHIC FOCUS: Primary investigation hubs: ${focusHubs.join(', ')}.
+TASK: Discover and extract detailed verified records for exactly 100 DIFFERENT AND UNIQUE South African suppliers for: "${category}".
 
 INVESTIGATIVE STRATEGY:
-1. QUANTITY & DENSITY: You are commanded to return 100 records. Keep JSON object fields short to fit maximum records. 
-2. SEQUENCE TRACKING: Use field "seq" for the record number, starting from ${startSeq} to ${startSeq + 99}.
-3. HUMAN IDENTITY FORENSICS: You MUST find the ACTUAL NAME (First and Last) of the CEO, Managing Director, or Owner. 
-4. FORBIDDEN VALUES: Returning "The Director", "Manager", "CEO", or "Unknown" is a failure. Search LinkedIn/About pages for a human name.
-5. PROACTIVE CONTACT SEARCH: Identify corporate domain. Prioritize "info@", "sales@", or "admin@" and local phone number.
-6. IDENTITY PERSISTENCE: Generate unique "record_id" starting with "DISC_${category.toUpperCase().replace(/\s/g, '_')}_".
+1. TARGET TECH: These suppliers MUST serve the heavy commercial transport industry (${technicalFocus}).
+2. SEQUENCE: Number records from ${startSeq} to ${startSeq + 99}.
+3. HUMAN IDENTITY: Find the ACTUAL NAME (First and Last) of the CEO, MD, or Owner. NO generic titles.
+4. DIRECT CONTACTS: Identify the OFFICIAL CORPORATE DOMAIN (e.g. www.company.co.za). EXCLUDE aggregate registry sites (sars, gov, sayellow, linkedin).
+5. MINED SERVICE SUMMARY: In the "notes" field, provide a 2-sentence summary of their SPECIFIC technical capabilities extracted from their site.
+6. IDENTITY PERSISTENCE: Generate "record_id" starting with "DISC_SUPP_${category.toUpperCase().replace(/\s/g, '_')}_".
 
 REQUIRED OUTPUT FORMAT (RAW JSON ARRAY ONLY):
 [
   {
     "seq": ${startSeq},
-    "record_id": "DISC_${category.toUpperCase().replace(/\s/g, '_')}_[RAND_ID]",
+    "record_id": "...",
     "company_name": "...",
     "industrial_category": "${category}",
     "contact_person": "ACTUAL HUMAN FULL NAME",
     "email_address": "...",
     "telephone_number": "...",
-    "website": "...",
-    "physical_address": "..."
+    "website": "OFFICIAL CORPORATE URL ONLY",
+    "physical_address": "...",
+    "notes": "TECHNICAL SUMMARY"
   }
 ]
 
-HUNTING GROUNDS: Search LinkedIn, Yellow Pages SA, and local industrial registries.`;
+HUNTING GROUNDS: Deep-search LinkedIn, local industrial hub directories, and Google for corporate domains in ${focusHubs.join(', ')}.`;
 }
 
 const DiscoveryTab = ({ category, currentCount }: { category: string, currentCount: number }) => {
@@ -263,11 +263,6 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                             {isCopied ? <ClipboardCheck className="h-5 w-5 text-green-600" /> : <Copy className="h-5 w-5" />}
                             {isCopied ? "Prompt Copied" : "Copy Manual Prompt"}
                         </Button>
-                        <Button variant="ghost" asChild className="w-full text-xs opacity-70">
-                            <a href="https://aistudio.google.com/" target="_blank" rel="noopener noreferrer">
-                                External AI Studio <ArrowRight className="ml-1 h-3 w-3" />
-                            </a>
-                        </Button>
                     </div>
                 </div>
 
@@ -292,7 +287,7 @@ export default function DiscoveryEngine() {
     const { toast } = useToast();
     const [isRefreshing, setIsRefreshing] = useState(false);
     
-    // Fetch CACHED counts immediately (snappy)
+    // Fetch CACHED counts immediately
     const { data: statsData, forceRefresh: refreshStats } = useConfig<any>('supplierDiscoveryStats');
     const counts = statsData?.counts || {};
 
