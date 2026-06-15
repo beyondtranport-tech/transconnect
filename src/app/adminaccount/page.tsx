@@ -41,6 +41,8 @@ import {
   Linkedin,
   Instagram,
   Music,
+  Lock,
+  Banknote,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
