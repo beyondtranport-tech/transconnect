@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -79,12 +80,6 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data });
             }
 
-            case 'getLeads': {
-                const snap = await db.collection('leads').orderBy('updatedAt', 'desc').limit(10000).get();
-                const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
-                return NextResponse.json({ success: true, data });
-            }
-
             case 'bulkSavePartners': {
                 const { partners, type } = payload;
                 const batch = db.batch();
@@ -111,59 +106,21 @@ export async function POST(req: NextRequest) {
                         mobile: p.mobile || p.registry_line || p.cell,
                         address: p.address || p.physical_address || p.location || p.operational_hub,
                         industrial_category: p.industrial_category || p.category || p.classification || p.service_classification,
+                        minedServiceWording: p.minedServiceWording || p.technical_summary || p.notes,
+                        industrialTags: p.industrialTags || p.tags || [],
                         updatedAt: FieldValue.serverTimestamp(),
-                        enrichedAt: (p.notes || p.website) ? FieldValue.serverTimestamp() : null,
-                        researchStatus: (p.notes || p.website) ? 'completed' : 'new'
+                        enrichedAt: FieldValue.serverTimestamp(),
+                        researchStatus: 'completed'
                     };
                     
                     delete (rawData as any).seq;
                     delete (rawData as any).sequence;
                     
-                    // Critical Fix: Sanitize undefined values before pushing to batch
                     const data = sanitizeForFirestore(rawData);
                     batch.set(ref, data, { merge: true });
                 }
                 await batch.commit();
                 return NextResponse.json({ success: true, count: partners.length });
-            }
-
-            case 'findDuplicatePartners': {
-                const { type } = payload;
-                const snap = await db.collection('partners').where('type', '==', type).get();
-                const seen = new Map<string, any[]>();
-                const incomplete: any[] = [];
-
-                snap.docs.forEach(doc => {
-                    const data = { id: doc.id, ...doc.data() };
-                    const name = (data.companyName || '').toLowerCase().trim();
-                    
-                    if (!name) {
-                        incomplete.push(data);
-                        return;
-                    }
-
-                    if (!seen.has(name)) seen.set(name, []);
-                    seen.get(name)?.push(data);
-                });
-
-                const duplicates = Array.from(seen.values()).filter(group => group.length > 1);
-                return NextResponse.json({ success: true, duplicates, incomplete });
-            }
-
-            case 'deletePartners': {
-                const { partnerIds } = payload;
-                const batch = db.batch();
-                partnerIds.forEach((id: string) => {
-                    batch.delete(db.collection('partners').doc(id));
-                });
-                await batch.commit();
-                return NextResponse.json({ success: true, count: partnerIds.length });
-            }
-
-            case 'deletePartner': {
-                const { partnerId } = payload;
-                await db.collection('partners').doc(partnerId).delete();
-                return NextResponse.json({ success: true });
             }
 
             case 'logCommunication': {
@@ -189,6 +146,22 @@ export async function POST(req: NextRequest) {
                 const { staff } = payload;
                 const ref = staff.id ? db.collection('platformStaff').doc(staff.id) : db.collection('platformStaff').doc();
                 await ref.set({ ...staff, id: ref.id, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+                return NextResponse.json({ success: true });
+            }
+
+            case 'deletePartners': {
+                const { partnerIds } = payload;
+                const batch = db.batch();
+                partnerIds.forEach((id: string) => {
+                    batch.delete(db.collection('partners').doc(id));
+                });
+                await batch.commit();
+                return NextResponse.json({ success: true, count: partnerIds.length });
+            }
+
+            case 'deletePartner': {
+                const { partnerId } = payload;
+                await db.collection('partners').doc(partnerId).delete();
                 return NextResponse.json({ success: true });
             }
 

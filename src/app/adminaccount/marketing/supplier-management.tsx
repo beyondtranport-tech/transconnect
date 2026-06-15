@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -7,7 +8,7 @@ import * as z from 'zod';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from '@/hooks/use-toast';
-import { getClientSideAuthToken, useUser } from '@/firebase';
+import { getClientSideAuthToken } from '@/firebase';
 import { 
   Loader2, PlusCircle, Building, Edit, Trash2, Send, Download, Save, Search, Filter, Users, Globe, Zap, Upload, RefreshCcw, Database, Copy, Tag, AlertTriangle, CheckCircle 
 } from 'lucide-react';
@@ -32,6 +33,7 @@ import { useConfig } from '@/hooks/use-config';
 import { supplierCategories } from './discovery-engine';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 async function performAdminAction(token: string, action: string, payload: any) {
   const response = await fetch('/api/admin', {
@@ -46,16 +48,17 @@ async function performAdminAction(token: string, action: string, payload: any) {
 }
 
 const partnerSchema = z.object({
-  firstName: z.string().min(1, 'First name is required'),
-  lastName: z.string().min(1, 'Last name is required'),
+  firstName: z.string().min(1, 'First name is required').optional().or(z.literal('')),
+  lastName: z.string().min(1, 'Last name is required').optional().or(z.literal('')),
   email: z.string().email('Invalid email address').optional().or(z.literal('')),
-  phone: z.string().optional(),
-  mobile: z.string().optional(),
-  contactPerson: z.string().optional(),
-  companyName: z.string().optional(),
+  phone: z.string().optional().or(z.literal('')),
+  mobile: z.string().optional().or(z.literal('')),
+  contactPerson: z.string().optional().or(z.literal('')),
+  companyName: z.string().optional().or(z.literal('')),
   website: z.string().url("Invalid URL").optional().or(z.literal('')),
-  address: z.string().optional(),
-  notes: z.string().optional(),
+  address: z.string().optional().or(z.literal('')),
+  minedServiceWording: z.string().optional().or(z.literal('')),
+  industrialTags: z.array(z.string()).optional().default([]),
   status: z.enum(['active', 'inactive', 'contacted', 'new', 'qualified', 'invited']),
   type: z.literal('supplier'),
 });
@@ -206,29 +209,58 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl text-left">
+      <DialogContent className="sm:max-w-3xl text-left">
         <DialogHeader><DialogTitle>{partner ? 'Edit' : 'Add'} Supplier</DialogTitle></DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left">
             <div className="grid grid-cols-2 gap-4 text-left">
-              <FormField control={form.control} name="firstName" render={({ field }) => (<FormItem><FormLabel>First Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-              <FormField control={form.control} name="lastName" render={({ field }) => (<FormItem><FormLabel>Last Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem className="text-left"><FormLabel>Entity Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="contactPerson" render={({ field }) => (<FormItem className="text-left"><FormLabel>Key Decision Maker</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
-            <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem className="text-left"><FormLabel>Entity Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             <div className="grid grid-cols-2 gap-4 text-left">
-              <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" /></FormControl><FormMessage /></FormItem>)} />
-              <FormField control={form.control} name="mobile" render={({ field }) => (<FormItem className="text-left"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} /></FormControl><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Direct E-mail</FormLabel><FormControl><Input {...field} type="email" /></FormControl><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="mobile" render={({ field }) => (<FormItem className="text-left"><FormLabel>Mobile (Direct Cell)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
+            <FormField control={form.control} name="website" render={({ field }) => (<FormItem className="text-left"><FormLabel>Corporate Website</FormLabel><FormControl><Input placeholder="https://..." {...field} /></FormControl><FormMessage /></FormItem>)} />
+            <FormField control={form.control} name="address" render={({ field }) => (<FormItem className="text-left"><FormLabel>Operational Address</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>)} />
+            
+            <Separator />
+            <div className="space-y-4">
+                <h3 className="text-sm font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                    <Sparkles className="h-4 w-4"/> Forensic Technical Profile
+                </h3>
+                <FormField control={form.control} name="minedServiceWording" render={({ field }) => (
+                    <FormItem className="text-left">
+                        <FormLabel>Scraped About/Hero Text</FormLabel>
+                        <FormControl><Textarea placeholder="Deep-crawled mission and product statements..." className="min-h-[150px]" {...field} /></FormControl>
+                        <FormMessage />
+                    </FormItem>
+                )} />
+                <FormField control={form.control} name="industrialTags" render={({ field }) => (
+                    <FormItem className="text-left">
+                        <FormLabel>ML Extracted Keywords (comma separated)</Label>
+                        <FormControl>
+                            <Input 
+                                placeholder="e.g. LFP Storage, Deep Cycle, Marine Batteries..." 
+                                value={Array.isArray(field.value) ? field.value.join(', ') : ''}
+                                onChange={(e) => field.onChange(e.target.value.split(',').map(t => t.trim()).filter(t => t.length > 0))}
+                            />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                )} />
+            </div>
+
             <FormField control={form.control} name="status" render={({ field }) => (
                 <FormItem className="text-left">
-                    <FormLabel>Status</FormLabel>
+                    <FormLabel>Pipeline Status</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl><SelectTrigger className="bg-white"><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
                         <SelectContent>
-                            <SelectItem value="new">New</SelectItem>
+                            <SelectItem value="new">New Lead</SelectItem>
                             <SelectItem value="contacted">Researching</SelectItem>
                             <SelectItem value="qualified">Qualified</SelectItem>
-                            <SelectItem value="active">Active</SelectItem>
+                            <SelectItem value="active">Active Provider</SelectItem>
                         </SelectContent>
                     </Select>
                 </FormItem>
@@ -303,7 +335,8 @@ export default function SupplierManagement() {
             (p.companyName?.toLowerCase().includes(term)) ||
             (p.firstName?.toLowerCase().includes(term)) ||
             (p.lastName?.toLowerCase().includes(term)) ||
-            (p.email?.toLowerCase().includes(term));
+            (p.email?.toLowerCase().includes(term)) ||
+            (p.industrialTags?.some((t:string) => t.toLowerCase().includes(term)));
 
         const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
         const matchesAssignee = assigneeFilter === 'all' || p.assigneeId === assigneeFilter;
@@ -333,26 +366,27 @@ export default function SupplierManagement() {
         cell: ({ row }) => (
             <div className="flex flex-col text-sm text-left">
                 <span className="font-bold text-left">{row.original.companyName || row.original.contactPerson || 'Incomplete Record'}</span>
-                <div className="flex items-center gap-2 mt-1 text-left">
-                    <span className="text-[10px] text-muted-foreground uppercase font-black text-left">{row.original.address || 'Operational Hub Verified'}</span>
-                    {row.original.website && <Globe className="h-3 w-3 text-primary" />}
+                <div className="flex flex-wrap gap-1 mt-1 text-left">
+                    {row.original.industrialTags?.slice(0, 3).map((tag: string) => (
+                        <Badge key={tag} variant="secondary" className="text-[8px] h-3.5 bg-slate-100 text-slate-600 border-none px-1.5 uppercase font-black">{tag}</Badge>
+                    ))}
+                    {row.original.website && <Globe className="h-3 w-3 text-primary ml-1" />}
                 </div>
             </div>
         )
     },
-    { accessorKey: 'phone', header: 'Landline' },
     { accessorKey: 'mobile', header: 'Mobile' },
     { accessorKey: 'email', header: 'Email' },
     { 
         header: 'Status', 
         cell: ({ row }) => {
-            const isEnriched = !!(row.original.notes || row.original.website);
+            const isEnriched = !!(row.original.minedServiceWording || row.original.website);
             const isSearching = row.original.researchStatus === 'searching';
             return (
                 <div className="flex flex-col gap-1 items-center">
                     <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge>
                     {isEnriched && (
-                        <div className="flex flex-col items-center">
+                        <div className="flex flex-col items-center text-left">
                             <Badge className="bg-green-100 text-green-700 border-none text-[9px] h-4 uppercase">Enriched</Badge>
                             <span className="text-[8px] text-muted-foreground mt-0.5">{formatDateSafe(row.original.enrichedAt, "dd/MM")}</span>
                         </div>
@@ -412,7 +446,7 @@ export default function SupplierManagement() {
                 )}
                 <div className="relative w-64 text-left">
                     <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input placeholder="Search registry..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8 bg-white" />
+                    <Input placeholder="Search tags, name, ID..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8 bg-white" />
                 </div>
                 <Button variant="outline" onClick={() => downloadDataAsCSV(allRecords, 'suppliers-export.csv')} disabled={isLoading}>
                     <Download className="mr-2 h-4 w-4" /> Export CSV
@@ -451,7 +485,7 @@ export default function SupplierManagement() {
                             <SelectTrigger className="bg-white"><SelectValue /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Statuses</SelectItem>
-                                <SelectItem value="new">New</SelectItem>
+                                <SelectItem value="new">New Lead</SelectItem>
                                 <SelectItem value="contacted">Researching</SelectItem>
                                 <SelectItem value="qualified">Qualified</SelectItem>
                                 <SelectItem value="active">Active</SelectItem>

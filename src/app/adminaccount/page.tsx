@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -200,6 +201,7 @@ function AdminAccountContent() {
                   </SidebarMenuButton>
               </SidebarMenuItem>
               
+              {/* Reinstated Social section as its own dedicated group */}
               <SidebarMenuItem>
                   <SidebarMenuButton tooltip="Social" isActive={isSocialActive}><Share2 /><span>Social</span></SidebarMenuButton>
                   <SidebarMenuSub>

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -34,26 +35,27 @@ VERIFY THE WEBSITE RESOLVES TO A LIVE CORPORATE DOMAIN. BROKEN LINKS ARE UNACCEP
 
 TASK: Discover and extract exactly 100 UNIQUE, LIVE South African suppliers for: "${category}".
 
-VERIFICATION PROTOCOL:
-1. SEARCH ENGINE COMMAND: Perform a live Google Search for "${category} suppliers in South Africa".
-2. WEBSITE AUDIT: Verify the OFFICIAL CORPORATE DOMAIN exists (e.g. www.companyname.co.za). 
-3. HUMAN IDENTITY: MINE the "About" or "Contact" pages to find the ACTUAL FULL NAME of the CEO, MD, or Branch Manager.
-4. MINED SERVICE SUMMARY: Provide a 2-sentence summary of their SPECIFIC technical capabilities (e.g. "Specializes in Scania fuel injector recalibration").
-5. PERSISTENCE: Generate "record_id" starting with "DISC_SUPP_${category.toUpperCase().replace(/\s/g, '_')}_".
+FORENSIC SCRAPING PROTOCOL:
+1. WEBSITE HIERARCHY SCAN: Find the primary Menu/Navigation. 
+2. DEEP WORDING EXTRACTION: Identify the "About Us" and "Products/Services" pages. 
+3. HERO CAPTURE: Scrape the actual headline and main marketing wording (Hero Text) from these sub-pages.
+4. MACHINE LEARNING TAGGING: Analyze the scraped text and extract 5-7 HIGH-INTENT industrial keywords (tags).
+5. HUMAN IDENTITY: MINE the contact pages to find the ACTUAL FULL NAME of the CEO, MD, or Branch Manager.
 
 REQUIRED JSON FIELDS:
 [
   {
     "seq": ${startSeq},
-    "record_id": "...",
-    "company_name": "FULL LEGAL NAME",
+    "record_id": "DISC_SUPP_${category.toUpperCase().replace(/\s/g, '_')}_[RAND_ID]",
+    "companyName": "FULL LEGAL NAME",
     "industrial_category": "${category}",
-    "contact_person": "VERIFIED HUMAN NAME",
-    "email_address": "...",
-    "telephone_number": "...",
+    "contactPerson": "VERIFIED HUMAN NAME",
+    "email": "...",
+    "phone": "...",
     "website": "OFFICIAL VERIFIED URL",
-    "physical_address": "...",
-    "notes": "TECHNICAL SUMMARY"
+    "address": "...",
+    "minedServiceWording": "FULL ABOUT-TEXT AND HERO HEADLINES FROM PRODUCT PAGES",
+    "industrialTags": ["Tag1", "Tag2", "Tag3", "Tag4", "Tag5"]
   }
 ]`;
 }
@@ -69,7 +71,7 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
     const handleCopy = async () => {
         await navigator.clipboard.writeText(prompt);
         setIsCopied(true);
-        toast({ title: "Forensic Prompt Ready", description: "Paste into AI Studio for live verification." });
+        toast({ title: "Forensic Prompt Ready", description: "Deep-crawling and ML-tagging instructions included." });
         setTimeout(() => setIsCopied(false), 3000);
     };
 
@@ -82,9 +84,9 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                 </h2>
                 <Alert className="bg-primary/5 border-primary/20 text-left">
                     <ShieldCheck className="h-4 w-4 text-primary" />
-                    <AlertTitle className="text-left font-bold">Hard-Verification Protocol</AlertTitle>
+                    <AlertTitle className="text-left font-bold">Deep-Scraping Active</AlertTitle>
                     <AlertDescription className="text-xs text-left">
-                        This prompt commands the AI to perform a live search and verify that every website actually resolves. Mock data is strictly forbidden.
+                        This prompt commands the AI to crawl sub-menus and extract product-page hero text and ML-based industrial tags.
                     </AlertDescription>
                 </Alert>
                 <div className="p-4 bg-muted/30 border rounded-xl space-y-4 text-left">
@@ -101,7 +103,7 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                 </div>
                 <Button onClick={handleCopy} size="lg" className="w-full gap-2 h-14 font-black uppercase tracking-widest">
                     {isCopied ? <ClipboardCheck className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
-                    Copy Forensic Prompt
+                    Copy Deep-Forensic Prompt
                 </Button>
             </div>
             <div className="space-y-2 text-left">
@@ -121,9 +123,9 @@ export default function DiscoveryEngine() {
                 <CardHeader className="px-0 pt-0 text-left">
                     <CardTitle className="flex items-center gap-2 text-left">
                         <Database className="h-6 w-6 text-primary" />
-                        AI Forensic Discovery
+                        AI Forensic Discovery (Deep Scan)
                     </CardTitle>
-                    <CardDescription className="text-left">Use the Hard-Verification prompt to bridge gaps with real-world data.</CardDescription>
+                    <CardDescription className="text-left">Use the Deep-Scraping prompt to build a high-fidelity technical registry.</CardDescription>
                 </CardHeader>
                 <CardContent className="px-0 text-left">
                     <TabsList className="h-auto flex-wrap justify-start bg-muted/30 mb-8 p-1">

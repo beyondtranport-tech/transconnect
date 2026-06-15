@@ -12,59 +12,57 @@
         "lastName": { "type": "string" },
         "email": { "type": "string", "format": "email" },
         "phone": { "type": "string" },
-        "companyId": { "type": ["string", "null"], "description": "The ID of the company this user belongs to in the /companies collection." },
+        "companyId": { "type": ["string", "null"], "description": "The ID of the company this user belongs to in the /companies collection. Null for partners." },
         "role": { "type": "string", "enum": ["owner", "staff", "partner"], "description": "The user's role in the system." },
-        "declaredPosition": { "type": "string", "description": "The role selected by the user during onboarding (e.g., transporter, vendor)." },
+        "passwordChangeRequired": { "type": "boolean", "description": "If true, the user must change their password on next login." },
         "createdAt": { "type": "object" },
         "updatedAt": { "type": "object" }
       },
       "required": ["id", "firstName", "lastName", "email", "role"]
     },
-    "Shop": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Shop",
-      "type": "object",
-      "description": "Represents a member's commercial profile (Shop or Service Profile).",
-      "properties": {
-        "id": { "type": "string" },
-        "companyId": { "type": "string" },
-        "ownerId": { "type": "string" },
-        "shopName": { "type": "string" },
-        "shopType": { "type": "string", "enum": ["vendor", "transporter"] },
-        "category": { "type": "string" },
-        "status": { "type": "string", "enum": ["draft", "pending_review", "approved", "rejected"] },
-        "homeHeading": { "type": "string", "description": "Custom headline for the profile home page." },
-        "homeSubheading": { "type": "string" },
-        "aboutText": { "type": "string", "description": "Detailed company bio." },
-        "termsText": { "type": "string", "description": "Legal terms and conditions for the shop." },
-        "privacyText": { "type": "string", "description": "Privacy policy for the shop." },
-        "showcaseFleetIds": { "type": "array", "items": { "type": "string" }, "description": "IDs of verified fleet items to display." },
-        "platformCommission": { "type": "number", "description": "The agreed platform commission rate." },
-        "createdAt": { "type": "object" },
-        "updatedAt": { "type": "object" }
-      },
-      "required": ["id", "companyId", "shopName", "shopType", "status"]
+    "Task": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "Task",
+        "description": "Represents a single task or reminder for a user.",
+        "type": "object",
+        "properties": {
+            "id": { "type": "string" },
+            "title": { "type": "string" },
+            "relatedToName": { "type": "string" },
+            "description": { "type": "string" },
+            "dueDate": { "type": "string", "format": "date-time" },
+            "status": { "type": "string", "enum": ["pending", "completed"] },
+            "assigneeId": { "type": "string" },
+            "createdAt": { "type": "object" },
+            "updatedAt": { "type": "object" }
+        },
+        "required": ["id", "title", "status", "assigneeId"]
     },
-    "Company": {
+    "Partner": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Company",
+      "title": "Partner",
       "type": "object",
-      "description": "Represents a member's business entity on the TransConnect platform.",
+      "description": "Represents a strategic partner, ISA, Investor, Developer, Supplier, Finance Co or Transporter in the system.",
       "properties": {
         "id": { "type": "string" },
-        "ownerId": { "type": "string" },
+        "firstName": { "type": "string" },
+        "lastName": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "phone": { "type": "string" },
+        "mobile": { "type": "string" },
         "companyName": { "type": "string" },
-        "shopId": { "type": "string" },
-        "shopType": { "type": "string", "enum": ["vendor", "transporter"] },
-        "membershipId": { "type": "string" },
-        "rewardPoints": { "type": "number" },
-        "walletBalance": { "type": "number" },
-        "availableBalance": { "type": "number" },
-        "status": { "type": "string" },
+        "status": { "type": "string", "enum": ["active", "inactive", "contacted", "new", "qualified", "invited"] },
+        "invitationStatus": { "type": "string", "enum": ["pending", "invited", "registered"] },
+        "consentStatus": { "type": "string", "enum": ["pending", "accepted", "declined"] },
+        "type": { "type": "string", "enum": ["partner", "isa", "investor", "developer", "supplier", "transporter", "finance"] },
+        "minedServiceWording": { "type": "string", "description": "Full technical profile and about text scraped from the website hero sections." },
+        "industrialTags": { "type": "array", "items": { "type": "string" }, "description": "ML-extracted keywords for search indexing." },
+        "address": { "type": "string" },
+        "website": { "type": "string" },
         "createdAt": { "type": "object" },
         "updatedAt": { "type": "object" }
       },
-      "required": ["id", "ownerId", "companyName", "membershipId"]
+      "required": ["firstName", "lastName", "email", "type"]
     }
   },
   "auth": {
@@ -74,29 +72,13 @@
     "structure": [
       {
         "path": "/users/{userId}",
-        "definition": {
-          "entityName": "User",
-          "schema": { "$ref": "#/entities/User" },
-          "description": "User profiles."
-        }
+        "definition": { "entityName": "User", "schema": { "$ref": "#/entities/User" }, "description": "User profiles." }
       },
       {
-        "path": "/companies/{companyId}",
-        "definition": {
-          "entityName": "Company",
-          "schema": { "$ref": "#/entities/Company" },
-          "description": "Member company records."
-        }
-      },
-      {
-        "path": "/companies/{companyId}/shops/{shopId}",
-        "definition": {
-          "entityName": "Shop",
-          "schema": { "$ref": "#/entities/Shop" },
-          "description": "Member's commercial profile."
-        }
+        "path": "/partners/{partnerId}",
+        "definition": { "entityName": "Partner", "schema": { "$ref": "#/entities/Partner" }, "description": "Consolidated industrial registry." }
       }
     ],
-    "reasoning": "Standardized the Shop entity to include detailed content and legal fields for role-aware commercial profiles."
+    "reasoning": "Added minedServiceWording and industrialTags to support high-fidelity technical data capture."
   }
 }
