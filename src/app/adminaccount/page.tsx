@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -67,7 +66,6 @@ import SocialStudio from '@/app/adminaccount/social-studio';
 import SalesRoadmap from '@/app/account/sales-roadmap';
 import TargetsPage from '@/app/account/targets';
 import FinancialProjections from '@/app/backend/financial-projections';
-import FinancialsGeneralSettings from '@/app/adminaccount/financials-general-settings';
 import FinancialSetup from '@/app/account/financial-setup';
 import BudgetPage from '@/app/account/budget/page';
 import SalaryForecastPage from '@/app/backend/salary-forecast';
@@ -150,7 +148,6 @@ function AdminAccountContent() {
       case 'sales-roadmap': return <SalesRoadmap />;
       case 'targets': return <TargetsPage />;
       case 'financial-projections': return <FinancialProjections />;
-      case 'financial-settings': return <FinancialsGeneralSettings />;
       case 'financial-setup': return <FinancialSetup />;
       case 'budget': return <BudgetPage />;
       case 'salary-forecast': return <SalaryForecastPage />;
@@ -221,7 +218,6 @@ function AdminAccountContent() {
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-suppliers'} onClick={() => navigate('marketing-suppliers')}>Suppliers</SidebarMenuSubButton></SidebarMenuSubItem>
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-transporters'} onClick={() => navigate('marketing-transporters')}>Transporters</SidebarMenuSubButton></SidebarMenuSubItem>
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-finance'} onClick={() => navigate('marketing-finance')}>Finance Co</SidebarMenuSubButton></SidebarMenuSubItem>
-                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-drivers'} onClick={() => navigate('marketing-drivers')}>Drivers</SidebarMenuSubButton></SidebarMenuSubItem>
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-investors'} onClick={() => navigate('marketing-investors')}>Investors</SidebarMenuSubButton></SidebarMenuSubItem>
                   </SidebarMenuSub>
               </SidebarMenuItem>

@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -142,7 +141,6 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
             <DialogContent className="sm:max-w-4xl max-h-[85vh] flex flex-col">
                 <DialogHeader>
                     <DialogTitle>ISA Registry Health Tool</DialogTitle>
-                    <DialogDescription>Clean up duplicate or broken records.</DialogDescription>
                 </DialogHeader>
                 <ScrollArea className="flex-1 p-4">
                     <div className="space-y-8 text-left">
@@ -151,10 +149,7 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
                                 <h3 className="font-bold text-destructive flex items-center gap-2 text-lg">
                                     <AlertTriangle className="h-5 w-5" /> Incomplete Records ({incomplete.length})
                                 </h3>
-                                <p className="text-sm text-muted-foreground">Broken records missing names.</p>
-                                <Button variant="destructive" size="sm" onClick={() => handleClean('incomplete')} disabled={isLoading}>
-                                    Delete All {incomplete.length} Records
-                                </Button>
+                                <Button variant="destructive" size="sm" onClick={() => handleClean('incomplete')} disabled={isLoading}>Delete All Incomplete</Button>
                             </div>
                         )}
                         {duplicates.length > 0 && (
@@ -174,16 +169,13 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
                                         </div>
                                     </div>
                                 ))}
-                                <Button variant="secondary" className="w-full" onClick={() => handleClean('duplicates')} disabled={isLoading}>
-                                    Clean Selected
-                                </Button>
+                                <Button variant="secondary" className="w-full" onClick={() => handleClean('duplicates')} disabled={isLoading}>Clean Selected</Button>
                             </div>
                         )}
-                        
                         {incomplete.length === 0 && duplicates.length === 0 && (
                             <div className="text-center py-20">
                                 <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
-                                <p className="text-lg font-bold text-foreground">Registry is Clean!</p>
+                                <p className="text-lg font-bold">Registry is Clean!</p>
                             </div>
                         )}
                     </div>
@@ -203,16 +195,8 @@ function ISADialog({ open, onOpenChange, partner, onSave }: { open: boolean; onO
 
   useEffect(() => {
     if (open) {
-      if (partner) {
-        form.reset({
-          ...partner,
-          website: partner.website || '',
-          notes: partner.notes || '',
-          address: partner.address || '',
-        });
-      } else {
-        form.reset({ firstName: '', lastName: '', email: '', phone: '', mobile: '', contactPerson: '', companyName: '', status: 'new', type: 'isa' });
-      }
+      if (partner) form.reset(partner);
+      else form.reset({ firstName: '', lastName: '', email: '', phone: '', mobile: '', contactPerson: '', companyName: '', status: 'new', type: 'isa' });
     }
   }, [open, partner, form]);
 
@@ -234,21 +218,18 @@ function ISADialog({ open, onOpenChange, partner, onSave }: { open: boolean; onO
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl text-left text-foreground">
-        <DialogHeader>
-          <DialogTitle>{partner ? 'Edit' : 'Add'} ISA</DialogTitle>
-          <DialogDescription>Enter details for the Independent Sales Agent.</DialogDescription>
-        </DialogHeader>
+      <DialogContent className="sm:max-w-2xl text-left">
+        <DialogHeader><DialogTitle>{partner ? 'Edit' : 'Add'} ISA</DialogTitle></DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left">
+          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2">
             <div className="grid grid-cols-2 gap-4 text-left">
               <FormField control={form.control} name="firstName" render={({ field }) => (<FormItem><FormLabel>First Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="lastName" render={({ field }) => (<FormItem><FormLabel>Last Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
-            <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Agency / Company Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+            <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem className="text-left"><FormLabel>Agency / Company Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             <div className="grid grid-cols-2 gap-4 text-left">
               <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" /></FormControl><FormMessage /></FormItem>)} />
-              <FormField control={form.control} name="mobile" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Mobile (Direct Cell)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} /></FormControl><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="mobile" render={({ field }) => (<FormItem className="text-left"><FormLabel>Mobile (Direct Cell)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
             <FormField control={form.control} name="status" render={({ field }) => (
                 <FormItem className="text-left">
@@ -342,7 +323,7 @@ export default function ISAManagement() {
     { 
         header: 'ISA Agency', 
         cell: ({ row }) => (
-            <div className="flex flex-col text-sm text-left text-foreground">
+            <div className="flex flex-col text-sm text-left">
                 <span className="font-bold text-left">{row.original.companyName || row.original.contactPerson || `${row.original.firstName} ${row.original.lastName}`}</span>
                 <div className="flex items-center gap-2 mt-1 text-left">
                     <span className="text-[10px] text-muted-foreground uppercase font-black text-left">{row.original.firstName} {row.original.lastName}</span>
@@ -388,7 +369,7 @@ export default function ISAManagement() {
 
   return (
     <div className="space-y-6 text-left">
-      <BatchResearchDialog open={dialog.type === 'batch'} onOpenChange={(o) => !o && setDialog({ type: null })} selectedLeads={filteredRecords.filter(r => selectedIds.includes(r.id))} onComplete={fetchData} />
+      <BatchResearchDialog open={dialog.type === 'batch'} onOpenChange={(o) => !o && setDialog({ type: null })} selectedLeads={allRecords.filter(r => selectedIds.includes(r.id))} onComplete={fetchData} />
       <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.data} audience="isa" onEngageSuccess={fetchData} />
       <ISADialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={fetchData} />
       
@@ -409,7 +390,7 @@ export default function ISAManagement() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <div className="space-y-6 text-left">
+      <div className="space-y-6 text-left text-foreground">
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left text-foreground">
             <div className="text-left text-foreground">
                 <CardTitle className="flex items-center gap-2 text-left text-2xl font-black font-headline text-foreground"><Bot /> ISA Management</CardTitle>

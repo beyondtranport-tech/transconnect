@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -78,64 +77,6 @@ const partnerSchema = z.object({
 });
 type PartnerFormValues = z.infer<typeof partnerSchema>;
 
-function CategorizationDialog({ open, onOpenChange, unclassifiedCount, records }: { open: boolean, onOpenChange: (o: boolean) => void, unclassifiedCount: number, records: any[] }) {
-    const { toast } = useToast();
-    const [isCopied, setIsCopied] = useState(false);
-
-    const listToClassify = records.slice(0, 100).map(r => `[KEY: ${r.id}] ${r.companyName}`).join('\n');
-    const categoryList = transporterCategories.join(', ');
-
-    const prompt = `ACT AS AN INDUSTRIAL DATA ARCHITECT. 
-RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
-
-TASK: Classify the following South African transport companies into their correct industrial category.
-
-VALID CATEGORIES: ${categoryList}
-
-REQUIRED FORMAT:
-[
-  { "record_id": "...", "industrial_category": "Selected Category" }
-]
-
-LIST TO CLASSIFY:
-${listToClassify}`;
-
-    const handleCopy = async () => {
-        await navigator.clipboard.writeText(prompt);
-        setIsCopied(true);
-        toast({ title: "Categorization Prompt Ready" });
-        setTimeout(() => {
-            setIsCopied(false);
-            onOpenChange(false);
-        }, 1000);
-    };
-
-    return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-2xl text-left text-foreground">
-                <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2"><Tag className="h-5 w-5 text-primary" /> Forensic Registry Categorizer</DialogTitle>
-                    <DialogDescription>Classify existing records using AI to populate tally badges.</DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4 py-4 text-left">
-                    <div className="p-3 bg-primary/5 border rounded-lg flex items-center justify-between text-left">
-                        <span className="text-sm font-bold text-foreground">Unclassified: <span className="text-primary">{unclassifiedCount}</span></span>
-                    </div>
-                    <ScrollArea className="h-48 border rounded-md p-3 bg-muted/30 text-[10px] font-mono leading-tight text-left text-foreground">
-                        <pre>{prompt}</pre>
-                    </ScrollArea>
-                </div>
-                <DialogFooter>
-                    <Button onClick={handleCopy} className="w-full h-12 font-black uppercase tracking-widest gap-2">
-                        {isCopied ? <Loader2 className="animate-spin h-4 w-4"/> : <Copy className="h-4 w-4" />}
-                        Copy Categorization Command
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-    );
-}
-
 function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
     const [isOpen, setIsOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -200,7 +141,7 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
                 {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <Trash2 className="h-4 w-4"/>}
                 Registry Cleaner
             </Button>
-            <DialogContent className="sm:max-w-4xl max-h-[85vh] flex flex-col">
+            <DialogContent className="sm:max-w-4xl max-h-[85vh] flex flex-col text-left">
                 <DialogHeader>
                     <DialogTitle>Registry Health Tool</DialogTitle>
                     <DialogDescription>Identify and remove duplicates or records with missing names.</DialogDescription>
@@ -208,32 +149,23 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
                 <ScrollArea className="flex-1 p-4">
                     <div className="space-y-8 text-left">
                         {incomplete.length > 0 && (
-                            <div className="space-y-4">
-                                <h3 className="font-bold text-destructive flex items-center gap-2 text-lg">
+                            <div className="space-y-4 text-left">
+                                <h3 className="font-bold text-destructive flex items-center gap-2 text-lg text-left">
                                     <AlertTriangle className="h-5 w-5" /> Incomplete Records ({incomplete.length})
                                 </h3>
-                                <p className="text-sm text-muted-foreground text-left">These records are missing names. Deleting them is recommended.</p>
-                                <Button variant="destructive" size="sm" onClick={() => handleClean('incomplete')} disabled={isLoading}>
-                                    Delete All {incomplete.length} Incomplete Records
-                                </Button>
+                                <Button variant="destructive" size="sm" onClick={() => handleClean('incomplete')} disabled={isLoading}>Delete All Incomplete</Button>
                             </div>
                         )}
-
                         {duplicates.length > 0 && (
-                            <div className="space-y-4">
-                                <h3 className="font-bold text-amber-600 flex items-center gap-2 text-lg text-left">
-                                    <Tag className="h-5 w-5" /> Potential Duplicates ({duplicates.length} groups)
-                                </h3>
+                            <div className="space-y-4 text-left">
+                                <h3 className="font-bold text-amber-600 flex items-center gap-2 text-lg text-left"><Tag className="h-5 w-5" /> Duplicates</h3>
                                 {duplicates.map((group, idx) => (
                                     <div key={idx} className="p-4 border rounded-lg bg-muted/20 space-y-2 text-left">
                                         <p className="font-bold text-sm text-left">{group[0].companyName}</p>
                                         <div className="space-y-1 text-left">
                                             {group.map(p => (
-                                                <div key={p.id} className="flex items-center gap-2 text-xs text-left">
-                                                    <Checkbox 
-                                                        checked={selections[idx] === p.id} 
-                                                        onCheckedChange={() => setSelections({...selections, [idx]: p.id})}
-                                                    />
+                                                <div key={p.id} className="flex items-center gap-2 text-xs">
+                                                    <Checkbox checked={selections[idx] === p.id} onCheckedChange={() => setSelections({...selections, [idx]: p.id})}/>
                                                     <span className="text-muted-foreground font-mono">{p.id}</span>
                                                     <span>{p.email || 'No Email'}</span>
                                                 </div>
@@ -241,16 +173,13 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
                                         </div>
                                     </div>
                                 ))}
-                                <Button variant="secondary" className="w-full" onClick={() => handleClean('duplicates')} disabled={isLoading}>
-                                    Clean Selected Duplicates
-                                </Button>
+                                <Button variant="secondary" className="w-full" onClick={() => handleClean('duplicates')} disabled={isLoading}>Clean Selected</Button>
                             </div>
                         )}
-                        
                         {incomplete.length === 0 && duplicates.length === 0 && (
                             <div className="text-center py-20">
                                 <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
-                                <p className="text-lg font-bold text-foreground">Registry is Clean!</p>
+                                <p className="text-lg font-bold">Registry is Clean!</p>
                             </div>
                         )}
                     </div>
@@ -301,23 +230,20 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl text-left text-foreground">
-        <DialogHeader>
-          <DialogTitle>{partner ? 'Edit' : 'Add'} Transporter</DialogTitle>
-          <DialogDescription>Manage haulier record and technical descriptions.</DialogDescription>
-        </DialogHeader>
+      <DialogContent className="sm:max-w-2xl text-left">
+        <DialogHeader><DialogTitle>{partner ? 'Edit' : 'Add'} Transporter</DialogTitle></DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left">
             <div className="grid grid-cols-2 gap-4 text-left">
               <FormField control={form.control} name="firstName" render={({ field }) => (<FormItem><FormLabel>First Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="lastName" render={({ field }) => (<FormItem><FormLabel>Last Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
-            <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Entity Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+            <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem className="text-left"><FormLabel>Entity Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             <div className="grid grid-cols-2 gap-4 text-left">
               <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="industrial_category" render={({ field }) => (
                     <FormItem className="text-left text-foreground">
-                        <FormLabel>Industrial Category</FormLabel>
+                        <FormLabel>Category</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl><SelectTrigger><SelectValue placeholder="Classify..." /></SelectTrigger></FormControl>
                             <SelectContent>
@@ -336,7 +262,6 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
                             <SelectItem value="new">New</SelectItem>
                             <SelectItem value="contacted">Searching</SelectItem>
                             <SelectItem value="qualified">Qualified</SelectItem>
-                            <SelectItem value="active">Active</SelectItem>
                         </SelectContent>
                     </Select>
                 </FormItem>
@@ -360,11 +285,11 @@ export default function TransporterManagement() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | 'batch' | 'categorize' | null, data?: any }>({ type: null });
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | 'batch' | null, data?: any }>({ type: null });
 
   const [statusFilter, setStatusFilter] = useState('all');
   const [assigneeFilter, setAssigneeFilter] = useState('all');
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const { data: statsData, forceRefresh: refreshStats } = useConfig<any>('transporterDiscoveryStats');
   const counts = statsData?.counts || {};
@@ -388,10 +313,6 @@ export default function TransporterManagement() {
   }, []);
 
   useEffect(() => { fetchData(); }, [fetchData]);
-
-  const unclassifiedRecords = useMemo(() => {
-      return allRecords.filter(r => !r.industrial_category && !r.category && !r.entryType);
-  }, [allRecords]);
 
   const handleRefreshTally = async () => {
     setIsRefreshing(true);
@@ -424,10 +345,6 @@ export default function TransporterManagement() {
     });
   }, [allRecords, searchTerm, statusFilter, assigneeFilter]);
 
-  const selectedLeads = useMemo(() => {
-      return allRecords.filter(r => selectedIds.includes(r.id));
-  }, [allRecords, selectedIds]);
-
   const handleDeleteBatch = async () => {
     if (selectedIds.length === 0) return;
     try {
@@ -447,21 +364,14 @@ export default function TransporterManagement() {
     { 
         header: 'Transporter Name', 
         cell: ({ row }) => (
-            <div className="flex flex-col text-sm text-left text-foreground">
+            <div className="flex flex-col text-sm text-left">
                 <span className="font-bold text-left">{row.original.companyName}</span>
                 <div className="flex items-center gap-2 mt-1 text-left">
-                    <span className="text-[10px] text-muted-foreground uppercase font-black text-left">{row.original.address || 'Location Verified'}</span>
+                    <span className="text-[10px] text-muted-foreground uppercase font-black text-left">{row.original.address || 'Hub Verified'}</span>
                     {row.original.website && <Globe className="h-3 w-3 text-primary" />}
                 </div>
             </div>
         )
-    },
-    { 
-        header: 'Category',
-        cell: ({ row }) => {
-            const cat = row.original.industrial_category || row.original.category || row.original.entryType;
-            return cat ? <Badge variant="secondary" className="text-[9px] uppercase font-bold">{cat}</Badge> : <span className="text-[10px] text-muted-foreground italic text-left">Unclassified</span>;
-        }
     },
     { accessorKey: 'mobile', header: 'Mobile' },
     { accessorKey: 'email', header: 'Email' },
@@ -480,14 +390,12 @@ export default function TransporterManagement() {
 
   return (
     <div className="space-y-6 text-left">
-      <BatchResearchDialog open={dialog.type === 'batch'} onOpenChange={(o) => !o && setDialog({ type: null })} selectedLeads={selectedLeads} onComplete={fetchData} />
-      <CategorizationDialog open={dialog.type === 'categorize'} onOpenChange={(o) => !o && setDialog({ type: null })} unclassifiedCount={unclassifiedRecords.length} records={unclassifiedRecords} />
       <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.data} audience="transporters" onEngageSuccess={fetchData} />
       <TransporterDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={fetchData} />
       
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
         <AlertDialogContent>
-          <AlertDialogHeader><AlertDialogTitle>Delete Record(s)?</AlertDialogTitle><AlertDialogDescription>Delete {selectedIds.length > 0 ? `${selectedIds.length} records` : 'record'}?</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogHeader><AlertDialogTitle>Delete Record(s)?</AlertDialogTitle><AlertDialogDescription>Delete Selected?</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={selectedIds.length > 0 ? handleDeleteBatch : async () => {
@@ -502,28 +410,22 @@ export default function TransporterManagement() {
         </AlertDialogContent>
       </AlertDialog>
       
-      <div className="space-y-6 text-left text-foreground">
+      <div className="space-y-6 text-left">
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
-            <div className="text-left text-foreground">
-                <CardTitle className="flex items-center gap-2 text-left text-2xl font-black font-headline text-foreground"><Truck /> Transporter Registry</CardTitle>
-                <CardDescription className="text-left text-foreground">Unified database view ({allRecords.length} records).</CardDescription>
+            <div className="text-left">
+                <CardTitle className="flex items-center gap-2 text-left text-2xl font-black font-headline"><Truck /> Transporter Registry</CardTitle>
+                <CardDescription className="text-left">Unified database view ({allRecords.length} records).</CardDescription>
             </div>
-            <div className="flex flex-wrap items-center gap-2 text-left text-foreground">
+            <div className="flex flex-wrap items-center gap-2 text-left">
                 <DuplicateCleaner onComplete={fetchData} />
                 {selectedIds.length > 0 && (
-                    <div className="flex gap-2 animate-in fade-in zoom-in duration-200">
-                        <Button variant="secondary" onClick={() => setDialog({ type: 'batch' })}><Zap className="mr-2 h-4 w-4" /> Batch Research ({selectedIds.length})</Button>
-                        <Button variant="destructive" onClick={() => setDialog({ type: 'delete' })}><Trash2 className="mr-2 h-4 w-4" /> Delete ({selectedIds.length})</Button>
-                    </div>
-                )}
-                {unclassifiedRecords.length > 0 && (
-                    <Button variant="outline" onClick={() => setDialog({ type: 'categorize' })} className="border-primary text-primary hover:bg-primary/5">
-                        <Tag className="mr-2 h-4 w-4" /> Categorize Existing ({unclassifiedRecords.length})
+                    <Button variant="destructive" onClick={() => setDialog({ type: 'delete' })} className="gap-2">
+                        <Trash2 className="mr-2 h-4 w-4" /> Delete Selected ({selectedIds.length})
                     </Button>
                 )}
-                <div className="relative w-64 text-left text-foreground">
+                <div className="relative w-64 text-left">
                     <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input placeholder="Search registry..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8 bg-white text-foreground" />
+                    <Input placeholder="Search registry..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8 bg-white" />
                 </div>
                 <Button variant="outline" onClick={() => downloadDataAsCSV(allRecords, 'transporters-export.csv')} disabled={isLoading}>
                     <Download className="mr-2 h-4 w-4" /> Export
@@ -533,9 +435,9 @@ export default function TransporterManagement() {
             </div>
         </CardHeader>
 
-        <Card className="border-primary/10 shadow-sm overflow-hidden text-foreground">
-            <CardHeader className="bg-muted/30 border-b text-left text-foreground">
-                 <div className="flex items-center justify-between text-left text-foreground">
+        <Card className="border-primary/10 shadow-sm overflow-hidden">
+            <CardHeader className="bg-muted/30 border-b text-left">
+                 <div className="flex items-center justify-between text-left">
                     <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
                         <Database className="h-3 w-3" /> Category Tally
                     </Label>
@@ -554,22 +456,21 @@ export default function TransporterManagement() {
                     ))}
                 </div>
             </CardHeader>
-            <CardContent className="pt-6 text-left text-foreground">
-                <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
-                    <div className="flex-1 space-y-2 text-left text-foreground">
+            <CardContent className="pt-6 text-left">
+                <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left">
+                    <div className="flex-1 space-y-2 text-left">
                         <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status</Label>
                         <Select value={statusFilter} onValueChange={setStatusFilter}>
                             <SelectTrigger className="bg-white"><SelectValue /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Statuses</SelectItem>
                                 <SelectItem value="new">New</SelectItem>
-                                <SelectItem value="contacted">Searching</SelectItem>
+                                <SelectItem value="contacted">Researching</SelectItem>
                                 <SelectItem value="qualified">Qualified</SelectItem>
-                                <SelectItem value="active">Active</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
-                    <div className="flex-1 space-y-2 text-left text-foreground">
+                    <div className="flex-1 space-y-2 text-left">
                         <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Users className="h-3 w-3"/> Assignee</Label>
                         <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
                             <SelectTrigger className="bg-white"><SelectValue /></SelectTrigger>

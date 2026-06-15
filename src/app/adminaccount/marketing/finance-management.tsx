@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -145,17 +144,17 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
                 <ScrollArea className="flex-1 p-4">
                     <div className="space-y-8 text-left">
                         {incomplete.length > 0 && (
-                            <div className="space-y-4">
-                                <h3 className="font-bold text-destructive flex items-center gap-2"><AlertTriangle className="h-5 w-5" /> Broken Records ({incomplete.length})</h3>
+                            <div className="space-y-4 text-left">
+                                <h3 className="font-bold text-destructive flex items-center gap-2"><AlertTriangle className="h-5 w-5" /> Incomplete Records ({incomplete.length})</h3>
                                 <Button variant="destructive" size="sm" onClick={() => handleClean('incomplete')} disabled={isLoading}>Delete Broken Records</Button>
                             </div>
                         )}
                         {duplicates.length > 0 && (
-                            <div className="space-y-4">
+                            <div className="space-y-4 text-left">
                                 <h3 className="font-bold text-amber-600 flex items-center gap-2"><Tag className="h-5 w-5" /> Duplicates</h3>
                                 {duplicates.map((group, idx) => (
                                     <div key={idx} className="p-4 border rounded-lg bg-muted/20 space-y-2 text-left">
-                                        <p className="font-bold text-sm">{group[0].companyName}</p>
+                                        <p className="font-bold text-sm text-left">{group[0].companyName}</p>
                                         <div className="space-y-1">
                                             {group.map(p => (
                                                 <div key={p.id} className="flex items-center gap-2 text-xs">
@@ -173,7 +172,7 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
                         {incomplete.length === 0 && duplicates.length === 0 && (
                             <div className="text-center py-20">
                                 <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
-                                <p className="text-lg font-bold text-foreground">Registry is Clean!</p>
+                                <p className="text-lg font-bold">Registry is Clean!</p>
                             </div>
                         )}
                     </div>
@@ -224,14 +223,13 @@ function FinanceDialog({ open, onOpenChange, partner, onSave }: { open: boolean;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl text-left text-foreground">
+      <DialogContent className="sm:max-w-2xl text-left">
         <DialogHeader>
           <DialogTitle>{partner ? 'Edit' : 'Add'} Finance Entity</DialogTitle>
-          <DialogDescription>Enter verified record for the capital partner.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left">
-            <div className="grid grid-cols-2 gap-4 text-left text-foreground">
+            <div className="grid grid-cols-2 gap-4 text-left">
               <FormField control={form.control} name="firstName" render={({ field }) => (
                 <FormItem><FormLabel>First Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
               )} />
@@ -239,7 +237,7 @@ function FinanceDialog({ open, onOpenChange, partner, onSave }: { open: boolean;
                 <FormItem><FormLabel>Last Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
               )} />
             </div>
-            <div className="grid grid-cols-2 gap-4 text-left text-foreground">
+            <div className="grid grid-cols-2 gap-4 text-left">
               <FormField control={form.control} name="email" render={({ field }) => (
                 <FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" /></FormControl><FormMessage /></FormItem>
               )} />
@@ -247,23 +245,23 @@ function FinanceDialog({ open, onOpenChange, partner, onSave }: { open: boolean;
                 <FormItem><FormLabel>Work Phone</FormLabel><FormControl><Input placeholder="+27 11..." {...field} /></FormControl><FormMessage /></FormItem>
               )} />
             </div>
-            <div className="grid grid-cols-2 gap-4 text-left text-foreground">
+            <div className="grid grid-cols-2 gap-4 text-left">
               <FormField control={form.control} name="mobile" render={({ field }) => (
-                <FormItem className="text-left text-foreground"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} /></FormControl><FormMessage /></FormItem>
+                <FormItem className="text-left"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} /></FormControl><FormMessage /></FormItem>
               )} />
               <FormField control={form.control} name="companyName" render={({ field }) => (
-                <FormItem className="text-left text-foreground"><FormLabel>Entity Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                <FormItem className="text-left"><FormLabel>Entity Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
               )} />
             </div>
             <FormField control={form.control} name="website" render={({ field }) => (
-              <FormItem className="text-left text-foreground"><FormLabel>Official Website</FormLabel><FormControl><Input placeholder="https://..." {...field} /></FormControl><FormMessage /></FormItem>
+              <FormItem className="text-left"><FormLabel>Official Website</FormLabel><FormControl><Input placeholder="https://..." {...field} /></FormControl><FormMessage /></FormItem>
             )} />
             <FormField control={form.control} name="address" render={({ field }) => (
-              <FormItem className="text-left text-foreground"><FormLabel>Physical Address</FormLabel><FormControl><Textarea placeholder="Enter physical address..." {...field} /></FormControl><FormMessage /></FormItem>)} />
+              <FormItem className="text-left"><FormLabel>Physical Address</FormLabel><FormControl><Textarea placeholder="Enter physical address..." {...field} /></FormControl><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="notes" render={({ field }) => (
-              <FormItem className="text-left text-foreground"><FormLabel>Focus / Notes</FormLabel><FormControl><Textarea placeholder="Details about their portfolio and sector focus..." {...field} className="min-h-[120px]" /></FormControl><FormMessage /></FormItem>)} />
+              <FormItem className="text-left"><FormLabel>Focus / Notes</FormLabel><FormControl><Textarea placeholder="Details about their portfolio and sector focus..." {...field} className="min-h-[120px]" /></FormControl><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="status" render={({ field }) => (
-                <FormItem className="text-left text-foreground">
+                <FormItem className="text-left">
                     <FormLabel>Status</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl><SelectTrigger className="bg-white"><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
@@ -355,7 +353,7 @@ export default function FinanceManagement() {
         accessorKey: 'companyName', 
         header: 'Entity Name', 
         cell: ({ row }) => (
-            <div className="flex flex-col text-left text-foreground">
+            <div className="flex flex-col text-left">
                 <span className="font-bold text-left">{row.original.companyName || `${row.original.firstName} ${row.original.lastName}`}</span>
                 {row.original.website && (
                     <div className="flex items-center gap-1.5 mt-1 text-left">
@@ -375,7 +373,7 @@ export default function FinanceManagement() {
             const isEnriched = !!(row.original.notes || row.original.website);
             const isSearching = row.original.researchStatus === 'searching';
             return (
-                <div className="flex flex-col gap-1 items-center text-foreground">
+                <div className="flex flex-col gap-1 items-center">
                     <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge>
                     {isEnriched && (
                          <div className="flex flex-col items-center text-left">
@@ -389,7 +387,7 @@ export default function FinanceManagement() {
         }
     },
     { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
-      <div className="flex justify-end gap-1 text-left text-foreground">
+      <div className="flex justify-end gap-1 text-left">
         <EnrichPartnerButton partner={row.original} onUpdate={fetchData} />
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'engage', data: row.original })} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
         <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.companyName} />
@@ -402,7 +400,7 @@ export default function FinanceManagement() {
   ];
 
   return (
-    <div className="space-y-6 text-left text-foreground">
+    <div className="space-y-6 text-left">
       <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.data} audience="finance" onEngageSuccess={fetchData} />
       <FinanceDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={fetchData} />
       
@@ -423,22 +421,22 @@ export default function FinanceManagement() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <div className="space-y-6 text-left text-foreground">
-        <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left text-foreground">
-            <div className="text-left text-foreground">
-                <CardTitle className="flex items-center gap-2 text-left text-2xl font-black font-headline text-foreground"><Landmark /> Capital Intelligence Registry</CardTitle>
-                <CardDescription className="text-left text-foreground">Full registry view of lending and finance entities ({partners.length} records).</CardDescription>
+      <div className="space-y-6 text-left">
+        <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
+            <div className="text-left">
+                <CardTitle className="flex items-center gap-2 text-left text-2xl font-black font-headline"><Landmark /> Capital Registry</CardTitle>
+                <CardDescription className="text-left">Full database view of lending and finance entities ({partners.length} records).</CardDescription>
             </div>
-            <div className="flex items-center gap-2 text-left text-foreground">
+            <div className="flex items-center gap-2 text-left">
                 <DuplicateCleaner onComplete={fetchData} />
                 {selectedIds.length > 0 && (
                     <Button variant="destructive" onClick={() => setDialog({ type: 'delete' })} className="gap-2">
                         <Trash2 className="h-4 w-4" /> Delete Selected ({selectedIds.length})
                     </Button>
                 )}
-                <div className="relative w-64 text-left text-foreground">
+                <div className="relative w-64 text-left">
                     <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input placeholder="Search registry..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8 bg-white text-foreground" />
+                    <Input placeholder="Search registry..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8 bg-white" />
                 </div>
                 <Button variant="outline" onClick={() => downloadDataAsCSV(partners, 'finance-export.csv')} disabled={isLoading}>
                     <Download className="mr-2 h-4 w-4" /> Export CSV
@@ -448,13 +446,13 @@ export default function FinanceManagement() {
             </div>
         </CardHeader>
 
-        <Card className="border-primary/10 shadow-sm overflow-hidden text-foreground">
-            <CardContent className="pt-6 text-left text-foreground">
-                <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
-                    <div className="flex-1 space-y-2 text-left text-foreground">
+        <Card className="border-primary/10 shadow-sm overflow-hidden">
+            <CardContent className="pt-6 text-left">
+                <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left">
+                    <div className="flex-1 space-y-2 text-left">
                         <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status</Label>
                         <Select value={statusFilter} onValueChange={setStatusFilter}>
-                            <SelectTrigger className="bg-white text-foreground"><SelectValue /></SelectTrigger>
+                            <SelectTrigger className="bg-white"><SelectValue /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Statuses</SelectItem>
                                 <SelectItem value="new">New</SelectItem>
@@ -464,10 +462,10 @@ export default function FinanceManagement() {
                             </SelectContent>
                         </Select>
                     </div>
-                    <div className="flex-1 space-y-2 text-left text-foreground">
+                    <div className="flex-1 space-y-2 text-left">
                         <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Users className="h-3 w-3"/> Assignee</Label>
                         <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-                            <SelectTrigger className="bg-white text-foreground"><SelectValue /></SelectTrigger>
+                            <SelectTrigger className="bg-white"><SelectValue /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Staff</SelectItem>
                                 <SelectItem value="none">Unallocated</SelectItem>
@@ -476,7 +474,7 @@ export default function FinanceManagement() {
                         </Select>
                     </div>
                 </div>
-                {isLoading ? <div className="flex justify-center items-center py-10 text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />}
+                {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />}
             </CardContent>
         </Card>
       </div>

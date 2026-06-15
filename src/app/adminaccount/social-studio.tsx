@@ -64,7 +64,6 @@ const platformConfig: Record<string, { label: string, icon: any, color: string, 
 };
 
 const socialTemplates = (platform: Platform) => {
-    const config = platformConfig[platform] || platformConfig['facebook'];
     const isLinkedIn = platform === 'linkedin';
     
     return {
@@ -106,8 +105,8 @@ const socialTemplates = (platform: Platform) => {
 
 export default function SocialStudio({ platform = 'facebook' }: { platform?: Platform }) {
     const { toast } = useToast();
-    const config = platformConfig[platform] || platformConfig['facebook'];
-    const templates = socialTemplates(platform);
+    const config = useMemo(() => platformConfig[platform] || platformConfig['facebook'], [platform]);
+    const templates = useMemo(() => socialTemplates(platform), [platform]);
     
     const [activeTab, setActiveTab] = useState<string>('app-launch');
     const [campaignName, setCampaignName] = useState('');
@@ -120,7 +119,10 @@ export default function SocialStudio({ platform = 'facebook' }: { platform?: Pla
     const [creatorParams, setCreatorParams] = useState({ topic: '', criticalPoints: '' });
     const [aiResult, setAiResult] = useState<any>(null);
 
-    const activePost = activeTab === 'creator' ? aiResult : (templates as any)[activeTab];
+    const activePost = useMemo(() => {
+        if (activeTab === 'creator') return aiResult;
+        return (templates as any)[activeTab];
+    }, [activeTab, aiResult, templates]);
 
     const derived = useMemo(() => {
         if (!activePost) return { trackingLink: '', fullPostBody: '' };
@@ -216,7 +218,7 @@ export default function SocialStudio({ platform = 'facebook' }: { platform?: Pla
                         {React.createElement(config.icon, { className: cn("h-8 w-8", config.color) })}
                     </div>
                     <div className="text-left">
-                        <h1 className="text-2xl font-black font-headline">{config.label} Engagement Studio</h1>
+                        <h1 className="text-2xl font-black font-headline">{config.label} Studio</h1>
                         <p className="text-muted-foreground text-sm">Targeted outreach and branding for the {config.label} professional network.</p>
                     </div>
                 </div>
@@ -253,7 +255,7 @@ export default function SocialStudio({ platform = 'facebook' }: { platform?: Pla
                 <div className="flex-1 flex overflow-hidden">
                     <div className="w-64 border-r bg-muted/10 p-4 space-y-4 overflow-y-auto">
                         <div className="space-y-1">
-                            <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-2 mb-2 block">Engagement Templates</Label>
+                            <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-2 mb-2 block">Post Templates</Label>
                             {Object.entries(templates).map(([id, template]: [string, any]) => (
                                 <Button
                                     key={id}
@@ -307,7 +309,7 @@ export default function SocialStudio({ platform = 'facebook' }: { platform?: Pla
                                     <Card className="border-none shadow-xl border-l-4 border-l-primary bg-white">
                                         <CardHeader>
                                             <CardTitle className="text-xl font-black">{activePost.headline}</CardTitle>
-                                            <CardDescription>Review and finalize your {config.label} engagement post.</CardDescription>
+                                            <CardDescription>Review and finalize your {config.label} post.</CardDescription>
                                         </CardHeader>
                                         <CardContent className="p-0 border-t">
                                             <Textarea 

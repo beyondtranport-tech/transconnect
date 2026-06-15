@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -126,7 +125,7 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
                 {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <Trash2 className="h-4 w-4"/>}
                 Registry Cleaner
             </Button>
-            <DialogContent className="sm:max-w-4xl max-h-[85vh] flex flex-col">
+            <DialogContent className="sm:max-w-4xl max-h-[85vh] flex flex-col text-left">
                 <DialogHeader>
                     <DialogTitle>Registry Health Tool</DialogTitle>
                     <DialogDescription>Identify and remove duplicates or records with missing names.</DialogDescription>
@@ -134,32 +133,23 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
                 <ScrollArea className="flex-1 p-4">
                     <div className="space-y-8 text-left">
                         {incomplete.length > 0 && (
-                            <div className="space-y-4">
-                                <h3 className="font-bold text-destructive flex items-center gap-2 text-lg">
+                            <div className="space-y-4 text-left">
+                                <h3 className="font-bold text-destructive flex items-center gap-2 text-lg text-left">
                                     <AlertTriangle className="h-5 w-5" /> Incomplete Records ({incomplete.length})
                                 </h3>
-                                <p className="text-sm text-muted-foreground text-left">These records are missing names. Deleting them is recommended.</p>
-                                <Button variant="destructive" size="sm" onClick={() => handleClean('incomplete')} disabled={isLoading}>
-                                    Delete All {incomplete.length} Incomplete Records
-                                </Button>
+                                <Button variant="destructive" size="sm" onClick={() => handleClean('incomplete')} disabled={isLoading}>Delete All Incomplete</Button>
                             </div>
                         )}
-
                         {duplicates.length > 0 && (
-                            <div className="space-y-4">
-                                <h3 className="font-bold text-amber-600 flex items-center gap-2 text-lg text-left">
-                                    <Tag className="h-5 w-5" /> Potential Duplicates ({duplicates.length} groups)
-                                </h3>
+                            <div className="space-y-4 text-left">
+                                <h3 className="font-bold text-amber-600 flex items-center gap-2 text-lg text-left"><Tag className="h-5 w-5" /> Duplicates</h3>
                                 {duplicates.map((group, idx) => (
                                     <div key={idx} className="p-4 border rounded-lg bg-muted/20 space-y-2 text-left">
                                         <p className="font-bold text-sm text-left">{group[0].companyName}</p>
                                         <div className="space-y-1 text-left">
                                             {group.map(p => (
-                                                <div key={p.id} className="flex items-center gap-2 text-xs text-left">
-                                                    <Checkbox 
-                                                        checked={selections[idx] === p.id} 
-                                                        onCheckedChange={() => setSelections({...selections, [idx]: p.id})}
-                                                    />
+                                                <div key={p.id} className="flex items-center gap-2 text-xs">
+                                                    <Checkbox checked={selections[idx] === p.id} onCheckedChange={() => setSelections({...selections, [idx]: p.id})}/>
                                                     <span className="text-muted-foreground font-mono">{p.id}</span>
                                                     <span>{p.email || 'No Email'}</span>
                                                 </div>
@@ -167,16 +157,13 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
                                         </div>
                                     </div>
                                 ))}
-                                <Button variant="secondary" className="w-full" onClick={() => handleClean('duplicates')} disabled={isLoading}>
-                                    Clean Selected Duplicates
-                                </Button>
+                                <Button variant="secondary" className="w-full" onClick={() => handleClean('duplicates')} disabled={isLoading}>Clean Selected</Button>
                             </div>
                         )}
-                        
                         {incomplete.length === 0 && duplicates.length === 0 && (
                             <div className="text-center py-20">
                                 <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
-                                <p className="text-lg font-bold text-foreground">Registry is Clean!</p>
+                                <p className="text-lg font-bold">Registry is Clean!</p>
                             </div>
                         )}
                     </div>
@@ -196,16 +183,8 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
 
   useEffect(() => {
     if (open) {
-      if (partner) {
-        form.reset({
-          ...partner,
-          website: partner.website || '',
-          notes: partner.notes || '',
-          address: partner.address || '',
-        });
-      } else {
-        form.reset({ firstName: '', lastName: '', email: '', phone: '', mobile: '', contactPerson: '', companyName: '', status: 'new', type: 'supplier' });
-      }
+      if (partner) form.reset(partner);
+      else form.reset({ firstName: '', lastName: '', email: '', phone: '', mobile: '', contactPerson: '', companyName: '', status: 'new', type: 'supplier' });
     }
   }, [open, partner, form]);
 
@@ -227,26 +206,19 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl text-left text-foreground">
-        <DialogHeader>
-          <DialogTitle>{partner ? 'Edit' : 'Add'} Supplier</DialogTitle>
-          <DialogDescription>Manage verified supplier record and technical details.</DialogDescription>
-        </DialogHeader>
+      <DialogContent className="sm:max-w-2xl text-left">
+        <DialogHeader><DialogTitle>{partner ? 'Edit' : 'Add'} Supplier</DialogTitle></DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left">
             <div className="grid grid-cols-2 gap-4 text-left">
               <FormField control={form.control} name="firstName" render={({ field }) => (<FormItem><FormLabel>First Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="lastName" render={({ field }) => (<FormItem><FormLabel>Last Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
-            <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Entity Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-            <FormField control={form.control} name="website" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Official Website</FormLabel><FormControl><Input placeholder="https://..." {...field} /></FormControl><FormMessage /></FormItem>)} />
+            <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem className="text-left"><FormLabel>Entity Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             <div className="grid grid-cols-2 gap-4 text-left">
               <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" /></FormControl><FormMessage /></FormItem>)} />
-              <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Landline</FormLabel><FormControl><Input placeholder="+27 11..." {...field} /></FormControl><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="mobile" render={({ field }) => (<FormItem className="text-left"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
-            <FormField control={form.control} name="mobile" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Mobile (Direct Cell)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} /></FormControl><FormMessage /></FormItem>)} />
-            <FormField control={form.control} name="address" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Physical Address</FormLabel><FormControl><Textarea placeholder="Enter full operational address..." {...field} /></FormControl><FormMessage /></FormItem>)} />
-            <FormField control={form.control} name="notes" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Technical Focus</FormLabel><FormControl><Textarea placeholder="Details about their parts or services..." {...field} className="min-h-[120px]" /></FormControl><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="status" render={({ field }) => (
                 <FormItem className="text-left">
                     <FormLabel>Status</FormLabel>
@@ -263,7 +235,7 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
             )} />
             <DialogFooter className="pt-4 border-t text-left">
               <Button type="submit" disabled={isLoading}>
-                {isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />} Save
+                {isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />} Save Record
               </Button>
             </DialogFooter>
           </form>
@@ -359,7 +331,7 @@ export default function SupplierManagement() {
         accessorKey: 'companyName', 
         header: 'Supplier Name', 
         cell: ({ row }) => (
-            <div className="flex flex-col text-sm text-left text-foreground">
+            <div className="flex flex-col text-sm text-left">
                 <span className="font-bold text-left">{row.original.companyName || row.original.contactPerson || 'Incomplete Record'}</span>
                 <div className="flex items-center gap-2 mt-1 text-left">
                     <span className="text-[10px] text-muted-foreground uppercase font-black text-left">{row.original.address || 'Operational Hub Verified'}</span>
@@ -404,16 +376,13 @@ export default function SupplierManagement() {
   ];
 
   return (
-    <div className="space-y-6 text-left text-foreground">
+    <div className="space-y-6 text-left">
       <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.data} audience="suppliers" onEngageSuccess={fetchData} />
       <SupplierDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={fetchData} />
       
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
         <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Record(s)?</AlertDialogTitle>
-            <AlertDialogDescription>This action will permanently remove {selectedIds.length > 0 ? `${selectedIds.length} records` : `"${dialog.data?.companyName}"`} from the registry.</AlertDialogDescription>
-          </AlertDialogHeader>
+          <AlertDialogHeader><AlertDialogTitle>Delete Record(s)?</AlertDialogTitle><AlertDialogDescription>Delete Selected?</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={selectedIds.length > 0 ? handleDeleteBatch : async () => {
@@ -429,21 +398,21 @@ export default function SupplierManagement() {
       </AlertDialog>
 
       <div className="space-y-6 text-left">
-        <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left text-foreground">
-            <div className="text-left text-foreground">
-                <CardTitle className="text-left text-2xl font-black font-headline flex items-center gap-2 text-foreground"><Building /> Supplier Registry</CardTitle>
-                <CardDescription className="text-left text-foreground">Unified industrial supply directory ({allRecords.length} records).</CardDescription>
+        <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
+            <div className="text-left">
+                <CardTitle className="text-left text-2xl font-black font-headline flex items-center gap-2"><Building /> Supplier Registry</CardTitle>
+                <CardDescription className="text-left">Unified industrial supply directory ({allRecords.length} records).</CardDescription>
             </div>
-            <div className="flex flex-wrap items-center gap-2 text-left text-foreground">
+            <div className="flex flex-wrap items-center gap-2 text-left">
                 <DuplicateCleaner onComplete={fetchData} />
                 {selectedIds.length > 0 && (
                     <Button variant="destructive" onClick={() => setDialog({ type: 'delete' })} className="gap-2">
                         <Trash2 className="h-4 w-4" /> Delete Selected ({selectedIds.length})
                     </Button>
                 )}
-                <div className="relative w-64 text-left text-foreground">
+                <div className="relative w-64 text-left">
                     <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input placeholder="Search registry..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8 bg-white text-foreground" />
+                    <Input placeholder="Search registry..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8 bg-white" />
                 </div>
                 <Button variant="outline" onClick={() => downloadDataAsCSV(allRecords, 'suppliers-export.csv')} disabled={isLoading}>
                     <Download className="mr-2 h-4 w-4" /> Export CSV
@@ -453,9 +422,9 @@ export default function SupplierManagement() {
             </div>
         </CardHeader>
 
-        <Card className="border-primary/10 shadow-sm overflow-hidden text-foreground">
-            <CardHeader className="bg-muted/30 border-b text-left text-foreground">
-                 <div className="flex items-center justify-between text-left text-foreground">
+        <Card className="border-primary/10 shadow-sm overflow-hidden">
+            <CardHeader className="bg-muted/30 border-b text-left">
+                 <div className="flex items-center justify-between text-left">
                     <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
                         <Database className="h-3 w-3" /> Category Tally
                     </Label>
@@ -474,9 +443,9 @@ export default function SupplierManagement() {
                     ))}
                 </div>
             </CardHeader>
-            <CardContent className="pt-6 text-left text-foreground">
-                <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
-                    <div className="flex-1 space-y-2 text-left text-foreground">
+            <CardContent className="pt-6 text-left">
+                <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left">
+                    <div className="flex-1 space-y-2 text-left">
                         <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status</Label>
                         <Select value={statusFilter} onValueChange={setStatusFilter}>
                             <SelectTrigger className="bg-white"><SelectValue /></SelectTrigger>
@@ -489,7 +458,7 @@ export default function SupplierManagement() {
                             </SelectContent>
                         </Select>
                     </div>
-                    <div className="flex-1 space-y-2 text-left text-foreground">
+                    <div className="flex-1 space-y-2 text-left">
                         <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Users className="h-3 w-3"/> Assignee</Label>
                         <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
                             <SelectTrigger className="bg-white"><SelectValue /></SelectTrigger>
