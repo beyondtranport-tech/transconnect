@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -10,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
 import { 
-  Loader2, PlusCircle, Building, Edit, Trash2, Send, Download, Save, Search, Filter, Users, Globe, Zap, Upload, RefreshCcw, Database, Copy, Tag, AlertTriangle, CheckCircle 
+  Loader2, PlusCircle, Building, Edit, Trash2, Send, Download, Save, Search, Filter, Users, Globe, Zap, Upload, RefreshCcw, Database, Copy, Tag, AlertTriangle, CheckCircle, Sparkles 
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
@@ -33,7 +32,7 @@ import { useConfig } from '@/hooks/use-config';
 import { supplierCategories } from './discovery-engine';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Separator } from '@/components/ui/separator';
 
 async function performAdminAction(token: string, action: string, payload: any) {
   const response = await fetch('/api/admin', {
@@ -124,32 +123,29 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
 
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <Button variant="outline" onClick={findDuplicates} disabled={isLoading} className="gap-2 text-left">
+            <Button variant="outline" onClick={findDuplicates} disabled={isLoading} className="gap-2">
                 {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <Trash2 className="h-4 w-4"/>}
                 Registry Cleaner
             </Button>
-            <DialogContent className="sm:max-w-4xl max-h-[85vh] flex flex-col text-left">
+            <DialogContent className="sm:max-w-4xl max-h-[85vh] flex flex-col">
                 <DialogHeader>
                     <DialogTitle>Registry Health Tool</DialogTitle>
-                    <DialogDescription>Identify and remove duplicates or records with missing names.</DialogDescription>
                 </DialogHeader>
                 <ScrollArea className="flex-1 p-4">
-                    <div className="space-y-8 text-left">
+                    <div className="space-y-8">
                         {incomplete.length > 0 && (
-                            <div className="space-y-4 text-left">
-                                <h3 className="font-bold text-destructive flex items-center gap-2 text-lg text-left">
-                                    <AlertTriangle className="h-5 w-5" /> Incomplete Records ({incomplete.length})
-                                </h3>
+                            <div className="space-y-4">
+                                <h3 className="font-bold text-destructive flex items-center gap-2"><AlertTriangle className="h-5 w-5" /> Incomplete Records ({incomplete.length})</h3>
                                 <Button variant="destructive" size="sm" onClick={() => handleClean('incomplete')} disabled={isLoading}>Delete All Incomplete</Button>
                             </div>
                         )}
                         {duplicates.length > 0 && (
-                            <div className="space-y-4 text-left">
-                                <h3 className="font-bold text-amber-600 flex items-center gap-2 text-lg text-left"><Tag className="h-5 w-5" /> Duplicates</h3>
+                            <div className="space-y-4">
+                                <h3 className="font-bold text-amber-600 flex items-center gap-2"><Tag className="h-5 w-5" /> Duplicates</h3>
                                 {duplicates.map((group, idx) => (
                                     <div key={idx} className="p-4 border rounded-lg bg-muted/20 space-y-2 text-left">
-                                        <p className="font-bold text-sm text-left">{group[0].companyName}</p>
-                                        <div className="space-y-1 text-left">
+                                        <p className="font-bold text-sm">{group[0].companyName}</p>
+                                        <div className="space-y-1">
                                             {group.map(p => (
                                                 <div key={p.id} className="flex items-center gap-2 text-xs">
                                                     <Checkbox checked={selections[idx] === p.id} onCheckedChange={() => setSelections({...selections, [idx]: p.id})}/>
@@ -212,33 +208,33 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
       <DialogContent className="sm:max-w-3xl text-left">
         <DialogHeader><DialogTitle>{partner ? 'Edit' : 'Add'} Supplier</DialogTitle></DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left">
+          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2">
             <div className="grid grid-cols-2 gap-4 text-left">
-              <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem className="text-left"><FormLabel>Entity Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-              <FormField control={form.control} name="contactPerson" render={({ field }) => (<FormItem className="text-left"><FormLabel>Key Decision Maker</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Entity Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="contactPerson" render={({ field }) => (<FormItem><FormLabel>Key Decision Maker</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
             <div className="grid grid-cols-2 gap-4 text-left">
               <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Direct E-mail</FormLabel><FormControl><Input {...field} type="email" /></FormControl><FormMessage /></FormItem>)} />
-              <FormField control={form.control} name="mobile" render={({ field }) => (<FormItem className="text-left"><FormLabel>Mobile (Direct Cell)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} /></FormControl><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="mobile" render={({ field }) => (<FormItem><FormLabel>Mobile (Direct Cell)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
             <FormField control={form.control} name="website" render={({ field }) => (<FormItem className="text-left"><FormLabel>Corporate Website</FormLabel><FormControl><Input placeholder="https://..." {...field} /></FormControl><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="address" render={({ field }) => (<FormItem className="text-left"><FormLabel>Operational Address</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>)} />
             
             <Separator />
-            <div className="space-y-4">
+            <div className="space-y-4 text-left">
                 <h3 className="text-sm font-black uppercase tracking-widest text-primary flex items-center gap-2">
                     <Sparkles className="h-4 w-4"/> Forensic Technical Profile
                 </h3>
                 <FormField control={form.control} name="minedServiceWording" render={({ field }) => (
-                    <FormItem className="text-left">
+                    <FormItem>
                         <FormLabel>Scraped About/Hero Text</FormLabel>
                         <FormControl><Textarea placeholder="Deep-crawled mission and product statements..." className="min-h-[150px]" {...field} /></FormControl>
                         <FormMessage />
                     </FormItem>
                 )} />
                 <FormField control={form.control} name="industrialTags" render={({ field }) => (
-                    <FormItem className="text-left">
-                        <FormLabel>ML Extracted Keywords (comma separated)</Label>
+                    <FormItem>
+                        <FormLabel>ML Extracted Keywords (comma separated)</FormLabel>
                         <FormControl>
                             <Input 
                                 placeholder="e.g. LFP Storage, Deep Cycle, Marine Batteries..." 
@@ -265,7 +261,7 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
                     </Select>
                 </FormItem>
             )} />
-            <DialogFooter className="pt-4 border-t text-left">
+            <DialogFooter className="pt-4 border-t">
               <Button type="submit" disabled={isLoading}>
                 {isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />} Save Record
               </Button>
@@ -366,7 +362,7 @@ export default function SupplierManagement() {
         cell: ({ row }) => (
             <div className="flex flex-col text-sm text-left">
                 <span className="font-bold text-left">{row.original.companyName || row.original.contactPerson || 'Incomplete Record'}</span>
-                <div className="flex flex-wrap gap-1 mt-1 text-left">
+                <div className="flex flex-wrap gap-1 mt-1">
                     {row.original.industrialTags?.slice(0, 3).map((tag: string) => (
                         <Badge key={tag} variant="secondary" className="text-[8px] h-3.5 bg-slate-100 text-slate-600 border-none px-1.5 uppercase font-black">{tag}</Badge>
                     ))}
@@ -386,7 +382,7 @@ export default function SupplierManagement() {
                 <div className="flex flex-col gap-1 items-center">
                     <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge>
                     {isEnriched && (
-                        <div className="flex flex-col items-center text-left">
+                        <div className="flex flex-col items-center">
                             <Badge className="bg-green-100 text-green-700 border-none text-[9px] h-4 uppercase">Enriched</Badge>
                             <span className="text-[8px] text-muted-foreground mt-0.5">{formatDateSafe(row.original.enrichedAt, "dd/MM")}</span>
                         </div>
@@ -397,7 +393,7 @@ export default function SupplierManagement() {
         }
     },
     { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
-      <div className="flex justify-end gap-1 text-left">
+      <div className="flex justify-end gap-1">
         <EnrichPartnerButton partner={row.original} onUpdate={fetchData} />
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'engage', data: row.original })} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
         <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.companyName} />
@@ -434,7 +430,7 @@ export default function SupplierManagement() {
       <div className="space-y-6 text-left">
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
             <div className="text-left">
-                <CardTitle className="text-left text-2xl font-black font-headline flex items-center gap-2"><Building /> Supplier Registry</CardTitle>
+                <CardTitle className="flex items-center gap-2 text-2xl font-black font-headline text-left"><Building /> Supplier Registry</CardTitle>
                 <CardDescription className="text-left">Unified industrial supply directory ({allRecords.length} records).</CardDescription>
             </div>
             <div className="flex flex-wrap items-center gap-2 text-left">
@@ -456,7 +452,7 @@ export default function SupplierManagement() {
             </div>
         </CardHeader>
 
-        <Card className="border-primary/10 shadow-sm overflow-hidden">
+        <Card className="border-primary/10 shadow-sm overflow-hidden text-left">
             <CardHeader className="bg-muted/30 border-b text-left">
                  <div className="flex items-center justify-between text-left">
                     <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
@@ -468,7 +464,7 @@ export default function SupplierManagement() {
                 </div>
                 <div className="flex flex-wrap gap-2 mt-3 text-left">
                     {supplierCategories.map(cat => (
-                        <div key={cat} className="flex items-center bg-white border rounded-full pl-3 pr-1 py-0.5 shadow-sm text-left">
+                        <div key={cat} className="flex items-center bg-white border rounded-full pl-3 pr-1 py-0.5 shadow-sm">
                             <span className="text-[9px] font-bold text-slate-600 mr-2">{cat}</span>
                             <Badge className="bg-primary/10 text-primary border-none text-[9px] font-black h-4 px-1.5 min-w-[20px] justify-center">
                                 {counts[cat] || 0}
@@ -482,7 +478,7 @@ export default function SupplierManagement() {
                     <div className="flex-1 space-y-2 text-left">
                         <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status</Label>
                         <Select value={statusFilter} onValueChange={setStatusFilter}>
-                            <SelectTrigger className="bg-white"><SelectValue /></SelectTrigger>
+                            <SelectTrigger className="bg-white"><SelectValue placeholder="All Statuses" /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Statuses</SelectItem>
                                 <SelectItem value="new">New Lead</SelectItem>
@@ -495,7 +491,7 @@ export default function SupplierManagement() {
                     <div className="flex-1 space-y-2 text-left">
                         <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Users className="h-3 w-3"/> Assignee</Label>
                         <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-                            <SelectTrigger className="bg-white"><SelectValue /></SelectTrigger>
+                            <SelectTrigger className="bg-white"><SelectValue placeholder="All Staff" /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Staff</SelectItem>
                                 <SelectItem value="none">Unallocated</SelectItem>

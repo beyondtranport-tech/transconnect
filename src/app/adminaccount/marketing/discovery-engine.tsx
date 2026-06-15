@@ -77,8 +77,8 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
 
     return (
         <div className="grid md:grid-cols-2 gap-6">
-            <div className="space-y-4 text-left">
-                <h2 className="text-2xl font-bold font-headline flex items-center gap-2 text-left">
+            <div className="space-y-4">
+                <h2 className="text-2xl font-bold font-headline flex items-center gap-2">
                     <Globe className="h-6 w-6 text-primary" />
                     Forensic Discovery: {category}
                 </h2>
@@ -89,7 +89,7 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                         This prompt commands the AI to crawl sub-menus and extract product-page hero text and ML-based industrial tags.
                     </AlertDescription>
                 </Alert>
-                <div className="p-4 bg-muted/30 border rounded-xl space-y-4 text-left">
+                <div className="p-4 bg-muted/30 border rounded-xl space-y-4">
                     <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Sequence Sync</Label>
                     <div className="space-y-1.5 text-left">
                         <Label className="text-xs font-bold">Start Sequence #</Label>
@@ -106,7 +106,7 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                     Copy Deep-Forensic Prompt
                 </Button>
             </div>
-            <div className="space-y-2 text-left">
+            <div className="space-y-2">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5"><Terminal className="h-3 w-3"/> Command Preview</Label>
                 <ScrollArea className="h-[400px] border rounded-lg bg-slate-900 p-4">
                     <pre className="text-[10px] text-slate-400 font-mono whitespace-pre-wrap leading-tight">{prompt}</pre>
@@ -120,14 +120,14 @@ export default function DiscoveryEngine() {
     return (
         <Card className="shadow-none border-none">
             <Tabs defaultValue="Accessories" className="w-full">
-                <CardHeader className="px-0 pt-0 text-left">
-                    <CardTitle className="flex items-center gap-2 text-left">
+                <CardHeader className="px-0 pt-0">
+                    <CardTitle className="flex items-center gap-2">
                         <Database className="h-6 w-6 text-primary" />
                         AI Forensic Discovery (Deep Scan)
                     </CardTitle>
-                    <CardDescription className="text-left">Use the Deep-Scraping prompt to build a high-fidelity technical registry.</CardDescription>
+                    <CardDescription>Use the Deep-Scraping prompt to build a high-fidelity technical registry.</CardDescription>
                 </CardHeader>
-                <CardContent className="px-0 text-left">
+                <CardContent className="px-0">
                     <TabsList className="h-auto flex-wrap justify-start bg-muted/30 mb-8 p-1">
                         {supplierCategories.map(category => (
                             <TabsTrigger key={category} value={category} className="text-xs px-4 py-2">{category}</TabsTrigger>

@@ -134,27 +134,25 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
 
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <Button variant="outline" onClick={findDuplicates} disabled={isLoading} className="gap-2 text-left">
+            <Button variant="outline" onClick={findDuplicates} disabled={isLoading} className="gap-2">
                 {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <Trash2 className="h-4 w-4"/>}
                 Registry Cleaner
             </Button>
-            <DialogContent className="sm:max-w-4xl max-h-[85vh] flex flex-col">
+            <DialogContent className="sm:max-w-4xl max-h-[85vh] flex flex-col text-left">
                 <DialogHeader>
                     <DialogTitle>ISA Registry Health Tool</DialogTitle>
                 </DialogHeader>
                 <ScrollArea className="flex-1 p-4">
-                    <div className="space-y-8 text-left">
+                    <div className="space-y-8">
                         {incomplete.length > 0 && (
                             <div className="space-y-4">
-                                <h3 className="font-bold text-destructive flex items-center gap-2 text-lg">
-                                    <AlertTriangle className="h-5 w-5" /> Incomplete Records ({incomplete.length})
-                                </h3>
+                                <h3 className="font-bold text-destructive flex items-center gap-2"><AlertTriangle className="h-5 w-5" /> Incomplete Records ({incomplete.length})</h3>
                                 <Button variant="destructive" size="sm" onClick={() => handleClean('incomplete')} disabled={isLoading}>Delete All Incomplete</Button>
                             </div>
                         )}
                         {duplicates.length > 0 && (
                             <div className="space-y-4">
-                                <h3 className="font-bold text-amber-600 flex items-center gap-2 text-lg"><Tag className="h-5 w-5" /> Duplicates</h3>
+                                <h3 className="font-bold text-amber-600 flex items-center gap-2"><Tag className="h-5 w-5" /> Duplicates</h3>
                                 {duplicates.map((group, idx) => (
                                     <div key={idx} className="p-4 border rounded-lg bg-muted/20 space-y-2 text-left">
                                         <p className="font-bold text-sm">{group[0].companyName}</p>
@@ -221,7 +219,7 @@ function ISADialog({ open, onOpenChange, partner, onSave }: { open: boolean; onO
       <DialogContent className="sm:max-w-2xl text-left">
         <DialogHeader><DialogTitle>{partner ? 'Edit' : 'Add'} ISA</DialogTitle></DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2">
+          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left">
             <div className="grid grid-cols-2 gap-4 text-left">
               <FormField control={form.control} name="firstName" render={({ field }) => (<FormItem><FormLabel>First Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="lastName" render={({ field }) => (<FormItem><FormLabel>Last Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
@@ -244,7 +242,7 @@ function ISADialog({ open, onOpenChange, partner, onSave }: { open: boolean; onO
                     </Select>
                 </FormItem>
             )} />
-            <DialogFooter className="pt-4 border-t text-left">
+            <DialogFooter className="pt-4 border-t">
               <Button type="submit" disabled={isLoading}>
                 {isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />} Save ISA
               </Button>
@@ -304,7 +302,7 @@ export default function ISAManagement() {
     });
   }, [allRecords, searchTerm, statusFilter, assigneeFilter]);
 
-  const handleDeleteBatch = async () => {
+  async function handleDeleteBatch() {
     if (selectedIds.length === 0) return;
     try {
       const token = await getClientSideAuthToken();
@@ -317,7 +315,7 @@ export default function ISAManagement() {
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Error', description: e.message });
     }
-  };
+  }
 
   const columns: ColumnDef<any>[] = [
     { 
@@ -325,7 +323,7 @@ export default function ISAManagement() {
         cell: ({ row }) => (
             <div className="flex flex-col text-sm text-left">
                 <span className="font-bold text-left">{row.original.companyName || row.original.contactPerson || `${row.original.firstName} ${row.original.lastName}`}</span>
-                <div className="flex items-center gap-2 mt-1 text-left">
+                <div className="flex items-center gap-2 mt-1">
                     <span className="text-[10px] text-muted-foreground uppercase font-black text-left">{row.original.firstName} {row.original.lastName}</span>
                     {row.original.website && <Globe className="h-3 w-3 text-primary" />}
                 </div>
@@ -390,13 +388,13 @@ export default function ISAManagement() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <div className="space-y-6 text-left text-foreground">
+      <div className="space-y-6 text-left">
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left text-foreground">
-            <div className="text-left text-foreground">
-                <CardTitle className="flex items-center gap-2 text-left text-2xl font-black font-headline text-foreground"><Bot /> ISA Management</CardTitle>
-                <CardDescription className="text-left text-foreground">Full database of Independent Sales Agents ({allRecords.length} records).</CardDescription>
+            <div className="text-left">
+                <CardTitle className="flex items-center gap-2 text-2xl font-black font-headline text-left"><Bot /> ISA Management</CardTitle>
+                <CardDescription className="text-left">Full database of Independent Sales Agents ({allRecords.length} records).</CardDescription>
             </div>
-            <div className="flex flex-wrap items-center gap-2 text-left text-foreground">
+            <div className="flex flex-wrap items-center gap-2 text-left">
                 <DuplicateCleaner onComplete={fetchData} />
                 {selectedIds.length > 0 && (
                     <div className="flex gap-2 animate-in fade-in zoom-in duration-200">
@@ -404,7 +402,7 @@ export default function ISAManagement() {
                         <Button variant="destructive" onClick={() => setDialog({ type: 'delete' })}><Trash2 className="mr-2 h-4 w-4" /> Delete ({selectedIds.length})</Button>
                     </div>
                 )}
-                <div className="relative w-64 text-left">
+                <div className="relative w-64 text-left text-foreground">
                     <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input placeholder="Search registry..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8 bg-white" />
                 </div>
@@ -415,13 +413,13 @@ export default function ISAManagement() {
                 <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4" /> Add ISA</Button>
             </div>
         </CardHeader>
-        <Card className="border-primary/10 shadow-sm overflow-hidden text-foreground">
-            <CardContent className="pt-6 text-left text-foreground">
-                <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
-                    <div className="flex-1 space-y-2 text-left text-foreground">
+        <Card className="border-primary/10 shadow-sm overflow-hidden text-left">
+            <CardContent className="pt-6 text-left">
+                <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left">
+                    <div className="flex-1 space-y-2 text-left">
                         <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status</Label>
                         <Select value={statusFilter} onValueChange={setStatusFilter}>
-                            <SelectTrigger className="bg-white"><SelectValue /></SelectTrigger>
+                            <SelectTrigger className="bg-white"><SelectValue placeholder="All Statuses" /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Statuses</SelectItem>
                                 <SelectItem value="new">New Lead</SelectItem>
@@ -433,7 +431,7 @@ export default function ISAManagement() {
                     <div className="flex-1 space-y-2 text-left text-foreground">
                         <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Users className="h-3 w-3"/> Assignee</Label>
                         <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-                            <SelectTrigger className="bg-white"><SelectValue /></SelectTrigger>
+                            <SelectTrigger className="bg-white"><SelectValue placeholder="All Staff" /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Staff</SelectItem>
                                 <SelectItem value="none">Unallocated</SelectItem>

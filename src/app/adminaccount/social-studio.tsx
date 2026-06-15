@@ -64,6 +64,7 @@ const platformConfig: Record<string, { label: string, icon: any, color: string, 
 };
 
 const socialTemplates = (platform: Platform) => {
+    const config = platformConfig[platform] || platformConfig['facebook'];
     const isLinkedIn = platform === 'linkedin';
     
     return {
@@ -212,8 +213,8 @@ export default function SocialStudio({ platform = 'facebook' }: { platform?: Pla
 
     return (
         <div className="space-y-6 text-left">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <div className="flex items-center gap-4">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 text-left">
+                <div className="flex items-center gap-4 text-left">
                     <div className="bg-muted p-3 rounded-xl">
                         {React.createElement(config.icon, { className: cn("h-8 w-8", config.color) })}
                     </div>
@@ -224,8 +225,8 @@ export default function SocialStudio({ platform = 'facebook' }: { platform?: Pla
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <div className="space-y-2">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 text-left">
+                <div className="space-y-2 text-left">
                     <Label className="text-[10px] font-black uppercase text-primary tracking-[0.2em] flex items-center gap-2">
                         <LinkIcon className="h-3 w-3"/> Campaign Tracking Label
                     </Label>
@@ -237,7 +238,7 @@ export default function SocialStudio({ platform = 'facebook' }: { platform?: Pla
                     />
                     <p className="text-[9px] text-muted-foreground italic">A unique tag to identify traffic from this post (e.g. 'LI_Q3_MEMO').</p>
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-2 text-left">
                     <Label className="text-[10px] font-black uppercase text-primary tracking-[0.2em] flex items-center gap-2">
                         <ExternalLink className="h-3 w-3"/> {config.targetLabel}
                     </Label>
@@ -251,10 +252,10 @@ export default function SocialStudio({ platform = 'facebook' }: { platform?: Pla
                 </div>
             </div>
 
-            <Card className="flex flex-col h-[75vh] overflow-hidden p-0 shadow-2xl border-none">
-                <div className="flex-1 flex overflow-hidden">
-                    <div className="w-64 border-r bg-muted/10 p-4 space-y-4 overflow-y-auto">
-                        <div className="space-y-1">
+            <Card className="flex flex-col h-[75vh] overflow-hidden p-0 shadow-2xl border-none text-left">
+                <div className="flex-1 flex overflow-hidden text-left">
+                    <div className="w-64 border-r bg-muted/10 p-4 space-y-4 overflow-y-auto text-left">
+                        <div className="space-y-1 text-left">
                             <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-2 mb-2 block">Post Templates</Label>
                             {Object.entries(templates).map(([id, template]: [string, any]) => (
                                 <Button
@@ -279,24 +280,24 @@ export default function SocialStudio({ platform = 'facebook' }: { platform?: Pla
                         </Button>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto bg-slate-50 p-8">
-                        <div className="max-w-[800px] mx-auto space-y-8">
-                             <div className="bg-white p-4 rounded-xl border shadow-sm flex flex-col gap-2">
-                                <div className="flex items-center justify-between">
+                    <div className="flex-1 overflow-y-auto bg-slate-50 p-8 text-left">
+                        <div className="max-w-[800px] mx-auto space-y-8 text-left">
+                             <div className="bg-white p-4 rounded-xl border shadow-sm flex flex-col gap-2 text-left">
+                                <div className="flex items-center justify-between text-left">
                                     <Label className="text-[10px] font-black uppercase text-primary tracking-widest flex items-center gap-2">
                                         <Search className="h-3 w-3"/> Follow Target: {config.label}
                                     </Label>
                                     <Input value={pageUrl} onChange={e => setPageUrl(e.target.value)} className="h-8 w-[400px] font-mono text-xs bg-slate-50" />
                                 </div>
-                                <p className="text-[9px] text-muted-foreground italic">The official Logistics Flow page URL to drive permanent followers.</p>
+                                <p className="text-[9px] text-muted-foreground italic text-left">The official Logistics Flow page URL to drive permanent followers.</p>
                             </div>
 
                             {activeTab === 'creator' && (
-                                <Card className="border-amber-200 bg-amber-50/20">
+                                <Card className="border-amber-200 bg-amber-50/20 text-left">
                                     <CardHeader><CardTitle className="text-lg flex items-center gap-2"><Sparkles className="h-5 w-5 text-amber-500" /> AI Creative memo</CardTitle></CardHeader>
                                     <CardContent className="space-y-4">
-                                        <div className="space-y-2"><Label>Primary Topic</Label><Input placeholder="e.g. Scaling industrial capacity" value={creatorParams.topic} onChange={e => setCreatorParams({...creatorParams, topic: e.target.value})} /></div>
-                                        <div className="space-y-2"><Label>Key Data Points</Label><Textarea placeholder="Point 1&#10;Point 2..." value={creatorParams.criticalPoints} onChange={e => setCreatorParams({...creatorParams, criticalPoints: e.target.value})} /></div>
+                                        <div className="space-y-2 text-left"><Label>Primary Topic</Label><Input placeholder="e.g. Scaling industrial capacity" value={creatorParams.topic} onChange={e => setCreatorParams({...creatorParams, topic: e.target.value})} /></div>
+                                        <div className="space-y-2 text-left"><Label>Key Data Points</Label><Textarea placeholder="Point 1&#10;Point 2..." value={creatorParams.criticalPoints} onChange={e => setCreatorParams({...creatorParams, criticalPoints: e.target.value})} /></div>
                                         <Button className="w-full font-bold bg-amber-600" onClick={handleGenerateCustom} disabled={isGenerating}>
                                             {isGenerating ? <Loader2 className="h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4" />} Generate Copy
                                         </Button>
@@ -306,7 +307,7 @@ export default function SocialStudio({ platform = 'facebook' }: { platform?: Pla
 
                             {activePost && (
                                 <>
-                                    <Card className="border-none shadow-xl border-l-4 border-l-primary bg-white">
+                                    <Card className="border-none shadow-xl border-l-4 border-l-primary bg-white text-left">
                                         <CardHeader>
                                             <CardTitle className="text-xl font-black">{activePost.headline}</CardTitle>
                                             <CardDescription>Review and finalize your {config.label} post.</CardDescription>
@@ -326,20 +327,20 @@ export default function SocialStudio({ platform = 'facebook' }: { platform?: Pla
                                         </CardFooter>
                                     </Card>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div className="bg-slate-900 text-white p-6 rounded-xl border-l-4 border-l-primary shadow-xl">
-                                            <div className="flex items-center justify-between mb-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
+                                        <div className="bg-slate-900 text-white p-6 rounded-xl border-l-4 border-l-primary shadow-xl text-left">
+                                            <div className="flex items-center justify-between mb-4 text-left">
                                                 <h4 className="font-bold uppercase text-[10px] tracking-widest text-primary flex items-center gap-2"><ImageIcon className="h-3 w-3"/> AI Image Prompt</h4>
                                                 <Button variant="outline" size="sm" className="h-7 text-[9px] uppercase bg-white/10 border-white/20" onClick={() => handleCopyPrompt('image')}><Copy className="mr-1 h-3 w-3" /> Copy</Button>
                                             </div>
-                                            <p className="text-xs italic font-mono opacity-80 pl-4 border-l border-white/10 leading-relaxed">{activePost.imagePrompt}</p>
+                                            <p className="text-xs italic font-mono opacity-80 pl-4 border-l border-white/10 leading-relaxed text-left">{activePost.imagePrompt}</p>
                                         </div>
-                                        <div className="bg-slate-900 text-white p-6 rounded-xl border-l-4 border-l-amber-500 shadow-xl">
-                                            <div className="flex items-center justify-between mb-4">
+                                        <div className="bg-slate-900 text-white p-6 rounded-xl border-l-4 border-l-amber-500 shadow-xl text-left">
+                                            <div className="flex items-center justify-between mb-4 text-left">
                                                 <h4 className="font-bold uppercase text-[10px] tracking-widest text-amber-500 flex items-center gap-2"><Video className="h-3 w-3"/> AI Video Prompt</h4>
                                                 <Button variant="outline" size="sm" className="h-7 text-[9px] uppercase bg-white/10 border-white/20" onClick={() => handleCopyPrompt('video')}><Copy className="mr-1 h-3 w-3" /> Copy</Button>
                                             </div>
-                                            <p className="text-xs italic font-mono opacity-80 pl-4 border-l border-white/10 leading-relaxed">{activePost.videoPrompt}</p>
+                                            <p className="text-xs italic font-mono opacity-80 pl-4 border-l border-white/10 leading-relaxed text-left">{activePost.videoPrompt}</p>
                                         </div>
                                     </div>
 

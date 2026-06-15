@@ -20,103 +20,30 @@
       },
       "required": ["id", "firstName", "lastName", "email", "role"]
     },
-    "Task": {
-        "$schema": "http://json-schema.org/draft-07/schema#",
-        "title": "Task",
-        "description": "Represents a single task or reminder for a user.",
-        "type": "object",
-        "properties": {
-            "id": { "type": "string" },
-            "title": { "type": "string" },
-            "relatedToName": { "type": "string", "description": "The name of the entity this task is related to (e.g., a partner's name)." },
-            "description": { "type": "string" },
-            "dueDate": { "type": "string", "format": "date-time" },
-            "status": { "type": "string", "enum": ["pending", "completed"] },
-            "assigneeId": { "type": "string", "description": "The UID of the user this task is assigned to." },
-            "createdAt": { "type": "object" },
-            "updatedAt": { "type": "object" }
-        },
-        "required": ["id", "title", "status", "assigneeId"]
-    },
     "Partner": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Partner",
       "type": "object",
-      "description": "Represents a strategic partner, ISA, Investor, Developer, Supplier, Finance Co or Transporter in the system.",
+      "description": "Represents a strategic partner, ISA, Investor, Developer, Supplier, Finance Co or Transporter.",
       "properties": {
         "id": { "type": "string" },
         "firstName": { "type": "string" },
         "lastName": { "type": "string" },
         "email": { "type": "string", "format": "email" },
-        "phone": { "type": "string", "description": "Primary office or landline number." },
-        "mobile": { "type": "string", "description": "Direct mobile or cell number." },
+        "phone": { "type": "string" },
+        "mobile": { "type": "string" },
         "companyName": { "type": "string" },
-        "status": { "type": "string", "enum": ["active", "inactive", "contacted", "new", "qualified", "invited"], "description": "The operational status of the partnership." },
-        "invitationStatus": { "type": "string", "enum": ["pending", "invited", "registered"], "description": "The status of their invitation to join the platform." },
-        "consentStatus": { "type": "string", "enum": ["pending", "accepted", "declined"], "description": "POPI and Marketing consent status." },
-        "consentDate": { "type": "object", "description": "Timestamp when consent was recorded." },
-        "lastOpenedAt": { "type": "object", "description": "Timestamp of the last email open tracked via pixel." },
-        "assigneeId": { "type": "string", "description": "The UID of the staff member allocated to this lead." },
-        "type": { "type": "string", "enum": ["partner", "isa", "investor", "developer", "supplier", "transporter", "finance"], "description": "The type of partner entity." },
-        "notes": { "type": "string" },
+        "status": { "type": "string", "enum": ["active", "inactive", "contacted", "new", "qualified", "invited", "registered"] },
+        "type": { "type": "string", "enum": ["partner", "isa", "investor", "developer", "supplier", "transporter", "finance"] },
+        "minedServiceWording": { "type": "string", "description": "Full technical profile and about text scraped from the website hero sections." },
+        "industrialTags": { "type": "array", "items": { "type": "string" }, "description": "ML-extracted keywords for search indexing." },
         "address": { "type": "string" },
         "website": { "type": "string" },
+        "assigneeId": { "type": "string", "description": "UID of the allocated platform staff member." },
         "createdAt": { "type": "object" },
         "updatedAt": { "type": "object" }
       },
       "required": ["firstName", "lastName", "email", "type"]
-    },
-    "CommunicationLog": {
-        "$schema": "http://json-schema.org/draft-07/schema#",
-        "title": "Communication Log",
-        "type": "object",
-        "description": "Records an instance of communication with a partner.",
-        "properties": {
-            "id": { "type": "string" },
-            "type": { "type": "string", "enum": ["Email", "WhatsApp", "Call", "Meeting"], "description": "The method of communication." },
-            "subject": { "type": "string", "description": "The topic of the communication, e.g., 'Company Profile'." },
-            "notes": { "type": "string", "description": "Optional notes about the interaction." },
-            "timestamp": { "type": "object" }
-        },
-        "required": ["id", "type", "subject", "timestamp"]
-    },
-    "Company": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Company",
-      "type": "object",
-      "description": "Represents a member's business entity on the TransConnect platform.",
-      "properties": {
-        "id": { "type": "string", "description": "Unique identifier for the company." },
-        "ownerId": { "type": "string", "description": "The Firebase Auth UID of the user who owns and manages this company account." },
-        "companyName": { "type": "string", "description": "The registered business name of the company." },
-        "registrationNumber": { "type": "string" },
-        "vatNumber": { "type": "string" },
-        "streetAddress": { "type": "string" },
-        "city": { "type": "string" },
-        "province": { "type": "string" },
-        "postalCode": { "type": "string" },
-        "bankName": { "type": "string" },
-        "branchCode": { "type": "string" },
-        "accountNumber": { "type": "string" },
-        "accountHolderName": { "type": "string" },
-        "membershipId": { "type": "string", "description": "Reference to Membership tier ID." },
-        "membershipStartDate": { "type": "string", "format": "date-time" },
-        "billingCycle": { "type": "string", "enum": ["monthly", "annual"] },
-        "nextBillingDate": { "type": "string", "format": "date-time" },
-        "shopId": { "type": "string", "description": "The ID of the shop owned by this company." },
-        "loadBoardId": { "type": "string", "description": "The ID of the load board owned by this company." },
-        "vehicleShowroomId": { "type": "string", "description": "The ID of the vehicle showroom owned by this company." },
-        "rewardPoints": { "type": "number", "description": "Points earned for community actions." },
-        "walletBalance": { "type": "number", "description": "Total ledger balance, including pending funds." },
-        "pendingBalance": { "type": "number", "description": "Funds from recent sales not yet cleared for withdrawal." },
-        "availableBalance": { "type": "number", "description": "Funds cleared and available for withdrawal or purchases." },
-        "loyaltyTier": { "type": "string", "enum": ["bronze", "silver", "gold"], "description": "The current loyalty status of the member." },
-        "activePlans": { "type": "array", "items": { "type": "string" }, "description": "A list of activated Connect plans (e.g., 'loyalty', 'rewards')." },
-        "isBillable": { "type": "boolean", "description": "Flag to indicate if the company has an active, billable subscription." },
-        "createdAt": { "type": "object" },
-        "updatedAt": { "type": "object" }
-      },
-      "required": ["id", "ownerId", "companyName", "membershipId"]
     }
   },
   "auth": {
@@ -126,37 +53,13 @@
     "structure": [
       {
         "path": "/users/{userId}",
-        "definition": {
-          "entityName": "User",
-          "schema": { "$ref": "#/entities/User" },
-          "description": "Stores individual user profiles. A user can only read/write their own document."
-        }
+        "definition": { "entityName": "User", "schema": { "$ref": "#/entities/User" }, "description": "User profiles." }
       },
       {
         "path": "/partners/{partnerId}",
-        "definition": {
-          "entityName": "Partner",
-          "schema": { "$ref": "#/entities/Partner" },
-          "description": "Admin-managed collection of strategic partners, ISAs, suppliers, etc."
-        }
-      },
-      {
-        "path": "/partners/{partnerId}/communications/{logId}",
-        "definition": {
-          "entityName": "CommunicationLog",
-          "schema": { "$ref": "#/entities/CommunicationLog" },
-          "description": "Log of communications with a partner."
-        }
-      },
-      {
-        "path": "/partners/{partnerId}/tasks/{taskId}",
-        "definition": {
-            "entityName": "Task",
-            "schema": { "$ref": "#/entities/Task" },
-            "description": "Subcollection for tasks related to a specific partner."
-        }
+        "definition": { "entityName": "Partner", "schema": { "$ref": "#/entities/Partner" }, "description": "Consolidated industrial registry." }
       }
     ],
-    "reasoning": "Standardized Partner entity to include distinct phone and mobile properties for landline and direct cell tracking."
+    "reasoning": "Added minedServiceWording and industrialTags to support high-fidelity technical data capture via deep-crawling AI prompts."
   }
 }
