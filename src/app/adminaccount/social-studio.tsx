@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { 
     Facebook, Linkedin, Instagram, Music, Sparkles, Loader2, Copy, ExternalLink, 
-    ShieldCheck, Search, BarChart3, ImageIcon, Video, Rocket, Link as LinkIcon, Users
+    ShieldCheck, Search, BarChart3, ImageIcon, Video, Rocket, Link as LinkIcon, Users, Info
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -31,9 +31,6 @@ const platformConfig: Record<string, { label: string, icon: any, color: string, 
     tiktok: { label: 'TikTok', icon: Music, color: 'text-black', targetLabel: 'Target Trend URL', defaultDest: 'https://tiktok.com/', defaultPage: 'https://tiktok.com/@LogisticsFlow' },
 };
 
-/**
- * Funnel-based social templates for high-traction engagement
- */
 const socialTemplates = (platform: string) => {
     const config = platformConfig[platform] || platformConfig['facebook'];
     const platformName = config.label;
@@ -191,20 +188,45 @@ export default function SocialStudio({ platform = 'facebook' }: { platform?: Pla
                         <p className="text-muted-foreground text-sm">Strategic expansion suite for {config.label}.</p>
                     </div>
                 </div>
-                <div className="flex flex-wrap items-center gap-3 bg-muted/50 p-2 rounded-lg border text-left">
-                    <div className="space-y-1 text-left">
-                        <Label className="text-[10px] font-black uppercase text-muted-foreground px-2 tracking-widest text-left">Tracking Label</Label>
-                        <Input placeholder="e.g. Intro post" value={campaignName} onChange={e => setCampaignName(e.target.value)} className="h-8 w-48 bg-white border-none shadow-none text-xs font-bold" />
+                
+                <div className="flex flex-wrap items-center gap-3 bg-white p-4 rounded-xl border-2 border-primary/10 shadow-sm text-left max-w-4xl">
+                    <div className="flex-1 min-w-[250px] space-y-2">
+                        <div className="flex items-center justify-between">
+                            <Label className="text-[10px] font-black uppercase text-primary tracking-[0.2em] flex items-center gap-2">
+                                <LinkIcon className="h-3 w-3"/> Tracking Label
+                            </Label>
+                             <Info className="h-3 w-3 text-muted-foreground" title="Enter a unique name for this campaign (e.g. 'July Promo') to track conversions in your dashboard." />
+                        </div>
+                        <Input 
+                            placeholder="e.g. Foundation Post" 
+                            value={campaignName} 
+                            onChange={e => setCampaignName(e.target.value)} 
+                            className="h-10 bg-slate-50 border-none shadow-none text-xs font-bold" 
+                        />
+                        <p className="text-[9px] text-muted-foreground italic">Appended to your join-links for conversion tracking.</p>
                     </div>
-                    <Separator orientation="vertical" className="hidden md:block h-10 mx-2" />
-                    <div className="space-y-1 text-left">
-                        <Label className="text-[10px] font-black uppercase text-muted-foreground px-2 tracking-widest text-left">{config.targetLabel}</Label>
-                        <Input placeholder="Link to group or profile..." value={groupUrl} onChange={e => setGroupUrl(e.target.value)} className="h-8 w-64 bg-white border-none shadow-none text-xs font-mono" />
+
+                    <Separator orientation="vertical" className="hidden lg:block h-12 mx-2" />
+
+                    <div className="flex-1 min-w-[300px] space-y-2">
+                        <div className="flex items-center justify-between">
+                            <Label className="text-[10px] font-black uppercase text-primary tracking-[0.2em] flex items-center gap-2">
+                                <ExternalLink className="h-3 w-3"/> {config.targetLabel}
+                            </Label>
+                            <Info className="h-3 w-3 text-muted-foreground" title="Paste the URL of the specific Facebook Group, LinkedIn Page, or TikTok Trend you are targeting." />
+                        </div>
+                        <Input 
+                            placeholder="URL to target destination..." 
+                            value={groupUrl} 
+                            onChange={e => setGroupUrl(e.target.value)} 
+                            className="h-10 bg-slate-50 border-none shadow-none text-xs font-mono" 
+                        />
+                        <p className="text-[9px] text-muted-foreground italic">The platform destination that will open when you click launch.</p>
                     </div>
                 </div>
             </div>
 
-            <Card className="flex flex-col h-[75vh] overflow-hidden p-0 shadow-2xl">
+            <Card className="flex flex-col h-[75vh] overflow-hidden p-0 shadow-2xl border-none">
                 <div className="flex-1 flex overflow-hidden">
                     <div className="w-64 border-r bg-muted/10 p-4 space-y-4 overflow-y-auto">
                         <div className="space-y-1">
@@ -234,11 +256,14 @@ export default function SocialStudio({ platform = 'facebook' }: { platform?: Pla
 
                     <div className="flex-1 overflow-y-auto bg-slate-50 p-8">
                         <div className="max-w-[800px] mx-auto space-y-8">
-                             <div className="bg-white p-3 rounded-lg border flex flex-col gap-1 text-left">
+                             <div className="bg-white p-4 rounded-xl border shadow-sm flex flex-col gap-2 text-left">
                                 <div className="flex items-center justify-between text-xs text-left">
-                                    <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest text-left">Follow Link: {config.label} Profile URL</Label>
-                                    <Input value={pageUrl} onChange={e => setPageUrl(e.target.value)} className="h-7 w-80 border-none shadow-none text-right font-mono" />
+                                    <Label className="text-[10px] font-black uppercase text-primary tracking-widest text-left flex items-center gap-2">
+                                        <Search className="h-3 w-3"/> Community Follow Link: {config.label}
+                                    </Label>
+                                    <Input value={pageUrl} onChange={e => setPageUrl(e.target.value)} className="h-8 w-[400px] border-none shadow-none text-right font-mono bg-slate-50" />
                                 </div>
+                                <p className="text-[9px] text-muted-foreground italic px-1">Ensure this links to your official {config.label} profile to drive permanent followers.</p>
                             </div>
 
                             {activeTab === 'creator' && (
@@ -258,50 +283,55 @@ export default function SocialStudio({ platform = 'facebook' }: { platform?: Pla
 
                             {activePost && (
                                 <>
-                                    <Card className="border-none shadow-xl border-l-4 border-l-primary text-left">
+                                    <Card className="border-none shadow-xl border-l-4 border-l-primary text-left bg-white">
                                         <CardHeader>
                                             <CardTitle className="text-xl font-black">{activePost.headline}</CardTitle>
-                                            <CardDescription>Review and finalize your {config.label} post.</CardDescription>
+                                            <CardDescription>Finalize your {config.label} post structure.</CardDescription>
                                         </CardHeader>
                                         <CardContent className="p-0 border-t text-left">
                                             <Textarea 
                                                 value={editedContent[activeTab] || activePost.body || activePost.text || ''}
                                                 onChange={e => setEditedContent({...editedContent, [activeTab]: e.target.value})}
-                                                className="min-h-[220px] border-none focus-visible:ring-0 p-6 italic font-sans leading-relaxed text-sm text-left"
+                                                className="min-h-[250px] border-none focus-visible:ring-0 p-8 italic font-sans leading-relaxed text-sm text-left bg-transparent"
                                             />
-                                            <div className="p-6 pt-0 space-y-2 text-left">
-                                                 <div className="p-3 bg-blue-50 border border-blue-100 rounded-lg flex items-center justify-between text-left">
-                                                    <span className="text-[10px] font-black uppercase text-blue-600 tracking-widest flex items-center gap-2 text-left"><LinkIcon className="h-3 w-3"/> Landing Page with Tracker</span>
-                                                    <code className="text-[10px] font-bold text-blue-800">{derived.trackingLink}</code>
+                                            <div className="p-8 pt-0 space-y-4 text-left">
+                                                 <div className="p-4 bg-blue-50 border border-blue-100 rounded-xl flex items-center justify-between text-left">
+                                                    <div className="space-y-1">
+                                                        <span className="text-[10px] font-black uppercase text-blue-600 tracking-[0.1em] flex items-center gap-2 text-left">
+                                                            <LinkIcon className="h-3 w-3"/> Join Link (Tracked)
+                                                        </span>
+                                                        <code className="text-[10px] font-bold text-blue-800 block mt-1">{derived.trackingLink}</code>
+                                                    </div>
+                                                    <Button variant="ghost" size="sm" className="h-7 text-[9px] font-black uppercase" onClick={() => { navigator.clipboard.writeText(derived.trackingLink); toast({ title: "Link Copied" }); }}>Copy Link</Button>
                                                 </div>
                                             </div>
                                         </CardContent>
-                                        <CardFooter className="bg-muted/10 border-t flex justify-end p-4">
-                                            <Button size="lg" className="bg-blue-600 hover:bg-blue-700 font-black uppercase text-xs gap-2 shadow-lg" onClick={handleLogAndLaunch}>
-                                                <ExternalLink className="mr-2 h-4 w-4" />
-                                                Copy & Launch to {config.label}
+                                        <CardFooter className="bg-muted/10 border-t flex justify-end p-6">
+                                            <Button size="lg" className="bg-blue-600 hover:bg-blue-700 font-black uppercase text-xs gap-3 shadow-lg h-14 px-8" onClick={handleLogAndLaunch}>
+                                                <ExternalLink className="h-5 w-5" />
+                                                Log interaction & Launch {config.label}
                                             </Button>
                                         </CardFooter>
                                     </Card>
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
-                                        <div className="bg-slate-900 text-white p-6 rounded-xl border-l-4 border-l-primary text-left">
+                                        <div className="bg-slate-900 text-white p-6 rounded-xl border-l-4 border-l-primary text-left shadow-xl">
                                             <div className="flex items-center justify-between mb-4 text-left">
                                                 <h4 className="font-bold uppercase text-[10px] tracking-widest text-primary flex items-center gap-2 text-left"><ImageIcon className="h-3 w-3"/> AI Image Command</h4>
-                                                <Button variant="outline" size="sm" className="h-7 text-[9px] uppercase bg-white/10" onClick={() => handleCopyPrompt('image')}><Copy className="mr-1 h-3 w-3" /> Copy</Button>
+                                                <Button variant="outline" size="sm" className="h-7 text-[9px] uppercase bg-white/10 border-white/20" onClick={() => handleCopyPrompt('image')}><Copy className="mr-1 h-3 w-3" /> Copy Prompt</Button>
                                             </div>
-                                            <p className="text-xs italic font-mono opacity-90 border-l border-white/20 pl-4 text-left">{activePost.imagePrompt}</p>
+                                            <p className="text-xs italic font-mono opacity-80 border-l border-white/20 pl-4 text-left leading-relaxed">{activePost.imagePrompt}</p>
                                         </div>
-                                        <div className="bg-slate-900 text-white p-6 rounded-xl border-l-4 border-l-amber-500 text-left">
+                                        <div className="bg-slate-900 text-white p-6 rounded-xl border-l-4 border-l-amber-500 text-left shadow-xl">
                                             <div className="flex items-center justify-between mb-4 text-left">
                                                 <h4 className="font-bold uppercase text-[10px] tracking-widest text-amber-500 flex items-center gap-2 text-left"><Video className="h-3 w-3"/> AI Video Command</h4>
-                                                <Button variant="outline" size="sm" className="h-7 text-[9px] uppercase bg-white/10" onClick={() => handleCopyPrompt('video')}><Copy className="mr-1 h-3 w-3" /> Copy</Button>
+                                                <Button variant="outline" size="sm" className="h-7 text-[9px] uppercase bg-white/10 border-white/20" onClick={() => handleCopyPrompt('video')}><Copy className="mr-1 h-3 w-3" /> Copy Prompt</Button>
                                             </div>
-                                            <p className="text-xs italic font-mono opacity-90 border-l border-amber-500/20 pl-4 text-left">{activePost.videoPrompt || 'A slow cinematic 4k video of the subject moving towards the camera.'}</p>
+                                            <p className="text-xs italic font-mono opacity-80 border-l border-amber-500/20 pl-4 text-left leading-relaxed">{activePost.videoPrompt || 'A slow cinematic 4k video of the subject moving towards the camera.'}</p>
                                         </div>
                                     </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left pt-4">
                                         <ImageGeneratorCard />
                                         <VideoGeneratorCard />
                                     </div>

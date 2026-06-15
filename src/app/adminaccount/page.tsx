@@ -42,7 +42,7 @@ import {
   Instagram,
   Music,
 } from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect, Suspense, useCallback } from 'react';
@@ -182,7 +182,7 @@ function AdminAccountContent() {
     <SidebarProvider>
       <Sidebar>
         <SidebarHeader>
-          <div className="flex items-center gap-2 p-2 text-left">
+          <div className="flex items-center gap-2 p-2 text-left text-foreground">
             <Shield className="h-6 w-6 text-primary" />
             <h2 className="text-lg font-semibold text-sidebar-foreground text-left">Admin Portal</h2>
           </div>
