@@ -68,66 +68,6 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data });
             }
 
-            case 'getShops': {
-                const snap = await db.collectionGroup('shops').where('status', '==', 'approved').orderBy('updatedAt', 'desc').get();
-                const data = snap.docs.map(doc => ({ id: doc.id, companyId: doc.ref.parent.parent?.id, ...serializeTimestamps(doc.data()) }));
-                return NextResponse.json({ success: true, data });
-            }
-
-            case 'getPlatformStaff': {
-                const snap = await db.collection('platformStaff').get();
-                const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
-                return NextResponse.json({ success: true, data });
-            }
-
-            case 'refreshTransporterCategoryCounts':
-            case 'refreshSupplierCategoryCounts':
-            case 'refreshFinanceCategoryCounts':
-            case 'refreshDriverCategoryCounts': {
-                const typeMap: Record<string, string> = {
-                    refreshTransporterCategoryCounts: 'transporter',
-                    refreshSupplierCategoryCounts: 'supplier',
-                    refreshFinanceCategoryCounts: 'finance',
-                    refreshDriverCategoryCounts: 'driver'
-                };
-                const configIdMap: Record<string, string> = {
-                    refreshTransporterCategoryCounts: 'transporterDiscoveryStats',
-                    refreshSupplierCategoryCounts: 'supplierDiscoveryStats',
-                    refreshFinanceCategoryCounts: 'financeDiscoveryStats',
-                    refreshDriverCategoryCounts: 'driverDiscoveryStats'
-                };
-                
-                const targetType = typeMap[action];
-                const configId = configIdMap[action];
-
-                const snap = await db.collection('partners').where('type', '==', targetType).get();
-                const counts: Record<string, number> = {};
-                
-                snap.docs.forEach(doc => {
-                    const data = doc.data();
-                    const category = data.industrial_category || data.category || data.entryType || 'General';
-                    counts[category] = (counts[category] || 0) + 1;
-                });
-
-                await db.collection('configuration').doc(configId).set({
-                    counts,
-                    lastUpdated: FieldValue.serverTimestamp()
-                }, { merge: true });
-
-                return NextResponse.json({ success: true });
-            }
-
-            case 'savePartner': {
-                const { partner } = payload;
-                if (!partner.id) {
-                    const ref = db.collection('partners').doc();
-                    await ref.set({ ...partner, id: ref.id, createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
-                } else {
-                    await db.collection('partners').doc(partner.id).update({ ...partner, updatedAt: FieldValue.serverTimestamp() });
-                }
-                return NextResponse.json({ success: true });
-            }
-
             case 'bulkSavePartners': {
                 const { partners, type } = payload;
                 const batch = db.batch();
@@ -147,7 +87,6 @@ export async function POST(req: NextRequest) {
                     const data = {
                         ...p,
                         type,
-                        // Normalization Logic: Map AI Forensic keys to Registry keys
                         companyName: cName,
                         contactPerson: p.contactPerson || p.contact_person || p.leadership || (p.firstName ? `${p.firstName} ${p.lastName}` : null),
                         email: p.email || p.email_address || p.professional_contact,
@@ -156,11 +95,10 @@ export async function POST(req: NextRequest) {
                         address: p.address || p.physical_address || p.location || p.operational_hub,
                         industrial_category: p.industrial_category || p.category || p.classification || p.service_classification,
                         updatedAt: FieldValue.serverTimestamp(),
-                        enrichedAt: (p.notes || p.website || p.contact_person || p.contact_person) ? FieldValue.serverTimestamp() : null,
+                        enrichedAt: (p.notes || p.website) ? FieldValue.serverTimestamp() : null,
                         researchStatus: (p.notes || p.website) ? 'completed' : 'new'
                     };
                     
-                    // Clean up raw sequence keys from AI output
                     delete (data as any).seq;
                     delete (data as any).sequence;
                     
@@ -170,28 +108,37 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, count: partners.length });
             }
 
-            case 'logForensicInitiated': {
-                const { partnerId, isLead } = payload;
-                const coll = isLead ? 'leads' : 'partners';
-                await db.collection(coll).doc(partnerId).update({
-                    researchStatus: 'searching',
-                    updatedAt: FieldValue.serverTimestamp()
+            case 'findDuplicatePartners': {
+                const { type } = payload;
+                const snap = await db.collection('partners').where('type', '==', type).get();
+                const seen = new Map<string, any[]>();
+                const incomplete: any[] = [];
+
+                snap.docs.forEach(doc => {
+                    const data = { id: doc.id, ...doc.data() };
+                    const name = (data.companyName || '').toLowerCase().trim();
+                    
+                    if (!name) {
+                        incomplete.push(data);
+                        return;
+                    }
+
+                    if (!seen.has(name)) seen.set(name, []);
+                    seen.get(name)?.push(data);
                 });
-                return NextResponse.json({ success: true });
+
+                const duplicates = Array.from(seen.values()).filter(group => group.length > 1);
+                return NextResponse.json({ success: true, duplicates, incomplete });
             }
 
-            case 'bulkLogForensicInitiated': {
-                const { leadIds, type } = payload;
-                const coll = type === 'lead' ? 'leads' : 'partners';
+            case 'deletePartners': {
+                const { partnerIds } = payload;
                 const batch = db.batch();
-                leadIds.forEach((id: string) => {
-                    batch.update(db.collection(coll).doc(id), {
-                        researchStatus: 'searching',
-                        updatedAt: FieldValue.serverTimestamp()
-                    });
+                partnerIds.forEach((id: string) => {
+                    batch.delete(db.collection('partners').doc(id));
                 });
                 await batch.commit();
-                return NextResponse.json({ success: true });
+                return NextResponse.json({ success: true, count: partnerIds.length });
             }
 
             case 'deletePartner': {
@@ -200,13 +147,16 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true });
             }
 
-            case 'deleteLeads': {
-                const { leadIds } = payload;
-                const batch = db.batch();
-                leadIds.forEach((id: string) => {
-                    batch.delete(db.collection('leads').doc(id));
+            case 'logCommunication': {
+                const { partnerId, type: commType, subject, notes } = payload;
+                const logRef = db.collection('partners').doc(partnerId).collection('communications').doc();
+                await logRef.set({
+                    id: logRef.id,
+                    type: commType,
+                    subject,
+                    notes: notes || '',
+                    timestamp: FieldValue.serverTimestamp()
                 });
-                await batch.commit();
                 return NextResponse.json({ success: true });
             }
 

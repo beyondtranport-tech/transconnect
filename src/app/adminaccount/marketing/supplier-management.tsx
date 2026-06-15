@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
-  Loader2, PlusCircle, Building, Edit, Trash2, Send, Download, Save, Search, Filter, Users, Globe, Zap, Upload, RefreshCcw, Database, Copy, Tag
+  Loader2, PlusCircle, Building, Edit, Trash2, Send, Download, Save, Search, Filter, Users, Globe, Zap, Upload, RefreshCcw, Database, Copy, Tag, AlertTriangle
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
@@ -32,6 +32,7 @@ import { Label } from '@/components/ui/label';
 import { useConfig } from '@/hooks/use-config';
 import { supplierCategories } from './discovery-engine';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Checkbox } from '@/components/ui/checkbox';
 
 async function performAdminAction(token: string, action: string, payload: any) {
   const response = await fetch('/api/admin', {
@@ -61,6 +62,130 @@ const partnerSchema = z.object({
 });
 type PartnerFormValues = z.infer<typeof partnerSchema>;
 
+function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
+    const [isOpen, setIsOpen] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [duplicates, setDuplicates] = useState<any[][]>([]);
+    const [incomplete, setIncomplete] = useState<any[]>([]);
+    const [selections, setSelections] = useState<Record<number, string>>({});
+    const { toast } = useToast();
+
+    const findDuplicates = async () => {
+        setIsLoading(true);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) return;
+            const res = await performAdminAction(token, 'findDuplicatePartners', { type: 'supplier' });
+            setDuplicates(res.duplicates || []);
+            setIncomplete(res.incomplete || []);
+            setIsOpen(true);
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: "Search Error", description: e.message });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleClean = async (target: 'duplicates' | 'incomplete') => {
+        setIsLoading(true);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) return;
+            
+            let idsToDelete: string[] = [];
+            if (target === 'duplicates') {
+                idsToDelete = duplicates.flatMap((group, idx) => {
+                    const keepId = selections[idx];
+                    if (!keepId) return [];
+                    return group.filter(p => p.id !== keepId).map(p => p.id);
+                });
+            } else {
+                idsToDelete = incomplete.map(p => p.id);
+            }
+
+            if (idsToDelete.length === 0) {
+                toast({ title: "No records selected for deletion." });
+                setIsLoading(false);
+                return;
+            }
+
+            await performAdminAction(token, 'deletePartners', { partnerIds: idsToDelete });
+            toast({ title: "Cleaned!", description: `${idsToDelete.length} records removed.` });
+            onComplete();
+            setIsOpen(false);
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: "Cleanup Error", description: e.message });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    return (
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <Button variant="outline" onClick={findDuplicates} disabled={isLoading} className="gap-2">
+                {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <Trash2 className="h-4 w-4"/>}
+                Registry Cleaner
+            </Button>
+            <DialogContent className="sm:max-w-4xl max-h-[85vh] flex flex-col">
+                <DialogHeader>
+                    <DialogTitle>Registry Health Tool</DialogTitle>
+                    <DialogDescription>Identify and remove duplicates or records with missing names.</DialogDescription>
+                </DialogHeader>
+                <ScrollArea className="flex-1 p-4">
+                    <div className="space-y-8">
+                        {incomplete.length > 0 && (
+                            <div className="space-y-4">
+                                <h3 className="font-bold text-destructive flex items-center gap-2 text-lg">
+                                    <AlertTriangle className="h-5 w-5" /> Incomplete Records ({incomplete.length})
+                                </h3>
+                                <p className="text-sm text-muted-foreground">These records are missing names (likely from a failed import). Deleting them is highly recommended.</p>
+                                <Button variant="destructive" size="sm" onClick={() => handleClean('incomplete')} disabled={isLoading}>
+                                    Delete All {incomplete.length} Incomplete Records
+                                </Button>
+                            </div>
+                        )}
+
+                        {duplicates.length > 0 && (
+                            <div className="space-y-4">
+                                <h3 className="font-bold text-amber-600 flex items-center gap-2 text-lg">
+                                    <Tag className="h-5 w-5" /> Potential Duplicates ({duplicates.length} groups)
+                                </h3>
+                                {duplicates.map((group, idx) => (
+                                    <div key={idx} className="p-4 border rounded-lg bg-muted/20 space-y-2">
+                                        <p className="font-bold text-sm">{group[0].companyName}</p>
+                                        <div className="space-y-1">
+                                            {group.map(p => (
+                                                <div key={p.id} className="flex items-center gap-2 text-xs">
+                                                    <Checkbox 
+                                                        checked={selections[idx] === p.id} 
+                                                        onCheckedChange={() => setSelections({...selections, [idx]: p.id})}
+                                                    />
+                                                    <span className="text-muted-foreground font-mono">{p.id}</span>
+                                                    <span>{p.email || 'No Email'}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                                <Button variant="secondary" className="w-full" onClick={() => handleClean('duplicates')} disabled={isLoading}>
+                                    Clean Selected Duplicates
+                                </Button>
+                            </div>
+                        )}
+                        
+                        {incomplete.length === 0 && duplicates.length === 0 && (
+                            <div className="text-center py-20">
+                                <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
+                                <p className="text-lg font-bold">Registry is Clean!</p>
+                            </div>
+                        )}
+                    </div>
+                </ScrollArea>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
 function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean; onOpenChange: (open: boolean) => void; partner?: any; onSave: () => void; }) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -84,7 +209,7 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
     }
   }, [open, partner, form]);
 
-  const handleFormSubmit = async (values: PartnerFormValues) => {
+  async function handleFormSubmit(values: PartnerFormValues) {
     setIsLoading(true);
     try {
       const token = await getClientSideAuthToken();
@@ -98,7 +223,7 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
     } finally {
       setIsLoading(false);
     }
-  };
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -148,64 +273,6 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
   );
 }
 
-function CategorizationDialog({ open, onOpenChange, unclassifiedCount, records }: { open: boolean, onOpenChange: (o: boolean) => void, unclassifiedCount: number, records: any[] }) {
-    const { toast } = useToast();
-    const [isCopied, setIsCopied] = useState(false);
-
-    const listToClassify = records.slice(0, 100).map(r => `[KEY: ${r.id}] ${r.companyName}`).join('\n');
-    const categoryList = supplierCategories.join(', ');
-
-    const prompt = `ACT AS AN INDUSTRIAL DATA ARCHITECT. 
-RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
-
-TASK: Classify the following South African industrial suppliers into their correct category.
-
-VALID CATEGORIES: ${categoryList}
-
-REQUIRED FORMAT:
-[
-  { "record_id": "...", "industrial_category": "Selected Category" }
-]
-
-LIST TO CLASSIFY:
-${listToClassify}`;
-
-    const handleCopy = async () => {
-        await navigator.clipboard.writeText(prompt);
-        setIsCopied(true);
-        toast({ title: "Categorization Prompt Ready" });
-        setTimeout(() => {
-            setIsCopied(false);
-            onOpenChange(false);
-        }, 1000);
-    };
-
-    return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-2xl text-left text-foreground">
-                <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2"><Tag className="h-5 w-5 text-primary" /> Forensic Registry Categorizer</DialogTitle>
-                    <DialogDescription>Classify existing records to populate tally badges.</DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4 py-4 text-left">
-                    <div className="p-3 bg-primary/5 border rounded-lg flex items-center justify-between text-left">
-                        <span className="text-sm font-bold text-foreground">Unclassified: <span className="text-primary">{unclassifiedCount}</span></span>
-                    </div>
-                    <ScrollArea className="h-48 border rounded-md p-3 bg-muted/30 text-[10px] font-mono leading-tight text-left">
-                        <pre className="text-foreground">{prompt}</pre>
-                    </ScrollArea>
-                </div>
-                <DialogFooter>
-                    <Button onClick={handleCopy} className="w-full h-12 font-black uppercase tracking-widest gap-2">
-                        {isCopied ? <Loader2 className="animate-spin h-4 w-4"/> : <Copy className="h-4 w-4" />}
-                        Copy Categorization Command
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-    );
-}
-
 export default function SupplierManagement() {
   const { toast } = useToast();
   const [allRecords, setAllRecords] = useState<any[]>([]);
@@ -213,7 +280,8 @@ export default function SupplierManagement() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | 'categorize' | null, data?: any }>({ type: null });
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | null, data?: any }>({ type: null });
 
   const [statusFilter, setStatusFilter] = useState('all');
   const [assigneeFilter, setAssigneeFilter] = useState('all');
@@ -240,10 +308,6 @@ export default function SupplierManagement() {
   }, []);
 
   useEffect(() => { fetchData(); }, [fetchData]);
-
-  const unclassifiedRecords = useMemo(() => {
-      return allRecords.filter(r => !r.industrial_category && !r.category && !r.entryType);
-  }, [allRecords]);
 
   const handleRefreshTally = async () => {
     setIsRefreshing(true);
@@ -275,19 +339,20 @@ export default function SupplierManagement() {
     });
   }, [allRecords, searchTerm, statusFilter, assigneeFilter]);
 
-  const handleDelete = async () => {
-    if (!dialog.data) return;
+  async function handleDeleteBatch() {
+    if (selectedIds.length === 0) return;
     try {
       const token = await getClientSideAuthToken();
       if (!token) return;
-      await performAdminAction(token, 'deletePartner', { partnerId: dialog.data.id });
-      toast({ title: 'Deleted' });
+      await performAdminAction(token, 'deletePartners', { partnerIds: selectedIds });
+      toast({ title: 'Batch Deleted', description: `${selectedIds.length} records removed.` });
       fetchData();
+      setSelectedIds([]);
       setDialog({ type: null });
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Error', description: e.message });
     }
-  };
+  }
 
   const columns: ColumnDef<any>[] = [
     { 
@@ -295,7 +360,7 @@ export default function SupplierManagement() {
         header: 'Supplier Name', 
         cell: ({ row }) => (
             <div className="flex flex-col text-sm text-left text-foreground">
-                <span className="font-bold text-left">{row.original.companyName || row.original.contactPerson || `${row.original.firstName || ''} ${row.original.lastName || ''}`.trim()}</span>
+                <span className="font-bold text-left">{row.original.companyName || row.original.contactPerson || 'Incomplete Record'}</span>
                 <div className="flex items-center gap-2 mt-1 text-left">
                     <span className="text-[10px] text-muted-foreground uppercase font-black text-left">{row.original.address || 'Operational Hub Verified'}</span>
                     {row.original.website && <Globe className="h-3 w-3 text-primary" />}
@@ -342,14 +407,27 @@ export default function SupplierManagement() {
     <div className="space-y-6 text-left text-foreground">
       <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.data} audience="suppliers" onEngageSuccess={fetchData} />
       <SupplierDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={fetchData} />
-      <CategorizationDialog open={dialog.type === 'categorize'} onOpenChange={(o) => !o && setDialog({ type: null })} unclassifiedCount={unclassifiedRecords.length} records={unclassifiedRecords} />
       
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
         <AlertDialogContent>
-          <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Delete Supplier?</AlertDialogDescription></AlertDialogHeader>
-          <AlertDialogFooter><AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction></AlertDialogFooter>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Record(s)?</AlertDialogTitle>
+            <AlertDialogDescription>This action will permanently remove {selectedIds.length > 0 ? `${selectedIds.length} records` : `"${dialog.data?.companyName}"`} from the registry.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={selectedIds.length > 0 ? handleDeleteBatch : async () => {
+                const token = await getClientSideAuthToken();
+                if (token && dialog.data) {
+                    await performAdminAction(token, 'deletePartner', { partnerId: dialog.data.id });
+                    fetchData();
+                    setDialog({ type: null });
+                }
+            }} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
       <div className="space-y-6 text-left">
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left text-foreground">
             <div className="text-left text-foreground">
@@ -357,9 +435,10 @@ export default function SupplierManagement() {
                 <CardDescription className="text-left text-foreground">Unified industrial supply directory ({allRecords.length} records).</CardDescription>
             </div>
             <div className="flex flex-wrap items-center gap-2 text-left text-foreground">
-                {unclassifiedRecords.length > 0 && (
-                    <Button variant="outline" onClick={() => setDialog({ type: 'categorize' })} className="border-primary text-primary hover:bg-primary/5">
-                        <Tag className="mr-2 h-4 w-4" /> Categorize ({unclassifiedRecords.length})
+                <DuplicateCleaner onComplete={fetchData} />
+                {selectedIds.length > 0 && (
+                    <Button variant="destructive" onClick={() => setDialog({ type: 'delete' })} className="gap-2">
+                        <Trash2 className="h-4 w-4" /> Delete Selected ({selectedIds.length})
                     </Button>
                 )}
                 <div className="relative w-64 text-left text-foreground">
@@ -422,7 +501,7 @@ export default function SupplierManagement() {
                         </Select>
                     </div>
                 </div>
-                {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredRecords} />}
+                {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />}
             </CardContent>
         </Card>
       </div>

@@ -29,7 +29,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, Bot, Edit, Trash2, Send, Download, Save, Search, Users, Filter, Globe, Zap, Database, Upload, Copy, Tag } from 'lucide-react';
+import { Loader2, PlusCircle, Bot, Edit, Trash2, Send, Download, Save, Search, Users, Filter, Globe, Zap, Database, Upload, Copy, Tag, AlertTriangle, CheckCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -45,6 +45,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { BulkImportDialog } from './BulkImportDialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Checkbox } from '@/components/ui/checkbox';
 
 async function performAdminAction(token: string, action: string, payload: any) {
   const response = await fetch('/api/admin', {
@@ -74,56 +75,110 @@ const partnerSchema = z.object({
 });
 type PartnerFormValues = z.infer<typeof partnerSchema>;
 
-function CategorizationDialog({ open, onOpenChange, unclassifiedCount, records }: { open: boolean, onOpenChange: (o: boolean) => void, unclassifiedCount: number, records: any[] }) {
+function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
+    const [isOpen, setIsOpen] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [duplicates, setDuplicates] = useState<any[][]>([]);
+    const [incomplete, setIncomplete] = useState<any[]>([]);
+    const [selections, setSelections] = useState<Record<number, string>>({});
     const { toast } = useToast();
-    const [isCopied, setIsCopied] = useState(false);
 
-    const listToClassify = records.slice(0, 100).map(r => `[KEY: ${r.id}] ${r.companyName}`).join('\n');
+    const findDuplicates = async () => {
+        setIsLoading(true);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) return;
+            const res = await performAdminAction(token, 'findDuplicatePartners', { type: 'isa' });
+            setDuplicates(res.duplicates || []);
+            setIncomplete(res.incomplete || []);
+            setIsOpen(true);
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: "Search Error", description: e.message });
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
-    const prompt = `ACT AS AN ISA DATA ARCHITECT. 
-RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
+    const handleClean = async (target: 'duplicates' | 'incomplete') => {
+        setIsLoading(true);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) return;
+            
+            let idsToDelete: string[] = [];
+            if (target === 'duplicates') {
+                idsToDelete = duplicates.flatMap((group, idx) => {
+                    const keepId = selections[idx];
+                    if (!keepId) return [];
+                    return group.filter(p => p.id !== keepId).map(p => p.id);
+                });
+            } else {
+                idsToDelete = incomplete.map(p => p.id);
+            }
 
-TASK: Classify these agents into their correct status and categorization using the provided keys.
+            if (idsToDelete.length === 0) {
+                toast({ title: "No records selected for deletion." });
+                setIsLoading(false);
+                return;
+            }
 
-REQUIRED FORMAT:
-[
-  { "record_id": "...", "notes": "Classification details extracted" }
-]
-
-LIST TO CLASSIFY:
-${listToClassify}`;
-
-    const handleCopy = async () => {
-        await navigator.clipboard.writeText(prompt);
-        setIsCopied(true);
-        toast({ title: "Categorization Prompt Ready" });
-        setTimeout(() => {
-            setIsCopied(false);
-            onOpenChange(false);
-        }, 1000);
+            await performAdminAction(token, 'deletePartners', { partnerIds: idsToDelete });
+            toast({ title: "Cleaned!", description: `${idsToDelete.length} records removed.` });
+            onComplete();
+            setIsOpen(false);
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: "Cleanup Error", description: e.message });
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-2xl text-left text-foreground">
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <Button variant="outline" onClick={findDuplicates} disabled={isLoading} className="gap-2">
+                {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <Trash2 className="h-4 w-4"/>}
+                Registry Cleaner
+            </Button>
+            <DialogContent className="sm:max-w-4xl max-h-[85vh] flex flex-col">
                 <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2"><Tag className="h-5 w-5 text-primary" /> ISA Registry Categorizer</DialogTitle>
-                    <DialogDescription>Classify existing records using AI analysis.</DialogDescription>
+                    <DialogTitle>ISA Registry Health Tool</DialogTitle>
+                    <DialogDescription>Clean up duplicate or broken records.</DialogDescription>
                 </DialogHeader>
-                <div className="space-y-4 py-4 text-left">
-                    <div className="p-3 bg-primary/5 border rounded-lg flex items-center justify-between text-left">
-                        <span className="text-sm font-bold text-foreground">Records to Analyze: <span className="text-primary">{unclassifiedCount}</span></span>
+                <ScrollArea className="flex-1 p-4">
+                    <div className="space-y-8">
+                        {incomplete.length > 0 && (
+                            <div className="space-y-4">
+                                <h3 className="font-bold text-destructive flex items-center gap-2 text-lg">
+                                    <AlertTriangle className="h-5 w-5" /> Incomplete Records ({incomplete.length})
+                                </h3>
+                                <p className="text-sm text-muted-foreground">Broken records missing names.</p>
+                                <Button variant="destructive" size="sm" onClick={() => handleClean('incomplete')} disabled={isLoading}>
+                                    Delete All {incomplete.length} Records
+                                </Button>
+                            </div>
+                        )}
+                        {duplicates.length > 0 && (
+                            <div className="space-y-4">
+                                <h3 className="font-bold text-amber-600 flex items-center gap-2 text-lg"><Tag className="h-5 w-5" /> Duplicates</h3>
+                                {duplicates.map((group, idx) => (
+                                    <div key={idx} className="p-4 border rounded-lg bg-muted/20 space-y-2">
+                                        <p className="font-bold text-sm">{group[0].companyName}</p>
+                                        <div className="space-y-1">
+                                            {group.map(p => (
+                                                <div key={p.id} className="flex items-center gap-2 text-xs">
+                                                    <Checkbox checked={selections[idx] === p.id} onCheckedChange={() => setSelections({...selections, [idx]: p.id})}/>
+                                                    <span className="text-muted-foreground font-mono">{p.id}</span>
+                                                    <span>{p.email || 'No Email'}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                                <Button variant="secondary" className="w-full" onClick={() => handleClean('duplicates')} disabled={isLoading}>Clean Selected</Button>
+                            </div>
+                        )}
                     </div>
-                    <ScrollArea className="h-48 border rounded-md p-3 bg-muted/30 text-[10px] font-mono leading-tight">
-                        <pre className="text-foreground">{prompt}</pre>
-                    </ScrollArea>
-                </div>
-                <DialogFooter>
-                    <Button onClick={handleCopy} className="w-full h-12 font-black uppercase tracking-widest gap-2">
-                        {isCopied ? <Loader2 className="animate-spin h-4 w-4"/> : <Copy className="h-4 w-4" />}
-                        Copy Categorization Command
-                    </Button>
-                </DialogFooter>
+                </ScrollArea>
             </DialogContent>
         </Dialog>
     );
@@ -147,7 +202,7 @@ function ISADialog({ open, onOpenChange, partner, onSave }: { open: boolean; onO
           address: partner.address || '',
         });
       } else {
-        form.reset({ firstName: '', lastName: '', email: '', phone: '', mobile: '', contactPerson: '', companyName: '', website: '', notes: '', address: '', status: 'new', type: 'isa' });
+        form.reset({ firstName: '', lastName: '', email: '', phone: '', mobile: '', contactPerson: '', companyName: '', status: 'new', type: 'isa' });
       }
     }
   }, [open, partner, form]);
@@ -182,15 +237,12 @@ function ISADialog({ open, onOpenChange, partner, onSave }: { open: boolean; onO
               <FormField control={form.control} name="lastName" render={({ field }) => (<FormItem><FormLabel>Last Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
             <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Agency / Company Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-            <FormField control={form.control} name="website" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Official Website</FormLabel><FormControl><Input placeholder="https://..." {...field} /></FormControl><FormMessage /></FormItem>)} />
             <div className="grid grid-cols-2 gap-4 text-left">
               <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="mobile" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Mobile (Direct Cell)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
-            <FormField control={form.control} name="address" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Physical Address</FormLabel><FormControl><Textarea placeholder="Enter physical address..." {...field} /></FormControl><FormMessage /></FormItem>)} />
-            <FormField control={form.control} name="notes" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Notes</FormLabel><FormControl><Textarea placeholder="Details about the agent..." {...field} className="min-h-[120px]" /></FormControl><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="status" render={({ field }) => (
-                <FormItem className="text-left text-foreground">
+                <FormItem className="text-left">
                     <FormLabel>Status</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl><SelectTrigger className="bg-white"><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
@@ -220,11 +272,11 @@ export default function ISAManagement() {
   const [staff, setStaff] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | 'batch' | 'categorize' | null, data?: any }>({ type: null });
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | 'batch' | null, data?: any }>({ type: null });
 
   const [statusFilter, setStatusFilter] = useState('all');
   const [assigneeFilter, setAssigneeFilter] = useState('all');
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
@@ -246,10 +298,6 @@ export default function ISAManagement() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  const unclassifiedRecords = useMemo(() => {
-      return allRecords.filter(r => !r.notes && !r.status);
-  }, [allRecords]);
-
   const filteredRecords = useMemo(() => {
     const term = searchTerm.toLowerCase();
     return allRecords.filter(r => {
@@ -266,23 +314,20 @@ export default function ISAManagement() {
     });
   }, [allRecords, searchTerm, statusFilter, assigneeFilter]);
 
-  const selectedLeads = useMemo(() => {
-      return allRecords.filter(r => selectedIds.includes(r.id));
-  }, [allRecords, selectedIds]);
-
-  const handleDelete = async () => {
-    if (!dialog.data) return;
+  const handleDeleteBatch = async () => {
+    if (selectedIds.length === 0) return;
     try {
       const token = await getClientSideAuthToken();
       if (!token) return;
-      await performAdminAction(token, 'deletePartner', { partnerId: dialog.data.id });
-      toast({ title: 'Deleted' });
+      await performAdminAction(token, 'deletePartners', { partnerIds: selectedIds });
+      toast({ title: 'Batch Deleted', description: `${selectedIds.length} records removed.` });
       fetchData();
+      setSelectedIds([]);
       setDialog({ type: null });
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Error', description: e.message });
     }
-  };
+  }
 
   const columns: ColumnDef<any>[] = [
     { 
@@ -334,17 +379,24 @@ export default function ISAManagement() {
 
   return (
     <div className="space-y-6 text-left">
-      <BatchResearchDialog open={dialog.type === 'batch'} onOpenChange={(o) => !o && setDialog({ type: null })} selectedLeads={selectedLeads} onComplete={fetchData} />
+      <BatchResearchDialog open={dialog.type === 'batch'} onOpenChange={(o) => !o && setDialog({ type: null })} selectedLeads={filteredRecords.filter(r => selectedIds.includes(r.id))} onComplete={fetchData} />
       <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.data} audience="isa" onEngageSuccess={fetchData} />
       <ISADialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={fetchData} />
-      <CategorizationDialog open={dialog.type === 'categorize'} onOpenChange={(o) => !o && setDialog({ type: null })} unclassifiedCount={unclassifiedRecords.length} records={unclassifiedRecords} />
       
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
         <AlertDialogContent>
-          <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Delete ISA record?</AlertDialogDescription></AlertDialogHeader>
-          <AlertDialogFooter><AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction></AlertDialogFooter>
+          <AlertDialogHeader><AlertDialogTitle>Delete Record(s)?</AlertDialogTitle><AlertDialogDescription>Delete {selectedIds.length > 0 ? `${selectedIds.length} records` : 'record'}?</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogFooter><AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel><AlertDialogAction onClick={selectedIds.length > 0 ? handleDeleteBatch : async () => {
+              const token = await getClientSideAuthToken();
+              if (token && dialog.data) {
+                  await performAdminAction(token, 'deletePartner', { partnerId: dialog.data.id });
+                  fetchData();
+                  setDialog({ type: null });
+              }
+          }} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
       <div className="space-y-6 text-left">
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left text-foreground">
             <div className="text-left text-foreground">
@@ -352,22 +404,19 @@ export default function ISAManagement() {
                 <CardDescription className="text-left text-foreground">Full database of Independent Sales Agents ({allRecords.length} records).</CardDescription>
             </div>
             <div className="flex flex-wrap items-center gap-2 text-left text-foreground">
+                <DuplicateCleaner onComplete={fetchData} />
                 {selectedIds.length > 0 && (
-                    <Button variant="secondary" onClick={() => setDialog({ type: 'batch' })}>
-                        <Zap className="mr-2 h-4 w-4" /> Batch Research ({selectedIds.length})
-                    </Button>
-                )}
-                {unclassifiedRecords.length > 0 && (
-                    <Button variant="outline" onClick={() => setDialog({ type: 'categorize' })} className="border-primary text-primary hover:bg-primary/5">
-                        <Tag className="mr-2 h-4 w-4" /> Categorize ({unclassifiedRecords.length})
-                    </Button>
+                    <div className="flex gap-2 animate-in fade-in zoom-in duration-200">
+                        <Button variant="secondary" onClick={() => setDialog({ type: 'batch' })}><Zap className="mr-2 h-4 w-4" /> Batch Research ({selectedIds.length})</Button>
+                        <Button variant="destructive" onClick={() => setDialog({ type: 'delete' })}><Trash2 className="mr-2 h-4 w-4" /> Delete ({selectedIds.length})</Button>
+                    </div>
                 )}
                 <div className="relative w-64 text-left">
                     <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input placeholder="Search registry..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8 bg-white" />
                 </div>
                 <Button variant="outline" onClick={() => downloadDataAsCSV(allRecords, 'isa-export.csv')} disabled={isLoading}>
-                    <Download className="mr-2 h-4 w-4" /> Export CSV
+                    <Download className="mr-2 h-4 w-4" /> Export
                 </Button>
                 <BulkImportDialog type="isa" onComplete={fetchData}><Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
                 <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4" /> Add ISA</Button>
