@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -104,7 +105,6 @@ export async function POST(req: NextRequest) {
                 
                 snap.docs.forEach(doc => {
                     const data = doc.data();
-                    // Smarter count: Check industrial_category, category, then entryType
                     const category = data.industrial_category || data.category || data.entryType || 'General';
                     counts[category] = (counts[category] || 0) + 1;
                 });
@@ -133,19 +133,37 @@ export async function POST(req: NextRequest) {
                 const batch = db.batch();
                 for (const p of partners) {
                     let ref;
+                    const cName = p.companyName || p.company_name || p.trading_name || p.name || p.service_handle;
+                    
                     if (p.record_id) {
                         ref = db.collection('partners').doc(p.record_id);
-                    } else {
-                        const safeId = (p.companyName || p.company_name).replace(/[^a-z0-9]/gi, '_').toLowerCase();
+                    } else if (cName) {
+                        const safeId = String(cName).replace(/[^a-z0-9]/gi, '_').toLowerCase();
                         ref = db.collection('partners').doc(`${type}_${safeId}`);
+                    } else {
+                        ref = db.collection('partners').doc();
                     }
+
                     const data = {
                         ...p,
                         type,
+                        // Normalization Logic: Map AI Forensic keys to Registry keys
+                        companyName: cName,
+                        contactPerson: p.contactPerson || p.contact_person || p.leadership || (p.firstName ? `${p.firstName} ${p.lastName}` : null),
+                        email: p.email || p.email_address || p.professional_contact,
+                        phone: p.phone || p.telephone_number || p.landline,
+                        mobile: p.mobile || p.registry_line || p.cell,
+                        address: p.address || p.physical_address || p.location || p.operational_hub,
+                        industrial_category: p.industrial_category || p.category || p.classification || p.service_classification,
                         updatedAt: FieldValue.serverTimestamp(),
-                        enrichedAt: p.notes || p.website ? FieldValue.serverTimestamp() : null
+                        enrichedAt: (p.notes || p.website || p.contact_person || p.contact_person) ? FieldValue.serverTimestamp() : null,
+                        researchStatus: (p.notes || p.website) ? 'completed' : 'new'
                     };
+                    
+                    // Clean up raw sequence keys from AI output
                     delete (data as any).seq;
+                    delete (data as any).sequence;
+                    
                     batch.set(ref, data, { merge: true });
                 }
                 await batch.commit();
