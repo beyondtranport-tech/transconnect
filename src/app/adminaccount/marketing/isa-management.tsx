@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -160,7 +161,7 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
                             <div className="space-y-4">
                                 <h3 className="font-bold text-amber-600 flex items-center gap-2 text-lg"><Tag className="h-5 w-5" /> Duplicates</h3>
                                 {duplicates.map((group, idx) => (
-                                    <div key={idx} className="p-4 border rounded-lg bg-muted/20 space-y-2">
+                                    <div key={idx} className="p-4 border rounded-lg bg-muted/20 space-y-2 text-left">
                                         <p className="font-bold text-sm">{group[0].companyName}</p>
                                         <div className="space-y-1">
                                             {group.map(p => (
@@ -182,7 +183,7 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
                         {incomplete.length === 0 && duplicates.length === 0 && (
                             <div className="text-center py-20">
                                 <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
-                                <p className="text-lg font-bold">Registry is Clean!</p>
+                                <p className="text-lg font-bold text-foreground">Registry is Clean!</p>
                             </div>
                         )}
                     </div>
@@ -393,15 +394,18 @@ export default function ISAManagement() {
       
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
         <AlertDialogContent>
-          <AlertDialogHeader><AlertDialogTitle>Delete Record(s)?</AlertDialogTitle><AlertDialogDescription>Delete {selectedIds.length > 0 ? `${selectedIds.length} records` : 'record'}?</AlertDialogDescription></AlertDialogHeader>
-          <AlertDialogFooter><AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel><AlertDialogAction onClick={selectedIds.length > 0 ? handleDeleteBatch : async () => {
-              const token = await getClientSideAuthToken();
-              if (token && dialog.data) {
-                  await performAdminAction(token, 'deletePartner', { partnerId: dialog.data.id });
-                  fetchData();
-                  setDialog({ type: null });
-              }
-          }} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction></AlertDialogFooter>
+          <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Delete record?</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={selectedIds.length > 0 ? handleDeleteBatch : async () => {
+                const token = await getClientSideAuthToken();
+                if (token && dialog.data) {
+                    await performAdminAction(token, 'deletePartner', { partnerId: dialog.data.id });
+                    fetchData();
+                    setDialog({ type: null });
+                }
+            }} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 

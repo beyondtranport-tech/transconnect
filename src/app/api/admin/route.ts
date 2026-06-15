@@ -6,6 +6,24 @@ import { getAdminApp } from '@/lib/firebase-admin';
 
 export const dynamic = 'force-dynamic';
 
+/**
+ * Sanitizes data for Firestore by removing 'undefined' values which cause API errors.
+ */
+function sanitizeForFirestore(obj: any): any {
+    if (obj === null || obj === undefined) return null;
+    if (typeof obj !== 'object') return obj;
+    if (Array.isArray(obj)) return obj.map(sanitizeForFirestore);
+    
+    const sanitized: any = {};
+    for (const key in obj) {
+        const val = obj[key];
+        if (val !== undefined) {
+            sanitized[key] = sanitizeForFirestore(val);
+        }
+    }
+    return sanitized;
+}
+
 function serializeTimestamps(docData: any): any {
     if (!docData) return docData;
     const newDocData: { [key: string]: any } = {};
@@ -46,7 +64,7 @@ export async function POST(req: NextRequest) {
 
         switch (action) {
             case 'getMembers': {
-                const snap = await db.collection('companies').orderBy('createdAt', 'desc').get();
+                const snap = await db.collection('companies').orderBy('createdAt', 'desc').limit(10000).get();
                 const data = snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) }));
                 return NextResponse.json({ success: true, data });
             }
@@ -84,7 +102,7 @@ export async function POST(req: NextRequest) {
                         ref = db.collection('partners').doc();
                     }
 
-                    const data = {
+                    const rawData = {
                         ...p,
                         type,
                         companyName: cName,
@@ -99,9 +117,11 @@ export async function POST(req: NextRequest) {
                         researchStatus: (p.notes || p.website) ? 'completed' : 'new'
                     };
                     
-                    delete (data as any).seq;
-                    delete (data as any).sequence;
+                    delete (rawData as any).seq;
+                    delete (rawData as any).sequence;
                     
+                    // Critical Fix: Sanitize undefined values before pushing to batch
+                    const data = sanitizeForFirestore(rawData);
                     batch.set(ref, data, { merge: true });
                 }
                 await batch.commit();
@@ -157,6 +177,19 @@ export async function POST(req: NextRequest) {
                     notes: notes || '',
                     timestamp: FieldValue.serverTimestamp()
                 });
+                return NextResponse.json({ success: true });
+            }
+
+            case 'getPlatformStaff': {
+                const snap = await db.collection('platformStaff').get();
+                const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
+                return NextResponse.json({ success: true, data });
+            }
+
+            case 'savePlatformStaff': {
+                const { staff } = payload;
+                const ref = staff.id ? db.collection('platformStaff').doc(staff.id) : db.collection('platformStaff').doc();
+                await ref.set({ ...staff, id: ref.id, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
                 return NextResponse.json({ success: true });
             }
 

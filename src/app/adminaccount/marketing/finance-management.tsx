@@ -154,18 +154,26 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
                             <div className="space-y-4">
                                 <h3 className="font-bold text-amber-600 flex items-center gap-2"><Tag className="h-5 w-5" /> Duplicates</h3>
                                 {duplicates.map((group, idx) => (
-                                    <div key={idx} className="p-4 border rounded-lg bg-muted/20 space-y-2">
+                                    <div key={idx} className="p-4 border rounded-lg bg-muted/20 space-y-2 text-left">
                                         <p className="font-bold text-sm">{group[0].companyName}</p>
-                                        {group.map(p => (
-                                            <div key={p.id} className="flex items-center gap-2 text-xs">
-                                                <Checkbox checked={selections[idx] === p.id} onCheckedChange={() => setSelections({...selections, [idx]: p.id})}/>
-                                                <span className="text-muted-foreground font-mono">{p.id}</span>
-                                                <span>{p.email || 'No Email'}</span>
-                                            </div>
-                                        ))}
+                                        <div className="space-y-1">
+                                            {group.map(p => (
+                                                <div key={p.id} className="flex items-center gap-2 text-xs">
+                                                    <Checkbox checked={selections[idx] === p.id} onCheckedChange={() => setSelections({...selections, [idx]: p.id})}/>
+                                                    <span className="text-muted-foreground font-mono">{p.id}</span>
+                                                    <span>{p.email || 'No Email'}</span>
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
                                 ))}
                                 <Button variant="secondary" className="w-full" onClick={() => handleClean('duplicates')} disabled={isLoading}>Clean Selected</Button>
+                            </div>
+                        )}
+                        {incomplete.length === 0 && duplicates.length === 0 && (
+                            <div className="text-center py-20">
+                                <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
+                                <p className="text-lg font-bold text-foreground">Registry is Clean!</p>
                             </div>
                         )}
                     </div>

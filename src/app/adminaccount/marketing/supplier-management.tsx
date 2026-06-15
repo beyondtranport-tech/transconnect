@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -121,7 +122,7 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
 
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <Button variant="outline" onClick={findDuplicates} disabled={isLoading} className="gap-2">
+            <Button variant="outline" onClick={findDuplicates} disabled={isLoading} className="gap-2 text-left">
                 {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <Trash2 className="h-4 w-4"/>}
                 Registry Cleaner
             </Button>
@@ -131,13 +132,13 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
                     <DialogDescription>Identify and remove duplicates or records with missing names.</DialogDescription>
                 </DialogHeader>
                 <ScrollArea className="flex-1 p-4">
-                    <div className="space-y-8">
+                    <div className="space-y-8 text-left">
                         {incomplete.length > 0 && (
                             <div className="space-y-4">
                                 <h3 className="font-bold text-destructive flex items-center gap-2 text-lg">
                                     <AlertTriangle className="h-5 w-5" /> Incomplete Records ({incomplete.length})
                                 </h3>
-                                <p className="text-sm text-muted-foreground">These records are missing names. Deleting them is recommended.</p>
+                                <p className="text-sm text-muted-foreground text-left">These records are missing names. Deleting them is recommended.</p>
                                 <Button variant="destructive" size="sm" onClick={() => handleClean('incomplete')} disabled={isLoading}>
                                     Delete All {incomplete.length} Incomplete Records
                                 </Button>
@@ -146,15 +147,15 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
 
                         {duplicates.length > 0 && (
                             <div className="space-y-4">
-                                <h3 className="font-bold text-amber-600 flex items-center gap-2 text-lg">
+                                <h3 className="font-bold text-amber-600 flex items-center gap-2 text-lg text-left">
                                     <Tag className="h-5 w-5" /> Potential Duplicates ({duplicates.length} groups)
                                 </h3>
                                 {duplicates.map((group, idx) => (
-                                    <div key={idx} className="p-4 border rounded-lg bg-muted/20 space-y-2">
-                                        <p className="font-bold text-sm">{group[0].companyName}</p>
-                                        <div className="space-y-1">
+                                    <div key={idx} className="p-4 border rounded-lg bg-muted/20 space-y-2 text-left">
+                                        <p className="font-bold text-sm text-left">{group[0].companyName}</p>
+                                        <div className="space-y-1 text-left">
                                             {group.map(p => (
-                                                <div key={p.id} className="flex items-center gap-2 text-xs">
+                                                <div key={p.id} className="flex items-center gap-2 text-xs text-left">
                                                     <Checkbox 
                                                         checked={selections[idx] === p.id} 
                                                         onCheckedChange={() => setSelections({...selections, [idx]: p.id})}
@@ -175,7 +176,7 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
                         {incomplete.length === 0 && duplicates.length === 0 && (
                             <div className="text-center py-20">
                                 <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
-                                <p className="text-lg font-bold">Registry is Clean!</p>
+                                <p className="text-lg font-bold text-foreground">Registry is Clean!</p>
                             </div>
                         )}
                     </div>
@@ -233,7 +234,7 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4 text-left">
               <FormField control={form.control} name="firstName" render={({ field }) => (<FormItem><FormLabel>First Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="lastName" render={({ field }) => (<FormItem><FormLabel>Last Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>

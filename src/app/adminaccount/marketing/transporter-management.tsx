@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -120,8 +121,8 @@ ${listToClassify}`;
                     <div className="p-3 bg-primary/5 border rounded-lg flex items-center justify-between text-left">
                         <span className="text-sm font-bold text-foreground">Unclassified: <span className="text-primary">{unclassifiedCount}</span></span>
                     </div>
-                    <ScrollArea className="h-48 border rounded-md p-3 bg-muted/30 text-[10px] font-mono leading-tight text-left">
-                        <pre className="text-foreground">{prompt}</pre>
+                    <ScrollArea className="h-48 border rounded-md p-3 bg-muted/30 text-[10px] font-mono leading-tight text-left text-foreground">
+                        <pre>{prompt}</pre>
                     </ScrollArea>
                 </div>
                 <DialogFooter>
@@ -195,7 +196,7 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
 
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <Button variant="outline" onClick={findDuplicates} disabled={isLoading} className="gap-2">
+            <Button variant="outline" onClick={findDuplicates} disabled={isLoading} className="gap-2 text-left">
                 {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <Trash2 className="h-4 w-4"/>}
                 Registry Cleaner
             </Button>
@@ -205,13 +206,13 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
                     <DialogDescription>Identify and remove duplicates or records with missing names.</DialogDescription>
                 </DialogHeader>
                 <ScrollArea className="flex-1 p-4">
-                    <div className="space-y-8">
+                    <div className="space-y-8 text-left">
                         {incomplete.length > 0 && (
                             <div className="space-y-4">
                                 <h3 className="font-bold text-destructive flex items-center gap-2 text-lg">
                                     <AlertTriangle className="h-5 w-5" /> Incomplete Records ({incomplete.length})
                                 </h3>
-                                <p className="text-sm text-muted-foreground">These records are missing names. Deleting them is recommended.</p>
+                                <p className="text-sm text-muted-foreground text-left">These records are missing names. Deleting them is recommended.</p>
                                 <Button variant="destructive" size="sm" onClick={() => handleClean('incomplete')} disabled={isLoading}>
                                     Delete All {incomplete.length} Incomplete Records
                                 </Button>
@@ -220,15 +221,15 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
 
                         {duplicates.length > 0 && (
                             <div className="space-y-4">
-                                <h3 className="font-bold text-amber-600 flex items-center gap-2 text-lg">
+                                <h3 className="font-bold text-amber-600 flex items-center gap-2 text-lg text-left">
                                     <Tag className="h-5 w-5" /> Potential Duplicates ({duplicates.length} groups)
                                 </h3>
                                 {duplicates.map((group, idx) => (
-                                    <div key={idx} className="p-4 border rounded-lg bg-muted/20 space-y-2">
-                                        <p className="font-bold text-sm">{group[0].companyName}</p>
-                                        <div className="space-y-1">
+                                    <div key={idx} className="p-4 border rounded-lg bg-muted/20 space-y-2 text-left">
+                                        <p className="font-bold text-sm text-left">{group[0].companyName}</p>
+                                        <div className="space-y-1 text-left">
                                             {group.map(p => (
-                                                <div key={p.id} className="flex items-center gap-2 text-xs">
+                                                <div key={p.id} className="flex items-center gap-2 text-xs text-left">
                                                     <Checkbox 
                                                         checked={selections[idx] === p.id} 
                                                         onCheckedChange={() => setSelections({...selections, [idx]: p.id})}
@@ -249,7 +250,7 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
                         {incomplete.length === 0 && duplicates.length === 0 && (
                             <div className="text-center py-20">
                                 <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
-                                <p className="text-lg font-bold">Registry is Clean!</p>
+                                <p className="text-lg font-bold text-foreground">Registry is Clean!</p>
                             </div>
                         )}
                     </div>
@@ -427,14 +428,15 @@ export default function TransporterManagement() {
       return allRecords.filter(r => selectedIds.includes(r.id));
   }, [allRecords, selectedIds]);
 
-  const handleDelete = async () => {
-    if (!dialog.data) return;
+  const handleDeleteBatch = async () => {
+    if (selectedIds.length === 0) return;
     try {
       const token = await getClientSideAuthToken();
       if (!token) return;
-      await performAdminAction(token, 'deletePartner', { partnerId: dialog.data.id });
-      toast({ title: 'Deleted' });
+      await performAdminAction(token, 'deletePartners', { partnerIds: selectedIds });
+      toast({ title: 'Batch Deleted', description: `${selectedIds.length} records removed.` });
       fetchData();
+      setSelectedIds([]);
       setDialog({ type: null });
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Error', description: e.message });
@@ -485,8 +487,18 @@ export default function TransporterManagement() {
       
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
         <AlertDialogContent>
-          <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Delete record?</AlertDialogDescription></AlertDialogHeader>
-          <AlertDialogFooter><AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction></AlertDialogFooter>
+          <AlertDialogHeader><AlertDialogTitle>Delete Record(s)?</AlertDialogTitle><AlertDialogDescription>Delete {selectedIds.length > 0 ? `${selectedIds.length} records` : 'record'}?</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={selectedIds.length > 0 ? handleDeleteBatch : async () => {
+                const token = await getClientSideAuthToken();
+                if (token && dialog.data) {
+                    await performAdminAction(token, 'deletePartner', { partnerId: dialog.data.id });
+                    fetchData();
+                    setDialog({ type: null });
+                }
+            }} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
       
@@ -499,9 +511,10 @@ export default function TransporterManagement() {
             <div className="flex flex-wrap items-center gap-2 text-left text-foreground">
                 <DuplicateCleaner onComplete={fetchData} />
                 {selectedIds.length > 0 && (
-                    <Button variant="secondary" onClick={() => setDialog({ type: 'batch' })}>
-                        <Zap className="mr-2 h-4 w-4" /> Batch Research ({selectedIds.length})
-                    </Button>
+                    <div className="flex gap-2 animate-in fade-in zoom-in duration-200">
+                        <Button variant="secondary" onClick={() => setDialog({ type: 'batch' })}><Zap className="mr-2 h-4 w-4" /> Batch Research ({selectedIds.length})</Button>
+                        <Button variant="destructive" onClick={() => setDialog({ type: 'delete' })}><Trash2 className="mr-2 h-4 w-4" /> Delete ({selectedIds.length})</Button>
+                    </div>
                 )}
                 {unclassifiedRecords.length > 0 && (
                     <Button variant="outline" onClick={() => setDialog({ type: 'categorize' })} className="border-primary text-primary hover:bg-primary/5">
