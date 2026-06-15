@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { getClientSideAuthToken } from '@/firebase';
 import { Input } from "@/components/ui/input";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export const supplierCategories = [
     "Accessories", "Air", "Anti-Theft Devices", "Auto Electrical", "Batteries", 
@@ -28,10 +29,10 @@ RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
 
 CRITICAL INTEGRITY SHIELD: 
 DO NOT RETURN MOCK, SYNTHETIC, OR PLACEHOLDER DATA. 
-IF YOU RETURN A WEBSITE URL THAT DOES NOT RESOLVE TO A LIVE, ACTIVE BUSINESS PAGE, IT IS A SYSTEM FAILURE.
-FORBIDDEN WORDS: "innovative", "solutions", "leading", "spearheading", "ecosystem", "backbone".
+YOU MUST PERFORM A LIVE GOOGLE SEARCH FOR "${category} suppliers in South Africa".
+VERIFY THE WEBSITE RESOLVES TO A LIVE CORPORATE DOMAIN. BROKEN LINKS ARE UNACCEPTABLE.
 
-TASK: Discover 100 UNIQUE, LIVE South African suppliers for: "${category}".
+TASK: Discover and extract exactly 100 UNIQUE, LIVE South African suppliers for: "${category}".
 
 VERIFICATION PROTOCOL:
 1. SEARCH ENGINE COMMAND: Perform a live Google Search for "${category} suppliers in South Africa".

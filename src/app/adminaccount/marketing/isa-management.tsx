@@ -134,7 +134,7 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
 
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <Button variant="outline" onClick={findDuplicates} disabled={isLoading} className="gap-2">
+            <Button variant="outline" onClick={findDuplicates} disabled={isLoading} className="gap-2 text-left">
                 {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <Trash2 className="h-4 w-4"/>}
                 Registry Cleaner
             </Button>
