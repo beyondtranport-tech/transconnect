@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -10,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
-  Loader2, PlusCircle, Building, Edit, Trash2, Send, Download, Save, Search, Filter, Users, Globe, Zap, Upload, RefreshCcw, Database, Copy, Tag, AlertTriangle
+  Loader2, PlusCircle, Building, Edit, Trash2, Send, Download, Save, Search, Filter, Users, Globe, Zap, Upload, RefreshCcw, Database, Copy, Tag, AlertTriangle, CheckCircle 
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
@@ -138,7 +137,7 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
                                 <h3 className="font-bold text-destructive flex items-center gap-2 text-lg">
                                     <AlertTriangle className="h-5 w-5" /> Incomplete Records ({incomplete.length})
                                 </h3>
-                                <p className="text-sm text-muted-foreground">These records are missing names (likely from a failed import). Deleting them is highly recommended.</p>
+                                <p className="text-sm text-muted-foreground">These records are missing names. Deleting them is recommended.</p>
                                 <Button variant="destructive" size="sm" onClick={() => handleClean('incomplete')} disabled={isLoading}>
                                     Delete All {incomplete.length} Incomplete Records
                                 </Button>
@@ -209,7 +208,7 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
     }
   }, [open, partner, form]);
 
-  async function handleFormSubmit(values: PartnerFormValues) {
+  const handleFormSubmit = async (values: PartnerFormValues) => {
     setIsLoading(true);
     try {
       const token = await getClientSideAuthToken();
@@ -223,7 +222,7 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
     } finally {
       setIsLoading(false);
     }
-  }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

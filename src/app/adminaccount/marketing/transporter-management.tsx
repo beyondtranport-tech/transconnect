@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -29,7 +28,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, Truck, Edit, Trash2, Send, Download, Save, Search, Filter, Users, Zap, Globe, RefreshCcw, Database, Upload, Copy, Tag } from 'lucide-react';
+import { Loader2, PlusCircle, Truck, Edit, Trash2, Send, Download, Save, Search, Filter, Users, Zap, Globe, RefreshCcw, Database, Upload, Copy, Tag, AlertTriangle, CheckCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -47,6 +46,7 @@ import { BulkImportDialog } from './BulkImportDialog';
 import { useConfig } from '@/hooks/use-config';
 import { transporterCategories } from './transporter-discovery';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Checkbox } from '@/components/ui/checkbox';
 
 async function performAdminAction(token: string, action: string, payload: any) {
   const response = await fetch('/api/admin', {
@@ -130,6 +130,130 @@ ${listToClassify}`;
                         Copy Categorization Command
                     </Button>
                 </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
+    const [isOpen, setIsOpen] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [duplicates, setDuplicates] = useState<any[][]>([]);
+    const [incomplete, setIncomplete] = useState<any[]>([]);
+    const [selections, setSelections] = useState<Record<number, string>>({});
+    const { toast } = useToast();
+
+    const findDuplicates = async () => {
+        setIsLoading(true);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) return;
+            const res = await performAdminAction(token, 'findDuplicatePartners', { type: 'transporter' });
+            setDuplicates(res.duplicates || []);
+            setIncomplete(res.incomplete || []);
+            setIsOpen(true);
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: "Search Error", description: e.message });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleClean = async (target: 'duplicates' | 'incomplete') => {
+        setIsLoading(true);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) return;
+            
+            let idsToDelete: string[] = [];
+            if (target === 'duplicates') {
+                idsToDelete = duplicates.flatMap((group, idx) => {
+                    const keepId = selections[idx];
+                    if (!keepId) return [];
+                    return group.filter(p => p.id !== keepId).map(p => p.id);
+                });
+            } else {
+                idsToDelete = incomplete.map(p => p.id);
+            }
+
+            if (idsToDelete.length === 0) {
+                toast({ title: "No records selected for deletion." });
+                setIsLoading(false);
+                return;
+            }
+
+            await performAdminAction(token, 'deletePartners', { partnerIds: idsToDelete });
+            toast({ title: "Cleaned!", description: `${idsToDelete.length} records removed.` });
+            onComplete();
+            setIsOpen(false);
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: "Cleanup Error", description: e.message });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    return (
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <Button variant="outline" onClick={findDuplicates} disabled={isLoading} className="gap-2">
+                {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <Trash2 className="h-4 w-4"/>}
+                Registry Cleaner
+            </Button>
+            <DialogContent className="sm:max-w-4xl max-h-[85vh] flex flex-col">
+                <DialogHeader>
+                    <DialogTitle>Registry Health Tool</DialogTitle>
+                    <DialogDescription>Identify and remove duplicates or records with missing names.</DialogDescription>
+                </DialogHeader>
+                <ScrollArea className="flex-1 p-4">
+                    <div className="space-y-8">
+                        {incomplete.length > 0 && (
+                            <div className="space-y-4">
+                                <h3 className="font-bold text-destructive flex items-center gap-2 text-lg">
+                                    <AlertTriangle className="h-5 w-5" /> Incomplete Records ({incomplete.length})
+                                </h3>
+                                <p className="text-sm text-muted-foreground">These records are missing names. Deleting them is recommended.</p>
+                                <Button variant="destructive" size="sm" onClick={() => handleClean('incomplete')} disabled={isLoading}>
+                                    Delete All {incomplete.length} Incomplete Records
+                                </Button>
+                            </div>
+                        )}
+
+                        {duplicates.length > 0 && (
+                            <div className="space-y-4">
+                                <h3 className="font-bold text-amber-600 flex items-center gap-2 text-lg">
+                                    <Tag className="h-5 w-5" /> Potential Duplicates ({duplicates.length} groups)
+                                </h3>
+                                {duplicates.map((group, idx) => (
+                                    <div key={idx} className="p-4 border rounded-lg bg-muted/20 space-y-2">
+                                        <p className="font-bold text-sm">{group[0].companyName}</p>
+                                        <div className="space-y-1">
+                                            {group.map(p => (
+                                                <div key={p.id} className="flex items-center gap-2 text-xs">
+                                                    <Checkbox 
+                                                        checked={selections[idx] === p.id} 
+                                                        onCheckedChange={() => setSelections({...selections, [idx]: p.id})}
+                                                    />
+                                                    <span className="text-muted-foreground font-mono">{p.id}</span>
+                                                    <span>{p.email || 'No Email'}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                                <Button variant="secondary" className="w-full" onClick={() => handleClean('duplicates')} disabled={isLoading}>
+                                    Clean Selected Duplicates
+                                </Button>
+                            </div>
+                        )}
+                        
+                        {incomplete.length === 0 && duplicates.length === 0 && (
+                            <div className="text-center py-20">
+                                <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
+                                <p className="text-lg font-bold">Registry is Clean!</p>
+                            </div>
+                        )}
+                    </div>
+                </ScrollArea>
             </DialogContent>
         </Dialog>
     );
@@ -373,6 +497,7 @@ export default function TransporterManagement() {
                 <CardDescription className="text-left text-foreground">Unified database view ({allRecords.length} records).</CardDescription>
             </div>
             <div className="flex flex-wrap items-center gap-2 text-left text-foreground">
+                <DuplicateCleaner onComplete={fetchData} />
                 {selectedIds.length > 0 && (
                     <Button variant="secondary" onClick={() => setDialog({ type: 'batch' })}>
                         <Zap className="mr-2 h-4 w-4" /> Batch Research ({selectedIds.length})

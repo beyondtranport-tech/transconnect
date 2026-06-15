@@ -101,7 +101,7 @@ function AdminAuthGuard({ children }: { children: React.ReactNode }) {
 
     if (isUserLoading || !user || (user.email !== 'mkoton100@gmail.com' && user.email !== 'beyondtransport@gmail.com')) {
         return (
-            <div className="flex flex-col justify-center items-center min-h-[calc(100vh-8rem)] text-left">
+            <div className="flex flex-col justify-center items-center min-h-[calc(100vh-8rem)] text-left text-foreground">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
                 <p className="mt-4 text-muted-foreground text-sm font-bold uppercase tracking-widest text-left">Verifying Admin Permissions...</p>
             </div>
@@ -259,7 +259,7 @@ function AdminAccountContent() {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
-          <div className="flex items-center gap-3 p-2 rounded-md bg-sidebar-accent text-left">
+          <div className="flex items-center gap-3 p-2 rounded-md bg-sidebar-accent text-left text-foreground">
             <Avatar className="h-10 w-10">
                 <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
             </Avatar>
@@ -274,7 +274,7 @@ function AdminAccountContent() {
       </SidebarFooter>
     </Sidebar>
     <SidebarInset>
-        <div className="p-6 text-left">
+        <div className="p-6 text-left text-foreground">
             {renderContent()}
         </div>
     </SidebarInset>
@@ -285,7 +285,7 @@ function AdminAccountContent() {
 export default function AdminAccountPage() {
   return (
     <AdminAuthGuard>
-        <Suspense fallback={<div className="flex justify-center items-center min-h-[calc(100vh-8rem)] text-left"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>}>
+        <Suspense fallback={<div className="flex justify-center items-center min-h-[calc(100vh-8rem)] text-left text-foreground"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>}>
             <AdminAccountContent />
         </Suspense>
     </AdminAuthGuard>

@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -145,7 +144,7 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
                     <DialogDescription>Clean up duplicate or broken records.</DialogDescription>
                 </DialogHeader>
                 <ScrollArea className="flex-1 p-4">
-                    <div className="space-y-8">
+                    <div className="space-y-8 text-left">
                         {incomplete.length > 0 && (
                             <div className="space-y-4">
                                 <h3 className="font-bold text-destructive flex items-center gap-2 text-lg">
@@ -174,7 +173,16 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
                                         </div>
                                     </div>
                                 ))}
-                                <Button variant="secondary" className="w-full" onClick={() => handleClean('duplicates')} disabled={isLoading}>Clean Selected</Button>
+                                <Button variant="secondary" className="w-full" onClick={() => handleClean('duplicates')} disabled={isLoading}>
+                                    Clean Selected
+                                </Button>
+                            </div>
+                        )}
+                        
+                        {incomplete.length === 0 && duplicates.length === 0 && (
+                            <div className="text-center py-20">
+                                <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
+                                <p className="text-lg font-bold">Registry is Clean!</p>
                             </div>
                         )}
                     </div>
@@ -327,7 +335,7 @@ export default function ISAManagement() {
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Error', description: e.message });
     }
-  }
+  };
 
   const columns: ColumnDef<any>[] = [
     { 
