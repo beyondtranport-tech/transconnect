@@ -6,8 +6,9 @@ import { getAdminApp } from '@/lib/firebase-admin';
 export const dynamic = 'force-dynamic';
 
 /**
- * Normalizes and sanitizes data for Firestore.
- * Handles snake_case to camelCase mapping and removes 'undefined' properties.
+ * Sanitizes and normalizes data for Firestore.
+ * 1. Handles snake_case to camelCase mapping for AI Studio imports.
+ * 2. RECTIFICATION: Automatically removes properties with 'undefined' values.
  */
 function normalizeAndSanitize(obj: any): any {
     if (obj === null || obj === undefined) return null;
@@ -17,6 +18,8 @@ function normalizeAndSanitize(obj: any): any {
     const sanitized: any = {};
     for (const key in obj) {
         let val = obj[key];
+        
+        // RECTIFICATION: Skip undefined values to prevent Firestore document write errors
         if (val === undefined) continue;
 
         // Map AI snake_case keys to camelCase CRM keys
@@ -27,7 +30,7 @@ function normalizeAndSanitize(obj: any): any {
         if (key === 'email_address') newKey = 'email';
         if (key === 'telephone_number') newKey = 'phone';
         if (key === 'registry_line') newKey = 'mobile';
-        if (key === 'industrial_category') newKey = 'industrial_category'; // keep consistent
+        if (key === 'industrial_category') newKey = 'industrial_category'; 
         
         sanitized[newKey] = normalizeAndSanitize(val);
     }
@@ -95,7 +98,6 @@ export async function POST(req: NextRequest) {
                 const batch = db.batch();
                 for (const p of partners) {
                     let ref;
-                    // Standardize the name for ID generation
                     const cName = p.companyName || p.company_name || p.trading_name || p.name || p.service_handle;
                     
                     if (p.record_id) {
@@ -107,7 +109,6 @@ export async function POST(req: NextRequest) {
                         ref = db.collection('partners').doc();
                     }
 
-                    // Map all possible variations to internal schema
                     const rawData = {
                         ...p,
                         type,
@@ -125,7 +126,6 @@ export async function POST(req: NextRequest) {
                         researchStatus: 'completed'
                     };
                     
-                    // Clean internal sequence flags
                     delete (rawData as any).seq;
                     delete (rawData as any).sequence;
                     
@@ -189,7 +189,7 @@ export async function POST(req: NextRequest) {
 
                 records.forEach((r: any) => {
                     const name = (r.companyName || '').toLowerCase().trim();
-                    if (!name || name === 'operational hub verified') {
+                    if (!name) {
                         incomplete.push(r);
                     } else {
                         if (seen.has(name)) seen.get(name)!.push(r.id);

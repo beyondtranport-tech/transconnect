@@ -74,8 +74,8 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
     };
 
     return (
-        <div className="grid md:grid-cols-2 gap-6">
-            <div className="space-y-4">
+        <div className="grid md:grid-cols-2 gap-6 text-left">
+            <div className="space-y-4 text-left">
                 <h2 className="text-2xl font-bold font-headline flex items-center gap-2">
                     <Globe className="h-6 w-6 text-primary" />
                     Forensic Discovery: {category}
@@ -104,7 +104,7 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                     Copy Deep-Forensic Prompt
                 </Button>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2 text-left">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5"><Terminal className="h-3 w-3"/> Command Preview</Label>
                 <ScrollArea className="h-[400px] border rounded-lg bg-slate-900 p-4">
                     <pre className="text-[10px] text-slate-400 font-mono whitespace-pre-wrap leading-tight">{prompt}</pre>
@@ -116,23 +116,23 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
 
 export default function DiscoveryEngine() {
     return (
-        <Card className="shadow-none border-none">
-            <Tabs defaultValue="Accessories" className="w-full">
-                <CardHeader className="px-0 pt-0">
+        <Card className="shadow-none border-none text-left">
+            <Tabs defaultValue="Accessories" className="w-full text-left">
+                <CardHeader className="px-0 pt-0 text-left">
                     <CardTitle className="flex items-center gap-2">
                         <Database className="h-6 w-6 text-primary" />
                         AI Forensic Discovery (Deep Scan)
                     </CardTitle>
                     <CardDescription>Use the Deep-Scraping prompt to build a high-fidelity technical registry.</CardDescription>
                 </CardHeader>
-                <CardContent className="px-0">
+                <CardContent className="px-0 text-left">
                     <TabsList className="h-auto flex-wrap justify-start bg-muted/30 mb-8 p-1">
                         {supplierCategories.map(category => (
                             <TabsTrigger key={category} value={category} className="text-xs px-4 py-2">{category}</TabsTrigger>
                         ))}
                     </TabsList>
                     {supplierCategories.map(category => (
-                        <TabsContent key={category} value={category}>
+                        <TabsContent key={category} value={category} className="text-left">
                             <DiscoveryTab category={category} currentCount={0} />
                         </TabsContent>
                     ))}

@@ -13,7 +13,6 @@ import {
   SidebarMenuSub,
   SidebarMenuSubItem,
   SidebarMenuSubButton,
-  SidebarGroupLabel,
 } from '@/components/ui/sidebar';
 import {
   LogOut,
@@ -44,6 +43,7 @@ import {
   Music,
   Lock,
   Banknote,
+  Search,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -55,7 +55,7 @@ import { signOut } from 'firebase/auth';
 import React from 'react';
 
 // Component Imports
-import AdminDashboardContent from '@/app/backend/dashboard-content';
+import AdminDashboardContent from '@/app/adminaccount/dashboard';
 import ActivityFeed from '@/app/backend/activity-feed';
 import LeadsAgent from '@/app/adminaccount/leads-agent';
 import LeadsDatabase from '@/app/adminaccount/leads-database';

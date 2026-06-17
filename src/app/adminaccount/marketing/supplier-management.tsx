@@ -127,7 +127,7 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
                 {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <Trash2 className="h-4 w-4"/>}
                 Registry Cleaner
             </Button>
-            <DialogContent className="sm:max-w-4xl max-h-[85vh] flex flex-col">
+            <DialogContent className="sm:max-w-4xl max-h-[85vh] flex flex-col text-left">
                 <DialogHeader>
                     <DialogTitle>Registry Health Tool</DialogTitle>
                 </DialogHeader>
@@ -162,7 +162,7 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
                         {incomplete.length === 0 && duplicates.length === 0 && (
                             <div className="text-center py-20">
                                 <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
-                                <p className="text-lg font-bold">Registry is Clean!</p>
+                                <p className="text-lg font-bold text-foreground">Registry is Clean!</p>
                             </div>
                         )}
                     </div>
@@ -222,7 +222,7 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
             
             <Separator />
             <div className="space-y-4 text-left">
-                <h3 className="text-sm font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                <h3 className="text-sm font-black uppercase tracking-widest text-primary flex items-center gap-2 text-left">
                     <Sparkles className="h-4 w-4"/> Forensic Technical Profile
                 </h3>
                 <FormField control={form.control} name="minedServiceWording" render={({ field }) => (
@@ -362,7 +362,7 @@ export default function SupplierManagement() {
         cell: ({ row }) => (
             <div className="flex flex-col text-sm text-left">
                 <span className="font-bold text-left">{row.original.companyName || row.original.contactPerson || 'Incomplete Record'}</span>
-                <div className="flex flex-wrap gap-1 mt-1">
+                <div className="flex flex-wrap gap-1 mt-1 text-left">
                     {row.original.industrialTags?.slice(0, 3).map((tag: string) => (
                         <Badge key={tag} variant="secondary" className="text-[8px] h-3.5 bg-slate-100 text-slate-600 border-none px-1.5 uppercase font-black">{tag}</Badge>
                     ))}
@@ -429,7 +429,7 @@ export default function SupplierManagement() {
 
       <div className="space-y-6 text-left">
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
-            <div className="text-left">
+            <div className="text-left text-foreground">
                 <CardTitle className="flex items-center gap-2 text-2xl font-black font-headline text-left"><Building /> Supplier Registry</CardTitle>
                 <CardDescription className="text-left">Unified industrial supply directory ({allRecords.length} records).</CardDescription>
             </div>
@@ -442,12 +442,12 @@ export default function SupplierManagement() {
                 )}
                 <div className="relative w-64 text-left">
                     <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input placeholder="Search tags, name, ID..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8 bg-white" />
+                    <Input placeholder="Search tags, name, ID..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8 bg-white text-foreground" />
                 </div>
-                <Button variant="outline" onClick={() => downloadDataAsCSV(allRecords, 'suppliers-export.csv')} disabled={isLoading}>
+                <Button variant="outline" onClick={() => downloadDataAsCSV(allRecords, 'suppliers-export.csv')} disabled={isLoading} className="text-foreground">
                     <Download className="mr-2 h-4 w-4" /> Export CSV
                 </Button>
-                <BulkImportDialog type="supplier" onComplete={fetchData}><Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
+                <BulkImportDialog type="supplier" onComplete={fetchData}><Button variant="outline" className="text-foreground"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
                 <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Record</Button>
             </div>
         </CardHeader>
@@ -474,7 +474,7 @@ export default function SupplierManagement() {
                 </div>
             </CardHeader>
             <CardContent className="pt-6 text-left">
-                <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left">
+                <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
                     <div className="flex-1 space-y-2 text-left">
                         <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status</Label>
                         <Select value={statusFilter} onValueChange={setStatusFilter}>
