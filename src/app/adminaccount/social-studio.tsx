@@ -64,8 +64,9 @@ const platformConfig: Record<string, { label: string, icon: any, color: string, 
 };
 
 const socialTemplates = (platform: Platform) => {
-    const config = platformConfig[platform] || platformConfig['facebook'];
-    const isLinkedIn = platform === 'linkedin';
+    const safePlatform = platform || 'facebook';
+    const config = platformConfig[safePlatform] || platformConfig['facebook'];
+    const isLinkedIn = safePlatform === 'linkedin';
     
     return {
         'app-launch': {

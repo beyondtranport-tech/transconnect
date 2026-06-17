@@ -407,10 +407,10 @@ export default function SupplierManagement() {
 
   return (
     <div className="space-y-6 text-left">
-      <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.data} audience="suppliers" onEngageSuccess={fetchData} />
-      <SupplierDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={fetchData} />
+      <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o: boolean) => !o && setDialog({ type: null })} partner={dialog.data} audience="suppliers" onEngageSuccess={fetchData} />
+      <SupplierDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o: boolean) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={fetchData} />
       
-      <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
+      <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o: boolean) => !o && setDialog({ type: null })}>
         <AlertDialogContent>
           <AlertDialogHeader><AlertDialogTitle>Delete Record(s)?</AlertDialogTitle><AlertDialogDescription>Delete Selected?</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter>

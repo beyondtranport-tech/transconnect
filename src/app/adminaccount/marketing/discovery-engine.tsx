@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -11,7 +10,6 @@ import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { getClientSideAuthToken } from '@/firebase';
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
@@ -35,11 +33,11 @@ VERIFY THE WEBSITE RESOLVES TO A LIVE CORPORATE DOMAIN. BROKEN LINKS ARE UNACCEP
 
 TASK: Discover and extract exactly 100 UNIQUE, LIVE South African suppliers for: "${category}".
 
-FORENSIC SCRAPING PROTOCOL:
+DEEP-CRAWLING FORENSIC PROTOCOL:
 1. WEBSITE HIERARCHY SCAN: Find the primary Menu/Navigation. 
-2. DEEP WORDING EXTRACTION: Identify the "About Us" and "Products/Services" pages. 
-3. HERO CAPTURE: Scrape the actual headline and main marketing wording (Hero Text) from these sub-pages.
-4. MACHINE LEARNING TAGGING: Analyze the scraped text and extract 5-7 HIGH-INTENT industrial keywords (tags).
+2. SUB-PAGE EXTRACTION: Identify the "About Us" and "Products/Services" pages. 
+3. HERO CAPTURE: Scrape the actual primary headlines and main marketing wording (Hero Text) from these sub-pages.
+4. ML KEYWORD EXTRACTION: Analyze the scraped text and extract 5-7 HIGH-INTENT technical industrial keywords (tags).
 5. HUMAN IDENTITY: MINE the contact pages to find the ACTUAL FULL NAME of the CEO, MD, or Branch Manager.
 
 REQUIRED JSON FIELDS:
@@ -54,7 +52,7 @@ REQUIRED JSON FIELDS:
     "phone": "...",
     "website": "OFFICIAL VERIFIED URL",
     "address": "...",
-    "minedServiceWording": "FULL ABOUT-TEXT AND HERO HEADLINES FROM PRODUCT PAGES",
+    "minedServiceWording": "FULL SCANNED ABOUT-TEXT AND HERO HEADLINES FROM PRODUCT PAGES",
     "industrialTags": ["Tag1", "Tag2", "Tag3", "Tag4", "Tag5"]
   }
 ]`;
@@ -71,7 +69,7 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
     const handleCopy = async () => {
         await navigator.clipboard.writeText(prompt);
         setIsCopied(true);
-        toast({ title: "Forensic Prompt Ready", description: "Deep-crawling and ML-tagging instructions included." });
+        toast({ title: "Forensic Prompt Ready", description: "Hard-Verification and Deep-Scraping protocols active." });
         setTimeout(() => setIsCopied(false), 3000);
     };
 
@@ -86,7 +84,7 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                     <ShieldCheck className="h-4 w-4 text-primary" />
                     <AlertTitle className="text-left font-bold">Deep-Scraping Active</AlertTitle>
                     <AlertDescription className="text-xs text-left">
-                        This prompt commands the AI to crawl sub-menus and extract product-page hero text and ML-based industrial tags.
+                        This prompt commands the AI to perform live corporate audits, visit sub-menus, and extract product-page hero text and ML tags.
                     </AlertDescription>
                 </Alert>
                 <div className="p-4 bg-muted/30 border rounded-xl space-y-4">

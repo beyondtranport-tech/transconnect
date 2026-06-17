@@ -13,6 +13,7 @@ import {
   SidebarMenuSub,
   SidebarMenuSubItem,
   SidebarMenuSubButton,
+  SidebarGroupLabel,
 } from '@/components/ui/sidebar';
 import {
   LogOut,
@@ -201,11 +202,12 @@ function AdminAccountContent() {
               </SidebarMenuItem>
               
               <SidebarMenuItem>
-                  <SidebarMenuButton tooltip="Social" isActive={isSocialActive}><Share2 /><span>Social</span></SidebarMenuButton>
+                  <SidebarMenuButton tooltip="Leads" isActive={activeView.includes('leads') || activeView === 'unified-directory'}><UserPlus /><span>Leads & CRM</span></SidebarMenuButton>
                   <SidebarMenuSub>
-                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'social-facebook'} onClick={() => navigate('social-facebook')}><Facebook className="h-4 w-4"/>Facebook</SidebarMenuSubButton></SidebarMenuSubItem>
-                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'social-linkedin'} onClick={() => navigate('social-linkedin')}><Linkedin className="h-4 w-4"/>LinkedIn</SidebarMenuSubButton></SidebarMenuSubItem>
-                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'social-instagram'} onClick={() => navigate('social-instagram')}><Instagram className="h-4 w-4"/>Instagram</SidebarMenuSubButton></SidebarMenuSubItem>
+                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'unified-directory'} onClick={() => navigate('unified-directory')}>Unified Directory</SidebarMenuSubButton></SidebarMenuSubItem>
+                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'leads-agent'} onClick={() => navigate('leads-agent')}>Leads Agent</SidebarMenuSubButton></SidebarMenuSubItem>
+                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'leads-database'} onClick={() => navigate('leads-database')}>Leads Database</SidebarMenuSubButton></SidebarMenuSubItem>
+                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'platform-staff'} onClick={() => navigate('platform-staff')}>Platform Staff</SidebarMenuSubButton></SidebarMenuSubItem>
                   </SidebarMenuSub>
               </SidebarMenuItem>
 
@@ -222,14 +224,15 @@ function AdminAccountContent() {
               </SidebarMenuItem>
 
               <SidebarMenuItem>
-                  <SidebarMenuButton tooltip="Leads" isActive={activeView.includes('leads') || activeView === 'unified-directory'}><UserPlus /><span>Leads & CRM</span></SidebarMenuButton>
+                  <SidebarMenuButton tooltip="Social" isActive={isSocialActive}><Share2 /><span>Social</span></SidebarMenuButton>
                   <SidebarMenuSub>
-                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'unified-directory'} onClick={() => navigate('unified-directory')}>Unified Directory</SidebarMenuSubButton></SidebarMenuSubItem>
-                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'leads-agent'} onClick={() => navigate('leads-agent')}>Leads Agent</SidebarMenuSubButton></SidebarMenuSubItem>
-                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'leads-database'} onClick={() => navigate('leads-database')}>Leads Database</SidebarMenuSubButton></SidebarMenuSubItem>
-                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'platform-staff'} onClick={() => navigate('platform-staff')}>Platform Staff</SidebarMenuSubButton></SidebarMenuSubItem>
+                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'social-facebook'} onClick={() => navigate('social-facebook')}><Facebook className="h-4 w-4"/>Facebook</SidebarMenuSubButton></SidebarMenuSubItem>
+                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'social-linkedin'} onClick={() => navigate('social-linkedin')}><Linkedin className="h-4 w-4"/>LinkedIn</SidebarMenuSubButton></SidebarMenuSubItem>
+                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'social-instagram'} onClick={() => navigate('social-instagram')}><Instagram className="h-4 w-4"/>Instagram</SidebarMenuSubButton></SidebarMenuSubItem>
+                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'social-tiktok'} onClick={() => navigate('social-tiktok')}><Music className="h-4 w-4"/>TikTok</SidebarMenuSubButton></SidebarMenuSubItem>
                   </SidebarMenuSub>
               </SidebarMenuItem>
+
               <SidebarMenuItem>
                   <SidebarMenuButton tooltip="Content" isActive={['branding-studio', 'tts-studio', 'asset-gallery'].includes(activeView)}><Sparkles /><span>Content Studio</span></SidebarMenuButton>
                   <SidebarMenuSub>
@@ -238,6 +241,7 @@ function AdminAccountContent() {
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'asset-gallery'} onClick={() => navigate('asset-gallery')}>Asset Gallery</SidebarMenuSubButton></SidebarMenuSubItem>
                   </SidebarMenuSub>
               </SidebarMenuItem>
+
               <SidebarMenuItem>
                   <SidebarMenuButton tooltip="Financials" isActive={activeView.includes('financial') || activeView === 'budget'}><FileText /><span>Financials</span></SidebarMenuButton>
                   <SidebarMenuSub>
@@ -245,6 +249,7 @@ function AdminAccountContent() {
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'budget'} onClick={() => navigate('budget')}>Budget</SidebarMenuSubButton></SidebarMenuSubItem>
                   </SidebarMenuSub>
               </SidebarMenuItem>
+
               <SidebarMenuItem>
               <SidebarMenuButton tooltip="Platform Settings" isActive={activeView === 'settings-bank' || activeView === 'permissions'}><Settings /><span>Platform Settings</span></SidebarMenuButton>
               <SidebarMenuSub>
