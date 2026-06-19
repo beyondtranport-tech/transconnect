@@ -114,7 +114,7 @@ export function EngageDialog({ open, onOpenChange, partner, audience, onEngageSu
             notes: `System generated engagement for ${partner.firstName} (${partner.entryType || 'General'}).`,
         });
 
-        // 2. Prepare HTML for clipboard - Wrap in a font-preserving div
+        // 2. Prepare HTML for clipboard
         const contentClone = contentElement.cloneNode(true) as HTMLElement;
         const origin = window.location.origin;
         
@@ -130,7 +130,6 @@ export function EngageDialog({ open, onOpenChange, partner, audience, onEngageSu
             if (href?.startsWith('/')) a.href = `${origin}${href}`;
         });
 
-        // Wrap in a div that enforces the Calibri font for the destination email client
         const wrappedHtml = `<div style="font-family: Calibri, sans-serif; font-size: 12pt; color: #000000; line-height: 1.2; text-align: left;">${contentClone.innerHTML}</div>`;
 
         // 3. Copy HTML

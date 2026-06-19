@@ -7,7 +7,7 @@ import * as z from 'zod';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from '@/hooks/use-toast';
-import { getClientSideAuthToken, useUser } from '@/firebase';
+import { getClientSideAuthToken } from '@/firebase';
 import { 
   Loader2, PlusCircle, Building, Edit, Trash2, Send, Download, Save, Search, Filter, Users, Globe, Zap, Upload, RefreshCcw, Database, Copy, Tag, AlertTriangle, CheckCircle, Sparkles 
 } from 'lucide-react';
@@ -28,7 +28,6 @@ import { downloadDataAsCSV, formatDateSafe, cn } from '@/lib/utils';
 import { EnrichPartnerButton } from './EnrichPartnerButton';
 import { BulkImportDialog } from './BulkImportDialog';
 import { Label } from '@/components/ui/label';
-import { useConfig } from '@/hooks/use-config';
 import { supplierCategories } from './discovery-engine';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -251,7 +250,7 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
                 <FormItem className="text-left">
                     <FormLabel>Pipeline Status</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl><SelectTrigger className="bg-white"><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
+                        <FormControl><SelectTrigger><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
                         <SelectContent>
                             <SelectItem value="new">New Lead</SelectItem>
                             <SelectItem value="contacted">Researching</SelectItem>
@@ -286,8 +285,11 @@ export default function SupplierManagement() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [assigneeFilter, setAssigneeFilter] = useState('all');
 
-  const { data: statsData, forceRefresh: refreshStats } = useConfig<any>('supplierDiscoveryStats');
-  const counts = statsData?.counts || {};
+  const { forceRefresh: refreshStats } = useConfig<any>('supplierDiscoveryStats');
+  
+  const statsConfig = useMemo(() => {
+    return { counts: {} };
+  }, []);
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
@@ -407,10 +409,10 @@ export default function SupplierManagement() {
 
   return (
     <div className="space-y-6 text-left">
-      <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o: boolean) => !o && setDialog({ type: null })} partner={dialog.data} audience="suppliers" onEngageSuccess={fetchData} />
-      <SupplierDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o: boolean) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={fetchData} />
+      <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.data} audience="suppliers" onEngageSuccess={fetchData} />
+      <SupplierDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={fetchData} />
       
-      <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o: boolean) => !o && setDialog({ type: null })}>
+      <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
         <AlertDialogContent>
           <AlertDialogHeader><AlertDialogTitle>Delete Record(s)?</AlertDialogTitle><AlertDialogDescription>Delete Selected?</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter>
@@ -461,16 +463,6 @@ export default function SupplierManagement() {
                     <Button variant="ghost" size="sm" onClick={handleRefreshTally} className="h-6 text-[9px] uppercase font-black tracking-tighter" disabled={isRefreshing}>
                         {isRefreshing ? <Loader2 className="mr-1 h-2.5 w-2.5 animate-spin"/> : <RefreshCcw className="mr-1 h-2.5 w-2.5"/>} Refresh Counts
                     </Button>
-                </div>
-                <div className="flex flex-wrap gap-2 mt-3 text-left">
-                    {supplierCategories.map(cat => (
-                        <div key={cat} className="flex items-center bg-white border rounded-full pl-3 pr-1 py-0.5 shadow-sm text-left">
-                            <span className="text-[9px] font-bold text-slate-600 mr-2 text-left">{cat}</span>
-                            <Badge className="bg-primary/10 text-primary border-none text-[9px] font-black h-4 px-1.5 min-w-[20px] justify-center">
-                                {counts[cat] || 0}
-                            </Badge>
-                        </div>
-                    ))}
                 </div>
             </CardHeader>
             <CardContent className="pt-6 text-left text-foreground">

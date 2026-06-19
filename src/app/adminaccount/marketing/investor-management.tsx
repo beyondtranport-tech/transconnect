@@ -139,7 +139,7 @@ function InvestorDialog({ open, onOpenChange, partner, onSave }: { open: boolean
                     <FormField control={form.control} name="notes" render={({ field }) => (<FormItem className="text-left"><FormLabel>Investment Focus / Notes</FormLabel><FormControl><Textarea placeholder="Details about their portfolio and sector focus..." {...field} className="min-h-[100px]" /></FormControl><FormMessage /></FormItem>)} />
                     <FormField control={form.control} name="status" render={({ field }) => ( 
                         <FormItem className="text-left">
-                            <FormLabel>Pipeline Status</FormLabel>
+                            <FormLabel>Pipeline Status</Label>
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                                 <FormControl><SelectTrigger><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
                                 <SelectContent>

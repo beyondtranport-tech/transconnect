@@ -44,7 +44,6 @@ import InvestorOffer from './offers/InvestorOffer';
 import DeveloperOffer from './offers/DeveloperOffer';
 import SupplierOffer from './offers/SupplierOffer';
 import TransporterOffer from './offers/TransporterOffer';
-import DriverOffer from './offers/DriverOffer';
 
 // Emails
 import PartnerEmails from './emails/PartnerEmails';
@@ -52,7 +51,6 @@ import SupplierEmails from './emails/SupplierEmails';
 import TransporterEmails from './emails/TransporterEmails';
 import InvestorEmails from './emails/InvestorEmails';
 import DeveloperEmails from './emails/DeveloperEmails';
-import DriverEmails from './emails/DriverEmails';
 
 // Management
 import PartnerManagement from './partner-management';
@@ -77,7 +75,7 @@ const audienceConfig = {
     suppliers: { title: 'Suppliers', icon: SearchCode, Offer: SupplierOffer, Emails: SupplierEmails, Management: SupplierManagement, Pitch: SupplierPitch, Discovery: DiscoveryEngine },
     transporters: { title: 'Transporters', icon: Send, Offer: TransporterOffer, Emails: TransporterEmails, Management: TransporterManagement, Discovery: TransporterDiscoveryEngine },
     finance: { title: 'Finance Companies', icon: Landmark, Offer: InvestorOffer, Emails: InvestorEmails, Management: FinanceManagement, Discovery: FinanceDiscoveryEngine },
-    drivers: { title: 'Drivers', icon: Users, Offer: DriverOffer, Emails: DriverEmails, Management: DriverManagement, Discovery: DriverDiscoveryEngine },
+    drivers: { title: 'Drivers', icon: Users, Offer: PartnerOffer, Emails: PartnerEmails, Management: DriverManagement, Discovery: DriverDiscoveryEngine },
     investors: { title: 'App Launch Investors', icon: DollarSign, Offer: InvestorOffer, Emails: InvestorEmails, Management: InvestorManagement, Discovery: InvestorDiscoveryEngine },
     developers: { title: 'Developers', icon: LayoutDashboard, Offer: DeveloperOffer, Emails: DeveloperEmails, Management: DeveloperManagement },
 };
@@ -176,7 +174,10 @@ function LogAndCopyDialog({ open, onOpenChange, partners, isLoadingPartners, act
 
 function MarketingPageContent({ audience }: MarketingPageProps) {
   const config = audienceConfig[audience] as any;
-  const { Offer, Emails, Management, Pitch, Discovery } = config;
+  const { Offer, Emails, Management } = config;
+  const Pitch = config.Pitch;
+  const Discovery = config.Discovery;
+  
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
