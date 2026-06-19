@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Users, PlusCircle, Sparkles, UserCheck, Star, Zap, TrendingUp, PieChart } from 'lucide-react';
+import { Loader2, Users, Star, Zap, TrendingUp, PieChart } from 'lucide-react';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { Badge } from '@/components/ui/badge';
@@ -79,9 +79,9 @@ export default function MembersList() {
           accessorKey: 'companyName',
           header: 'Member / Entity',
           cell: ({ row }) => (
-            <div className="flex flex-col">
-              <p className="font-bold text-sm">{row.original.companyName}</p>
-              <p className="text-xs text-muted-foreground">{row.original.firstName} {row.original.lastName}</p>
+            <div className="flex flex-col text-left text-foreground">
+              <p className="font-bold text-sm text-left">{row.original.companyName}</p>
+              <p className="text-xs text-muted-foreground text-left">{row.original.firstName} {row.original.lastName}</p>
             </div>
           )
         },
@@ -141,11 +141,11 @@ export default function MembersList() {
 
 
     return (
-        <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
+        <Card className="text-left text-foreground">
+            <CardHeader className="flex flex-row items-center justify-between text-left">
                 <div>
-                    <CardTitle className="flex items-center gap-2"><Users /> Member Registry</CardTitle>
-                    <CardDescription>
+                    <CardTitle className="flex items-center gap-2 text-left"><Users /> Member Registry</CardTitle>
+                    <CardDescription className="text-left">
                         Managing lifecycle and success for {members.length} registered entities.
                     </CardDescription>
                 </div>
@@ -155,7 +155,7 @@ export default function MembersList() {
                     </Link>
                 </Button>
             </CardHeader>
-            <CardContent>
+            <CardContent className="text-left text-foreground">
                  {isLoading ? <div className="flex justify-center py-20"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div> : (
                     <DataTable columns={columns} data={members || []} />
                  )}

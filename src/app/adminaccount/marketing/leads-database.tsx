@@ -106,36 +106,36 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
       <DialogContent className="sm:max-w-xl text-left text-foreground">
         <DialogHeader><DialogTitle>{lead ? 'Edit' : 'Add New'} Lead</DialogTitle></DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[60vh] overflow-y-auto pr-2 text-left">
+          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[60vh] overflow-y-auto pr-2 text-left text-foreground">
             <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Company Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             <div className="grid grid-cols-2 gap-4 text-left">
               <FormField control={form.control} name="firstName" render={({ field }) => (<FormItem><FormLabel>First Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="lastName" render={({ field }) => (<FormItem><FormLabel>Last Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
             <FormField control={form.control} name="contactPerson" render={({ field }) => (<FormItem className="text-left"><FormLabel>Alternative Contact Name</FormLabel><FormControl><Input placeholder="Full Name" {...field} /></FormControl><FormMessage /></FormItem>)} />
-            <div className="grid grid-cols-2 gap-4 text-left">
+            <div className="grid grid-cols-2 gap-4 text-left text-foreground">
               <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Landline</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="mobile" render={({ field }) => (<FormItem><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
-            <FormField control={form.control} name="email" render={({ field }) => (<FormItem className="text-left"><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" /></FormControl><FormMessage /></FormItem>)} />
-            <FormField control={form.control} name="website" render={({ field }) => (<FormItem className="text-left"><FormLabel>Website</FormLabel><FormControl><Input {...field} type="url" placeholder="https://..." /></FormControl><FormMessage /></FormItem>)} />
-            <FormField control={form.control} name="address" render={({ field }) => (<FormItem className="text-left"><FormLabel>Address</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>)} />
-            <FormField control={form.control} name="notes" render={({ field }) => (<FormItem className="text-left"><FormLabel>Mined Service wording</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>)} />
-             <div className="grid grid-cols-2 gap-4 text-left">
+            <FormField control={form.control} name="email" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" /></FormControl><FormMessage /></FormItem>)} />
+            <FormField control={form.control} name="website" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Website</FormLabel><FormControl><Input {...field} type="url" placeholder="https://..." /></FormControl><FormMessage /></FormItem>)} />
+            <FormField control={form.control} name="address" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Address</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>)} />
+            <FormField control={form.control} name="notes" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Mined Service wording</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>)} />
+             <div className="grid grid-cols-2 gap-4 text-left text-foreground">
               <FormField control={form.control} name="role" render={({ field }) => (
                 <FormItem className="text-left"><FormLabel>Potential Role</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl><SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger></FormControl>
+                    <FormControl><SelectTrigger className="bg-white"><SelectValue placeholder="Select..." /></SelectTrigger></FormControl>
                     <SelectContent>{roles.map(r => <SelectItem key={r.id} value={r.title}>{r.title}</SelectItem>)}</SelectContent>
                 </Select></FormItem>
               )} />
               <FormField control={form.control} name="status" render={({ field }) => (
                 <FormItem className="text-left"><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                    <FormControl><SelectTrigger className="bg-white"><SelectValue /></SelectTrigger></FormControl>
                     <SelectContent><SelectItem value="new">New</SelectItem><SelectItem value="contacted">Researching</SelectItem><SelectItem value="qualified">Qualified</SelectItem></SelectContent>
                 </Select></FormItem>
               )} />
             </div>
-            <DialogFooter className="pt-4 border-t text-left"><Button type="submit" disabled={isLoading}>
+            <DialogFooter className="pt-4 border-t text-left text-foreground"><Button type="submit" disabled={isLoading}>
                 {isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />} Save Record
             </Button></DialogFooter>
           </form>
@@ -225,8 +225,8 @@ function LeadsDatabaseComponent() {
         const matchesStatus = statusFilter === 'all' || r.status === statusFilter;
         
         let matchesData = true;
-        if (dataFilter === 'no-email') matchesData = !r.email;
-        else if (dataFilter === 'has-email') matchesData = !!r.email;
+        if (dataFilter === 'no-email') matchesData = !p.email;
+        else if (dataFilter === 'has-email') matchesData = !!p.email;
 
         return matchesSearch && matchesStatus && matchesData;
     });
@@ -252,8 +252,8 @@ function LeadsDatabaseComponent() {
     { 
         header: 'Human Contact', 
         cell: ({ row }) => (
-            <div className="flex flex-col text-sm text-left">
-                <span className="font-bold text-left text-foreground">{row.original.contactPerson || `${row.original.firstName || ''} ${row.original.lastName || ''}`.trim() || 'N/A'}</span>
+            <div className="flex flex-col text-sm text-left text-foreground">
+                <span className="font-bold text-left">{row.original.contactPerson || `${row.original.firstName || ''} ${row.original.lastName || ''}`.trim() || 'N/A'}</span>
                 <span className="text-xs text-muted-foreground text-left">{row.original.email}</span>
             </div>
         )
@@ -287,7 +287,7 @@ function LeadsDatabaseComponent() {
       <EngageDialog open={!!engageLead} onOpenChange={(o) => !o && setEngageLead(null)} partner={engageLead} audience="suppliers" onEngageSuccess={forceRefresh} />
       <LeadDialog open={isAddLeadOpen || !!editLead} onOpenChange={(o) => { if(!o) { setEditLead(null); setIsAddLeadOpen(false); } }} lead={editLead} onSave={forceRefresh} defaultValues={newLeadDefaults} />
       
-      <div className="space-y-6 text-left">
+      <div className="space-y-6 text-left text-foreground">
         {!hasLoaded ? (
             <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground">
                 <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
@@ -304,8 +304,8 @@ function LeadsDatabaseComponent() {
         ) : (
             <div className="space-y-6 text-left text-foreground">
                 <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
-                <div className="text-left text-foreground"><CardTitle className="flex items-center gap-2 text-left"><Users /> Lead Database</CardTitle><CardDescription className="text-left text-foreground">Unified registry view of prospective members ({allRecords.length} records).</CardDescription></div>
-                <div className="flex gap-2 text-left text-foreground">
+                <div className="text-left text-foreground text-foreground"><CardTitle className="flex items-center gap-2 text-left"><Users /> Lead Database</CardTitle><CardDescription className="text-left text-foreground">Unified registry view of prospective members ({allRecords.length} records).</CardDescription></div>
+                <div className="flex gap-2 text-left text-foreground text-foreground">
                     <Button variant="outline" onClick={() => downloadDataAsCSV(allRecords, 'leads-backup.csv')} disabled={isLoading} className="text-foreground"><Download className="mr-2 h-4 w-4" /> Export CSV</Button>
                     <BulkImportDialog type="lead" onComplete={forceRefresh}><Button variant="outline" className="text-foreground"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
                     <Button onClick={() => setIsAddLeadOpen(true)} className="text-foreground"><PlusCircle className="mr-2 h-4 w-4" />Add Lead</Button>
@@ -313,15 +313,15 @@ function LeadsDatabaseComponent() {
                 </CardHeader>
                 <Card className="text-left">
                     <CardContent className="pt-6 text-left">
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left">
-                            <div className="md:col-span-2 space-y-2 text-left">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
+                            <div className="md:col-span-2 space-y-2 text-left text-foreground">
                                 <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5 text-left"><Search className="h-3 w-3"/> Registry Search</Label>
-                                <div className="flex gap-2 text-left">
+                                <div className="flex gap-2 text-left text-foreground">
                                     <Input placeholder="Refine your search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-                                    <Button onClick={forceRefresh} disabled={isLoading}><Search className="h-4 w-4"/></Button>
+                                    <Button onClick={forceRefresh} disabled={isLoading} className="text-foreground"><Search className="h-4 w-4"/></Button>
                                 </div>
                             </div>
-                            <div className="space-y-2 text-left">
+                            <div className="space-y-2 text-left text-foreground text-foreground">
                                 <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5 text-left"><Tag className="h-3 w-3"/> Data Filter</Label>
                                 <Select value={dataFilter} onValueChange={setDataFilter}>
                                     <SelectTrigger className="h-10 text-xs bg-white text-foreground text-left"><SelectValue /></SelectTrigger>
@@ -332,7 +332,7 @@ function LeadsDatabaseComponent() {
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <div className="flex items-end text-left">
+                            <div className="flex items-end text-left text-foreground text-foreground">
                                 <Button variant="outline" onClick={() => setHasLoaded(false)} className="h-10 w-full text-foreground"><RotateCcw className="mr-1 h-3 w-3" /> Reset Variables</Button>
                             </div>
                         </div>
@@ -343,9 +343,12 @@ function LeadsDatabaseComponent() {
         )}
       </div>
       <AlertDialog open={!!deleteLead} onOpenChange={(o) => !o && setDeleteLead(null)}>
-        <AlertDialogContent className="text-left text-foreground">
+        <AlertDialogContent className="text-left text-foreground text-foreground">
           <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Permanently remove record?</AlertDialogDescription></AlertDialogHeader>
-          <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction></AlertDialogFooter>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </>

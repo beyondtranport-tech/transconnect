@@ -152,7 +152,7 @@ export function EngageDialog({ open, onOpenChange, partner, audience, onEngageSu
         <DialogContent className="max-w-5xl h-[90vh] flex flex-col p-0 text-left">
             <DialogHeader className="p-6 border-b bg-muted/50 text-left">
                 <div className="flex justify-between items-start">
-                    <div className="text-left">
+                    <div className="text-left text-foreground">
                         <DialogTitle className="text-2xl font-bold flex items-center gap-2">
                             <Send className="h-6 w-6 text-primary" />
                             Engagement: {partner.firstName} {partner.lastName}
@@ -168,7 +168,7 @@ export function EngageDialog({ open, onOpenChange, partner, audience, onEngageSu
                 </div>
             </DialogHeader>
 
-            <div className="flex-1 flex overflow-hidden">
+            <div className="flex-1 flex overflow-hidden text-left text-foreground">
                 <div className="w-64 border-r bg-muted/20 p-4 space-y-2 text-left">
                     {[
                         { id: 'digital-handshake', label: 'Digital Handshake' },
@@ -183,7 +183,7 @@ export function EngageDialog({ open, onOpenChange, partner, audience, onEngageSu
                         <Button
                             key={tab.id}
                             variant={activeTab === tab.id ? "secondary" : "ghost"}
-                            className="w-full justify-start font-medium"
+                            className="w-full justify-start font-medium text-left"
                             onClick={() => setActiveTab(tab.id)}
                         >
                             {tab.label}
@@ -192,7 +192,7 @@ export function EngageDialog({ open, onOpenChange, partner, audience, onEngageSu
                 </div>
 
                 <div className="flex-1 overflow-y-auto bg-slate-50 p-8 text-left">
-                    <div id={`engage-content-wrapper-${activeTab}`} className="bg-white p-8 rounded-lg shadow-sm border mx-auto max-w-[800px] text-left">
+                    <div id={`engage-content-wrapper-${activeTab}`} className="bg-white p-8 rounded-lg shadow-sm border mx-auto max-w-[800px] text-left text-foreground">
                         {activeTab === 'digital-handshake' && <DigitalHandshake partner={partner} />}
                         {activeTab === 'company-profile' && <CompanyProfile audience={audience} partner={partner} />}
                         {activeTab === 'tech-architecture' && <TechArchitecture partner={partner} />}

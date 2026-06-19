@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -302,7 +301,7 @@ export default function HomePage() {
                             </CardContent>
                         </Card>
                     </div>
-                    <Button asChild size="lg" className="mt-4 h-14 px-10 text-lg font-black uppercase tracking-tight" asChild>
+                    <Button asChild size="lg" className="mt-4 h-14 px-10 text-lg font-black uppercase tracking-tight">
                         <Link href="/intelligence/human-capital">Explore Human Capital <ArrowRight className="ml-2 h-4 w-4"/></Link>
                     </Button>
                 </div>

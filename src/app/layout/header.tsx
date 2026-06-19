@@ -81,8 +81,15 @@ export function Header() {
 
         {!isPublicLandingPage && (
             <nav className="hidden sm:flex items-center gap-1 text-sm font-medium">
-                <Link href="/" className={cn("transition-colors hover:text-primary px-3 py-2 rounded-md", pathname === "/" ? "text-primary font-semibold" : "text-muted-foreground")}>Home</Link>
-                <Link href="/about" className={cn("transition-colors hover:text-primary px-3 py-2 rounded-md", pathname === "/about" ? "text-primary font-semibold" : "text-muted-foreground")}>About</Link>
+                {mainNavLinks.map(({ href, label }) => (
+                    <Link 
+                        key={href}
+                        href={href} 
+                        className={cn("transition-colors hover:text-primary px-3 py-2 rounded-md text-left", pathname === href ? "text-primary font-semibold" : "text-muted-foreground")}
+                    >
+                        {label}
+                    </Link>
+                ))}
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="ghost" className="flex items-center gap-1 px-3 py-2 text-sm font-medium hover:text-primary">
@@ -97,11 +104,6 @@ export function Header() {
                         ))}
                     </DropdownMenuContent>
                 </DropdownMenu>
-                <Link href="/pricing" className={cn("transition-colors hover:text-primary px-3 py-2 rounded-md", pathname === "/pricing" ? "text-primary font-semibold" : "text-muted-foreground")}>Membership</Link>
-                <Link href="/connect" className={cn("transition-colors hover:text-primary px-3 py-2 rounded-md", pathname === "/connect" ? "text-primary font-semibold" : "text-muted-foreground")}>Connect</Link>
-                <Link href="/incentives" className={cn("transition-colors hover:text-primary px-3 py-2 rounded-md", pathname === "/incentives" ? "text-primary font-semibold" : "text-muted-foreground")}>Incentives</Link>
-                <Link href="/resources" className={cn("transition-colors hover:text-primary px-3 py-2 rounded-md", pathname === "/resources" ? "text-primary font-semibold" : "text-muted-foreground")}>Resources</Link>
-                <Link href="/contact" className={cn("transition-colors hover:text-primary px-3 py-2 rounded-md", pathname === "/contact" ? "text-primary font-semibold" : "text-muted-foreground")}>Contact Us</Link>
             </nav>
         )}
 
@@ -180,30 +182,30 @@ export function Header() {
                         <SheetTitle>
                             <Link href="/" className="flex items-center gap-2" onClick={() => setIsSheetOpen(false)}>
                                 <Truck className="h-6 w-6 text-primary" />
-                                <span className="font-bold text-lg">Logistics Flow</span>
+                                <span className="font-bold text-lg text-left">Logistics Flow</span>
                             </Link>
                         </SheetTitle>
                     </SheetHeader>
                     <div className="flex-1 overflow-y-auto px-6 py-4">
-                        <nav className="flex flex-col gap-4">
+                        <nav className="flex flex-col gap-4 text-left">
                             {mainNavLinks.map(({ href, label }) => (
                                 <Link
                                     key={href}
                                     href={href}
                                     onClick={() => setIsSheetOpen(false)}
-                                    className={cn("text-lg transition-colors hover:text-primary", pathname === href ? "text-primary font-bold" : "text-muted-foreground")}
+                                    className={cn("text-lg transition-colors hover:text-primary text-left", pathname === href ? "text-primary font-bold" : "text-muted-foreground")}
                                 >
                                     {label}
                                 </Link>
                             ))}
                             <div className="border-t pt-4 mt-2">
-                                <p className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-4">Divisions</p>
+                                <p className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-4 text-left">Divisions</p>
                                 {divisionLinks.map(({ href, label }) => (
                                     <Link
                                         key={href}
                                         href={href}
                                         onClick={() => setIsSheetOpen(false)}
-                                        className="text-base transition-colors hover:text-primary block py-2 text-muted-foreground"
+                                        className="text-base transition-colors hover:text-primary block py-2 text-muted-foreground text-left"
                                     >
                                         {label}
                                     </Link>

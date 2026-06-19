@@ -129,7 +129,7 @@ function LogAndCopyDialog({ open, onOpenChange, partners, isLoadingPartners, act
     
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="text-left">
+            <DialogContent className="text-left text-foreground">
                 <DialogHeader>
                     <DialogTitle>Log and Copy Content</DialogTitle>
                     <DialogDescription>Select a partner to log this communication against before copying.</DialogDescription>
@@ -174,7 +174,14 @@ function LogAndCopyDialog({ open, onOpenChange, partners, isLoadingPartners, act
 
 function MarketingPageContent({ audience }: MarketingPageProps) {
   const config = audienceConfig[audience];
-  const { Offer, Emails, Management, Pitch, Discovery } = config;
+  // Type-safe extraction of optional components
+  const { Offer, Emails, Management, Pitch, Discovery } = config as {
+      Offer: React.ComponentType<any>;
+      Emails: React.ComponentType<any>;
+      Management?: React.ComponentType<any>;
+      Pitch?: React.ComponentType<any>;
+      Discovery?: React.ComponentType<any>;
+  };
   
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -254,7 +261,7 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
         const success = await copyHtmlToClipboard(wrappedHtml);
         if (!success) throw new Error("Copy failed.");
 
-        toast({ title: 'Logged and Covied!', description: 'Interaction recorded. Content ready for paste into your email client.' });
+        toast({ title: 'Logged and Copied!', description: 'Interaction recorded. Content ready for paste into your email client.' });
         setIsLogDialogOpen(false);
     } catch (e: any) {
         toast({ variant: 'destructive', title: 'Action Failed', description: e.message });
@@ -265,12 +272,12 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
 
   return (
     <div className="space-y-6 text-left">
-        <LogAndCopyDialog open={isLogDialogOpen} onOpenChange={setIsLogDialogOpen} partners={partners} isLoadingPartners={isLoadingPartners} activeTabLabel={activeTab} onLogAndCopy={handleLogAndCopy} audienceTitle={config.title} />
+        <LogAndCopyDialog open={isLogDialogOpen} onOpenChange={setIsLogDialogOpen} partners={partners} isLoadingPartners={isLoadingPartners} activeTabLabel={activeTab} onLogAndCopy={handleLogAndCopy} audienceTitle={audienceConfig[audience].title} />
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div className="flex items-center gap-4">
-                <div className="bg-primary/10 p-3 rounded-lg">{config.icon && <config.icon className="h-6 w-6 text-primary" />}</div>
+            <div className="flex items-center gap-4 text-left">
+                <div className="bg-primary/10 p-3 rounded-lg">{audienceConfig[audience].icon && React.createElement(audienceConfig[audience].icon, { className: "h-6 w-6 text-primary" })}</div>
                 <div className="text-left">
-                    <h1 className="text-2xl font-bold">Marketing Library: {config.title}</h1>
+                    <h1 className="text-2xl font-bold">Marketing Library: {audienceConfig[audience].title}</h1>
                     <p className="text-muted-foreground">Manage forensic records and browse engagement materials.</p>
                 </div>
             </div>
@@ -291,8 +298,8 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
             </div>
         </div>
 
-        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-            <TabsList className="h-auto flex-wrap justify-start bg-muted p-1">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full text-left">
+            <TabsList className="h-auto flex-wrap justify-start bg-muted p-1 text-left">
                 {Management && <TabsTrigger value="management">CRM & Pipeline</TabsTrigger>}
                 {Discovery && <TabsTrigger value="discovery" className="gap-2"><Sparkles className="h-3.5 w-3.5"/>Discovery (AI)</TabsTrigger>}
                 {Pitch && <TabsTrigger value="pitch-generator">Pitch Library</TabsTrigger>}
@@ -306,16 +313,16 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
             </TabsList>
 
             <div className="mt-6 text-left">
-                <TabsContent value="management"><div id="tab-content-management">{Management && <Management />}</div></TabsContent>
-                {Discovery && <TabsContent value="discovery"><div id="tab-content-discovery">{Discovery && <Discovery />}</div></TabsContent>}
-                {Pitch && <TabsContent value="pitch-generator"><div id="tab-content-pitch-generator">{Pitch && <Pitch />}</div></TabsContent>}
-                <TabsContent value="company-profile"><div id="tab-content-company-profile"><CompanyProfile partner={null} audience={audience} /></div></TabsContent>
-                <TabsContent value="tech-architecture"><div id="tab-content-tech-architecture"><TechArchitecture partner={null} /></div></TabsContent>
-                <TabsContent value="revenue-model"><div id="tab-content-revenue-model"><RevenueModel partner={null} /></div></TabsContent>
-                <TabsContent value="offer"><div id="tab-content-offer"><Offer partner={null} /></div></TabsContent>
-                <TabsContent value="pitch"><div id="tab-content-pitch"><PitchDeck partner={null} /></div></TabsContent>
-                <TabsContent value="framework"><div id="tab-content-framework"><Framework partner={null} /></div></TabsContent>
-                <TabsContent value="emails"><div id="tab-content-emails"><Emails partner={null} /></div></TabsContent>
+                <TabsContent value="management" className="text-left"><div id="tab-content-management">{Management && <Management />}</div></TabsContent>
+                {Discovery && <TabsContent value="discovery" className="text-left"><div id="tab-content-discovery">{Discovery && <Discovery />}</div></TabsContent>}
+                {Pitch && <TabsContent value="pitch-generator" className="text-left"><div id="tab-content-pitch-generator">{Pitch && <Pitch />}</div></TabsContent>}
+                <TabsContent value="company-profile" className="text-left"><div id="tab-content-company-profile"><CompanyProfile partner={null} audience={audience} /></div></TabsContent>
+                <TabsContent value="tech-architecture" className="text-left"><div id="tab-content-tech-architecture"><TechArchitecture partner={null} /></div></TabsContent>
+                <TabsContent value="revenue-model" className="text-left"><div id="tab-content-revenue-model"><RevenueModel partner={null} /></div></TabsContent>
+                <TabsContent value="offer" className="text-left"><div id="tab-content-offer"><Offer partner={null} /></div></TabsContent>
+                <TabsContent value="pitch" className="text-left"><div id="tab-content-pitch"><PitchDeck partner={null} /></div></TabsContent>
+                <TabsContent value="framework" className="text-left"><div id="tab-content-framework"><Framework partner={null} /></div></TabsContent>
+                <TabsContent value="emails" className="text-left"><div id="tab-content-emails"><Emails partner={null} /></div></TabsContent>
             </div>
         </Tabs>
     </div>
