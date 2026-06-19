@@ -11,10 +11,10 @@ import { copyHtmlToClipboard } from '@/lib/utils';
 // Content components
 import DigitalHandshake from './content/DigitalHandshake';
 import CompanyProfile from './content/CompanyProfile';
-import TechArchitecture from './content/TechArchitecture';
-import RevenueModel from './content/RevenueModel';
-import PitchDeck from './content/PitchDeck';
-import Framework from './content/Framework';
+import TechArchitecture from './tech-architecture';
+import RevenueModel from './revenue-model';
+import PitchDeck from './pitch-deck';
+import Framework from './framework';
 
 // Offers
 import PartnerOffer from './offers/PartnerOffer';
