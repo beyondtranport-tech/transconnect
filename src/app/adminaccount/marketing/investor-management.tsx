@@ -269,9 +269,9 @@ export default function InvestorManagement() {
       
       <div className="space-y-6 text-left">
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left text-foreground">
-          <div className="text-left text-foreground"><CardTitle className="flex items-center gap-2"><DollarSign /> App Launch Investors</CardTitle><CardDescription className="text-left text-foreground">Registry view ({partners.length} records).</CardDescription></div>
+          <div className="text-left text-foreground"><CardTitle className="flex items-center gap-2 text-left"><DollarSign /> App Launch Investors</CardTitle><CardDescription className="text-left text-foreground">Registry view ({partners.length} records).</CardDescription></div>
           <div className="flex gap-2 text-left">
-            <div className="relative w-64 text-left">
+            <div className="relative w-64 text-left text-foreground">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input placeholder="Filter registry..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8" />
             </div>
@@ -279,7 +279,7 @@ export default function InvestorManagement() {
             <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4"/>Add Record</Button>
           </div>
         </CardHeader>
-        <Card>
+        <Card className="text-left">
             <CardContent className="pt-6 text-left text-foreground">
                 <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
                     <div className="flex-1 space-y-2 text-left text-foreground">

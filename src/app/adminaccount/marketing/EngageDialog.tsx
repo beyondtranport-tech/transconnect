@@ -8,13 +8,13 @@ import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
 import { copyHtmlToClipboard } from '@/lib/utils';
 
-// Content components
+// Content components - Fixed paths to point to content sub-directory
 import DigitalHandshake from './content/DigitalHandshake';
 import CompanyProfile from './content/CompanyProfile';
-import TechArchitecture from './tech-architecture';
-import RevenueModel from './revenue-model';
-import PitchDeck from './pitch-deck';
-import Framework from './framework';
+import TechArchitecture from './content/TechArchitecture';
+import RevenueModel from './content/RevenueModel';
+import PitchDeck from './content/PitchDeck';
+import Framework from './content/Framework';
 
 // Offers
 import PartnerOffer from './offers/PartnerOffer';
@@ -149,7 +149,7 @@ export function EngageDialog({ open, onOpenChange, partner, audience, onEngageSu
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-5xl h-[90vh] flex flex-col p-0">
+        <DialogContent className="max-w-5xl h-[90vh] flex flex-col p-0 text-left">
             <DialogHeader className="p-6 border-b bg-muted/50 text-left">
                 <div className="flex justify-between items-start">
                     <div className="text-left">

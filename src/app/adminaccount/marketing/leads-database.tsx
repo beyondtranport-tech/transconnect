@@ -129,7 +129,9 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
                 <FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="new">New</SelectItem><SelectItem value="contacted">Researching</SelectItem><SelectItem value="qualified">Qualified</SelectItem></SelectContent></Select></FormItem>
               )} />
             </div>
-            <DialogFooter className="pt-4 border-t"><Button type="submit" disabled={isLoading}>{isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />} Save</Button></DialogFooter>
+            <DialogFooter className="pt-4 border-t"><Button type="submit" disabled={isLoading}>
+                {isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />} Save Record
+            </Button></DialogFooter>
           </form>
         </Form>
       </DialogContent>
@@ -281,8 +283,8 @@ function LeadsDatabaseComponent() {
         {!hasLoaded ? (
             <Card className="bg-primary/5 border-primary/20 p-12 text-center">
                 <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
-                <h2 className="text-2xl font-black font-headline mb-2 text-foreground">Registry Search Variables</h2>
-                <p className="text-muted-foreground max-w-sm mx-auto mb-8">Enter your search criteria to load the master registry. This targets your session to preserve your daily data quota.</p>
+                <h2 className="text-2xl font-black font-headline mb-2 text-foreground text-center">Registry Search Variables</h2>
+                <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center">Enter your search criteria to load the master registry. This targets your session to preserve your daily data quota.</p>
                 <div className="flex flex-col md:flex-row justify-center gap-4 max-w-2xl mx-auto">
                     <Input placeholder="Type company name, ID or email to search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleInitialSearch()} className="h-12 text-lg bg-white" />
                     <Button size="lg" onClick={handleInitialSearch} disabled={isLoading} className="h-12 px-8">
@@ -292,16 +294,16 @@ function LeadsDatabaseComponent() {
                 </div>
             </Card>
         ) : (
-            <div className="space-y-6">
+            <div className="space-y-6 text-left">
                 <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left text-foreground">
-                <div className="text-left"><CardTitle className="flex items-center gap-2"><Users /> Lead Database</CardTitle><CardDescription className="text-left">Unified registry view of prospective members ({allRecords.length} records).</CardDescription></div>
-                <div className="flex gap-2">
-                    <Button variant="outline" onClick={() => downloadDataAsCSV(allRecords, 'leads-backup.csv')} disabled={isLoading}><Download className="mr-2 h-4 w-4" /> Export CSV</Button>
-                    <BulkImportDialog type="lead" onComplete={forceRefresh}><Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
-                    <Button onClick={() => setIsAddLeadOpen(true)}><PlusCircle className="mr-2 h-4 w-4" />Add Lead</Button>
+                <div className="text-left text-foreground"><CardTitle className="flex items-center gap-2 text-left"><Users /> Lead Database</CardTitle><CardDescription className="text-left">Unified registry view of prospective members ({allRecords.length} records).</CardDescription></div>
+                <div className="flex gap-2 text-left">
+                    <Button variant="outline" onClick={() => downloadDataAsCSV(allRecords, 'leads-backup.csv')} disabled={isLoading} className="text-foreground"><Download className="mr-2 h-4 w-4" /> Export CSV</Button>
+                    <BulkImportDialog type="lead" onComplete={forceRefresh}><Button variant="outline" className="text-foreground"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
+                    <Button onClick={() => setIsAddLeadOpen(true)} className="text-foreground"><PlusCircle className="mr-2 h-4 w-4" />Add Lead</Button>
                 </div>
                 </CardHeader>
-                <Card>
+                <Card className="text-left">
                     <CardContent className="pt-6 text-left">
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left">
                             <div className="md:col-span-2 space-y-2 text-left">
@@ -333,7 +335,7 @@ function LeadsDatabaseComponent() {
         )}
       </div>
       <AlertDialog open={!!deleteLead} onOpenChange={(o) => !o && setDeleteLead(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="text-left">
           <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Permanently remove record?</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>

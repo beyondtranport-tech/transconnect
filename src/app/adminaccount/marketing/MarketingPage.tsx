@@ -129,7 +129,7 @@ function LogAndCopyDialog({ open, onOpenChange, partners, isLoadingPartners, act
     
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent>
+            <DialogContent className="text-left">
                 <DialogHeader>
                     <DialogTitle>Log and Copy Content</DialogTitle>
                     <DialogDescription>Select a partner to log this communication against before copying.</DialogDescription>
@@ -311,8 +311,8 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
 
             <div className="mt-6 text-left">
                 <TabsContent value="management"><div id="tab-content-management">{Management && <Management />}</div></TabsContent>
-                {Discovery && <TabsContent value="discovery"><div id="tab-content-discovery"><Discovery /></div></TabsContent>}
-                {Pitch && <TabsContent value="pitch-generator"><div id="tab-content-pitch-generator"><Pitch /></div></TabsContent>}
+                {Discovery && <TabsContent value="discovery"><div id="tab-content-discovery">{Discovery && <Discovery />}</div></TabsContent>}
+                {Pitch && <TabsContent value="pitch-generator"><div id="tab-content-pitch-generator">{Pitch && <Pitch />}</div></TabsContent>}
                 <TabsContent value="company-profile"><div id="tab-content-company-profile"><CompanyProfile partner={null} audience={audience} /></div></TabsContent>
                 <TabsContent value="tech-architecture"><div id="tab-content-tech-architecture"><TechArchitecture partner={null} /></div></TabsContent>
                 <TabsContent value="revenue-model"><div id="tab-content-revenue-model"><RevenueModel partner={null} /></div></TabsContent>

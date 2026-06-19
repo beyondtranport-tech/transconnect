@@ -74,20 +74,20 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
 
     return (
         <div className="grid md:grid-cols-2 gap-6 text-left">
-            <div className="space-y-4">
-                <h2 className="text-2xl font-bold font-headline flex items-center gap-2">
+            <div className="space-y-4 text-left">
+                <h2 className="text-2xl font-bold font-headline flex items-center gap-2 text-left">
                     <Search className="h-6 w-6 text-primary" />
                     Haulier Discovery: {category}
                 </h2>
-                <Alert className="bg-primary/5 border-primary/20">
+                <Alert className="bg-primary/5 border-primary/20 text-left">
                     <ShieldCheck className="h-4 w-4 text-primary" />
-                    <AlertTitle>Hard-Verification Active</AlertTitle>
-                    <AlertDescription className="text-xs">
+                    <AlertTitle className="text-left font-bold">Hard-Verification Active</AlertTitle>
+                    <AlertDescription className="text-xs text-left">
                         Commanding AI to perform live audits. Mock data and non-resolving websites are strictly forbidden.
                     </AlertDescription>
                 </Alert>
-                <div className="p-4 bg-muted/30 border rounded-xl space-y-4">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-primary">Pagination Sync</Label>
+                <div className="p-4 bg-muted/30 border rounded-xl space-y-4 text-left">
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-primary text-left">Pagination Sync</Label>
                     <div className="space-y-1.5 text-left">
                         <Label className="text-xs font-bold">Start from Page #</Label>
                         <Input 
@@ -105,11 +105,11 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                 </Button>
             </div>
             <div className="space-y-2 text-left">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5 text-left">
                     <Terminal className="h-3 w-3"/> Industrial Command
                 </Label>
-                <ScrollArea className="h-[400px] border rounded-lg bg-slate-900 p-4 shadow-inner">
-                    <pre className="text-[10px] text-slate-400 font-mono whitespace-pre-wrap leading-tight">{prompt}</pre>
+                <ScrollArea className="h-[400px] border rounded-lg bg-slate-900 p-4 shadow-inner text-left">
+                    <pre className="text-[10px] text-slate-400 font-mono whitespace-pre-wrap leading-tight text-left">{prompt}</pre>
                 </ScrollArea>
             </div>
         </div>
@@ -118,8 +118,8 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
 
 export default function TransporterDiscoveryEngine() {
     return (
-        <Card className="shadow-none border-none">
-            <Tabs defaultValue="Long Haul" className="w-full">
+        <Card className="shadow-none border-none text-left">
+            <Tabs defaultValue="Long Haul" className="w-full text-left">
                 <CardHeader className="px-0 pt-0 text-left">
                     <CardTitle className="flex items-center gap-2 text-left">
                         <Database className="h-6 w-6 text-primary" />
@@ -128,7 +128,7 @@ export default function TransporterDiscoveryEngine() {
                     <CardDescription className="text-left text-muted-foreground">Map unique transport entities with verified corporate websites and technical fleet summaries.</CardDescription>
                 </CardHeader>
                 <CardContent className="px-0 text-left">
-                    <TabsList className="h-auto flex-wrap justify-start bg-muted/30 mb-8 p-1">
+                    <TabsList className="h-auto flex-wrap justify-start bg-muted/30 mb-8 p-1 text-left">
                         {transporterCategories.map(category => (
                             <TabsTrigger key={category} value={category} className="text-xs px-4 py-2">{category}</TabsTrigger>
                         ))}
