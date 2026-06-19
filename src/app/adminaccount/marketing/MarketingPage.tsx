@@ -2,7 +2,7 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { BookOpen, Loader2, ClipboardCopy, SearchCode, Target, Users, LayoutDashboard, Send, Sparkles, Landmark, DollarSign, Download } from 'lucide-react';
+import { BookOpen, Loader2, ClipboardCopy, SearchCode, Target, Users, LayoutDashboard, Send, Sparkles, Landmark, DollarSign, Download, MessageSquare } from 'lucide-react';
 import { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -175,7 +175,7 @@ function LogAndCopyDialog({ open, onOpenChange, partners, isLoadingPartners, act
 }
 
 function MarketingPageContent({ audience }: MarketingPageProps) {
-  const config = audienceConfig[audience];
+  const config = audienceConfig[audience] as any;
   const { Offer, Emails, Management, Pitch, Discovery } = config;
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -256,7 +256,7 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
         const success = await copyHtmlToClipboard(wrappedHtml);
         if (!success) throw new Error("Copy failed.");
 
-        toast({ title: 'Logged and Copied!', description: 'Interaction recorded. Content ready for paste into your email client.' });
+        toast({ title: 'Logged and Covied!', description: 'Interaction recorded. Content ready for paste into your email client.' });
         setIsLogDialogOpen(false);
     } catch (e: any) {
         toast({ variant: 'destructive', title: 'Action Failed', description: e.message });
@@ -270,7 +270,7 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
         <LogAndCopyDialog open={isLogDialogOpen} onOpenChange={setIsLogDialogOpen} partners={partners} isLoadingPartners={isLoadingPartners} activeTabLabel={activeTab} onLogAndCopy={handleLogAndCopy} audienceTitle={config.title} />
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div className="flex items-center gap-4">
-                <div className="bg-primary/10 p-3 rounded-lg"><config.icon className="h-6 w-6 text-primary" /></div>
+                <div className="bg-primary/10 p-3 rounded-lg">{config.icon && <config.icon className="h-6 w-6 text-primary" />}</div>
                 <div className="text-left">
                     <h1 className="text-2xl font-bold">Marketing Library: {config.title}</h1>
                     <p className="text-muted-foreground">Manage forensic records and browse engagement materials.</p>
@@ -308,7 +308,7 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
             </TabsList>
 
             <div className="mt-6">
-                <TabsContent value="management"><div id="tab-content-management"><Management /></div></TabsContent>
+                <TabsContent value="management"><div id="tab-content-management">{Management && <Management />}</div></TabsContent>
                 {Discovery && <TabsContent value="discovery"><div id="tab-content-discovery"><Discovery /></div></TabsContent>}
                 {Pitch && <TabsContent value="pitch-generator"><div id="tab-content-pitch-generator"><Pitch /></div></TabsContent>}
                 <TabsContent value="company-profile"><div id="tab-content-company-profile"><CompanyProfile partner={null} audience={audience} /></div></TabsContent>

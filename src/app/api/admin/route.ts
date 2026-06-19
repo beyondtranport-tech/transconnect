@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 /**
  * Sanitizes and normalizes data for Firestore.
  * 1. Handles snake_case to camelCase mapping for AI Studio imports.
- * 2. RECTIFICATION: Automatically removes properties with 'undefined' values to prevent Firestore crashes.
+ * 2. Automatically removes properties with 'undefined' values to prevent Firestore crashes.
  */
 function normalizeAndSanitize(obj: any): any {
     if (obj === null || obj === undefined) return null;
@@ -19,7 +19,7 @@ function normalizeAndSanitize(obj: any): any {
     for (const key in obj) {
         let val = obj[key];
         
-        // RECTIFICATION: Skip undefined values to prevent Firestore document write errors
+        // Skip undefined values to prevent Firestore document write errors
         if (val === undefined) continue;
 
         // Map AI snake_case keys to camelCase CRM keys
@@ -129,7 +129,7 @@ export async function POST(req: NextRequest) {
                     delete (rawData as any).seq;
                     delete (rawData as any).sequence;
                     
-                    // RECTIFICATION: Sanitize object to remove undefined before set
+                    // Sanitize object to remove undefined before set
                     const data = normalizeAndSanitize(rawData);
                     batch.set(ref, data, { merge: true });
                 }
