@@ -145,7 +145,7 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
                             <div className="space-y-4 text-left text-foreground">
                                 <h3 className="font-bold text-amber-600 flex items-center gap-2 text-left text-foreground"><Tag className="h-5 w-5" /> Duplicates</h3>
                                 {duplicates.map((group, idx) => (
-                                    <div key={idx} className="p-4 border rounded-lg bg-muted/20 space-y-2 text-left">
+                                    <div key={idx} className="p-4 border rounded-lg bg-muted/20 space-y-2 text-left text-foreground">
                                         <p className="font-bold text-sm text-left">{group[0].companyName}</p>
                                         <div className="space-y-1 text-left">
                                             {group.map(p => (

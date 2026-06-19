@@ -277,7 +277,7 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div className="flex items-center gap-4 text-left">
                 <div className="bg-primary/10 p-3 rounded-lg">
-                    {AudienceIcon && <AudienceIcon className="h-6 w-6 text-primary" />}
+                    {AudienceIcon && React.createElement(AudienceIcon, { className: "h-6 w-6 text-primary" })}
                 </div>
                 <div className="text-left">
                     <h1 className="text-2xl font-bold">Marketing Library: {audienceConfig[audience].title}</h1>

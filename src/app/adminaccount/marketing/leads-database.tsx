@@ -226,8 +226,8 @@ function LeadsDatabaseComponent() {
         const matchesStatus = statusFilter === 'all' || r.status === statusFilter;
         
         let matchesData = true;
-        if (dataFilter === 'no-email') matchesData = !p.email;
-        else if (dataFilter === 'has-email') matchesData = !!p.email;
+        if (dataFilter === 'no-email') matchesData = !r.email;
+        else if (dataFilter === 'has-email') matchesData = !!r.email;
 
         return matchesSearch && matchesStatus && matchesData;
     });
