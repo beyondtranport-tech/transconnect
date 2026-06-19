@@ -61,12 +61,11 @@ export function usePermissions() {
         // Handle staff members first, as they have explicit, limited permissions
         // Note: The `permissions` array is expected to be on the user object for staff.
         if (user.role === 'staff' && Array.isArray(user.permissions)) {
-             user.permissions.forEach(p => perms.add(p));
+             user.permissions.forEach((p: string) => perms.add(p));
              return perms; // Return immediately with only staff permissions
         }
 
         // For everyone else who is logged in, grant default owner permissions.
-        // This is safer and assumes any authenticated non-staff user is an owner.
         perms.add('create:shop');
         perms.add('edit:shop');
         perms.add('manage:products');
@@ -77,7 +76,6 @@ export function usePermissions() {
         perms.add('create:staff');
 
         // Check for premium status and add permissions accordingly
-        // This check is safe because companyData is fetched with the user object
         const isWctaMember = user.companyData?.referrerId === 'WCTA';
         const isPaidMember = user.companyData?.membershipId && user.companyData.membershipId !== 'free';
 
