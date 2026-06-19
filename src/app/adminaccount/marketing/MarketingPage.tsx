@@ -1,5 +1,6 @@
 'use client';
 
+import * as React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { BookOpen, Loader2, ClipboardCopy, SearchCode, Target, Users, LayoutDashboard, Send, Sparkles, Landmark, DollarSign, Download } from 'lucide-react';
@@ -174,14 +175,12 @@ function LogAndCopyDialog({ open, onOpenChange, partners, isLoadingPartners, act
 
 function MarketingPageContent({ audience }: MarketingPageProps) {
   const config = audienceConfig[audience];
-  // Type-safe extraction of optional components
-  const { Offer, Emails, Management, Pitch, Discovery } = config as {
-      Offer: React.ComponentType<any>;
-      Emails: React.ComponentType<any>;
-      Management?: React.ComponentType<any>;
-      Pitch?: React.ComponentType<any>;
-      Discovery?: React.ComponentType<any>;
-  };
+  // Type-safe extraction of optional properties to handle build errors
+  const Offer = (config as any).Offer as React.ComponentType<any>;
+  const Emails = (config as any).Emails as React.ComponentType<any>;
+  const Management = (config as any).Management as React.ComponentType<any> | undefined;
+  const Pitch = (config as any).Pitch as React.ComponentType<any> | undefined;
+  const Discovery = (config as any).Discovery as React.ComponentType<any> | undefined;
   
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -270,12 +269,16 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
 
   const isContentTab = ['company-profile', 'tech-architecture', 'revenue-model', 'offer', 'pitch', 'framework', 'emails'].includes(activeTab);
 
+  const AudienceIcon = audienceConfig[audience].icon;
+
   return (
     <div className="space-y-6 text-left">
         <LogAndCopyDialog open={isLogDialogOpen} onOpenChange={setIsLogDialogOpen} partners={partners} isLoadingPartners={isLoadingPartners} activeTabLabel={activeTab} onLogAndCopy={handleLogAndCopy} audienceTitle={audienceConfig[audience].title} />
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div className="flex items-center gap-4 text-left">
-                <div className="bg-primary/10 p-3 rounded-lg">{audienceConfig[audience].icon && React.createElement(audienceConfig[audience].icon, { className: "h-6 w-6 text-primary" })}</div>
+                <div className="bg-primary/10 p-3 rounded-lg">
+                    {AudienceIcon && <AudienceIcon className="h-6 w-6 text-primary" />}
+                </div>
                 <div className="text-left">
                     <h1 className="text-2xl font-bold">Marketing Library: {audienceConfig[audience].title}</h1>
                     <p className="text-muted-foreground">Manage forensic records and browse engagement materials.</p>

@@ -1,12 +1,12 @@
 "use client";
 
+import * as React from 'react';
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Truck, Menu, ChevronDown, LogOut, ShoppingCart, Ship, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetFooter } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
-import * as React from "react";
 import { useUser, useAuth } from "@/firebase";
 import { signOut } from "firebase/auth";
 import {

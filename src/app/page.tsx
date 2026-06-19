@@ -1,5 +1,6 @@
 'use client';
 
+import * as React from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowRight, SearchCode, CheckCircle2, ShieldCheck, Database, Truck, Landmark, Building2, Zap, MapPin, Users, Briefcase, UserPlus } from "lucide-react";
@@ -7,7 +8,6 @@ import Image from "next/image";
 import Link from "next/link";
 import data from "@/lib/placeholder-images.json";
 import { useUser } from "@/firebase";
-import * as React from "react";
 import { useState, useMemo } from "react";
 import * as gtag from '@/lib/gtag';
 import { HomeIntentModal } from "./home-intent-modal";

@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import * as React from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -133,16 +134,16 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
                     <DialogTitle>Registry Health Tool</DialogTitle>
                 </DialogHeader>
                 <ScrollArea className="flex-1 p-4 text-left">
-                    <div className="space-y-8 text-left">
+                    <div className="space-y-8 text-left text-foreground">
                         {incomplete.length > 0 && (
                             <div className="space-y-4 text-left">
-                                <h3 className="font-bold text-destructive flex items-center gap-2 text-left"><AlertTriangle className="h-5 w-5" /> Incomplete Records ({incomplete.length})</h3>
+                                <h3 className="font-bold text-destructive flex items-center gap-2 text-left text-foreground"><AlertTriangle className="h-5 w-5" /> Incomplete Records ({incomplete.length})</h3>
                                 <Button variant="destructive" size="sm" onClick={() => handleClean('incomplete')} disabled={isLoading}>Delete All Incomplete</Button>
                             </div>
                         )}
                         {duplicates.length > 0 && (
                             <div className="space-y-4 text-left text-foreground">
-                                <h3 className="font-bold text-amber-600 flex items-center gap-2 text-left"><Tag className="h-5 w-5" /> Duplicates</h3>
+                                <h3 className="font-bold text-amber-600 flex items-center gap-2 text-left text-foreground"><Tag className="h-5 w-5" /> Duplicates</h3>
                                 {duplicates.map((group, idx) => (
                                     <div key={idx} className="p-4 border rounded-lg bg-muted/20 space-y-2 text-left">
                                         <p className="font-bold text-sm text-left">{group[0].companyName}</p>
@@ -229,7 +230,7 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
                     <FormItem className="text-left text-foreground">
                         <FormLabel>Category</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl><SelectTrigger className="bg-white text-left"><SelectValue placeholder="Classify..." /></SelectTrigger></FormControl>
+                            <FormControl><SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="Classify..." /></SelectTrigger></FormControl>
                             <SelectContent>
                                 {transporterCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
                             </SelectContent>
@@ -239,7 +240,7 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
             </div>
             
             <Separator />
-            <div className="space-y-4 text-left">
+            <div className="space-y-4 text-left text-foreground">
                 <h3 className="text-sm font-black uppercase tracking-widest text-primary flex items-center gap-2 text-left">
                     <Sparkles className="h-4 w-4"/> Forensic Technical Profile
                 </h3>
@@ -257,7 +258,7 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
                             <Input 
                                 placeholder="e.g. SADC Corridor, 34t Side-Tipper, Tri-Axle Reefer..." 
                                 value={Array.isArray(field.value) ? field.value.join(', ') : ''}
-                                onChange={(e) => field.onChange(e.target.value.split(',').map(t => t.trim()).slice(0, 7))}
+                                onChange={(e) => field.onChange(e.target.value.split(',').map(t => t.trim()).filter(t => t.length > 0))}
                             />
                         </FormControl>
                         <FormMessage />
@@ -269,7 +270,7 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
                 <FormItem className="text-left text-foreground">
                     <FormLabel>Status</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl><SelectTrigger className="bg-white text-left"><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
+                        <FormControl><SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
                         <SelectContent>
                             <SelectItem value="new">New</SelectItem>
                             <SelectItem value="contacted">Searching</SelectItem>
@@ -429,7 +430,7 @@ export default function TransporterManagement() {
       
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o: boolean) => !o && setDialog({ type: null })}>
         <AlertDialogContent className="text-left text-foreground">
-          <AlertDialogHeader><AlertDialogTitle>Delete Record(s)?</AlertDialogTitle><AlertDialogDescription>Delete Selected?</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Delete Record(s)?</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={selectedIds.length > 0 ? handleDeleteBatch : async () => {
@@ -450,7 +451,7 @@ export default function TransporterManagement() {
                 <CardTitle className="flex items-center gap-2 text-2xl font-black font-headline text-left text-foreground"><Truck /> Transporter Registry</CardTitle>
                 <CardDescription className="text-left text-foreground">Unified database view ({allRecords.length} records).</CardDescription>
             </div>
-            <div className="flex flex-wrap items-center gap-2 text-left">
+            <div className="flex flex-wrap items-center gap-2 text-left text-foreground">
                 <DuplicateCleaner onComplete={fetchData} />
                 {selectedIds.length > 0 && (
                     <Button variant="destructive" onClick={() => setDialog({ type: 'delete' })} className="gap-2">
@@ -469,8 +470,8 @@ export default function TransporterManagement() {
             </div>
         </CardHeader>
 
-        <Card className="border-primary/10 shadow-sm overflow-hidden text-left">
-            <CardHeader className="bg-muted/30 border-b text-left">
+        <Card className="border-primary/10 shadow-sm overflow-hidden text-left text-foreground">
+            <CardHeader className="bg-muted/30 border-b text-left text-foreground">
                  <div className="flex items-center justify-between text-left">
                     <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
                         <Database className="h-3 w-3" /> Category Tally
@@ -490,10 +491,10 @@ export default function TransporterManagement() {
                     ))}
                 </div>
             </CardHeader>
-            <CardContent className="pt-6 text-left">
+            <CardContent className="pt-6 text-left text-foreground">
                 <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
                     <div className="flex-1 space-y-2 text-left">
-                        <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left"><Filter className="h-3 w-3"/> Status</Label>
+                        <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Filter className="h-3 w-3"/> Status</Label>
                         <Select value={statusFilter} onValueChange={setStatusFilter}>
                             <SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="All Statuses" /></SelectTrigger>
                             <SelectContent>
@@ -505,9 +506,9 @@ export default function TransporterManagement() {
                         </Select>
                     </div>
                     <div className="flex-1 space-y-2 text-left">
-                        <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left"><Users className="h-3 w-3"/> Assignee</Label>
+                        <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-foreground"><Users className="h-3 w-3"/> Assignee</Label>
                         <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-                            <SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="All Staff" /></SelectTrigger>
+                            <SelectTrigger className="bg-white text-left text-foreground text-foreground"><SelectValue placeholder="All Staff" /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Staff</SelectItem>
                                 <SelectItem value="none">Unallocated</SelectItem>
@@ -516,7 +517,7 @@ export default function TransporterManagement() {
                         </Select>
                     </div>
                 </div>
-                {isLoading ? <div className="flex justify-center items-center py-10 text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />}
+                {isLoading ? <div className="flex justify-center items-center py-10 text-foreground text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />}
             </CardContent>
         </Card>
       </div>
