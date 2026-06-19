@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -7,7 +8,7 @@ import * as z from 'zod';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from '@/hooks/use-toast';
-import { getClientSideAuthToken } from '@/firebase';
+import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
   Loader2, PlusCircle, Building, Edit, Trash2, Send, Download, Save, Search, Filter, Users, Globe, Zap, Upload, RefreshCcw, Database, Copy, Tag, AlertTriangle, CheckCircle, Sparkles 
 } from 'lucide-react';
@@ -42,7 +43,7 @@ async function performAdminAction(token: string, action: string, payload: any) {
     cache: 'no-store'
   });
   const result = await response.json();
-  if (!response.ok || !result.success) throw new Error(result.error || `API Error for action: ${action}`);
+  if (!response.ok || !result.success) throw new Error(result.error || `API Error: ${action}`);
   return result;
 }
 
@@ -162,7 +163,7 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
                         {incomplete.length === 0 && duplicates.length === 0 && (
                             <div className="text-center py-20">
                                 <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
-                                <p className="text-lg font-bold text-foreground">Registry is Clean!</p>
+                                <p className="text-lg font-bold">Registry is Clean!</p>
                             </div>
                         )}
                     </div>
@@ -187,7 +188,7 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
     }
   }, [open, partner, form]);
 
-  const handleFormSubmit = async (values: PartnerFormValues) => {
+  async function handleFormSubmit(values: PartnerFormValues) {
     setIsLoading(true);
     try {
       const token = await getClientSideAuthToken();
@@ -201,7 +202,7 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
     } finally {
       setIsLoading(false);
     }
-  };
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -430,8 +431,8 @@ export default function SupplierManagement() {
       <div className="space-y-6 text-left">
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
             <div className="text-left text-foreground">
-                <CardTitle className="flex items-center gap-2 text-2xl font-black font-headline text-left"><Building /> Supplier Registry</CardTitle>
-                <CardDescription className="text-left">Unified industrial supply directory ({allRecords.length} records).</CardDescription>
+                <CardTitle className="flex items-center gap-2 text-2xl font-black font-headline text-left text-foreground"><Building /> Supplier Registry</CardTitle>
+                <CardDescription className="text-left text-foreground">Unified industrial supply directory ({allRecords.length} records).</CardDescription>
             </div>
             <div className="flex flex-wrap items-center gap-2 text-left">
                 <DuplicateCleaner onComplete={fetchData} />
@@ -475,7 +476,7 @@ export default function SupplierManagement() {
             </CardHeader>
             <CardContent className="pt-6 text-left">
                 <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
-                    <div className="flex-1 space-y-2 text-left">
+                    <div className="flex-1 space-y-2 text-left text-foreground">
                         <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status</Label>
                         <Select value={statusFilter} onValueChange={setStatusFilter}>
                             <SelectTrigger className="bg-white"><SelectValue placeholder="All Statuses" /></SelectTrigger>
@@ -488,7 +489,7 @@ export default function SupplierManagement() {
                             </SelectContent>
                         </Select>
                     </div>
-                    <div className="flex-1 space-y-2 text-left">
+                    <div className="flex-1 space-y-2 text-left text-foreground">
                         <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Users className="h-3 w-3"/> Assignee</Label>
                         <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
                             <SelectTrigger className="bg-white"><SelectValue placeholder="All Staff" /></SelectTrigger>

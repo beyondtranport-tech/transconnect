@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -10,7 +11,8 @@ export const dynamic = 'force-dynamic';
  * Enforces:
  * 1. 10-search-per-day testing limit for Free members.
  * 2. Visual data masking for Free tier.
- * 3. 100-record hard cap for all tiers.
+ * 3. Deep-scan of industrialTags and minedServiceWording.
+ * 4. 100-record hard cap for all tiers.
  */
 export async function POST(req: NextRequest) {
     try {
@@ -60,27 +62,32 @@ export async function POST(req: NextRequest) {
         }
 
         // 3. Execute Registry Scan
-        // Strategy: Fetch a larger batch and filter in-memory for maximum resilience in prototype
         let collectionName = 'leads';
-        if (type === 'driver') collectionName = 'partners';
+        if (type === 'driver' || type === 'transporter') collectionName = 'partners';
         
-        const snapshot = await db.collection(collectionName).limit(500).get();
+        // Fetch a representative batch for in-memory forensic matching
+        const snapshot = await db.collection(collectionName)
+            .orderBy('updatedAt', 'desc')
+            .limit(2000) 
+            .get();
 
         let results = snapshot.docs.map((doc: any) => {
             const item = doc.data();
-            // Resilient field mapping
+            // Robust field mapping for disparate sources
             const normalized = {
                 id: doc.id,
-                companyName: item.companyName || item.trading_name || item.name || 'Industrial Entity',
+                companyName: item.companyName || item.company_name || item.trading_name || item.name || item.service_handle || 'Industrial Entity',
                 address: item.address || item.physicalAddress || item.physical_address || item.location || 'South Africa',
-                entryType: item.entryType || item.industrial_category || item.category || item.role || 'General',
+                entryType: item.industrial_category || item.category || item.entryType || item.classification || item.role || 'General',
+                industrialTags: item.industrialTags || item.tags || [],
+                minedServiceWording: item.minedServiceWording || item.notes || '',
                 region: item.region || item.operational_hub || item.city || '',
             };
 
             if (isPaid) {
                 return {
                     ...normalized,
-                    contactPerson: item.contactPerson || (item.firstName ? `${item.firstName} ${item.lastName}` : 'N/A'),
+                    contactPerson: item.contactPerson || item.contact_person || (item.firstName ? `${item.firstName} ${item.lastName}` : 'N/A'),
                     email: item.email || item.email_address || 'N/A',
                     phone: item.phone || item.telephone_number || 'N/A',
                     mobile: item.mobile || item.registry_line || 'N/A',
@@ -99,7 +106,7 @@ export async function POST(req: NextRequest) {
             }
         });
 
-        // 4. Memory Filter
+        // 4. Forensic Memory Filter (Deep Scan)
         if (searchTerm || service || city || suburb || province || category) {
             const lowSearch = searchTerm?.toLowerCase() || '';
             const lowProv = province?.toLowerCase() || '';
@@ -111,11 +118,20 @@ export async function POST(req: NextRequest) {
                 const addr = (item.address || '').toLowerCase();
                 const typeStr = (item.entryType || '').toLowerCase();
                 const name = (item.companyName || '').toLowerCase();
+                const tagsStr = (item.industrialTags || []).join(' ').toLowerCase();
+                const minedText = (item.minedServiceWording || '').toLowerCase();
 
                 const matchesLoc = (!lowProv || addr.includes(lowProv)) && (!lowCity || addr.includes(lowCity));
                 const matchesCat = !lowCat || typeStr.includes(lowCat);
                 const matchesServ = !lowServ || typeStr.includes(lowServ);
-                const matchesText = !lowSearch || name.includes(lowSearch) || typeStr.includes(lowSearch) || addr.includes(lowSearch);
+                
+                // Deep Scan logic: Matches against Name, Category, Address, ML Tags, and Scraped Wording
+                const matchesText = !lowSearch || 
+                    name.includes(lowSearch) || 
+                    typeStr.includes(lowSearch) || 
+                    addr.includes(lowSearch) ||
+                    tagsStr.includes(lowSearch) ||
+                    minedText.includes(lowSearch);
 
                 return matchesLoc && (matchesCat || matchesServ) && matchesText;
             });
