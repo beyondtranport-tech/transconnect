@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -182,7 +181,7 @@ export default function PartnerManagement() {
         cell: ({ row }) => (
             <div className="flex flex-col text-left">
                 <span className="font-bold text-left">{row.original.companyName || row.original.contactPerson || `${row.original.firstName || ''} ${row.original.lastName || ''}`.trim()}</span>
-                <div className="flex items-center gap-2 mt-1">
+                <div className="flex items-center gap-2 mt-1 text-left">
                     <span className="text-[10px] text-muted-foreground uppercase font-black text-left">{row.original.firstName} {row.original.lastName}</span>
                     {row.original.website && <Globe className="h-3 w-3 text-primary" />}
                 </div>
@@ -229,9 +228,9 @@ export default function PartnerManagement() {
             </div>
         </CardHeader>
         <Card>
-            <CardContent className="pt-6 text-left">
-                <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left">
-                    <div className="flex-1 space-y-2 text-left">
+            <CardContent className="pt-6 text-left text-foreground">
+                <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
+                    <div className="flex-1 space-y-2 text-left text-foreground">
                         <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status</Label>
                         <Select value={statusFilter} onValueChange={setStatusFilter}>
                             <SelectTrigger className="bg-white"><SelectValue /></SelectTrigger>
@@ -242,7 +241,7 @@ export default function PartnerManagement() {
                             </SelectContent>
                         </Select>
                     </div>
-                    <div className="flex-1 space-y-2 text-left">
+                    <div className="flex-1 space-y-2 text-left text-foreground">
                         <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Users className="h-3 w-3"/> Assignee</Label>
                         <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
                             <SelectTrigger className="bg-white"><SelectValue /></SelectTrigger>

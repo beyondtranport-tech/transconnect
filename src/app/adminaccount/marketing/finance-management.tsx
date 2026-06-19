@@ -264,7 +264,7 @@ function FinanceDialog({ open, onOpenChange, partner, onSave }: { open: boolean;
             
             <Separator />
             <div className="space-y-4 text-left">
-                <h3 className="text-sm font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                <h3 className="text-sm font-black uppercase tracking-widest text-primary flex items-center gap-2 text-left">
                     <Sparkles className="h-4 w-4"/> Forensic Technical Profile
                 </h3>
                 <FormField control={form.control} name="minedServiceWording" render={({ field }) => (

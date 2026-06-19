@@ -126,27 +126,27 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
                 {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <Trash2 className="h-4 w-4"/>}
                 Registry Cleaner
             </Button>
-            <DialogContent className="sm:max-w-4xl max-h-[85vh] flex flex-col">
+            <DialogContent className="sm:max-w-4xl max-h-[85vh] flex flex-col text-left">
                 <DialogHeader>
                     <DialogTitle>Registry Health Tool</DialogTitle>
                 </DialogHeader>
                 <ScrollArea className="flex-1 p-4">
-                    <div className="space-y-8">
+                    <div className="space-y-8 text-left">
                         {incomplete.length > 0 && (
-                            <div className="space-y-4">
-                                <h3 className="font-bold text-destructive flex items-center gap-2"><AlertTriangle className="h-5 w-5" /> Incomplete Records ({incomplete.length})</h3>
+                            <div className="space-y-4 text-left">
+                                <h3 className="font-bold text-destructive flex items-center gap-2 text-left"><AlertTriangle className="h-5 w-5" /> Incomplete Records ({incomplete.length})</h3>
                                 <Button variant="destructive" size="sm" onClick={() => handleClean('incomplete')} disabled={isLoading}>Delete All Incomplete</Button>
                             </div>
                         )}
                         {duplicates.length > 0 && (
-                            <div className="space-y-4">
-                                <h3 className="font-bold text-amber-600 flex items-center gap-2"><Tag className="h-5 w-5" /> Duplicates</h3>
+                            <div className="space-y-4 text-left">
+                                <h3 className="font-bold text-amber-600 flex items-center gap-2 text-left"><Tag className="h-5 w-5" /> Duplicates</h3>
                                 {duplicates.map((group, idx) => (
-                                    <div key={idx} className="p-4 border rounded-lg bg-muted/20 space-y-2 text-left">
-                                        <p className="font-bold text-sm">{group[0].companyName}</p>
-                                        <div className="space-y-1">
+                                    <div key={idx} className="p-4 border rounded-lg bg-muted/20 space-y-2 text-left text-foreground">
+                                        <p className="font-bold text-sm text-left">{group[0].companyName}</p>
+                                        <div className="space-y-1 text-left">
                                             {group.map(p => (
-                                                <div key={p.id} className="flex items-center gap-2 text-xs">
+                                                <div key={p.id} className="flex items-center gap-2 text-xs text-left">
                                                     <Checkbox checked={selections[idx] === p.id} onCheckedChange={() => setSelections({...selections, [idx]: p.id})}/>
                                                     <span className="text-muted-foreground font-mono">{p.id}</span>
                                                     <span>{p.email || 'No Email'}</span>
@@ -159,7 +159,7 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
                             </div>
                         )}
                         {incomplete.length === 0 && duplicates.length === 0 && (
-                            <div className="text-center py-20">
+                            <div className="text-center py-20 text-left">
                                 <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
                                 <p className="text-lg font-bold">Registry is Clean!</p>
                             </div>
@@ -215,7 +215,7 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
       <DialogContent className="sm:max-w-3xl text-left">
         <DialogHeader><DialogTitle>{partner ? 'Edit' : 'Add'} Transporter</DialogTitle></DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left">
+          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left text-foreground">
             <div className="grid grid-cols-2 gap-4 text-left">
               <FormField control={form.control} name="firstName" render={({ field }) => (<FormItem><FormLabel>First Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="lastName" render={({ field }) => (<FormItem><FormLabel>Last Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
@@ -224,10 +224,10 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
             <div className="grid grid-cols-2 gap-4 text-left">
               <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="industrial_category" render={({ field }) => (
-                    <FormItem className="text-left">
+                    <FormItem className="text-left text-foreground">
                         <FormLabel>Category</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl><SelectTrigger className="bg-white"><SelectValue placeholder="Classify..." /></SelectTrigger></FormControl>
+                            <FormControl><SelectTrigger className="bg-white text-left"><SelectValue placeholder="Classify..." /></SelectTrigger></FormControl>
                             <SelectContent>
                                 {transporterCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
                             </SelectContent>
@@ -238,7 +238,7 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
             
             <Separator />
             <div className="space-y-4 text-left">
-                <h3 className="text-sm font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                <h3 className="text-sm font-black uppercase tracking-widest text-primary flex items-center gap-2 text-left">
                     <Sparkles className="h-4 w-4"/> Forensic Technical Profile
                 </h3>
                 <FormField control={form.control} name="minedServiceWording" render={({ field }) => (
@@ -264,10 +264,10 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
             </div>
 
             <FormField control={form.control} name="status" render={({ field }) => (
-                <FormItem className="text-left">
+                <FormItem className="text-left text-foreground">
                     <FormLabel>Status</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl><SelectTrigger className="bg-white"><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
+                        <FormControl><SelectTrigger className="bg-white text-left"><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
                         <SelectContent>
                             <SelectItem value="new">New</SelectItem>
                             <SelectItem value="contacted">Searching</SelectItem>
@@ -441,11 +441,11 @@ export default function TransporterManagement() {
         </AlertDialogContent>
       </AlertDialog>
       
-      <div className="space-y-6 text-left">
+      <div className="space-y-6 text-left text-foreground">
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
             <div className="text-left">
-                <CardTitle className="flex items-center gap-2 text-2xl font-black font-headline text-left"><Truck /> Transporter Registry</CardTitle>
-                <CardDescription className="text-left">Unified database view ({allRecords.length} records).</CardDescription>
+                <CardTitle className="flex items-center gap-2 text-2xl font-black font-headline text-left text-foreground"><Truck /> Transporter Registry</CardTitle>
+                <CardDescription className="text-left text-foreground">Unified database view ({allRecords.length} records).</CardDescription>
             </div>
             <div className="flex flex-wrap items-center gap-2 text-left">
                 <DuplicateCleaner onComplete={fetchData} />
@@ -478,8 +478,8 @@ export default function TransporterManagement() {
                 </div>
                 <div className="flex flex-wrap gap-2 mt-3 text-left">
                     {transporterCategories.map(cat => (
-                        <div key={cat} className="flex items-center bg-white border rounded-full pl-3 pr-1 py-0.5 shadow-sm">
-                            <span className="text-[9px] font-bold text-slate-600 mr-2">{cat}</span>
+                        <div key={cat} className="flex items-center bg-white border rounded-full pl-3 pr-1 py-0.5 shadow-sm text-left">
+                            <span className="text-[9px] font-bold text-slate-600 mr-2 text-left">{cat}</span>
                             <Badge className="bg-primary/10 text-primary border-none text-[9px] font-black h-4 px-1.5 min-w-[20px] justify-center">
                                 {counts[cat] || 0}
                             </Badge>
@@ -488,11 +488,11 @@ export default function TransporterManagement() {
                 </div>
             </CardHeader>
             <CardContent className="pt-6 text-left">
-                <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left">
+                <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
                     <div className="flex-1 space-y-2 text-left">
                         <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status</Label>
                         <Select value={statusFilter} onValueChange={setStatusFilter}>
-                            <SelectTrigger className="bg-white"><SelectValue placeholder="All Statuses" /></SelectTrigger>
+                            <SelectTrigger className="bg-white text-left"><SelectValue placeholder="All Statuses" /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Statuses</SelectItem>
                                 <SelectItem value="new">New</SelectItem>
@@ -504,7 +504,7 @@ export default function TransporterManagement() {
                     <div className="flex-1 space-y-2 text-left">
                         <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Users className="h-3 w-3"/> Assignee</Label>
                         <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-                            <SelectTrigger className="bg-white"><SelectValue placeholder="All Staff" /></SelectTrigger>
+                            <SelectTrigger className="bg-white text-left"><SelectValue placeholder="All Staff" /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Staff</SelectItem>
                                 <SelectItem value="none">Unallocated</SelectItem>

@@ -42,7 +42,7 @@ async function performAdminAction(token: string, action: string, payload: any) {
     cache: 'no-store'
   });
   const result = await response.json();
-  if (!response.ok || !result.success) throw new Error(result.error || `API Error: ${action}`);
+  if (!response.ok || !result.success) throw new Error(result.error || `API Error for action: ${action}`);
   return result;
 }
 
@@ -132,22 +132,22 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
                     <DialogTitle>Registry Health Tool</DialogTitle>
                 </DialogHeader>
                 <ScrollArea className="flex-1 p-4">
-                    <div className="space-y-8">
+                    <div className="space-y-8 text-left">
                         {incomplete.length > 0 && (
-                            <div className="space-y-4">
+                            <div className="space-y-4 text-left">
                                 <h3 className="font-bold text-destructive flex items-center gap-2 text-left"><AlertTriangle className="h-5 w-5" /> Incomplete Records ({incomplete.length})</h3>
                                 <Button variant="destructive" size="sm" onClick={() => handleClean('incomplete')} disabled={isLoading}>Delete All Incomplete</Button>
                             </div>
                         )}
                         {duplicates.length > 0 && (
-                            <div className="space-y-4">
+                            <div className="space-y-4 text-left">
                                 <h3 className="font-bold text-amber-600 flex items-center gap-2 text-left"><Tag className="h-5 w-5" /> Duplicates</h3>
                                 {duplicates.map((group, idx) => (
                                     <div key={idx} className="p-4 border rounded-lg bg-muted/20 space-y-2 text-left">
                                         <p className="font-bold text-sm text-left">{group[0].companyName}</p>
                                         <div className="space-y-1 text-left">
                                             {group.map(p => (
-                                                <div key={p.id} className="flex items-center gap-2 text-xs">
+                                                <div key={p.id} className="flex items-center gap-2 text-xs text-left">
                                                     <Checkbox checked={selections[idx] === p.id} onCheckedChange={() => setSelections({...selections, [idx]: p.id})}/>
                                                     <span className="text-muted-foreground font-mono">{p.id}</span>
                                                     <span>{p.email || 'No Email'}</span>
@@ -160,7 +160,7 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
                             </div>
                         )}
                         {incomplete.length === 0 && duplicates.length === 0 && (
-                            <div className="text-center py-20">
+                            <div className="text-center py-20 text-left">
                                 <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
                                 <p className="text-lg font-bold">Registry is Clean!</p>
                             </div>
@@ -261,7 +261,7 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
                     </Select>
                 </FormItem>
             )} />
-            <DialogFooter className="pt-4 border-t">
+            <DialogFooter className="pt-4 border-t text-left">
               <Button type="submit" disabled={isLoading}>
                 {isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />} Save Record
               </Button>
@@ -464,8 +464,8 @@ export default function SupplierManagement() {
                 </div>
                 <div className="flex flex-wrap gap-2 mt-3 text-left">
                     {supplierCategories.map(cat => (
-                        <div key={cat} className="flex items-center bg-white border rounded-full pl-3 pr-1 py-0.5 shadow-sm">
-                            <span className="text-[9px] font-bold text-slate-600 mr-2">{cat}</span>
+                        <div key={cat} className="flex items-center bg-white border rounded-full pl-3 pr-1 py-0.5 shadow-sm text-left">
+                            <span className="text-[9px] font-bold text-slate-600 mr-2 text-left">{cat}</span>
                             <Badge className="bg-primary/10 text-primary border-none text-[9px] font-black h-4 px-1.5 min-w-[20px] justify-center">
                                 {counts[cat] || 0}
                             </Badge>
@@ -473,12 +473,12 @@ export default function SupplierManagement() {
                     ))}
                 </div>
             </CardHeader>
-            <CardContent className="pt-6 text-left">
+            <CardContent className="pt-6 text-left text-foreground">
                 <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
                     <div className="flex-1 space-y-2 text-left text-foreground">
-                        <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status</Label>
+                        <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left"><Filter className="h-3 w-3"/> Status</Label>
                         <Select value={statusFilter} onValueChange={setStatusFilter}>
-                            <SelectTrigger className="bg-white"><SelectValue placeholder="All Statuses" /></SelectTrigger>
+                            <SelectTrigger className="bg-white text-left"><SelectValue placeholder="All Statuses" /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Statuses</SelectItem>
                                 <SelectItem value="active">Active</SelectItem>
@@ -487,9 +487,9 @@ export default function SupplierManagement() {
                         </Select>
                     </div>
                     <div className="flex-1 space-y-2 text-left text-foreground">
-                        <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Users className="h-3 w-3"/> Assignee</Label>
+                        <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left"><Users className="h-3 w-3"/> Assignee</Label>
                         <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-                            <SelectTrigger className="bg-white"><SelectValue placeholder="All Staff" /></SelectTrigger>
+                            <SelectTrigger className="bg-white text-left"><SelectValue placeholder="All Staff" /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Staff</SelectItem>
                                 <SelectItem value="none">Unallocated</SelectItem>

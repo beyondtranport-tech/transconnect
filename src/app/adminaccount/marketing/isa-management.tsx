@@ -142,23 +142,23 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
                 <DialogHeader>
                     <DialogTitle>ISA Registry Health Tool</DialogTitle>
                 </DialogHeader>
-                <ScrollArea className="flex-1 p-4">
-                    <div className="space-y-8">
+                <ScrollArea className="flex-1 p-4 text-left">
+                    <div className="space-y-8 text-left">
                         {incomplete.length > 0 && (
-                            <div className="space-y-4">
-                                <h3 className="font-bold text-destructive flex items-center gap-2"><AlertTriangle className="h-5 w-5" /> Incomplete Records ({incomplete.length})</h3>
+                            <div className="space-y-4 text-left">
+                                <h3 className="font-bold text-destructive flex items-center gap-2 text-left"><AlertTriangle className="h-5 w-5" /> Incomplete Records ({incomplete.length})</h3>
                                 <Button variant="destructive" size="sm" onClick={() => handleClean('incomplete')} disabled={isLoading}>Delete All Incomplete</Button>
                             </div>
                         )}
                         {duplicates.length > 0 && (
-                            <div className="space-y-4">
-                                <h3 className="font-bold text-amber-600 flex items-center gap-2"><Tag className="h-5 w-5" /> Duplicates</h3>
+                            <div className="space-y-4 text-left">
+                                <h3 className="font-bold text-amber-600 flex items-center gap-2 text-left"><Tag className="h-5 w-5" /> Duplicates</h3>
                                 {duplicates.map((group, idx) => (
                                     <div key={idx} className="p-4 border rounded-lg bg-muted/20 space-y-2 text-left">
                                         <p className="font-bold text-sm text-left">{group[0].companyName}</p>
                                         <div className="space-y-1 text-left">
                                             {group.map(p => (
-                                                <div key={p.id} className="flex items-center gap-2 text-xs">
+                                                <div key={p.id} className="flex items-center gap-2 text-xs text-left">
                                                     <Checkbox checked={selections[idx] === p.id} onCheckedChange={() => setSelections({...selections, [idx]: p.id})}/>
                                                     <span className="text-muted-foreground font-mono">{p.id}</span>
                                                     <span>{p.email || 'No Email'}</span>
@@ -171,7 +171,7 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
                             </div>
                         )}
                         {incomplete.length === 0 && duplicates.length === 0 && (
-                            <div className="text-center py-20">
+                            <div className="text-center py-20 text-left">
                                 <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
                                 <p className="text-lg font-bold">Registry is Clean!</p>
                             </div>
@@ -233,7 +233,7 @@ function ISADialog({ open, onOpenChange, partner, onSave }: { open: boolean; onO
                 <FormItem className="text-left">
                     <FormLabel>Status</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl><SelectTrigger className="bg-white"><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
+                        <FormControl><SelectTrigger><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
                         <SelectContent>
                             <SelectItem value="new">New Lead</SelectItem>
                             <SelectItem value="contacted">Researching</SelectItem>
@@ -414,8 +414,8 @@ export default function ISAManagement() {
             </div>
         </CardHeader>
         <Card className="border-primary/10 shadow-sm overflow-hidden text-left text-foreground">
-            <CardContent className="pt-6 text-left">
-                <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left">
+            <CardContent className="pt-6 text-left text-foreground">
+                <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
                     <div className="flex-1 space-y-2 text-left text-foreground">
                         <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status</Label>
                         <Select value={statusFilter} onValueChange={setStatusFilter}>
