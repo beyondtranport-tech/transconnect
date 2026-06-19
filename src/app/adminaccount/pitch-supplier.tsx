@@ -55,7 +55,7 @@ const PitchComponent = ({ category }: { category: string }) => {
                 <Button asChild variant="outline">
                     <Link href={`/adminaccount?view=marketing-suppliers&subview=emails&type=${encodeURIComponent(category)}`}>
                         <MessageSquare className="mr-2 h-4 w-4 text-primary" />
-                        View Email Sequence <ArrowRight className="ml-2 h-4 w-4" />
+                        View Pitch Emails <ArrowRight className="ml-2 h-4 w-4" />
                     </Link>
                 </Button>
             </div>

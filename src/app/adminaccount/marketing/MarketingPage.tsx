@@ -2,7 +2,7 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { BookOpen, Loader2, ClipboardCopy, SearchCode, Target, Users, LayoutDashboard, Send, Sparkles, Landmark, DollarSign, Download, MessageSquare } from 'lucide-react';
+import { BookOpen, Loader2, ClipboardCopy, SearchCode, Target, Users, LayoutDashboard, Send, Sparkles, Landmark, DollarSign, Download } from 'lucide-react';
 import { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -69,7 +69,7 @@ import InvestorDiscoveryEngine from './investor-discovery';
 import TransporterDiscoveryEngine from './transporter-discovery';
 import DriverDiscoveryEngine from './driver-discovery';
 
-const audienceConfig = {
+const audienceConfig: Record<string, any> = {
     partners: { title: 'Strategic Partners', icon: Users, Offer: PartnerOffer, Emails: PartnerEmails, Management: PartnerManagement },
     isa: { title: 'ISA Agents', icon: Target, Offer: PartnerOffer, Emails: PartnerEmails, Management: ISAManagement },
     suppliers: { title: 'Suppliers', icon: SearchCode, Offer: SupplierOffer, Emails: SupplierEmails, Management: SupplierManagement, Pitch: SupplierPitch, Discovery: DiscoveryEngine },
@@ -173,8 +173,7 @@ function LogAndCopyDialog({ open, onOpenChange, partners, isLoadingPartners, act
 }
 
 function MarketingPageContent({ audience }: MarketingPageProps) {
-  // Use as any to safely destructure optional components without TS errors
-  const config = audienceConfig[audience] as any;
+  const config = audienceConfig[audience];
   const { Offer, Emails, Management, Pitch, Discovery } = config;
   
   const searchParams = useSearchParams();
@@ -251,7 +250,6 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
             notes: logData.notes,
         });
 
-        // Wrap in Calibri styling for consistent executive memo look in email clients
         const wrappedHtml = `<div style="font-family: Calibri, sans-serif; font-size: 12pt; color: #000000; line-height: 1.2; text-align: left;">${contentElement.innerHTML}</div>`;
         const success = await copyHtmlToClipboard(wrappedHtml);
         if (!success) throw new Error("Copy failed.");

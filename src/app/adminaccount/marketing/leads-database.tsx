@@ -123,10 +123,16 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
             <FormField control={form.control} name="notes" render={({ field }) => (<FormItem className="text-left"><FormLabel>Mined Service wording</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>)} />
              <div className="grid grid-cols-2 gap-4 text-left">
               <FormField control={form.control} name="role" render={({ field }) => (
-                <FormItem className="text-left"><FormLabel>Potential Role</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger></FormControl><SelectContent>{roles.map(r => <SelectItem key={r.id} value={r.title}>{r.title}</SelectItem>)}</SelectContent></Select></FormItem>
+                <FormItem className="text-left"><FormLabel>Potential Role</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl><SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger></FormControl>
+                    <SelectContent>{roles.map(r => <SelectItem key={r.id} value={r.title}>{r.title}</SelectItem>)}</SelectContent>
+                </Select></FormItem>
               )} />
               <FormField control={form.control} name="status" render={({ field }) => (
-                <FormItem className="text-left"><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="new">New</SelectItem><SelectItem value="contacted">Researching</SelectItem><SelectItem value="qualified">Qualified</SelectItem></SelectContent></Select></FormItem>
+                <FormItem className="text-left"><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                    <SelectContent><SelectItem value="new">New</SelectItem><SelectItem value="contacted">Researching</SelectItem><SelectItem value="qualified">Qualified</SelectItem></SelectContent>
+                </Select></FormItem>
               )} />
             </div>
             <DialogFooter className="pt-4 border-t text-left"><Button type="submit" disabled={isLoading}>
@@ -200,7 +206,6 @@ function LeadsDatabaseComponent() {
   useEffect(() => {
     if (searchParams.get('action') === 'add-member' || newLeadDefaults) {
       setIsAddLeadOpen(true);
-      // Clean the URL to prevent re-triggering
       const newPath = `${window.location.pathname}?view=leads-database`;
       router.replace(newPath, { scroll: false });
     }
