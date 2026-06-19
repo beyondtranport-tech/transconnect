@@ -7,7 +7,7 @@ import * as z from 'zod';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from '@/hooks/use-toast';
-import { getClientSideAuthToken } from '@/firebase';
+import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
   Loader2, PlusCircle, Building, Edit, Trash2, Send, Download, Save, Search, Filter, Users, Globe, Zap, Upload, RefreshCcw, Database, Copy, Tag, AlertTriangle, CheckCircle, Sparkles 
 } from 'lucide-react';
@@ -221,7 +221,7 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
             
             <Separator />
             <div className="space-y-4 text-left">
-                <h3 className="text-sm font-black uppercase tracking-widest text-primary flex items-center gap-2 text-left">
+                <h3 className="text-sm font-black uppercase tracking-widest text-primary flex items-center gap-2 text-left text-foreground">
                     <Sparkles className="h-4 w-4"/> Forensic Technical Profile
                 </h3>
                 <FormField control={form.control} name="minedServiceWording" render={({ field }) => (
@@ -340,7 +340,7 @@ export default function SupplierManagement() {
         header: 'Supplier Name', 
         cell: ({ row }) => (
             <div className="flex flex-col text-sm text-left">
-                <span className="font-bold text-left">{row.original.companyName || row.original.contactPerson || 'Incomplete Record'}</span>
+                <span className="font-bold text-left text-foreground">{row.original.companyName || row.original.contactPerson || 'Incomplete Record'}</span>
                 <div className="flex flex-wrap gap-1 mt-1 text-left">
                     {row.original.industrialTags?.slice(0, 3).map((tag: string) => (
                         <Badge key={tag} variant="secondary" className="text-[8px] h-3.5 bg-slate-100 text-slate-600 border-none px-1.5 uppercase font-black">{tag}</Badge>
@@ -457,7 +457,7 @@ export default function SupplierManagement() {
                         </Select>
                     </div>
                 </div>
-                {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />}
+                {isLoading ? <div className="flex justify-center items-center py-10 text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />}
             </CardContent>
         </Card>
       </div>

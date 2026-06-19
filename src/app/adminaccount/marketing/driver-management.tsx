@@ -101,13 +101,13 @@ function DriverDialog({ open, onOpenChange, partner, onSave }: { open: boolean; 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl text-left">
+      <DialogContent className="sm:max-w-2xl text-left text-foreground">
         <DialogHeader>
           <DialogTitle>{partner ? 'Edit' : 'Add'} Driver Record</DialogTitle>
           <DialogDescription>Enter verified record for the industrial service unit.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left">
+          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left text-foreground">
             <div className="grid grid-cols-2 gap-4 text-left">
               <FormField control={form.control} name="firstName" render={({ field }) => (<FormItem><FormLabel>First Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="lastName" render={({ field }) => (<FormItem><FormLabel>Last Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
@@ -119,10 +119,10 @@ function DriverDialog({ open, onOpenChange, partner, onSave }: { open: boolean; 
             <FormField control={form.control} name="mobile" render={({ field }) => (<FormItem className="text-left"><FormLabel>Mobile (Direct Cell)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} /></FormControl><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem className="text-left"><FormLabel>Service Handle / Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="status" render={({ field }) => (
-                <FormItem className="text-left">
+                <FormItem className="text-left text-foreground">
                     <FormLabel>Status</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl><SelectTrigger><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
+                        <FormControl><SelectTrigger className="bg-white"><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
                         <SelectContent>
                             <SelectItem value="new">New</SelectItem>
                             <SelectItem value="contacted">Researching</SelectItem>
@@ -210,7 +210,7 @@ export default function DriverManagement() {
     { 
         header: 'Driver Identity', 
         cell: ({ row }) => (
-            <div className="flex flex-col text-sm text-left">
+            <div className="flex flex-col text-sm text-left text-foreground">
                 <span className="font-bold text-left">{row.original.service_handle || row.original.contactPerson || `${row.original.firstName} ${row.original.lastName}`}</span>
                 <span className="text-[10px] text-muted-foreground uppercase font-black text-left">{row.original.operational_hub || 'SA Region'}</span>
             </div>
@@ -239,7 +239,7 @@ export default function DriverManagement() {
         }
     },
     { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
-      <div className="flex justify-end gap-1 text-left">
+      <div className="flex justify-end gap-1 text-left text-foreground">
         <EnrichPartnerButton partner={row.original} onUpdate={fetchData} />
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'engage', data: row.original })} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
         <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.firstName || row.original.service_handle} />
@@ -267,27 +267,27 @@ export default function DriverManagement() {
       
       <div className="space-y-6 text-left">
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
-            <div className="text-left">
+            <div className="text-left text-foreground">
                 <CardTitle className="flex items-center gap-2"><Users /> Driver Registry</CardTitle>
-                <CardDescription>High-capacity registry view ({allRecords.length} records).</CardDescription>
+                <CardDescription className="text-left text-foreground">High-capacity registry view ({allRecords.length} records).</CardDescription>
             </div>
-            <div className="flex items-center gap-2 text-left">
-                <div className="relative w-64">
+            <div className="flex items-center gap-2 text-left text-foreground">
+                <div className="relative w-64 text-left">
                     <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input placeholder="Filter registry..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8" />
+                    <Input placeholder="Filter registry..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8 bg-white text-foreground" />
                 </div>
-                <Button variant="outline" onClick={() => downloadDataAsCSV(allRecords, 'drivers-export.csv')} disabled={isLoading}><Download className="mr-2 h-4 w-4" /> Export CSV</Button>
-                <BulkImportDialog type="driver" onComplete={fetchData}><Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
-                <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Record</Button>
+                <Button variant="outline" onClick={() => downloadDataAsCSV(allRecords, 'drivers-export.csv')} disabled={isLoading} className="text-foreground"><Download className="mr-2 h-4 w-4" /> Export CSV</Button>
+                <BulkImportDialog type="driver" onComplete={fetchData}><Button variant="outline" className="text-foreground"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
+                <Button onClick={() => setDialog({ type: 'add' })} className="text-foreground"><PlusCircle className="mr-2 h-4 w-4" /> Add Record</Button>
             </div>
         </CardHeader>
-        <Card>
-            <CardContent className="pt-6 text-left">
+        <Card className="text-left">
+            <CardContent className="pt-6 text-left text-foreground">
                 <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left">
-                    <div className="flex-1 space-y-2 text-left">
-                        <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status</Label>
+                    <div className="flex-1 space-y-2 text-left text-foreground">
+                        <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left"><Filter className="h-3 w-3"/> Status</Label>
                         <Select value={statusFilter} onValueChange={setStatusFilter}>
-                            <SelectTrigger className="bg-white"><SelectValue placeholder="All Statuses" /></SelectTrigger>
+                            <SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="All Statuses" /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Statuses</SelectItem>
                                 <SelectItem value="new">New</SelectItem>
@@ -297,10 +297,10 @@ export default function DriverManagement() {
                             </SelectContent>
                         </Select>
                     </div>
-                    <div className="flex-1 space-y-2 text-left">
-                        <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Users className="h-3 w-3"/> Assignee</Label>
+                    <div className="flex-1 space-y-2 text-left text-foreground">
+                        <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left"><Users className="h-3 w-3"/> Assignee</Label>
                         <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-                            <SelectTrigger className="bg-white"><SelectValue /></SelectTrigger>
+                            <SelectTrigger className="bg-white text-left text-foreground"><SelectValue /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Staff</SelectItem>
                                 <SelectItem value="none">Unallocated</SelectItem>
@@ -309,7 +309,7 @@ export default function DriverManagement() {
                         </Select>
                     </div>
                 </div>
-                {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredRecords} />}
+                {isLoading ? <div className="flex justify-center items-center py-10 text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredRecords} />}
             </CardContent>
         </Card>
       </div>

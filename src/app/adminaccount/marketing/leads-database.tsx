@@ -103,33 +103,33 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-xl text-left">
+      <DialogContent className="sm:max-w-xl text-left text-foreground">
         <DialogHeader><DialogTitle>{lead ? 'Edit' : 'Add New'} Lead</DialogTitle></DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[60vh] overflow-y-auto pr-2 text-left">
             <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Company Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4 text-left">
               <FormField control={form.control} name="firstName" render={({ field }) => (<FormItem><FormLabel>First Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="lastName" render={({ field }) => (<FormItem><FormLabel>Last Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
-            <FormField control={form.control} name="contactPerson" render={({ field }) => (<FormItem><FormLabel>Alternative Contact Name</FormLabel><FormControl><Input placeholder="Full Name" {...field} /></FormControl><FormMessage /></FormItem>)} />
-            <div className="grid grid-cols-2 gap-4">
+            <FormField control={form.control} name="contactPerson" render={({ field }) => (<FormItem className="text-left"><FormLabel>Alternative Contact Name</FormLabel><FormControl><Input placeholder="Full Name" {...field} /></FormControl><FormMessage /></FormItem>)} />
+            <div className="grid grid-cols-2 gap-4 text-left">
               <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Landline</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="mobile" render={({ field }) => (<FormItem><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
-            <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" /></FormControl><FormMessage /></FormItem>)} />
-            <FormField control={form.control} name="website" render={({ field }) => (<FormItem><FormLabel>Website</FormLabel><FormControl><Input {...field} type="url" placeholder="https://..." /></FormControl><FormMessage /></FormItem>)} />
-            <FormField control={form.control} name="address" render={({ field }) => (<FormItem><FormLabel>Address</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>)} />
-            <FormField control={form.control} name="notes" render={({ field }) => (<FormItem><FormLabel>Mined Service wording</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>)} />
-             <div className="grid grid-cols-2 gap-4">
+            <FormField control={form.control} name="email" render={({ field }) => (<FormItem className="text-left"><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" /></FormControl><FormMessage /></FormItem>)} />
+            <FormField control={form.control} name="website" render={({ field }) => (<FormItem className="text-left"><FormLabel>Website</FormLabel><FormControl><Input {...field} type="url" placeholder="https://..." /></FormControl><FormMessage /></FormItem>)} />
+            <FormField control={form.control} name="address" render={({ field }) => (<FormItem className="text-left"><FormLabel>Address</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>)} />
+            <FormField control={form.control} name="notes" render={({ field }) => (<FormItem className="text-left"><FormLabel>Mined Service wording</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>)} />
+             <div className="grid grid-cols-2 gap-4 text-left">
               <FormField control={form.control} name="role" render={({ field }) => (
-                <FormItem><FormLabel>Potential Role</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger></FormControl><SelectContent>{roles.map(r => <SelectItem key={r.id} value={r.title}>{r.title}</SelectItem>)}</SelectContent></Select></FormItem>
+                <FormItem className="text-left"><FormLabel>Potential Role</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger></FormControl><SelectContent>{roles.map(r => <SelectItem key={r.id} value={r.title}>{r.title}</SelectItem>)}</SelectContent></Select></FormItem>
               )} />
               <FormField control={form.control} name="status" render={({ field }) => (
-                <FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="new">New</SelectItem><SelectItem value="contacted">Researching</SelectItem><SelectItem value="qualified">Qualified</SelectItem></SelectContent></Select></FormItem>
+                <FormItem className="text-left"><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="new">New</SelectItem><SelectItem value="contacted">Researching</SelectItem><SelectItem value="qualified">Qualified</SelectItem></SelectContent></Select></FormItem>
               )} />
             </div>
-            <DialogFooter className="pt-4 border-t"><Button type="submit" disabled={isLoading}>
+            <DialogFooter className="pt-4 border-t text-left"><Button type="submit" disabled={isLoading}>
                 {isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />} Save Record
             </Button></DialogFooter>
           </form>
@@ -200,8 +200,11 @@ function LeadsDatabaseComponent() {
   useEffect(() => {
     if (searchParams.get('action') === 'add-member' || newLeadDefaults) {
       setIsAddLeadOpen(true);
+      // Clean the URL to prevent re-triggering
+      const newPath = `${window.location.pathname}?view=leads-database`;
+      router.replace(newPath, { scroll: false });
     }
-  }, [searchParams, newLeadDefaults]);
+  }, [searchParams, newLeadDefaults, router]);
 
   const filteredLeads = useMemo(() => {
     return allRecords.filter(r => {
@@ -245,7 +248,7 @@ function LeadsDatabaseComponent() {
         header: 'Human Contact', 
         cell: ({ row }) => (
             <div className="flex flex-col text-sm text-left">
-                <span className="font-bold text-left">{row.original.contactPerson || `${row.original.firstName || ''} ${row.original.lastName || ''}`.trim() || 'N/A'}</span>
+                <span className="font-bold text-left text-foreground">{row.original.contactPerson || `${row.original.firstName || ''} ${row.original.lastName || ''}`.trim() || 'N/A'}</span>
                 <span className="text-xs text-muted-foreground text-left">{row.original.email}</span>
             </div>
         )
@@ -263,7 +266,7 @@ function LeadsDatabaseComponent() {
       cell: ({ row }) => (
         <div className="text-right flex items-center justify-end gap-1">
           <EnrichPartnerButton partner={row.original} onUpdate={forceRefresh} />
-          <Button variant="ghost" size="icon" onClick={() => setEngageLead(row.original)}><Send className="h-4 w-4 text-primary" /></Button>
+          <Button variant="ghost" size="icon" onClick={() => setEngageLead(row.original)} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
           <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.companyName} />
           <PartnerTasksDialog partner={row.original} />
           <PartnerOversightDialog partner={row.original} onUpdate={forceRefresh} />
@@ -281,11 +284,11 @@ function LeadsDatabaseComponent() {
       
       <div className="space-y-6 text-left">
         {!hasLoaded ? (
-            <Card className="bg-primary/5 border-primary/20 p-12 text-center">
+            <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground">
                 <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
                 <h2 className="text-2xl font-black font-headline mb-2 text-foreground text-center">Registry Search Variables</h2>
                 <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center">Enter your search criteria to load the master registry. This targets your session to preserve your daily data quota.</p>
-                <div className="flex flex-col md:flex-row justify-center gap-4 max-w-2xl mx-auto">
+                <div className="flex flex-col md:flex-row justify-center gap-4 max-w-2xl mx-auto text-left">
                     <Input placeholder="Type company name, ID or email to search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleInitialSearch()} className="h-12 text-lg bg-white" />
                     <Button size="lg" onClick={handleInitialSearch} disabled={isLoading} className="h-12 px-8">
                         {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4" />}
@@ -294,10 +297,10 @@ function LeadsDatabaseComponent() {
                 </div>
             </Card>
         ) : (
-            <div className="space-y-6 text-left">
-                <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left text-foreground">
-                <div className="text-left text-foreground"><CardTitle className="flex items-center gap-2 text-left"><Users /> Lead Database</CardTitle><CardDescription className="text-left">Unified registry view of prospective members ({allRecords.length} records).</CardDescription></div>
-                <div className="flex gap-2 text-left">
+            <div className="space-y-6 text-left text-foreground">
+                <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
+                <div className="text-left text-foreground"><CardTitle className="flex items-center gap-2 text-left"><Users /> Lead Database</CardTitle><CardDescription className="text-left text-foreground">Unified registry view of prospective members ({allRecords.length} records).</CardDescription></div>
+                <div className="flex gap-2 text-left text-foreground">
                     <Button variant="outline" onClick={() => downloadDataAsCSV(allRecords, 'leads-backup.csv')} disabled={isLoading} className="text-foreground"><Download className="mr-2 h-4 w-4" /> Export CSV</Button>
                     <BulkImportDialog type="lead" onComplete={forceRefresh}><Button variant="outline" className="text-foreground"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
                     <Button onClick={() => setIsAddLeadOpen(true)} className="text-foreground"><PlusCircle className="mr-2 h-4 w-4" />Add Lead</Button>
@@ -328,14 +331,14 @@ function LeadsDatabaseComponent() {
                                 <Button variant="outline" onClick={() => setHasLoaded(false)} className="h-10 w-full text-foreground"><RotateCcw className="mr-1 h-3 w-3" /> Reset Variables</Button>
                             </div>
                         </div>
-                        {isLoading ? <div className="flex justify-center p-10"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredLeads} />}
+                        {isLoading ? <div className="flex justify-center p-10 text-foreground"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredLeads} />}
                     </CardContent>
                 </Card>
             </div>
         )}
       </div>
       <AlertDialog open={!!deleteLead} onOpenChange={(o) => !o && setDeleteLead(null)}>
-        <AlertDialogContent className="text-left">
+        <AlertDialogContent className="text-left text-foreground">
           <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Permanently remove record?</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>

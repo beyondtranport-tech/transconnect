@@ -179,7 +179,7 @@ export default function PartnerManagement() {
         accessorKey: 'companyName', 
         header: 'Partner Name', 
         cell: ({ row }) => (
-            <div className="flex flex-col text-left">
+            <div className="flex flex-col text-left text-foreground">
                 <span className="font-bold text-left">{row.original.companyName || row.original.contactPerson || `${row.original.firstName || ''} ${row.original.lastName || ''}`.trim()}</span>
                 <div className="flex items-center gap-2 mt-1 text-left">
                     <span className="text-[10px] text-muted-foreground uppercase font-black text-left">{row.original.firstName} {row.original.lastName}</span>
@@ -214,26 +214,26 @@ export default function PartnerManagement() {
           <AlertDialogFooter><AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      <div className="space-y-6 text-left">
+      <div className="space-y-6 text-left text-foreground">
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
-            <div className="text-left">
+            <div className="text-left text-foreground">
                 <CardTitle className="flex items-center gap-2 text-left"><Handshake /> Strategic Partners</CardTitle>
-                <CardDescription>Full registry view ({partners.length} records).</CardDescription>
+                <CardDescription className="text-left">Full registry view ({partners.length} records).</CardDescription>
             </div>
-            <div className="flex items-center gap-2 text-left">
-                <Button variant="outline" onClick={() => downloadDataAsCSV(partners, 'partners-export.csv')} disabled={isLoading}>
+            <div className="flex items-center gap-2 text-left text-foreground">
+                <Button variant="outline" onClick={() => downloadDataAsCSV(partners, 'partners-export.csv')} disabled={isLoading} className="text-foreground">
                     <Download className="mr-2 h-4 w-4" /> Export CSV
                 </Button>
-                <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Partner</Button>
+                <Button onClick={() => setDialog({ type: 'add' })} className="text-foreground"><PlusCircle className="mr-2 h-4 w-4" /> Add Partner</Button>
             </div>
         </CardHeader>
         <Card>
             <CardContent className="pt-6 text-left text-foreground">
                 <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
                     <div className="flex-1 space-y-2 text-left text-foreground">
-                        <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status</Label>
+                        <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left"><Filter className="h-3 w-3"/> Status</Label>
                         <Select value={statusFilter} onValueChange={setStatusFilter}>
-                            <SelectTrigger className="bg-white text-left"><SelectValue placeholder="All Statuses" /></SelectTrigger>
+                            <SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="All Statuses" /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Statuses</SelectItem>
                                 <SelectItem value="active">Active</SelectItem>
@@ -242,9 +242,9 @@ export default function PartnerManagement() {
                         </Select>
                     </div>
                     <div className="flex-1 space-y-2 text-left text-foreground">
-                        <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Users className="h-3 w-3"/> Assignee</Label>
+                        <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left"><Users className="h-3 w-3"/> Assignee</Label>
                         <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-                            <SelectTrigger className="bg-white text-left"><SelectValue placeholder="All Staff" /></SelectTrigger>
+                            <SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="All Staff" /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Staff</SelectItem>
                                 <SelectItem value="none">Unallocated</SelectItem>
@@ -253,7 +253,7 @@ export default function PartnerManagement() {
                         </Select>
                     </div>
                 </div>
-                {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredRecords} />}
+                {isLoading ? <div className="flex justify-center items-center py-10 text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredRecords} />}
             </CardContent>
         </Card>
       </div>

@@ -113,7 +113,7 @@ function InvestorDialog({ open, onOpenChange, partner, onSave }: { open: boolean
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[700px] text-left">
+        <DialogContent className="sm:max-w-[700px] text-left text-foreground">
             <DialogHeader>
                 <DialogTitle>{partner ? 'Edit' : 'Add'} App Launch Investor</DialogTitle>
                 <DialogDescription>Enter details for the capital partner.</DialogDescription>
@@ -255,8 +255,8 @@ export default function InvestorManagement() {
 
   return (
     <div className="space-y-6 text-left">
-      <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.data} audience="investors" onEngageSuccess={fetchData} />
-      <InvestorDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={fetchData} />
+      <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o: boolean) => !o && setDialog({ type: null })} partner={dialog.data} audience="investors" onEngageSuccess={fetchData} />
+      <InvestorDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o: boolean) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={fetchData} />
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
         <AlertDialogContent>
           <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Delete record?</AlertDialogDescription></AlertDialogHeader>
@@ -273,7 +273,7 @@ export default function InvestorManagement() {
           <div className="flex gap-2 text-left">
             <div className="relative w-64 text-left text-foreground">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Filter registry..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8" />
+                <Input placeholder="Filter registry..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8 bg-white" />
             </div>
             <Button variant="outline" onClick={() => downloadDataAsCSV(partners, 'investors-export.csv')} disabled={isLoading}><Download className="mr-2 h-4 w-4"/>Export CSV</Button>
             <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4"/>Add Record</Button>
@@ -308,7 +308,7 @@ export default function InvestorManagement() {
                     </div>
                 </div>
                 {isLoading ? (
-                    <div className="flex justify-center items-center py-10 text-left">
+                    <div className="flex justify-center items-center py-10 text-left text-foreground">
                         <Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" />
                     </div>
                 ) : (

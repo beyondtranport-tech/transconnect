@@ -8,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
 import { copyHtmlToClipboard } from '@/lib/utils';
 
-// Content components - Fixed paths to point to content sub-directory
+// Content components located in content/ sub-folder
 import DigitalHandshake from './content/DigitalHandshake';
 import CompanyProfile from './content/CompanyProfile';
 import TechArchitecture from './content/TechArchitecture';

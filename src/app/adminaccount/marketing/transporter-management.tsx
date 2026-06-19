@@ -30,6 +30,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
 
 async function performAdminAction(token: string, action: string, payload: any) {
   const response = await fetch('/api/admin', {
@@ -130,7 +132,7 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
                 <DialogHeader>
                     <DialogTitle>Registry Health Tool</DialogTitle>
                 </DialogHeader>
-                <ScrollArea className="flex-1 p-4">
+                <ScrollArea className="flex-1 p-4 text-left">
                     <div className="space-y-8 text-left">
                         {incomplete.length > 0 && (
                             <div className="space-y-4 text-left">
@@ -139,10 +141,10 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
                             </div>
                         )}
                         {duplicates.length > 0 && (
-                            <div className="space-y-4 text-left">
+                            <div className="space-y-4 text-left text-foreground">
                                 <h3 className="font-bold text-amber-600 flex items-center gap-2 text-left"><Tag className="h-5 w-5" /> Duplicates</h3>
                                 {duplicates.map((group, idx) => (
-                                    <div key={idx} className="p-4 border rounded-lg bg-muted/20 space-y-2 text-left text-foreground">
+                                    <div key={idx} className="p-4 border rounded-lg bg-muted/20 space-y-2 text-left">
                                         <p className="font-bold text-sm text-left">{group[0].companyName}</p>
                                         <div className="space-y-1 text-left">
                                             {group.map(p => (
@@ -421,10 +423,11 @@ export default function TransporterManagement() {
 
   return (
     <div className="space-y-6 text-left">
-      <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.data} audience="transporters" onEngageSuccess={fetchData} />
-      <TransporterDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={fetchData} />
+      <BatchResearchDialog open={dialog.type === 'batch'} onOpenChange={(o: boolean) => !o && setDialog({ type: null })} selectedLeads={allRecords.filter(r => selectedIds.includes(r.id))} onComplete={fetchData} />
+      <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o: boolean) => !o && setDialog({ type: null })} partner={dialog.data} audience="transporters" onEngageSuccess={fetchData} />
+      <TransporterDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o: boolean) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={fetchData} />
       
-      <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
+      <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o: boolean) => !o && setDialog({ type: null })}>
         <AlertDialogContent>
           <AlertDialogHeader><AlertDialogTitle>Delete Record(s)?</AlertDialogTitle><AlertDialogDescription>Delete Selected?</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter>

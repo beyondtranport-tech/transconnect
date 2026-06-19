@@ -173,11 +173,9 @@ function LogAndCopyDialog({ open, onOpenChange, partners, isLoadingPartners, act
 }
 
 function MarketingPageContent({ audience }: MarketingPageProps) {
+  // Use as any to safely destructure optional components without TS errors
   const config = audienceConfig[audience] as any;
-  const { Offer, Emails, Management } = config;
-  // Type-safe extraction of optional components
-  const Pitch = (config as any).Pitch;
-  const Discovery = (config as any).Discovery;
+  const { Offer, Emails, Management, Pitch, Discovery } = config;
   
   const searchParams = useSearchParams();
   const router = useRouter();
