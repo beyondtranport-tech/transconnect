@@ -64,9 +64,7 @@ const platformConfig: Record<string, { label: string, icon: any, color: string, 
 };
 
 const socialTemplates = (platform: Platform) => {
-    const safePlatform = platform || 'facebook';
-    const config = platformConfig[safePlatform] || platformConfig['facebook'];
-    const isLinkedIn = safePlatform === 'linkedin';
+    const isLinkedIn = platform === 'linkedin';
     
     return {
         'app-launch': {
@@ -229,7 +227,7 @@ export default function SocialStudio({ platform = 'facebook' }: { platform?: Pla
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 text-left">
                 <div className="space-y-2 text-left">
                     <Label className="text-[10px] font-black uppercase text-primary tracking-[0.2em] flex items-center gap-2">
-                        <LinkIcon className="h-3 w-3"/> Campaign Tracking Label
+                        <LinkIcon className="h-3 w-3"/> Tracking Label
                     </Label>
                     <Input 
                         placeholder="e.g. Q3 Expansion" 
@@ -286,19 +284,19 @@ export default function SocialStudio({ platform = 'facebook' }: { platform?: Pla
                              <div className="bg-white p-4 rounded-xl border shadow-sm flex flex-col gap-2 text-left">
                                 <div className="flex items-center justify-between text-left">
                                     <Label className="text-[10px] font-black uppercase text-primary tracking-widest flex items-center gap-2">
-                                        <Search className="h-3 w-3"/> Follow Target: {config.label}
+                                        <Search className="h-3 w-3"/> Follow Target Link
                                     </Label>
                                     <Input value={pageUrl} onChange={e => setPageUrl(e.target.value)} className="h-8 w-[400px] font-mono text-xs bg-slate-50" />
                                 </div>
-                                <p className="text-[9px] text-muted-foreground italic text-left">The official Logistics Flow page URL to drive permanent followers.</p>
+                                <p className="text-[9px] text-muted-foreground italic text-left">The link used for 'Follow Us' CTAs in the post footer.</p>
                             </div>
 
                             {activeTab === 'creator' && (
                                 <Card className="border-amber-200 bg-amber-50/20 text-left">
-                                    <CardHeader><CardTitle className="text-lg flex items-center gap-2"><Sparkles className="h-5 w-5 text-amber-500" /> AI Creative memo</CardTitle></CardHeader>
+                                    <CardHeader><CardTitle className="text-lg flex items-center gap-2"><Sparkles className="h-5 w-5 text-amber-500" /> AI Creative Assistant</CardTitle></CardHeader>
                                     <CardContent className="space-y-4">
-                                        <div className="space-y-2 text-left"><Label>Primary Topic</Label><Input placeholder="e.g. Scaling industrial capacity" value={creatorParams.topic} onChange={e => setCreatorParams({...creatorParams, topic: e.target.value})} /></div>
-                                        <div className="space-y-2 text-left"><Label>Key Data Points</Label><Textarea placeholder="Point 1&#10;Point 2..." value={creatorParams.criticalPoints} onChange={e => setCreatorParams({...creatorParams, criticalPoints: e.target.value})} /></div>
+                                        <div className="space-y-2 text-left"><Label>Topic</Label><Input placeholder="e.g. Scaling industrial capacity" value={creatorParams.topic} onChange={e => setCreatorParams({...creatorParams, topic: e.target.value})} /></div>
+                                        <div className="space-y-2 text-left"><Label>Key Points</Label><Textarea placeholder="Point 1&#10;Point 2..." value={creatorParams.criticalPoints} onChange={e => setCreatorParams({...creatorParams, criticalPoints: e.target.value})} /></div>
                                         <Button className="w-full font-bold bg-amber-600" onClick={handleGenerateCustom} disabled={isGenerating}>
                                             {isGenerating ? <Loader2 className="h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4" />} Generate Copy
                                         </Button>

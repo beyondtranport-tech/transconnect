@@ -6,12 +6,11 @@ import { getAdminApp } from '@/lib/firebase-admin';
 export const dynamic = 'force-dynamic';
 
 /**
- * INTELLIGENCE SEARCH ENGINE
+ * FORENSIC SEARCH ENGINE
  * Enforces:
- * 1. 10-search-per-day testing limit for Free members.
+ * 1. Deep-scan of industrialTags and minedServiceWording.
  * 2. Visual data masking for Free tier.
- * 3. Deep-scan of industrialTags and minedServiceWording.
- * 4. 100-record hard cap for all tiers.
+ * 3. 100-record hard cap for all tiers.
  */
 export async function POST(req: NextRequest) {
     try {
@@ -63,6 +62,7 @@ export async function POST(req: NextRequest) {
         // 3. Execute Registry Scan
         let collectionName = 'leads';
         if (type === 'driver' || type === 'transporter') collectionName = 'partners';
+        if (type === 'supplier' || type === 'finance') collectionName = 'partners';
         
         // Fetch a representative batch for in-memory forensic matching
         const snapshot = await db.collection(collectionName)

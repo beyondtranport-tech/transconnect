@@ -263,7 +263,7 @@ function FinanceDialog({ open, onOpenChange, partner, onSave }: { open: boolean;
               <FormItem className="text-left"><FormLabel>Physical Address</FormLabel><FormControl><Textarea placeholder="Enter physical address..." {...field} /></FormControl><FormMessage /></FormItem>)} />
             
             <Separator />
-            <div className="space-y-4">
+            <div className="space-y-4 text-left">
                 <h3 className="text-sm font-black uppercase tracking-widest text-primary flex items-center gap-2">
                     <Sparkles className="h-4 w-4"/> Forensic Technical Profile
                 </h3>
