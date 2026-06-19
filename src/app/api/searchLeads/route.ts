@@ -61,8 +61,7 @@ export async function POST(req: NextRequest) {
 
         // 3. Execute Registry Scan
         let collectionName = 'leads';
-        if (type === 'driver' || type === 'transporter') collectionName = 'partners';
-        if (type === 'supplier' || type === 'finance') collectionName = 'partners';
+        if (type === 'driver' || type === 'transporter' || type === 'supplier' || type === 'finance') collectionName = 'partners';
         
         // Fetch a representative batch for in-memory forensic matching
         const snapshot = await db.collection(collectionName)
