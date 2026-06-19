@@ -52,10 +52,7 @@ import { Label } from '@/components/ui/label';
 async function performAdminAction(token: string, action: string, payload: any) {
     const response = await fetch('/api/admin', {
         method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-        },
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ action, payload }),
     });
 
@@ -233,7 +230,7 @@ export default function InvestorManagement() {
             <div className="flex flex-col text-left text-foreground">
                 <span className="font-bold text-left">{row.original.companyName || `${row.original.firstName} ${row.original.lastName}`}</span>
                 <div className="flex items-center gap-2 mt-1 text-left">
-                    <span className="text-[10px] text-muted-foreground uppercase font-black">{row.original.firstName} {row.original.lastName}</span>
+                    <span className="text-[10px] text-muted-foreground uppercase font-black text-left">{row.original.firstName} {row.original.lastName}</span>
                     {row.original.website && <Globe className="h-3 w-3 text-primary" />}
                 </div>
             </div>
@@ -271,8 +268,8 @@ export default function InvestorManagement() {
       </AlertDialog>
       
       <div className="space-y-6 text-left">
-        <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
-          <div className="text-left"><CardTitle><DollarSign /> App Launch Investors</CardTitle><CardDescription>Registry view ({partners.length} records).</CardDescription></div>
+        <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left text-foreground">
+          <div className="text-left text-foreground"><CardTitle className="flex items-center gap-2"><DollarSign /> App Launch Investors</CardTitle><CardDescription className="text-left text-foreground">Registry view ({partners.length} records).</CardDescription></div>
           <div className="flex gap-2 text-left">
             <div className="relative w-64 text-left">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -283,12 +280,12 @@ export default function InvestorManagement() {
           </div>
         </CardHeader>
         <Card>
-            <CardContent className="pt-6 text-left">
-                <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left">
-                    <div className="flex-1 space-y-2 text-left">
-                        <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status</Label>
+            <CardContent className="pt-6 text-left text-foreground">
+                <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
+                    <div className="flex-1 space-y-2 text-left text-foreground">
+                        <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Filter className="h-3 w-3"/> Status</Label>
                         <Select value={statusFilter} onValueChange={setStatusFilter}>
-                            <SelectTrigger className="bg-white"><SelectValue placeholder="All Statuses" /></SelectTrigger>
+                            <SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="All Statuses" /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Statuses</SelectItem>
                                 <SelectItem value="new">New</SelectItem>
@@ -298,10 +295,10 @@ export default function InvestorManagement() {
                             </SelectContent>
                         </Select>
                     </div>
-                    <div className="flex-1 space-y-2 text-left">
-                        <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Users className="h-3 w-3"/> Assignee</Label>
+                    <div className="flex-1 space-y-2 text-left text-foreground">
+                        <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Users className="h-3 w-3"/> Assignee</Label>
                         <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-                            <SelectTrigger className="bg-white"><SelectValue placeholder="All Staff" /></SelectTrigger>
+                            <SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="All Staff" /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Staff</SelectItem>
                                 <SelectItem value="none">Unallocated</SelectItem>
@@ -310,7 +307,7 @@ export default function InvestorManagement() {
                         </Select>
                     </div>
                 </div>
-                {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredRecords} />}
+                {isLoading ? <div className="flex justify-center items-center py-10 text-left"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredRecords} />}
             </CardContent>
         </Card>
       </div>

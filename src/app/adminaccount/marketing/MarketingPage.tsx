@@ -278,7 +278,7 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
                     <p className="text-muted-foreground">Manage forensic records and browse engagement materials.</p>
                 </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 text-left">
                 <Button variant="outline" onClick={handleExport} disabled={isLoadingPartners}>
                     <Download className="mr-2 h-4 w-4" /> Backup (CSV)
                 </Button>
@@ -309,7 +309,7 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
                 <TabsTrigger value="emails">Emails</TabsTrigger>
             </TabsList>
 
-            <div className="mt-6">
+            <div className="mt-6 text-left">
                 <TabsContent value="management"><div id="tab-content-management">{Management && <Management />}</div></TabsContent>
                 {Discovery && <TabsContent value="discovery"><div id="tab-content-discovery"><Discovery /></div></TabsContent>}
                 {Pitch && <TabsContent value="pitch-generator"><div id="tab-content-pitch-generator"><Pitch /></div></TabsContent>}

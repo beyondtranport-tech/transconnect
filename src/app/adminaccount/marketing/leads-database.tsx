@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
@@ -26,7 +25,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { getClientSideAuthToken } from '@/firebase';
-import { Loader2, PlusCircle, Users, Edit, Trash2, Search, Send, Download, Upload, Save, RefreshCcw, Filter, RotateCcw, Tag } from 'lucide-react';
+import { Loader2, PlusCircle, Users, Edit, Trash2, Search, Send, Download, Upload, Save, RefreshCcw, Filter, RotateCcw, Tag, Database } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -244,8 +243,8 @@ function LeadsDatabaseComponent() {
         header: 'Human Contact', 
         cell: ({ row }) => (
             <div className="flex flex-col text-sm text-left">
-                <span className="font-bold">{row.original.contactPerson || `${row.original.firstName || ''} ${row.original.lastName || ''}`.trim() || 'N/A'}</span>
-                <span className="text-xs text-muted-foreground">{row.original.email}</span>
+                <span className="font-bold text-left">{row.original.contactPerson || `${row.original.firstName || ''} ${row.original.lastName || ''}`.trim() || 'N/A'}</span>
+                <span className="text-xs text-muted-foreground text-left">{row.original.email}</span>
             </div>
         )
     },
@@ -295,7 +294,7 @@ function LeadsDatabaseComponent() {
         ) : (
             <div className="space-y-6">
                 <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left text-foreground">
-                <div><CardTitle><Users /> Lead Database</CardTitle><CardDescription>Unified registry view of prospective members ({allRecords.length} records).</CardDescription></div>
+                <div className="text-left"><CardTitle className="flex items-center gap-2"><Users /> Lead Database</CardTitle><CardDescription className="text-left">Unified registry view of prospective members ({allRecords.length} records).</CardDescription></div>
                 <div className="flex gap-2">
                     <Button variant="outline" onClick={() => downloadDataAsCSV(allRecords, 'leads-backup.csv')} disabled={isLoading}><Download className="mr-2 h-4 w-4" /> Export CSV</Button>
                     <BulkImportDialog type="lead" onComplete={forceRefresh}><Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
@@ -306,16 +305,16 @@ function LeadsDatabaseComponent() {
                     <CardContent className="pt-6 text-left">
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left">
                             <div className="md:col-span-2 space-y-2 text-left">
-                                <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Search className="h-3 w-3"/> Registry Search</Label>
+                                <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5 text-left"><Search className="h-3 w-3"/> Registry Search</Label>
                                 <div className="flex gap-2 text-left">
                                     <Input placeholder="Refine your search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                                     <Button onClick={forceRefresh} disabled={isLoading}><Search className="h-4 w-4"/></Button>
                                 </div>
                             </div>
                             <div className="space-y-2 text-left">
-                                <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Tag className="h-3 w-3"/> Data Filter</Label>
+                                <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5 text-left"><Tag className="h-3 w-3"/> Data Filter</Label>
                                 <Select value={dataFilter} onValueChange={setDataFilter}>
-                                    <SelectTrigger className="h-10 text-xs bg-white text-foreground"><SelectValue /></SelectTrigger>
+                                    <SelectTrigger className="h-10 text-xs bg-white text-foreground text-left"><SelectValue /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">All Records</SelectItem>
                                         <SelectItem value="has-email">Has Email</SelectItem>
@@ -323,7 +322,7 @@ function LeadsDatabaseComponent() {
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <div className="flex items-end">
+                            <div className="flex items-end text-left">
                                 <Button variant="outline" onClick={() => setHasLoaded(false)} className="h-10 w-full text-foreground"><RotateCcw className="mr-1 h-3 w-3" /> Reset Variables</Button>
                             </div>
                         </div>
