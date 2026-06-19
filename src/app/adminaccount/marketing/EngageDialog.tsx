@@ -34,7 +34,7 @@ interface EngageDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   partner: any;
-  audience: "partners" | "isa" | "transporters" | "suppliers" | "investors" | "developers";
+  audience: "partners" | "isa" | "transporters" | "suppliers" | "investors" | "developers" | "drivers" | "finance";
   onEngageSuccess?: () => void;
 }
 
@@ -61,11 +61,13 @@ export function EngageDialog({ open, onOpenChange, partner, audience, onEngageSu
     if (audience === 'isa') return 'ISA Agent';
     if (audience === 'suppliers') return 'Supplier';
     if (audience === 'transporters') return partner?.entryType || 'Transporter';
+    if (audience === 'drivers') return 'Professional Driver';
+    if (audience === 'finance') return 'Finance Partner';
     return audience.slice(0, -1).charAt(0).toUpperCase() + audience.slice(1, -1);
   }, [audience, partner]);
 
   const Offer = useMemo(() => {
-    if (audience === 'investors') return InvestorOffer;
+    if (audience === 'investors' || audience === 'finance') return InvestorOffer;
     if (audience === 'developers') return DeveloperOffer;
     if (audience === 'suppliers') return SupplierOffer;
     if (audience === 'transporters') return TransporterOffer;
@@ -73,7 +75,7 @@ export function EngageDialog({ open, onOpenChange, partner, audience, onEngageSu
   }, [audience]);
 
   const Emails = useMemo(() => {
-    if (audience === 'investors') return InvestorEmails;
+    if (audience === 'investors' || audience === 'finance') return InvestorEmails;
     if (audience === 'developers') return DeveloperEmails;
     if (audience === 'suppliers') return SupplierEmails;
     if (audience === 'transporters') return TransporterEmails;
