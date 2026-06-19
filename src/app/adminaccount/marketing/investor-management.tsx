@@ -116,7 +116,7 @@ function InvestorDialog({ open, onOpenChange, partner, onSave }: { open: boolean
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-2xl text-left">
+        <DialogContent className="sm:max-w-[700px] text-left">
             <DialogHeader>
                 <DialogTitle>{partner ? 'Edit' : 'Add'} App Launch Investor</DialogTitle>
                 <DialogDescription>Enter details for the capital partner.</DialogDescription>
@@ -139,7 +139,7 @@ function InvestorDialog({ open, onOpenChange, partner, onSave }: { open: boolean
                     <FormField control={form.control} name="notes" render={({ field }) => (<FormItem className="text-left"><FormLabel>Investment Focus / Notes</FormLabel><FormControl><Textarea placeholder="Details about their portfolio and sector focus..." {...field} className="min-h-[100px]" /></FormControl><FormMessage /></FormItem>)} />
                     <FormField control={form.control} name="status" render={({ field }) => ( 
                         <FormItem className="text-left">
-                            <FormLabel>Pipeline Status</Label>
+                            <FormLabel>Pipeline Status</FormLabel>
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                                 <FormControl><SelectTrigger><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
                                 <SelectContent>
@@ -288,7 +288,7 @@ export default function InvestorManagement() {
                     <div className="flex-1 space-y-2 text-left">
                         <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status</Label>
                         <Select value={statusFilter} onValueChange={setStatusFilter}>
-                            <SelectTrigger className="bg-white"><SelectValue /></SelectTrigger>
+                            <SelectTrigger className="bg-white"><SelectValue placeholder="All Statuses" /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Statuses</SelectItem>
                                 <SelectItem value="new">New</SelectItem>

@@ -148,7 +148,7 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
                     <div className="space-y-8">
                         {incomplete.length > 0 && (
                             <div className="space-y-4">
-                                <h3 className="font-bold text-destructive flex items-center gap-2"><AlertTriangle className="h-5 w-5" /> Incomplete Records ({incomplete.length})</h3>
+                                <h3 className="font-bold text-destructive flex items-center gap-2 text-left"><AlertTriangle className="h-5 w-5" /> Incomplete Records ({incomplete.length})</h3>
                                 <Button variant="destructive" size="sm" onClick={() => handleClean('incomplete')} disabled={isLoading}>Delete Broken Records</Button>
                             </div>
                         )}

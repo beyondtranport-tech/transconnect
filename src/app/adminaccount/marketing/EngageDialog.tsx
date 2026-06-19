@@ -124,12 +124,6 @@ export function EngageDialog({ open, onOpenChange, partner, audience, onEngageSu
             if (src?.startsWith('/')) img.src = `${origin}${src}`;
         });
 
-        const links = contentClone.querySelectorAll('a');
-        links.forEach(a => {
-            const href = a.getAttribute('href');
-            if (href?.startsWith('/')) a.href = `${origin}${href}`;
-        });
-
         const wrappedHtml = `<div style="font-family: Calibri, sans-serif; font-size: 12pt; color: #000000; line-height: 1.2; text-align: left;">${contentClone.innerHTML}</div>`;
 
         // 3. Copy HTML

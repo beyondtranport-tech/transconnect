@@ -255,7 +255,7 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
                             <Input 
                                 placeholder="e.g. SADC Corridor, 34t Side-Tipper, Tri-Axle Reefer..." 
                                 value={Array.isArray(field.value) ? field.value.join(', ') : ''}
-                                onChange={(e) => field.onChange(e.target.value.split(',').map(t => t.trim()).filter(t => t.length > 0))}
+                                onChange={(e) => field.onChange(e.target.value.split(',').map(t => t.trim()).slice(0, 7))}
                             />
                         </FormControl>
                         <FormMessage />
@@ -443,7 +443,7 @@ export default function TransporterManagement() {
       
       <div className="space-y-6 text-left text-foreground">
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
-            <div className="text-left">
+            <div className="text-left text-foreground">
                 <CardTitle className="flex items-center gap-2 text-2xl font-black font-headline text-left text-foreground"><Truck /> Transporter Registry</CardTitle>
                 <CardDescription className="text-left text-foreground">Unified database view ({allRecords.length} records).</CardDescription>
             </div>

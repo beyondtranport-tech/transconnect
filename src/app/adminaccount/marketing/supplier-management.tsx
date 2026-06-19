@@ -208,11 +208,11 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
         <DialogHeader><DialogTitle>{partner ? 'Edit' : 'Add'} Supplier</DialogTitle></DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4 text-left">
               <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Entity Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="contactPerson" render={({ field }) => (<FormItem><FormLabel>Key Decision Maker</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4 text-left">
               <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Direct E-mail</FormLabel><FormControl><Input {...field} type="email" /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="mobile" render={({ field }) => (<FormItem><FormLabel>Mobile (Direct Cell)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
@@ -238,7 +238,7 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
                             <Input 
                                 placeholder="e.g. LFP Storage, Deep Cycle, Marine Batteries..." 
                                 value={Array.isArray(field.value) ? field.value.join(', ') : ''}
-                                onChange={(e) => field.onChange(e.target.value.split(',').map(t => t.trim()).filter(t => t.length > 0))}
+                                onChange={(e) => field.onChange(e.target.value.split(',').map(t => t.trim()).slice(0, 7))}
                             />
                         </FormControl>
                         <FormMessage />
@@ -250,7 +250,7 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
                 <FormItem className="text-left">
                     <FormLabel>Pipeline Status</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl><SelectTrigger><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
+                        <FormControl><SelectTrigger className="bg-white"><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
                         <SelectContent>
                             <SelectItem value="new">New Lead</SelectItem>
                             <SelectItem value="contacted">Researching</SelectItem>
@@ -285,12 +285,6 @@ export default function SupplierManagement() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [assigneeFilter, setAssigneeFilter] = useState('all');
 
-  const { forceRefresh: refreshStats } = useConfig<any>('supplierDiscoveryStats');
-  
-  const statsConfig = useMemo(() => {
-    return { counts: {} };
-  }, []);
-
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -311,21 +305,6 @@ export default function SupplierManagement() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  const handleRefreshTally = async () => {
-    setIsRefreshing(true);
-    try {
-        const token = await getClientSideAuthToken();
-        if (!token) return;
-        await performAdminAction(token, 'refreshSupplierCategoryCounts', {});
-        toast({ title: "Tally Updated" });
-        refreshStats();
-    } catch (e: any) {
-        toast({ variant: 'destructive', title: "Tally Failed", description: e.message });
-    } finally {
-        setIsRefreshing(false);
-    }
-  };
-
   const filteredRecords = useMemo(() => {
     const term = searchTerm.toLowerCase();
     return allRecords.filter(p => {
@@ -333,8 +312,7 @@ export default function SupplierManagement() {
             (p.companyName?.toLowerCase().includes(term)) ||
             (p.firstName?.toLowerCase().includes(term)) ||
             (p.lastName?.toLowerCase().includes(term)) ||
-            (p.email?.toLowerCase().includes(term)) ||
-            (p.industrialTags?.some((t:string) => t.toLowerCase().includes(term)));
+            (p.email?.toLowerCase().includes(term));
 
         const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
         const matchesAssignee = assigneeFilter === 'all' || p.assigneeId === assigneeFilter;
@@ -455,16 +433,6 @@ export default function SupplierManagement() {
         </CardHeader>
 
         <Card className="border-primary/10 shadow-sm overflow-hidden text-left">
-            <CardHeader className="bg-muted/30 border-b text-left">
-                 <div className="flex items-center justify-between text-left">
-                    <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
-                        <Database className="h-3 w-3" /> Category Tally
-                    </Label>
-                    <Button variant="ghost" size="sm" onClick={handleRefreshTally} className="h-6 text-[9px] uppercase font-black tracking-tighter" disabled={isRefreshing}>
-                        {isRefreshing ? <Loader2 className="mr-1 h-2.5 w-2.5 animate-spin"/> : <RefreshCcw className="mr-1 h-2.5 w-2.5"/>} Refresh Counts
-                    </Button>
-                </div>
-            </CardHeader>
             <CardContent className="pt-6 text-left text-foreground">
                 <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
                     <div className="flex-1 space-y-2 text-left text-foreground">

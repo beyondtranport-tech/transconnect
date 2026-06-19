@@ -23,7 +23,7 @@ import { PartnerTasksDialog } from './PartnerTasksDialog';
 import { CommunicationLogDialog } from './CommunicationLogDialog';
 import { EngageDialog } from './EngageDialog';
 import { PartnerOversightDialog } from './PartnerOversightDialog';
-import { downloadDataAsCSV } from '@/lib/utils';
+import { downloadDataAsCSV, formatDateSafe, cn } from '@/lib/utils';
 import { EnrichPartnerButton } from './EnrichPartnerButton';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -233,7 +233,7 @@ export default function PartnerManagement() {
                     <div className="flex-1 space-y-2 text-left text-foreground">
                         <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status</Label>
                         <Select value={statusFilter} onValueChange={setStatusFilter}>
-                            <SelectTrigger className="bg-white"><SelectValue /></SelectTrigger>
+                            <SelectTrigger className="bg-white text-left"><SelectValue placeholder="All Statuses" /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Statuses</SelectItem>
                                 <SelectItem value="active">Active</SelectItem>
@@ -244,7 +244,7 @@ export default function PartnerManagement() {
                     <div className="flex-1 space-y-2 text-left text-foreground">
                         <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Users className="h-3 w-3"/> Assignee</Label>
                         <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-                            <SelectTrigger className="bg-white"><SelectValue /></SelectTrigger>
+                            <SelectTrigger className="bg-white text-left"><SelectValue placeholder="All Staff" /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Staff</SelectItem>
                                 <SelectItem value="none">Unallocated</SelectItem>

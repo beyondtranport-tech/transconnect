@@ -174,9 +174,7 @@ function LogAndCopyDialog({ open, onOpenChange, partners, isLoadingPartners, act
 
 function MarketingPageContent({ audience }: MarketingPageProps) {
   const config = audienceConfig[audience] as any;
-  const { Offer, Emails, Management } = config;
-  const Pitch = config.Pitch;
-  const Discovery = config.Discovery;
+  const { Offer, Emails, Management, Pitch, Discovery } = config;
   
   const searchParams = useSearchParams();
   const router = useRouter();
