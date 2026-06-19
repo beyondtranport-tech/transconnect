@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -139,7 +138,7 @@ export async function POST(req: NextRequest) {
 
         const finalResults = results.slice(0, 100);
 
-        // 5. Log Search (Sanitize undefined values)
+        // 5. Log Search
         await companyRef.collection('searchLogs').add({
             userId: uid,
             type,

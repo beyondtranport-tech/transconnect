@@ -77,16 +77,16 @@ export async function POST(req: NextRequest) {
 
         switch (action) {
             case 'getMembers': {
-                const snap = await db.collection('companies').orderBy('createdAt', 'desc').limit(10000).get();
+                const snap = await db.collection('companies').orderBy('createdAt', 'desc').limit(1000).get();
                 const data = snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) }));
                 return NextResponse.json({ success: true, data });
             }
 
             case 'getPartnersByType': {
                 const { type } = payload;
-                let q = db.collection('partners').orderBy('updatedAt', 'desc').limit(10000);
+                let q = db.collection('partners').orderBy('updatedAt', 'desc').limit(1000);
                 if (type && type !== 'all') {
-                    q = db.collection('partners').where('type', '==', type).orderBy('updatedAt', 'desc').limit(10000);
+                    q = db.collection('partners').where('type', '==', type).orderBy('updatedAt', 'desc').limit(1000);
                 }
                 const snap = await q.get();
                 const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
