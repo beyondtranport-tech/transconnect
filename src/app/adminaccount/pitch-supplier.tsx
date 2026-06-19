@@ -3,7 +3,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, PlusCircle } from "lucide-react";
+import { ArrowRight, PlusCircle, MessageSquare } from "lucide-react";
 import Link from "next/link";
 import * as React from "react";
 
@@ -16,12 +16,15 @@ const supplierCategories = [
     "Brakes", 
     "Cleaning Products",
     "Diesel", 
+    "Differential",
+    "Engine Refurbish",
     "Filters", 
     "Injectors", 
     "Lights", 
     "Mechanical repairs",
     "Oils & Lubricants", 
     "Parts", 
+    "Prop Shafts",
     "Second Hand Trailers",
     "Second Hand Trucks",
     "Transport", 
@@ -37,14 +40,14 @@ const supplierCategories = [
 
 const PitchComponent = ({ category }: { category: string }) => {
     return (
-        <div className="text-center py-10">
-            <h2 className="text-2xl font-semibold">Engage with {category} Suppliers</h2>
-            <p className="mt-2 text-muted-foreground">
-                First, add a new supplier lead to the database. Then, use our email templates to start the conversation.
+        <div className="text-center py-10 space-y-4">
+            <h2 className="text-2xl font-bold font-headline">Engage with {category} Suppliers</h2>
+            <p className="max-w-xl mx-auto text-muted-foreground">
+                Pitch the value of a digital storefront and collective buying power to suppliers in the <strong>{category}</strong> sector.
             </p>
-            <div className="mt-6 flex justify-center gap-4">
+            <div className="pt-6 flex justify-center gap-4">
                  <Button asChild>
-                    <Link href={`/adminaccount?view=leads-database&action=add-member&newRole=Supplier&newNotes=Category:%20${category}`}>
+                    <Link href={`/adminaccount?view=marketing-suppliers&subview=management&action=add-member&newRole=Supplier&newNotes=Category:%20${category}`}>
                         <PlusCircle className="mr-2 h-4 w-4" />
                         Add New Supplier
                     </Link>
@@ -52,7 +55,7 @@ const PitchComponent = ({ category }: { category: string }) => {
                 <Button asChild variant="outline">
                     <Link href={`/adminaccount?view=marketing-suppliers&subview=emails&type=${encodeURIComponent(category)}`}>
                         <MessageSquare className="mr-2 h-4 w-4 text-primary" />
-                        View Email Sequence <ArrowRight className="ml-2 h-4 w-4" />
+                        View Pitch Emails <ArrowRight className="ml-2 h-4 w-4" />
                     </Link>
                 </Button>
             </div>
@@ -63,24 +66,26 @@ const PitchComponent = ({ category }: { category: string }) => {
 
 export default function SupplierPitch() {
     return (
-        <Tabs defaultValue="Accessories" className="w-full">
-            <CardHeader>
-                <CardTitle>Supplier Pitch Generator</CardTitle>
-                <CardDescription>Select a supplier category to view a tailored engagement pitch and add new leads.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <TabsList className="h-auto flex-wrap justify-start">
-                    {supplierCategories.map(category => (
-                        <TabsTrigger key={category} value={category}>{category}</TabsTrigger>
-                    ))}
-                </TabsList>
+        <Card className="shadow-none border-none">
+            <Tabs defaultValue="Accessories" className="w-full">
+                <CardHeader className="px-0 pt-0">
+                    <CardTitle>Supplier Pitch Library</CardTitle>
+                    <CardDescription>Select a category to access tailored pitch notes and engagement tools.</CardDescription>
+                </CardHeader>
+                <CardContent className="px-0">
+                    <TabsList className="h-auto flex-wrap justify-start bg-muted/30 mb-6">
+                        {supplierCategories.map(category => (
+                            <TabsTrigger key={category} value={category} className="text-xs">{category}</TabsTrigger>
+                        ))}
+                    </TabsList>
 
-                {supplierCategories.map(category => (
-                    <TabsContent key={category} value={category} className="mt-6">
-                        <PitchComponent category={category} />
-                    </TabsContent>
-                ))}
-            </CardContent>
-        </Tabs>
+                    {supplierCategories.map(category => (
+                        <TabsContent key={category} value={category}>
+                            <PitchComponent category={category} />
+                        </TabsContent>
+                    ))}
+                </CardContent>
+            </Tabs>
+        </Card>
     );
 }
