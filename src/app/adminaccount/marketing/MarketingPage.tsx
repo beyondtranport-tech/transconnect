@@ -174,7 +174,10 @@ function LogAndCopyDialog({ open, onOpenChange, partners, isLoadingPartners, act
 
 function MarketingPageContent({ audience }: MarketingPageProps) {
   const config = audienceConfig[audience] as any;
-  const { Offer, Emails, Management, Pitch, Discovery } = config;
+  const { Offer, Emails, Management } = config;
+  // Type-safe extraction of optional components
+  const Pitch = (config as any).Pitch;
+  const Discovery = (config as any).Discovery;
   
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -324,9 +327,9 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
 }
 
 export default function MarketingPage({ audience }: MarketingPageProps) {
-    return (
-        <Suspense fallback={<Loader2 className="animate-spin h-10 w-10 text-primary mx-auto my-20"/>}>
-            <MarketingPageContent audience={audience} />
-        </Suspense>
-    )
+  return (
+    <Suspense fallback={<Loader2 className="animate-spin h-10 w-10 text-primary mx-auto my-20"/>}>
+      <MarketingPageContent audience={audience} />
+    </Suspense>
+  );
 }

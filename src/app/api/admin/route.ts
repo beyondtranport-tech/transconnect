@@ -179,45 +179,6 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true });
             }
 
-            case 'findDuplicatePartners': {
-                const { type } = payload;
-                const snap = await db.collection('partners').where('type', '==', type).get();
-                const records = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                
-                const duplicates: any[][] = [];
-                const incomplete: any[] = [];
-                const seen = new Map<string, string[]>();
-
-                records.forEach((r: any) => {
-                    const name = (r.companyName || '').toLowerCase().trim();
-                    if (!name) {
-                        incomplete.push(r);
-                    } else {
-                        if (seen.has(name)) seen.get(name)!.push(r.id);
-                        else seen.set(name, [r.id]);
-                    }
-                });
-
-                seen.forEach((ids, name) => {
-                    if (ids.length > 1) {
-                        duplicates.push(records.filter(r => ids.includes(r.id)));
-                    }
-                });
-
-                return NextResponse.json({ success: true, duplicates, incomplete });
-            }
-
-            case 'refreshSupplierCategoryCounts': {
-                const snap = await db.collection('partners').where('type', '==', 'supplier').get();
-                const counts: Record<string, number> = {};
-                snap.docs.forEach(doc => {
-                    const cat = doc.data().industrial_category || 'Unclassified';
-                    counts[cat] = (counts[cat] || 0) + 1;
-                });
-                await db.collection('configuration').doc('supplierDiscoveryStats').set({ counts, updatedAt: FieldValue.serverTimestamp() });
-                return NextResponse.json({ success: true });
-            }
-
             default:
                 return NextResponse.json({ success: false, error: `Action "${action}" not implemented.` }, { status: 400 });
         }
