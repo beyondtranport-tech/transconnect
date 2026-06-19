@@ -82,6 +82,12 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data });
             }
 
+            case 'getLeads': {
+                const snap = await db.collection('leads').orderBy('updatedAt', 'desc').limit(1000).get();
+                const data = snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) }));
+                return NextResponse.json({ success: true, data });
+            }
+
             case 'getPartnersByType': {
                 const { type } = payload;
                 let q = db.collection('partners').orderBy('updatedAt', 'desc').limit(1000);
@@ -91,6 +97,19 @@ export async function POST(req: NextRequest) {
                 const snap = await q.get();
                 const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
                 return NextResponse.json({ success: true, data });
+            }
+
+            case 'savePartner': {
+                const { partner } = payload;
+                if (!partner) throw new Error("Partner data missing.");
+                const ref = partner.id ? db.collection('partners').doc(partner.id) : db.collection('partners').doc();
+                const sanitized = normalizeAndSanitize({
+                    ...partner,
+                    id: ref.id,
+                    updatedAt: FieldValue.serverTimestamp()
+                });
+                await ref.set(sanitized, { merge: true });
+                return NextResponse.json({ success: true });
             }
 
             case 'bulkSavePartners': {
@@ -129,7 +148,6 @@ export async function POST(req: NextRequest) {
                     delete (rawData as any).seq;
                     delete (rawData as any).sequence;
                     
-                    // Sanitize object to remove undefined before set
                     const data = normalizeAndSanitize(rawData);
                     batch.set(ref, data, { merge: true });
                 }
@@ -177,6 +195,16 @@ export async function POST(req: NextRequest) {
                 const { partnerId } = payload;
                 await db.collection('partners').doc(partnerId).delete();
                 return NextResponse.json({ success: true });
+            }
+
+            case 'deleteLeads': {
+                const { leadIds } = payload;
+                const batch = db.batch();
+                leadIds.forEach((id: string) => {
+                    batch.delete(db.collection('leads').doc(id));
+                });
+                await batch.commit();
+                return NextResponse.json({ success: true, count: leadIds.length });
             }
 
             default:
