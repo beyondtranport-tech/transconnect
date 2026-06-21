@@ -125,7 +125,7 @@ export default function IntelligenceHistory() {
                             Start exploring our forensic registries to find capacity, suppliers, and funding partners.
                         </p>
                         <Button asChild className="mt-8" size="lg">
-                            <Link href="/mall">Explore the Malls</Link>
+                            <Link href="/mall">Explore intelligence registries</Link>
                         </Button>
                     </CardContent>
                 </Card>
