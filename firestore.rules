@@ -46,14 +46,13 @@ service cloud.firestore {
       allow create: if isSignedIn();
       
       // Top-level document access
-      // Using 'get' and 'list' explicitly. Owner check uses resource.data to avoid circular get()
-      allow get: if isAdmin() || isCompanyMember(companyId) || (isSignedIn() && resource.data.ownerId == request.auth.uid);
-      allow list: if isAdmin(); // Members usually find their company via their user profile, not by listing /companies
-      allow update: if isAdmin() || (isSignedIn() && resource.data.ownerId == request.auth.uid);
+      // Owners and verified members can access the company doc
+      allow get, update: if isAdmin() || (isSignedIn() && (resource == null || resource.data.ownerId == request.auth.uid)) || isCompanyMember(companyId);
+      allow list: if isAdmin(); 
 
-      // Recursive match for all sub-collections (supportMessages, transactions, walletPayments, products, etc.)
-      match /{allSub=**} {
-        allow read, write: if isAdmin() || isCompanyMember(companyId);
+      // Explicit match for sub-collections to ensure 'list' and 'read' work correctly
+      match /{subCollection}/{allPaths=**} {
+        allow read, write: if isAdmin() || isCompanyMember(companyId) || (isSignedIn() && get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid);
       }
     }
 
