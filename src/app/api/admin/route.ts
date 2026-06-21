@@ -208,6 +208,128 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, count: leadIds.length });
             }
 
+            case 'getShops': {
+                const snap = await db.collectionGroup('shops').get();
+                const data = snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) }));
+                return NextResponse.json({ success: true, data });
+            }
+
+            case 'approveShop': {
+                const { shopId, companyId } = payload;
+                const internalShopRef = db.doc(`companies/${companyId}/shops/${shopId}`);
+                const publicShopRef = db.doc(`shops/${shopId}`);
+                
+                const shopSnap = await internalShopRef.get();
+                if (!shopSnap.exists) throw new Error("Internal shop record not found.");
+                
+                const shopData = shopSnap.data()!;
+                const { id, ...sanitizedData } = shopData;
+
+                // 1. Update internal status
+                await internalShopRef.update({ status: 'approved', updatedAt: FieldValue.serverTimestamp() });
+
+                // 2. Clone to root public registry
+                await publicShopRef.set({
+                    ...sanitizedData,
+                    id: shopId,
+                    companyId,
+                    status: 'approved',
+                    updatedAt: FieldValue.serverTimestamp()
+                }, { merge: true });
+
+                // 3. Sync all products to public sub-collection
+                const productsSnap = await internalShopRef.collection('products').get();
+                const publicProductsCol = publicShopRef.collection('products');
+                
+                const batch = db.batch();
+                
+                // Clear existing public products to prevent stale data
+                const existingPublic = await publicProductsCol.get();
+                existingPublic.forEach(d => batch.delete(d.ref));
+
+                // Copy current products
+                productsSnap.forEach(d => {
+                    const pData = d.data();
+                    batch.set(publicProductsCol.doc(d.id), { ...pData, id: d.id });
+                });
+
+                await batch.commit();
+
+                return NextResponse.json({ success: true, message: "Shop and products synchronized to public registry." });
+            }
+
+            case 'rejectShop': {
+                const { shopId, companyId } = payload;
+                const internalShopRef = db.doc(`companies/${companyId}/shops/${shopId}`);
+                const publicShopRef = db.doc(`shops/${shopId}`);
+
+                await internalShopRef.update({ status: 'rejected', updatedAt: FieldValue.serverTimestamp() });
+                await publicShopRef.delete(); // Remove from public view
+
+                return NextResponse.json({ success: true });
+            }
+
+            case 'getAuditLogs': {
+                const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(200).get();
+                const data = snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) }));
+                return NextResponse.json({ success: true, data });
+            }
+
+            case 'listAllUsers': {
+                const listUsersResult = await adminAuth.listUsers(1000);
+                const users = listUsersResult.users.map(u => ({
+                    uid: u.uid,
+                    email: u.email,
+                    displayName: u.displayName,
+                    disabled: u.disabled,
+                    creationTime: u.metadata.creationTime,
+                    lastSignInTime: u.metadata.lastSignInTime,
+                }));
+                return NextResponse.json({ success: true, data: users });
+            }
+
+            case 'approveWalletPayment': {
+                const { companyId, paymentId, amount, description, reconciliationId } = payload;
+                const companyRef = db.doc(`companies/${companyId}`);
+                const paymentRef = companyRef.collection('walletPayments').doc(paymentId);
+                
+                await db.runTransaction(async (transaction) => {
+                    transaction.update(companyRef, {
+                        walletBalance: FieldValue.increment(amount),
+                        availableBalance: FieldValue.increment(amount),
+                        updatedAt: FieldValue.serverTimestamp(),
+                    });
+                    transaction.update(paymentRef, { status: 'approved', updatedAt: FieldValue.serverTimestamp() });
+                    
+                    const txRef = companyRef.collection('transactions').doc();
+                    transaction.set(txRef, {
+                        transactionId: txRef.id,
+                        reconciliationId,
+                        type: 'credit',
+                        amount,
+                        date: FieldValue.serverTimestamp(),
+                        description,
+                        status: 'allocated',
+                    });
+                });
+                return NextResponse.json({ success: true });
+            }
+
+            case 'updateMemberStatus': {
+                const { companyId, status } = payload;
+                await db.collection('companies').doc(companyId).update({
+                    status,
+                    updatedAt: FieldValue.serverTimestamp()
+                });
+                return NextResponse.json({ success: true });
+            }
+
+            case 'deleteMember': {
+                const { companyId } = payload;
+                await db.collection('companies').doc(companyId).delete();
+                return NextResponse.json({ success: true });
+            }
+
             default:
                 return NextResponse.json({ success: false, error: `Action "${action}" not implemented.` }, { status: 400 });
         }
