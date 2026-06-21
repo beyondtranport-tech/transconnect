@@ -47,8 +47,7 @@ service cloud.firestore {
       allow create: if isSignedIn();
       
       // Top-level document access
-      // We avoid get() calls to parent docs within rules to prevent recursion.
-      // Owners check via resource data, members check via profile data.
+      // Break recursion by using simple UID check or member helper
       allow get, update: if isAdmin() || (isSignedIn() && (resource == null || resource.data.ownerId == request.auth.uid)) || isCompanyMember(companyId);
       allow list: if isAdmin(); 
 
