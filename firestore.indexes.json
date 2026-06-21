@@ -31,6 +31,13 @@
       "collectionId": "shops",
       "queryScope": "COLLECTION_GROUP",
       "fields": [
+        { "fieldPath": "updatedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionId": "shops",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
         { "fieldPath": "status", "order": "ASCENDING" },
         { "fieldPath": "updatedAt", "order": "DESCENDING" }
       ]

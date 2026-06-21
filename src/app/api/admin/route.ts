@@ -6,29 +6,6 @@ import { getAdminApp } from '@/lib/firebase-admin';
 
 export const dynamic = 'force-dynamic';
 
-function normalizeAndSanitize(obj: any): any {
-    if (obj === null || obj === undefined) return null;
-    if (typeof obj !== 'object') return obj;
-    if (Array.isArray(obj)) return obj.map(normalizeAndSanitize);
-    
-    const sanitized: any = {};
-    for (const key in obj) {
-        let val = obj[key];
-        if (val === undefined) continue;
-
-        let newKey = key;
-        if (key === 'company_name') newKey = 'companyName';
-        if (key === 'physical_address') newKey = 'address';
-        if (key === 'contact_person') newKey = 'contactPerson';
-        if (key === 'email_address') newKey = 'email';
-        if (key === 'telephone_number') newKey = 'phone';
-        if (key === 'registry_line') newKey = 'mobile';
-        
-        sanitized[newKey] = normalizeAndSanitize(val);
-    }
-    return sanitized;
-}
-
 function serializeTimestamps(docData: any): any {
     if (!docData) return docData;
     const newDocData: { [key: string]: any } = {};
@@ -69,22 +46,22 @@ export async function POST(req: NextRequest) {
 
         switch (action) {
             case 'getMembers': {
-                const snap = await db.collection('companies').orderBy('createdAt', 'desc').get();
+                const snap = await db.collection('companies').orderBy('createdAt', 'desc').limit(100).get();
                 const data = snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) }));
                 return NextResponse.json({ success: true, data });
             }
 
             case 'getLeads': {
-                const snap = await db.collection('leads').orderBy('updatedAt', 'desc').limit(1000).get();
+                const snap = await db.collection('leads').orderBy('updatedAt', 'desc').limit(100).get();
                 const data = snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) }));
                 return NextResponse.json({ success: true, data });
             }
 
             case 'getPartnersByType': {
                 const { type } = payload;
-                let q = db.collection('partners').orderBy('updatedAt', 'desc').limit(1000);
+                let q = db.collection('partners').orderBy('updatedAt', 'desc').limit(100);
                 if (type && type !== 'all') {
-                    q = db.collection('partners').where('type', '==', type).orderBy('updatedAt', 'desc').limit(1000);
+                    q = db.collection('partners').where('type', '==', type).orderBy('updatedAt', 'desc').limit(100);
                 }
                 const snap = await q.get();
                 const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
@@ -92,16 +69,20 @@ export async function POST(req: NextRequest) {
             }
 
             case 'getShops': {
+                // Fetch all shops but filter for primary sources (those nested under companies)
+                // This resolves the "multiple records" issue by excluding public clones from the management list
                 const snap = await db.collectionGroup('shops').orderBy('updatedAt', 'desc').get();
-                const data = snap.docs.map(d => {
-                    const pathSegments = d.ref.path.split('/');
-                    const companyId = pathSegments[1]; 
-                    return { 
-                        id: d.id, 
-                        companyId,
-                        ...serializeTimestamps(d.data()) 
-                    };
-                });
+                const data = snap.docs
+                    .filter(d => d.ref.path.includes('companies/'))
+                    .map(d => {
+                        const pathSegments = d.ref.path.split('/');
+                        const companyId = pathSegments[1]; 
+                        return { 
+                            id: d.id, 
+                            companyId,
+                            ...serializeTimestamps(d.data()) 
+                        };
+                    });
                 return NextResponse.json({ success: true, data });
             }
 
@@ -113,7 +94,7 @@ export async function POST(req: NextRequest) {
                 const publicShopRef = db.doc(`shops/${shopId}`);
                 
                 const shopSnap = await internalShopRef.get();
-                if (!shopSnap.exists) throw new Error(`Shop record not found.`);
+                if (!shopSnap.exists) throw new Error(`Source shop record not found at: ${internalShopRef.path}`);
                 
                 const shopData = shopSnap.data()!;
                 const { id, ...sanitizedData } = shopData;
@@ -128,6 +109,7 @@ export async function POST(req: NextRequest) {
                     updatedAt: FieldValue.serverTimestamp()
                 }, { merge: true });
 
+                // Sync products subcollection
                 const productsSnap = await internalShopRef.collection('products').get();
                 const publicProductsCol = publicShopRef.collection('products');
                 
@@ -144,13 +126,13 @@ export async function POST(req: NextRequest) {
             }
 
             case 'getContributions': {
-                const snap = await db.collection('contributions').orderBy('createdAt', 'desc').limit(200).get();
+                const snap = await db.collection('contributions').orderBy('createdAt', 'desc').limit(100).get();
                 const data = snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) }));
                 return NextResponse.json({ success: true, data });
             }
 
             case 'getAuditLogs': {
-                const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(200).get();
+                const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(100).get();
                 const data = snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) }));
                 return NextResponse.json({ success: true, data });
             }
@@ -159,6 +141,24 @@ export async function POST(req: NextRequest) {
                 const snap = await db.collection('platformStaff').get();
                 const data = snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) }));
                 return NextResponse.json({ success: true, data });
+            }
+
+            case 'getPendingPayouts': {
+                // New Strategy: Avoid collection group query to bypass indexing issues.
+                const companiesSnap = await db.collection('companies').get();
+                const promises = companiesSnap.docs.map(companyDoc => {
+                    return db.collection(`companies/${companyDoc.id}/payoutRequests`)
+                             .where('status', '==', 'pending')
+                             .get();
+                });
+                const results = await Promise.all(promises);
+                const allPayouts: any[] = [];
+                results.forEach(querySnapshot => {
+                    querySnapshot.docs.forEach(doc => {
+                        allPayouts.push({ id: doc.id, ...serializeTimestamps(doc.data()) });
+                    });
+                });
+                return NextResponse.json({ success: true, data: allPayouts });
             }
 
             default:
