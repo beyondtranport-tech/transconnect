@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
 import {
@@ -20,13 +20,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Loader2, MoreVertical, CheckCircle, Eye, XCircle } from 'lucide-react';
-import { ShopPreview } from '@/components/shop-preview';
-import { collection, query } from 'firebase/firestore';
-import { useCollection, useFirestore } from '@/firebase';
-import { useMemoFirebase } from '@/hooks/use-memo-firebase';
+import Link from 'next/link';
 
 async function fetchFromAdminAPI(token: string, action: string, payload?: any) {
     const response = await fetch('/api/admin', {
@@ -43,47 +39,6 @@ async function fetchFromAdminAPI(token: string, action: string, payload?: any) {
         throw new Error(result.error || `API Error for action: ${action}`);
     }
     return result;
-}
-
-function ShopPreviewDialog({ shop }: { shop: any }) {
-    const [products, setProducts] = useState<any[]>([]);
-    const firestore = useFirestore();
-
-    const productsQuery = useMemoFirebase(() => {
-        if (!firestore || !shop?.id) return null;
-        return query(collection(firestore, `companies/${shop.companyId}/shops/${shop.id}/products`));
-    }, [firestore, shop]);
-
-    const { data: fetchedProducts, isLoading } = useCollection(productsQuery);
-
-    useEffect(() => {
-        if(fetchedProducts) {
-            setProducts(fetchedProducts);
-        }
-    }, [fetchedProducts]);
-    
-    return (
-        <Dialog>
-            <DialogTrigger asChild>
-                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                    <Eye className="mr-2 h-4 w-4" /> Preview
-                </DropdownMenuItem>
-            </DialogTrigger>
-            <DialogContent className="max-w-6xl h-[90vh] p-0 border-0">
-                 <DialogHeader className="sr-only">
-                    <DialogTitle>Shop Preview: {shop.shopName}</DialogTitle>
-                    <DialogDescription>A preview of the shop as it will appear to customers.</DialogDescription>
-                </DialogHeader>
-                <div className="w-full h-full overflow-y-auto">
-                     {isLoading ? (
-                        <div className="flex justify-center items-center h-full"><Loader2 className="animate-spin h-10 w-10" /></div>
-                     ) : (
-                        <ShopPreview shop={shop} products={products} />
-                     )}
-                </div>
-            </DialogContent>
-        </Dialog>
-    )
 }
 
 export function ShopActionMenu({ shop, onUpdate }: { shop: any, onUpdate: () => void }) {
@@ -123,6 +78,7 @@ export function ShopActionMenu({ shop, onUpdate }: { shop: any, onUpdate: () => 
         } finally {
             setIsProcessing(false);
             setIsAlertOpen(false);
+            setActionToConfirm(null);
         }
     };
     
@@ -135,12 +91,16 @@ export function ShopActionMenu({ shop, onUpdate }: { shop: any, onUpdate: () => 
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                    <ShopPreviewDialog shop={shop} />
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => setActionToConfirm('approve')}>
-                        <CheckCircle className="mr-2 h-4 w-4" /> Approve / Sync
+                    <DropdownMenuItem asChild>
+                        <Link href={`/shops/${shop.id}`} target="_blank">
+                             <Eye className="mr-2 h-4 w-4" /> View Public Profile
+                        </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem className="text-destructive" onClick={() => setActionToConfirm('reject')}>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setActionToConfirm('approve'); setIsAlertOpen(true); }}>
+                        <CheckCircle className="mr-2 h-4 w-4 text-green-600" /> Approve / Sync
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="text-destructive" onSelect={(e) => { e.preventDefault(); setActionToConfirm('reject'); setIsAlertOpen(true); }}>
                         <XCircle className="mr-2 h-4 w-4" /> Reject
                     </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -153,7 +113,7 @@ export function ShopActionMenu({ shop, onUpdate }: { shop: any, onUpdate: () => 
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogCancel onClick={() => setActionToConfirm(null)}>Cancel</AlertDialogCancel>
                     <AlertDialogAction onClick={handleAction} className={buttonVariants({ variant: actionToConfirm === 'reject' ? 'destructive' : 'default' })}>
                         Yes, Continue
                     </AlertDialogAction>

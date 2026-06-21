@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -6,9 +5,6 @@ import { getAdminApp } from '@/lib/firebase-admin';
 
 export const dynamic = 'force-dynamic';
 
-/**
- * Utility to recursively serialize Firestore Timestamps to ISO strings.
- */
 function serializeTimestamps(docData: any): any {
     if (!docData) return docData;
     if (docData instanceof Timestamp) {
@@ -50,26 +46,21 @@ export async function POST(req: NextRequest) {
         switch (action) {
             case 'getShops': {
                 const snap = await db.collectionGroup('shops').get();
-                
-                // Robust Path Filtering: 
-                // We want only primary records: companies/{companyId}/shops/{shopId} (length 4)
-                // We ignore public clones: shops/{shopId} (length 2)
                 const data = snap.docs
                     .filter(doc => {
                         const segments = doc.ref.path.split('/');
-                        return segments.length === 4 && segments[0] === 'companies' && segments[2] === 'shops';
+                        // Only return primary records: companies/{companyId}/shops/{shopId}
+                        return segments.length === 4 && segments[0] === 'companies';
                     })
                     .map(doc => {
                         const segments = doc.ref.path.split('/');
-                        const companyId = segments[1];
                         return { 
                             id: doc.id, 
-                            companyId,
+                            companyId: segments[1],
                             ...serializeTimestamps(doc.data()) 
                         };
                     });
                 
-                // In-memory sort to bypass potential index requirements during build
                 data.sort((a, b) => {
                     const timeA = new Date(a.updatedAt || a.createdAt || 0).getTime();
                     const timeB = new Date(b.updatedAt || b.createdAt || 0).getTime();
@@ -87,29 +78,24 @@ export async function POST(req: NextRequest) {
                 const publicShopRef = db.doc(`shops/${shopId}`);
                 
                 const shopSnap = await internalShopRef.get();
-                if (!shopSnap.exists) throw new Error(`Source profile not found at ${internalShopRef.path}`);
+                if (!shopSnap.exists) throw new Error(`Source profile not found.`);
                 
                 const shopData = shopSnap.data()!;
                 const batch = db.batch();
 
-                // 1. Mark as approved internally
                 batch.update(internalShopRef, { 
                     status: 'approved', 
-                    lastSyncAt: FieldValue.serverTimestamp(),
                     updatedAt: FieldValue.serverTimestamp() 
                 });
                 
-                // 2. Clear and Clone to Public Root (Resolves 404)
                 batch.set(publicShopRef, {
                     ...shopData,
                     id: shopId,
                     companyId,
                     status: 'approved',
-                    synchronizedAt: FieldValue.serverTimestamp(),
                     updatedAt: FieldValue.serverTimestamp()
                 }, { merge: true });
 
-                // 3. Resync Product Sub-collections
                 const productsSnap = await internalShopRef.collection('products').get();
                 const publicProductsCol = publicShopRef.collection('products');
                 
@@ -120,7 +106,7 @@ export async function POST(req: NextRequest) {
                     batch.set(publicProductsCol.doc(d.id), { 
                         ...d.data(), 
                         id: d.id,
-                        synchronizedAt: FieldValue.serverTimestamp()
+                        updatedAt: FieldValue.serverTimestamp()
                     });
                 });
 
@@ -151,19 +137,15 @@ export async function POST(req: NextRequest) {
                 const agreements = await Promise.all(snap.docs.map(async d => {
                     const data = d.data();
                     const pathSegments = d.ref.path.split('/');
-                    const cIdx = pathSegments.indexOf('companies');
-                    const sIdx = pathSegments.indexOf('shops');
-                    const cid = pathSegments[cIdx + 1];
-                    const sid = pathSegments[sIdx + 1];
+                    const cid = pathSegments[pathSegments.indexOf('companies') + 1];
+                    const sid = pathSegments[pathSegments.indexOf('shops') + 1];
 
                     const shopSnap = await db.doc(`companies/${cid}/shops/${sid}`).get();
-                    const shopName = shopSnap.exists ? shopSnap.data()?.shopName : 'Unknown Shop';
-
                     return {
                         id: d.id,
                         companyId: cid,
                         shopId: sid,
-                        shopName,
+                        shopName: shopSnap.exists ? shopSnap.data()?.shopName : 'Unknown Shop',
                         ...serializeTimestamps(data)
                     };
                 }));
