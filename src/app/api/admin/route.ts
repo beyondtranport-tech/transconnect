@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -45,11 +46,13 @@ export async function POST(req: NextRequest) {
 
         switch (action) {
             case 'getShops': {
+                // Remove orderBy from query to avoid FAILED_PRECONDITION during index build
                 const snap = await db.collectionGroup('shops').get();
                 const data = snap.docs
                     .filter(doc => {
                         const segments = doc.ref.path.split('/');
                         // Only return primary records: companies/{companyId}/shops/{shopId}
+                        // These have exactly 4 segments and start with 'companies'
                         return segments.length === 4 && segments[0] === 'companies';
                     })
                     .map(doc => {
@@ -61,6 +64,7 @@ export async function POST(req: NextRequest) {
                         };
                     });
                 
+                // Sort in memory to bypass indexing requirements for the admin view
                 data.sort((a, b) => {
                     const timeA = new Date(a.updatedAt || a.createdAt || 0).getTime();
                     const timeB = new Date(b.updatedAt || b.createdAt || 0).getTime();

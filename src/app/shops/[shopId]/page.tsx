@@ -4,7 +4,7 @@
 import { useDoc, useCollection, useFirestore } from '@/firebase';
 import { useMemoFirebase } from '@/hooks/use-memo-firebase';
 import { collection, doc, query } from 'firebase/firestore';
-import { Loader2, Store, ArrowLeft } from 'lucide-react';
+import { Loader2, Store } from 'lucide-react';
 import { notFound, useParams } from 'next/navigation';
 import { ShopPreview } from '@/components/shop-preview';
 import React, { useEffect, useState } from 'react';
