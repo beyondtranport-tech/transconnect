@@ -18,18 +18,12 @@ service cloud.firestore {
       );
     }
 
-    // Direct check: Does the company document exist and does the user own it?
-    function isCompanyOwner(cid) {
-      return isSignedIn() && get(/databases/$(database)/documents/companies/$(cid)).data.ownerId == request.auth.uid;
-    }
-
-    // Indirect check: Does the user's profile document link them to this company?
-    function isCompanyStaff(cid) {
-      return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == cid;
-    }
-
+    // Helper for sub-collection access. 
+    // Breaks recursion by using the user profile first and being called from sub-paths.
     function isMember(cid) {
-      return isAdmin() || isCompanyOwner(cid) || isCompanyStaff(cid);
+      return isAdmin() || 
+             (isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == cid) ||
+             (isSignedIn() && get(/databases/$(database)/documents/companies/$(cid)).data.ownerId == request.auth.uid);
     }
 
     // --- RULES ---
@@ -41,7 +35,10 @@ service cloud.firestore {
 
     // User Profiles
     match /users/{userId} {
-      allow read, update: if isSignedIn() && request.auth.uid == userId;
+      // Allow user to read their own profile, and allow rules engine to 'get' any profile via UID for membership checks.
+      allow get: if isSignedIn(); 
+      allow list: if isAdmin();
+      allow update: if isSignedIn() && request.auth.uid == userId;
       allow create: if isSignedIn(); 
       
       match /{allSub=**} {
@@ -51,14 +48,20 @@ service cloud.firestore {
 
     // Company Data & Sub-collections
     match /companies/{companyId} {
-      // Allow read/write for owners and admins
-      allow read, write: if isAdmin() || (isSignedIn() && (resource == null || resource.data.ownerId == request.auth.uid));
-      // Allow members (staff/owners) to get the company doc
-      allow get: if isMember(companyId);
+      // Direct document access - Break recursion by avoiding isMember() call for the company doc itself.
+      allow get: if isAdmin() || (isSignedIn() && (
+        resource.data.ownerId == request.auth.uid ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId
+      ));
+      
+      allow list: if isAdmin();
+      
+      allow create: if isSignedIn();
+      allow update, delete: if isAdmin() || (isSignedIn() && resource.data.ownerId == request.auth.uid);
       
       // Explicitly handle all sub-collections (Support Chat, Wallet, etc.)
       match /{allSub=**} {
-        allow read, write: if isAdmin() || isMember(companyId);
+        allow read, write: if isMember(companyId);
       }
     }
 
