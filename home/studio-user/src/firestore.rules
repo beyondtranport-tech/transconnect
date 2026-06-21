@@ -18,10 +18,18 @@ service cloud.firestore {
       );
     }
 
-    // Direct membership check via user document
+    // Direct check: Does the company document exist and does the user own it?
+    function isCompanyOwner(cid) {
+      return isSignedIn() && get(/databases/$(database)/documents/companies/$(cid)).data.ownerId == request.auth.uid;
+    }
+
+    // Indirect check: Does the user's profile document link them to this company?
+    function isCompanyStaff(cid) {
+      return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == cid;
+    }
+
     function isMember(cid) {
-      return isSignedIn() && 
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('companyId', null) == cid;
+      return isAdmin() || isCompanyOwner(cid) || isCompanyStaff(cid);
     }
 
     // --- RULES ---
@@ -45,7 +53,7 @@ service cloud.firestore {
     match /companies/{companyId} {
       // Allow read/write for owners and admins
       allow read, write: if isAdmin() || (isSignedIn() && (resource == null || resource.data.ownerId == request.auth.uid));
-      // Allow members to get the company doc
+      // Allow members (staff/owners) to get the company doc
       allow get: if isMember(companyId);
       
       // Explicitly handle all sub-collections (Support Chat, Wallet, etc.)
