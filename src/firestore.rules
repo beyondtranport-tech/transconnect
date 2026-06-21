@@ -1,6 +1,6 @@
 rules_version = '2';
 
-// Security Rules Version: 1.0.7 - Member Subcollection Access Fix
+// Security Rules Version: 1.1.0 - Unified Sub-collection Access Fix
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -16,9 +16,8 @@ service cloud.firestore {
 
     // Helper to check if the user belongs to the company
     function isCompanyMember(companyId) {
-      return request.auth != null && (
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId
-      );
+      let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
+      return request.auth != null && userDoc != null && userDoc.data.companyId == companyId;
     }
 
     // --- 1. GLOBAL ADMIN BYPASS ---
@@ -29,14 +28,12 @@ service cloud.firestore {
     // --- 2. PARTNER & LEAD CRM ---
     match /partners/{partnerId} {
       allow read, write: if isAdmin();
-      match /communications/{docId} { allow read, write: if isAdmin(); }
-      match /tasks/{docId} { allow read, write: if isAdmin(); }
+      match /{allSub=**} { allow read, write: if isAdmin(); }
     }
 
     match /leads/{leadId} {
       allow read, write: if isAdmin();
-      match /communications/{docId} { allow read, write: if isAdmin(); }
-      match /tasks/{docId} { allow read, write: if isAdmin(); }
+      match /{allSub=**} { allow read, write: if isAdmin(); }
     }
 
     // --- 3. COMPANY & MEMBER DATA ---
@@ -44,30 +41,14 @@ service cloud.firestore {
       allow create: if request.auth != null;
       allow get, update: if isAdmin() || isCompanyMember(companyId);
 
-      // Explicitly allow members to manage their own subcollections
-      // This fix ensures 'list' operations on these paths are permitted for the owner.
-      match /supportMessages/{docId} { allow read, write: if isAdmin() || isCompanyMember(companyId); }
-      match /walletPayments/{docId} { allow read, write: if isAdmin() || isCompanyMember(companyId); }
-      match /transactions/{docId} { allow read, write: if isAdmin() || isCompanyMember(companyId); }
-      match /enquiries/{docId} { allow read, write: if isAdmin() || isCompanyMember(companyId); }
-      match /quotes/{docId} { allow read, write: if isAdmin() || isCompanyMember(companyId); }
-      match /staff/{docId} { allow read, write: if isAdmin() || isCompanyMember(companyId); }
-      match /payoutRequests/{docId} { allow read, write: if isAdmin() || isCompanyMember(companyId); }
-      match /searchLogs/{docId} { allow read, write: if isAdmin() || isCompanyMember(companyId); }
-      match /vehicleListings/{docId} { allow read, write: if isAdmin() || isCompanyMember(companyId); }
-      
-      match /shops/{shopId} { 
-        allow read, write: if isAdmin() || isCompanyMember(companyId); 
-        match /products/{prodId} { allow read, write: if isAdmin() || isCompanyMember(companyId); }
-        match /agreements/{agId} { allow read, write: if isAdmin() || isCompanyMember(companyId); }
-      }
-      match /loadBoards/{boardId} {
-        allow read, write: if isAdmin() || isCompanyMember(companyId);
-        match /loads/{loadId} { allow read, write: if isAdmin() || isCompanyMember(companyId); }
-      }
-      
-      // Fallback for any other subcollections
+      // BROAD SUB-COLLECTION ACCESS
+      // This ensures 'list' and document-level operations work for all sub-collections
       match /{subcollection}/{docId=**} {
+        allow read, write: if isAdmin() || isCompanyMember(companyId);
+      }
+      
+      // Explicit top-level collection match to satisfy strict 'list' requirements
+      match /{subcollection} {
         allow read, write: if isAdmin() || isCompanyMember(companyId);
       }
     }
@@ -77,7 +58,7 @@ service cloud.firestore {
       allow read, update: if request.auth != null && request.auth.uid == userId;
       allow create: if request.auth != null; 
       
-      match /tasks/{taskId} {
+      match /{allSub=**} {
         allow read, write: if request.auth != null && request.auth.uid == userId;
       }
     }

@@ -1,9 +1,10 @@
 rules_version = '2';
 
+// Security Rules Version: 1.1.0 - Unified Sub-collection Access Fix
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper function for admin check - prioritized for UID and Email
+    // Helper function for admin check
     function isAdmin() {
       return request.auth != null && (
         request.auth.uid == '0Y3IhZffEPNlMAIhURPnzRgNokL2' || 
@@ -13,51 +14,56 @@ service cloud.firestore {
       );
     }
 
-    // --- 1. EXPLICIT CRM OVERRIDES (TOP PRIORITY) ---
-    // These root collections are used for the Oversight/Timeline feature
-    match /platformCommunications {
-      allow read, write: if isAdmin();
-    }
-    match /platformCommunications/{docId} {
-      allow read, write: if isAdmin();
-    }
-    
-    match /platformTasks {
-      allow read, write: if isAdmin();
-    }
-    match /platformTasks/{docId} {
-      allow read, write: if isAdmin();
+    // Helper to check if the user belongs to the company
+    function isCompanyMember(companyId) {
+      let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
+      return request.auth != null && userDoc != null && userDoc.data.companyId == companyId;
     }
 
-    // --- 2. ABSOLUTE ADMIN BYPASS ---
+    // --- 1. GLOBAL ADMIN BYPASS ---
     match /{allPaths=**} {
       allow read, write: if isAdmin();
     }
 
-    // --- 3. USER-SPECIFIC RULES (FOR NON-ADMINS) ---
+    // --- 2. PARTNER & LEAD CRM ---
+    match /partners/{partnerId} {
+      allow read, write: if isAdmin();
+      match /{allSub=**} { allow read, write: if isAdmin(); }
+    }
+
+    match /leads/{leadId} {
+      allow read, write: if isAdmin();
+      match /{allSub=**} { allow read, write: if isAdmin(); }
+    }
+
+    // --- 3. COMPANY & MEMBER DATA ---
+    match /companies/{companyId} {
+      allow create: if request.auth != null;
+      allow get, update: if isAdmin() || isCompanyMember(companyId);
+
+      // BROAD SUB-COLLECTION ACCESS
+      // This ensures 'list' and document-level operations work for all sub-collections
+      match /{subcollection}/{docId=**} {
+        allow read, write: if isAdmin() || isCompanyMember(companyId);
+      }
+      
+      // Explicit top-level collection match to satisfy strict 'list' requirements
+      match /{subcollection} {
+        allow read, write: if isAdmin() || isCompanyMember(companyId);
+      }
+    }
+
+    // --- 4. USER-SPECIFIC RULES ---
     match /users/{userId} {
       allow read, update: if request.auth != null && request.auth.uid == userId;
       allow create: if request.auth != null; 
       
-      match /tasks/{taskId} {
+      match /{allSub=**} {
         allow read, write: if request.auth != null && request.auth.uid == userId;
       }
     }
     
-    match /companies/{companyId} {
-      allow create: if request.auth != null; 
-      allow get, update: if request.auth != null && (
-         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId
-      );
-
-      match /{subcollection}/{docId=**} {
-        allow read, write: if request.auth != null && (
-           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId
-        );
-      }
-    }
-    
-    // --- 4. PUBLIC & GLOBAL COLLECTIONS ---
+    // --- 5. PUBLIC & GLOBAL COLLECTIONS ---
     match /shops/{shopId}/{path=**} {
       allow get, list: if true;
     }
