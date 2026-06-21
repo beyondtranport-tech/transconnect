@@ -1,6 +1,6 @@
 rules_version = '2';
 
-// Security Rules Version: 1.1.5 - Fixed recursion in isCompanyMember to resolve sub-collection permission errors
+// Security Rules Version: 1.2.0 - Resolved recursion in membership checks and explicitly authorized sub-collections
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -14,12 +14,16 @@ service cloud.firestore {
       );
     }
 
-    // Helper to check if the user belongs to the company (Used for sub-collections)
-    function isCompanyMember(companyId) {
-      return request.auth != null && (
-        get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid ||
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId
-      );
+    // Helper to check if the user is the explicit owner of the company
+    function isCompanyOwner(cid) {
+      return request.auth != null && 
+        get(/databases/$(database)/documents/companies/$(cid)).data.ownerId == request.auth.uid;
+    }
+    
+    // Helper to check if the user's profile links them to this company
+    function isCompanyStaff(cid) {
+      return request.auth != null && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == cid;
     }
 
     // --- 1. GLOBAL ADMIN BYPASS ---
@@ -27,7 +31,53 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
 
-    // --- 2. PARTNER & LEAD CRM ---
+    // --- 2. USER PROFILES ---
+    match /users/{userId} {
+      allow read, update: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null; 
+      
+      match /{allSub=**} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+
+    // --- 3. COMPANY & MEMBER DATA ---
+    match /companies/{companyId} {
+      allow create: if request.auth != null;
+      
+      // Use resource.data for the parent doc to avoid recursion with get() calls
+      allow get, update: if isAdmin() || (
+        request.auth != null && (
+          resource.data.ownerId == request.auth.uid ||
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId
+        )
+      );
+
+      // Explicitly authorize critical sub-collections for 'list' and 'read' operations
+      match /supportMessages/{msgId} { allow read, write: if isCompanyOwner(companyId) || isCompanyStaff(companyId); }
+      match /transactions/{txId} { allow read, write: if isCompanyOwner(companyId) || isCompanyStaff(companyId); }
+      match /walletPayments/{payId} { allow read, write: if isCompanyOwner(companyId) || isCompanyStaff(companyId); }
+      match /enquiries/{enqId} { allow read, write: if isCompanyOwner(companyId) || isCompanyStaff(companyId); }
+      match /quotes/{quoId} { allow read, write: if isCompanyOwner(companyId) || isCompanyStaff(companyId); }
+      match /staff/{staffId} { allow read, write: if isCompanyOwner(companyId) || isCompanyStaff(companyId); }
+      
+      match /shops/{shopId} { 
+        allow read, write: if isCompanyOwner(companyId) || isCompanyStaff(companyId); 
+        match /{all=**} { allow read, write: if isCompanyOwner(companyId) || isCompanyStaff(companyId); }
+      }
+      
+      match /loadBoards/{boardId} {
+        allow read, write: if isCompanyOwner(companyId) || isCompanyStaff(companyId);
+        match /{all=**} { allow read, write: if isCompanyOwner(companyId) || isCompanyStaff(companyId); }
+      }
+
+      // Generic catch-all for any other nested paths
+      match /{allSub=**} {
+        allow read, write: if isAdmin() || isCompanyOwner(companyId) || isCompanyStaff(companyId);
+      }
+    }
+
+    // --- 4. PARTNER & LEAD CRM (Admin Only) ---
     match /partners/{partnerId} {
       allow read, write: if isAdmin();
       match /{allSub=**} { allow read, write: if isAdmin(); }
@@ -36,34 +86,6 @@ service cloud.firestore {
     match /leads/{leadId} {
       allow read, write: if isAdmin();
       match /{allSub=**} { allow read, write: if isAdmin(); }
-    }
-
-    // --- 3. COMPANY & MEMBER DATA ---
-    match /companies/{companyId} {
-      allow create: if request.auth != null;
-      
-      // Use resource.data for the parent doc to avoid recursion with the get() in isCompanyMember
-      allow get, update: if isAdmin() || (
-        request.auth != null && (
-          resource.data.ownerId == request.auth.uid ||
-          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId
-        )
-      );
-
-      // Sub-collections use the recursive wildcard and helper
-      match /{allSub=**} {
-        allow read, write: if isAdmin() || isCompanyMember(companyId);
-      }
-    }
-
-    // --- 4. USER-SPECIFIC RULES ---
-    match /users/{userId} {
-      allow read, update: if request.auth != null && request.auth.uid == userId;
-      allow create: if request.auth != null; 
-      
-      match /{allSub=**} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
-      }
     }
     
     // --- 5. PUBLIC & GLOBAL COLLECTIONS ---
