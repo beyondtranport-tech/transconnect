@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Suspense, useState, useEffect, useMemo } from 'react';
@@ -183,33 +182,33 @@ function CheckoutComponent() {
 
   return (
     <div className="container mx-auto px-4 py-16 flex justify-center text-left">
-        <Card className="w-full max-w-xl shadow-2xl border-none overflow-hidden">
-            <CardHeader className="bg-slate-900 text-white p-8">
-                <div className="flex items-center gap-4">
+        <Card className="w-full max-w-xl shadow-2xl border-none overflow-hidden text-left">
+            <CardHeader className="bg-slate-900 text-white p-8 text-left">
+                <div className="flex items-center gap-4 text-left">
                     <div className="bg-primary/20 p-3 rounded-xl"><PlanIcon className="h-8 w-8 text-primary" /></div>
-                    <div className="text-left">
-                        <CardTitle className="text-2xl font-black font-headline">Finalize Activation</CardTitle>
-                        <CardDescription className="text-slate-400">Review your plan details and confirm payment.</CardDescription>
+                    <div className="text-left text-foreground">
+                        <CardTitle className="text-2xl font-black font-headline text-white text-left">Finalize Activation</CardTitle>
+                        <CardDescription className="text-slate-400 text-left">Review your plan details and confirm payment.</CardDescription>
                     </div>
                 </div>
             </CardHeader>
             
             <CardContent className="p-8 space-y-8 text-left">
-                <div className="space-y-4">
-                    <div className="flex justify-between items-baseline text-left">
-                        <h3 className="text-xl font-bold">{planDisplay.name}</h3>
-                        <p className="text-2xl font-black text-primary">{formatCurrency(planDisplay.price)}</p>
+                <div className="space-y-4 text-left">
+                    <div className="flex justify-between items-baseline text-left text-foreground">
+                        <h3 className="text-xl font-bold text-left">{planDisplay.name}</h3>
+                        <p className="text-2xl font-black text-primary text-left">{formatCurrency(planDisplay.price)}</p>
                     </div>
-                    <p className="text-sm text-muted-foreground leading-relaxed">{planDisplay.description}</p>
+                    <p className="text-sm text-muted-foreground leading-relaxed text-left">{planDisplay.description}</p>
                     <Badge variant="secondary" className="capitalize">{cycle} billing cycle</Badge>
                 </div>
 
                 <Separator />
 
-                <div className="space-y-4 text-left">
+                <div className="space-y-4 text-left text-foreground">
                     <div className="flex justify-between items-center text-left">
-                        <span className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Available Wallet Balance</span>
-                        <span className="font-mono font-bold">{formatCurrency(companyData?.availableBalance)}</span>
+                        <span className="text-sm font-bold uppercase tracking-widest text-muted-foreground text-left">Available Wallet Balance</span>
+                        <span className="font-mono font-bold text-left">{formatCurrency(companyData?.availableBalance)}</span>
                     </div>
                     
                     {!hasSufficientFunds && (
@@ -223,18 +222,18 @@ function CheckoutComponent() {
                     )}
                 </div>
 
-                <div className="bg-slate-50 p-6 rounded-2xl border border-dashed text-left">
-                    <h4 className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-2">
+                <div className="bg-slate-50 p-6 rounded-2xl border border-dashed text-left text-foreground">
+                    <h4 className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-2 text-left">
                         <ShieldCheck className="h-4 w-4 text-primary"/>
                         Ecosystem Agreement
                     </h4>
-                    <p className="text-[11px] text-muted-foreground leading-relaxed">
+                    <p className="text-[11px] text-muted-foreground leading-relaxed text-left">
                         By clicking "Confirm & Activate", you authorize Logistics Flow to debit {formatCurrency(planDisplay.price)} from your wallet. Subscriptions will renew automatically on the next billing date unless cancelled.
                     </p>
                 </div>
             </CardContent>
 
-            <CardFooter className="p-8 bg-muted/20 border-t flex flex-col gap-4">
+            <CardFooter className="p-8 bg-muted/20 border-t flex flex-col gap-4 text-left">
                 <Button 
                     onClick={handlePurchase} 
                     disabled={isProcessing || !hasSufficientFunds} 
