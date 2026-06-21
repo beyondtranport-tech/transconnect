@@ -4,10 +4,12 @@
 import { useDoc, useCollection, useFirestore } from '@/firebase';
 import { useMemoFirebase } from '@/hooks/use-memo-firebase';
 import { collection, doc, query } from 'firebase/firestore';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Store } from 'lucide-react';
 import { notFound, useParams } from 'next/navigation';
 import { ShopPreview } from '@/components/shop-preview';
 import React, { useEffect, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 export default function PublicShopPage() {
     const params = useParams();
@@ -38,13 +40,31 @@ export default function PublicShopPage() {
          return (
             <div className="flex flex-col justify-center items-center h-screen gap-4 bg-background">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                <p className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Loading Profile...</p>
+                <p className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Initializing Commercial Profile...</p>
             </div>
         );
     }
     
-    if (!shop || shopError) {
-        return notFound();
+    // If loading is finished and we still have no shop, then it's a 404
+    if (!shop && !isShopLoading) {
+        return (
+            <div className="flex flex-col items-center justify-center h-screen space-y-4 px-4 text-center">
+                <Store className="h-16 w-16 text-muted-foreground opacity-20" />
+                <h1 className="text-3xl font-black font-headline">Profile Not Synchronized</h1>
+                <p className="text-muted-foreground max-w-md">
+                    This commercial profile exists in draft but hasn't been synchronized with the public registry yet. 
+                    If you are the owner, please request an Admin Sync.
+                </p>
+                <div className="flex gap-4 pt-4">
+                    <Button asChild variant="outline">
+                        <Link href="/">Return Home</Link>
+                    </Button>
+                    <Button asChild>
+                        <Link href="/signin">Sign In to Dashboard</Link>
+                    </Button>
+                </div>
+            </div>
+        );
     }
 
     return <ShopPreview shop={shop} products={products || []} />;

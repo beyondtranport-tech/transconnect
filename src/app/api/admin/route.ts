@@ -46,21 +46,27 @@ export async function POST(req: NextRequest) {
 
         switch (action) {
             case 'getShops': {
+                // Using collectionGroup to find all shop documents across all companies
                 const snap = await db.collectionGroup('shops').get();
                 const data = snap.docs
-                    .filter(d => d.ref.path.includes('/companies/'))
+                    .filter(d => d.ref.path.includes('/companies/')) // Ensure we only get the private company shops
                     .map(d => {
                         const pathSegments = d.ref.path.split('/');
-                        const companyId = pathSegments[pathSegments.indexOf('companies') + 1];
+                        const companiesIndex = pathSegments.indexOf('companies');
+                        const companyId = companiesIndex !== -1 ? pathSegments[companiesIndex + 1] : 'unknown';
                         return { 
                             id: d.id, 
                             companyId,
                             ...serializeTimestamps(d.data()) 
                         };
-                    })
-                    .sort((a, b) => new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime());
+                    });
+                
+                // Sort in memory to avoid index dependency while they are building
+                const sortedData = data.sort((a, b) => 
+                    new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime()
+                );
                     
-                return NextResponse.json({ success: true, data: data.slice(0, 100) });
+                return NextResponse.json({ success: true, data: sortedData.slice(0, 100) });
             }
 
             case 'approveShop': {
@@ -76,8 +82,13 @@ export async function POST(req: NextRequest) {
                 const shopData = shopSnap.data()!;
                 const batch = db.batch();
 
-                batch.update(internalShopRef, { status: 'approved', updatedAt: FieldValue.serverTimestamp() });
+                // 1. Update internal status
+                batch.update(internalShopRef, { 
+                    status: 'approved', 
+                    updatedAt: FieldValue.serverTimestamp() 
+                });
                 
+                // 2. Clone to public root
                 batch.set(publicShopRef, {
                     ...shopData,
                     id: shopId,
@@ -86,12 +97,15 @@ export async function POST(req: NextRequest) {
                     updatedAt: FieldValue.serverTimestamp()
                 }, { merge: true });
 
+                // 3. Sync Products sub-collection
                 const productsSnap = await internalShopRef.collection('products').get();
                 const publicProductsCol = publicShopRef.collection('products');
                 
+                // Clear existing public products first to ensure sync
                 const existingPublic = await publicProductsCol.get();
                 existingPublic.forEach(d => batch.delete(d.ref));
 
+                // Copy over current products
                 productsSnap.forEach(d => {
                     batch.set(publicProductsCol.doc(d.id), { ...d.data(), id: d.id });
                 });
@@ -104,6 +118,23 @@ export async function POST(req: NextRequest) {
                 const snap = await db.collection('companies').orderBy('createdAt', 'desc').limit(100).get();
                 const data = snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) }));
                 return NextResponse.json({ success: true, data });
+            }
+
+            case 'getAuditLogs': {
+                const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(100).get();
+                const data = snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) }));
+                return NextResponse.json({ success: true, data });
+            }
+
+            case 'getPartnersByType': {
+                const { type } = payload;
+                let q = db.collection('partners');
+                if (type && type !== 'all') {
+                    const snap = await q.where('type', '==', type).orderBy('updatedAt', 'desc').limit(100).get();
+                    return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
+                }
+                const snap = await q.orderBy('updatedAt', 'desc').limit(100).get();
+                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
             }
 
             default:
