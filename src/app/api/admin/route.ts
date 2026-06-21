@@ -46,14 +46,18 @@ export async function POST(req: NextRequest) {
 
         switch (action) {
             case 'getShops': {
-                // Using collectionGroup to find all shop documents across all companies
+                // Fetch all shops across the platform
                 const snap = await db.collectionGroup('shops').get();
+                
+                // Filter and Map: We only want shops nested under companies (Primary Source)
+                // Reference path looks like: companies/COMPANY_ID/shops/SHOP_ID
                 const data = snap.docs
-                    .filter(d => d.ref.path.includes('/companies/')) // Ensure we only get the private company shops
+                    .filter(d => d.ref.path.includes('companies/'))
                     .map(d => {
                         const pathSegments = d.ref.path.split('/');
-                        const companiesIndex = pathSegments.indexOf('companies');
-                        const companyId = companiesIndex !== -1 ? pathSegments[companiesIndex + 1] : 'unknown';
+                        const companiesIdx = pathSegments.indexOf('companies');
+                        const companyId = companiesIdx !== -1 ? pathSegments[companiesIdx + 1] : 'unknown';
+                        
                         return { 
                             id: d.id, 
                             companyId,
@@ -61,23 +65,25 @@ export async function POST(req: NextRequest) {
                         };
                     });
                 
-                // Sort in memory to avoid index dependency while they are building
-                const sortedData = data.sort((a, b) => 
-                    new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime()
-                );
+                // Sort in memory to bypass the COLLECTION_GROUP index requirement
+                const sortedData = data.sort((a, b) => {
+                    const timeA = new Date(a.updatedAt || a.createdAt || 0).getTime();
+                    const timeB = new Date(b.updatedAt || b.createdAt || 0).getTime();
+                    return timeB - timeA;
+                });
                     
                 return NextResponse.json({ success: true, data: sortedData.slice(0, 100) });
             }
 
             case 'approveShop': {
                 const { shopId, companyId } = payload;
-                if (!shopId || !companyId) throw new Error("Sync Error: Missing identifiers.");
+                if (!shopId || !companyId) throw new Error("Approval Error: Missing identifiers.");
 
                 const internalShopRef = db.doc(`companies/${companyId}/shops/${shopId}`);
                 const publicShopRef = db.doc(`shops/${shopId}`);
                 
                 const shopSnap = await internalShopRef.get();
-                if (!shopSnap.exists) throw new Error(`Source not found at ${internalShopRef.path}`);
+                if (!shopSnap.exists) throw new Error(`Source profile not found at ${internalShopRef.path}`);
                 
                 const shopData = shopSnap.data()!;
                 const batch = db.batch();
@@ -88,7 +94,7 @@ export async function POST(req: NextRequest) {
                     updatedAt: FieldValue.serverTimestamp() 
                 });
                 
-                // 2. Clone to public root
+                // 2. Clone to public root registry
                 batch.set(publicShopRef, {
                     ...shopData,
                     id: shopId,
@@ -97,15 +103,15 @@ export async function POST(req: NextRequest) {
                     updatedAt: FieldValue.serverTimestamp()
                 }, { merge: true });
 
-                // 3. Sync Products sub-collection
+                // 3. Sync Products sub-collection to public
                 const productsSnap = await internalShopRef.collection('products').get();
                 const publicProductsCol = publicShopRef.collection('products');
                 
-                // Clear existing public products first to ensure sync
+                // Clear existing public entries first
                 const existingPublic = await publicProductsCol.get();
                 existingPublic.forEach(d => batch.delete(d.ref));
 
-                // Copy over current products
+                // Copy over current active products
                 productsSnap.forEach(d => {
                     batch.set(publicProductsCol.doc(d.id), { ...d.data(), id: d.id });
                 });
@@ -115,26 +121,24 @@ export async function POST(req: NextRequest) {
             }
 
             case 'getMembers': {
-                const snap = await db.collection('companies').orderBy('createdAt', 'desc').limit(100).get();
+                const snap = await db.collection('companies').limit(500).get();
                 const data = snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) }));
-                return NextResponse.json({ success: true, data });
+                // Sort in memory
+                data.sort((a,b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+                return NextResponse.json({ success: true, data: data.slice(0, 100) });
             }
 
             case 'getAuditLogs': {
-                const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(100).get();
+                const snap = await db.collection('auditLogs').limit(100).get();
                 const data = snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) }));
+                data.sort((a,b) => new Date(b.timestamp || 0).getTime() - new Date(a.timestamp || 0).getTime());
                 return NextResponse.json({ success: true, data });
             }
 
-            case 'getPartnersByType': {
-                const { type } = payload;
-                let q = db.collection('partners');
-                if (type && type !== 'all') {
-                    const snap = await q.where('type', '==', type).orderBy('updatedAt', 'desc').limit(100).get();
-                    return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
-                }
-                const snap = await q.orderBy('updatedAt', 'desc').limit(100).get();
-                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
+            case 'getContributions': {
+                const snap = await db.collection('contributions').limit(100).get();
+                const data = snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) }));
+                return NextResponse.json({ success: true, data });
             }
 
             default:
