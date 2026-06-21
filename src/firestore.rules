@@ -5,8 +5,12 @@ service cloud.firestore {
 
     // --- HELPER FUNCTIONS ---
     
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
     function isAdmin() {
-      return request.auth != null && (
+      return isSignedIn() && (
         request.auth.uid == '0Y3IhZffEPNlMAIhURPnzRgNokL2' || 
         request.auth.token.email == 'mkoton100@gmail.com' || 
         request.auth.token.email == 'beyondtransport@gmail.com' ||
@@ -14,49 +18,65 @@ service cloud.firestore {
       );
     }
 
-    // BREAKS RECURSION: Check if the user document points to this company
-    function userLinkedToCompany(cid) {
-      return request.auth != null && 
+    // Core membership check: verify the user profile points to this company
+    function isCompanyMember(cid) {
+      return isSignedIn() && 
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == cid;
     }
 
     // --- RULES ---
 
+    // Global Admin Override
     match /{allPaths=**} {
       allow read, write: if isAdmin();
     }
 
+    // User Profiles
     match /users/{userId} {
-      allow read, update: if request.auth != null && request.auth.uid == userId;
-      allow create: if request.auth != null; 
+      allow read, update: if isSignedIn() && request.auth.uid == userId;
+      allow create: if isSignedIn(); 
       
       match /{allSub=**} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
+        allow read, write: if isSignedIn() && request.auth.uid == userId;
       }
     }
 
+    // Company Data & Sub-collections
     match /companies/{companyId} {
-      allow create: if request.auth != null;
+      allow create: if isSignedIn();
       
-      // Use resource.data to avoid self-referencing get() calls
-      allow get, list, update: if isAdmin() || (
-        request.auth != null && (
-          (exists(resource) && resource.data.ownerId == request.auth.uid) ||
-          userLinkedToCompany(companyId)
-        )
-      );
+      // Top-level document access
+      allow get, list: if isAdmin() || isCompanyMember(companyId) || (isSignedIn() && resource.data.ownerId == request.auth.uid);
+      allow update: if isAdmin() || (isSignedIn() && resource.data.ownerId == request.auth.uid);
 
-      // Explicitly authorize sub-collections for members
+      // Explicit sub-collection rules for Members
+      match /supportMessages/{msgId} {
+        allow read, write: if isAdmin() || isCompanyMember(companyId);
+      }
+      
+      match /transactions/{txId} {
+        allow read, write: if isAdmin() || isCompanyMember(companyId);
+      }
+      
+      match /walletPayments/{payId} {
+        allow read, write: if isAdmin() || isCompanyMember(companyId);
+      }
+      
+      match /enquiries/{enquiryId} {
+        allow read, write: if isAdmin() || isCompanyMember(companyId);
+      }
+      
+      match /quotes/{quoteId} {
+        allow read, write: if isAdmin() || isCompanyMember(companyId);
+      }
+
+      // Generic handler for other nested data (Shops, LoadBoards, etc.)
       match /{allSub=**} {
-        allow read, write: if isAdmin() || (
-          request.auth != null && (
-            get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid ||
-            userLinkedToCompany(companyId)
-          )
-        );
+        allow read, write: if isAdmin() || isCompanyMember(companyId);
       }
     }
 
+    // Industrial Registries (Internal)
     match /partners/{partnerId} {
       allow read, write: if isAdmin();
       match /{allSub=**} { allow read, write: if isAdmin(); }
@@ -67,6 +87,7 @@ service cloud.firestore {
       match /{allSub=**} { allow read, write: if isAdmin(); }
     }
     
+    // Public Marketplaces
     match /shops/{shopId}/{path=**} {
       allow get, list: if true;
     }
@@ -84,7 +105,7 @@ service cloud.firestore {
     }
 
     match /contributions/{contributionId} {
-      allow create: if request.auth != null;
+      allow create: if isSignedIn();
     }
   }
 }
