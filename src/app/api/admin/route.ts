@@ -69,13 +69,13 @@ export async function POST(req: NextRequest) {
             }
 
             case 'getShops': {
-                // Fetch all shops from the collection group
                 const snap = await db.collectionGroup('shops').orderBy('updatedAt', 'desc').get();
                 const data = snap.docs
-                    .filter(d => d.ref.path.includes('companies/')) // Filter for primary source records
+                    .filter(d => d.ref.path.includes('/companies/'))
                     .map(d => {
                         const pathSegments = d.ref.path.split('/');
-                        const companyId = pathSegments[1]; 
+                        const companyIdIndex = pathSegments.indexOf('companies');
+                        const companyId = pathSegments[companyIdIndex + 1];
                         return { 
                             id: d.id, 
                             companyId,
@@ -87,22 +87,19 @@ export async function POST(req: NextRequest) {
 
             case 'approveShop': {
                 const { shopId, companyId } = payload;
-                if (!shopId || !companyId) throw new Error("Missing shopId or companyId.");
+                if (!shopId || !companyId) throw new Error("Critical: Missing shopId or companyId for synchronization.");
 
                 const internalShopRef = db.doc(`companies/${companyId}/shops/${shopId}`);
                 const publicShopRef = db.doc(`shops/${shopId}`);
                 
                 const shopSnap = await internalShopRef.get();
-                if (!shopSnap.exists) throw new Error(`Source record not found at: ${internalShopRef.path}`);
+                if (!shopSnap.exists) throw new Error(`Sync Error: Source document not found at ${internalShopRef.path}`);
                 
                 const shopData = shopSnap.data()!;
-                const { id, ...sanitizedData } = shopData;
+                const { id: _, ...sanitizedData } = shopData;
 
                 const batch = db.batch();
-                // 1. Update internal status
                 batch.update(internalShopRef, { status: 'approved', updatedAt: FieldValue.serverTimestamp() });
-                
-                // 2. Clone to public root with company reference
                 batch.set(publicShopRef, {
                     ...sanitizedData,
                     id: shopId,
@@ -111,11 +108,9 @@ export async function POST(req: NextRequest) {
                     updatedAt: FieldValue.serverTimestamp()
                 }, { merge: true });
 
-                // 3. Clone all products to public subcollection
                 const productsSnap = await internalShopRef.collection('products').get();
                 const publicProductsCol = publicShopRef.collection('products');
                 
-                // Clean existing public products first to ensure exact sync
                 const existingPublic = await publicProductsCol.get();
                 existingPublic.forEach(d => batch.delete(d.ref));
 
