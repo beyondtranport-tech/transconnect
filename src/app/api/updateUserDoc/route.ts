@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
   }
 
   const authorization = req.headers.get('authorization');
-  if (!authorization?.startsWith('Bearer ')) {
+  if (!authorization || !authorization.startsWith('Bearer ')) {
     return NextResponse.json({ success: false, error: 'Unauthorized: No token provided.' }, { status: 401 });
   }
 
@@ -90,7 +90,6 @@ export async function POST(req: NextRequest) {
     if (!isAuthorized) {
         return NextResponse.json({ success: false, error: 'Forbidden: You do not have permission to modify this resource.' }, { status: 403 });
     }
-    // --- End Authorization ---
 
     const deserializedData = deserializeData(data);
     
@@ -104,7 +103,6 @@ export async function POST(req: NextRequest) {
         const dataToSave = { ...deserializedData };
         let finalCompanyId = existingCompanyId;
 
-        // Determine the companyId for auditing
         if (path.startsWith('companies/')) {
             finalCompanyId = pathSegments[1];
         }
@@ -120,7 +118,7 @@ export async function POST(req: NextRequest) {
             collectionPath: pathSegments.slice(0, -1).join('/'),
             documentId: pathSegments[pathSegments.length - 1],
             userId: uid,
-            companyId: finalCompanyId, // Use the determined companyId
+            companyId: finalCompanyId, 
             action: beforeData ? 'update' : 'create',
             timestamp: FieldValue.serverTimestamp(),
             before: serializeTimestamps(beforeData),

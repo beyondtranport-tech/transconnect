@@ -1,3 +1,4 @@
+
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from 'firebase-admin/auth';
@@ -53,7 +54,6 @@ export async function POST(req: NextRequest) {
     
     let isAuthorized = false;
 
-    // Authorization logic
     if (pathSegments[0] === 'users' && pathSegments[1] === uid) {
         isAuthorized = true;
     }
@@ -73,7 +73,6 @@ export async function POST(req: NextRequest) {
     const userDoc = await db.collection('users').doc(uid).get();
     const userCompanyId = userDoc.data()?.companyId;
 
-    // Use a transaction to delete and log atomically
     await db.runTransaction(async (transaction) => {
         const docSnap = await transaction.get(docRef);
         if (!docSnap.exists) {
@@ -88,7 +87,7 @@ export async function POST(req: NextRequest) {
             collectionPath: pathSegments.slice(0, -1).join('/'),
             documentId: pathSegments[pathSegments.length - 1],
             userId: uid,
-            companyId: userCompanyId, 
+            companyId: userCompanyId || pathSegments[1], 
             action: 'delete',
             timestamp: FieldValue.serverTimestamp(),
             before: serializeTimestamps(beforeData),

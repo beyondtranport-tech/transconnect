@@ -36,7 +36,6 @@ export async function POST(req: NextRequest) {
         path = body.path;
         type = body.type;
     } catch (e) {
-        // If body is empty or not valid JSON, it's a bad request.
         return NextResponse.json({ success: false, error: 'Bad Request: Invalid or missing JSON body.' }, { status: 400 });
     }
 
@@ -59,7 +58,6 @@ export async function POST(req: NextRequest) {
         if (idToken) {
             decodedToken = await adminAuth.verifyIdToken(idToken);
         } else if (!isPublicPath) {
-            // If it's not a public path and there's no token, deny access.
             return NextResponse.json({ success: false, error: 'Unauthorized: No token provided for a private route.' }, { status: 401 });
         }
 
@@ -72,13 +70,10 @@ export async function POST(req: NextRequest) {
             const pathSegments = path.split('/');
             
             if (uid && pathSegments.length >= 2) {
-                // Check if user is accessing their own user document
                 if (pathSegments[0] === 'users' && pathSegments[1] === uid) {
                     isAuthorized = true;
                 }
-                // Check if user is accessing their own company document or its subcollections
                 else if (pathSegments[0] === 'companies') {
-                    // Fetch user's companyId once to check ownership
                     const userDoc = await db.collection('users').doc(uid).get();
                     const userCompanyId = userDoc.data()?.companyId;
 
@@ -92,7 +87,6 @@ export async function POST(req: NextRequest) {
                  return NextResponse.json({ success: false, error: 'Forbidden: You do not have permission to access this resource.' }, { status: 403 });
             }
         }
-        // --- End Authorization Logic ---
         
         if (type === 'collection') {
             const collectionRef = db.collection(path);
@@ -105,11 +99,9 @@ export async function POST(req: NextRequest) {
             if (docSnap.exists) {
                 return NextResponse.json({ success: true, data: { id: docSnap.id, ...serializeTimestamps(docSnap.data()) } });
             } else {
-                // For document not found, it's not a permissions error, just return null data.
                 return NextResponse.json({ success: true, data: null });
             }
         } else if (type === 'collection-group') {
-             // Collection group queries are generally admin-only in this app's context
              if (!isAdmin) {
                  return NextResponse.json({ success: false, error: 'Forbidden: Access to collection groups is restricted.' }, { status: 403 });
              }

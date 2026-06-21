@@ -1,3 +1,4 @@
+
 'use server';
 
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
@@ -5,7 +6,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase-admin';
 
-async function handleServicePayment(db: FirebaseFirestore.Firestore, adminUid: string, payload: any) {
+async function handleServicePayment(db: FirebaseFirestore.Firestore, adminUid: string, payload: any, isAdmin: boolean) {
     const { companyId, paymentId, amount, description } = payload;
     if (!companyId || paymentId === undefined || typeof amount !== 'number' || !description) {
         throw new Error('Missing required fields for service payment.');
@@ -13,7 +14,6 @@ async function handleServicePayment(db: FirebaseFirestore.Firestore, adminUid: s
 
     const companyRef = db.doc(`companies/${companyId}`);
     
-    // Use a transaction to ensure all reads and writes are atomic
     await db.runTransaction(async (transaction) => {
         const companySnap = await transaction.get(companyRef);
         
@@ -22,25 +22,21 @@ async function handleServicePayment(db: FirebaseFirestore.Firestore, adminUid: s
         }
         
         const companyData = companySnap.data()!;
-        
-        // Check against AVAILABLE balance, not total balance
         const currentBalance = Number(companyData?.availableBalance || 0);
 
-        if (isNaN(currentBalance) || currentBalance < amount) {
+        if (!isAdmin && (isNaN(currentBalance) || currentBalance < amount)) {
             throw new Error(`Insufficient available funds. Available balance is less than the required amount.`);
         }
         
         const userDoc = await transaction.get(db.collection('users').doc(companyData.ownerId));
         const memberName = `${userDoc.data()?.firstName || ''} ${userDoc.data()?.lastName || ''}`.trim();
 
-        // 1. Debit company's wallet and available balance
         transaction.update(companyRef, {
             walletBalance: FieldValue.increment(-amount),
             availableBalance: FieldValue.increment(-amount),
             updatedAt: FieldValue.serverTimestamp(),
         });
 
-        // 2. Create a DEBIT transaction record in the company's wallet ledger
         const companyTransactionRef = db.collection(`companies/${companyId}/transactions`).doc();
         const chartOfAccountsCode = description.toLowerCase().includes('membership') ? '4010' : '4410';
         transaction.set(companyTransactionRef, {
@@ -56,7 +52,6 @@ async function handleServicePayment(db: FirebaseFirestore.Firestore, adminUid: s
             companyId: companyId,
         });
 
-        // 3. Create a corresponding CREDIT transaction in the PLATFORM's ledger (as revenue)
         const platformTransactionRef = db.collection('platformTransactions').doc();
         transaction.set(platformTransactionRef, {
             transactionId: platformTransactionRef.id,
@@ -71,7 +66,6 @@ async function handleServicePayment(db: FirebaseFirestore.Firestore, adminUid: s
             companyId: companyId,
         });
 
-        // 4. Handle membership purchase logic
         if (payload.membershipDetails) {
             const { planId, cycle } = payload.membershipDetails;
             const newNextBillingDate = new Date();
@@ -90,7 +84,6 @@ async function handleServicePayment(db: FirebaseFirestore.Firestore, adminUid: s
                 status: 'active', 
             });
 
-            // 5. Handle Referrer Commission on FIRST paid membership purchase
             if (isFirstPaidMembership && companyData.referrerId) {
                 const referrerCompanyRef = db.collection('companies').doc(companyData.referrerId);
                 const referrerCompanySnap = await transaction.get(referrerCompanyRef);
@@ -101,12 +94,10 @@ async function handleServicePayment(db: FirebaseFirestore.Firestore, adminUid: s
                     const commissionAmount = amount * commissionRate;
 
                     if (commissionAmount > 0) {
-                        // Credit referrer's wallet
                         transaction.update(referrerCompanyRef, {
                             walletBalance: FieldValue.increment(commissionAmount)
                         });
 
-                        // Create transaction log for referrer
                         const referrerTxRef = db.collection(`companies/${companyData.referrerId}/transactions`).doc();
                         transaction.set(referrerTxRef, {
                             transactionId: referrerTxRef.id,
@@ -151,17 +142,14 @@ export async function POST(req: NextRequest) {
     const db = getFirestore(app);
 
     const payload = await req.json();
+    const isAdmin = decodedToken.email === 'beyondtransport@gmail.com' || decodedToken.email === 'mkoton100@gmail.com';
 
-    // Verify user owns the company they are trying to pay from
     const userDoc = await db.collection('users').doc(uid).get();
-    if (userDoc.data()?.companyId !== payload.companyId) {
-        const isAdmin = decodedToken.email === 'beyondtransport@gmail.com' || decodedToken.email === 'mkoton100@gmail.com';
-        if (!isAdmin) {
-          return NextResponse.json({ success: false, error: 'Forbidden: You can only make payments for your own company.' }, { status: 403 });
-        }
+    if (userDoc.data()?.companyId !== payload.companyId && !isAdmin) {
+        return NextResponse.json({ success: false, error: 'Forbidden: You can only make payments for your own company.' }, { status: 403 });
     }
     
-    const result = await handleServicePayment(db, uid, payload);
+    const result = await handleServicePayment(db, uid, payload, isAdmin);
     
     return NextResponse.json(result);
 

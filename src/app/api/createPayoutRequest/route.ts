@@ -1,3 +1,4 @@
+
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from 'firebase-admin/auth';
@@ -37,7 +38,6 @@ export async function POST(req: NextRequest) {
         }
     }
     
-    // Transactional logic to ensure data integrity
     const newDocRef = await db.runTransaction(async (transaction) => {
         const companyRef = db.collection('companies').doc(companyId);
         const companyDoc = await transaction.get(companyRef);
@@ -47,15 +47,12 @@ export async function POST(req: NextRequest) {
             throw new Error("Company not found.");
         }
 
-        // Use the pre-calculated availableBalance from the document, not the total walletBalance.
         const availableBalanceFromDoc = companyData.availableBalance || 0;
 
-        // Fetch existing pending payouts for this company within the transaction
         const pendingPayoutsQuery = db.collection(`companies/${companyId}/payoutRequests`).where('status', '==', 'pending');
         const pendingPayoutsSnap = await transaction.get(pendingPayoutsQuery);
         const pendingTotal = pendingPayoutsSnap.docs.reduce((sum, doc) => sum + doc.data().amount, 0);
         
-        // Calculate the amount that is *truly* available for a new payout.
         const effectivelyAvailable = availableBalanceFromDoc - pendingTotal;
 
         if (amount > effectivelyAvailable) {
