@@ -1,6 +1,6 @@
 rules_version = '2';
 
-// Security Rules Version: 1.1.0 - Unified Sub-collection Access Fix
+// Security Rules Version: 1.1.1 - Sub-collection List Access Fix
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -16,8 +16,8 @@ service cloud.firestore {
 
     // Helper to check if the user belongs to the company
     function isCompanyMember(companyId) {
-      let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
-      return request.auth != null && userDoc != null && userDoc.data.companyId == companyId;
+      return request.auth != null && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId;
     }
 
     // --- 1. GLOBAL ADMIN BYPASS ---
@@ -41,14 +41,13 @@ service cloud.firestore {
       allow create: if request.auth != null;
       allow get, update: if isAdmin() || isCompanyMember(companyId);
 
-      // BROAD SUB-COLLECTION ACCESS
-      // This ensures 'list' and document-level operations work for all sub-collections
-      match /{subcollection}/{docId=**} {
-        allow read, write: if isAdmin() || isCompanyMember(companyId);
+      // Explicit permission for listing and reading any sub-collection (supportMessages, walletPayments, etc.)
+      match /{subcollection} {
+        allow list, read: if isAdmin() || isCompanyMember(companyId);
       }
       
-      // Explicit top-level collection match to satisfy strict 'list' requirements
-      match /{subcollection} {
+      // Explicit permission for individual documents within sub-collections
+      match /{subcollection}/{docId=**} {
         allow read, write: if isAdmin() || isCompanyMember(companyId);
       }
     }
