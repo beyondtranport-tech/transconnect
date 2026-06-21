@@ -1,5 +1,3 @@
-
-
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from 'firebase-admin/auth';
@@ -12,8 +10,6 @@ function serializeTimestamps(docData: any): any {
     for (const key in docData) {
         const value = docData[key];
         if (value instanceof FieldValue) {
-            // FieldValues are special objects and cannot be directly serialized to JSON.
-            // We'll represent them with a placeholder string for logging purposes.
             newDocData[key] = `(FieldValue: serverTimestamp)`;
         } else if (value && typeof value.toDate === 'function') { // Check for Timestamp
             newDocData[key] = value.toDate().toISOString();
@@ -34,7 +30,7 @@ export async function POST(req: NextRequest) {
   }
 
   const authorization = req.headers.get('authorization');
-  if (!authorization?.startsWith('Bearer ')) {
+  if (!authorization || !authorization.startsWith('Bearer ')) {
     return NextResponse.json({ success: false, error: 'Unauthorized: No token provided.' }, { status: 401 });
   }
 
@@ -53,7 +49,7 @@ export async function POST(req: NextRequest) {
     
     const docRef = db.doc(path);
     const pathSegments = path.split('/');
-    const isAdmin = decodedToken.email === 'beyondtransport@gmail.com';
+    const isAdmin = decodedToken.email === 'beyondtransport@gmail.com' || decodedToken.email === 'mkoton100@gmail.com';
     
     let isAuthorized = false;
 
@@ -92,7 +88,7 @@ export async function POST(req: NextRequest) {
             collectionPath: pathSegments.slice(0, -1).join('/'),
             documentId: pathSegments[pathSegments.length - 1],
             userId: uid,
-            companyId: userCompanyId, // Add companyId for filtering
+            companyId: userCompanyId, 
             action: 'delete',
             timestamp: FieldValue.serverTimestamp(),
             before: serializeTimestamps(beforeData),
@@ -111,4 +107,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: `Internal Server Error: ${error.message}` }, { status: 500 });
   }
 }
-    

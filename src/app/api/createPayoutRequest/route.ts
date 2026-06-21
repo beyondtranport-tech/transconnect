@@ -1,4 +1,3 @@
-
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from 'firebase-admin/auth';
@@ -7,11 +6,11 @@ import { getAdminApp } from '@/lib/firebase-admin';
 export async function POST(req: NextRequest) {
   const { app, error: initError } = getAdminApp();
   if (initError || !app) {
-    return NextResponse.json({ success: false, error: `Internal Server Error: ${initError}` }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Internal Server Error: Could not connect to Firebase.' }, { status: 500 });
   }
 
   const authorization = req.headers.get('authorization');
-  if (!authorization?.startsWith('Bearer ')) {
+  if (!authorization || !authorization.startsWith('Bearer ')) {
     return NextResponse.json({ success: false, error: 'Unauthorized: No token provided.' }, { status: 401 });
   }
 
@@ -32,7 +31,7 @@ export async function POST(req: NextRequest) {
     // Authorization check
     const userDoc = await db.collection('users').doc(uid).get();
     if (userDoc.data()?.companyId !== companyId) {
-        const isAdmin = decodedToken.email === 'beyondtransport@gmail.com';
+        const isAdmin = decodedToken.email === 'beyondtransport@gmail.com' || decodedToken.email === 'mkoton100@gmail.com';
         if (!isAdmin) {
             return NextResponse.json({ success: false, error: 'Forbidden: You can only request payouts for your own company.' }, { status: 403 });
         }

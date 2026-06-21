@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useUser, getClientSideAuthToken } from '@/firebase';
@@ -150,7 +149,8 @@ export default function EnquiriesCard() {
         }
     };
 
-    if (user && user.email === 'beyondtransport@gmail.com') {
+    const isAdmin = user && (user.email === 'beyondtransport@gmail.com' || user.email === 'mkoton100@gmail.com');
+    if (isAdmin) {
         return null;
     }
     

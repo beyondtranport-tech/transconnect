@@ -1,4 +1,3 @@
-
 'use server';
 
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
@@ -88,7 +87,7 @@ async function handleServicePayment(db: FirebaseFirestore.Firestore, adminUid: s
                 membershipId: planId,
                 billingCycle: cycle,
                 nextBillingDate: newNextBillingDate,
-                status: 'active', // Set status to active on membership purchase
+                status: 'active', 
             });
 
             // 5. Handle Referrer Commission on FIRST paid membership purchase
@@ -117,13 +116,13 @@ async function handleServicePayment(db: FirebaseFirestore.Firestore, adminUid: s
                             description: `Referral Commission: ${memberName}`,
                             status: 'allocated',
                             isAdjustment: false,
-                            chartOfAccountsCode: '5010', // Commission Payout
+                            chartOfAccountsCode: '5010', 
                             postedBy: 'system',
                         });
                     }
                 }
             }
-        } else if (paymentId) { // Only delete if it's a standard service payment
+        } else if (paymentId) { 
             const paymentRef = db.doc(`companies/${companyId}/walletPayments/${paymentId}`);
             transaction.delete(paymentRef);
         }
@@ -140,7 +139,7 @@ export async function POST(req: NextRequest) {
   }
 
   const authorization = req.headers.get('authorization');
-  if (!authorization?.startsWith('Bearer ')) {
+  if (!authorization || !authorization.startsWith('Bearer ')) {
     return NextResponse.json({ success: false, error: 'Unauthorized: No token provided.' }, { status: 401 });
   }
   const idToken = authorization.split('Bearer ')[1];
@@ -156,7 +155,7 @@ export async function POST(req: NextRequest) {
     // Verify user owns the company they are trying to pay from
     const userDoc = await db.collection('users').doc(uid).get();
     if (userDoc.data()?.companyId !== payload.companyId) {
-        const isAdmin = decodedToken.email === 'beyondtransport@gmail.com';
+        const isAdmin = decodedToken.email === 'beyondtransport@gmail.com' || decodedToken.email === 'mkoton100@gmail.com';
         if (!isAdmin) {
           return NextResponse.json({ success: false, error: 'Forbidden: You can only make payments for your own company.' }, { status: 403 });
         }
