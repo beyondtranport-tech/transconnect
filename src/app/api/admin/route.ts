@@ -24,22 +24,6 @@ function serializeTimestamps(docData: any): any {
     return newDocData;
 }
 
-/**
- * Normalizes keys and scrubs undefined values to prevent Firestore crashes.
- */
-function normalizeAndSanitize(data: any): any {
-    if (!data || typeof data !== 'object') return data;
-    const clean: any = {};
-    Object.entries(data).forEach(([key, val]) => {
-        if (val === undefined) return;
-        const normalizedKey = key.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
-        clean[normalizedKey] = (val && typeof val === 'object' && !Array.isArray(val)) 
-            ? normalizeAndSanitize(val) 
-            : val;
-    });
-    return clean;
-}
-
 export async function POST(req: NextRequest) {
     try {
         const { app, error: initError } = getAdminApp();
@@ -85,10 +69,10 @@ export async function POST(req: NextRequest) {
             }
 
             case 'getShops': {
-                // Fetch all shops from the collection group but filter for primary sources
+                // Fetch all shops from the collection group
                 const snap = await db.collectionGroup('shops').orderBy('updatedAt', 'desc').get();
                 const data = snap.docs
-                    .filter(d => d.ref.path.includes('companies/'))
+                    .filter(d => d.ref.path.includes('companies/')) // Filter for primary source records
                     .map(d => {
                         const pathSegments = d.ref.path.split('/');
                         const companyId = pathSegments[1]; 
@@ -115,7 +99,10 @@ export async function POST(req: NextRequest) {
                 const { id, ...sanitizedData } = shopData;
 
                 const batch = db.batch();
+                // 1. Update internal status
                 batch.update(internalShopRef, { status: 'approved', updatedAt: FieldValue.serverTimestamp() });
+                
+                // 2. Clone to public root with company reference
                 batch.set(publicShopRef, {
                     ...sanitizedData,
                     id: shopId,
@@ -124,8 +111,11 @@ export async function POST(req: NextRequest) {
                     updatedAt: FieldValue.serverTimestamp()
                 }, { merge: true });
 
+                // 3. Clone all products to public subcollection
                 const productsSnap = await internalShopRef.collection('products').get();
                 const publicProductsCol = publicShopRef.collection('products');
+                
+                // Clean existing public products first to ensure exact sync
                 const existingPublic = await publicProductsCol.get();
                 existingPublic.forEach(d => batch.delete(d.ref));
 
@@ -139,6 +129,12 @@ export async function POST(req: NextRequest) {
 
             case 'getAuditLogs': {
                 const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(100).get();
+                const data = snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) }));
+                return NextResponse.json({ success: true, data });
+            }
+
+            case 'getContributions': {
+                const snap = await db.collection('contributions').orderBy('createdAt', 'desc').limit(100).get();
                 const data = snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) }));
                 return NextResponse.json({ success: true, data });
             }
