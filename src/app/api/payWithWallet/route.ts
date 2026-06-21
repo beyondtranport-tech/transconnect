@@ -29,9 +29,6 @@ async function processPlanPurchase(db: FirebaseFirestore.Firestore, adminUid: st
             throw new Error(`Insufficient funds: Required ${amount}, Available ${currentBalance}`);
         }
         
-        const userDoc = await transaction.get(db.collection('users').doc(companyData.ownerId));
-        const memberName = `${userDoc.data()?.firstName || ''} ${userDoc.data()?.lastName || ''}`.trim();
-
         // 1. Execute Wallet Debit
         transaction.update(companyRef, {
             walletBalance: FieldValue.increment(-amount),
@@ -43,8 +40,6 @@ async function processPlanPurchase(db: FirebaseFirestore.Firestore, adminUid: st
         let chartOfAccountsCode = '4010'; // Default membership
         if (planType === 'connect') {
             chartOfAccountsCode = '4100'; // Connect Plan Series
-        } else if (description.toLowerCase().includes('top-up')) {
-            chartOfAccountsCode = '4410';
         }
 
         // 3. Record Member Transaction
@@ -120,7 +115,6 @@ async function processPlanPurchase(db: FirebaseFirestore.Firestore, adminUid: st
                 }
             }
         } else if (planType === 'connect') {
-            // Activate specific connect plan flag
             const planKey = `has${planId.charAt(0).toUpperCase() + planId.slice(1)}Plan`;
             transaction.update(companyRef, {
                 [planKey]: true,

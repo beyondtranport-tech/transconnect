@@ -27,7 +27,7 @@ export default function RewardsPlanPage() {
                     </p>
                 </div>
 
-                <Card className="border-primary border-2 shadow-2xl relative overflow-hidden">
+                <Card className="border-primary border-2 shadow-2xl relative overflow-hidden text-left">
                     <div className="absolute top-0 right-0 p-4 opacity-5">
                         <Gift className="h-32 w-32" />
                     </div>
@@ -73,7 +73,7 @@ export default function RewardsPlanPage() {
                     </CardFooter>
                 </Card>
 
-                <div className="grid md:grid-cols-2 gap-8">
+                <div className="grid md:grid-cols-2 gap-8 text-left">
                     <div className="space-y-4">
                         <h3 className="text-xl font-bold flex items-center gap-2">
                             <Star className="h-6 w-6 text-primary" />
@@ -94,7 +94,7 @@ export default function RewardsPlanPage() {
                     </div>
                 </div>
                 
-                <Alert className="bg-primary/5 border-primary/20 p-6">
+                <Alert className="bg-primary/5 border-primary/20 p-6 text-left">
                     <Info className="h-6 w-6 text-primary" />
                     <AlertTitle className="text-lg font-bold ml-2">Quick Tip</AlertTitle>
                     <AlertDescription className="mt-2 text-muted-foreground ml-2">

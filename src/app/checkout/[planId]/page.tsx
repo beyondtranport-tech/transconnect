@@ -13,6 +13,8 @@ import Link from 'next/link';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useMemoFirebase } from '@/hooks/use-memo-firebase';
 import { formatCurrency } from '@/lib/utils';
+import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
 
 const iconMap: Record<string, any> = {
     loyalty: Heart,
@@ -34,7 +36,6 @@ function CheckoutComponent() {
   const cycle = searchParams.get('cycle') || 'monthly';
   const isConnectPlan = ['loyalty', 'rewards', 'actions'].includes(planId);
   
-  // 1. Resolve Plan References
   const membershipRef = useMemoFirebase(() => {
       if (!firestore || !planId || isConnectPlan) return null;
       return doc(firestore, 'memberships', planId);
@@ -50,7 +51,6 @@ function CheckoutComponent() {
     return doc(firestore, 'users', user.uid);
   }, [firestore, user]);
 
-  // 2. Fetch Data
   const { data: userData } = useDoc<{ companyId: string }>(userDocRef);
   const companyDocRef = useMemoFirebase(() => {
     if (!firestore || !userData?.companyId) return null;
@@ -61,14 +61,12 @@ function CheckoutComponent() {
   const { data: membershipPlan, isLoading: isMembershipLoading } = useDoc(membershipRef);
   const { data: connectConfig, isLoading: isConnectLoading } = useDoc<any>(connectConfigRef);
   
-  // 3. Auth Guard
   useEffect(() => {
     if (!isUserLoading && !user) {
       router.push(`/signin?redirect=/checkout/${planId}?cycle=${cycle}`);
     }
   }, [user, isUserLoading, router, planId, cycle]);
   
-  // 4. Resolve Display Data
   const planDisplay = useMemo(() => {
     if (isConnectPlan && connectConfig) {
         const priceKey = `${planId}PlanPrice`;
@@ -82,13 +80,13 @@ function CheckoutComponent() {
     if (membershipPlan) {
         const monthlyPrice = (typeof membershipPlan.price === 'object' && membershipPlan.price !== null)
             ? membershipPlan.price.monthly || 0
-            : membershipPlan.price || 0;
+            : Number(membershipPlan.price) || 0;
             
-        const specialOfferDiscount = membershipPlan.specialOfferDiscount || 0;
+        const specialOfferDiscount = Number(membershipPlan.specialOfferDiscount) || 0;
         const finalMonthlyPrice = monthlyPrice * (1 - (specialOfferDiscount / 100));
 
         if (cycle === 'annual') {
-            const annualDiscount = membershipPlan.annualDiscount || 0;
+            const annualDiscount = Number(membershipPlan.annualDiscount) || 0;
             const baseAnnualPrice = monthlyPrice * 12 * (1 - (annualDiscount / 100));
             return {
                 name: membershipPlan.name,
@@ -127,7 +125,7 @@ function CheckoutComponent() {
             companyId: companyData.id,
             amount: planDisplay.price,
             description: `Plan Activation: ${planDisplay.name} (${cycle})`,
-            planType: planDisplay.type, // 'membership' or 'connect'
+            planType: planDisplay.type,
             planId: planId,
             cycle: cycle,
         };
@@ -172,7 +170,7 @@ function CheckoutComponent() {
         <div className="container mx-auto max-w-md py-20 text-center">
             <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
             <h2 className="text-2xl font-bold">Plan Configuration Error</h2>
-            <p className="text-muted-foreground mt-2">We couldn't retrieve the details for this plan. It might be undergoing maintenance.</p>
+            <p className="text-muted-foreground mt-2">We couldn't retrieve the details for this plan.</p>
             <Button asChild className="mt-6" variant="outline"><Link href="/pricing">Return to Pricing</Link></Button>
         </div>
     );
@@ -228,7 +226,7 @@ function CheckoutComponent() {
                         Ecosystem Agreement
                     </h4>
                     <p className="text-[11px] text-muted-foreground leading-relaxed text-left">
-                        By clicking "Confirm & Activate", you authorize Logistics Flow to debit {formatCurrency(planDisplay.price)} from your wallet. Subscriptions will renew automatically on the next billing date unless cancelled.
+                        By clicking "Confirm & Activate", you authorize Logistics Flow to debit {formatCurrency(planDisplay.price)} from your wallet.
                     </p>
                 </div>
             </CardContent>
