@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -18,9 +17,9 @@ import Link from 'next/link';
 import { format as formatDateFns } from 'date-fns';
 
 const formatDate = (dateValue: any) => {
-    if (!dateValue) return 'N/A';
+    if (!dateValue) return 'Sending...';
     const date = dateValue.toDate ? dateValue.toDate() : new Date(dateValue);
-    if (isNaN(date.getTime())) return 'Invalid Date';
+    if (isNaN(date.getTime())) return 'Just now';
     return formatDateFns(date, "dd MMM yyyy, HH:mm");
 };
 
@@ -32,14 +31,12 @@ interface SupportMessage {
     timestamp: any;
 }
 
-
 export default function SupportChatContent() {
     const { user, isUserLoading } = useUser();
     const firestore = useFirestore();
     const { toast } = useToast();
     const [inputFieldText, setInputFieldText] = useState('');
     const [isSending, setIsSending] = useState(false);
-    const [profileError, setProfileError] = useState(false);
     const scrollAreaRef = useRef<HTMLDivElement>(null);
 
     const companyId = user?.companyId;
@@ -47,12 +44,12 @@ export default function SupportChatContent() {
     const messagesQuery = useMemoFirebase(() => {
         if (!firestore || !companyId) return null;
         return query(
-            collection(firestore, `companies/${companyId}/supportMessages`),
+            collection(firestore, 'companies', companyId, 'supportMessages'),
             orderBy('timestamp', 'asc')
         );
     }, [firestore, companyId]);
 
-    const { data: messages, isLoading: areMessagesLoading, forceRefresh } = useCollection<SupportMessage>(messagesQuery);
+    const { data: messages, isLoading: areMessagesLoading, forceRefresh, error: permissionError } = useCollection<SupportMessage>(messagesQuery);
 
     const isLoading = isUserLoading || areMessagesLoading;
     
@@ -63,18 +60,7 @@ export default function SupportChatContent() {
     }, [messages]);
 
     const handleSend = async () => {
-        if (!inputFieldText.trim()) return;
-        setProfileError(false);
-
-        if (!user || !companyId) {
-            setProfileError(true);
-            toast({
-                variant: 'destructive',
-                title: 'Could not send message',
-                description: 'Your profile information could not be found.',
-            });
-            return;
-        }
+        if (!inputFieldText.trim() || !user || !companyId) return;
 
         setIsSending(true);
         const userMessageText = inputFieldText;
@@ -84,16 +70,17 @@ export default function SupportChatContent() {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication failed.");
 
-            // 1. Save user message
+            // 1. Save user message via proxy API for consistent auditing
             const path = `companies/${companyId}/supportMessages`;
             const userMessageData = {
                 text: userMessageText,
                 senderId: user.uid,
                 senderName: user.displayName || 'Member',
-                timestamp: serverTimestamp(),
+                timestamp: { _methodName: 'serverTimestamp' },
                 readByAdmin: false,
                 companyId: companyId,
             };
+            
             await fetch('/api/addUserDoc', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -102,28 +89,31 @@ export default function SupportChatContent() {
             
             forceRefresh();
 
-            // 2. Call AI
+            // 2. Build history for AI (ensure roles are correct)
             const historyForApi: { role: 'user' | 'model'; content: { text: string; }[] }[] = (messages || [])
                 .filter(m => !!m && typeof m === 'object' && m.senderId && m.text)
                 .map(msg => {
+                    // Detect role: AI or anyone else as the model, Current User as user
                     const role: 'user' | 'model' = msg.senderId === user.uid ? 'user' : 'model';
                     return { role, content: [{ text: msg.text }] };
                 });
 
+            // 3. Call AI agent
             const aiResult = await supportQuery({ 
                 query: userMessageText, 
                 history: historyForApi
             });
 
-            // 3. Save AI response
+            // 4. Save AI response via proxy API
             const aiMessageData = {
                 text: aiResult.response,
                 senderId: 'ai-assistant',
                 senderName: 'AI Assistant',
-                timestamp: serverTimestamp(),
+                timestamp: { _methodName: 'serverTimestamp' },
                 readByAdmin: false,
                 companyId: companyId,
             };
+
             await fetch('/api/addUserDoc', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -141,23 +131,47 @@ export default function SupportChatContent() {
         }
     };
 
+    if (permissionError) {
+        return (
+            <Card className="border-destructive bg-destructive/5">
+                <CardHeader>
+                    <CardTitle className="text-destructive flex items-center gap-2">
+                        <AlertTriangle className="h-5 w-5" />
+                        Access Restricted
+                    </CardTitle>
+                    <CardDescription>
+                        We encountered a permission error loading your messages.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-sm text-muted-foreground">
+                        Your account may be undergoing verification. If this persists, please refresh or contact technical support.
+                    </p>
+                    <Button variant="outline" className="mt-4" onClick={() => window.location.reload()}>
+                        Retry Connection
+                    </Button>
+                </CardContent>
+            </Card>
+        );
+    }
+
     return (
         <Card className="h-[calc(100vh-10rem)] flex flex-col">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2"><MessageSquare /> Support Chat</CardTitle>
-                <CardDescription>Have a question? Chat with our AI assistant or a support team member.</CardDescription>
+                <CardDescription>Direct line to our AI assistant and platform support team.</CardDescription>
             </CardHeader>
             <CardContent className="flex-1 flex flex-col min-h-[0px]">
                 <ScrollArea className="flex-1 pr-4 -mr-4 mb-4" ref={scrollAreaRef as any}>
                     <div className="space-y-4">
-                        {isLoading ? (
-                             <div className="flex justify-center items-center h-full"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div>
-                        ) : profileError ? (
+                        {isLoading && !messages ? (
+                             <div className="flex justify-center items-center h-full py-12"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div>
+                        ) : !companyId && !isUserLoading ? (
                             <Alert variant="destructive">
                                 <AlertTriangle className="h-4 w-4" />
                                 <AlertTitle>Profile Incomplete</AlertTitle>
                                 <AlertDescription>
-                                    Please complete your profile to enable support chat.
+                                    Please complete your company profile to enable secure support chat.
                                     <Button asChild variant="link" className="p-0 h-auto ml-1">
                                         <Link href="/account?view=profile">Go to My Profile</Link>
                                     </Button>
@@ -170,7 +184,7 @@ export default function SupportChatContent() {
                                 const alignment = isMember ? "justify-end" : "justify-start";
 
                                 return (
-                                    <div key={msg.id} className={cn("flex items-end gap-2", alignment)}>
+                                    <div key={msg.id} className={cn("flex items-end gap-2 animate-in fade-in slide-in-from-bottom-2 duration-300", alignment)}>
                                         {!isMember && (
                                             <Avatar className="h-8 w-8">
                                                 <AvatarFallback className={isAI ? 'bg-secondary' : 'bg-muted'}>
@@ -179,38 +193,44 @@ export default function SupportChatContent() {
                                             </Avatar>
                                         )}
                                         <div className={cn(
-                                            "rounded-lg px-3 py-2 max-w-[80%] text-sm", 
-                                            isMember ? "bg-primary text-primary-foreground" : 
-                                            isAI ? "bg-blue-200 text-blue-900" :
-                                            "bg-muted"
+                                            "rounded-2xl px-4 py-2 max-w-[85%] text-sm shadow-sm", 
+                                            isMember ? "bg-primary text-primary-foreground rounded-br-none" : 
+                                            isAI ? "bg-blue-100 text-blue-900 rounded-bl-none" :
+                                            "bg-muted rounded-bl-none"
                                         )}>
-                                            <p className="font-semibold text-xs mb-1">{msg.senderName || 'Staff'}</p>
-                                            <p>{msg.text}</p>
-                                            <p className="text-xs opacity-70 mt-1 text-right">{formatDate(msg.timestamp)}</p>
+                                            <p className="font-bold text-[10px] mb-1 opacity-70 uppercase tracking-widest">{msg.senderName || 'Staff'}</p>
+                                            <p className="leading-relaxed">{msg.text}</p>
+                                            <p className="text-[10px] opacity-60 mt-1 text-right">{formatDate(msg.timestamp)}</p>
                                         </div>
                                         {isMember && (
                                             <Avatar className="h-8 w-8">
-                                                <AvatarFallback>YOU</AvatarFallback>
+                                                <AvatarFallback className="bg-primary/10 text-primary font-bold">
+                                                    {user?.displayName?.charAt(0) || 'U'}
+                                                </AvatarFallback>
                                             </Avatar>
                                         )}
                                     </div>
                                 );
                             })
                         )}
-                         {messages?.length === 0 && !isLoading && !profileError && (
-                            <p className="text-center text-sm text-muted-foreground pt-8">No messages yet. Send a message to start a conversation.</p>
+                         {messages?.length === 0 && !isLoading && (
+                            <div className="text-center py-12 space-y-2 opacity-50">
+                                <MessageSquare className="h-10 w-10 mx-auto" />
+                                <p className="text-sm font-medium">No messages yet. Send a query to start.</p>
+                            </div>
                         )}
                     </div>
                 </ScrollArea>
                 <div className="mt-auto flex items-center gap-2 pt-4 border-t">
                     <Input 
-                        placeholder="Type your message..." 
+                        placeholder={companyId ? "Type your question..." : "Waiting for profile..."}
                         value={inputFieldText}
                         onChange={e => setInputFieldText(e.target.value)}
-                        onKeyDown={e => e.key === 'Enter' && handleSend()}
-                        disabled={isSending || isLoading}
+                        onKeyDown={e => e.key === 'Enter' && !isSending && handleSend()}
+                        disabled={isSending || !companyId}
+                        className="rounded-full bg-slate-50"
                     />
-                    <Button onClick={handleSend} disabled={isSending || isLoading || !inputFieldText.trim()} size="icon">
+                    <Button onClick={handleSend} disabled={isSending || !companyId || !inputFieldText.trim()} size="icon" className="rounded-full h-10 w-10 shrink-0">
                         {isSending ? <Loader2 className="h-4 w-4 animate-spin"/> : <Send className="h-4 w-4" />}
                     </Button>
                 </div>

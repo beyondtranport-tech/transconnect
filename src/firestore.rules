@@ -1,10 +1,10 @@
 rules_version = '2';
 
-// Security Rules Version: 1.2.0 - Resolved recursion in membership checks and explicitly authorized sub-collections
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper function for admin check
+    // --- HELPER FUNCTIONS ---
+    
     function isAdmin() {
       return request.auth != null && (
         request.auth.uid == '0Y3IhZffEPNlMAIhURPnzRgNokL2' || 
@@ -14,24 +14,18 @@ service cloud.firestore {
       );
     }
 
-    // Helper to check if the user is the explicit owner of the company
-    function isCompanyOwner(cid) {
-      return request.auth != null && 
-        get(/databases/$(database)/documents/companies/$(cid)).data.ownerId == request.auth.uid;
-    }
-    
-    // Helper to check if the user's profile links them to this company
-    function isCompanyStaff(cid) {
+    // BREAKS RECURSION: Check if the user document points to this company
+    function userLinkedToCompany(cid) {
       return request.auth != null && 
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == cid;
     }
 
-    // --- 1. GLOBAL ADMIN BYPASS ---
+    // --- RULES ---
+
     match /{allPaths=**} {
       allow read, write: if isAdmin();
     }
 
-    // --- 2. USER PROFILES ---
     match /users/{userId} {
       allow read, update: if request.auth != null && request.auth.uid == userId;
       allow create: if request.auth != null; 
@@ -41,43 +35,28 @@ service cloud.firestore {
       }
     }
 
-    // --- 3. COMPANY & MEMBER DATA ---
     match /companies/{companyId} {
       allow create: if request.auth != null;
       
-      // Use resource.data for the parent doc to avoid recursion with get() calls
-      allow get, update: if isAdmin() || (
+      // Use resource.data to avoid self-referencing get() calls
+      allow get, list, update: if isAdmin() || (
         request.auth != null && (
-          resource.data.ownerId == request.auth.uid ||
-          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId
+          (exists(resource) && resource.data.ownerId == request.auth.uid) ||
+          userLinkedToCompany(companyId)
         )
       );
 
-      // Explicitly authorize critical sub-collections for 'list' and 'read' operations
-      match /supportMessages/{msgId} { allow read, write: if isCompanyOwner(companyId) || isCompanyStaff(companyId); }
-      match /transactions/{txId} { allow read, write: if isCompanyOwner(companyId) || isCompanyStaff(companyId); }
-      match /walletPayments/{payId} { allow read, write: if isCompanyOwner(companyId) || isCompanyStaff(companyId); }
-      match /enquiries/{enqId} { allow read, write: if isCompanyOwner(companyId) || isCompanyStaff(companyId); }
-      match /quotes/{quoId} { allow read, write: if isCompanyOwner(companyId) || isCompanyStaff(companyId); }
-      match /staff/{staffId} { allow read, write: if isCompanyOwner(companyId) || isCompanyStaff(companyId); }
-      
-      match /shops/{shopId} { 
-        allow read, write: if isCompanyOwner(companyId) || isCompanyStaff(companyId); 
-        match /{all=**} { allow read, write: if isCompanyOwner(companyId) || isCompanyStaff(companyId); }
-      }
-      
-      match /loadBoards/{boardId} {
-        allow read, write: if isCompanyOwner(companyId) || isCompanyStaff(companyId);
-        match /{all=**} { allow read, write: if isCompanyOwner(companyId) || isCompanyStaff(companyId); }
-      }
-
-      // Generic catch-all for any other nested paths
+      // Explicitly authorize sub-collections for members
       match /{allSub=**} {
-        allow read, write: if isAdmin() || isCompanyOwner(companyId) || isCompanyStaff(companyId);
+        allow read, write: if isAdmin() || (
+          request.auth != null && (
+            get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid ||
+            userLinkedToCompany(companyId)
+          )
+        );
       }
     }
 
-    // --- 4. PARTNER & LEAD CRM (Admin Only) ---
     match /partners/{partnerId} {
       allow read, write: if isAdmin();
       match /{allSub=**} { allow read, write: if isAdmin(); }
@@ -88,7 +67,6 @@ service cloud.firestore {
       match /{allSub=**} { allow read, write: if isAdmin(); }
     }
     
-    // --- 5. PUBLIC & GLOBAL COLLECTIONS ---
     match /shops/{shopId}/{path=**} {
       allow get, list: if true;
     }
