@@ -1,6 +1,6 @@
 rules_version = '2';
 
-// Security Rules Version: 1.1.4 - Fixed sub-collection list permissions for members
+// Security Rules Version: 1.1.5 - Fixed recursion in isCompanyMember to resolve sub-collection permission errors
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -14,7 +14,7 @@ service cloud.firestore {
       );
     }
 
-    // Helper to check if the user belongs to the company
+    // Helper to check if the user belongs to the company (Used for sub-collections)
     function isCompanyMember(companyId) {
       return request.auth != null && (
         get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid ||
@@ -41,16 +41,18 @@ service cloud.firestore {
     // --- 3. COMPANY & MEMBER DATA ---
     match /companies/{companyId} {
       allow create: if request.auth != null;
-      allow get, update: if isAdmin() || isCompanyMember(companyId);
+      
+      // Use resource.data for the parent doc to avoid recursion with the get() in isCompanyMember
+      allow get, update: if isAdmin() || (
+        request.auth != null && (
+          resource.data.ownerId == request.auth.uid ||
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId
+        )
+      );
 
-      // Explicit sub-collection matching to allow 'list' operations
-      match /{subcollection} {
+      // Sub-collections use the recursive wildcard and helper
+      match /{allSub=**} {
         allow read, write: if isAdmin() || isCompanyMember(companyId);
-        
-        // Match documents within sub-collections
-        match /{docId=**} {
-          allow read, write: if isAdmin() || isCompanyMember(companyId);
-        }
       }
     }
 
