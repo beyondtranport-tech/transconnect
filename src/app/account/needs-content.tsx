@@ -10,7 +10,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { Checkbox } from '@/components/ui/checkbox';
 import { useUser, getClientSideAuthToken } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, ShoppingCart, Package, MapPin, Sparkles, Info } from 'lucide-react';
+import { Loader2, Save, ShoppingCart, Package, MapPin, Sparkles, Info, Clock, Weight, Hammer } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
 
@@ -18,13 +18,17 @@ const needsSchema = z.object({
     cargoTypes: z.array(z.string()).min(1, "Please select at least one cargo type."),
     routes: z.array(z.string()).min(1, "Please select your primary routes."),
     approxMonthlyLoads: z.coerce.number().optional(),
+    loadingConstraints: z.array(z.string()).optional().default([]),
+    operatingHours: z.string().optional(),
 });
 
 const cargoOptions = ['General Freight', 'Containers', 'Refrigerated Containers', 'Bulk / Aggregates', 'Abnormal Loads', 'Perishables', 'Hazmat', 'FMCG'];
 const routeOptions = ['Intra-Gauteng', 'GP to KZN', 'GP to WC', 'GP to EC', 'WC to KZN', 'KZN to EC', 'Cross-Border (SADC)'];
+const constraintOptions = ['Dock Loading', 'Forklift On-Site', 'Crane Required', 'Side-Load Only', 'Hand-Offloading Only', 'Secure Overnight Parking'];
 
 export default function NeedsContent() {
-    const { user, isUserLoading, forceRefresh } = useUser();
+    const { user, isUserLoading, forceRefresh } = userHook();
+    function userHook() { return useUser(); }
     const { toast } = useToast();
     const [isSaving, setIsSaving] = useState(false);
 
@@ -34,6 +38,8 @@ export default function NeedsContent() {
             cargoTypes: user?.companyData?.logisticsNeeds?.cargoTypes || [],
             routes: user?.companyData?.logisticsNeeds?.routes || [],
             approxMonthlyLoads: user?.companyData?.logisticsNeeds?.approxMonthlyLoads || 0,
+            loadingConstraints: user?.companyData?.logisticsNeeds?.loadingConstraints || [],
+            operatingHours: user?.companyData?.logisticsNeeds?.operatingHours || '',
         }
     });
 
@@ -59,7 +65,7 @@ export default function NeedsContent() {
             });
 
             if (!response.ok) throw new Error("Update failed.");
-            toast({ title: "Strategic Needs Saved", description: "Your intelligence profile has been updated." });
+            toast({ title: "Strategic Needs Saved", description: "Your shipping profile has been updated." });
             forceRefresh();
         } catch (e: any) {
             toast({ variant: 'destructive', title: "Error", description: e.message });
@@ -71,13 +77,13 @@ export default function NeedsContent() {
     if (isUserLoading) return <div className="flex justify-center p-20"><Loader2 className="animate-spin h-10 w-10 text-primary" /></div>;
 
     return (
-        <Card className="max-w-4xl mx-auto shadow-xl">
-            <CardHeader className="border-b bg-muted/20 text-left">
+        <Card className="max-w-4xl mx-auto shadow-xl text-left">
+            <CardHeader className="border-b bg-muted/20">
                 <div className="flex items-center gap-4">
                     <div className="bg-primary/10 p-3 rounded-xl"><ShoppingCart className="h-6 w-6 text-primary" /></div>
                     <div className="text-left">
-                        <CardTitle className="text-2xl font-bold">Logistics Requirements</CardTitle>
-                        <CardDescription>Declare your shipping needs to enable AI-powered matching with verified hauliers.</CardDescription>
+                        <CardTitle className="text-2xl font-bold">Shipping Requirements</CardTitle>
+                        <CardDescription>Declare your regular logistics needs to enable AI-powered matching with vetted hauliers.</CardDescription>
                     </div>
                 </div>
             </CardHeader>
@@ -86,9 +92,9 @@ export default function NeedsContent() {
                     <CardContent className="p-8 space-y-10 text-left">
                         <Alert className="bg-primary/5 border-primary/20">
                             <Info className="h-5 w-5 text-primary" />
-                            <AlertTitle className="font-bold">Your Professional Advantage</AlertTitle>
+                            <AlertTitle className="font-bold">The Information Flow Advantage</AlertTitle>
                             <AlertDescription className="text-sm text-muted-foreground leading-relaxed mt-1">
-                                By specifying your cargo types and regular routes, you allow our matching engine to proactively find the most efficient hauliers in the registry. This reduces manual searching and drives down procurement costs.
+                                By specifying your cargo profile and regular routes, you allow our matching engine to proactively find the most efficient hauliers in the registry. This reduces manual searching and drives down your spot-market procurement costs.
                             </AlertDescription>
                         </Alert>
 
@@ -99,7 +105,7 @@ export default function NeedsContent() {
                                     <FormField key={item} control={form.control} name="cargoTypes" render={({ field }) => (
                                         <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md hover:bg-muted/50 transition-colors">
                                             <FormControl><Checkbox checked={field.value?.includes(item)} onCheckedChange={(checked) => checked ? field.onChange([...field.value, item]) : field.onChange(field.value?.filter((v: string) => v !== item))} /></FormControl>
-                                            <FormLabel className="font-medium text-sm cursor-pointer">{item}</FormLabel>
+                                            <FormLabel className="font-medium text-xs cursor-pointer">{item}</FormLabel>
                                         </FormItem>
                                     )} />
                                 ))}
@@ -107,13 +113,13 @@ export default function NeedsContent() {
                         </div>
 
                         <div className="space-y-4">
-                            <h3 className="font-bold flex items-center gap-2 text-lg text-foreground"><MapPin className="h-5 w-5 text-primary" /> Regular Service Routes</h3>
+                            <h3 className="font-bold flex items-center gap-2 text-lg text-foreground"><MapPin className="h-5 w-5 text-primary" /> Regular Service Corridors</h3>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                 {routeOptions.map(item => (
                                     <FormField key={item} control={form.control} name="routes" render={({ field }) => (
                                         <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md hover:bg-muted/50 transition-colors">
                                             <FormControl><Checkbox checked={field.value?.includes(item)} onCheckedChange={(checked) => checked ? field.onChange([...field.value, item]) : field.onChange(field.value?.filter((v: string) => v !== item))} /></FormControl>
-                                            <FormLabel className="font-medium text-sm cursor-pointer">{item}</FormLabel>
+                                            <FormLabel className="font-medium text-[10px] cursor-pointer">{item}</FormLabel>
                                         </FormItem>
                                     )} />
                                 ))}
@@ -121,20 +127,46 @@ export default function NeedsContent() {
                         </div>
 
                         <div className="space-y-4">
-                            <h3 className="font-bold flex items-center gap-2 text-lg text-foreground"><Sparkles className="h-5 w-5 text-primary" /> Volume Declaration</h3>
-                            <FormField control={form.control} name="approxMonthlyLoads" render={({ field }) => (
-                                <FormItem className="max-w-xs">
-                                    <FormLabel>Approx. Loads per Month</FormLabel>
-                                    <FormControl><Input type="number" placeholder="e.g. 10" {...field} /></FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )} />
+                            <h3 className="font-bold flex items-center gap-2 text-lg text-foreground"><Hammer className="h-5 w-5 text-primary" /> Facility Constraints</h3>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                {constraintOptions.map(item => (
+                                    <FormField key={item} control={form.control} name="loadingConstraints" render={({ field }) => (
+                                        <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md hover:bg-muted/50 transition-colors">
+                                            <FormControl><Checkbox checked={field.value?.includes(item)} onCheckedChange={(checked) => checked ? field.onChange([...field.value, item]) : field.onChange(field.value?.filter((v: string) => v !== item))} /></FormControl>
+                                            <FormLabel className="font-medium text-[10px] cursor-pointer">{item}</FormLabel>
+                                        </FormItem>
+                                    )} />
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div className="space-y-4">
+                                <h3 className="font-bold flex items-center gap-2 text-lg text-foreground"><Weight className="h-5 w-5 text-primary" /> Volume Declaration</h3>
+                                <FormField control={form.control} name="approxMonthlyLoads" render={({ field }) => (
+                                    <FormItem className="max-w-xs">
+                                        <FormLabel>Approx. Loads per Month</FormLabel>
+                                        <FormControl><Input type="number" placeholder="e.g. 10" {...field} /></FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
+                            </div>
+                            <div className="space-y-4">
+                                <h3 className="font-bold flex items-center gap-2 text-lg text-foreground"><Clock className="h-5 w-5 text-primary" /> Site Operating Hours</h3>
+                                <FormField control={form.control} name="operatingHours" render={({ field }) => (
+                                    <FormItem className="max-w-xs">
+                                        <FormLabel>Daily Receiving Hours</FormLabel>
+                                        <FormControl><Input placeholder="e.g. 08:00 - 16:30" {...field} /></FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
+                            </div>
                         </div>
                     </CardContent>
                     <CardFooter className="bg-slate-50 border-t p-6 flex justify-end">
                         <Button type="submit" disabled={isSaving} size="lg" className="h-12 px-10 font-bold gap-2">
                             {isSaving ? <Loader2 className="h-5 w-5 animate-spin"/> : <Save className="h-5 w-5" />}
-                            Update Logistics Profile
+                            Update Shipping Profile
                         </Button>
                     </CardFooter>
                 </form>

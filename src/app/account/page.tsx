@@ -198,7 +198,7 @@ function AccountPageContent() {
               )}
               {!isTransporter && !isSupplier && !isProfessional && (
                 <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Logistics Needs" isActive={activeView === 'needs'} onClick={() => navigate('needs')}><ShoppingCart /><span>Logistics Needs</span></SidebarMenuButton>
+                    <SidebarMenuButton tooltip="Shipping Requirements" isActive={activeView === 'needs'} onClick={() => navigate('needs')}><ShoppingCart /><span>Shipping Requirements</span></SidebarMenuButton>
                 </SidebarMenuItem>
               )}
 
