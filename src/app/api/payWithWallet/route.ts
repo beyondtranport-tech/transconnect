@@ -6,39 +6,50 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase-admin';
 
-async function handleServicePayment(db: FirebaseFirestore.Firestore, adminUid: string, payload: any, isAdmin: boolean) {
-    const { companyId, paymentId, amount, description } = payload;
-    if (!companyId || paymentId === undefined || typeof amount !== 'number' || !description) {
-        throw new Error('Missing required fields for service payment.');
+/**
+ * PAY WITH WALLET ENDPOINT
+ * Handles both core Membership Tier upgrades and specialized Connect Plan activations.
+ */
+async function processPlanPurchase(db: FirebaseFirestore.Firestore, adminUid: string, payload: any, isAdmin: boolean) {
+    const { companyId, amount, description, planType, planId, cycle } = payload;
+    
+    if (!companyId || typeof amount !== 'number' || !planType || !planId) {
+        throw new Error('Missing required activation metadata.');
     }
 
     const companyRef = db.doc(`companies/${companyId}`);
     
-    await db.runTransaction(async (transaction) => {
+    return await db.runTransaction(async (transaction) => {
         const companySnap = await transaction.get(companyRef);
-        
-        if (!companySnap.exists) {
-            throw new Error("Company not found.");
-        }
+        if (!companySnap.exists) throw new Error("Member profile not found.");
         
         const companyData = companySnap.data()!;
         const currentBalance = Number(companyData?.availableBalance || 0);
 
         if (!isAdmin && (isNaN(currentBalance) || currentBalance < amount)) {
-            throw new Error(`Insufficient available funds. Available balance is less than the required amount.`);
+            throw new Error(`Insufficient funds: Required ${amount}, Available ${currentBalance}`);
         }
         
         const userDoc = await transaction.get(db.collection('users').doc(companyData.ownerId));
         const memberName = `${userDoc.data()?.firstName || ''} ${userDoc.data()?.lastName || ''}`.trim();
 
+        // 1. Execute Wallet Debit
         transaction.update(companyRef, {
             walletBalance: FieldValue.increment(-amount),
             availableBalance: FieldValue.increment(-amount),
             updatedAt: FieldValue.serverTimestamp(),
         });
 
-        const companyTransactionRef = db.collection(`companies/${companyId}/transactions`).doc();
-        const chartOfAccountsCode = description.toLowerCase().includes('membership') ? '4010' : '4410';
+        // 2. Resolve Accounting Logic
+        let chartOfAccountsCode = '4010'; // Default membership
+        if (planType === 'connect') {
+            chartOfAccountsCode = '4100'; // Connect Plan Series
+        } else if (description.toLowerCase().includes('top-up')) {
+            chartOfAccountsCode = '4410';
+        }
+
+        // 3. Record Member Transaction
+        const companyTransactionRef = companyRef.collection('transactions').doc();
         transaction.set(companyTransactionRef, {
             transactionId: companyTransactionRef.id,
             type: 'debit',
@@ -49,115 +60,109 @@ async function handleServicePayment(db: FirebaseFirestore.Firestore, adminUid: s
             isAdjustment: false,
             chartOfAccountsCode, 
             postedBy: adminUid,
-            companyId: companyId,
         });
 
+        // 4. Record Platform Revenue
         const platformTransactionRef = db.collection('platformTransactions').doc();
         transaction.set(platformTransactionRef, {
             transactionId: platformTransactionRef.id,
             type: 'credit',
             amount: amount,
             date: FieldValue.serverTimestamp(),
-            description: `Revenue: ${description} from ${memberName} (${companyId})`,
+            description: `Revenue: ${description} from ${companyData.companyName} (${companyId})`,
             status: 'allocated',
             chartOfAccountsCode,
             isAdjustment: false,
-            postedBy: 'system',
             companyId: companyId,
         });
 
-        if (payload.membershipDetails) {
-            const { planId, cycle } = payload.membershipDetails;
-            const newNextBillingDate = new Date();
-            if (cycle === 'monthly') {
-                newNextBillingDate.setMonth(newNextBillingDate.getMonth() + 1);
-            } else {
-                newNextBillingDate.setFullYear(newNextBillingDate.getFullYear() + 1);
-            }
-            
-            const isFirstPaidMembership = companyData.membershipId === 'free';
+        // 5. Apply Plan Specific Logic
+        const nextBilling = new Date();
+        if (cycle === 'annual') nextBilling.setFullYear(nextBilling.getFullYear() + 1);
+        else nextBilling.setMonth(nextBilling.getMonth() + 1);
+
+        if (planType === 'membership') {
+            const isFirstPaid = companyData.membershipId === 'free';
             
             transaction.update(companyRef, {
                 membershipId: planId,
-                billingCycle: cycle,
-                nextBillingDate: newNextBillingDate,
+                billingCycle: cycle || 'monthly',
+                nextBillingDate: nextBilling,
                 status: 'active', 
             });
 
-            if (isFirstPaidMembership && companyData.referrerId) {
-                const referrerCompanyRef = db.collection('companies').doc(companyData.referrerId);
-                const referrerCompanySnap = await transaction.get(referrerCompanyRef);
-
-                if (referrerCompanySnap.exists) {
-                    const isaConfigSnap = await transaction.get(db.collection('configuration').doc('isaPitch'));
+            // Handle ISA Commission for first-time paid membership
+            if (isFirstPaid && companyData.referrerId) {
+                const referrerRef = db.collection('companies').doc(companyData.referrerId);
+                const referrerSnap = await transaction.get(referrerRef);
+                const isaConfigSnap = await db.collection('configuration').doc('isaPitch').get();
+                
+                if (referrerSnap.exists && isaConfigSnap.exists) {
                     const commissionRate = (isaConfigSnap.data()?.membershipCommission || 30) / 100;
-                    const commissionAmount = amount * commissionRate;
+                    const commissionAmt = amount * commissionRate;
 
-                    if (commissionAmount > 0) {
-                        transaction.update(referrerCompanyRef, {
-                            walletBalance: FieldValue.increment(commissionAmount)
+                    if (commissionAmt > 0) {
+                        transaction.update(referrerRef, { 
+                            walletBalance: FieldValue.increment(commissionAmt),
+                            availableBalance: FieldValue.increment(commissionAmt)
                         });
 
-                        const referrerTxRef = db.collection(`companies/${companyData.referrerId}/transactions`).doc();
-                        transaction.set(referrerTxRef, {
-                            transactionId: referrerTxRef.id,
+                        const refTxRef = referrerRef.collection('transactions').doc();
+                        transaction.set(refTxRef, {
+                            transactionId: refTxRef.id,
                             type: 'credit',
-                            amount: commissionAmount,
+                            amount: commissionAmt,
                             date: FieldValue.serverTimestamp(),
-                            description: `Referral Commission: ${memberName}`,
+                            description: `ISA Referral Commission: ${companyData.companyName}`,
                             status: 'allocated',
-                            isAdjustment: false,
-                            chartOfAccountsCode: '5010', 
-                            postedBy: 'system',
+                            chartOfAccountsCode: '5010'
                         });
                     }
                 }
             }
-        } else if (paymentId) { 
-            const paymentRef = db.doc(`companies/${companyId}/walletPayments/${paymentId}`);
-            transaction.delete(paymentRef);
+        } else if (planType === 'connect') {
+            // Activate specific connect plan flag
+            const planKey = `has${planId.charAt(0).toUpperCase() + planId.slice(1)}Plan`;
+            transaction.update(companyRef, {
+                [planKey]: true,
+                [`${planId}NextBillingDate`]: nextBilling,
+                [`${planId}BillingCycle`]: cycle || 'monthly'
+            });
         }
+        
+        return { success: true };
     });
-
-    return { success: true, message: 'Payment processed successfully.' };
 }
-
 
 export async function POST(req: NextRequest) {
   const { app, error: initError } = getAdminApp();
   if (initError || !app) {
-    return NextResponse.json({ success: false, error: 'Internal Server Error: Could not connect to Firebase.' }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Firebase Connection Failure' }, { status: 500 });
   }
 
   const authorization = req.headers.get('authorization');
-  if (!authorization || !authorization.startsWith('Bearer ')) {
-    return NextResponse.json({ success: false, error: 'Unauthorized: No token provided.' }, { status: 401 });
+  if (!authorization?.startsWith('Bearer ')) {
+    return NextResponse.json({ success: false, error: 'Missing Auth Token' }, { status: 401 });
   }
-  const idToken = authorization.split('Bearer ')[1];
-
+  
   try {
     const adminAuth = getAuth(app);
-    const decodedToken = await adminAuth.verifyIdToken(idToken);
-    const uid = decodedToken.uid;
+    const decodedToken = await adminAuth.verifyIdToken(authorization.split('Bearer ')[1]);
     const db = getFirestore(app);
-
     const payload = await req.json();
-    const isAdmin = decodedToken.email === 'beyondtransport@gmail.com' || decodedToken.email === 'mkoton100@gmail.com';
 
-    const userDoc = await db.collection('users').doc(uid).get();
+    const isAdmin = decodedToken.email === 'beyondtransport@gmail.com' || decodedToken.email === 'mkoton100@gmail.com';
+    const userDoc = await db.collection('users').doc(decodedToken.uid).get();
+    
     if (userDoc.data()?.companyId !== payload.companyId && !isAdmin) {
-        return NextResponse.json({ success: false, error: 'Forbidden: You can only make payments for your own company.' }, { status: 403 });
+        return NextResponse.json({ success: false, error: 'Forbidden: Cross-company payment denied.' }, { status: 403 });
     }
     
-    const result = await handleServicePayment(db, uid, payload, isAdmin);
-    
+    const result = await processPlanPurchase(db, decodedToken.uid, payload, isAdmin);
     return NextResponse.json(result);
 
   } catch (error: any) {
-    console.error(`Error in payWithWallet:`, error);
-    if (error.code?.startsWith('auth/')) {
-       return NextResponse.json({ success: false, error: `Authentication error: ${error.message}` }, { status: 401 });
-    }
-    return NextResponse.json({ success: false, error: `Internal Server Error: ${error.message}` }, { status: 500 });
+    console.error(`PayWithWallet API Error:`, error);
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
