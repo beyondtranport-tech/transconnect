@@ -97,8 +97,8 @@ export async function POST(req: NextRequest) {
                 // Fetch all shops using collection group
                 const snap = await db.collectionGroup('shops').orderBy('updatedAt', 'desc').get();
                 
-                // CRITICAL: Filter for 'Primary Source' records only (nested under companies)
-                // This eliminates the public clones from appearing as duplicates in management.
+                // Filter for 'Primary Source' records only (nested under companies)
+                // This prevents public clones from appearing as duplicates in management.
                 const data = snap.docs
                     .filter(d => d.ref.path.includes('/companies/'))
                     .map(d => {
