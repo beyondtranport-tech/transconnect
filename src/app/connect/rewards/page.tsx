@@ -1,80 +1,106 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useUser } from '@/firebase';
-import { ArrowRight, Gift, Loader2 } from 'lucide-react';
-import Image from 'next/image';
+import { ArrowRight, Gift, Loader2, Check, Star, ShieldCheck, Info } from 'lucide-react';
 import Link from 'next/link';
-import data from '@/lib/placeholder-images.json';
 import { useConfig } from '@/hooks/use-config';
 import { formatCurrency } from '@/lib/utils';
-
-const { placeholderImages } = data;
-
-const rewardsImage = placeholderImages.find(p => p.id === 'mall-division');
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 export default function RewardsPlanPage() {
     const { user } = useUser();
-    const ctaLink = user ? '/account?view=connect-rewards' : '/join?redirect=/account?view=connect-rewards';
     const { data: pricing, isLoading } = useConfig<{ rewardsPlanPrice: number }>('connectPlans');
     
+    const price = pricing?.rewardsPlanPrice || 50;
+
     return (
-        <div className="container mx-auto px-4 py-16">
-            <div className="max-w-4xl mx-auto">
-                <Card className="overflow-hidden">
-                     {rewardsImage && (
-                        <div className="relative w-full h-56 bg-card">
-                            <Image
-                                src={rewardsImage.imageUrl}
-                                alt="Rewards Plan"
-                                fill
-                                className="object-cover"
-                                data-ai-hint={rewardsImage.imageHint}
-                            />
-                             <div className="absolute inset-0 bg-black/50" />
+        <div className="bg-background min-h-full">
+            <div className="max-w-4xl mx-auto space-y-12">
+                <div className="text-center space-y-4">
+                    <Badge className="bg-primary/10 text-primary border-primary/20 font-bold uppercase tracking-widest">Connect Division</Badge>
+                    <h1 className="text-4xl md:text-5xl font-black font-headline tracking-tight">The Rewards Plan</h1>
+                    <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+                        Turn your platform engagement into tangible assets. Redeem points for fuel, parts, and more.
+                    </p>
+                </div>
+
+                <Card className="border-primary border-2 shadow-2xl relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-4 opacity-5">
+                        <Gift className="h-32 w-32" />
+                    </div>
+                    
+                    <CardHeader className="text-center pb-2">
+                        <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit mb-4">
+                            <Gift className="h-10 w-10 text-primary" />
                         </div>
-                     )}
-                    <CardHeader className="relative border-b">
-                         <div className="flex items-center gap-4">
-                            <Gift className="h-12 w-12 text-primary" />
-                            <div>
-                                <h1 className="text-3xl md:text-4xl font-bold font-headline">Rewards Plan</h1>
-                                {isLoading ? (
-                                    <Loader2 className="h-6 w-6 animate-spin text-primary mt-2" />
-                                ) : (
-                                    <p className="text-lg text-primary font-semibold">{formatCurrency(pricing?.rewardsPlanPrice || 0)}/month</p>
-                                )}
+                        <CardTitle className="text-3xl font-bold">Reward & Redeem</CardTitle>
+                        <CardDescription className="mt-2 text-base">Your points are as good as cash in our ecosystem.</CardDescription>
+                        <div className="py-8">
+                            <div className="flex items-baseline justify-center gap-1">
+                                <span className="text-6xl font-black tracking-tight">{formatCurrency(price)}</span>
+                                <span className="text-muted-foreground font-medium">/month</span>
                             </div>
                         </div>
                     </CardHeader>
-                    <CardContent className="p-6 space-y-6">
-                        <p className="text-lg text-muted-foreground">
-                            The Rewards Plan is your key to unlocking tangible benefits from being part of the TransConnect community. Earn points by completing actions and redeem them in our Rewards Store for items that directly impact your bottom line.
-                        </p>
-                        
-                        <div>
-                            <h3 className="text-xl font-semibold mb-3">How It Works:</h3>
-                            <ul className="list-disc list-inside space-y-2 text-muted-foreground">
-                                <li><span className="font-semibold text-foreground">Earn Points:</span> Complete actions like listing products, contributing data, or referring members to earn loyalty points.</li>
-                                <li><span className="font-semibold text-foreground">Redeem for Value:</span> Your points are as good as cash. Redeem them for high-value items like fuel vouchers, service discounts, or premium features in the Rewards Store.</li>
-                                <li><span className="font-semibold text-foreground">Exclusive Rewards:</span> As a Rewards Plan member, you gain access to a curated selection of rewards that are not available to other members.</li>
-                            </ul>
-                        </div>
-                        
-                        <p className="text-lg text-muted-foreground">
-                           This plan is designed for the active transporter who wants to get more value from their engagement with the platform.
-                        </p>
-                        
-                        <div className="text-center pt-6">
-                            <Button asChild size="lg">
-                                <Link href={ctaLink}>
-                                    Activate Rewards Plan <ArrowRight className="ml-2 h-4 w-4" />
-                                </Link>
-                            </Button>
-                        </div>
+
+                    <CardContent className="max-w-md mx-auto">
+                        <ul className="space-y-4 mb-8">
+                            {[
+                                "Points for Every Mall Transaction",
+                                "Access to the Rewards Store",
+                                "Redeem for Fuel Vouchers",
+                                "Redeem for Service Discounts",
+                                "Exclusive Member-Only Rewards",
+                                "Points Never Expire"
+                            ].map((feature, i) => (
+                                <li key={i} className="flex items-start">
+                                    <Check className="h-5 w-5 text-green-500 mr-3 shrink-0 mt-0.5" />
+                                    <span className="font-medium text-muted-foreground">{feature}</span>
+                                </li>
+                            ))}
+                        </ul>
                     </CardContent>
+
+                    <CardFooter className="bg-muted/30 border-t p-8 flex justify-center">
+                        <Button asChild size="lg" className="h-14 px-12 text-lg font-bold w-full max-w-sm shadow-lg">
+                            <Link href={`/checkout/rewards`}>
+                                Activate Rewards Plan <ArrowRight className="ml-2 h-5 w-5" />
+                            </Link>
+                        </Button>
+                    </CardFooter>
                 </Card>
+
+                <div className="grid md:grid-cols-2 gap-8">
+                    <div className="space-y-4">
+                        <h3 className="text-xl font-bold flex items-center gap-2">
+                            <Star className="h-6 w-6 text-primary" />
+                            Earn while you operate
+                        </h3>
+                        <p className="text-muted-foreground leading-relaxed">
+                            The Rewards Plan tracks your daily operations within the Mall and Marketplace. Whether you're buying tires or booking a load, you're building a points balance that can be used to lower your overheads.
+                        </p>
+                    </div>
+                    <div className="space-y-4">
+                        <h3 className="text-xl font-bold flex items-center gap-2">
+                            <ShieldCheck className="h-6 w-6 text-primary" />
+                            Exclusive Store Access
+                        </h3>
+                        <p className="text-muted-foreground leading-relaxed">
+                            Members on the Rewards Plan get first access to our stock liquidation events and specialized equipment sales, where points can be used to secure massive discounts.
+                        </p>
+                    </div>
+                </div>
+                
+                <Alert className="bg-primary/5 border-primary/20 p-6">
+                    <Info className="h-6 w-6 text-primary" />
+                    <AlertTitle className="text-lg font-bold ml-2">Quick Tip</AlertTitle>
+                    <AlertDescription className="mt-2 text-muted-foreground ml-2">
+                        You can view the full list of redeemable items in the **Rewards Store** on your account dashboard.
+                    </AlertDescription>
+                </Alert>
             </div>
         </div>
     );

@@ -1,175 +1,107 @@
 'use client';
 
-import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection } from '@/firebase';
-import { useConfig } from '@/hooks/use-config';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Star, Award, Gift, HeartHandshake, User, Store, Package, Search, Video, Building, Truck, Users, CheckCircle, Zap, Map } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { doc, collection } from 'firebase/firestore';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { useUser } from '@/firebase';
+import { ArrowRight, Zap, Loader2, Check, TrendingUp, Handshake, Info } from 'lucide-react';
 import Link from 'next/link';
-import React, { useMemo } from 'react';
+import { useConfig } from '@/hooks/use-config';
+import { formatCurrency } from '@/lib/utils';
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 export default function ActionsPlanPage() {
-    const { user, isUserLoading } = useUser();
-    const firestore = useFirestore();
-
-    const { data: loyaltySettings, isLoading: isSettingsLoading } = useConfig<any>('loyaltySettings');
-
-    const userDocRef = useMemoFirebase(() => {
-        if (!firestore || !user) return null;
-        return doc(firestore, 'users', user.uid);
-    }, [firestore, user]);
-    const { data: userData, isLoading: isUserDocLoading } = useDoc(userDocRef);
-
-    const companyDocRef = useMemoFirebase(() => {
-        if (!firestore || !userData?.companyId) return null;
-        return doc(firestore, 'companies', userData.companyId);
-    }, [firestore, userData]);
-
-    const { data: companyData, isLoading: isCompanyLoading } = useDoc(companyDocRef);
-
-    const productsQuery = useMemoFirebase(() => {
-        if (!firestore || !companyData?.shopId) return null;
-        return collection(firestore, `companies/${companyData.id}/shops/${companyData.shopId}/products`);
-    }, [firestore, companyData]);
-    const { data: products, isLoading: areProductsLoading } = useCollection(productsQuery);
-
-    const isLoading = isUserLoading || isUserDocLoading || isCompanyLoading || isSettingsLoading || areProductsLoading;
+    const { user } = useUser();
+    const { data: pricing, isLoading } = useConfig<{ actionsPlanPrice: number }>('connectPlans');
     
-    const isTransporter = companyData?.shopType === 'transporter';
-
-    const earningActions = useMemo(() => [
-        { 
-            points: loyaltySettings?.userSignupPoints, 
-            name: 'Sign up for an account', 
-            icon: User, 
-            isCompleted: true,
-            cta: { label: 'Completed!', href: '#', disabled: true } 
-        },
-        { 
-            points: isTransporter ? loyaltySettings?.serviceProfileCreationPoints : loyaltySettings?.shopCreationPoints, 
-            name: isTransporter ? 'Create a Service Profile' : 'Create a Vendor Shop', 
-            icon: isTransporter ? Truck : Store, 
-            isCompleted: !!companyData?.shopId,
-            cta: { label: isTransporter ? 'Create Profile' : 'Create Shop', href: '/account?view=shop' } 
-        },
-        { 
-            points: isTransporter ? loyaltySettings?.routeListingPoints : loyaltySettings?.productAddPoints, 
-            name: isTransporter ? 'List a Service Route/Rate' : 'Add a Product to your Shop', 
-            icon: isTransporter ? Map : Package, 
-            isCompleted: (products?.length || 0) > 0,
-            cta: { label: isTransporter ? 'Add Route' : 'Add Product', href: '/account?view=shop' } 
-        },
-        { 
-            points: loyaltySettings?.loadBoardCreationPoints,
-            name: 'Create a Load Board',
-            icon: Truck,
-            isCompleted: !!companyData?.loadBoardId,
-            cta: { label: 'Create Board', href: '/account?view=load-board' }
-        },
-        { 
-            points: loyaltySettings?.truckContributionPoints, 
-            name: 'Contribute Truck/Trailer Data', 
-            icon: Truck, 
-            isCompleted: false, 
-            cta: { label: 'Contribute', href: '/contribute' } 
-        },
-        { 
-            points: loyaltySettings?.supplierContributionPoints, 
-            name: 'Contribute Supplier Data', 
-            icon: Building, 
-            isCompleted: false,
-            cta: { label: 'Contribute', href: '/contribute?tab=suppliers' } 
-        },
-        { 
-            points: loyaltySettings?.debtorContributionPoints, 
-            name: 'Contribute Debtor Data', 
-            icon: Users,
-            isCompleted: false,
-            cta: { label: 'Contribute', href: '/contribute?tab=debtors' } 
-        },
-        { 
-            points: loyaltySettings?.partnerReferralPoints, 
-            name: 'Refer a New Member', 
-            icon: HeartHandshake, 
-            isCompleted: false,
-            cta: { label: 'Refer Now', href: '/account?view=network' } 
-        },
-        { 
-            points: loyaltySettings?.aiVideoGeneratorPoints, 
-            name: 'Generate an AI Video', 
-            icon: Video, 
-            isCompleted: false,
-            cta: { label: 'Go to AI Studio', href: '/account?view=marketing-studio' } 
-        },
-        { 
-            points: loyaltySettings?.seoBoosterPoints, 
-            name: 'Use the AI SEO Booster', 
-            icon: Search, 
-            isCompleted: false,
-            cta: { label: 'Go to My Shop', href: '/account?view=shop' } 
-        },
-    ], [loyaltySettings, companyData, products, isTransporter]);
-
+    const price = pricing?.actionsPlanPrice || 50;
 
     return (
-        <div className="space-y-6">
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-2xl"><Zap /> Actions Plan</CardTitle>
-                    <CardDescription>
-                        Complete these tasks to earn loyalty points, climb the loyalty tiers, and unlock rewards for your business.
-                    </CardDescription>
-                    <p className="text-sm text-muted-foreground pt-1">
-                        See your current points on your <Link href="/account?view=rewards" className="font-semibold text-primary hover:underline">rewards dashboard</Link>.
+        <div className="bg-background min-h-full">
+            <div className="max-w-4xl mx-auto space-y-12">
+                <div className="text-center space-y-4">
+                    <Badge className="bg-primary/10 text-primary border-primary/20 font-bold uppercase tracking-widest">Connect Division</Badge>
+                    <h1 className="text-4xl md:text-5xl font-black font-headline tracking-tight">The Actions Plan</h1>
+                    <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+                        Monetize your network. Earn recurring revenue by introducing others to the ecosystem.
                     </p>
-                </CardHeader>
-                <CardContent>
-                    {isLoading ? (
-                        <div className="flex justify-center items-center py-20">
-                            <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                </div>
+
+                <Card className="border-primary border-2 shadow-2xl relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-4 opacity-5">
+                        <Zap className="h-32 w-32" />
+                    </div>
+                    
+                    <CardHeader className="text-center pb-2">
+                        <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit mb-4">
+                            <Zap className="h-10 w-10 text-primary" />
                         </div>
-                    ) : (
-                        <div className="border rounded-lg overflow-x-auto">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Action</TableHead>
-                                        <TableHead className="text-center">Points</TableHead>
-                                        <TableHead className="text-right">Status / Link</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {earningActions.map((action) => {
-                                        if (!action.points) return null; 
-                                        const Icon = action.icon;
-                                        return (
-                                            <TableRow key={action.name}>
-                                                <TableCell className="font-medium flex items-center gap-3"><Icon className="h-5 w-5 text-muted-foreground" /> {action.name}</TableCell>
-                                                <TableCell className="text-center font-bold text-primary">{action.points || 0}</TableCell>
-                                                <TableCell className="text-right">
-                                                    {action.isCompleted ? (
-                                                        <Button size="sm" variant="ghost" disabled className="text-green-600">
-                                                            <CheckCircle className="mr-2 h-4 w-4" />
-                                                            Completed
-                                                        </Button>
-                                                    ) : (
-                                                        <Button asChild size="sm" variant="outline">
-                                                            <Link href={action.cta.href}>{action.cta.label}</Link>
-                                                        </Button>
-                                                    )}
-                                                </TableCell>
-                                            </TableRow>
-                                        )
-                                    })}
-                                </TableBody>
-                            </Table>
+                        <CardTitle className="text-3xl font-bold">Network Monetization</CardTitle>
+                        <CardDescription className="mt-2 text-base">Build a passive revenue stream through referrals.</CardDescription>
+                        <div className="py-8">
+                            <div className="flex items-baseline justify-center gap-1">
+                                <span className="text-6xl font-black tracking-tight">{formatCurrency(price)}</span>
+                                <span className="text-muted-foreground font-medium">/month</span>
+                            </div>
                         </div>
-                    )}
-                </CardContent>
-            </Card>
+                    </CardHeader>
+
+                    <CardContent className="max-w-md mx-auto">
+                        <ul className="space-y-4 mb-8">
+                            {[
+                                "Earn on Every Successful Referral",
+                                "Recurring Membership Commissions",
+                                "Transactional Revenue Share",
+                                "Personal Referral Dashboard",
+                                "Priority ISA Pathway Access",
+                                "Automated Payouts to Wallet"
+                            ].map((feature, i) => (
+                                <li key={i} className="flex items-start">
+                                    <Check className="h-5 w-5 text-green-500 mr-3 shrink-0 mt-0.5" />
+                                    <span className="font-medium text-muted-foreground">{feature}</span>
+                                </li>
+                            ))}
+                        </ul>
+                    </CardContent>
+
+                    <CardFooter className="bg-muted/30 border-t p-8 flex justify-center">
+                        <Button asChild size="lg" className="h-14 px-12 text-lg font-bold w-full max-w-sm shadow-lg">
+                            <Link href={`/checkout/actions`}>
+                                Activate Actions Plan <ArrowRight className="ml-2 h-5 w-5" />
+                            </Link>
+                        </Button>
+                    </CardFooter>
+                </Card>
+
+                <div className="grid md:grid-cols-2 gap-8">
+                    <div className="space-y-4">
+                        <h3 className="text-xl font-bold flex items-center gap-2">
+                            <TrendingUp className="h-6 w-6 text-primary" />
+                            Annuity Income Model
+                        </h3>
+                        <p className="text-muted-foreground leading-relaxed">
+                            The Actions Plan isn't just about one-time bonuses. You earn a percentage of the monthly fees of every member you bring in, for as long as they stay active. It's a true annuity for your business.
+                        </p>
+                    </div>
+                    <div className="space-y-4">
+                        <h3 className="text-xl font-bold flex items-center gap-2">
+                            <Handshake className="h-6 w-6 text-primary" />
+                            Shared Transactional Success
+                        </h3>
+                        <p className="text-muted-foreground leading-relaxed">
+                            When your network transacts—whether they are buying parts or financing vehicles—you share in the platform commission. Your network becomes your most valuable digital asset.
+                        </p>
+                    </div>
+                </div>
+                
+                <Alert className="bg-primary/5 border-primary/20 p-6">
+                    <Info className="h-6 w-6 text-primary" />
+                    <AlertTitle className="text-lg font-bold ml-2">Strategic Insight</AlertTitle>
+                    <AlertDescription className="mt-2 text-muted-foreground ml-2">
+                        You can track your referrals and estimated earnings in the **My Network** section of your sidebar once the plan is active.
+                    </AlertDescription>
+                </Alert>
+            </div>
         </div>
     );
 }
