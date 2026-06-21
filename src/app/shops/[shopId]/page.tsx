@@ -11,45 +11,41 @@ import React, { useEffect, useState } from 'react';
 
 export default function PublicShopPage() {
     const params = useParams();
-    const shopId = params.shopId as string;
+    const shopId = params?.shopId as string;
     const firestore = useFirestore();
-    const [ready, setReady] = useState(false);
+    const [isClient, setIsClient] = useState(false);
 
-    // Defer initialization to ensure params are fully resolved by Next.js
     useEffect(() => {
-        if (shopId) setReady(true);
-    }, [shopId]);
+        setIsClient(true);
+    }, []);
 
     const shopRef = useMemoFirebase(() => {
-        if (!firestore || !ready || !shopId) return null;
+        if (!firestore || !shopId || !isClient) return null;
         return doc(firestore, 'shops', shopId);
-    }, [firestore, ready, shopId]);
+    }, [firestore, shopId, isClient]);
     
     const productsQuery = useMemoFirebase(() => {
-        if (!firestore || !ready || !shopId) return null;
+        if (!firestore || !shopId || !isClient) return null;
         return query(collection(firestore, `shops/${shopId}/products`));
-    }, [firestore, ready, shopId]);
+    }, [firestore, shopId, isClient]);
 
-    const { data: shop, isLoading: isShopLoading } = useDoc(shopRef);
+    const { data: shop, isLoading: isShopLoading, error: shopError } = useDoc(shopRef);
     const { data: products, isLoading: areProductsLoading } = useCollection(productsQuery);
     
-    const isLoading = isShopLoading || areProductsLoading || !ready;
+    const isLoading = !isClient || isShopLoading || areProductsLoading;
 
-    // Use a secondary check for "not found" only after initial loading is confirmed complete
-    if (!isLoading && !isShopLoading && !shop) {
-        return notFound();
-    }
-    
     if (isLoading) {
          return (
-            <div className="flex flex-col justify-center items-center h-screen gap-4">
+            <div className="flex flex-col justify-center items-center h-screen gap-4 bg-background">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                <p className="text-sm font-bold uppercase tracking-widest text-muted-foreground animate-pulse">Loading Digital Branch...</p>
+                <p className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Loading Profile...</p>
             </div>
         );
     }
     
-    if (!shop) return notFound();
+    if (!shop || shopError) {
+        return notFound();
+    }
 
     return <ShopPreview shop={shop} products={products || []} />;
 }
