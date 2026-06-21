@@ -49,30 +49,30 @@ export async function POST(req: NextRequest) {
                 // Fetch all shops across the platform
                 const snap = await db.collectionGroup('shops').get();
                 
-                // Filter and Map: We only want shops nested under companies (Primary Source)
-                // Reference path looks like: companies/COMPANY_ID/shops/SHOP_ID
+                // Resilient filtering: Only show primary records (nested under companies)
                 const data = snap.docs
-                    .filter(d => d.ref.path.includes('companies/'))
+                    .filter(d => d.ref.path.includes('/companies/'))
                     .map(d => {
                         const pathSegments = d.ref.path.split('/');
-                        const companiesIdx = pathSegments.indexOf('companies');
-                        const companyId = companiesIdx !== -1 ? pathSegments[companiesIdx + 1] : 'unknown';
+                        const cIdx = pathSegments.indexOf('companies');
+                        const companyId = cIdx !== -1 ? pathSegments[cIdx + 1] : 'unknown';
                         
                         return { 
                             id: d.id, 
                             companyId,
+                            path: d.ref.path,
                             ...serializeTimestamps(d.data()) 
                         };
                     });
                 
-                // Sort in memory to bypass the COLLECTION_GROUP index requirement
-                const sortedData = data.sort((a, b) => {
+                // Memory sort to bypass index requirement
+                data.sort((a, b) => {
                     const timeA = new Date(a.updatedAt || a.createdAt || 0).getTime();
                     const timeB = new Date(b.updatedAt || b.createdAt || 0).getTime();
                     return timeB - timeA;
                 });
                     
-                return NextResponse.json({ success: true, data: sortedData.slice(0, 100) });
+                return NextResponse.json({ success: true, data: data.slice(0, 100) });
             }
 
             case 'approveShop': {
@@ -103,15 +103,15 @@ export async function POST(req: NextRequest) {
                     updatedAt: FieldValue.serverTimestamp()
                 }, { merge: true });
 
-                // 3. Sync Products sub-collection to public
+                // 3. Sync Products sub-collection
                 const productsSnap = await internalShopRef.collection('products').get();
                 const publicProductsCol = publicShopRef.collection('products');
                 
-                // Clear existing public entries first
+                // Clear existing public entries
                 const existingPublic = await publicProductsCol.get();
                 existingPublic.forEach(d => batch.delete(d.ref));
 
-                // Copy over current active products
+                // Copy active products
                 productsSnap.forEach(d => {
                     batch.set(publicProductsCol.doc(d.id), { ...d.data(), id: d.id });
                 });
@@ -120,10 +120,24 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true });
             }
 
+            case 'rejectShop': {
+                const { shopId, companyId } = payload;
+                if (!shopId || !companyId) throw new Error("Missing identifiers.");
+
+                const internalShopRef = db.doc(`companies/${companyId}/shops/${shopId}`);
+                const publicShopRef = db.doc(`shops/${shopId}`);
+
+                const batch = db.batch();
+                batch.update(internalShopRef, { status: 'rejected', updatedAt: FieldValue.serverTimestamp() });
+                batch.delete(publicShopRef); // Remove from public registry
+
+                await batch.commit();
+                return NextResponse.json({ success: true });
+            }
+
             case 'getMembers': {
                 const snap = await db.collection('companies').limit(500).get();
                 const data = snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) }));
-                // Sort in memory
                 data.sort((a,b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
                 return NextResponse.json({ success: true, data: data.slice(0, 100) });
             }

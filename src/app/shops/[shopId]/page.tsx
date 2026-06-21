@@ -45,15 +45,15 @@ export default function PublicShopPage() {
         );
     }
     
-    // If loading is finished and we still have no shop, then it's a 404
+    // Final safety check: if loading is complete and no data exists, it's a 404.
     if (!shop && !isShopLoading) {
         return (
             <div className="flex flex-col items-center justify-center h-screen space-y-4 px-4 text-center">
                 <Store className="h-16 w-16 text-muted-foreground opacity-20" />
-                <h1 className="text-3xl font-black font-headline">Profile Not Synchronized</h1>
+                <h1 className="text-3xl font-black font-headline">Profile Not Found</h1>
                 <p className="text-muted-foreground max-w-md">
-                    This commercial profile exists in draft but hasn't been synchronized with the public registry yet. 
-                    If you are the owner, please request an Admin Sync.
+                    This commercial profile hasn't been synchronized with the public registry yet. 
+                    If you are the owner, please ensure your profile is submitted for approval.
                 </p>
                 <div className="flex gap-4 pt-4">
                     <Button asChild variant="outline">
