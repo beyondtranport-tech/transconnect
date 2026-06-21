@@ -15,6 +15,18 @@
       ]
     },
     {
+      "collectionId": "companies",
+      "fields": [
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionId": "contributions",
+      "fields": [
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
       "collectionId": "shops",
       "queryScope": "COLLECTION_GROUP",
       "fields": [

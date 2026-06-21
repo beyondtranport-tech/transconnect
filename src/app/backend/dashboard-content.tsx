@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -61,15 +60,18 @@ export default function AdminDashboardContent() {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication failed.");
 
-            const [membersRes, contributionsRes, shopsRes] = await Promise.all([
-                fetchFromAdminAPI(token, 'getMembers'),
-                fetchFromAdminAPI(token, 'getContributions'),
-                fetchFromAdminAPI(token, 'getShops')
-            ]);
+            // Fetch data sequentially to avoid crashing the whole view on one index error
+            let mData = [];
+            let cData = [];
+            let sData = [];
+
+            try { mData = (await fetchFromAdminAPI(token, 'getMembers')).data || []; } catch(e) { console.warn("Members fetch failed", e); }
+            try { cData = (await fetchFromAdminAPI(token, 'getContributions')).data || []; } catch(e) { console.warn("Contributions fetch failed", e); }
+            try { sData = (await fetchFromAdminAPI(token, 'getShops')).data || []; } catch(e) { console.warn("Shops fetch failed", e); }
             
-            setMembers(membersRes.data || []);
-            setContributions(contributionsRes.data || []);
-            setShops(shopsRes.data || []);
+            setMembers(mData);
+            setContributions(cData);
+            setShops(sData);
 
         } catch (e: any) {
             setError(e.message);
@@ -184,16 +186,16 @@ export default function AdminDashboardContent() {
                         <div className="space-y-6">
                             <div className="space-y-4">
                                 <h4 className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">High Engagement (Free)</h4>
-                                {members.filter(m => m.membershipId === 'free' && m.rewardPoints > 100).slice(0, 3).map(m => (
+                                {members.filter(m => m.membershipId === 'free' && (m.rewardPoints || 0) > 100).slice(0, 3).map(m => (
                                     <div key={m.id} className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30">
                                         <div className="bg-amber-100 p-1.5 rounded-full"><TrendingUp className="h-4 w-4 text-amber-600" /></div>
                                         <div className="flex-1 min-w-0">
                                             <p className="text-sm font-bold truncate">{m.companyName}</p>
-                                            <p className="text-[10px] text-muted-foreground uppercase">{m.rewardPoints} Points • Potential Lead</p>
+                                            <p className="text-[10px] text-muted-foreground uppercase">{m.rewardPoints || 0} Points • Potential Lead</p>
                                         </div>
                                     </div>
                                 ))}
-                                {members.filter(m => m.membershipId === 'free' && m.rewardPoints > 100).length === 0 && (
+                                {members.filter(m => m.membershipId === 'free' && (m.rewardPoints || 0) > 100).length === 0 && (
                                     <p className="text-xs text-center text-muted-foreground py-4 italic">No high-engagement free members detected yet.</p>
                                 )}
                             </div>
