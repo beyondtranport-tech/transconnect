@@ -89,6 +89,23 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data });
             }
 
+            case 'saveLead': {
+                const { lead } = payload;
+                const ref = lead.id ? db.collection('leads').doc(lead.id) : db.collection('leads').doc();
+                await ref.set({ ...lead, id: ref.id, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+                return NextResponse.json({ success: true });
+            }
+
+            case 'inviteLead': {
+                const { leadId } = payload;
+                await db.collection('leads').doc(leadId).update({
+                    status: 'invited',
+                    invitedAt: FieldValue.serverTimestamp(),
+                    updatedAt: FieldValue.serverTimestamp()
+                });
+                return NextResponse.json({ success: true, message: "Lead marked as invited." });
+            }
+
             case 'getPartnersByType': {
                 const { type } = payload;
                 let q = db.collection('partners').orderBy('updatedAt', 'desc').limit(1000);
@@ -146,9 +163,6 @@ export async function POST(req: NextRequest) {
                         researchStatus: 'completed'
                     };
                     
-                    delete (rawData as any).seq;
-                    delete (rawData as any).sequence;
-                    
                     const data = normalizeAndSanitize(rawData);
                     batch.set(ref, data, { merge: true });
                 }
@@ -156,63 +170,11 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, count: partners.length });
             }
 
-            case 'logCommunication': {
-                const { partnerId, type: commType, subject, notes } = payload;
-                const logRef = db.collection('partners').doc(partnerId).collection('communications').doc();
-                await logRef.set({
-                    id: logRef.id,
-                    type: commType,
-                    subject,
-                    notes: notes || '',
-                    timestamp: FieldValue.serverTimestamp()
-                });
-                return NextResponse.json({ success: true });
-            }
-
-            case 'getPlatformStaff': {
-                const snap = await db.collection('platformStaff').get();
-                const data = snap.docs.map(doc => ({ id: doc.id, ...serializeTimestamps(doc.data()) }));
-                return NextResponse.json({ success: true, data });
-            }
-
-            case 'savePlatformStaff': {
-                const { staff } = payload;
-                const ref = staff.id ? db.collection('platformStaff').doc(staff.id) : db.collection('platformStaff').doc();
-                await ref.set({ ...staff, id: ref.id, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
-                return NextResponse.json({ success: true });
-            }
-
-            case 'deletePartners': {
-                const { partnerIds } = payload;
-                const batch = db.batch();
-                partnerIds.forEach((id: string) => {
-                    batch.delete(db.collection('partners').doc(id));
-                });
-                await batch.commit();
-                return NextResponse.json({ success: true, count: partnerIds.length });
-            }
-
-            case 'deletePartner': {
-                const { partnerId } = payload;
-                await db.collection('partners').doc(partnerId).delete();
-                return NextResponse.json({ success: true });
-            }
-
-            case 'deleteLeads': {
-                const { leadIds } = payload;
-                const batch = db.batch();
-                leadIds.forEach((id: string) => {
-                    batch.delete(db.collection('leads').doc(id));
-                });
-                await batch.commit();
-                return NextResponse.json({ success: true, count: leadIds.length });
-            }
-
             case 'getShops': {
                 const snap = await db.collectionGroup('shops').get();
                 const data = snap.docs.map(d => {
                     const pathSegments = d.ref.path.split('/');
-                    const companyId = pathSegments[1]; // companies/{companyId}/shops/{shopId}
+                    const companyId = pathSegments[1]; 
                     return { 
                         id: d.id, 
                         companyId,
@@ -224,20 +186,24 @@ export async function POST(req: NextRequest) {
 
             case 'approveShop': {
                 const { shopId, companyId } = payload;
+                if (!shopId || !companyId) throw new Error("Missing shopId or companyId in sync request.");
+
                 const internalShopRef = db.doc(`companies/${companyId}/shops/${shopId}`);
                 const publicShopRef = db.doc(`shops/${shopId}`);
                 
                 const shopSnap = await internalShopRef.get();
-                if (!shopSnap.exists) throw new Error("Internal shop record not found.");
+                if (!shopSnap.exists) throw new Error(`Internal shop record not found at: ${internalShopRef.path}`);
                 
                 const shopData = shopSnap.data()!;
                 const { id, ...sanitizedData } = shopData;
 
+                const batch = db.batch();
+
                 // 1. Update internal status
-                await internalShopRef.update({ status: 'approved', updatedAt: FieldValue.serverTimestamp() });
+                batch.update(internalShopRef, { status: 'approved', updatedAt: FieldValue.serverTimestamp() });
 
                 // 2. Clone to root public registry
-                await publicShopRef.set({
+                batch.set(publicShopRef, {
                     ...sanitizedData,
                     id: shopId,
                     companyId,
@@ -249,13 +215,9 @@ export async function POST(req: NextRequest) {
                 const productsSnap = await internalShopRef.collection('products').get();
                 const publicProductsCol = publicShopRef.collection('products');
                 
-                const batch = db.batch();
-                
-                // Clear existing public products to prevent stale data
                 const existingPublic = await publicProductsCol.get();
                 existingPublic.forEach(d => batch.delete(d.ref));
 
-                // Copy current products
                 productsSnap.forEach(d => {
                     const pData = d.data();
                     batch.set(publicProductsCol.doc(d.id), { ...pData, id: d.id });
@@ -272,9 +234,15 @@ export async function POST(req: NextRequest) {
                 const publicShopRef = db.doc(`shops/${shopId}`);
 
                 await internalShopRef.update({ status: 'rejected', updatedAt: FieldValue.serverTimestamp() });
-                await publicShopRef.delete(); // Remove from public view
+                await publicShopRef.delete(); 
 
                 return NextResponse.json({ success: true });
+            }
+
+            case 'getContributions': {
+                const snap = await db.collection('contributions').orderBy('createdAt', 'desc').limit(200).get();
+                const data = snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) }));
+                return NextResponse.json({ success: true, data });
             }
 
             case 'getAuditLogs': {
@@ -296,31 +264,67 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: users });
             }
 
-            case 'approveWalletPayment': {
-                const { companyId, paymentId, amount, description, reconciliationId } = payload;
+            case 'getWalletPayments': {
+                const snap = await db.collectionGroup('walletPayments').get();
+                const data = snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) }));
+                return NextResponse.json({ success: true, data });
+            }
+
+            case 'getWalletTransactions': {
+                const snap = await db.collectionGroup('transactions').orderBy('date', 'desc').limit(500).get();
+                const data = snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) }));
+                return NextResponse.json({ success: true, data });
+            }
+
+            case 'approvePayout': {
+                const { companyId, payoutId, amount } = payload;
                 const companyRef = db.doc(`companies/${companyId}`);
-                const paymentRef = companyRef.collection('walletPayments').doc(paymentId);
+                const payoutRef = companyRef.collection('payoutRequests').doc(payoutId);
                 
                 await db.runTransaction(async (transaction) => {
                     transaction.update(companyRef, {
-                        walletBalance: FieldValue.increment(amount),
-                        availableBalance: FieldValue.increment(amount),
+                        walletBalance: FieldValue.increment(-amount),
+                        availableBalance: FieldValue.increment(-amount),
                         updatedAt: FieldValue.serverTimestamp(),
                     });
-                    transaction.update(paymentRef, { status: 'approved', updatedAt: FieldValue.serverTimestamp() });
+                    transaction.update(payoutRef, { status: 'approved', updatedAt: FieldValue.serverTimestamp() });
                     
                     const txRef = companyRef.collection('transactions').doc();
                     transaction.set(txRef, {
                         transactionId: txRef.id,
-                        reconciliationId,
-                        type: 'credit',
+                        type: 'debit',
                         amount,
                         date: FieldValue.serverTimestamp(),
-                        description,
+                        description: 'Wallet Payout (Withdrawal)',
                         status: 'allocated',
                     });
                 });
                 return NextResponse.json({ success: true });
+            }
+
+            case 'rejectPayout': {
+                const { companyId, payoutId } = payload;
+                await db.doc(`companies/${companyId}/payoutRequests/${payoutId}`).update({
+                    status: 'rejected',
+                    updatedAt: FieldValue.serverTimestamp()
+                });
+                return NextResponse.json({ success: true });
+            }
+
+            case 'getPendingAgreements': {
+                const snap = await db.collectionGroup('agreements').where('status', '==', 'proposed').get();
+                const data = snap.docs.map(d => {
+                    const path = d.ref.path.split('/');
+                    return { id: d.id, companyId: path[1], shopId: path[3], ...serializeTimestamps(d.data()) };
+                });
+                return NextResponse.json({ success: true, data });
+            }
+
+            case 'getLendingData': {
+                const { collectionName } = payload;
+                const snap = await db.collection(collectionName).get();
+                const data = snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) }));
+                return NextResponse.json({ success: true, data });
             }
 
             case 'updateMemberStatus': {
