@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
 
         switch (action) {
             case 'getMembers': {
-                const snap = await db.collection('companies').orderBy('createdAt', 'desc').limit(1000).get();
+                const snap = await db.collection('companies').orderBy('createdAt', 'desc').get();
                 const data = snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) }));
                 return NextResponse.json({ success: true, data });
             }
@@ -210,7 +210,15 @@ export async function POST(req: NextRequest) {
 
             case 'getShops': {
                 const snap = await db.collectionGroup('shops').get();
-                const data = snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) }));
+                const data = snap.docs.map(d => {
+                    const pathSegments = d.ref.path.split('/');
+                    const companyId = pathSegments[1]; // companies/{companyId}/shops/{shopId}
+                    return { 
+                        id: d.id, 
+                        companyId,
+                        ...serializeTimestamps(d.data()) 
+                    };
+                });
                 return NextResponse.json({ success: true, data });
             }
 
