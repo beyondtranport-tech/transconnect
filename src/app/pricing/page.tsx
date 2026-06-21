@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, Star, ShieldCheck, ArrowRight } from 'lucide-react';
+import { Check, Star, ShieldCheck, ArrowRight, Building2, Zap, Search } from 'lucide-react';
 import Link from 'next/link';
 import { useUser } from '@/firebase';
 import { cn, formatCurrency } from '@/lib/utils';
@@ -50,12 +50,12 @@ export default function MembershipPage() {
   ];
 
   return (
-    <div className="bg-background min-h-screen">
+    <div className="bg-background min-h-screen text-left">
       <div className="container mx-auto px-4 py-16 md:py-24">
         <div className="text-center max-w-3xl mx-auto mb-12">
           <Badge className="mb-4 bg-primary/10 text-primary border-primary/20 font-bold uppercase tracking-widest">Pricing Strategy</Badge>
-          <h1 className="text-4xl md:text-6xl font-black font-headline tracking-tight">One Price. Total Intelligence.</h1>
-          <p className="mt-4 text-lg md:text-xl text-muted-foreground">
+          <h1 className="text-4xl md:text-6xl font-black font-headline tracking-tight text-center">One Price. Total Intelligence.</h1>
+          <p className="mt-4 text-lg md:text-xl text-muted-foreground text-center">
             Upgrade to the Intelligence Access tier to unlock the direct contacts of decision-makers across the industry.
           </p>
         </div>
@@ -74,7 +74,7 @@ export default function MembershipPage() {
                     )}
                     <CardHeader className="text-center pb-2">
                         <CardTitle className="text-2xl font-bold">{plan.name}</CardTitle>
-                        <CardDescription className="mt-2 text-sm h-12">{plan.description}</CardDescription>
+                        <CardDescription className="mt-2 text-sm h-12 text-center">{plan.description}</CardDescription>
                         <div className="py-6">
                             <div className="flex items-baseline justify-center gap-1">
                                 <span className="text-5xl font-black tracking-tight">{formatCurrency(plan.price)}</span>
@@ -102,9 +102,41 @@ export default function MembershipPage() {
                 </Card>
             ))}
         </div>
+
+        {/* Supplier Specific Value Prop */}
+        <div className="mt-24 max-w-5xl mx-auto space-y-12">
+            <div className="text-center">
+                <h2 className="text-3xl font-black font-headline">Why Suppliers Join</h2>
+                <p className="text-muted-foreground mt-2">Intelligence Access isn't just a membership; it's a sales velocity engine.</p>
+            </div>
+            
+            <div className="grid md:grid-cols-3 gap-8">
+                <div className="space-y-4 text-left">
+                    <div className="bg-primary/10 p-3 rounded-xl w-fit"><Building2 className="h-6 w-6 text-primary"/></div>
+                    <h3 className="text-xl font-bold">Your Digital Branch</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                        Create a high-fidelity shop profile. Showcase your inventory to a captive community of fleet owners actively searching for your parts.
+                    </p>
+                </div>
+                <div className="space-y-4 text-left">
+                    <div className="bg-primary/10 p-3 rounded-xl w-fit"><Search className="h-6 w-6 text-primary"/></div>
+                    <h3 className="text-xl font-bold">Forensic Lead Gen</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                        Search for transporters by region or vehicle type. Get direct access to MD/Owner mobile numbers to bypass generic call-centers.
+                    </p>
+                </div>
+                <div className="space-y-4 text-left">
+                    <div className="bg-primary/10 p-3 rounded-xl w-fit"><Zap className="h-6 w-6 text-primary"/></div>
+                    <h3 className="text-xl font-bold">Embedded Finance</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                        Close more deals. Your customers can use their platform wallet or apply for instant funding to buy your products directly.
+                    </p>
+                </div>
+            </div>
+        </div>
         
         <div className="mt-20 max-w-3xl mx-auto">
-             <Alert className="bg-primary/5 border-primary/20 p-6">
+             <Alert className="bg-primary/5 border-primary/20 p-6 text-left">
                 <ShieldCheck className="h-6 w-6 text-primary" />
                 <AlertTitle className="text-lg font-bold ml-2">Why R100?</AlertTitle>
                 <AlertDescription className="mt-2 text-muted-foreground ml-2">

@@ -33,7 +33,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Eye, EyeOff, Lock } from 'lucide-react';
+import { Loader2, Eye, EyeOff, Lock, ShoppingCart, Truck, ShieldCheck, Briefcase, Bot, Users, Code, ArrowRight } from 'lucide-react';
 import { roles } from '@/lib/roles';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
@@ -160,28 +160,35 @@ function JoinFormComponent() {
 
   if (!selectedPosition) {
       return (
-          <div className="container mx-auto flex min-h-[calc(100vh-8rem)] items-center justify-center px-4 py-16">
-          <Card className="w-full max-w-2xl">
-            <CardHeader className="text-center">
-                <CardTitle className="text-3xl font-bold">Choose Your Position</CardTitle>
-                <CardDescription>Select the role that best describes your business goals within the ecosystem.</CardDescription>
+          <div className="container mx-auto flex min-h-[calc(100vh-8rem)] items-center justify-center px-4 py-16 text-left">
+          <Card className="w-full max-w-2xl text-left border-none shadow-2xl overflow-hidden">
+            <CardHeader className="text-center bg-slate-900 text-white p-10">
+                <CardTitle className="text-3xl font-black font-headline">Secure Your Digital Node</CardTitle>
+                <CardDescription className="text-slate-400 mt-2">Select your primary function to optimize your ecosystem experience.</CardDescription>
             </CardHeader>
-            <CardContent>
-                <ScrollArea className="h-[50vh] pr-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-4">
+            <CardContent className="p-8">
+                <ScrollArea className="h-[50vh] pr-4 text-left">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-4 text-left">
                         {roles.map((role) => {
                             const Icon = role.icon;
+                            const isSupplier = role.id === 'vendor';
                             return (
                                 <Button 
                                     key={role.id}
                                     variant="outline" 
-                                    className="h-auto min-h-[100px] justify-start px-6 gap-4 border-2 hover:border-primary transition-all" 
+                                    className={cn(
+                                        "h-auto min-h-[120px] justify-start px-6 gap-4 border-2 transition-all text-left",
+                                        isSupplier ? "border-primary/40 bg-primary/5 hover:border-primary" : "hover:border-primary"
+                                    )} 
                                     onClick={() => setSelectedPosition(role.id)}
                                 >
-                                    <div className="bg-primary/10 p-2 rounded-full shrink-0"><Icon className="text-primary"/></div>
+                                    <div className="bg-primary/10 p-3 rounded-xl shrink-0"><Icon className="text-primary h-6 w-6"/></div>
                                     <div className="text-left py-2">
-                                        <p className="font-bold">{role.title}</p>
-                                        <p className="text-[10px] text-muted-foreground leading-tight mt-1">{role.description}</p>
+                                        <div className="flex items-center gap-2">
+                                            <p className="font-black text-sm uppercase tracking-tighter">{role.title}</p>
+                                            {isSupplier && <Badge className="text-[8px] h-4 bg-primary text-white border-none uppercase">Priority</Badge>}
+                                        </div>
+                                        <p className="text-[11px] text-muted-foreground leading-tight mt-1 font-medium">{role.description}</p>
                                     </div>
                                 </Button>
                             );
@@ -189,6 +196,9 @@ function JoinFormComponent() {
                     </div>
                 </ScrollArea>
             </CardContent>
+            <CardFooter className="bg-slate-50 border-t p-6 flex justify-center text-left">
+                <p className="text-xs text-muted-foreground italic">Choosing a role allows the AI to curate the most profitable matches for your dashboard.</p>
+            </CardFooter>
           </Card>
           </div>
       )
@@ -197,39 +207,39 @@ function JoinFormComponent() {
   const selectedRoleData = roles.find(r => r.id === selectedPosition);
 
   return (
-    <Card className="w-full max-w-lg shadow-xl">
-      <CardHeader className="text-center">
-        <CardTitle className="text-3xl font-bold font-headline">Register Your Account</CardTitle>
-        <CardDescription className="flex items-center justify-center gap-2 mt-2">
-            Setting up your <Badge variant="secondary" className="capitalize">{selectedRoleData?.title || selectedPosition}</Badge> profile. 
-            <Button variant="link" size="sm" className="px-1 h-auto text-xs" onClick={() => setSelectedPosition(null)}>Change Role</Button>
+    <Card className="w-full max-w-lg shadow-2xl border-none text-left">
+      <CardHeader className="text-center p-8 border-b text-left">
+        <CardTitle className="text-3xl font-black font-headline text-left">Create Account</CardTitle>
+        <CardDescription className="flex items-center justify-start gap-2 mt-3 text-left">
+            Registering as <Badge variant="secondary" className="capitalize font-black px-3">{selectedRoleData?.title || selectedPosition}</Badge> 
+            <Button variant="link" size="sm" className="px-1 h-auto text-[10px] font-bold uppercase text-primary" onClick={() => setSelectedPosition(null)}>Change Role</Button>
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-8">
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <FormField control={form.control} name="firstName" render={({ field }) => ( <FormItem><FormLabel>First Name</FormLabel><FormControl><Input placeholder="John" {...field} /></FormControl><FormMessage /></FormItem> )} />
-              <FormField control={form.control} name="lastName" render={({ field }) => ( <FormItem><FormLabel>Last Name</FormLabel><FormControl><Input placeholder="Doe" {...field} /></FormControl><FormMessage /></FormItem> )} />
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 text-left">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 text-left">
+              <FormField control={form.control} name="firstName" render={({ field }) => ( <FormItem><FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">First Name</FormLabel><FormControl><Input placeholder="John" {...field} className="h-11"/></FormControl><FormMessage /></FormItem> )} />
+              <FormField control={form.control} name="lastName" render={({ field }) => ( <FormItem><FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Last Name</FormLabel><FormControl><Input placeholder="Doe" {...field} className="h-11"/></FormControl><FormMessage /></FormItem> )} />
             </div>
             <FormField control={form.control} name="email" render={({ field }) => (
-                <FormItem><FormLabel>Email Address</FormLabel><FormControl><div className="relative"><Input {...field} disabled={!!emailParam} />{!!emailParam && <Lock className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />}</div></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Business Email</FormLabel><FormControl><div className="relative"><Input {...field} disabled={!!emailParam} className="h-11"/>{!!emailParam && <Lock className="absolute right-3 top-3.5 h-4 w-4 text-muted-foreground" />}</div></FormControl><FormMessage /></FormItem>
             )} />
-            <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel>Phone Number</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+            <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Mobile Number</FormLabel><FormControl><Input {...field} className="h-11" placeholder="+27..."/></FormControl><FormMessage /></FormItem> )} />
             <FormField control={form.control} name="password" render={({ field }) => (
-                <FormItem><div className="flex items-center justify-between"><FormLabel>Password</FormLabel><button type="button" onClick={handlePasswordReset} className="text-xs text-primary underline">Forgot?</button></div>
-                <FormControl><div className="relative"><Input type={showPassword ? "text" : "password"} {...field} /><Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0" onClick={() => setShowPassword(!showPassword)}>{showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</Button></div></FormControl><FormMessage /></FormItem>
+                <FormItem><div className="flex items-center justify-between"><FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Secure Password</FormLabel><button type="button" onClick={handlePasswordReset} className="text-[10px] font-bold text-primary uppercase underline">Forgot?</button></div>
+                <FormControl><div className="relative"><Input type={showPassword ? "text" : "password"} {...field} className="h-11"/><Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0 h-11" onClick={() => setShowPassword(!showPassword)}>{showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</Button></div></FormControl><FormMessage /></FormItem>
             )} />
-            <Button type="submit" className="w-full py-6 text-lg font-bold mt-6" disabled={isLoading}>
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Create My Account
+            <Button type="submit" className="w-full h-14 text-lg font-black uppercase tracking-tight mt-6 shadow-xl" disabled={isLoading}>
+              {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <ArrowRight className="mr-2 h-5 w-5" />}
+              Activate Membership
             </Button>
           </form>
         </Form>
       </CardContent>
-      <CardFooter className="justify-center border-t py-4 bg-muted/20">
-        <p className="text-sm text-muted-foreground">
-            Already have an account? <Link href="/signin" className="text-primary font-bold hover:underline ml-1">Sign In</Link>
+      <CardFooter className="justify-center border-t py-6 bg-slate-50 text-left rounded-b-xl">
+        <p className="text-xs text-muted-foreground font-medium">
+            Member already? <Link href="/signin" className="text-primary font-bold hover:underline ml-1 uppercase">Sign In</Link>
         </p>
       </CardFooter>
     </Card>
@@ -238,7 +248,7 @@ function JoinFormComponent() {
 
 export default function JoinPage() {
   return (
-    <div className="container mx-auto flex min-h-[calc(100vh-8rem)] items-center justify-center px-4 py-16">
+    <div className="container mx-auto flex min-h-[calc(100vh-8rem)] items-center justify-center px-4 py-16 text-left">
       <Suspense fallback={<Loader2 className="h-12 w-12 animate-spin text-primary" />}>
         <JoinFormComponent />
       </Suspense>
