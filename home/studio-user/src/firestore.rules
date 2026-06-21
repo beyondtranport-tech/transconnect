@@ -18,11 +18,10 @@ service cloud.firestore {
       );
     }
 
-    // Core membership check: verify the user profile points to this company
-    // This is the source of truth for member access to company sub-collections.
-    function isCompanyMember(cid) {
+    // Direct membership check via user document
+    function isMember(cid) {
       return isSignedIn() && 
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == cid;
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('companyId', null) == cid;
     }
 
     // --- RULES ---
@@ -44,23 +43,20 @@ service cloud.firestore {
 
     // Company Data & Sub-collections
     match /companies/{companyId} {
-      allow create: if isSignedIn();
+      // Allow read/write for owners and admins
+      allow read, write: if isAdmin() || (isSignedIn() && (resource == null || resource.data.ownerId == request.auth.uid));
+      // Allow members to get the company doc
+      allow get: if isMember(companyId);
       
-      // Top-level document access
-      // Break recursion by using simple UID check or member helper
-      allow get, update: if isAdmin() || (isSignedIn() && (resource == null || resource.data.ownerId == request.auth.uid)) || isCompanyMember(companyId);
-      allow list: if isAdmin(); 
-
-      // Explicit match for sub-collections to ensure 'list' and 'read' work correctly.
-      // This matches any path inside companies/{companyId}/ and grants access based on user profile.
+      // Explicitly handle all sub-collections (Support Chat, Wallet, etc.)
       match /{allSub=**} {
-        allow read, write: if isAdmin() || isCompanyMember(companyId);
+        allow read, write: if isAdmin() || isMember(companyId);
       }
     }
 
     // Industrial Registries (Internal)
     match /partners/{partnerId} {
-      allow read: if isSignedIn(); // Allow members to browse the registry
+      allow read: if isSignedIn();
       allow write: if isAdmin();
       match /{allSub=**} { allow read, write: if isAdmin(); }
     }
