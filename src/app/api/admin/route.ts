@@ -24,6 +24,22 @@ function serializeTimestamps(docData: any): any {
     return newDocData;
 }
 
+/**
+ * Normalizes keys and scrubs undefined values to prevent Firestore crashes.
+ */
+function normalizeAndSanitize(data: any): any {
+    if (!data || typeof data !== 'object') return data;
+    const clean: any = {};
+    Object.entries(data).forEach(([key, val]) => {
+        if (val === undefined) return;
+        const normalizedKey = key.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+        clean[normalizedKey] = (val && typeof val === 'object' && !Array.isArray(val)) 
+            ? normalizeAndSanitize(val) 
+            : val;
+    });
+    return clean;
+}
+
 export async function POST(req: NextRequest) {
     try {
         const { app, error: initError } = getAdminApp();
@@ -69,8 +85,7 @@ export async function POST(req: NextRequest) {
             }
 
             case 'getShops': {
-                // Fetch all shops but filter for primary sources (those nested under companies)
-                // This resolves the "multiple records" issue by excluding public clones from the management list
+                // Fetch all shops from the collection group but filter for primary sources
                 const snap = await db.collectionGroup('shops').orderBy('updatedAt', 'desc').get();
                 const data = snap.docs
                     .filter(d => d.ref.path.includes('companies/'))
@@ -94,7 +109,7 @@ export async function POST(req: NextRequest) {
                 const publicShopRef = db.doc(`shops/${shopId}`);
                 
                 const shopSnap = await internalShopRef.get();
-                if (!shopSnap.exists) throw new Error(`Source shop record not found at: ${internalShopRef.path}`);
+                if (!shopSnap.exists) throw new Error(`Source record not found at: ${internalShopRef.path}`);
                 
                 const shopData = shopSnap.data()!;
                 const { id, ...sanitizedData } = shopData;
@@ -109,56 +124,23 @@ export async function POST(req: NextRequest) {
                     updatedAt: FieldValue.serverTimestamp()
                 }, { merge: true });
 
-                // Sync products subcollection
                 const productsSnap = await internalShopRef.collection('products').get();
                 const publicProductsCol = publicShopRef.collection('products');
-                
                 const existingPublic = await publicProductsCol.get();
                 existingPublic.forEach(d => batch.delete(d.ref));
 
                 productsSnap.forEach(d => {
-                    const pData = d.data();
-                    batch.set(publicProductsCol.doc(d.id), { ...pData, id: d.id });
+                    batch.set(publicProductsCol.doc(d.id), { ...d.data(), id: d.id });
                 });
 
                 await batch.commit();
                 return NextResponse.json({ success: true });
             }
 
-            case 'getContributions': {
-                const snap = await db.collection('contributions').orderBy('createdAt', 'desc').limit(100).get();
-                const data = snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) }));
-                return NextResponse.json({ success: true, data });
-            }
-
             case 'getAuditLogs': {
                 const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(100).get();
                 const data = snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) }));
                 return NextResponse.json({ success: true, data });
-            }
-
-            case 'getPlatformStaff': {
-                const snap = await db.collection('platformStaff').get();
-                const data = snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) }));
-                return NextResponse.json({ success: true, data });
-            }
-
-            case 'getPendingPayouts': {
-                // New Strategy: Avoid collection group query to bypass indexing issues.
-                const companiesSnap = await db.collection('companies').get();
-                const promises = companiesSnap.docs.map(companyDoc => {
-                    return db.collection(`companies/${companyDoc.id}/payoutRequests`)
-                             .where('status', '==', 'pending')
-                             .get();
-                });
-                const results = await Promise.all(promises);
-                const allPayouts: any[] = [];
-                results.forEach(querySnapshot => {
-                    querySnapshot.docs.forEach(doc => {
-                        allPayouts.push({ id: doc.id, ...serializeTimestamps(doc.data()) });
-                    });
-                });
-                return NextResponse.json({ success: true, data: allPayouts });
             }
 
             default:
