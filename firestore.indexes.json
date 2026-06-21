@@ -28,21 +28,6 @@
       ]
     },
     {
-      "collectionId": "shops",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        { "fieldPath": "status", "order": "ASCENDING" },
-        { "fieldPath": "updatedAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionId": "auditLogs",
-      "fields": [
-        { "fieldPath": "companyId", "order": "ASCENDING" },
-        { "fieldPath": "timestamp", "order": "DESCENDING" }
-      ]
-    },
-    {
       "collectionId": "auditLogs",
       "fields": [
         { "fieldPath": "timestamp", "order": "DESCENDING" }
