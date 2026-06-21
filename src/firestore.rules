@@ -1,6 +1,6 @@
 rules_version = '2';
 
-// Security Rules Version: 1.0.6 - Support Chat & Member Subcollections
+// Security Rules Version: 1.0.7 - Member Subcollection Access Fix
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -44,7 +44,29 @@ service cloud.firestore {
       allow create: if request.auth != null;
       allow get, update: if isAdmin() || isCompanyMember(companyId);
 
-      // Allow members to manage their own subcollections
+      // Explicitly allow members to manage their own subcollections
+      // This fix ensures 'list' operations on these paths are permitted for the owner.
+      match /supportMessages/{docId} { allow read, write: if isAdmin() || isCompanyMember(companyId); }
+      match /walletPayments/{docId} { allow read, write: if isAdmin() || isCompanyMember(companyId); }
+      match /transactions/{docId} { allow read, write: if isAdmin() || isCompanyMember(companyId); }
+      match /enquiries/{docId} { allow read, write: if isAdmin() || isCompanyMember(companyId); }
+      match /quotes/{docId} { allow read, write: if isAdmin() || isCompanyMember(companyId); }
+      match /staff/{docId} { allow read, write: if isAdmin() || isCompanyMember(companyId); }
+      match /payoutRequests/{docId} { allow read, write: if isAdmin() || isCompanyMember(companyId); }
+      match /searchLogs/{docId} { allow read, write: if isAdmin() || isCompanyMember(companyId); }
+      match /vehicleListings/{docId} { allow read, write: if isAdmin() || isCompanyMember(companyId); }
+      
+      match /shops/{shopId} { 
+        allow read, write: if isAdmin() || isCompanyMember(companyId); 
+        match /products/{prodId} { allow read, write: if isAdmin() || isCompanyMember(companyId); }
+        match /agreements/{agId} { allow read, write: if isAdmin() || isCompanyMember(companyId); }
+      }
+      match /loadBoards/{boardId} {
+        allow read, write: if isAdmin() || isCompanyMember(companyId);
+        match /loads/{loadId} { allow read, write: if isAdmin() || isCompanyMember(companyId); }
+      }
+      
+      // Fallback for any other subcollections
       match /{subcollection}/{docId=**} {
         allow read, write: if isAdmin() || isCompanyMember(companyId);
       }
