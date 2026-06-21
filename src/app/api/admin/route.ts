@@ -6,22 +6,25 @@ import { getAdminApp } from '@/lib/firebase-admin';
 
 export const dynamic = 'force-dynamic';
 
+/**
+ * Utility to recursively serialize Firestore Timestamps to ISO strings.
+ */
 function serializeTimestamps(docData: any): any {
     if (!docData) return docData;
-    const newDocData: { [key: string]: any } = {};
-    for (const key in docData) {
-        const value = docData[key];
-        if (value instanceof Timestamp) {
-            newDocData[key] = value.toDate().toISOString();
-        } else if (value && typeof value === 'object' && value._methodName === 'serverTimestamp') {
-            newDocData[key] = new Date().toISOString();
-        } else if (value && typeof value === 'object' && !Array.isArray(value)) {
-            newDocData[key] = serializeTimestamps(value);
-        } else {
-            newDocData[key] = value;
-        }
+    if (docData instanceof Timestamp) {
+        return docData.toDate().toISOString();
     }
-    return newDocData;
+    if (Array.isArray(docData)) {
+        return docData.map(serializeTimestamps);
+    }
+    if (typeof docData === 'object' && docData !== null) {
+        const serialized: { [key: string]: any } = {};
+        for (const key in docData) {
+            serialized[key] = serializeTimestamps(docData[key]);
+        }
+        return serialized;
+    }
+    return docData;
 }
 
 export async function POST(req: NextRequest) {
@@ -36,36 +39,36 @@ export async function POST(req: NextRequest) {
         const adminAuth = getAuth(app);
         const decodedToken = await adminAuth.verifyIdToken(token);
         
+        const isAdmin = decodedToken.email === 'beyondtransport@gmail.com' || decodedToken.email === 'mkoton100@gmail.com';
+        if (!isAdmin) throw new Error("Forbidden: Admin access required.");
+
         const body = await req.json();
         const action = (body.action || '').trim();
         const payload = body.payload || {};
         const db = getFirestore(app);
-        
-        const isAdmin = decodedToken.email === 'beyondtransport@gmail.com' || decodedToken.email === 'mkoton100@gmail.com';
-        if (!isAdmin) throw new Error("Forbidden: Admin access required.");
 
         switch (action) {
             case 'getShops': {
                 // Fetch all shops across the platform
                 const snap = await db.collectionGroup('shops').get();
                 
-                // Resilient filtering: Only show primary records (nested under companies)
+                // Filter to only show primary records (nested under companies)
+                // Public clones live at 'shops/{id}', primary live at 'companies/{cid}/shops/{id}'
                 const data = snap.docs
-                    .filter(d => d.ref.path.includes('/companies/'))
+                    .filter(d => d.ref.path.split('/').includes('companies'))
                     .map(d => {
                         const pathSegments = d.ref.path.split('/');
                         const cIdx = pathSegments.indexOf('companies');
-                        const companyId = cIdx !== -1 ? pathSegments[cIdx + 1] : 'unknown';
+                        const companyId = pathSegments[cIdx + 1];
                         
                         return { 
                             id: d.id, 
                             companyId,
-                            path: d.ref.path,
                             ...serializeTimestamps(d.data()) 
                         };
                     });
                 
-                // Memory sort to bypass index requirement
+                // Sort in memory to bypass index requirement
                 data.sort((a, b) => {
                     const timeA = new Date(a.updatedAt || a.createdAt || 0).getTime();
                     const timeB = new Date(b.updatedAt || b.createdAt || 0).getTime();
@@ -77,13 +80,13 @@ export async function POST(req: NextRequest) {
 
             case 'approveShop': {
                 const { shopId, companyId } = payload;
-                if (!shopId || !companyId) throw new Error("Approval Error: Missing identifiers.");
+                if (!shopId || !companyId) throw new Error("Missing shopId or companyId.");
 
                 const internalShopRef = db.doc(`companies/${companyId}/shops/${shopId}`);
                 const publicShopRef = db.doc(`shops/${shopId}`);
                 
                 const shopSnap = await internalShopRef.get();
-                if (!shopSnap.exists) throw new Error(`Source profile not found at ${internalShopRef.path}`);
+                if (!shopSnap.exists) throw new Error(`Source shop record not found.`);
                 
                 const shopData = shopSnap.data()!;
                 const batch = db.batch();
@@ -94,7 +97,7 @@ export async function POST(req: NextRequest) {
                     updatedAt: FieldValue.serverTimestamp() 
                 });
                 
-                // 2. Clone to public root registry
+                // 2. Clone to public root (The fix for 404)
                 batch.set(publicShopRef, {
                     ...shopData,
                     id: shopId,
@@ -103,15 +106,15 @@ export async function POST(req: NextRequest) {
                     updatedAt: FieldValue.serverTimestamp()
                 }, { merge: true });
 
-                // 3. Sync Products sub-collection
+                // 3. Sync Products
                 const productsSnap = await internalShopRef.collection('products').get();
                 const publicProductsCol = publicShopRef.collection('products');
                 
-                // Clear existing public entries
+                // Clear old public products
                 const existingPublic = await publicProductsCol.get();
                 existingPublic.forEach(d => batch.delete(d.ref));
 
-                // Copy active products
+                // Copy current products
                 productsSnap.forEach(d => {
                     batch.set(publicProductsCol.doc(d.id), { ...d.data(), id: d.id });
                 });
@@ -129,28 +132,89 @@ export async function POST(req: NextRequest) {
 
                 const batch = db.batch();
                 batch.update(internalShopRef, { status: 'rejected', updatedAt: FieldValue.serverTimestamp() });
-                batch.delete(publicShopRef); // Remove from public registry
+                batch.delete(publicShopRef);
+
+                await batch.commit();
+                return NextResponse.json({ success: true });
+            }
+
+            case 'getPendingAgreements': {
+                const snap = await db.collectionGroup('agreements')
+                    .where('status', '==', 'proposed')
+                    .get();
+                
+                const agreements = await Promise.all(snap.docs.map(async d => {
+                    const data = d.data();
+                    const pathSegments = d.ref.path.split('/');
+                    const cIdx = pathSegments.indexOf('companies');
+                    const sIdx = pathSegments.indexOf('shops');
+                    const companyId = pathSegments[cIdx + 1];
+                    const shopId = pathSegments[sIdx + 1];
+
+                    // Fetch shop name for UI
+                    const shopSnap = await db.doc(`companies/${companyId}/shops/${shopId}`).get();
+                    const shopName = shopSnap.exists ? shopSnap.data()?.shopName : 'Unknown Shop';
+
+                    return {
+                        id: d.id,
+                        companyId,
+                        shopId,
+                        shopName,
+                        ...serializeTimestamps(data)
+                    };
+                }));
+
+                return NextResponse.json({ success: true, data: agreements });
+            }
+
+            case 'acceptCommercialAgreement': {
+                const { companyId, shopId, agreementId } = payload;
+                const agreementRef = db.doc(`companies/${companyId}/shops/${shopId}/agreements/${agreementId}`);
+                const shopRef = db.doc(`companies/${companyId}/shops/${shopId}`);
+                
+                const agreementSnap = await agreementRef.get();
+                if (!agreementSnap.exists) throw new Error("Agreement not found.");
+
+                const batch = db.batch();
+                batch.update(agreementRef, { 
+                    status: 'active', 
+                    effectiveDate: FieldValue.serverTimestamp(),
+                    updatedAt: FieldValue.serverTimestamp() 
+                });
+                batch.update(shopRef, { 
+                    platformCommission: agreementSnap.data().percentage,
+                    updatedAt: FieldValue.serverTimestamp()
+                });
+
+                // Archive other proposals
+                const otherProposals = await db.collection(`companies/${companyId}/shops/${shopId}/agreements`)
+                    .where('status', '==', 'proposed')
+                    .get();
+                
+                otherProposals.forEach(doc => {
+                    if (doc.id !== agreementId) {
+                        batch.update(doc.ref, { status: 'archived', updatedAt: FieldValue.serverTimestamp() });
+                    }
+                });
 
                 await batch.commit();
                 return NextResponse.json({ success: true });
             }
 
             case 'getMembers': {
-                const snap = await db.collection('companies').limit(500).get();
+                const snap = await db.collection('companies').orderBy('createdAt', 'desc').limit(100).get();
                 const data = snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) }));
-                data.sort((a,b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
-                return NextResponse.json({ success: true, data: data.slice(0, 100) });
+                return NextResponse.json({ success: true, data });
             }
 
             case 'getAuditLogs': {
-                const snap = await db.collection('auditLogs').limit(100).get();
+                const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(100).get();
                 const data = snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) }));
-                data.sort((a,b) => new Date(b.timestamp || 0).getTime() - new Date(a.timestamp || 0).getTime());
                 return NextResponse.json({ success: true, data });
             }
 
             case 'getContributions': {
-                const snap = await db.collection('contributions').limit(100).get();
+                const snap = await db.collection('contributions').orderBy('createdAt', 'desc').limit(100).get();
                 const data = snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) }));
                 return NextResponse.json({ success: true, data });
             }
