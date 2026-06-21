@@ -3,7 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useUser } from '@/firebase';
-import { ArrowRight, Heart, Loader2, Check, ShieldCheck, Star } from 'lucide-react';
+import { ArrowRight, Heart, Loader2, Check, ShieldCheck, Star, Info } from 'lucide-react';
 import Link from 'next/link';
 import { useConfig } from '@/hooks/use-config';
 import { formatCurrency } from '@/lib/utils';
