@@ -66,7 +66,6 @@ export default function VideoGeneratorCard({
     setGeneratedVideo(null);
 
     try {
-      // Use API route instead of direct server action for better timeout resilience in browser
       const response = await fetch('/api/generateVideo', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
