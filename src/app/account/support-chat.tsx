@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -49,7 +50,7 @@ export default function SupportChatContent() {
         );
     }, [firestore, companyId]);
 
-    const { data: messages, isLoading: areMessagesLoading, forceRefresh, error: permissionError } = useCollection<SupportMessage>(messagesQuery);
+    const { data: messages, isLoading: areMessagesLoading, error: permissionError } = useCollection<SupportMessage>(messagesQuery);
 
     const isLoading = isUserLoading || areMessagesLoading;
     
@@ -70,7 +71,7 @@ export default function SupportChatContent() {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication failed.");
 
-            // 1. Save user message via proxy API for consistent auditing
+            // 1. Save user message via proxy API
             const path = `companies/${companyId}/supportMessages`;
             const userMessageData = {
                 text: userMessageText,
@@ -86,14 +87,11 @@ export default function SupportChatContent() {
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ collectionPath: path, data: userMessageData }),
             });
-            
-            forceRefresh();
 
-            // 2. Build history for AI (ensure roles are correct)
+            // 2. Build history for AI
             const historyForApi: { role: 'user' | 'model'; content: { text: string; }[] }[] = (messages || [])
                 .filter(m => !!m && typeof m === 'object' && m.senderId && m.text)
                 .map(msg => {
-                    // Detect role: AI or anyone else as the model, Current User as user
                     const role: 'user' | 'model' = msg.senderId === user.uid ? 'user' : 'model';
                     return { role, content: [{ text: msg.text }] };
                 });
@@ -104,7 +102,7 @@ export default function SupportChatContent() {
                 history: historyForApi
             });
 
-            // 4. Save AI response via proxy API
+            // 4. Save AI response
             const aiMessageData = {
                 text: aiResult.response,
                 senderId: 'ai-assistant',
@@ -119,12 +117,13 @@ export default function SupportChatContent() {
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ collectionPath: path, data: aiMessageData }),
             });
-            
-            forceRefresh();
 
         } catch (error: any) {
             console.error("Support chat error:", error);
-            toast({ variant: 'destructive', title: 'Send Failed', description: error.message });
+            const errorMessage = error.message?.includes('429') 
+                ? "AI Assistant is busy. Please wait a moment before sending another message."
+                : error.message;
+            toast({ variant: 'destructive', title: 'Send Failed', description: errorMessage });
             setInputFieldText(userMessageText);
         } finally {
             setIsSending(false);
@@ -156,12 +155,12 @@ export default function SupportChatContent() {
     }
 
     return (
-        <Card className="h-[calc(100vh-10rem)] flex flex-col">
-            <CardHeader>
+        <Card className="h-[calc(100vh-10rem)] flex flex-col border-none shadow-none">
+            <CardHeader className="px-0">
                 <CardTitle className="flex items-center gap-2"><MessageSquare /> Support Chat</CardTitle>
                 <CardDescription>Direct line to our AI assistant and platform support team.</CardDescription>
             </CardHeader>
-            <CardContent className="flex-1 flex flex-col min-h-[0px]">
+            <CardContent className="flex-1 flex flex-col min-h-[0px] p-0">
                 <ScrollArea className="flex-1 pr-4 -mr-4 mb-4" ref={scrollAreaRef as any}>
                     <div className="space-y-4">
                         {isLoading && !messages ? (

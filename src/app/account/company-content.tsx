@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useForm } from 'react-hook-form';
@@ -44,7 +45,6 @@ export default function CompanyContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const fromWallet = searchParams.get('from') === 'wallet';
-  const [isAwaitingCompanyId, setIsAwaitingCompanyId] = useState(false);
 
   const form = useForm<CompanyFormValues>({
     resolver: zodResolver(companyFormSchema),
@@ -85,41 +85,6 @@ export default function CompanyContent() {
       });
     }
   }, [user, form]);
-
-  useEffect(() => {
-    let pollInterval: NodeJS.Timeout | null = null;
-    let timeout: NodeJS.Timeout | null = null;
-
-    if (!isUserLoading && user && !user.companyId) {
-      setIsAwaitingCompanyId(true);
-      pollInterval = setInterval(() => {
-        forceRefresh();
-      }, 2000);
-
-      timeout = setTimeout(() => {
-        if (pollInterval) {
-          clearInterval(pollInterval);
-          setIsAwaitingCompanyId(false);
-          toast({
-            variant: "destructive",
-            title: "Could not finalize setup",
-            description: "There was a delay creating your company profile. Please try refreshing the page.",
-          });
-        }
-      }, 15000);
-    }
-
-    if (user?.companyId) {
-      if (pollInterval) clearInterval(pollInterval);
-      if (timeout) clearTimeout(timeout);
-      setIsAwaitingCompanyId(false);
-    }
-    
-    return () => {
-      if (pollInterval) clearInterval(pollInterval);
-      if (timeout) clearTimeout(timeout);
-    };
-  }, [isUserLoading, user, user?.companyId, forceRefresh, toast]);
 
   const onSubmit = async (values: CompanyFormValues) => {
     setIsSaving(true);
@@ -164,7 +129,7 @@ export default function CompanyContent() {
     }
   };
   
-  const isLoading = isUserLoading || isAwaitingCompanyId;
+  const isAwaitingCompanyId = !isUserLoading && user && !user.companyId;
 
   return (
     <Card>
@@ -173,7 +138,7 @@ export default function CompanyContent() {
         <CardDescription>View and update your company's information and payout bank details.</CardDescription>
       </CardHeader>
       <CardContent>
-        {isUserLoading && !isAwaitingCompanyId ? (
+        {isUserLoading ? (
           <div className="flex justify-center items-center py-10">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
@@ -184,15 +149,15 @@ export default function CompanyContent() {
                 <Loader2 className="h-5 w-5 animate-spin" />
                 <div>
                   <p className="font-semibold">Finalizing your company profile...</p>
-                  <p className="text-xs">This should only take a moment.</p>
+                  <p className="text-xs">The real-time listener will update your dashboard automatically.</p>
                 </div>
               </div>
             )}
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 max-w-2xl">
               <div>
-                <h3 className="text-lg font-medium">Business Details</h3>
+                <h3 className="text-lg font-medium text-left text-foreground">Business Details</h3>
                 <Separator className="my-2" />
-                <div className="space-y-4 pt-2">
+                <div className="space-y-4 pt-2 text-left">
                      <FormField control={form.control} name="companyName" render={({ field }) => (
                         <FormItem><FormLabel>Company Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                     )} />
@@ -208,9 +173,9 @@ export default function CompanyContent() {
               </div>
 
                <div>
-                <h3 className="text-lg font-medium">Physical Address</h3>
+                <h3 className="text-lg font-medium text-left text-foreground">Physical Address</h3>
                 <Separator className="my-2" />
-                <div className="space-y-4 pt-2">
+                <div className="space-y-4 pt-2 text-left">
                      <FormField control={form.control} name="streetAddress" render={({ field }) => (
                         <FormItem><FormLabel>Street Address</FormLabel><FormControl><Input placeholder="123 Transport Lane" {...field} /></FormControl><FormMessage /></FormItem>
                     )} />
@@ -229,10 +194,10 @@ export default function CompanyContent() {
               </div>
               
               <div>
-                <h3 className="text-lg font-medium flex items-center gap-2"><Banknote/> Bank Details for Payouts</h3>
-                 <p className="text-sm text-muted-foreground">This is the account where your earnings from sales and commissions will be paid.</p>
+                <h3 className="text-lg font-medium flex items-center gap-2 text-left text-foreground"><Banknote/> Bank Details for Payouts</h3>
+                 <p className="text-sm text-muted-foreground text-left">This is the account where your earnings from sales and commissions will be paid.</p>
                 <Separator className="my-2" />
-                <div className="space-y-4 pt-2">
+                <div className="space-y-4 pt-2 text-left">
                      <FormField control={form.control} name="accountHolderName" render={({ field }) => (
                         <FormItem><FormLabel>Account Holder Name</FormLabel><FormControl><Input placeholder="Your Company (Pty) Ltd" {...field} /></FormControl><FormMessage /></FormItem>
                     )} />
@@ -251,7 +216,7 @@ export default function CompanyContent() {
               </div>
 
               <div className="flex items-center gap-4">
-                <Button type="submit" disabled={isSaving || isLoading}>
+                <Button type="submit" disabled={isSaving || isUserLoading}>
                     {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                     Save Changes
                 </Button>

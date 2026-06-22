@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -11,6 +12,7 @@ export const dynamic = 'force-dynamic';
  * 1. Deep-scan of industrialTags and minedServiceWording.
  * 2. Visual data masking for Free tier.
  * 3. 100-record hard cap for all tiers.
+ * 4. Optimized batch sizing to prevent 429 quota exhaustion.
  */
 export async function POST(req: NextRequest) {
     try {
@@ -63,15 +65,14 @@ export async function POST(req: NextRequest) {
         let collectionName = 'leads';
         if (type === 'driver' || type === 'transporter' || type === 'supplier' || type === 'finance') collectionName = 'partners';
         
-        // Fetch a representative batch for in-memory forensic matching
+        // OPTIMIZATION: Reduced limit to 500 to save on read quota and prevent resource exhaustion
         const snapshot = await db.collection(collectionName)
             .orderBy('updatedAt', 'desc')
-            .limit(2000) 
+            .limit(500) 
             .get();
 
         let results = snapshot.docs.map((doc: any) => {
             const item = doc.data();
-            // Robust field mapping for disparate sources
             const normalized = {
                 id: doc.id,
                 companyName: item.companyName || item.company_name || item.trading_name || item.name || item.service_handle || 'Industrial Entity',
@@ -123,7 +124,6 @@ export async function POST(req: NextRequest) {
                 const matchesCat = !lowCat || typeStr.includes(lowCat);
                 const matchesServ = !lowServ || typeStr.includes(lowServ);
                 
-                // Deep Scan logic: Matches against Name, Category, Address, ML Tags, and Scraped Wording
                 const matchesText = !lowSearch || 
                     name.includes(lowSearch) || 
                     typeStr.includes(lowSearch) || 
