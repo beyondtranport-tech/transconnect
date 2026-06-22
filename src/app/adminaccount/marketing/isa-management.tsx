@@ -44,6 +44,7 @@ import { BatchResearchDialog } from './BatchResearchDialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { BulkImportDialog } from './BulkImportDialog';
+import { Separator } from '@/components/ui/separator';
 
 async function performAdminAction(token: string, action: string, payload: any) {
   const response = await fetch('/api/admin', {
@@ -185,6 +186,12 @@ export default function ISAManagement() {
     });
   }, [allRecords, statusFilter, assigneeFilter]);
 
+  const handleExport = () => {
+      if (filteredRecords.length === 0) return;
+      downloadDataAsCSV(filteredRecords, `isa-export-${new Date().toISOString().split('T')[0]}.csv`);
+      toast({ title: "Export Complete" });
+  };
+
   async function handleDeleteBatch() {
     if (selectedIds.length === 0) return;
     try {
@@ -215,7 +222,18 @@ export default function ISAManagement() {
     },
     { accessorKey: 'phone', header: 'Landline' },
     { accessorKey: 'mobile', header: 'Mobile' },
-    { accessorKey: 'email', header: 'Email' },
+    { 
+        header: 'Outreach',
+        cell: ({ row }) => {
+            if (!row.original.lastOutreachSubject) return <span className="text-[10px] text-muted-foreground italic text-left">None</span>;
+            return (
+                <div className="flex flex-col text-left">
+                    <Badge variant="outline" className="text-[9px] h-4 border-primary/20 text-primary uppercase font-bold truncate max-w-[100px]">{row.original.lastOutreachSubject}</Badge>
+                    <span className="text-[8px] text-muted-foreground mt-0.5">{formatDateSafe(row.original.lastOutreachAt, "dd/MM")}</span>
+                </div>
+            );
+        }
+    },
     { 
         header: 'Status', 
         cell: ({ row }) => {
@@ -272,73 +290,101 @@ export default function ISAManagement() {
       </AlertDialog>
 
       <div className="space-y-6 text-left">
-        <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left text-foreground">
-            <div className="text-left">
-                <CardTitle className="flex items-center gap-2 text-2xl font-black font-headline text-left text-foreground"><Bot /> ISA Management</CardTitle>
-                <CardDescription className="text-left text-foreground">Full database of Independent Sales Agents ({allRecords.length} records).</CardDescription>
-            </div>
-            <div className="flex flex-wrap items-center gap-2 text-left">
-                {selectedIds.length > 0 && (
-                    <div className="flex gap-2 animate-in fade-in zoom-in duration-200">
-                        <Button variant="secondary" onClick={() => setDialog({ type: 'batch' })}><Zap className="mr-2 h-4 w-4" /> Batch Research ({selectedIds.length})</Button>
-                        <Button variant="destructive" onClick={() => setDialog({ type: 'delete' })}><Trash2 className="mr-2 h-4 w-4" /> Delete ({selectedIds.length})</Button>
+        {!hasLoaded ? (
+            <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground">
+                <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
+                <h2 className="text-2xl font-black font-headline mb-2 text-foreground text-center">Registry Search Variables</h2>
+                <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center">Enter your search criteria to load the master registry. Filter by outreach stage to target your session.</p>
+                <div className="flex flex-col md:flex-row justify-center gap-4 max-w-3xl mx-auto text-left">
+                    <div className="flex-1 space-y-2 text-left">
+                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Company, Contact or ID</Label>
+                        <Input placeholder="Search criteria..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && fetchData()} className="h-12 text-lg bg-white" />
                     </div>
-                )}
-                <div className="relative w-64 text-left text-foreground">
-                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input placeholder="Search criteria..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8 bg-white" />
-                </div>
-                <Button variant="outline" onClick={() => downloadDataAsCSV(allRecords, 'isa-export.csv')} disabled={isLoading}>
-                    <Download className="mr-2 h-4 w-4" /> Export
-                </Button>
-                <BulkImportDialog type="isa" onComplete={fetchData}><Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
-                <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4" /> Add ISA</Button>
-            </div>
-        </CardHeader>
-        <Card className="border-primary/10 shadow-sm overflow-hidden text-left text-foreground">
-            <CardContent className="pt-6 text-left text-foreground">
-                <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
-                    <div className="flex-1 space-y-2 text-left text-foreground">
-                        <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Filter className="h-3 w-3"/> Status</Label>
-                        <Select value={statusFilter} onValueChange={setStatusFilter}>
-                            <SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="All Statuses" /></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All Statuses</SelectItem>
-                                <SelectItem value="new">New Lead</SelectItem>
-                                <SelectItem value="contacted">Researching</SelectItem>
-                                <SelectItem value="active">Active ISA</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div className="flex-1 space-y-2 text-left text-foreground">
-                        <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Users className="h-3 w-3"/> Assignee</Label>
-                        <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-                            <SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="All Staff" /></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All Staff</SelectItem>
-                                <SelectItem value="none">Unallocated</SelectItem>
-                                {staff.map(s => <SelectItem key={s.id} value={s.id}>{s.firstName} {s.lastName}</SelectItem>)}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div className="flex-1 space-y-2 text-left text-foreground">
-                        <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Search className="h-3 w-3"/> Integrity Filter</Label>
+                    <div className="w-full md:w-72 space-y-2 text-left">
+                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Outreach Stage</Label>
                         <Select value={dataFilter} onValueChange={setDataFilter}>
-                            <SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="All Records" /></SelectTrigger>
+                            <SelectTrigger className="h-12 bg-white text-left"><SelectValue placeholder="All Records" /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Records</SelectItem>
                                 <SelectItem value="has-email">Has Email</SelectItem>
                                 <SelectItem value="no-email">Missing Email</SelectItem>
+                                <Separator className="my-1"/>
+                                <SelectItem value="outreach:Digital Handshake">Step 0: Handshake Sent</SelectItem>
+                                <SelectItem value="outreach:Company Profile">Step 1: Profile Sent</SelectItem>
+                                <SelectItem value="outreach:Tech Architecture">Step 2: Tech Sent</SelectItem>
+                                <SelectItem value="outreach:Revenue Model">Step 3: Revenue Sent</SelectItem>
+                                <SelectItem value="outreach:The Offer">Step 4: Offer Sent</SelectItem>
+                                <SelectItem value="outreach:The Pitch">Step 5: Pitch Sent</SelectItem>
+                                <SelectItem value="outreach:The Framework">Step 6: Framework Sent</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
-                    <div className="flex items-end">
-                        <Button variant="outline" onClick={() => fetchData()} className="h-10 w-full"><RefreshCcw className="mr-1 h-3 w-3" /> Refresh Scan</Button>
-                    </div>
+                    <Button size="lg" onClick={fetchData} disabled={isLoading} className="h-12 px-8 self-end font-bold">
+                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4" />}
+                        Execute Scan
+                    </Button>
                 </div>
-                {isLoading ? <div className="flex justify-center items-center py-10 text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />}
-            </CardContent>
-        </Card>
+            </Card>
+        ) : (
+            <div className="space-y-6 text-left text-foreground">
+                <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left text-foreground">
+                    <div className="text-left">
+                        <CardTitle className="flex items-center gap-2 text-2xl font-black font-headline text-left text-foreground"><Bot /> ISA Management</CardTitle>
+                        <CardDescription className="text-left text-foreground">Full database of Independent Sales Agents ({allRecords.length} records).</CardDescription>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2 text-left">
+                        {selectedIds.length > 0 && (
+                            <div className="flex gap-2 animate-in fade-in zoom-in duration-200">
+                                <Button variant="secondary" onClick={() => setDialog({ type: 'batch' })}><Zap className="mr-2 h-4 w-4" /> Batch Research ({selectedIds.length})</Button>
+                                <Button variant="destructive" onClick={() => setDialog({ type: 'delete' })}><Trash2 className="mr-2 h-4 w-4" /> Delete ({selectedIds.length})</Button>
+                            </div>
+                        )}
+                        <div className="relative w-64 text-left text-foreground">
+                            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <Input placeholder="Search criteria..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8 bg-white" />
+                        </div>
+                        <Button variant="outline" onClick={handleExport} disabled={isLoading}>
+                            <Download className="mr-2 h-4 w-4" /> Export Filtered
+                        </Button>
+                        <BulkImportDialog type="isa" onComplete={fetchData}><Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
+                        <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4" /> Add ISA</Button>
+                    </div>
+                </CardHeader>
+                <Card className="border-primary/10 shadow-sm overflow-hidden text-left text-foreground">
+                    <CardContent className="pt-6 text-left text-foreground">
+                        <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
+                            <div className="flex-1 space-y-2 text-left text-foreground">
+                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Filter className="h-3 w-3"/> Status</Label>
+                                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                                    <SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="All Statuses" /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All Statuses</SelectItem>
+                                        <SelectItem value="new">New Lead</SelectItem>
+                                        <SelectItem value="contacted">Researching</SelectItem>
+                                        <SelectItem value="active">Active ISA</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="flex-1 space-y-2 text-left text-foreground">
+                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Users className="h-3 w-3"/> Assignee</Label>
+                                <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
+                                    <SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="All Staff" /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All Staff</SelectItem>
+                                        <SelectItem value="none">Unallocated</SelectItem>
+                                        {staff.map(s => <SelectItem key={s.id} value={s.id}>{s.firstName} {s.lastName}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="flex items-end">
+                                <Button variant="outline" onClick={() => fetchData()} className="h-10 w-full"><RotateCcw className="mr-1 h-3 w-3" /> New Search</Button>
+                            </div>
+                        </div>
+                        {isLoading ? <div className="flex justify-center items-center py-10 text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />}
+                    </CardContent>
+                </Card>
+            </div>
+        )}
       </div>
     </div>
   );

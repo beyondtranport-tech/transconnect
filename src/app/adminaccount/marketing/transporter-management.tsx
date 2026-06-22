@@ -269,6 +269,18 @@ export default function TransporterManagement() {
     { accessorKey: 'mobile', header: 'Mobile' },
     { accessorKey: 'email', header: 'Email' },
     { 
+        header: 'Outreach',
+        cell: ({ row }) => {
+            if (!row.original.lastOutreachSubject) return <span className="text-[10px] text-muted-foreground italic text-left">None</span>;
+            return (
+                <div className="flex flex-col text-left">
+                    <Badge variant="outline" className="text-[9px] h-4 border-primary/20 text-primary uppercase font-bold truncate max-w-[100px]">{row.original.lastOutreachSubject}</Badge>
+                    <span className="text-[8px] text-muted-foreground mt-0.5">{formatDateSafe(row.original.lastOutreachAt, "dd/MM")}</span>
+                </div>
+            );
+        }
+    },
+    { 
         header: 'Status', 
         cell: ({ row }) => {
             const isEnriched = !!(row.original.minedServiceWording || row.original.website);
@@ -328,24 +340,32 @@ export default function TransporterManagement() {
              <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground">
                 <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
                 <h2 className="text-2xl font-black font-headline mb-2 text-foreground text-center">Transporter Forensic Scan</h2>
-                <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center">Execute a targeted scan of the master haulier registry. Search by company name or route to find specific capacity.</p>
+                <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center">Execute a targeted scan of the master haulier registry. Filter by outreach step to follow up on your sequence.</p>
                 <div className="flex flex-col md:flex-row justify-center gap-4 max-w-3xl mx-auto text-left">
-                    <div className="flex-1 space-y-2">
+                    <div className="flex-1 space-y-2 text-left">
                         <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Company, Category or ID</Label>
                         <Input placeholder="Search criteria..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && fetchData()} className="h-12 text-lg bg-white" />
                     </div>
-                    <div className="w-full md:w-64 space-y-2">
-                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Integrity Filter</Label>
+                    <div className="w-full md:w-72 space-y-2 text-left">
+                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Outreach Stage</Label>
                         <Select value={dataFilter} onValueChange={setDataFilter}>
-                            <SelectTrigger className="h-12 bg-white"><SelectValue placeholder="All Records" /></SelectTrigger>
+                            <SelectTrigger className="h-12 bg-white text-left"><SelectValue placeholder="All Records" /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Records</SelectItem>
                                 <SelectItem value="has-email">Has Email</SelectItem>
                                 <SelectItem value="no-email">Missing Email</SelectItem>
+                                <Separator className="my-1"/>
+                                <SelectItem value="outreach:Digital Handshake">Step 0: Handshake Sent</SelectItem>
+                                <SelectItem value="outreach:Company Profile">Step 1: Profile Sent</SelectItem>
+                                <SelectItem value="outreach:Tech Architecture">Step 2: Tech Sent</SelectItem>
+                                <SelectItem value="outreach:Revenue Model">Step 3: Revenue Sent</SelectItem>
+                                <SelectItem value="outreach:The Offer">Step 4: Offer Sent</SelectItem>
+                                <SelectItem value="outreach:The Pitch">Step 5: Pitch Sent</SelectItem>
+                                <SelectItem value="outreach:The Framework">Step 6: Framework Sent</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
-                    <Button size="lg" onClick={fetchData} disabled={isLoading} className="h-12 px-8 self-end">
+                    <Button size="lg" onClick={fetchData} disabled={isLoading} className="h-12 px-8 self-end font-bold">
                         {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4" />}
                         Execute Scan
                     </Button>
@@ -383,13 +403,15 @@ export default function TransporterManagement() {
                                 </div>
                             </div>
                             <div className="flex-1 space-y-2 text-left">
-                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Filter className="h-3 w-3"/> Integrity Filter</Label>
+                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Filter className="h-3 w-3"/> Step Filter</Label>
                                 <Select value={dataFilter} onValueChange={setDataFilter}>
                                     <SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="All Records" /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">All Records</SelectItem>
                                         <SelectItem value="has-email">Has Email</SelectItem>
-                                        <SelectItem value="no-email">Missing Email</SelectItem>
+                                        <Separator className="my-1"/>
+                                        <SelectItem value="outreach:Digital Handshake">Handshake Sent</SelectItem>
+                                        <SelectItem value="outreach:Company Profile">Profile Sent</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>

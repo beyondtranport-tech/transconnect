@@ -61,6 +61,7 @@ export async function POST(req: NextRequest) {
                     ...serializeTimestamps(d.data()) 
                 }));
 
+                // Apply text search
                 if (term && term.length > 0) {
                     const lowTerm = term.toLowerCase();
                     data = data.filter((item: any) => {
@@ -73,6 +74,7 @@ export async function POST(req: NextRequest) {
                     });
                 }
 
+                // Apply integrity and outreach filters
                 if (dataFilter && dataFilter !== 'all') {
                     if (dataFilter === 'has-email') data = data.filter((p: any) => !!p.email);
                     else if (dataFilter === 'no-email') data = data.filter((p: any) => !p.email);
@@ -80,6 +82,10 @@ export async function POST(req: NextRequest) {
                     else if (dataFilter === 'no-phone') data = data.filter((p: any) => !(p.phone || p.mobile));
                     else if (dataFilter === 'has-website') data = data.filter((p: any) => !!p.website);
                     else if (dataFilter === 'no-website') data = data.filter((p: any) => !p.website);
+                    else if (dataFilter.startsWith('outreach:')) {
+                        const stepSubject = dataFilter.replace('outreach:', '');
+                        data = data.filter((p: any) => p.lastOutreachSubject === stepSubject);
+                    }
                 }
 
                 return NextResponse.json({ success: true, data: data.slice(0, 100) });
@@ -91,13 +97,9 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data });
             }
 
-            case 'getStaff': {
-                const snap = await db.collectionGroup('staff').get();
-                const data = snap.docs.map((d: QueryDocumentSnapshot) => ({ 
-                    id: d.id, 
-                    companyId: d.ref.parent.parent?.id,
-                    ...serializeTimestamps(d.data()) 
-                }));
+            case 'getPlatformStaff': {
+                const snap = await db.collection('platformStaff').get();
+                const data = snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...serializeTimestamps(d.data()) }));
                 return NextResponse.json({ success: true, data });
             }
 
@@ -118,77 +120,25 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data });
             }
 
-            case 'getPendingAgreements': {
-                const snap = await db.collectionGroup('agreements').where('status', '==', 'proposed').get();
-                const data = snap.docs.map((d: QueryDocumentSnapshot) => ({ 
-                    id: d.id, 
-                    shopId: d.ref.parent.parent?.id,
-                    companyId: d.ref.parent.parent?.parent.parent?.id,
-                    ...serializeTimestamps(d.data()) 
-                }));
-                return NextResponse.json({ success: true, data });
-            }
-
-            case 'approveWalletPayment': {
-                const { companyId, paymentId, amount, description, reconciliationId } = payload;
-                const paymentRef = db.doc(`companies/${companyId}/walletPayments/${paymentId}`);
-                const companyRef = db.doc(`companies/${companyId}`);
-                
-                await db.runTransaction(async (transaction) => {
-                    transaction.update(paymentRef, { status: 'approved', reconciliationId, updatedAt: FieldValue.serverTimestamp() });
-                    transaction.update(companyRef, { 
-                        walletBalance: FieldValue.increment(amount),
-                        availableBalance: FieldValue.increment(amount),
-                        updatedAt: FieldValue.serverTimestamp()
-                    });
-                    const txRef = companyRef.collection('transactions').doc();
-                    transaction.set(txRef, {
-                        transactionId: txRef.id,
-                        type: 'credit',
-                        amount,
-                        description,
-                        reconciliationId,
-                        date: FieldValue.serverTimestamp(),
-                        status: 'allocated'
-                    });
-                });
-                return NextResponse.json({ success: true });
-            }
-
-            case 'getWalletPayments': {
-                const snap = await db.collectionGroup('walletPayments').where('status', '==', 'pending').get();
-                const data = snap.docs.map((d: QueryDocumentSnapshot) => ({ 
-                    id: d.id, 
-                    companyId: d.ref.parent.parent?.id,
-                    ...serializeTimestamps(d.data()) 
-                }));
-                return NextResponse.json({ success: true, data });
-            }
-
-            case 'getWalletTransactions': {
-                const snap = await db.collectionGroup('transactions').orderBy('date', 'desc').limit(100).get();
-                const data = snap.docs.map((d: QueryDocumentSnapshot) => ({ 
-                    id: d.id, 
-                    companyId: d.ref.parent.parent?.id,
-                    ...serializeTimestamps(d.data()) 
-                }));
-                return NextResponse.json({ success: true, data });
-            }
-
-            case 'getPlatformStaff': {
-                const snap = await db.collection('platformStaff').get();
-                const data = snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...serializeTimestamps(d.data()) }));
-                return NextResponse.json({ success: true, data });
-            }
-
             case 'logCommunication': {
-                const { partnerId, type, subject, notes } = payload;
-                const logRef = db.collection('partners').doc(partnerId).collection('communications').doc();
-                await logRef.set({
+                const { partnerId, type, subject, notes, collection: collName = 'partners' } = payload;
+                const logRef = db.collection(collName).doc(partnerId).collection('communications').doc();
+                
+                const batch = db.batch();
+                batch.set(logRef, {
                     type, subject, notes,
                     timestamp: FieldValue.serverTimestamp(),
                     adminId: decodedToken.uid
                 });
+                
+                // Update the parent with the last outreach metadata for filtering
+                batch.update(db.collection(collName).doc(partnerId), {
+                    lastOutreachSubject: subject,
+                    lastOutreachAt: FieldValue.serverTimestamp(),
+                    updatedAt: FieldValue.serverTimestamp()
+                });
+
+                await batch.commit();
                 return NextResponse.json({ success: true });
             }
 
@@ -206,6 +156,32 @@ export async function POST(req: NextRequest) {
             case 'deletePartner': {
                 const { partnerId } = payload;
                 await db.collection('partners').doc(partnerId).delete();
+                return NextResponse.json({ success: true });
+            }
+
+            case 'logForensicInitiated': {
+                const { partnerId, isLead } = payload;
+                const collName = isLead ? 'leads' : 'partners';
+                await db.collection(collName).doc(partnerId).update({
+                    researchStatus: 'searching',
+                    lastForensicAt: FieldValue.serverTimestamp(),
+                    updatedAt: FieldValue.serverTimestamp()
+                });
+                return NextResponse.json({ success: true });
+            }
+
+            case 'bulkLogForensicInitiated': {
+                const { leadIds, type } = payload;
+                const collName = type === 'lead' ? 'leads' : 'partners';
+                const batch = db.batch();
+                leadIds.forEach((id: string) => {
+                    batch.update(db.collection(collName).doc(id), {
+                        researchStatus: 'searching',
+                        lastForensicAt: FieldValue.serverTimestamp(),
+                        updatedAt: FieldValue.serverTimestamp()
+                    });
+                });
+                await batch.commit();
                 return NextResponse.json({ success: true });
             }
 

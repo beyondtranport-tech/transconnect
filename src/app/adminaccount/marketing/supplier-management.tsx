@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
 import { 
-  Loader2, PlusCircle, Building, Edit, Trash2, Send, Download, Save, Search, Filter, Users, Globe, Zap, Upload, RefreshCcw, Database, Tag, Sparkles, RotateCcw 
+  Loader2, PlusCircle, Building, Edit, Trash2, Send, Download, Save, Search, Filter, Users, Globe, Zap, Upload, RefreshCcw, Database, Tag, Sparkles, RotateCcw, Clock 
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
@@ -25,7 +25,7 @@ import { PartnerTasksDialog } from './PartnerTasksDialog';
 import { CommunicationLogDialog } from './CommunicationLogDialog';
 import { EngageDialog } from './EngageDialog';
 import { PartnerOversightDialog } from './PartnerOversightDialog';
-import { downloadDataAsCSV, formatDateSafe } from '@/lib/utils';
+import { downloadDataAsCSV, formatDateSafe, cn } from '@/lib/utils';
 import { EnrichPartnerButton } from './EnrichPartnerButton';
 import { BulkImportDialog } from './BulkImportDialog';
 import { Label } from '@/components/ui/label';
@@ -255,6 +255,18 @@ export default function SupplierManagement() {
     { accessorKey: 'mobile', header: 'Mobile' },
     { accessorKey: 'email', header: 'Email' },
     { 
+        header: 'Outreach',
+        cell: ({ row }) => {
+            if (!row.original.lastOutreachSubject) return <span className="text-[10px] text-muted-foreground italic">None</span>;
+            return (
+                <div className="flex flex-col text-left">
+                    <Badge variant="outline" className="text-[9px] h-4 border-primary/20 text-primary uppercase font-bold truncate max-w-[100px]">{row.original.lastOutreachSubject}</Badge>
+                    <span className="text-[8px] text-muted-foreground mt-0.5">{formatDateSafe(row.original.lastOutreachAt, "dd/MM")}</span>
+                </div>
+            );
+        }
+    },
+    { 
         header: 'Status', 
         cell: ({ row }) => {
             const isEnriched = !!(row.original.minedServiceWording || row.original.website);
@@ -314,24 +326,31 @@ export default function SupplierManagement() {
                 <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
                 <h2 className="text-2xl font-black font-headline mb-2 text-foreground text-center">Registry Forensic Search</h2>
                 <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center">Scan the master database of 20,000+ suppliers. Targeted searches preserve your daily data quota.</p>
-                <div className="flex flex-col md:flex-row justify-center gap-4 max-w-2xl mx-auto text-left">
-                    <div className="flex-1 space-y-2">
+                <div className="flex flex-col md:flex-row justify-center gap-4 max-w-3xl mx-auto text-left">
+                    <div className="flex-1 space-y-2 text-left">
                         <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Company, Keyword, or Tag</Label>
                         <Input placeholder="Type company name or product to search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && fetchData()} className="h-12 text-lg bg-white" />
                     </div>
-                    <div className="w-full md:w-64 space-y-2">
-                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Integrity Filter</Label>
+                    <div className="w-full md:w-72 space-y-2 text-left">
+                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Integrity & Outreach Filter</Label>
                         <Select value={dataFilter} onValueChange={setDataFilter}>
-                            <SelectTrigger className="h-12 bg-white"><SelectValue placeholder="All Records" /></SelectTrigger>
+                            <SelectTrigger className="h-12 bg-white text-left"><SelectValue placeholder="All Records" /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Records</SelectItem>
                                 <SelectItem value="has-email">Has Email</SelectItem>
                                 <SelectItem value="no-email">Missing Email</SelectItem>
-                                <SelectItem value="has-website">Has Website</SelectItem>
+                                <Separator className="my-1"/>
+                                <SelectItem value="outreach:Digital Handshake">Step 0: Handshake Sent</SelectItem>
+                                <SelectItem value="outreach:Company Profile">Step 1: Profile Sent</SelectItem>
+                                <SelectItem value="outreach:Tech Architecture">Step 2: Tech Sent</SelectItem>
+                                <SelectItem value="outreach:Revenue Model">Step 3: Revenue Sent</SelectItem>
+                                <SelectItem value="outreach:The Offer">Step 4: Offer Sent</SelectItem>
+                                <SelectItem value="outreach:The Pitch">Step 5: Pitch Sent</SelectItem>
+                                <SelectItem value="outreach:The Framework">Step 6: Framework Sent</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
-                    <Button size="lg" onClick={fetchData} disabled={isLoading} className="h-12 px-8 self-end">
+                    <Button size="lg" onClick={fetchData} disabled={isLoading} className="h-12 px-8 self-end font-bold">
                         {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4" />}
                         Execute Scan
                     </Button>
@@ -376,8 +395,9 @@ export default function SupplierManagement() {
                                         <SelectItem value="all">All Records</SelectItem>
                                         <SelectItem value="has-email">Has Email</SelectItem>
                                         <SelectItem value="no-email">Missing Email</SelectItem>
-                                        <SelectItem value="has-phone">Has Phone</SelectItem>
-                                        <SelectItem value="has-website">Has Website</SelectItem>
+                                        <Separator className="my-1"/>
+                                        <SelectItem value="outreach:Digital Handshake">Handshake Sent</SelectItem>
+                                        <SelectItem value="outreach:Company Profile">Profile Sent</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
