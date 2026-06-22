@@ -54,8 +54,6 @@ export async function POST(req: NextRequest) {
                     query = query.where('type', '==', type);
                 }
 
-                // Note: Firestore doesn't support efficient "not empty" queries without specific indexes.
-                // We perform a wide read (capped) and filter in memory to provide the "Forensic" experience.
                 const snap = await query.orderBy('updatedAt', 'desc').limit(1000).get();
                 
                 let data = snap.docs.map((d: QueryDocumentSnapshot) => ({ 
@@ -63,7 +61,6 @@ export async function POST(req: NextRequest) {
                     ...serializeTimestamps(d.data()) 
                 }));
 
-                // 1. Term Filter
                 if (term && term.length > 0) {
                     const lowTerm = term.toLowerCase();
                     data = data.filter((item: any) => {
@@ -76,7 +73,6 @@ export async function POST(req: NextRequest) {
                     });
                 }
 
-                // 2. Data Integrity Filter
                 if (dataFilter && dataFilter !== 'all') {
                     if (dataFilter === 'has-email') data = data.filter((p: any) => !!p.email);
                     else if (dataFilter === 'no-email') data = data.filter((p: any) => !p.email);
@@ -86,8 +82,23 @@ export async function POST(req: NextRequest) {
                     else if (dataFilter === 'no-website') data = data.filter((p: any) => !p.website);
                 }
 
-                // Return exactly 100 after filtering
                 return NextResponse.json({ success: true, data: data.slice(0, 100) });
+            }
+
+            case 'getAuditLogs': {
+                const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(200).get();
+                const data = snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...serializeTimestamps(d.data()) }));
+                return NextResponse.json({ success: true, data });
+            }
+
+            case 'getStaff': {
+                const snap = await db.collectionGroup('staff').get();
+                const data = snap.docs.map((d: QueryDocumentSnapshot) => ({ 
+                    id: d.id, 
+                    companyId: d.ref.parent.parent?.id,
+                    ...serializeTimestamps(d.data()) 
+                }));
+                return NextResponse.json({ success: true, data });
             }
 
             case 'getMembers': {
@@ -107,9 +118,60 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data });
             }
 
-            case 'getLeads': {
-                const snap = await db.collection('leads').orderBy('updatedAt', 'desc').limit(100).get();
-                const data = snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...serializeTimestamps(d.data()) }));
+            case 'getPendingAgreements': {
+                const snap = await db.collectionGroup('agreements').where('status', '==', 'proposed').get();
+                const data = snap.docs.map((d: QueryDocumentSnapshot) => ({ 
+                    id: d.id, 
+                    shopId: d.ref.parent.parent?.id,
+                    companyId: d.ref.parent.parent?.parent.parent?.id,
+                    ...serializeTimestamps(d.data()) 
+                }));
+                return NextResponse.json({ success: true, data });
+            }
+
+            case 'approveWalletPayment': {
+                const { companyId, paymentId, amount, description, reconciliationId } = payload;
+                const paymentRef = db.doc(`companies/${companyId}/walletPayments/${paymentId}`);
+                const companyRef = db.doc(`companies/${companyId}`);
+                
+                await db.runTransaction(async (transaction) => {
+                    transaction.update(paymentRef, { status: 'approved', reconciliationId, updatedAt: FieldValue.serverTimestamp() });
+                    transaction.update(companyRef, { 
+                        walletBalance: FieldValue.increment(amount),
+                        availableBalance: FieldValue.increment(amount),
+                        updatedAt: FieldValue.serverTimestamp()
+                    });
+                    const txRef = companyRef.collection('transactions').doc();
+                    transaction.set(txRef, {
+                        transactionId: txRef.id,
+                        type: 'credit',
+                        amount,
+                        description,
+                        reconciliationId,
+                        date: FieldValue.serverTimestamp(),
+                        status: 'allocated'
+                    });
+                });
+                return NextResponse.json({ success: true });
+            }
+
+            case 'getWalletPayments': {
+                const snap = await db.collectionGroup('walletPayments').where('status', '==', 'pending').get();
+                const data = snap.docs.map((d: QueryDocumentSnapshot) => ({ 
+                    id: d.id, 
+                    companyId: d.ref.parent.parent?.id,
+                    ...serializeTimestamps(d.data()) 
+                }));
+                return NextResponse.json({ success: true, data });
+            }
+
+            case 'getWalletTransactions': {
+                const snap = await db.collectionGroup('transactions').orderBy('date', 'desc').limit(100).get();
+                const data = snap.docs.map((d: QueryDocumentSnapshot) => ({ 
+                    id: d.id, 
+                    companyId: d.ref.parent.parent?.id,
+                    ...serializeTimestamps(d.data()) 
+                }));
                 return NextResponse.json({ success: true, data });
             }
 
@@ -121,7 +183,6 @@ export async function POST(req: NextRequest) {
 
             case 'logCommunication': {
                 const { partnerId, type, subject, notes } = payload;
-                if (!partnerId) throw new Error("Missing partnerId");
                 const logRef = db.collection('partners').doc(partnerId).collection('communications').doc();
                 await logRef.set({
                     type, subject, notes,
@@ -137,8 +198,7 @@ export async function POST(req: NextRequest) {
                 await db.collection('partners').doc(id).set({
                     ...partner,
                     id,
-                    updatedAt: FieldValue.serverTimestamp(),
-                    createdAt: partner.createdAt ? Timestamp.fromDate(new Date(partner.createdAt)) : FieldValue.serverTimestamp()
+                    updatedAt: FieldValue.serverTimestamp()
                 }, { merge: true });
                 return NextResponse.json({ success: true, id });
             }

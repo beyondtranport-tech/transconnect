@@ -9,7 +9,7 @@ import * as z from 'zod';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from '@/hooks/use-toast';
-import { getClientSideAuthToken } from '@/firebase';
+import { getClientSideAuthToken, useUser } from '@/firebase';
 import { Loader2, PlusCircle, Truck, Edit, Trash2, Send, Download, Save, Search, Filter, Users, Zap, Globe, RefreshCcw, Database, Upload, Copy, Tag, AlertTriangle, CheckCircle, Sparkles, RotateCcw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
@@ -227,6 +227,15 @@ export default function TransporterManagement() {
     });
   }, [allRecords, statusFilter, assigneeFilter]);
 
+  const handleExport = () => {
+      if (filteredRecords.length === 0) {
+          toast({ variant: 'destructive', title: "No data to export" });
+          return;
+      }
+      downloadDataAsCSV(filteredRecords, `transporters-export-${new Date().toISOString().split('T')[0]}.csv`);
+      toast({ title: "Export Complete" });
+  };
+
   async function handleDeleteBatch() {
     if (selectedIds.length === 0) return;
     try {
@@ -355,8 +364,8 @@ export default function TransporterManagement() {
                                 <Trash2 className="h-4 w-4" /> Delete Selected ({selectedIds.length})
                             </Button>
                         )}
-                        <Button variant="outline" onClick={() => downloadDataAsCSV(allRecords, 'transporters-export.csv')} disabled={isLoading} className="text-foreground">
-                            <Download className="mr-2 h-4 w-4" /> Export
+                        <Button variant="outline" onClick={handleExport} disabled={isLoading} className="text-foreground">
+                            <Download className="mr-2 h-4 w-4" /> Export Filtered
                         </Button>
                         <BulkImportDialog type="transporter" onComplete={fetchData}><Button variant="outline" className="text-foreground"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
                         <Button onClick={() => setDialog({ type: 'add' })} className="text-foreground"><PlusCircle className="mr-2 h-4 w-4" /> Add Record</Button>
