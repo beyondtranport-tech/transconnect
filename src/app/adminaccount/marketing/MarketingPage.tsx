@@ -1,9 +1,10 @@
+
 'use client';
 
 import * as React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { BookOpen, Loader2, ClipboardCopy, SearchCode, Target, Users, LayoutDashboard, Send, Sparkles, Landmark, DollarSign, Download } from 'lucide-react';
+import { BookOpen, Loader2, ClipboardCopy, SearchCode, Target, Users, LayoutDashboard, Send, Sparkles, Landmark, DollarSign, Download, MessageSquare, ClipboardList, Search } from 'lucide-react';
 import { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -31,6 +32,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Textarea } from '@/components/ui/textarea';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
+import dynamic from 'next/dynamic';
 
 // Content components
 import CompanyProfile from './content/CompanyProfile';
@@ -62,6 +64,11 @@ import SupplierManagement from './supplier-management';
 import TransporterManagement from './transporter-management';
 import FinanceManagement from './finance-management';
 import DriverManagement from './driver-management';
+
+// Global Audience Tables
+const AudienceCommunicationsTable = dynamic(() => import('./AudienceCommunicationsTable'), { loading: () => <Loader2 className="animate-spin" /> });
+const AudienceTasksTable = dynamic(() => import('./AudienceTasksTable'), { loading: () => <Loader2 className="animate-spin" /> });
+const AudienceOversightTable = dynamic(() => import('./AudienceOversightTable'), { loading: () => <Loader2 className="animate-spin" /> });
 
 import SupplierPitch from '@/app/adminaccount/supplier-pitch';
 import DiscoveryEngine from './discovery-engine';
@@ -175,7 +182,6 @@ function LogAndCopyDialog({ open, onOpenChange, partners, isLoadingPartners, act
 
 function MarketingPageContent({ audience }: MarketingPageProps) {
   const config = audienceConfig[audience];
-  // Type-safe extraction of optional properties to handle build errors
   const Offer = (config as any).Offer as React.ComponentType<any>;
   const Emails = (config as any).Emails as React.ComponentType<any>;
   const Management = (config as any).Management as React.ComponentType<any> | undefined;
@@ -304,6 +310,9 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full text-left">
             <TabsList className="h-auto flex-wrap justify-start bg-muted p-1 text-left">
                 {Management && <TabsTrigger value="management">CRM & Pipeline</TabsTrigger>}
+                <TabsTrigger value="communications" className="gap-2"><MessageSquare className="h-3.5 w-3.5"/>Communications</TabsTrigger>
+                <TabsTrigger value="tasks" className="gap-2"><ClipboardList className="h-3.5 w-3.5"/>Tasks</TabsTrigger>
+                <TabsTrigger value="oversight" className="gap-2"><Search className="h-3.5 w-3.5"/>Oversight</TabsTrigger>
                 {Discovery && <TabsTrigger value="discovery" className="gap-2"><Sparkles className="h-3.5 w-3.5"/>Discovery (AI)</TabsTrigger>}
                 {Pitch && <TabsTrigger value="pitch-generator">Pitch Library</TabsTrigger>}
                 <TabsTrigger value="company-profile">Profile</TabsTrigger>
@@ -317,6 +326,9 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
 
             <div className="mt-6 text-left">
                 <TabsContent value="management" className="text-left"><div id="tab-content-management">{Management && <Management />}</div></TabsContent>
+                <TabsContent value="communications" className="text-left"><AudienceCommunicationsTable audience={audience} /></TabsContent>
+                <TabsContent value="tasks" className="text-left"><AudienceTasksTable audience={audience} /></TabsContent>
+                <TabsContent value="oversight" className="text-left"><AudienceOversightTable audience={audience} /></TabsContent>
                 {Discovery && <TabsContent value="discovery" className="text-left"><div id="tab-content-discovery">{Discovery && <Discovery />}</div></TabsContent>}
                 {Pitch && <TabsContent value="pitch-generator" className="text-left"><div id="tab-content-pitch-generator">{Pitch && <Pitch />}</div></TabsContent>}
                 <TabsContent value="company-profile" className="text-left"><div id="tab-content-company-profile"><CompanyProfile partner={null} audience={audience} /></div></TabsContent>

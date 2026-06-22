@@ -60,17 +60,12 @@ export async function POST(req: NextRequest) {
                 
                 let query: any = db.collection(collectionName);
                 
-                // --- OPTIMIZATION: Use Firestore Filters where possible ---
-                // If a category is selected, we use a where clause to fetch all records in that category.
-                // This bypasses the 1,000-record scan limit and ensures we see the full 800+ batteries.
                 if (category && category !== 'all') {
                     query = query.where('industrial_category', '==', category);
                 } else if (type && type !== 'all' && type !== 'lead') {
                     query = query.where('type', '==', type);
                 }
 
-                // Initial pull - increase to 10,000 for server-side processing to ensure we find all matches
-                // We drop the orderBy when filtering by category to avoid the need for composite indexes in the prototype.
                 const snap = category && category !== 'all' 
                     ? await query.limit(10000).get() 
                     : await query.orderBy('updatedAt', 'desc').limit(5000).get();
@@ -80,7 +75,6 @@ export async function POST(req: NextRequest) {
                     ...serializeTimestamps(d.data()) 
                 }));
 
-                // 1. Independent Text Search Variables
                 if (searchCompany) {
                     const low = searchCompany.toLowerCase();
                     data = data.filter((item: any) => 
@@ -102,7 +96,6 @@ export async function POST(req: NextRequest) {
                     );
                 }
 
-                // 2. Data Integrity Filter
                 if (integrityFilter && integrityFilter !== 'all') {
                     if (integrityFilter === 'has-email') data = data.filter((p: any) => !!p.email);
                     else if (integrityFilter === 'no-email') data = data.filter((p: any) => !p.email);
@@ -112,13 +105,79 @@ export async function POST(req: NextRequest) {
                     else if (integrityFilter === 'no-website') data = data.filter((p: any) => !p.website);
                 }
 
-                // 3. Outreach Stage Filter
                 if (outreachFilter && outreachFilter !== 'all') {
                     data = data.filter((p: any) => p.lastOutreachSubject === outreachFilter);
                 }
 
-                // Return up to 1000 records for the Admin UI (Paged by DataTable)
                 return NextResponse.json({ success: true, data: data.slice(0, 1000) });
+            }
+
+            case 'getAudienceCommunications': {
+                const { type } = payload;
+                const commsSnap = await db.collectionGroup('communications').orderBy('timestamp', 'desc').limit(500).get();
+                const parentIds = [...new Set(commsSnap.docs.map(d => d.ref.path.split('/').slice(-3, -2)[0]))];
+                
+                const [partnersSnap, leadsSnap] = await Promise.all([
+                    db.collection('partners').where(FieldValue.documentId(), 'in', parentIds.length > 0 ? parentIds : ['none']).get(),
+                    db.collection('leads').where(FieldValue.documentId(), 'in', parentIds.length > 0 ? parentIds : ['none']).get()
+                ]);
+                
+                const entities = [...partnersSnap.docs, ...leadsSnap.docs].map(d => ({ id: d.id, ...d.data() }));
+                const entityMap = new Map(entities.map(e => [e.id, e]));
+
+                const data = commsSnap.docs.map(d => {
+                    const entId = d.ref.path.split('/').slice(-3, -2)[0];
+                    const entity = entityMap.get(entId);
+                    return {
+                        id: d.id,
+                        partnerId: entId,
+                        partnerName: entity?.companyName || entity?.trading_name || entity?.company_name || `${entity?.firstName || ''} ${entity?.lastName || ''}`.trim() || 'Unknown',
+                        partnerType: entity?.type || entity?.role || 'lead',
+                        ...serializeTimestamps(d.data())
+                    };
+                });
+
+                const filtered = type && type !== 'all' 
+                    ? data.filter(c => c.partnerType?.toLowerCase().includes(type.toLowerCase())) 
+                    : data;
+
+                return NextResponse.json({ success: true, data: filtered });
+            }
+
+            case 'getAudienceTasks': {
+                const { type } = payload;
+                const tasksSnap = await db.collectionGroup('tasks').orderBy('createdAt', 'desc').limit(500).get();
+                const parentIds = [...new Set(tasksSnap.docs.map(d => d.ref.path.split('/').slice(-3, -2)[0]))];
+                
+                const [partnersSnap, leadsSnap, staffSnap] = await Promise.all([
+                    db.collection('partners').where(FieldValue.documentId(), 'in', parentIds.length > 0 ? parentIds : ['none']).get(),
+                    db.collection('leads').where(FieldValue.documentId(), 'in', parentIds.length > 0 ? parentIds : ['none']).get(),
+                    db.collection('platformStaff').get()
+                ]);
+                
+                const entities = [...partnersSnap.docs, ...leadsSnap.docs].map(d => ({ id: d.id, ...d.data() }));
+                const entityMap = new Map(entities.map(e => [e.id, e]));
+                const staffMap = new Map(staffSnap.docs.map(d => [d.id, `${d.data().firstName} ${d.data().lastName}`]));
+
+                const data = tasksSnap.docs.map(d => {
+                    const taskData = d.data();
+                    const entId = d.ref.path.split('/').slice(-3, -2)[0];
+                    const entity = entityMap.get(entId);
+                    return {
+                        id: d.id,
+                        partnerId: entId,
+                        partnerName: entity?.companyName || entity?.trading_name || entity?.company_name || `${entity?.firstName || ''} ${entity?.lastName || ''}`.trim() || 'Unknown',
+                        partnerType: entity?.type || entity?.role || 'lead',
+                        assigneeName: staffMap.get(taskData.assigneeId) || 'Unassigned',
+                        ...serializeTimestamps(taskData)
+                    };
+                });
+
+                const filtered = type && type !== 'all' 
+                    ? data.filter(t => t.partnerType?.toLowerCase().includes(type.toLowerCase())) 
+                    : data;
+
+                return NextResponse.json({ success: true, data: filtered });
             }
 
             case 'getAuditLogs': {
