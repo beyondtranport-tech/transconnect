@@ -149,14 +149,16 @@ export default function ISAManagement() {
   const { toast } = useToast();
   const [allRecords, setAllRecords] = useState<any[]>([]);
   const [staff, setStaff] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasLoaded, setHasLoaded] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | 'batch' | null, data?: any }>({ type: null });
 
   const [statusFilter, setStatusFilter] = useState('all');
   const [assigneeFilter, setAssigneeFilter] = useState('all');
-  const [dataFilter, setDataFilter] = useState('all');
+  const [integrityFilter, setIntegrityFilter] = useState('all');
+  const [outreachFilter, setOutreachFilter] = useState('all');
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
@@ -164,19 +166,23 @@ export default function ISAManagement() {
       const token = await getClientSideAuthToken();
       if (!token) return;
       const [res, staffRes] = await Promise.all([
-        performAdminAction(token, 'searchRegistry', { type: 'isa', term: searchTerm, dataFilter }),
+        performAdminAction(token, 'searchRegistry', { type: 'isa', term: searchTerm, integrityFilter, outreachFilter }),
         performAdminAction(token, 'getPlatformStaff', {})
       ]);
       setAllRecords(res.data || []);
       setStaff(staffRes.data || []);
+      setHasLoaded(true);
     } catch (e: any) {
         console.error("Fetch Error:", e);
     } finally {
       setIsLoading(false);
     }
-  }, [searchTerm, dataFilter]);
+  }, [searchTerm, integrityFilter, outreachFilter]);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => { 
+    if (hasLoaded) fetchData(); 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [integrityFilter, outreachFilter, statusFilter, assigneeFilter]);
 
   const filteredRecords = useMemo(() => {
     return allRecords.filter(r => {
@@ -294,28 +300,31 @@ export default function ISAManagement() {
             <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground">
                 <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
                 <h2 className="text-2xl font-black font-headline mb-2 text-foreground text-center">Registry Search Variables</h2>
-                <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center">Enter your search criteria to load the master registry. Filter by outreach stage to target your session.</p>
-                <div className="flex flex-col md:flex-row justify-center gap-4 max-w-3xl mx-auto text-left">
+                <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center">Enter your search criteria to load the master registry. Filter by outreach stage or data integrity.</p>
+                <div className="flex flex-col md:flex-row justify-center gap-4 max-w-4xl mx-auto text-left">
                     <div className="flex-1 space-y-2 text-left">
                         <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Company, Contact or ID</Label>
                         <Input placeholder="Search criteria..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && fetchData()} className="h-12 text-lg bg-white" />
                     </div>
-                    <div className="w-full md:w-72 space-y-2 text-left">
-                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Outreach Stage</Label>
-                        <Select value={dataFilter} onValueChange={setDataFilter}>
-                            <SelectTrigger className="h-12 bg-white text-left"><SelectValue placeholder="All Records" /></SelectTrigger>
+                     <div className="w-40 space-y-2 text-left">
+                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Integrity</Label>
+                        <Select value={integrityFilter} onValueChange={setIntegrityFilter}>
+                            <SelectTrigger className="h-12 bg-white text-left"><SelectValue placeholder="All" /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Records</SelectItem>
                                 <SelectItem value="has-email">Has Email</SelectItem>
-                                <SelectItem value="no-email">Missing Email</SelectItem>
-                                <Separator className="my-1"/>
-                                <SelectItem value="outreach:Digital Handshake">Step 0: Handshake Sent</SelectItem>
-                                <SelectItem value="outreach:Company Profile">Step 1: Profile Sent</SelectItem>
-                                <SelectItem value="outreach:Tech Architecture">Step 2: Tech Sent</SelectItem>
-                                <SelectItem value="outreach:Revenue Model">Step 3: Revenue Sent</SelectItem>
-                                <SelectItem value="outreach:The Offer">Step 4: Offer Sent</SelectItem>
-                                <SelectItem value="outreach:The Pitch">Step 5: Pitch Sent</SelectItem>
-                                <SelectItem value="outreach:The Framework">Step 6: Framework Sent</SelectItem>
+                                <SelectItem value="no-email">No Email</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="w-56 space-y-2 text-left">
+                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Outreach Stage</Label>
+                        <Select value={outreachFilter} onValueChange={setOutreachFilter}>
+                            <SelectTrigger className="h-12 bg-white text-left"><SelectValue placeholder="All Stages" /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Stages</SelectItem>
+                                <SelectItem value="Digital Handshake">Step 0: Handshake</SelectItem>
+                                <SelectItem value="Company Profile">Step 1: Profile Sent</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
@@ -332,31 +341,25 @@ export default function ISAManagement() {
                         <CardTitle className="flex items-center gap-2 text-2xl font-black font-headline text-left text-foreground"><Bot /> ISA Management</CardTitle>
                         <CardDescription className="text-left text-foreground">Full database of Independent Sales Agents ({allRecords.length} records).</CardDescription>
                     </div>
-                    <div className="flex flex-wrap items-center gap-2 text-left">
-                        {selectedIds.length > 0 && (
-                            <div className="flex gap-2 animate-in fade-in zoom-in duration-200">
-                                <Button variant="secondary" onClick={() => setDialog({ type: 'batch' })}><Zap className="mr-2 h-4 w-4" /> Batch Research ({selectedIds.length})</Button>
-                                <Button variant="destructive" onClick={() => setDialog({ type: 'delete' })}><Trash2 className="mr-2 h-4 w-4" /> Delete ({selectedIds.length})</Button>
-                            </div>
-                        )}
-                        <div className="relative w-64 text-left text-foreground">
+                    <div className="flex flex-wrap items-center gap-2 text-left text-foreground text-foreground">
+                        <div className="relative w-64 text-left text-foreground text-foreground">
                             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                             <Input placeholder="Search criteria..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8 bg-white" />
                         </div>
                         <Button variant="outline" onClick={handleExport} disabled={isLoading}>
                             <Download className="mr-2 h-4 w-4" /> Export Filtered
                         </Button>
-                        <BulkImportDialog type="isa" onComplete={fetchData}><Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
-                        <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4" /> Add ISA</Button>
+                        <BulkImportDialog type="isa" onComplete={fetchData}><Button variant="outline" className="text-foreground"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
+                        <Button onClick={() => setDialog({ type: 'add' })} className="text-foreground"><PlusCircle className="mr-2 h-4 w-4" /> Add ISA</Button>
                     </div>
                 </CardHeader>
                 <Card className="border-primary/10 shadow-sm overflow-hidden text-left text-foreground">
                     <CardContent className="pt-6 text-left text-foreground">
                         <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
-                            <div className="flex-1 space-y-2 text-left text-foreground">
-                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Filter className="h-3 w-3"/> Status</Label>
+                            <div className="flex-1 space-y-2 text-left text-foreground text-foreground">
+                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-foreground"><Filter className="h-3 w-3"/> Status</Label>
                                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                                    <SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="All Statuses" /></SelectTrigger>
+                                    <SelectTrigger className="bg-white text-left text-foreground text-foreground"><SelectValue placeholder="All Statuses" /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">All Statuses</SelectItem>
                                         <SelectItem value="new">New Lead</SelectItem>
@@ -377,7 +380,7 @@ export default function ISAManagement() {
                                 </Select>
                             </div>
                             <div className="flex items-end">
-                                <Button variant="outline" onClick={() => fetchData()} className="h-10 w-full"><RotateCcw className="mr-1 h-3 w-3" /> New Search</Button>
+                                <Button variant="outline" onClick={() => setHasLoaded(false)} className="h-10 w-full text-foreground"><RotateCcw className="mr-1 h-3 w-3" /> New Search</Button>
                             </div>
                         </div>
                         {isLoading ? <div className="flex justify-center items-center py-10 text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />}

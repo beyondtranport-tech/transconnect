@@ -105,7 +105,7 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-xl text-left text-foreground">
+      <DialogContent className="sm:max-w-xl text-left text-foreground text-foreground">
         <DialogHeader><DialogTitle>{lead ? 'Edit' : 'Add New'} Lead</DialogTitle></DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[60vh] overflow-y-auto pr-2 text-left text-foreground">
@@ -125,14 +125,14 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
             <FormField control={form.control} name="notes" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Mined Service wording</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>)} />
              <div className="grid grid-cols-2 gap-4 text-left text-foreground">
               <FormField control={form.control} name="role" render={({ field }) => (
-                <FormItem className="text-left"><FormLabel>Potential Role</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl><SelectTrigger className="bg-white"><SelectValue placeholder="Select..." /></SelectTrigger></FormControl>
+                <FormItem className="text-left text-foreground"><FormLabel>Potential Role</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl><SelectTrigger className="bg-white text-left text-foreground text-foreground"><SelectValue placeholder="Select..." /></SelectTrigger></FormControl>
                     <SelectContent>{roles.map(r => <SelectItem key={r.id} value={r.title}>{r.title}</SelectItem>)}</SelectContent>
                 </Select></FormItem>
               )} />
               <FormField control={form.control} name="status" render={({ field }) => (
-                <FormItem className="text-left"><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl><SelectTrigger className="bg-white"><SelectValue /></SelectTrigger></FormControl>
+                <FormItem className="text-left text-foreground"><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl><SelectTrigger className="bg-white text-left text-foreground"><SelectValue /></SelectTrigger></FormControl>
                     <SelectContent><SelectItem value="new">New</SelectItem><SelectItem value="contacted">Researching</SelectItem><SelectItem value="qualified">Qualified</SelectItem></SelectContent>
                 </Select></FormItem>
               )} />
@@ -158,7 +158,8 @@ function LeadsDatabaseComponent() {
   const [searchTerm, setSearchTerm] = useState('');
   
   const [statusFilter, setStatusFilter] = useState('all');
-  const [dataFilter, setDataFilter] = useState('all');
+  const [integrityFilter, setIntegrityFilter] = useState('all');
+  const [outreachFilter, setOutreachFilter] = useState('all');
   
   const [isAddLeadOpen, setIsAddLeadOpen] = useState(false);
   const [editLead, setEditLead] = useState<any | null>(null);
@@ -170,7 +171,7 @@ function LeadsDatabaseComponent() {
     try {
       const token = await getClientSideAuthToken();
       if (!token) return;
-      const res = await performAdminAction(token, 'searchRegistry', { type: 'lead', term: searchTerm, dataFilter });
+      const res = await performAdminAction(token, 'searchRegistry', { type: 'lead', term: searchTerm, integrityFilter, outreachFilter });
       setAllRecords(res.data || []);
       setHasLoaded(true);
     } catch (e: any) {
@@ -178,12 +179,12 @@ function LeadsDatabaseComponent() {
     } finally {
       setIsLoading(false);
     }
-  }, [searchTerm, dataFilter, toast]);
+  }, [searchTerm, integrityFilter, outreachFilter, toast]);
 
   useEffect(() => {
     if (hasLoaded) fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dataFilter]);
+  }, [integrityFilter, outreachFilter]);
 
   const newLeadDefaults = useMemo(() => {
     const companyName = searchParams.get('newCompanyName');
@@ -215,6 +216,12 @@ function LeadsDatabaseComponent() {
         return matchesStatus;
     });
   }, [allRecords, statusFilter]);
+
+  const handleExport = () => {
+      if (filteredLeads.length === 0) return;
+      downloadDataAsCSV(filteredLeads, `leads-backup-${new Date().toISOString().split('T')[0]}.csv`);
+      toast({ title: "Backup Exported" });
+  };
 
   const handleDelete = async () => {
     if (!deleteLead) return;
@@ -276,16 +283,16 @@ function LeadsDatabaseComponent() {
             <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground">
                 <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
                 <h2 className="text-2xl font-black font-headline mb-2 text-foreground text-center">Registry Search Variables</h2>
-                <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center">Enter your search criteria to load the master registry. This targets your session to preserve your daily data quota.</p>
-                <div className="flex flex-col md:flex-row justify-center gap-4 max-w-2xl mx-auto text-left">
-                    <div className="flex-1 space-y-2">
+                <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center">Enter your search criteria to load the master registry. Filter by outreach stage or data integrity.</p>
+                <div className="flex flex-col md:flex-row justify-center gap-4 max-w-4xl mx-auto text-left">
+                    <div className="flex-1 space-y-2 text-left">
                         <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Company, Contact or ID</Label>
                         <Input placeholder="Type company name or ID to search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && fetchData()} className="h-12 text-lg bg-white" />
                     </div>
-                    <div className="w-full md:w-64 space-y-2">
-                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Integrity Filter</Label>
-                        <Select value={dataFilter} onValueChange={setDataFilter}>
-                            <SelectTrigger className="h-12 bg-white"><SelectValue placeholder="All Records" /></SelectTrigger>
+                    <div className="w-40 space-y-2 text-left">
+                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Integrity</Label>
+                        <Select value={integrityFilter} onValueChange={setIntegrityFilter}>
+                            <SelectTrigger className="h-12 bg-white text-left"><SelectValue placeholder="All" /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Records</SelectItem>
                                 <SelectItem value="has-email">Has Email</SelectItem>
@@ -293,36 +300,47 @@ function LeadsDatabaseComponent() {
                             </SelectContent>
                         </Select>
                     </div>
-                    <Button size="lg" onClick={fetchData} disabled={isLoading} className="h-12 px-8 self-end">
+                    <div className="w-56 space-y-2 text-left">
+                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Outreach Stage</Label>
+                        <Select value={outreachFilter} onValueChange={setOutreachFilter}>
+                            <SelectTrigger className="h-12 bg-white text-left text-foreground text-foreground"><SelectValue placeholder="All Stages" /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Stages</SelectItem>
+                                <SelectItem value="Digital Handshake">Step 0: Handshake</SelectItem>
+                                <SelectItem value="Company Profile">Step 1: Profile Sent</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <Button size="lg" onClick={fetchData} disabled={isLoading} className="h-12 px-8 self-end font-bold">
                         {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4" />}
-                        Load Master Registry
+                        Execute Scan
                     </Button>
                 </div>
             </Card>
         ) : (
             <div className="space-y-6 text-left text-foreground">
                 <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
-                <div className="text-left text-foreground"><CardTitle className="flex items-center gap-2 text-left"><Users /> Lead Database</CardTitle><CardDescription className="text-left text-foreground">Unified registry view of prospective members ({allRecords.length} results).</CardDescription></div>
+                <div className="text-left text-foreground"><CardTitle className="flex items-center gap-2 text-left"><Users /> Lead Database</CardTitle><CardDescription className="text-left text-foreground text-foreground">Unified registry view of prospective members ({allRecords.length} results).</CardDescription></div>
                 <div className="flex gap-2 text-left text-foreground text-foreground">
-                    <Button variant="outline" onClick={() => downloadDataAsCSV(allRecords, 'leads-backup.csv')} disabled={isLoading} className="text-foreground"><Download className="mr-2 h-4 w-4" /> Export CSV</Button>
-                    <BulkImportDialog type="lead" onComplete={fetchData}><Button variant="outline" className="text-foreground"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
-                    <Button onClick={() => setIsAddLeadOpen(true)} className="text-foreground"><PlusCircle className="mr-2 h-4 w-4" />Add Lead</Button>
+                    <Button variant="outline" onClick={handleExport} disabled={isLoading} className="text-foreground"><Download className="mr-2 h-4 w-4" /> Export CSV</Button>
+                    <BulkImportDialog type="lead" onComplete={fetchData}><Button variant="outline" className="text-foreground text-foreground"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
+                    <Button onClick={() => setIsAddLeadOpen(true)} className="text-foreground text-foreground text-foreground"><PlusCircle className="mr-2 h-4 w-4" />Add Lead</Button>
                 </div>
                 </CardHeader>
-                <Card className="text-left">
-                    <CardContent className="pt-6 text-left">
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
-                            <div className="md:col-span-2 space-y-2 text-left text-foreground">
-                                <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5 text-left"><Search className="h-3 w-3"/> Registry Search</Label>
-                                <div className="flex gap-2 text-left text-foreground">
+                <Card className="text-left text-foreground">
+                    <CardContent className="pt-6 text-left text-foreground">
+                        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground text-foreground text-foreground text-foreground">
+                            <div className="md:col-span-2 space-y-2 text-left text-foreground text-foreground">
+                                <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Search className="h-3 w-3"/> Registry Search</Label>
+                                <div className="flex gap-2 text-left text-foreground text-foreground">
                                     <Input placeholder="Refine your search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && fetchData()} />
-                                    <Button onClick={fetchData} disabled={isLoading} className="text-foreground"><Search className="h-4 w-4"/></Button>
+                                    <Button onClick={fetchData} disabled={isLoading} className="text-foreground text-foreground"><Search className="h-4 w-4"/></Button>
                                 </div>
                             </div>
                             <div className="space-y-2 text-left text-foreground text-foreground">
-                                <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5 text-left"><Tag className="h-3 w-3"/> Integrity Filter</Label>
-                                <Select value={dataFilter} onValueChange={setDataFilter}>
-                                    <SelectTrigger className="h-10 text-xs bg-white text-foreground text-left"><SelectValue placeholder="All Records" /></SelectTrigger>
+                                <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Tag className="h-3 w-3"/> Integrity</Label>
+                                <Select value={integrityFilter} onValueChange={setIntegrityFilter}>
+                                    <SelectTrigger className="h-10 text-xs bg-white text-foreground text-left text-foreground text-foreground"><SelectValue placeholder="All Records" /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">All Records</SelectItem>
                                         <SelectItem value="has-email">Has Email</SelectItem>
@@ -330,11 +348,21 @@ function LeadsDatabaseComponent() {
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <div className="flex items-end text-left text-foreground text-foreground">
+                            <div className="space-y-2 text-left text-foreground text-foreground text-foreground">
+                                <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Send className="h-3 w-3"/> Outreach</Label>
+                                <Select value={outreachFilter} onValueChange={setOutreachFilter}>
+                                    <SelectTrigger className="h-10 text-xs bg-white text-foreground text-left text-foreground text-foreground"><SelectValue placeholder="All Stages" /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All Stages</SelectItem>
+                                        <SelectItem value="Digital Handshake">Handshake Sent</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="flex items-end text-left text-foreground text-foreground text-foreground">
                                 <Button variant="outline" onClick={() => setHasLoaded(false)} className="h-10 w-full text-foreground"><RotateCcw className="mr-1 h-3 w-3" /> New Search</Button>
                             </div>
                         </div>
-                        {isLoading ? <div className="flex justify-center p-10 text-foreground"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredLeads} />}
+                        {isLoading ? <div className="flex justify-center p-10 text-foreground text-foreground"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredLeads} />}
                     </CardContent>
                 </Card>
             </div>

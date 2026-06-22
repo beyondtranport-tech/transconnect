@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
 
         switch (action) {
             case 'searchRegistry': {
-                const { term, type, dataFilter } = payload;
+                const { term, type, integrityFilter, outreachFilter } = payload;
                 const collectionName = (type === 'lead') ? 'leads' : 'partners';
                 
                 let query: any = db.collection(collectionName);
@@ -74,18 +74,19 @@ export async function POST(req: NextRequest) {
                     });
                 }
 
-                // Apply integrity and outreach filters
-                if (dataFilter && dataFilter !== 'all') {
-                    if (dataFilter === 'has-email') data = data.filter((p: any) => !!p.email);
-                    else if (dataFilter === 'no-email') data = data.filter((p: any) => !p.email);
-                    else if (dataFilter === 'has-phone') data = data.filter((p: any) => !!(p.phone || p.mobile));
-                    else if (dataFilter === 'no-phone') data = data.filter((p: any) => !(p.phone || p.mobile));
-                    else if (dataFilter === 'has-website') data = data.filter((p: any) => !!p.website);
-                    else if (dataFilter === 'no-website') data = data.filter((p: any) => !p.website);
-                    else if (dataFilter.startsWith('outreach:')) {
-                        const stepSubject = dataFilter.replace('outreach:', '');
-                        data = data.filter((p: any) => p.lastOutreachSubject === stepSubject);
-                    }
+                // Apply integrity filter
+                if (integrityFilter && integrityFilter !== 'all') {
+                    if (integrityFilter === 'has-email') data = data.filter((p: any) => !!p.email);
+                    else if (integrityFilter === 'no-email') data = data.filter((p: any) => !p.email);
+                    else if (integrityFilter === 'has-phone') data = data.filter((p: any) => !!(p.phone || p.mobile));
+                    else if (integrityFilter === 'no-phone') data = data.filter((p: any) => !(p.phone || p.mobile));
+                    else if (integrityFilter === 'has-website') data = data.filter((p: any) => !!p.website);
+                    else if (integrityFilter === 'no-website') data = data.filter((p: any) => !p.website);
+                }
+
+                // Apply outreach filter
+                if (outreachFilter && outreachFilter !== 'all') {
+                    data = data.filter((p: any) => p.lastOutreachSubject === outreachFilter);
                 }
 
                 return NextResponse.json({ success: true, data: data.slice(0, 100) });

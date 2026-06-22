@@ -111,7 +111,6 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
               <FormField control={form.control} name="mobile" render={({ field }) => (<FormItem><FormLabel>Mobile (Direct Cell)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
             <FormField control={form.control} name="website" render={({ field }) => (<FormItem className="text-left"><FormLabel>Corporate Website</FormLabel><FormControl><Input placeholder="https://..." {...field} /></FormControl><FormMessage /></FormItem>)} />
-            <FormField control={form.control} name="address" render={({ field }) => (<FormItem className="text-left"><FormLabel>Operational Address</FormLabel><FormControl><Textarea placeholder="Enter physical address..." {...field} /></FormControl><FormMessage /></FormItem>)} />
             
             <Separator />
             <div className="space-y-4 text-left">
@@ -178,7 +177,8 @@ export default function SupplierManagement() {
 
   const [statusFilter, setStatusFilter] = useState('all');
   const [assigneeFilter, setAssigneeFilter] = useState('all');
-  const [dataFilter, setDataFilter] = useState('all');
+  const [integrityFilter, setIntegrityFilter] = useState('all');
+  const [outreachFilter, setOutreachFilter] = useState('all');
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
@@ -186,7 +186,7 @@ export default function SupplierManagement() {
       const token = await getClientSideAuthToken();
       if (!token) return;
       const [res, staffRes] = await Promise.all([
-        performAdminAction(token, 'searchRegistry', { type: 'supplier', term: searchTerm, dataFilter }),
+        performAdminAction(token, 'searchRegistry', { type: 'supplier', term: searchTerm, integrityFilter, outreachFilter }),
         performAdminAction(token, 'getPlatformStaff', {})
       ]);
       setPartners(res.data || []);
@@ -197,12 +197,12 @@ export default function SupplierManagement() {
     } finally {
       setIsLoading(false);
     }
-  }, [searchTerm, dataFilter, toast]);
+  }, [searchTerm, integrityFilter, outreachFilter, toast]);
 
   useEffect(() => { 
     if (hasLoaded) fetchData(); 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dataFilter, statusFilter, assigneeFilter]);
+  }, [integrityFilter, outreachFilter, statusFilter, assigneeFilter]);
 
   const filteredRecords = useMemo(() => {
     return partners.filter(p => {
@@ -270,17 +270,10 @@ export default function SupplierManagement() {
         header: 'Status', 
         cell: ({ row }) => {
             const isEnriched = !!(row.original.minedServiceWording || row.original.website);
-            const isSearching = row.original.researchStatus === 'searching';
             return (
                 <div className="flex flex-col gap-1 items-center">
                     <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge>
-                    {isEnriched && (
-                        <div className="flex flex-col items-center">
-                            <Badge className="bg-green-100 text-green-700 border-none text-[9px] h-4 uppercase">Enriched</Badge>
-                            <span className="text-[8px] text-muted-foreground mt-0.5">{formatDateSafe(row.original.enrichedAt, "dd/MM")}</span>
-                        </div>
-                    )}
-                    {isSearching && <Badge className="bg-amber-100 text-amber-700 border-none text-[9px] h-4 uppercase animate-pulse">Searching</Badge>}
+                    {isEnriched && <Badge className="bg-green-100 text-green-700 border-none text-[9px] h-4 uppercase">Enriched</Badge>}
                 </div>
             );
         }
@@ -326,27 +319,36 @@ export default function SupplierManagement() {
                 <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
                 <h2 className="text-2xl font-black font-headline mb-2 text-foreground text-center">Registry Forensic Search</h2>
                 <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center">Scan the master database of 20,000+ suppliers. Targeted searches preserve your daily data quota.</p>
-                <div className="flex flex-col md:flex-row justify-center gap-4 max-w-3xl mx-auto text-left">
+                <div className="flex flex-col md:flex-row justify-center gap-4 max-w-4xl mx-auto text-left">
                     <div className="flex-1 space-y-2 text-left">
                         <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Company, Keyword, or Tag</Label>
                         <Input placeholder="Type company name or product to search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && fetchData()} className="h-12 text-lg bg-white" />
                     </div>
-                    <div className="w-full md:w-72 space-y-2 text-left">
-                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Integrity & Outreach Filter</Label>
-                        <Select value={dataFilter} onValueChange={setDataFilter}>
-                            <SelectTrigger className="h-12 bg-white text-left"><SelectValue placeholder="All Records" /></SelectTrigger>
+                    <div className="w-40 space-y-2 text-left">
+                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Integrity</Label>
+                        <Select value={integrityFilter} onValueChange={setIntegrityFilter}>
+                            <SelectTrigger className="h-12 bg-white text-left"><SelectValue placeholder="All" /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Records</SelectItem>
                                 <SelectItem value="has-email">Has Email</SelectItem>
-                                <SelectItem value="no-email">Missing Email</SelectItem>
-                                <Separator className="my-1"/>
-                                <SelectItem value="outreach:Digital Handshake">Step 0: Handshake Sent</SelectItem>
-                                <SelectItem value="outreach:Company Profile">Step 1: Profile Sent</SelectItem>
-                                <SelectItem value="outreach:Tech Architecture">Step 2: Tech Sent</SelectItem>
-                                <SelectItem value="outreach:Revenue Model">Step 3: Revenue Sent</SelectItem>
-                                <SelectItem value="outreach:The Offer">Step 4: Offer Sent</SelectItem>
-                                <SelectItem value="outreach:The Pitch">Step 5: Pitch Sent</SelectItem>
-                                <SelectItem value="outreach:The Framework">Step 6: Framework Sent</SelectItem>
+                                <SelectItem value="no-email">No Email</SelectItem>
+                                <SelectItem value="has-website">Has WWW</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="w-56 space-y-2 text-left">
+                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Outreach Stage</Label>
+                        <Select value={outreachFilter} onValueChange={setOutreachFilter}>
+                            <SelectTrigger className="h-12 bg-white text-left"><SelectValue placeholder="All Stages" /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Stages</SelectItem>
+                                <SelectItem value="Digital Handshake">Step 0: Handshake</SelectItem>
+                                <SelectItem value="Company Profile">Step 1: Profile</SelectItem>
+                                <SelectItem value="Tech Architecture">Step 2: Tech</SelectItem>
+                                <SelectItem value="Revenue Model">Step 3: Revenue</SelectItem>
+                                <SelectItem value="The Offer">Step 4: Offer</SelectItem>
+                                <SelectItem value="The Pitch">Step 5: Pitch</SelectItem>
+                                <SelectItem value="The Framework">Step 6: Framework</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
@@ -379,7 +381,7 @@ export default function SupplierManagement() {
 
                 <Card className="border-primary/10 shadow-sm overflow-hidden text-left">
                     <CardContent className="pt-6 text-left text-foreground">
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
+                        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
                             <div className="md:col-span-2 space-y-2 text-left text-foreground">
                                 <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5 text-left"><Search className="h-3 w-3"/> Forensic Search</Label>
                                 <div className="flex gap-2 text-left text-foreground">
@@ -388,16 +390,24 @@ export default function SupplierManagement() {
                                 </div>
                             </div>
                             <div className="space-y-2 text-left text-foreground">
-                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left"><Filter className="h-3 w-3"/> Integrity Filter</Label>
-                                <Select value={dataFilter} onValueChange={setDataFilter}>
-                                    <SelectTrigger className="bg-white text-left"><SelectValue placeholder="All Records" /></SelectTrigger>
+                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left"><Filter className="h-3 w-3"/> Integrity</Label>
+                                <Select value={integrityFilter} onValueChange={setIntegrityFilter}>
+                                    <SelectTrigger className="bg-white text-left"><SelectValue placeholder="All" /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">All Records</SelectItem>
                                         <SelectItem value="has-email">Has Email</SelectItem>
-                                        <SelectItem value="no-email">Missing Email</SelectItem>
-                                        <Separator className="my-1"/>
-                                        <SelectItem value="outreach:Digital Handshake">Handshake Sent</SelectItem>
-                                        <SelectItem value="outreach:Company Profile">Profile Sent</SelectItem>
+                                        <SelectItem value="no-email">No Email</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2 text-left text-foreground">
+                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left"><Send className="h-3 w-3"/> Outreach</Label>
+                                <Select value={outreachFilter} onValueChange={setOutreachFilter}>
+                                    <SelectTrigger className="bg-white text-left"><SelectValue placeholder="All Stages" /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All Stages</SelectItem>
+                                        <SelectItem value="Digital Handshake">Handshake</SelectItem>
+                                        <SelectItem value="Company Profile">Profile</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>

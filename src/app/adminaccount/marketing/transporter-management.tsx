@@ -193,7 +193,8 @@ export default function TransporterManagement() {
 
   const [statusFilter, setStatusFilter] = useState('all');
   const [assigneeFilter, setAssigneeFilter] = useState('all');
-  const [dataFilter, setDataFilter] = useState('all');
+  const [integrityFilter, setIntegrityFilter] = useState('all');
+  const [outreachFilter, setOutreachFilter] = useState('all');
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
@@ -201,7 +202,7 @@ export default function TransporterManagement() {
       const token = await getClientSideAuthToken();
       if (!token) return;
       const [res, staffRes] = await Promise.all([
-        performAdminAction(token, 'searchRegistry', { type: 'transporter', term: searchTerm, dataFilter }),
+        performAdminAction(token, 'searchRegistry', { type: 'transporter', term: searchTerm, integrityFilter, outreachFilter }),
         performAdminAction(token, 'getPlatformStaff', {})
       ]);
       setAllRecords(res.data || []);
@@ -212,12 +213,12 @@ export default function TransporterManagement() {
     } finally {
       setIsLoading(false);
     }
-  }, [searchTerm, dataFilter, toast]);
+  }, [searchTerm, integrityFilter, outreachFilter, toast]);
 
   useEffect(() => { 
     if (hasLoaded) fetchData(); 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dataFilter, statusFilter, assigneeFilter]);
+  }, [integrityFilter, outreachFilter, statusFilter, assigneeFilter]);
 
   const filteredRecords = useMemo(() => {
     return allRecords.filter(r => {
@@ -341,27 +342,31 @@ export default function TransporterManagement() {
                 <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
                 <h2 className="text-2xl font-black font-headline mb-2 text-foreground text-center">Transporter Forensic Scan</h2>
                 <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center">Execute a targeted scan of the master haulier registry. Filter by outreach step to follow up on your sequence.</p>
-                <div className="flex flex-col md:flex-row justify-center gap-4 max-w-3xl mx-auto text-left">
+                <div className="flex flex-col md:flex-row justify-center gap-4 max-w-4xl mx-auto text-left">
                     <div className="flex-1 space-y-2 text-left">
                         <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Company, Category or ID</Label>
                         <Input placeholder="Search criteria..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && fetchData()} className="h-12 text-lg bg-white" />
                     </div>
-                    <div className="w-full md:w-72 space-y-2 text-left">
-                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Outreach Stage</Label>
-                        <Select value={dataFilter} onValueChange={setDataFilter}>
-                            <SelectTrigger className="h-12 bg-white text-left"><SelectValue placeholder="All Records" /></SelectTrigger>
+                    <div className="w-40 space-y-2 text-left">
+                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Integrity</Label>
+                        <Select value={integrityFilter} onValueChange={setIntegrityFilter}>
+                            <SelectTrigger className="h-12 bg-white text-left"><SelectValue placeholder="All" /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Records</SelectItem>
                                 <SelectItem value="has-email">Has Email</SelectItem>
-                                <SelectItem value="no-email">Missing Email</SelectItem>
-                                <Separator className="my-1"/>
-                                <SelectItem value="outreach:Digital Handshake">Step 0: Handshake Sent</SelectItem>
-                                <SelectItem value="outreach:Company Profile">Step 1: Profile Sent</SelectItem>
-                                <SelectItem value="outreach:Tech Architecture">Step 2: Tech Sent</SelectItem>
-                                <SelectItem value="outreach:Revenue Model">Step 3: Revenue Sent</SelectItem>
-                                <SelectItem value="outreach:The Offer">Step 4: Offer Sent</SelectItem>
-                                <SelectItem value="outreach:The Pitch">Step 5: Pitch Sent</SelectItem>
-                                <SelectItem value="outreach:The Framework">Step 6: Framework Sent</SelectItem>
+                                <SelectItem value="no-email">No Email</SelectItem>
+                                <SelectItem value="has-website">Has WWW</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="w-56 space-y-2 text-left">
+                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Outreach Stage</Label>
+                        <Select value={outreachFilter} onValueChange={setOutreachFilter}>
+                            <SelectTrigger className="h-12 bg-white text-left"><SelectValue placeholder="All Stages" /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Stages</SelectItem>
+                                <SelectItem value="Digital Handshake">Step 0: Handshake</SelectItem>
+                                <SelectItem value="Company Profile">Step 1: Profile</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
@@ -376,7 +381,7 @@ export default function TransporterManagement() {
                 <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
                     <div className="text-left text-foreground">
                         <CardTitle className="flex items-center gap-2 text-2xl font-black font-headline text-left text-foreground"><Truck /> Transporter Registry</CardTitle>
-                        <CardDescription className="text-left text-foreground">Unified database view ({partners.length} results).</CardDescription>
+                        <CardDescription className="text-left text-foreground">Unified database view ({allRecords.length} results).</CardDescription>
                     </div>
                     <div className="flex flex-wrap items-center gap-2 text-left text-foreground">
                         {selectedIds.length > 0 && (
@@ -394,8 +399,8 @@ export default function TransporterManagement() {
 
                 <Card className="border-primary/10 shadow-sm overflow-hidden text-left text-foreground">
                     <CardContent className="pt-6 text-left text-foreground">
-                        <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
-                            <div className="flex-1 space-y-2 text-left">
+                        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
+                            <div className="md:col-span-2 space-y-2 text-left">
                                 <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Search className="h-3 w-3"/> Forensic Search</Label>
                                 <div className="flex gap-2 text-left text-foreground">
                                     <Input placeholder="Refine current scan..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && fetchData()} />
@@ -403,15 +408,22 @@ export default function TransporterManagement() {
                                 </div>
                             </div>
                             <div className="flex-1 space-y-2 text-left">
-                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Filter className="h-3 w-3"/> Step Filter</Label>
-                                <Select value={dataFilter} onValueChange={setDataFilter}>
-                                    <SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="All Records" /></SelectTrigger>
+                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Filter className="h-3 w-3"/> Integrity</Label>
+                                <Select value={integrityFilter} onValueChange={setIntegrityFilter}>
+                                    <SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="All" /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">All Records</SelectItem>
                                         <SelectItem value="has-email">Has Email</SelectItem>
-                                        <Separator className="my-1"/>
-                                        <SelectItem value="outreach:Digital Handshake">Handshake Sent</SelectItem>
-                                        <SelectItem value="outreach:Company Profile">Profile Sent</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                             <div className="flex-1 space-y-2 text-left">
+                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Send className="h-3 w-3"/> Outreach</Label>
+                                <Select value={outreachFilter} onValueChange={setOutreachFilter}>
+                                    <SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="All Stages" /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All Stages</SelectItem>
+                                        <SelectItem value="Digital Handshake">Handshake</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
