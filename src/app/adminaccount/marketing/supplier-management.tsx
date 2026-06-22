@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -173,7 +172,7 @@ export default function SupplierManagement() {
   const [hasLoaded, setHasLoaded] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | null, data?: any }>({ type: null });
+  const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | null, data?: any, initialIndex?: number }>({ type: null });
 
   const [statusFilter, setStatusFilter] = useState('all');
   const [assigneeFilter, setAssigneeFilter] = useState('all');
@@ -219,6 +218,25 @@ export default function SupplierManagement() {
       }
       downloadDataAsCSV(filteredRecords, `suppliers-export-${new Date().toISOString().split('T')[0]}.csv`);
       toast({ title: "Export Complete" });
+  };
+
+  const handleEngage = (record: any) => {
+    const indexInSelected = selectedIds.indexOf(record.id);
+    const engageList = selectedIds.length > 0 
+        ? partners.filter(p => selectedIds.includes(p.id)) 
+        : [record];
+        
+    setDialog({ 
+        type: 'engage', 
+        data: engageList, 
+        initialIndex: Math.max(0, indexInSelected) 
+    });
+  };
+
+  const handleBatchEngage = () => {
+    if (selectedIds.length === 0) return;
+    const engageList = partners.filter(p => selectedIds.includes(p.id));
+    setDialog({ type: 'engage', data: engageList, initialIndex: 0 });
   };
 
   async function handleDeleteBatch() {
@@ -281,7 +299,7 @@ export default function SupplierManagement() {
     { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
       <div className="flex justify-end gap-1">
         <EnrichPartnerButton partner={row.original} onUpdate={fetchData} />
-        <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'engage', data: row.original })} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
+        <Button variant="ghost" size="icon" onClick={() => handleEngage(row.original)} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
         <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.companyName} />
         <PartnerTasksDialog partner={row.original} />
         <PartnerOversightDialog partner={row.original} onUpdate={fetchData} />
@@ -293,7 +311,14 @@ export default function SupplierManagement() {
 
   return (
     <div className="space-y-6 text-left">
-      <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.data} audience="suppliers" onEngageSuccess={fetchData} />
+      <EngageDialog 
+        open={dialog.type === 'engage'} 
+        onOpenChange={(o) => !o && setDialog({ type: null })} 
+        partners={Array.isArray(dialog.data) ? dialog.data : [dialog.data]} 
+        initialIndex={dialog.initialIndex}
+        audience="suppliers" 
+        onEngageSuccess={fetchData} 
+      />
       <SupplierDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={fetchData} />
       
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
@@ -367,12 +392,17 @@ export default function SupplierManagement() {
                     </div>
                     <div className="flex flex-wrap items-center gap-2 text-left">
                         {selectedIds.length > 0 && (
-                            <Button variant="destructive" onClick={() => setDialog({ type: 'delete' })} className="gap-2">
-                                <Trash2 className="h-4 w-4" /> Delete Selected ({selectedIds.length})
-                            </Button>
+                            <>
+                                <Button variant="secondary" onClick={handleBatchEngage} className="gap-2 shadow-sm font-bold">
+                                    <Send className="h-4 w-4" /> Batch Engage ({selectedIds.length})
+                                </Button>
+                                <Button variant="destructive" onClick={() => setDialog({ type: 'delete' })} className="gap-2">
+                                    <Trash2 className="h-4 w-4" /> Delete ({selectedIds.length})
+                                </Button>
+                            </>
                         )}
                         <Button variant="outline" onClick={handleExport} disabled={isLoading} className="text-foreground">
-                            <Download className="mr-2 h-4 w-4" /> Export Filtered
+                            <Download className="mr-2 h-4 w-4" /> Export CSV
                         </Button>
                         <BulkImportDialog type="supplier" onComplete={fetchData}><Button variant="outline" className="text-foreground"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
                         <Button onClick={() => setDialog({ type: 'add' })} className="text-foreground"><PlusCircle className="mr-2 h-4 w-4" /> Add Record</Button>

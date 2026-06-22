@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -153,7 +152,7 @@ export default function ISAManagement() {
   const [hasLoaded, setHasLoaded] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | 'batch' | null, data?: any }>({ type: null });
+  const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | 'batch' | null, data?: any, initialIndex?: number }>({ type: null });
 
   const [statusFilter, setStatusFilter] = useState('all');
   const [assigneeFilter, setAssigneeFilter] = useState('all');
@@ -196,6 +195,25 @@ export default function ISAManagement() {
       if (filteredRecords.length === 0) return;
       downloadDataAsCSV(filteredRecords, `isa-export-${new Date().toISOString().split('T')[0]}.csv`);
       toast({ title: "Export Complete" });
+  };
+
+  const handleEngage = (record: any) => {
+    const indexInSelected = selectedIds.indexOf(record.id);
+    const engageList = selectedIds.length > 0 
+        ? allRecords.filter(r => selectedIds.includes(r.id)) 
+        : [record];
+        
+    setDialog({ 
+        type: 'engage', 
+        data: engageList, 
+        initialIndex: Math.max(0, indexInSelected) 
+    });
+  };
+
+  const handleBatchEngage = () => {
+    if (selectedIds.length === 0) return;
+    const engageList = allRecords.filter(r => selectedIds.includes(r.id));
+    setDialog({ type: 'engage', data: engageList, initialIndex: 0 });
   };
 
   async function handleDeleteBatch() {
@@ -262,7 +280,7 @@ export default function ISAManagement() {
     { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
       <div className="flex justify-end gap-1 text-left">
         <EnrichPartnerButton partner={row.original} onUpdate={fetchData} />
-        <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'engage', data: row.original })} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
+        <Button variant="ghost" size="icon" onClick={() => handleEngage(row.original)} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
         <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.firstName} />
         <PartnerTasksDialog partner={row.original} />
         <PartnerOversightDialog partner={row.original} onUpdate={fetchData} />
@@ -275,7 +293,14 @@ export default function ISAManagement() {
   return (
     <div className="space-y-6 text-left">
       <BatchResearchDialog open={dialog.type === 'batch'} onOpenChange={(o) => !o && setDialog({ type: null })} selectedLeads={allRecords.filter(r => selectedIds.includes(r.id))} onComplete={fetchData} />
-      <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.data} audience="isa" onEngageSuccess={fetchData} />
+      <EngageDialog 
+        open={dialog.type === 'engage'} 
+        onOpenChange={(o) => !o && setDialog({ type: null })} 
+        partners={Array.isArray(dialog.data) ? dialog.data : [dialog.data]} 
+        initialIndex={dialog.initialIndex}
+        audience="isa" 
+        onEngageSuccess={fetchData} 
+      />
       <ISADialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={fetchData} />
       
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
@@ -342,6 +367,16 @@ export default function ISAManagement() {
                         <CardDescription className="text-left text-foreground">Full database of Independent Sales Agents ({allRecords.length} records).</CardDescription>
                     </div>
                     <div className="flex flex-wrap items-center gap-2 text-left text-foreground text-foreground">
+                        {selectedIds.length > 0 && (
+                            <>
+                                <Button variant="secondary" onClick={handleBatchEngage} className="gap-2 shadow-sm font-bold">
+                                    <Send className="h-4 w-4" /> Batch Engage ({selectedIds.length})
+                                </Button>
+                                <Button variant="destructive" onClick={() => setDialog({ type: 'delete' })} className="gap-2">
+                                    <Trash2 className="h-4 w-4" /> Delete ({selectedIds.length})
+                                </Button>
+                            </>
+                        )}
                         <div className="relative w-64 text-left text-foreground text-foreground">
                             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                             <Input placeholder="Search criteria..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8 bg-white" />

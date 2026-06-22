@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -35,7 +34,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { roles } from '@/lib/roles';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { downloadDataAsCSV } from '@/lib/utils';
+import { downloadDataAsCSV, formatDateSafe } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 
 import { EnrichPartnerButton } from '@/app/adminaccount/marketing/EnrichPartnerButton';
@@ -156,6 +155,7 @@ function LeadsDatabaseComponent() {
   const [isLoading, setIsLoading] = useState(false);
   const [hasLoaded, setHasLoaded] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   
   const [statusFilter, setStatusFilter] = useState('all');
   const [integrityFilter, setIntegrityFilter] = useState('all');
@@ -164,7 +164,7 @@ function LeadsDatabaseComponent() {
   const [isAddLeadOpen, setIsAddLeadOpen] = useState(false);
   const [editLead, setEditLead] = useState<any | null>(null);
   const [deleteLead, setDeleteLead] = useState<any | null>(null);
-  const [engageLead, setEngageLead] = useState<any | null>(null);
+  const [engageDialog, setEngageDialog] = useState<{ open: boolean, data?: any[], initialIndex?: number }>({ open: false });
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
@@ -223,6 +223,25 @@ function LeadsDatabaseComponent() {
       toast({ title: "Backup Exported" });
   };
 
+  const handleEngage = (record: any) => {
+    const indexInSelected = selectedIds.indexOf(record.id);
+    const engageList = selectedIds.length > 0 
+        ? allRecords.filter(r => selectedIds.includes(r.id)) 
+        : [record];
+        
+    setEngageDialog({ 
+        open: true, 
+        data: engageList, 
+        initialIndex: Math.max(0, indexInSelected) 
+    });
+  };
+
+  const handleBatchEngage = () => {
+    if (selectedIds.length === 0) return;
+    const engageList = allRecords.filter(r => selectedIds.includes(r.id));
+    setEngageDialog({ open: true, data: engageList, initialIndex: 0 });
+  };
+
   const handleDelete = async () => {
     if (!deleteLead) return;
     try {
@@ -262,7 +281,7 @@ function LeadsDatabaseComponent() {
       cell: ({ row }) => (
         <div className="text-right flex items-center justify-end gap-1">
           <EnrichPartnerButton partner={row.original} onUpdate={fetchData} />
-          <Button variant="ghost" size="icon" onClick={() => setEngageLead(row.original)} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
+          <Button variant="ghost" size="icon" onClick={() => handleEngage(row.original)} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
           <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.companyName} />
           <PartnerTasksDialog partner={row.original} />
           <PartnerOversightDialog partner={row.original} onUpdate={fetchData} />
@@ -271,11 +290,18 @@ function LeadsDatabaseComponent() {
         </div>
       )
     },
-  ], [fetchData]);
+  ], [fetchData, selectedIds]);
 
   return (
     <>
-      <EngageDialog open={!!engageLead} onOpenChange={(o) => !o && setEngageLead(null)} partner={engageLead} audience="suppliers" onEngageSuccess={fetchData} />
+      <EngageDialog 
+        open={engageDialog.open} 
+        onOpenChange={(o) => !o && setEngageDialog({ open: false })} 
+        partners={engageDialog.data || []} 
+        initialIndex={engageDialog.initialIndex}
+        audience="suppliers" 
+        onEngageSuccess={fetchData} 
+      />
       <LeadDialog open={isAddLeadOpen || !!editLead} onOpenChange={(o) => { if(!o) { setEditLead(null); setIsAddLeadOpen(false); } }} lead={editLead} onSave={fetchData} defaultValues={newLeadDefaults} />
       
       <div className="space-y-6 text-left text-foreground">
@@ -322,6 +348,11 @@ function LeadsDatabaseComponent() {
                 <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
                 <div className="text-left text-foreground"><CardTitle className="flex items-center gap-2 text-left"><Users /> Lead Database</CardTitle><CardDescription className="text-left text-foreground text-foreground">Unified registry view of prospective members ({allRecords.length} results).</CardDescription></div>
                 <div className="flex gap-2 text-left text-foreground text-foreground">
+                    {selectedIds.length > 0 && (
+                        <Button variant="secondary" onClick={handleBatchEngage} className="gap-2 shadow-sm font-bold">
+                            <Send className="h-4 w-4" /> Batch Engage ({selectedIds.length})
+                        </Button>
+                    )}
                     <Button variant="outline" onClick={handleExport} disabled={isLoading} className="text-foreground"><Download className="mr-2 h-4 w-4" /> Export CSV</Button>
                     <BulkImportDialog type="lead" onComplete={fetchData}><Button variant="outline" className="text-foreground text-foreground"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
                     <Button onClick={() => setIsAddLeadOpen(true)} className="text-foreground text-foreground text-foreground"><PlusCircle className="mr-2 h-4 w-4" />Add Lead</Button>
@@ -362,7 +393,7 @@ function LeadsDatabaseComponent() {
                                 <Button variant="outline" onClick={() => setHasLoaded(false)} className="h-10 w-full text-foreground"><RotateCcw className="mr-1 h-3 w-3" /> New Search</Button>
                             </div>
                         </div>
-                        {isLoading ? <div className="flex justify-center p-10 text-foreground text-foreground"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredLeads} />}
+                        {isLoading ? <div className="flex justify-center p-10 text-foreground text-foreground"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredLeads} onSelectionChange={setSelectedIds} />}
                     </CardContent>
                 </Card>
             </div>
