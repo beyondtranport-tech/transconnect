@@ -11,8 +11,7 @@ export const dynamic = 'force-dynamic';
  * Enforces:
  * 1. Deep-scan of industrialTags and minedServiceWording.
  * 2. Visual data masking for Free tier.
- * 3. 100-record hard cap for all tiers.
- * 4. Optimized batch sizing to prevent 429 quota exhaustion.
+ * 3. 100-record hard cap for all tiers to prevent resource exhaustion.
  */
 export async function POST(req: NextRequest) {
     try {
@@ -24,7 +23,7 @@ export async function POST(req: NextRequest) {
         
         const authorization = req.headers.get('authorization');
         if (!authorization?.startsWith('Bearer ')) {
-            return NextResponse.json({ success: false, error: 'Unauthorized: Access restricted to members.' }, { status: 401 });
+            return NextResponse.json({ success: false, error: 'Unauthorized.' }, { status: 401 });
         }
 
         const token = authorization.split('Bearer ')[1];
@@ -36,16 +35,15 @@ export async function POST(req: NextRequest) {
         // 1. Get Member Status
         const userDoc = await db.collection('users').doc(uid).get();
         const companyId = userDoc.data()?.companyId;
-        if (!companyId) throw new Error("Member company profile not found.");
+        if (!companyId) throw new Error("Member profile not found.");
 
         const companyRef = db.collection('companies').doc(companyId);
         const companyDoc = await companyRef.get();
         const companyData = companyDoc.data()!;
         
-        const membershipId = companyData.membershipId || 'free';
-        const isPaid = membershipId !== 'free';
+        const isPaid = companyData.membershipId && companyData.membershipId !== 'free';
 
-        // 2. Enforce Daily Limit (10 per day for testing)
+        // 2. Enforce Daily Limit (10 per day for free users)
         if (!isPaid) {
             const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
             const recentSearches = await companyRef.collection('searchLogs')
@@ -55,7 +53,7 @@ export async function POST(req: NextRequest) {
             if (recentSearches.size >= 10) {
                 return NextResponse.json({ 
                     success: false, 
-                    error: 'Testing Limit Reached: Free members are restricted to 10 searches per 24 hours.',
+                    error: 'Daily Search Limit Reached (10/10). Upgrade to Intelligence Access for unlimited scans.',
                     limitReached: true
                 }, { status: 429 });
             }
@@ -63,12 +61,12 @@ export async function POST(req: NextRequest) {
 
         // 3. Execute Registry Scan
         let collectionName = 'leads';
-        if (type === 'driver' || type === 'transporter' || type === 'supplier' || type === 'finance') collectionName = 'partners';
+        if (['driver', 'transporter', 'supplier', 'finance'].includes(type)) collectionName = 'partners';
         
-        // OPTIMIZATION: Reduced limit to 500 to save on read quota and prevent resource exhaustion
+        // Capped Scan: Only search the latest 200 items to preserve quota
         const snapshot = await db.collection(collectionName)
             .orderBy('updatedAt', 'desc')
-            .limit(500) 
+            .limit(200) 
             .get();
 
         let results = snapshot.docs.map((doc: any) => {
@@ -80,7 +78,6 @@ export async function POST(req: NextRequest) {
                 entryType: item.industrial_category || item.category || item.entryType || item.classification || item.role || 'General',
                 industrialTags: item.industrialTags || item.tags || [],
                 minedServiceWording: item.minedServiceWording || item.notes || '',
-                region: item.region || item.operational_hub || item.city || '',
             };
 
             if (isPaid) {
@@ -105,33 +102,21 @@ export async function POST(req: NextRequest) {
             }
         });
 
-        // 4. Forensic Memory Filter (Deep Scan)
+        // 4. Forensic Memory Filter
         if (searchTerm || service || city || suburb || province || category) {
             const lowSearch = searchTerm?.toLowerCase() || '';
             const lowProv = province?.toLowerCase() || '';
             const lowCity = city?.toLowerCase() || '';
-            const lowCat = category?.toLowerCase() || '';
-            const lowServ = service?.toLowerCase() || '';
             
             results = results.filter((item: any) => {
                 const addr = (item.address || '').toLowerCase();
                 const typeStr = (item.entryType || '').toLowerCase();
                 const name = (item.companyName || '').toLowerCase();
-                const tagsStr = (item.industrialTags || []).join(' ').toLowerCase();
-                const minedText = (item.minedServiceWording || '').toLowerCase();
 
                 const matchesLoc = (!lowProv || addr.includes(lowProv)) && (!lowCity || addr.includes(lowCity));
-                const matchesCat = !lowCat || typeStr.includes(lowCat);
-                const matchesServ = !lowServ || typeStr.includes(lowServ);
-                
-                const matchesText = !lowSearch || 
-                    name.includes(lowSearch) || 
-                    typeStr.includes(lowSearch) || 
-                    addr.includes(lowSearch) ||
-                    tagsStr.includes(lowSearch) ||
-                    minedText.includes(lowSearch);
+                const matchesText = !lowSearch || name.includes(lowSearch) || typeStr.includes(lowSearch) || addr.includes(lowSearch);
 
-                return matchesLoc && (matchesCat || matchesServ) && matchesText;
+                return matchesLoc && matchesText;
             });
         }
 
@@ -142,23 +127,11 @@ export async function POST(req: NextRequest) {
             userId: uid,
             type,
             searchTerm: searchTerm || '',
-            variables: { 
-                province: province || null, 
-                city: city || null, 
-                suburb: suburb || null, 
-                category: category || null, 
-                service: service || null 
-            },
             resultCount: finalResults.length,
             timestamp: FieldValue.serverTimestamp(),
-            tier: membershipId
         });
 
-        return NextResponse.json({ 
-            success: true, 
-            data: finalResults, 
-            isMasked: !isPaid 
-        });
+        return NextResponse.json({ success: true, data: finalResults });
 
     } catch (error: any) {
         console.error(`Search API Error:`, error);

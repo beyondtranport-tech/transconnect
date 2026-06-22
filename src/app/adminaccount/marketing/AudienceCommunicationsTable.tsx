@@ -5,10 +5,11 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, MessageSquare, RefreshCcw } from 'lucide-react';
+import { Loader2, MessageSquare, RefreshCcw, Info } from 'lucide-react';
 import { getClientSideAuthToken } from '@/firebase';
 import { formatDateSafe, cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function AudienceCommunicationsTable({ audience }: { audience: string }) {
     const [logs, setLogs] = useState<any[]>([]);
@@ -49,13 +50,20 @@ export default function AudienceCommunicationsTable({ audience }: { audience: st
             <div className="flex items-center justify-between">
                 <div>
                     <h3 className="text-lg font-bold flex items-center gap-2"><MessageSquare className="h-5 w-5 text-primary" /> Global Communication Feed</h3>
-                    <p className="text-xs text-muted-foreground">All recorded interactions for this audience segment.</p>
+                    <p className="text-xs text-muted-foreground">Showing the latest 100 recorded interactions.</p>
                 </div>
                 <Button variant="outline" size="sm" onClick={loadData} disabled={isLoading}>
                     <RefreshCcw className={cn("h-3 w-3 mr-2", isLoading && "animate-spin")} />
                     Refresh Feed
                 </Button>
             </div>
+            
+            <Alert className="bg-muted/50 border-none py-2">
+                <Info className="h-4 w-4" />
+                <AlertTitle className="text-xs font-bold uppercase tracking-widest">Performance Capping Active</AlertTitle>
+                <AlertDescription className="text-[10px]">Registry results are restricted to the top 100 records to prevent Firestore resource exhaustion.</AlertDescription>
+            </Alert>
+
             {isLoading ? <div className="flex justify-center p-12"><Loader2 className="animate-spin text-primary" /></div> : <DataTable columns={columns} data={logs} />}
         </div>
     );

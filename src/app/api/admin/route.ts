@@ -24,6 +24,14 @@ function serializeTimestamps(docData: any): any {
     return docData;
 }
 
+/**
+ * Helper to chunk arrays for Firestore 'in' queries (max 30 items)
+ */
+const chunkArray = (arr: any[], size: number) => 
+  Array.from({ length: Math.ceil(arr.length / size) }, (v, i) =>
+    arr.slice(i * size, i * size + size)
+  );
+
 export async function POST(req: NextRequest) {
     try {
         const { app, error: initError } = getAdminApp();
@@ -57,7 +65,6 @@ export async function POST(req: NextRequest) {
                 } = payload;
                 
                 const collectionName = (type === 'lead') ? 'leads' : 'partners';
-                
                 let query: any = db.collection(collectionName);
                 
                 if (category && category !== 'all') {
@@ -66,9 +73,8 @@ export async function POST(req: NextRequest) {
                     query = query.where('type', '==', type);
                 }
 
-                const snap = category && category !== 'all' 
-                    ? await query.limit(10000).get() 
-                    : await query.orderBy('updatedAt', 'desc').limit(5000).get();
+                // CAPPED READ: Limit to 1000 to prevent resource exhaustion
+                const snap = await query.orderBy('updatedAt', 'desc').limit(1000).get();
                 
                 let data = snap.docs.map((d: QueryDocumentSnapshot) => ({ 
                     id: d.id, 
@@ -109,20 +115,30 @@ export async function POST(req: NextRequest) {
                     data = data.filter((p: any) => p.lastOutreachSubject === outreachFilter);
                 }
 
-                return NextResponse.json({ success: true, data: data.slice(0, 1000) });
+                return NextResponse.json({ success: true, data: data.slice(0, 500) });
             }
 
             case 'getAudienceCommunications': {
                 const { type } = payload;
-                const commsSnap = await db.collectionGroup('communications').orderBy('timestamp', 'desc').limit(500).get();
+                const commsSnap = await db.collectionGroup('communications').orderBy('timestamp', 'desc').limit(100).get();
+                
+                if (commsSnap.empty) return NextResponse.json({ success: true, data: [] });
+
                 const parentIds = [...new Set(commsSnap.docs.map(d => d.ref.path.split('/').slice(-3, -2)[0]))];
                 
-                const [partnersSnap, leadsSnap] = await Promise.all([
-                    db.collection('partners').where(FieldValue.documentId(), 'in', parentIds.length > 0 ? parentIds : ['none']).get(),
-                    db.collection('leads').where(FieldValue.documentId(), 'in', parentIds.length > 0 ? parentIds : ['none']).get()
-                ]);
+                // Chunk lookups to handle Firestore 'in' limit of 30
+                const parentIdChunks = chunkArray(parentIds, 30);
+                const entities: any[] = [];
+
+                for (const chunkIds of parentIdChunks) {
+                    const [pSnap, lSnap] = await Promise.all([
+                        db.collection('partners').where(FieldValue.documentId(), 'in', chunkIds).get(),
+                        db.collection('leads').where(FieldValue.documentId(), 'in', chunkIds).get()
+                    ]);
+                    entities.push(...pSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+                    entities.push(...lSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+                }
                 
-                const entities = [...partnersSnap.docs, ...leadsSnap.docs].map(d => ({ id: d.id, ...d.data() }));
                 const entityMap = new Map(entities.map(e => [e.id, e]));
 
                 const data = commsSnap.docs.map(d => {
@@ -146,16 +162,24 @@ export async function POST(req: NextRequest) {
 
             case 'getAudienceTasks': {
                 const { type } = payload;
-                const tasksSnap = await db.collectionGroup('tasks').orderBy('createdAt', 'desc').limit(500).get();
+                const tasksSnap = await db.collectionGroup('tasks').orderBy('createdAt', 'desc').limit(100).get();
+                
+                if (tasksSnap.empty) return NextResponse.json({ success: true, data: [] });
+
                 const parentIds = [...new Set(tasksSnap.docs.map(d => d.ref.path.split('/').slice(-3, -2)[0]))];
+                const parentIdChunks = chunkArray(parentIds, 30);
+                const entities: any[] = [];
+
+                for (const chunkIds of parentIdChunks) {
+                    const [pSnap, lSnap] = await Promise.all([
+                        db.collection('partners').where(FieldValue.documentId(), 'in', chunkIds).get(),
+                        db.collection('leads').where(FieldValue.documentId(), 'in', chunkIds).get()
+                    ]);
+                    entities.push(...pSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+                    entities.push(...lSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+                }
                 
-                const [partnersSnap, leadsSnap, staffSnap] = await Promise.all([
-                    db.collection('partners').where(FieldValue.documentId(), 'in', parentIds.length > 0 ? parentIds : ['none']).get(),
-                    db.collection('leads').where(FieldValue.documentId(), 'in', parentIds.length > 0 ? parentIds : ['none']).get(),
-                    db.collection('platformStaff').get()
-                ]);
-                
-                const entities = [...partnersSnap.docs, ...leadsSnap.docs].map(d => ({ id: d.id, ...d.data() }));
+                const staffSnap = await db.collection('platformStaff').get();
                 const entityMap = new Map(entities.map(e => [e.id, e]));
                 const staffMap = new Map(staffSnap.docs.map(d => [d.id, `${d.data().firstName} ${d.data().lastName}`]));
 
@@ -181,7 +205,7 @@ export async function POST(req: NextRequest) {
             }
 
             case 'getAuditLogs': {
-                const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(200).get();
+                const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(100).get();
                 const data = snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...serializeTimestamps(d.data()) }));
                 return NextResponse.json({ success: true, data });
             }
@@ -205,6 +229,18 @@ export async function POST(req: NextRequest) {
                     q = q.where('type', '==', type);
                 }
                 const snap = await q.orderBy('updatedAt', 'desc').limit(100).get();
+                const data = snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...serializeTimestamps(d.data()) }));
+                return NextResponse.json({ success: true, data });
+            }
+
+            case 'getContributions': {
+                const snap = await db.collection('contributions').orderBy('createdAt', 'desc').limit(100).get();
+                const data = snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...serializeTimestamps(d.data()) }));
+                return NextResponse.json({ success: true, data });
+            }
+
+            case 'getShops': {
+                const snap = await db.collectionGroup('shops').orderBy('updatedAt', 'desc').limit(100).get();
                 const data = snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...serializeTimestamps(d.data()) }));
                 return NextResponse.json({ success: true, data });
             }
@@ -239,38 +275,6 @@ export async function POST(req: NextRequest) {
                     updatedAt: FieldValue.serverTimestamp()
                 }, { merge: true });
                 return NextResponse.json({ success: true, id });
-            }
-
-            case 'deletePartner': {
-                const { partnerId } = payload;
-                await db.collection('partners').doc(partnerId).delete();
-                return NextResponse.json({ success: true });
-            }
-
-            case 'logForensicInitiated': {
-                const { partnerId, isLead } = payload;
-                const collName = isLead ? 'leads' : 'partners';
-                await db.collection(collName).doc(partnerId).update({
-                    researchStatus: 'searching',
-                    lastForensicAt: FieldValue.serverTimestamp(),
-                    updatedAt: FieldValue.serverTimestamp()
-                });
-                return NextResponse.json({ success: true });
-            }
-
-            case 'bulkLogForensicInitiated': {
-                const { leadIds, type } = payload;
-                const collName = type === 'lead' ? 'leads' : 'partners';
-                const batch = db.batch();
-                leadIds.forEach((id: string) => {
-                    batch.update(db.collection(collName).doc(id), {
-                        researchStatus: 'searching',
-                        lastForensicAt: FieldValue.serverTimestamp(),
-                        updatedAt: FieldValue.serverTimestamp()
-                    });
-                });
-                await batch.commit();
-                return NextResponse.json({ success: true });
             }
 
             default:
