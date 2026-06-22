@@ -126,7 +126,6 @@ export async function POST(req: NextRequest) {
 
                 const parentIds = [...new Set(commsSnap.docs.map(d => d.ref.path.split('/').slice(-3, -2)[0]))];
                 
-                // Chunk lookups to handle Firestore 'in' limit of 30
                 const parentIdChunks = chunkArray(parentIds, 30);
                 const entities: any[] = [];
 
@@ -144,11 +143,15 @@ export async function POST(req: NextRequest) {
                 const data = commsSnap.docs.map(d => {
                     const entId = d.ref.path.split('/').slice(-3, -2)[0];
                     const entity = entityMap.get(entId);
+                    
+                    // SMART CATEGORIZATION: Use type, then role, then industrial_category
+                    const partnerType = entity?.type || entity?.role || entity?.industrial_category || 'lead';
+
                     return {
                         id: d.id,
                         partnerId: entId,
                         partnerName: entity?.companyName || entity?.trading_name || entity?.company_name || `${entity?.firstName || ''} ${entity?.lastName || ''}`.trim() || 'Unknown',
-                        partnerType: entity?.type || entity?.role || 'lead',
+                        partnerType: partnerType,
                         ...serializeTimestamps(d.data())
                     };
                 });
@@ -187,11 +190,14 @@ export async function POST(req: NextRequest) {
                     const taskData = d.data();
                     const entId = d.ref.path.split('/').slice(-3, -2)[0];
                     const entity = entityMap.get(entId);
+                    
+                    const partnerType = entity?.type || entity?.role || entity?.industrial_category || 'lead';
+
                     return {
                         id: d.id,
                         partnerId: entId,
                         partnerName: entity?.companyName || entity?.trading_name || entity?.company_name || `${entity?.firstName || ''} ${entity?.lastName || ''}`.trim() || 'Unknown',
-                        partnerType: entity?.type || entity?.role || 'lead',
+                        partnerType: partnerType,
                         assigneeName: staffMap.get(taskData.assigneeId) || 'Unassigned',
                         ...serializeTimestamps(taskData)
                     };
