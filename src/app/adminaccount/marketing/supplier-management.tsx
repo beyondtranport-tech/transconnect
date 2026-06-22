@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -7,9 +8,9 @@ import * as z from 'zod';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from '@/hooks/use-toast';
-import { getClientSideAuthToken, useUser } from '@/firebase';
+import { getClientSideAuthToken } from '@/firebase';
 import { 
-  Loader2, PlusCircle, Building, Edit, Trash2, Send, Download, Save, Search, Filter, Users, Globe, Zap, Upload, RefreshCcw, Database, Copy, Tag, AlertTriangle, CheckCircle, Sparkles 
+  Loader2, PlusCircle, Building, Edit, Trash2, Send, Download, Save, Search, Filter, Users, Globe, Zap, Upload, RefreshCcw, Database, Copy, Tag, AlertTriangle, CheckCircle, Sparkles, RotateCcw 
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
@@ -62,115 +63,6 @@ const partnerSchema = z.object({
 });
 type PartnerFormValues = z.infer<typeof partnerSchema>;
 
-function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
-    const [isOpen, setIsOpen] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
-    const [duplicates, setDuplicates] = useState<any[][]>([]);
-    const [incomplete, setIncomplete] = useState<any[]>([]);
-    const [selections, setSelections] = useState<Record<number, string>>({});
-    const { toast } = useToast();
-
-    const findDuplicates = async () => {
-        setIsLoading(true);
-        try {
-            const token = await getClientSideAuthToken();
-            if (!token) return;
-            const res = await performAdminAction(token, 'findDuplicatePartners', { type: 'supplier' });
-            setDuplicates(res.duplicates || []);
-            setIncomplete(res.incomplete || []);
-            setIsOpen(true);
-        } catch (e: any) {
-            toast({ variant: 'destructive', title: "Search Error", description: e.message });
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const handleClean = async (target: 'duplicates' | 'incomplete') => {
-        setIsLoading(true);
-        try {
-            const token = await getClientSideAuthToken();
-            if (!token) return;
-            
-            let idsToDelete: string[] = [];
-            if (target === 'duplicates') {
-                idsToDelete = duplicates.flatMap((group, idx) => {
-                    const keepId = selections[idx];
-                    if (!keepId) return [];
-                    return group.filter(p => p.id !== keepId).map(p => p.id);
-                });
-            } else {
-                idsToDelete = incomplete.map(p => p.id);
-            }
-
-            if (idsToDelete.length === 0) {
-                toast({ title: "No records selected for deletion." });
-                setIsLoading(false);
-                return;
-            }
-
-            await performAdminAction(token, 'deletePartners', { partnerIds: idsToDelete });
-            toast({ title: "Cleaned!", description: `${idsToDelete.length} records removed.` });
-            onComplete();
-            setIsOpen(false);
-        } catch (e: any) {
-            toast({ variant: 'destructive', title: "Cleanup Error", description: e.message });
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    return (
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <Button variant="outline" onClick={findDuplicates} disabled={isLoading} className="gap-2">
-                {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <Trash2 className="h-4 w-4"/>}
-                Registry Cleaner
-            </Button>
-            <DialogContent className="sm:max-w-4xl max-h-[85vh] flex flex-col text-left">
-                <DialogHeader>
-                    <DialogTitle>Registry Health Tool</DialogTitle>
-                </DialogHeader>
-                <ScrollArea className="flex-1 p-4">
-                    <div className="space-y-8 text-left">
-                        {incomplete.length > 0 && (
-                            <div className="space-y-4 text-left">
-                                <h3 className="font-bold text-destructive flex items-center gap-2 text-left"><AlertTriangle className="h-5 w-5" /> Incomplete Records ({incomplete.length})</h3>
-                                <Button variant="destructive" size="sm" onClick={() => handleClean('incomplete')} disabled={isLoading}>Delete All Incomplete</Button>
-                            </div>
-                        )}
-                        {duplicates.length > 0 && (
-                            <div className="space-y-4 text-left">
-                                <h3 className="font-bold text-amber-600 flex items-center gap-2 text-left"><Tag className="h-5 w-5" /> Duplicates</h3>
-                                {duplicates.map((group, idx) => (
-                                    <div key={idx} className="p-4 border rounded-lg bg-muted/20 space-y-2 text-left">
-                                        <p className="font-bold text-sm text-left">{group[0].companyName}</p>
-                                        <div className="space-y-1 text-left">
-                                            {group.map(p => (
-                                                <div key={p.id} className="flex items-center gap-2 text-xs text-left">
-                                                    <Checkbox checked={selections[idx] === p.id} onCheckedChange={() => setSelections({...selections, [idx]: p.id})}/>
-                                                    <span className="text-muted-foreground font-mono">{p.id}</span>
-                                                    <span>{p.email || 'No Email'}</span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                ))}
-                                <Button variant="secondary" className="w-full" onClick={() => handleClean('duplicates')} disabled={isLoading}>Clean Selected</Button>
-                            </div>
-                        )}
-                        {incomplete.length === 0 && duplicates.length === 0 && (
-                            <div className="text-center py-20 text-left">
-                                <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
-                                <p className="text-lg font-bold">Registry is Clean!</p>
-                            </div>
-                        )}
-                    </div>
-                </ScrollArea>
-            </DialogContent>
-        </Dialog>
-    );
-}
-
 function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean; onOpenChange: (open: boolean) => void; partner?: any; onSave: () => void; }) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -213,7 +105,7 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
               <FormField control={form.control} name="contactPerson" render={({ field }) => (<FormItem><FormLabel>Key Decision Maker</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
             <div className="grid grid-cols-2 gap-4 text-left text-foreground">
-              <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Direct E-mail</FormLabel><FormControl><Input {...field} type="email" /></FormControl><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Direct E-mail</FormLabel><FormControl><Input {...field} type="email" /></FormControl><FormMessage /></FormMessage>)} />
               <FormField control={form.control} name="mobile" render={({ field }) => (<FormItem><FormLabel>Mobile (Direct Cell)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
             <FormField control={form.control} name="website" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Corporate Website</FormLabel><FormControl><Input placeholder="https://..." {...field} /></FormControl><FormMessage /></FormItem>)} />
@@ -250,7 +142,7 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
                 <FormItem className="text-left text-foreground">
                     <FormLabel>Pipeline Status</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl><SelectTrigger className="bg-white"><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
+                        <FormControl><SelectTrigger className="bg-white text-left"><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
                         <SelectContent>
                             <SelectItem value="new">New Lead</SelectItem>
                             <SelectItem value="contacted">Researching</SelectItem>
@@ -274,9 +166,10 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
 
 export default function SupplierManagement() {
   const { toast } = useToast();
-  const [allRecords, setAllRecords] = useState<any[]>([]);
+  const [partners, setPartners] = useState<any[]>([]);
   const [staff, setStaff] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasLoaded, setHasLoaded] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | null, data?: any }>({ type: null });
@@ -290,34 +183,26 @@ export default function SupplierManagement() {
       const token = await getClientSideAuthToken();
       if (!token) return;
       const [res, staffRes] = await Promise.all([
-        performAdminAction(token, 'getPartnersByType', { type: 'supplier' }),
+        performAdminAction(token, 'searchRegistry', { type: 'supplier', term: searchTerm }),
         performAdminAction(token, 'getPlatformStaff', {})
       ]);
-      setAllRecords(res.data || []);
+      setPartners(res.data || []);
       setStaff(staffRes.data || []);
+      setHasLoaded(true);
     } catch (e: any) {
-        console.error("Fetch Error:", e);
+        toast({ variant: 'destructive', title: 'Fetch Error', description: e.message });
     } finally {
       setIsLoading(false);
     }
-  }, []);
-
-  useEffect(() => { fetchData(); }, [fetchData]);
+  }, [searchTerm, toast]);
 
   const filteredRecords = useMemo(() => {
-    const term = searchTerm.toLowerCase();
-    return allRecords.filter(p => {
-        const matchesText = !searchTerm || 
-            (p.companyName?.toLowerCase().includes(term)) ||
-            (p.firstName?.toLowerCase().includes(term)) ||
-            (p.lastName?.toLowerCase().includes(term)) ||
-            (p.email?.toLowerCase().includes(term));
-
+    return partners.filter(p => {
         const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
         const matchesAssignee = assigneeFilter === 'all' || p.assigneeId === assigneeFilter;
-        return matchesStatus && matchesAssignee && matchesText;
+        return matchesStatus && matchesAssignee;
     });
-  }, [allRecords, searchTerm, statusFilter, assigneeFilter]);
+  }, [partners, statusFilter, assigneeFilter]);
 
   async function handleDeleteBatch() {
     if (selectedIds.length === 0) return;
@@ -407,59 +292,73 @@ export default function SupplierManagement() {
       </AlertDialog>
 
       <div className="space-y-6 text-left">
-        <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
-            <div className="text-left text-foreground">
-                <CardTitle className="flex items-center gap-2 text-2xl font-black font-headline text-left text-foreground"><Building /> Supplier Registry</CardTitle>
-                <CardDescription className="text-left text-foreground">Unified industrial supply directory ({allRecords.length} records).</CardDescription>
-            </div>
-            <div className="flex flex-wrap items-center gap-2 text-left">
-                <DuplicateCleaner onComplete={fetchData} />
-                {selectedIds.length > 0 && (
-                    <Button variant="destructive" onClick={() => setDialog({ type: 'delete' })} className="gap-2">
-                        <Trash2 className="h-4 w-4" /> Delete Selected ({selectedIds.length})
+        {!hasLoaded ? (
+             <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground">
+                <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
+                <h2 className="text-2xl font-black font-headline mb-2 text-foreground text-center">Registry Forensic Search</h2>
+                <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center">Scan the master database of 20,000+ suppliers. Targeted searches preserve your daily data quota.</p>
+                <div className="flex flex-col md:flex-row justify-center gap-4 max-w-2xl mx-auto text-left">
+                    <Input placeholder="Type company name, tag or ID to search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && fetchData()} className="h-12 text-lg bg-white" />
+                    <Button size="lg" onClick={fetchData} disabled={isLoading} className="h-12 px-8">
+                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4" />}
+                        Execute Scan
                     </Button>
-                )}
-                <div className="relative w-64 text-left">
-                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input placeholder="Search tags, name, ID..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8 bg-white text-foreground" />
                 </div>
-                <Button variant="outline" onClick={() => downloadDataAsCSV(allRecords, 'suppliers-export.csv')} disabled={isLoading} className="text-foreground">
-                    <Download className="mr-2 h-4 w-4" /> Export CSV
-                </Button>
-                <BulkImportDialog type="supplier" onComplete={fetchData}><Button variant="outline" className="text-foreground"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
-                <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Record</Button>
-            </div>
-        </CardHeader>
+            </Card>
+        ) : (
+            <>
+                <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
+                    <div className="text-left text-foreground">
+                        <CardTitle className="flex items-center gap-2 text-2xl font-black font-headline text-left text-foreground"><Building /> Supplier Registry</CardTitle>
+                        <CardDescription className="text-left text-foreground">Unified industrial supply directory ({partners.length} matches found).</CardDescription>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2 text-left">
+                        <DuplicateCleaner onComplete={fetchData} />
+                        {selectedIds.length > 0 && (
+                            <Button variant="destructive" onClick={() => setDialog({ type: 'delete' })} className="gap-2">
+                                <Trash2 className="h-4 w-4" /> Delete Selected ({selectedIds.length})
+                            </Button>
+                        )}
+                        <Button variant="outline" onClick={() => downloadDataAsCSV(partners, 'suppliers-export.csv')} disabled={isLoading} className="text-foreground">
+                            <Download className="mr-2 h-4 w-4" /> Export CSV
+                        </Button>
+                        <BulkImportDialog type="supplier" onComplete={fetchData}><Button variant="outline" className="text-foreground"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
+                        <Button onClick={() => setDialog({ type: 'add' })} className="text-foreground"><PlusCircle className="mr-2 h-4 w-4" /> Add Record</Button>
+                    </div>
+                </CardHeader>
 
-        <Card className="border-primary/10 shadow-sm overflow-hidden text-left">
-            <CardContent className="pt-6 text-left text-foreground">
-                <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
-                    <div className="flex-1 space-y-2 text-left text-foreground">
-                        <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left"><Filter className="h-3 w-3"/> Status</Label>
-                        <Select value={statusFilter} onValueChange={setStatusFilter}>
-                            <SelectTrigger className="bg-white text-left"><SelectValue placeholder="All Statuses" /></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All Statuses</SelectItem>
-                                <SelectItem value="active">Active</SelectItem>
-                                <SelectItem value="inactive">Inactive</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div className="flex-1 space-y-2 text-left text-foreground">
-                        <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left"><Users className="h-3 w-3"/> Assignee</Label>
-                        <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-                            <SelectTrigger className="bg-white text-left"><SelectValue placeholder="All Staff" /></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All Staff</SelectItem>
-                                <SelectItem value="none">Unallocated</SelectItem>
-                                {staff.map(s => <SelectItem key={s.id} value={s.id}>{s.firstName} {s.lastName}</SelectItem>)}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                </div>
-                {isLoading ? <div className="flex justify-center items-center py-10 text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />}
-            </CardContent>
-        </Card>
+                <Card className="border-primary/10 shadow-sm overflow-hidden text-left">
+                    <CardContent className="pt-6 text-left text-foreground">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
+                            <div className="md:col-span-2 space-y-2 text-left text-foreground">
+                                <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5 text-left"><Search className="h-3 w-3"/> Forensic Search</Label>
+                                <div className="flex gap-2 text-left text-foreground">
+                                    <Input placeholder="Refine your current scan..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && fetchData()} />
+                                    <Button onClick={fetchData} disabled={isLoading} className="text-foreground"><Search className="h-4 w-4"/></Button>
+                                </div>
+                            </div>
+                            <div className="space-y-2 text-left text-foreground">
+                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left"><Filter className="h-3 w-3"/> Status</Label>
+                                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                                    <SelectTrigger className="bg-white text-left"><SelectValue placeholder="All Statuses" /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All Statuses</SelectItem>
+                                        <SelectItem value="new">New</SelectItem>
+                                        <SelectItem value="contacted">Researching</SelectItem>
+                                        <SelectItem value="qualified">Qualified</SelectItem>
+                                        <SelectItem value="active">Active</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="flex items-end text-left">
+                                <Button variant="outline" onClick={() => setHasLoaded(false)} className="h-10 w-full text-foreground"><RotateCcw className="mr-1 h-3 w-3" /> New Search</Button>
+                            </div>
+                        </div>
+                        {isLoading ? <div className="flex justify-center items-center py-10 text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />}
+                    </CardContent>
+                </Card>
+            </>
+        )}
       </div>
     </div>
   );

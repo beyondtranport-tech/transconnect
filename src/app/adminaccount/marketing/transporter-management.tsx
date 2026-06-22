@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -9,7 +10,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, Truck, Edit, Trash2, Send, Download, Save, Search, Filter, Users, Zap, Globe, RefreshCcw, Database, Upload, Copy, Tag, AlertTriangle, CheckCircle, Sparkles } from 'lucide-react';
+import { Loader2, PlusCircle, Truck, Edit, Trash2, Send, Download, Save, Search, Filter, Users, Zap, Globe, RefreshCcw, Database, Upload, Copy, Tag, AlertTriangle, CheckCircle, Sparkles, RotateCcw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -31,7 +32,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 
 async function performAdminAction(token: string, action: string, payload: any) {
@@ -228,7 +228,7 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
               <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="industrial_category" render={({ field }) => (
                     <FormItem className="text-left text-foreground">
-                        <FormLabel>Category</FormLabel>
+                        <FormLabel>Category</Label>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl><SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="Classify..." /></SelectTrigger></FormControl>
                             <SelectContent>
@@ -295,7 +295,8 @@ export default function TransporterManagement() {
   const { toast } = useToast();
   const [allRecords, setAllRecords] = useState<any[]>([]);
   const [staff, setStaff] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasLoaded, setHasLoaded] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -313,19 +314,18 @@ export default function TransporterManagement() {
       const token = await getClientSideAuthToken();
       if (!token) return;
       const [res, staffRes] = await Promise.all([
-        performAdminAction(token, 'getPartnersByType', { type: 'transporter' }),
+        performAdminAction(token, 'searchRegistry', { type: 'transporter', term: searchTerm }),
         performAdminAction(token, 'getPlatformStaff', {})
       ]);
       setAllRecords(res.data || []);
       setStaff(staffRes.data || []);
+      setHasLoaded(true);
     } catch (e: any) {
-        console.error("Fetch Error:", e);
+        toast({ variant: 'destructive', title: 'Fetch Error', description: e.message });
     } finally {
       setIsLoading(false);
     }
-  }, []);
-
-  useEffect(() => { fetchData(); }, [fetchData]);
+  }, [searchTerm, toast]);
 
   const handleRefreshTally = async () => {
     setIsRefreshing(true);
@@ -343,20 +343,12 @@ export default function TransporterManagement() {
   };
 
   const filteredRecords = useMemo(() => {
-    const term = searchTerm.toLowerCase();
     return allRecords.filter(r => {
-        const matchesText = !searchTerm || 
-            (r.companyName?.toLowerCase().includes(term)) ||
-            (r.firstName?.toLowerCase().includes(term)) ||
-            (r.lastName?.toLowerCase().includes(term)) ||
-            (r.email?.toLowerCase().includes(term));
-            
         const matchesStatus = statusFilter === 'all' || r.status === statusFilter;
         const matchesAssignee = assigneeFilter === 'all' || r.assigneeId === assigneeFilter;
-
-        return matchesText && matchesStatus && matchesAssignee;
+        return matchesStatus && matchesAssignee;
     });
-  }, [allRecords, searchTerm, statusFilter, assigneeFilter]);
+  }, [allRecords, statusFilter, assigneeFilter]);
 
   async function handleDeleteBatch() {
     if (selectedIds.length === 0) return;
@@ -424,11 +416,11 @@ export default function TransporterManagement() {
 
   return (
     <div className="space-y-6 text-left text-foreground">
-      <BatchResearchDialog open={dialog.type === 'batch'} onOpenChange={(o: boolean) => !o && setDialog({ type: null })} selectedLeads={allRecords.filter(r => selectedIds.includes(r.id))} onComplete={fetchData} />
-      <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o: boolean) => !o && setDialog({ type: null })} partner={dialog.data} audience="transporters" onEngageSuccess={fetchData} />
-      <TransporterDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o: boolean) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={fetchData} />
+      <BatchResearchDialog open={dialog.type === 'batch'} onOpenChange={(o) => !o && setDialog({ type: null })} selectedLeads={allRecords.filter(r => selectedIds.includes(r.id))} onComplete={fetchData} />
+      <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.data} audience="transporters" onEngageSuccess={fetchData} />
+      <TransporterDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={fetchData} />
       
-      <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o: boolean) => !o && setDialog({ type: null })}>
+      <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
         <AlertDialogContent className="text-left text-foreground">
           <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Delete Record(s)?</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter>
@@ -446,80 +438,91 @@ export default function TransporterManagement() {
       </AlertDialog>
       
       <div className="space-y-6 text-left text-foreground">
-        <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
-            <div className="text-left text-foreground">
-                <CardTitle className="flex items-center gap-2 text-2xl font-black font-headline text-left text-foreground"><Truck /> Transporter Registry</CardTitle>
-                <CardDescription className="text-left text-foreground">Unified database view ({allRecords.length} records).</CardDescription>
-            </div>
-            <div className="flex flex-wrap items-center gap-2 text-left text-foreground">
-                <DuplicateCleaner onComplete={fetchData} />
-                {selectedIds.length > 0 && (
-                    <Button variant="destructive" onClick={() => setDialog({ type: 'delete' })} className="gap-2">
-                        <Trash2 className="h-4 w-4" /> Delete Selected ({selectedIds.length})
+        {!hasLoaded ? (
+             <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground">
+                <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
+                <h2 className="text-2xl font-black font-headline mb-2 text-foreground text-center">Transporter Forensic Scan</h2>
+                <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center">Execute a targeted scan of the master haulier registry. Search by company name or route to find specific capacity.</p>
+                <div className="flex flex-col md:flex-row justify-center gap-4 max-w-2xl mx-auto text-left">
+                    <Input placeholder="Type company name, category or ID..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && fetchData()} className="h-12 text-lg bg-white" />
+                    <Button size="lg" onClick={fetchData} disabled={isLoading} className="h-12 px-8">
+                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4" />}
+                        Execute Scan
                     </Button>
-                )}
-                <div className="relative w-64 text-left text-foreground">
-                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input placeholder="Search registry..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8 bg-white text-foreground" />
                 </div>
-                <Button variant="outline" onClick={() => downloadDataAsCSV(allRecords, 'transporters-export.csv')} disabled={isLoading} className="text-foreground">
-                    <Download className="mr-2 h-4 w-4" /> Export
-                </Button>
-                <BulkImportDialog type="transporter" onComplete={fetchData}><Button variant="outline" className="text-foreground"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
-                <Button onClick={() => setDialog({ type: 'add' })} className="text-foreground"><PlusCircle className="mr-2 h-4 w-4" /> Add Record</Button>
-            </div>
-        </CardHeader>
+            </Card>
+        ) : (
+            <>
+                <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
+                    <div className="text-left text-foreground">
+                        <CardTitle className="flex items-center gap-2 text-2xl font-black font-headline text-left text-foreground"><Truck /> Transporter Registry</CardTitle>
+                        <CardDescription className="text-left text-foreground">Unified database view ({allRecords.length} matches found).</CardDescription>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2 text-left text-foreground">
+                        <DuplicateCleaner onComplete={fetchData} />
+                        {selectedIds.length > 0 && (
+                            <Button variant="destructive" onClick={() => setDialog({ type: 'delete' })} className="gap-2">
+                                <Trash2 className="h-4 w-4" /> Delete Selected ({selectedIds.length})
+                            </Button>
+                        )}
+                        <Button variant="outline" onClick={() => downloadDataAsCSV(allRecords, 'transporters-export.csv')} disabled={isLoading} className="text-foreground">
+                            <Download className="mr-2 h-4 w-4" /> Export
+                        </Button>
+                        <BulkImportDialog type="transporter" onComplete={fetchData}><Button variant="outline" className="text-foreground"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
+                        <Button onClick={() => setDialog({ type: 'add' })} className="text-foreground"><PlusCircle className="mr-2 h-4 w-4" /> Add Record</Button>
+                    </div>
+                </CardHeader>
 
-        <Card className="border-primary/10 shadow-sm overflow-hidden text-left text-foreground">
-            <CardHeader className="bg-muted/30 border-b text-left text-foreground">
-                 <div className="flex items-center justify-between text-left">
-                    <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
-                        <Database className="h-3 w-3" /> Category Tally
-                    </Label>
-                    <Button variant="ghost" size="sm" onClick={handleRefreshTally} className="h-6 text-[9px] uppercase font-black tracking-tighter text-foreground" disabled={isRefreshing}>
-                        {isRefreshing ? <Loader2 className="mr-1 h-2.5 w-2.5 animate-spin"/> : <RefreshCcw className="mr-1 h-2.5 w-2.5"/>} Refresh Counts
-                    </Button>
-                </div>
-                <div className="flex flex-wrap gap-2 mt-3 text-left">
-                    {transporterCategories.map(cat => (
-                        <div key={cat} className="flex items-center bg-white border rounded-full pl-3 pr-1 py-0.5 shadow-sm text-left">
-                            <span className="text-[9px] font-bold text-slate-600 mr-2 text-left">{cat}</span>
-                            <Badge className="bg-primary/10 text-primary border-none text-[9px] font-black h-4 px-1.5 min-w-[20px] justify-center">
-                                {counts[cat] || 0}
-                            </Badge>
+                <Card className="border-primary/10 shadow-sm overflow-hidden text-left text-foreground">
+                    <CardHeader className="bg-muted/30 border-b text-left text-foreground">
+                         <div className="flex items-center justify-between text-left">
+                            <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
+                                <Database className="h-3 w-3" /> Category Tally
+                            </Label>
+                            <Button variant="ghost" size="sm" onClick={handleRefreshTally} className="h-6 text-[9px] uppercase font-black tracking-tighter text-foreground" disabled={isRefreshing}>
+                                {isRefreshing ? <Loader2 className="mr-1 h-2.5 w-2.5 animate-spin"/> : <RefreshCcw className="mr-1 h-2.5 w-2.5"/>} Refresh Tally
+                            </Button>
                         </div>
-                    ))}
-                </div>
-            </CardHeader>
-            <CardContent className="pt-6 text-left text-foreground">
-                <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
-                    <div className="flex-1 space-y-2 text-left">
-                        <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Filter className="h-3 w-3"/> Status</Label>
-                        <Select value={statusFilter} onValueChange={setStatusFilter}>
-                            <SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="All Statuses" /></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All Statuses</SelectItem>
-                                <SelectItem value="new">New</SelectItem>
-                                <SelectItem value="contacted">Searching</SelectItem>
-                                <SelectItem value="qualified">Qualified</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div className="flex-1 space-y-2 text-left">
-                        <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-foreground"><Users className="h-3 w-3"/> Assignee</Label>
-                        <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-                            <SelectTrigger className="bg-white text-left text-foreground text-foreground"><SelectValue placeholder="All Staff" /></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All Staff</SelectItem>
-                                <SelectItem value="none">Unallocated</SelectItem>
-                                {staff.map(s => <SelectItem key={s.id} value={s.id}>{s.firstName} {s.lastName}</SelectItem>)}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                </div>
-                {isLoading ? <div className="flex justify-center items-center py-10 text-foreground text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />}
-            </CardContent>
-        </Card>
+                        <div className="flex flex-wrap gap-2 mt-3 text-left">
+                            {transporterCategories.map(cat => (
+                                <div key={cat} className="flex items-center bg-white border rounded-full pl-3 pr-1 py-0.5 shadow-sm text-left">
+                                    <span className="text-[9px] font-bold text-slate-600 mr-2 text-left">{cat}</span>
+                                    <Badge className="bg-primary/10 text-primary border-none text-[9px] font-black h-4 px-1.5 min-w-[20px] justify-center">
+                                        {counts[cat] || 0}
+                                    </Badge>
+                                </div>
+                            ))}
+                        </div>
+                    </CardHeader>
+                    <CardContent className="pt-6 text-left text-foreground">
+                        <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
+                            <div className="flex-1 space-y-2 text-left">
+                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Search className="h-3 w-3"/> Forensic Search</Label>
+                                <div className="flex gap-2 text-left text-foreground">
+                                    <Input placeholder="Refine current scan..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && fetchData()} />
+                                    <Button onClick={fetchData} disabled={isLoading} className="text-foreground"><Search className="h-4 w-4"/></Button>
+                                </div>
+                            </div>
+                            <div className="flex-1 space-y-2 text-left">
+                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Users className="h-3 w-3"/> Assignee</Label>
+                                <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
+                                    <SelectTrigger className="bg-white text-left text-foreground text-foreground"><SelectValue placeholder="All Staff" /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All Staff</SelectItem>
+                                        <SelectItem value="none">Unallocated</SelectItem>
+                                        {staff.map(s => <SelectItem key={s.id} value={s.id}>{s.firstName} {s.lastName}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="flex items-end">
+                                <Button variant="outline" onClick={() => setHasLoaded(false)} className="h-10 w-full"><RotateCcw className="mr-1 h-3 w-3" /> New Search</Button>
+                            </div>
+                        </div>
+                        {isLoading ? <div className="flex justify-center items-center py-10 text-foreground text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />}
+                    </CardContent>
+                </Card>
+            </>
+        )}
       </div>
     </div>
   );

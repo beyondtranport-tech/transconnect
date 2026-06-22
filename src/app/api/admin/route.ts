@@ -45,6 +45,46 @@ export async function POST(req: NextRequest) {
         const db = getFirestore(app);
 
         switch (action) {
+            case 'searchRegistry': {
+                const { term, type } = payload;
+                const collectionName = (type === 'lead') ? 'leads' : 'partners';
+                
+                let query: any = db.collection(collectionName);
+                if (type && type !== 'all' && type !== 'lead') {
+                    query = query.where('type', '==', type);
+                }
+
+                // Note: Firestore doesn't support full-text search.
+                // We perform a wide read (capped) and filter for a "Forensic Scan" experience.
+                const snap = await query.orderBy('updatedAt', 'desc').limit(1000).get();
+                
+                let data = snap.docs.map((d: QueryDocumentSnapshot) => ({ 
+                    id: d.id, 
+                    ...serializeTimestamps(d.data()) 
+                }));
+
+                if (term && term.length > 0) {
+                    const lowTerm = term.toLowerCase();
+                    data = data.filter((item: any) => {
+                        const name = (item.companyName || item.company_name || '').toLowerCase();
+                        const email = (item.email || '').toLowerCase();
+                        const contact = (item.contactPerson || '').toLowerCase();
+                        const tags = (item.industrialTags || []).join(' ').toLowerCase();
+                        const notes = (item.minedServiceWording || item.notes || '').toLowerCase();
+                        const id = item.id.toLowerCase();
+
+                        return name.includes(lowTerm) || 
+                               email.includes(lowTerm) || 
+                               contact.includes(lowTerm) || 
+                               tags.includes(lowTerm) ||
+                               notes.includes(lowTerm) ||
+                               id.includes(lowTerm);
+                    });
+                }
+
+                return NextResponse.json({ success: true, data: data.slice(0, 100) });
+            }
+
             case 'getShops': {
                 const snap = await db.collectionGroup('shops').get();
                 const data = snap.docs
@@ -114,67 +154,8 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true });
             }
 
-            case 'rejectShop': {
-                const { shopId, companyId } = payload;
-                if (!shopId || !companyId) throw new Error("Missing identifiers.");
-
-                const internalShopRef = db.doc(`companies/${companyId}/shops/${shopId}`);
-                const publicShopRef = db.doc(`shops/${shopId}`);
-
-                const batch = db.batch();
-                batch.update(internalShopRef, { status: 'rejected', updatedAt: FieldValue.serverTimestamp() });
-                batch.delete(publicShopRef);
-
-                await batch.commit();
-                return NextResponse.json({ success: true });
-            }
-
-            case 'getPendingAgreements': {
-                const snap = await db.collectionGroup('agreements')
-                    .where('status', '==', 'proposed')
-                    .get();
-                
-                const agreements = await Promise.all(snap.docs.map(async d => {
-                    const data = d.data();
-                    const pathSegments = d.ref.path.split('/');
-                    const cid = pathSegments[pathSegments.indexOf('companies') + 1];
-                    const sid = pathSegments[pathSegments.indexOf('shops') + 1];
-
-                    const shopSnap = await db.doc(`companies/${cid}/shops/${sid}`).get();
-                    return {
-                        id: d.id,
-                        companyId: cid,
-                        shopId: sid,
-                        shopName: shopSnap.exists ? shopSnap.data()?.shopName : 'Unknown Shop',
-                        ...serializeTimestamps(data)
-                    };
-                }));
-
-                return NextResponse.json({ success: true, data: agreements });
-            }
-
-            case 'acceptCommercialAgreement': {
-                const { companyId, shopId, agreementId } = payload;
-                if (!companyId || !shopId || !agreementId) throw new Error("Missing details.");
-
-                const agreementRef = db.doc(`companies/${companyId}/shops/${shopId}/agreements/${agreementId}`);
-                const shopRef = db.doc(`companies/${companyId}/shops/${shopId}`);
-                const publicShopRef = db.doc(`shops/${shopId}`);
-
-                const agreementSnap = await agreementRef.get();
-                const newRate = agreementSnap.data()?.percentage;
-
-                const batch = db.batch();
-                batch.update(agreementRef, { status: 'active', updatedAt: FieldValue.serverTimestamp() });
-                batch.update(shopRef, { platformCommission: newRate, updatedAt: FieldValue.serverTimestamp() });
-                batch.update(publicShopRef, { platformCommission: newRate, updatedAt: FieldValue.serverTimestamp() });
-
-                await batch.commit();
-                return NextResponse.json({ success: true });
-            }
-
             case 'getMembers': {
-                const snap = await db.collection('companies').limit(100).get();
+                const snap = await db.collection('companies').limit(1000).get();
                 const data = snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...serializeTimestamps(d.data()) }));
                 return NextResponse.json({ success: true, data });
             }
@@ -185,19 +166,13 @@ export async function POST(req: NextRequest) {
                 if (type !== 'all') {
                     q = q.where('type', '==', type);
                 }
-                const snap = await q.limit(100).get();
+                const snap = await q.orderBy('updatedAt', 'desc').limit(1000).get();
                 const data = snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...serializeTimestamps(d.data()) }));
                 return NextResponse.json({ success: true, data });
             }
 
             case 'getAuditLogs': {
-                const snap = await db.collection('auditLogs').limit(100).get();
-                const data = snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...serializeTimestamps(d.data()) }));
-                return NextResponse.json({ success: true, data });
-            }
-
-            case 'getContributions': {
-                const snap = await db.collection('contributions').limit(100).get();
+                const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(100).get();
                 const data = snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...serializeTimestamps(d.data()) }));
                 return NextResponse.json({ success: true, data });
             }
