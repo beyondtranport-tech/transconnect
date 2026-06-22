@@ -3,7 +3,7 @@
 import React from "react";
 
 export default function Framework({ partner }: { partner?: any }) {
-    const recipientName = partner?.firstName || 'Partner';
+    const firstName = partner?.firstName || (partner?.contactPerson ? partner.contactPerson.split(' ')[0] : 'Partner');
     const companyName = partner?.companyName || 'your business';
 
     return (
@@ -23,7 +23,7 @@ export default function Framework({ partner }: { partner?: any }) {
                 The following framework defines the strategic objective and commercial parameters for our partnership with {companyName}.
             </p>
 
-            <p style={{ margin: '0 0 7pt 0', fontWeight: 'bold' }}>Our Objective for {recipientName}:</p>
+            <p style={{ margin: '0 0 7pt 0', fontWeight: 'bold' }}>Our Objective for {firstName}:</p>
             <p style={{ margin: '0 0 14pt 0' }}>
                 To provide {companyName} with the tools and incentives to digitize your existing network, leveraging collective data to unlock funding, savings, and new revenue streams for every participant.
             </p>

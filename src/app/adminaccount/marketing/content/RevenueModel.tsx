@@ -3,7 +3,7 @@
 import React from "react";
 
 export default function RevenueModel({ partner }: { partner?: any }) {
-    const recipientName = partner?.firstName || 'Partner';
+    const firstName = partner?.firstName || (partner?.contactPerson ? partner.contactPerson.split(' ')[0] : 'Partner');
     const companyName = partner?.companyName || 'your business';
 
     return (

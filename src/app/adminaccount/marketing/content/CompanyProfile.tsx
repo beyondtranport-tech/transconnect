@@ -6,8 +6,9 @@ import React from "react";
  * Enhanced Company Profile with Intelligence Focus
  * Format: Calibri 12pt, All Black and White, Left-Aligned.
  */
-export default function CompanyProfile({ partner }: { audience: string; partner?: any }) {
-    const firstName = partner?.firstName || 'Member';
+export default function CompanyProfile({ audience, partner }: { audience: string; partner?: any }) {
+    // Smart First Name extraction
+    const firstName = partner?.firstName || (partner?.contactPerson ? partner.contactPerson.split(' ')[0] : 'Member');
     const email = partner?.email || '';
     const lastName = partner?.lastName || '';
     

@@ -7,6 +7,7 @@ import React from "react";
  * Format: Calibri 12pt, All Black and White, Left-Aligned, High-Contrast Business Style.
  */
 export default function DigitalHandshake({ partner }: { partner?: any }) {
+    const firstName = partner?.firstName || (partner?.contactPerson ? partner.contactPerson.split(' ')[0] : 'Partner');
     const companyName = partner?.companyName || 'your business';
     const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://studio--ecosystem-hub.us-central1.hosted.app';
     const optInLink = `${baseUrl}/join?ref=${partner?.id || 'PROSPECT'}`;
@@ -23,6 +24,8 @@ export default function DigitalHandshake({ partner }: { partner?: any }) {
             <p style={{ margin: '0 0 14pt 0', fontWeight: 'bold', textTransform: 'uppercase', borderBottom: '2px solid #000000', paddingBottom: '4pt' }}>
                 Digital Handshake & Strategic Connection: {companyName.toUpperCase()}
             </p>
+
+            <p style={{ margin: '0 0 14pt 0' }}>Good day {firstName},</p>
 
             <p style={{ margin: '0 0 14pt 0' }}>
                 For too long, the transport industry has been held back by fragmentation, high operating costs, and limited access to capital. Logistics Flow exists to break these constraints by building a unified digital ecosystem that combines collective buying power with AI-driven efficiency.

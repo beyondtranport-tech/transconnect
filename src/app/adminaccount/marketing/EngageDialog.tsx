@@ -175,6 +175,8 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
 
   if (!currentPartner) return null;
 
+  const partnerDisplayName = currentPartner.companyName || currentPartner.contactPerson || `${currentPartner.firstName || ''} ${currentPartner.lastName || ''}`.trim() || 'Partner';
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-6xl h-[90vh] flex flex-col p-0 text-left overflow-hidden">
@@ -183,7 +185,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                     <div className="text-left text-foreground space-y-1">
                         <DialogTitle className="text-2xl font-bold flex items-center gap-2">
                             <Send className="h-6 w-6 text-primary" />
-                            Engagement Wizard: {currentPartner.companyName || `${currentPartner.firstName} ${currentPartner.lastName}`}
+                            Engagement Wizard: {partnerDisplayName}
                         </DialogTitle>
                         <div className="flex items-center gap-2 text-sm">
                            <Badge variant="secondary" className="uppercase font-black text-[10px] tracking-widest">{audienceLabel}</Badge>
@@ -257,7 +259,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                                             onClick={() => setCurrentIndex(idx)}
                                         >
                                             {currentIndex === idx ? <CheckCircle2 className="h-3 w-3 mr-1.5 shrink-0" /> : <div className="w-3 h-3 mr-1.5 rounded-full border shrink-0" />}
-                                            {p.companyName || `${p.firstName} ${p.lastName}`}
+                                            {p.companyName || p.contactPerson || `${p.firstName || ''} ${p.lastName || ''}`.trim() || 'Partner'}
                                         </Button>
                                     ))}
                                 </div>

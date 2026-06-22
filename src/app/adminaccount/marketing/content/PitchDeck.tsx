@@ -3,7 +3,7 @@
 import React from "react";
 
 export default function PitchDeck({ partner }: { partner?: any }) {
-    const recipientName = partner?.firstName || 'Partner';
+    const firstName = partner?.firstName || (partner?.contactPerson ? partner.contactPerson.split(' ')[0] : 'Partner');
     const companyName = partner?.companyName || 'your business';
 
     return (
@@ -20,7 +20,7 @@ export default function PitchDeck({ partner }: { partner?: any }) {
             </p>
 
             <p style={{ margin: '0 0 14pt 0' }}>
-                We have identified {companyName} as a potential foundational stakeholder in the Logistics Flow ecosystem. This proposal outlines the personalized roadmap for {recipientName} to achieve exponential growth through collaboration.
+                We have identified {companyName} as a potential foundational stakeholder in the Logistics Flow ecosystem. This proposal outlines the personalized roadmap for {firstName} to achieve exponential growth through collaboration.
             </p>
 
             <p style={{ margin: '0 0 7pt 0', fontWeight: 'bold' }}>Executive Summary:</p>
