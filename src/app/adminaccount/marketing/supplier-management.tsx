@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -28,8 +29,6 @@ import { downloadDataAsCSV, formatDateSafe, cn } from '@/lib/utils';
 import { EnrichPartnerButton } from './EnrichPartnerButton';
 import { BulkImportDialog } from './BulkImportDialog';
 import { Label } from '@/components/ui/label';
-import { supplierCategories } from './discovery-engine';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 
 async function performAdminAction(token: string, action: string, payload: any) {
@@ -40,7 +39,7 @@ async function performAdminAction(token: string, action: string, payload: any) {
     cache: 'no-store'
   });
   const result = await response.json();
-  if (!response.ok || !result.success) throw new Error(result.error || `API Error: ${action}`);
+  if (!response.ok || !result.success) throw new Error(result.error || `API Error for action: ${action}`);
   return result;
 }
 
@@ -77,7 +76,7 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
     }
   }, [open, partner, form]);
 
-  const handleFormSubmit = async (values: PartnerFormValues) => {
+  async function onSubmit(values: PartnerFormValues) {
     setIsLoading(true);
     try {
       const token = await getClientSideAuthToken();
@@ -91,14 +90,17 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
     } finally {
       setIsLoading(false);
     }
-  };
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-3xl text-left">
-        <DialogHeader><DialogTitle>{partner ? 'Edit' : 'Add'} Supplier</DialogTitle></DialogHeader>
+      <DialogContent className="sm:max-w-3xl text-left text-foreground">
+        <DialogHeader>
+          <DialogTitle>{partner ? 'Edit' : 'Add'} Supplier</DialogTitle>
+          <DialogDescription>Update verified record details.</DialogDescription>
+        </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left">
             <div className="grid grid-cols-2 gap-4 text-left">
               <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Entity Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="contactPerson" render={({ field }) => (<FormItem><FormLabel>Key Decision Maker</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
@@ -175,6 +177,7 @@ export default function SupplierManagement() {
 
   const [statusFilter, setStatusFilter] = useState('all');
   const [assigneeFilter, setAssigneeFilter] = useState('all');
+  const [dataFilter, setDataFilter] = useState('all');
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
@@ -182,7 +185,7 @@ export default function SupplierManagement() {
       const token = await getClientSideAuthToken();
       if (!token) return;
       const [res, staffRes] = await Promise.all([
-        performAdminAction(token, 'searchRegistry', { type: 'supplier', term: searchTerm }),
+        performAdminAction(token, 'searchRegistry', { type: 'supplier', term: searchTerm, dataFilter }),
         performAdminAction(token, 'getPlatformStaff', {})
       ]);
       setPartners(res.data || []);
@@ -193,9 +196,12 @@ export default function SupplierManagement() {
     } finally {
       setIsLoading(false);
     }
-  }, [searchTerm, toast]);
+  }, [searchTerm, dataFilter, toast]);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => { 
+    if (hasLoaded) fetchData(); 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dataFilter, statusFilter, assigneeFilter]);
 
   const filteredRecords = useMemo(() => {
     return partners.filter(p => {
@@ -225,8 +231,8 @@ export default function SupplierManagement() {
         accessorKey: 'companyName', 
         header: 'Supplier Name', 
         cell: ({ row }) => (
-            <div className="flex flex-col text-sm text-left">
-                <span className="font-bold text-left text-foreground">{row.original.companyName || row.original.contactPerson || 'Incomplete Record'}</span>
+            <div className="flex flex-col text-sm text-left text-foreground">
+                <span className="font-bold text-left">{row.original.companyName || row.original.contactPerson || 'Incomplete Record'}</span>
                 <div className="flex flex-wrap gap-1 mt-1 text-left">
                     {row.original.industrialTags?.slice(0, 3).map((tag: string) => (
                         <Badge key={tag} variant="secondary" className="text-[8px] h-3.5 bg-slate-100 text-slate-600 border-none px-1.5 uppercase font-black">{tag}</Badge>
@@ -299,8 +305,23 @@ export default function SupplierManagement() {
                 <h2 className="text-2xl font-black font-headline mb-2 text-foreground text-center">Registry Forensic Search</h2>
                 <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center">Scan the master database of 20,000+ suppliers. Targeted searches preserve your daily data quota.</p>
                 <div className="flex flex-col md:flex-row justify-center gap-4 max-w-2xl mx-auto text-left">
-                    <Input placeholder="Type company name, tag or ID to search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && fetchData()} className="h-12 text-lg bg-white" />
-                    <Button size="lg" onClick={fetchData} disabled={isLoading} className="h-12 px-8">
+                    <div className="flex-1 space-y-2">
+                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Company, Keyword, or Tag</Label>
+                        <Input placeholder="Type company name or product to search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && fetchData()} className="h-12 text-lg bg-white" />
+                    </div>
+                    <div className="w-full md:w-64 space-y-2">
+                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Integrity Filter</Label>
+                        <Select value={dataFilter} onValueChange={setDataFilter}>
+                            <SelectTrigger className="h-12 bg-white"><SelectValue placeholder="All Records" /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Records</SelectItem>
+                                <SelectItem value="has-email">Has Email</SelectItem>
+                                <SelectItem value="no-email">Missing Email</SelectItem>
+                                <SelectItem value="has-website">Has Website</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <Button size="lg" onClick={fetchData} disabled={isLoading} className="h-12 px-8 self-end">
                         {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4" />}
                         Execute Scan
                     </Button>
@@ -311,7 +332,7 @@ export default function SupplierManagement() {
                 <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
                     <div className="text-left text-foreground">
                         <CardTitle className="flex items-center gap-2 text-2xl font-black font-headline text-left text-foreground"><Building /> Supplier Registry</CardTitle>
-                        <CardDescription className="text-left text-foreground">Unified industrial supply directory ({partners.length} matches found).</CardDescription>
+                        <CardDescription className="text-left text-foreground">Unified industrial supply directory ({partners.length} results).</CardDescription>
                     </div>
                     <div className="flex flex-wrap items-center gap-2 text-left">
                         {selectedIds.length > 0 && (
@@ -319,8 +340,8 @@ export default function SupplierManagement() {
                                 <Trash2 className="h-4 w-4" /> Delete Selected ({selectedIds.length})
                             </Button>
                         )}
-                        <Button variant="outline" onClick={() => downloadDataAsCSV(partners, 'suppliers-export.csv')} disabled={isLoading} className="text-foreground">
-                            <Download className="mr-2 h-4 w-4" /> Export CSV
+                        <Button variant="outline" onClick={handleExport} disabled={isLoading} className="text-foreground">
+                            <Download className="mr-2 h-4 w-4" /> Export Filtered
                         </Button>
                         <BulkImportDialog type="supplier" onComplete={fetchData}><Button variant="outline" className="text-foreground"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
                         <Button onClick={() => setDialog({ type: 'add' })} className="text-foreground"><PlusCircle className="mr-2 h-4 w-4" /> Add Record</Button>
@@ -338,15 +359,15 @@ export default function SupplierManagement() {
                                 </div>
                             </div>
                             <div className="space-y-2 text-left text-foreground">
-                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left"><Filter className="h-3 w-3"/> Status</Label>
-                                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                                    <SelectTrigger className="bg-white text-left"><SelectValue placeholder="All Statuses" /></SelectTrigger>
+                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left"><Filter className="h-3 w-3"/> Integrity Filter</Label>
+                                <Select value={dataFilter} onValueChange={setDataFilter}>
+                                    <SelectTrigger className="bg-white text-left"><SelectValue placeholder="All Records" /></SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="all">All Statuses</SelectItem>
-                                        <SelectItem value="new">New</SelectItem>
-                                        <SelectItem value="contacted">Researching</SelectItem>
-                                        <SelectItem value="qualified">Qualified</SelectItem>
-                                        <SelectItem value="active">Active</SelectItem>
+                                        <SelectItem value="all">All Records</SelectItem>
+                                        <SelectItem value="has-email">Has Email</SelectItem>
+                                        <SelectItem value="no-email">Missing Email</SelectItem>
+                                        <SelectItem value="has-phone">Has Phone</SelectItem>
+                                        <SelectItem value="has-website">Has Website</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>

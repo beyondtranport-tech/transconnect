@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -28,7 +29,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, Bot, Edit, Trash2, Send, Download, Save, Search, Users, Filter, Globe, Zap, Database, Upload, Copy, Tag, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Loader2, PlusCircle, Bot, Edit, Trash2, Send, Download, Save, Search, Users, Filter, Globe, Zap, Database, Upload, Copy, Tag, AlertTriangle, CheckCircle, RotateCcw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -43,7 +44,6 @@ import { BatchResearchDialog } from './BatchResearchDialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { BulkImportDialog } from './BulkImportDialog';
-import { ScrollArea } from '@/components/ui/scroll-area';
 
 async function performAdminAction(token: string, action: string, payload: any) {
   const response = await fetch('/api/admin', {
@@ -155,6 +155,7 @@ export default function ISAManagement() {
 
   const [statusFilter, setStatusFilter] = useState('all');
   const [assigneeFilter, setAssigneeFilter] = useState('all');
+  const [dataFilter, setDataFilter] = useState('all');
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
@@ -162,7 +163,7 @@ export default function ISAManagement() {
       const token = await getClientSideAuthToken();
       if (!token) return;
       const [res, staffRes] = await Promise.all([
-        performAdminAction(token, 'getPartnersByType', { type: 'isa' }),
+        performAdminAction(token, 'searchRegistry', { type: 'isa', term: searchTerm, dataFilter }),
         performAdminAction(token, 'getPlatformStaff', {})
       ]);
       setAllRecords(res.data || []);
@@ -172,25 +173,17 @@ export default function ISAManagement() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [searchTerm, dataFilter]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
   const filteredRecords = useMemo(() => {
-    const term = searchTerm.toLowerCase();
     return allRecords.filter(r => {
-        const matchesText = !searchTerm || 
-            (r.companyName?.toLowerCase().includes(term)) ||
-            (r.firstName?.toLowerCase().includes(term)) ||
-            (r.lastName?.toLowerCase().includes(term)) ||
-            (r.email?.toLowerCase().includes(term));
-            
         const matchesStatus = statusFilter === 'all' || r.status === statusFilter;
         const matchesAssignee = assigneeFilter === 'all' || r.assigneeId === assigneeFilter;
-
-        return matchesText && matchesStatus && matchesAssignee;
+        return matchesStatus && matchesAssignee;
     });
-  }, [allRecords, searchTerm, statusFilter, assigneeFilter]);
+  }, [allRecords, statusFilter, assigneeFilter]);
 
   async function handleDeleteBatch() {
     if (selectedIds.length === 0) return;
@@ -293,7 +286,7 @@ export default function ISAManagement() {
                 )}
                 <div className="relative w-64 text-left text-foreground">
                     <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input placeholder="Search registry..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8 bg-white" />
+                    <Input placeholder="Search criteria..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8 bg-white" />
                 </div>
                 <Button variant="outline" onClick={() => downloadDataAsCSV(allRecords, 'isa-export.csv')} disabled={isLoading}>
                     <Download className="mr-2 h-4 w-4" /> Export
@@ -327,6 +320,20 @@ export default function ISAManagement() {
                                 {staff.map(s => <SelectItem key={s.id} value={s.id}>{s.firstName} {s.lastName}</SelectItem>)}
                             </SelectContent>
                         </Select>
+                    </div>
+                    <div className="flex-1 space-y-2 text-left text-foreground">
+                        <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Search className="h-3 w-3"/> Integrity Filter</Label>
+                        <Select value={dataFilter} onValueChange={setDataFilter}>
+                            <SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="All Records" /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Records</SelectItem>
+                                <SelectItem value="has-email">Has Email</SelectItem>
+                                <SelectItem value="no-email">Missing Email</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="flex items-end">
+                        <Button variant="outline" onClick={() => fetchData()} className="h-10 w-full"><RefreshCcw className="mr-1 h-3 w-3" /> Refresh Scan</Button>
                     </div>
                 </div>
                 {isLoading ? <div className="flex justify-center items-center py-10 text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />}

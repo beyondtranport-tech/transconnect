@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
 
         switch (action) {
             case 'searchRegistry': {
-                const { term, type } = payload;
+                const { term, type, dataFilter } = payload;
                 const collectionName = (type === 'lead') ? 'leads' : 'partners';
                 
                 let query: any = db.collection(collectionName);
@@ -54,8 +54,8 @@ export async function POST(req: NextRequest) {
                     query = query.where('type', '==', type);
                 }
 
-                // Note: Firestore doesn't support full-text search.
-                // We perform a wide read (capped) and filter for a "Forensic Scan" experience.
+                // Note: Firestore doesn't support efficient "not empty" queries without specific indexes.
+                // We perform a wide read (capped) and filter in memory to provide the "Forensic" experience.
                 const snap = await query.orderBy('updatedAt', 'desc').limit(1000).get();
                 
                 let data = snap.docs.map((d: QueryDocumentSnapshot) => ({ 
@@ -63,6 +63,7 @@ export async function POST(req: NextRequest) {
                     ...serializeTimestamps(d.data()) 
                 }));
 
+                // 1. Term Filter
                 if (term && term.length > 0) {
                     const lowTerm = term.toLowerCase();
                     data = data.filter((item: any) => {
@@ -71,91 +72,26 @@ export async function POST(req: NextRequest) {
                         const contact = (item.contactPerson || '').toLowerCase();
                         const tags = (item.industrialTags || []).join(' ').toLowerCase();
                         const notes = (item.minedServiceWording || item.notes || '').toLowerCase();
-                        const id = item.id.toLowerCase();
-
-                        return name.includes(lowTerm) || 
-                               email.includes(lowTerm) || 
-                               contact.includes(lowTerm) || 
-                               tags.includes(lowTerm) ||
-                               notes.includes(lowTerm) ||
-                               id.includes(lowTerm);
+                        return name.includes(lowTerm) || email.includes(lowTerm) || contact.includes(lowTerm) || tags.includes(lowTerm) || notes.includes(lowTerm);
                     });
                 }
 
+                // 2. Data Integrity Filter
+                if (dataFilter && dataFilter !== 'all') {
+                    if (dataFilter === 'has-email') data = data.filter((p: any) => !!p.email);
+                    else if (dataFilter === 'no-email') data = data.filter((p: any) => !p.email);
+                    else if (dataFilter === 'has-phone') data = data.filter((p: any) => !!(p.phone || p.mobile));
+                    else if (dataFilter === 'no-phone') data = data.filter((p: any) => !(p.phone || p.mobile));
+                    else if (dataFilter === 'has-website') data = data.filter((p: any) => !!p.website);
+                    else if (dataFilter === 'no-website') data = data.filter((p: any) => !p.website);
+                }
+
+                // Return exactly 100 after filtering
                 return NextResponse.json({ success: true, data: data.slice(0, 100) });
-            }
-
-            case 'getShops': {
-                const snap = await db.collectionGroup('shops').get();
-                const data = snap.docs
-                    .filter((doc: QueryDocumentSnapshot) => {
-                        const segments = doc.ref.path.split('/');
-                        return segments.length === 4 && segments[0] === 'companies';
-                    })
-                    .map((doc: QueryDocumentSnapshot) => {
-                        const segments = doc.ref.path.split('/');
-                        return { 
-                            id: doc.id, 
-                            companyId: segments[1],
-                            ...serializeTimestamps(doc.data()) 
-                        };
-                    });
-                
-                data.sort((a, b) => {
-                    const timeA = new Date(a.updatedAt || a.createdAt || 0).getTime();
-                    const timeB = new Date(b.updatedAt || b.createdAt || 0).getTime();
-                    return timeB - timeA;
-                });
-                    
-                return NextResponse.json({ success: true, data: data.slice(0, 100) });
-            }
-
-            case 'approveShop': {
-                const { shopId, companyId } = payload;
-                if (!shopId || !companyId) throw new Error("Missing shopId or companyId.");
-
-                const internalShopRef = db.doc(`companies/${companyId}/shops/${shopId}`);
-                const publicShopRef = db.doc(`shops/${shopId}`);
-                
-                const shopSnap = await internalShopRef.get();
-                if (!shopSnap.exists) throw new Error(`Source profile not found.`);
-                
-                const shopData = shopSnap.data()!;
-                const batch = db.batch();
-
-                batch.update(internalShopRef, { 
-                    status: 'approved', 
-                    updatedAt: FieldValue.serverTimestamp() 
-                });
-                
-                batch.set(publicShopRef, {
-                    ...shopData,
-                    id: shopId,
-                    companyId,
-                    status: 'approved',
-                    updatedAt: FieldValue.serverTimestamp()
-                }, { merge: true });
-
-                const productsSnap = await internalShopRef.collection('products').get();
-                const publicProductsCol = publicShopRef.collection('products');
-                
-                const existingPublic = await publicProductsCol.get();
-                existingPublic.forEach(d => batch.delete(d.ref));
-
-                productsSnap.forEach(d => {
-                    batch.set(publicProductsCol.doc(d.id), { 
-                        ...d.data(), 
-                        id: d.id,
-                        updatedAt: FieldValue.serverTimestamp()
-                    });
-                });
-
-                await batch.commit();
-                return NextResponse.json({ success: true });
             }
 
             case 'getMembers': {
-                const snap = await db.collection('companies').limit(1000).get();
+                const snap = await db.collection('companies').orderBy('updatedAt', 'desc').limit(100).get();
                 const data = snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...serializeTimestamps(d.data()) }));
                 return NextResponse.json({ success: true, data });
             }
@@ -166,13 +102,13 @@ export async function POST(req: NextRequest) {
                 if (type !== 'all') {
                     q = q.where('type', '==', type);
                 }
-                const snap = await q.orderBy('updatedAt', 'desc').limit(1000).get();
+                const snap = await q.orderBy('updatedAt', 'desc').limit(100).get();
                 const data = snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...serializeTimestamps(d.data()) }));
                 return NextResponse.json({ success: true, data });
             }
 
-            case 'getAuditLogs': {
-                const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(100).get();
+            case 'getLeads': {
+                const snap = await db.collection('leads').orderBy('updatedAt', 'desc').limit(100).get();
                 const data = snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...serializeTimestamps(d.data()) }));
                 return NextResponse.json({ success: true, data });
             }
@@ -181,6 +117,36 @@ export async function POST(req: NextRequest) {
                 const snap = await db.collection('platformStaff').get();
                 const data = snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...serializeTimestamps(d.data()) }));
                 return NextResponse.json({ success: true, data });
+            }
+
+            case 'logCommunication': {
+                const { partnerId, type, subject, notes } = payload;
+                if (!partnerId) throw new Error("Missing partnerId");
+                const logRef = db.collection('partners').doc(partnerId).collection('communications').doc();
+                await logRef.set({
+                    type, subject, notes,
+                    timestamp: FieldValue.serverTimestamp(),
+                    adminId: decodedToken.uid
+                });
+                return NextResponse.json({ success: true });
+            }
+
+            case 'savePartner': {
+                const { partner } = payload;
+                const id = partner.id || db.collection('partners').doc().id;
+                await db.collection('partners').doc(id).set({
+                    ...partner,
+                    id,
+                    updatedAt: FieldValue.serverTimestamp(),
+                    createdAt: partner.createdAt ? Timestamp.fromDate(new Date(partner.createdAt)) : FieldValue.serverTimestamp()
+                }, { merge: true });
+                return NextResponse.json({ success: true, id });
+            }
+
+            case 'deletePartner': {
+                const { partnerId } = payload;
+                await db.collection('partners').doc(partnerId).delete();
+                return NextResponse.json({ success: true });
             }
 
             default:
