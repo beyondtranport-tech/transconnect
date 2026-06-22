@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -22,10 +21,10 @@ import {
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Sparkles, Video, Download, PlayCircle, Save, RefreshCcw } from 'lucide-react';
-import { generateVideo } from '@/ai/flows/video-generation-flow';
 import Link from 'next/link';
 import React from 'react';
 import { Textarea } from '@/components/ui/textarea';
+import { cn } from '@/lib/utils';
 
 interface VideoGeneratorCardProps {
     title?: string;
@@ -67,7 +66,23 @@ export default function VideoGeneratorCard({
     setGeneratedVideo(null);
 
     try {
-      const result = await generateVideo({ prompt: finalPrompt });
+      // Use API route instead of direct server action for better timeout resilience in browser
+      const response = await fetch('/api/generateVideo', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt: finalPrompt })
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result || result.success === false) {
+          throw new Error(result?.error || 'Video generation timed out or failed.');
+      }
+
+      if (!result.videoDataUri) {
+          throw new Error('AI returned an empty response.');
+      }
+
       setGeneratedVideo(result.videoDataUri);
       toast({
         title: 'Video Generated!',
@@ -105,7 +120,7 @@ export default function VideoGeneratorCard({
     <Card className={cn("text-left", presetPrompt ? "border-primary/20 bg-primary/5" : "")}>
       <CardHeader className="text-left">
         <CardTitle className="flex items-center gap-2 text-left">
-          <Icon className={presetPrompt ? "text-primary h-6 w-6" : "h-5 w-5"} /> {title}
+          <Icon className={cn(presetPrompt ? "text-primary h-6 w-6" : "h-5 w-5")} /> {title}
         </CardTitle>
         <CardDescription className="text-left">
           {description}
@@ -188,8 +203,4 @@ export default function VideoGeneratorCard({
       </CardContent>
     </Card>
   );
-}
-
-function cn(...classes: any[]) {
-    return classes.filter(Boolean).join(' ');
 }

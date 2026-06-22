@@ -1,13 +1,13 @@
-
 'use client';
 
+import React from 'react';
 import ImageGeneratorCard from "@/app/backend/image-generator-card";
 import ImageEditorCard from "@/app/backend/image-editor-card";
 import VideoGeneratorCard from "@/app/backend/video-generator-card";
 import IconGeneratorCard from "@/app/backend/icon-generator-card";
 import { Card, CardDescription, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Palette, BrainCircuit, Ship, Film, Truck, Phone, MessageSquare } from "lucide-react";
+import { Palette, Ship, Film, Phone, MessageSquare } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 
 // Placeholder for new components
@@ -46,7 +46,7 @@ export default function BrandingStudio() {
             </CardHeader>
 
             <div className="space-y-4 text-left">
-                <h3 className="text-sm font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Production Suite: Driver Narrative (Scene-by-Scene)</h3>
+                <h3 className="text-sm font-black uppercase tracking-widest text-muted-foreground ml-1">Production Suite: Driver Narrative (Scene-by-Scene)</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <VideoGeneratorCard 
                         title="Scene 1: The Harbor Meeting"
@@ -72,7 +72,7 @@ export default function BrandingStudio() {
             <Separator className="my-8" />
 
             <div className="space-y-4 text-left">
-                <h3 className="text-sm font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">General Creative Tools</h3>
+                <h3 className="text-sm font-black uppercase tracking-widest text-muted-foreground ml-1">General Creative Tools</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     <ImageGeneratorCard />
                     <IconGeneratorCard />
