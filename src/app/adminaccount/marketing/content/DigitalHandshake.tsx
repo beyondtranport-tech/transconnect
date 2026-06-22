@@ -4,13 +4,15 @@ import React from "react";
 
 /**
  * Professional Digital Handshake Content
- * Format: Calibri 12pt, All Black and White, Left-Aligned, High-Contrast Business Style.
+ * Tailored by audience to include specific ecosystem stats.
  */
-export default function DigitalHandshake({ partner }: { partner?: any }) {
+export default function DigitalHandshake({ partner, audience }: { partner?: any, audience?: string }) {
     const firstName = partner?.firstName || (partner?.contactPerson ? partner.contactPerson.split(' ')[0] : 'Partner');
     const companyName = partner?.companyName || 'your business';
     const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://studio--ecosystem-hub.us-central1.hosted.app';
     const optInLink = `${baseUrl}/join?ref=${partner?.id || 'PROSPECT'}`;
+
+    const isSupplier = audience === 'suppliers';
 
     return (
         <div style={{ 
@@ -28,18 +30,35 @@ export default function DigitalHandshake({ partner }: { partner?: any }) {
             <p style={{ margin: '0 0 14pt 0' }}>Good day {firstName},</p>
 
             <p style={{ margin: '0 0 14pt 0' }}>
-                For too long, the transport industry has been held back by fragmentation, high operating costs, and limited access to capital. Logistics Flow exists to break these constraints by building a unified digital ecosystem that combines collective buying power with AI-driven efficiency.
+                For too long, the transport industry has been held back by fragmentation and information gaps. Logistics Flow exists to break these constraints by building a unified digital ecosystem that combines forensic intelligence with transactional power.
             </p>
 
+            {isSupplier ? (
+                <div style={{ margin: '0 0 14pt 0', padding: '12pt', border: '1px dashed #228B22', backgroundColor: '#f0fdf4' }}>
+                    <p style={{ margin: '0 0 7pt 0', fontWeight: 'bold', color: '#166534' }}>Ecosystem Snapshot:</p>
+                    <p style={{ margin: '0' }}>
+                        We have mapped and verified over <strong>5,400+ transport companies</strong> across South Africa. Our objective is to open this high-intent member base directly to you, creating a seamless sales channel for your industrial inventory. 
+                    </p>
+                    <p style={{ margin: '7pt 0 0 0' }}>
+                        Crucially, <strong>we provide direct funding to these transporters</strong> via our Capital Division. This ensures they have the liquidity to buy more from your business, with you receiving payment in full and upfront.
+                    </p>
+                </div>
+            ) : (
+                <p style={{ margin: '0 0 14pt 0' }}>
+                    We provide the infrastructure to connect vetted hauliers with high-fidelity cargo opportunities and specialized funding partners, creating a continuous flow of commerce and capital.
+                </p>
+            )}
+
             <p style={{ margin: '0 0 14pt 0' }}>
-                Before we initiate commercial discussions or match you with our network of vetted suppliers and financiers, we require a formal Digital Handshake. This ensures our partnership is founded on data integrity and full compliance with the Protection of Personal Information (POPI) Act.
+                Before we initiate commercial discussions or grant access to our forensic industrial registries, we require a formal Digital Handshake. This ensures our partnership is founded on data integrity and full POPI compliance.
             </p>
 
             <p style={{ margin: '0 0 7pt 0', fontWeight: 'bold' }}>Scope of Connection:</p>
             <ul style={{ listStyleType: 'disc', marginLeft: '20pt', margin: '0 0 14pt 20pt' }}>
                 <li style={{ marginBottom: '7pt' }}>Identity Verification: Confirmation of professional standing within the ecosystem.</li>
-                <li style={{ marginBottom: '7pt' }}>Data Sovereignty: Ensuring your business intelligence is handled with POPI-compliant care.</li>
-                <li style={{ marginBottom: '7pt' }}>Intelligence Access: Authorization for our AI to scan for cost-saving load and finance matches.</li>
+                {isSupplier && <li style={{ marginBottom: '7pt' }}>Market Access: Authorization to showcase your inventory to our 5,400+ transport members.</li>}
+                <li style={{ marginBottom: '7pt' }}>Embedded Finance: Activation of the funding pipeline to facilitate customer purchases.</li>
+                <li style={{ marginBottom: '7pt' }}>Data Sovereignty: Ensuring your business intelligence is handled with secure, compliant care.</li>
             </ul>
 
             <p style={{ margin: '0 0 14pt 0', fontWeight: 'bold' }}>
@@ -62,7 +81,7 @@ export default function DigitalHandshake({ partner }: { partner?: any }) {
             </p>
             
             <p style={{ margin: '0 0 14pt 0', fontSize: '10pt', color: '#666666', fontStyle: 'italic' }}>
-                This action secures your position in our Priority Communication Pipeline, providing a transparent audit trail of all matched opportunities and community benefits.
+                This action secures your position in our Priority Communication Pipeline and initiates the onboarding for your Digital Branch.
             </p>
 
             <div style={{ borderTop: '1px solid #eeeeee', paddingTop: '10pt', marginTop: '20pt' }}>

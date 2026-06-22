@@ -270,7 +270,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
 
                 <div className="flex-1 overflow-y-auto bg-slate-50 p-8 text-left">
                     <div id={`engage-content-wrapper-${activeTab}`} className="bg-white p-12 rounded-lg shadow-sm border mx-auto max-w-[850px] text-left text-foreground min-h-full">
-                        {activeTab === 'digital-handshake' && <DigitalHandshake partner={currentPartner} />}
+                        {activeTab === 'digital-handshake' && <DigitalHandshake partner={currentPartner} audience={audience} />}
                         {activeTab === 'company-profile' && <CompanyProfile audience={audience} partner={currentPartner} />}
                         {activeTab === 'tech-architecture' && <TechArchitecture partner={currentPartner} />}
                         {activeTab === 'revenue-model' && <RevenueModel partner={currentPartner} />}

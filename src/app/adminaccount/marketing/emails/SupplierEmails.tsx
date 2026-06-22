@@ -41,13 +41,13 @@ const EmailTemplate = ({ subject, content, partner, referralLink }: { subject: s
                 </div>
             </CardHeader>
             <CardContent className="px-0 text-left text-foreground">
-                <div className="p-6 bg-white border rounded-md whitespace-pre-wrap font-sans text-sm shadow-inner min-h-[300px] text-left text-foreground">
+                <div className="p-6 bg-white border rounded-md whitespace-pre-wrap font-sans text-sm shadow-inner min-h-[300px] text-left text-foreground text-foreground">
                     {personalizedContent.trim()}
                 </div>
             </CardContent>
             {partner && (
                 <CardFooter className="px-0 pt-4 border-t mt-4 text-xs text-muted-foreground italic text-center">
-                    Establish the handshake to secure your direct line to fleet owners.
+                    Establish the handshake to secure your direct line to 5,400+ transport decision makers.
                 </CardFooter>
             )}
         </Card>
@@ -60,7 +60,11 @@ const getTemplates = (supplierType: string) => ({
         content: `
 Hi [Supplier Name],
 
-Fragmented industrial maps lead to inefficient sales cycles. Logistics Flow exists to break this constraint. We provide industrial suppliers like [Your Company] with a direct, forensic-powered sales channel to the national haulier community.
+Fragmented industrial maps lead to inefficient sales cycles. Logistics Flow exists to break this constraint. We have cataloged the national transport grid and currently host over 5,400+ verified transport companies in our community.
+
+We want to open this base directly to [Your Company] as a preferred supply partner. 
+
+Crucially, we have solved the payment bottleneck: we provide direct funding to these transporters specifically to increase their capacity to purchase from our vetted suppliers. You get paid in full, upfront, while they get the equipment they need to scale.
 
 Before we can deliver high-intent RFQs to your dashboard or invite you to publish your digital branch, we require a formal "Digital Handshake."
 
@@ -68,9 +72,9 @@ Establish your standing here:
 [Opt-in Link]
 
 Why establish the connection?
-- Forensic Targeting: We match your specialized inventory ( ${supplierType} ) with the exact fleet equipment declared by our members.
-- Direct Leadership Access: Unlock the forensic registry of fleet owners and MDs across South Africa.
-- Embedded Finance: Close more deals with instant credit for your customers at checkout.
+- Direct Market Access: Sell to 5,400+ fleet owners actively searching for ${supplierType}.
+- Embedded Finance: We fund the buyers so they can spend more with you.
+- Forensic Targeting: We match your specialized inventory with the exact equipment declared by our members.
 
 Best regards,
 
@@ -82,7 +86,7 @@ The Logistics Flow Team
         content: `
 Hi [Supplier Name],
 
-Stop cold-calling switchboards. Logistics Flow gives you a direct line to the people who sign the checks.
+Stop cold-calling switchboards. Logistics Flow gives you a direct line to the people who sign the checks in the transport sector.
 
 Our "Intelligence Access" tier provides verified mobile numbers and professional e-mails for thousands of haulier decision-makers. Filter by region, vehicle type, and fleet capacity to find your next major account instantly.
 
@@ -128,7 +132,7 @@ export default function SupplierEmails({ partner }: { partner?: any }) {
                    })}
                 </TabsList>
                 {Object.entries(templates).map(([key, t]) => (
-                    <TabsContent key={key} value={key} className="mt-6 text-left text-foreground">
+                    <TabsContent key={key} value={key} className="mt-6 text-left">
                         <EmailTemplate 
                             subject={t.subject} 
                             content={t.content.replace(/\[Your Name\]/g, user?.displayName || 'Logistics Flow Team')} 
