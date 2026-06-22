@@ -59,12 +59,21 @@ export async function POST(req: NextRequest) {
                 const collectionName = (type === 'lead') ? 'leads' : 'partners';
                 
                 let query: any = db.collection(collectionName);
-                if (type && type !== 'all' && type !== 'lead') {
+                
+                // --- OPTIMIZATION: Use Firestore Filters where possible ---
+                // If a category is selected, we use a where clause to fetch all records in that category.
+                // This bypasses the 1,000-record scan limit and ensures we see the full 800+ batteries.
+                if (category && category !== 'all') {
+                    query = query.where('industrial_category', '==', category);
+                } else if (type && type !== 'all' && type !== 'lead') {
                     query = query.where('type', '==', type);
                 }
 
-                // Initial high-volume pull
-                const snap = await query.orderBy('updatedAt', 'desc').limit(1000).get();
+                // Initial pull - increase to 10,000 for server-side processing to ensure we find all matches
+                // We drop the orderBy when filtering by category to avoid the need for composite indexes in the prototype.
+                const snap = category && category !== 'all' 
+                    ? await query.limit(10000).get() 
+                    : await query.orderBy('updatedAt', 'desc').limit(5000).get();
                 
                 let data = snap.docs.map((d: QueryDocumentSnapshot) => ({ 
                     id: d.id, 
@@ -93,15 +102,7 @@ export async function POST(req: NextRequest) {
                     );
                 }
 
-                // 2. Industrial Category Filter
-                if (category && category !== 'all') {
-                    const low = category.toLowerCase();
-                    data = data.filter((item: any) => 
-                        (item.industrial_category || item.category || '').toLowerCase() === low
-                    );
-                }
-
-                // 3. Integrity Filter
+                // 2. Data Integrity Filter
                 if (integrityFilter && integrityFilter !== 'all') {
                     if (integrityFilter === 'has-email') data = data.filter((p: any) => !!p.email);
                     else if (integrityFilter === 'no-email') data = data.filter((p: any) => !p.email);
@@ -111,12 +112,13 @@ export async function POST(req: NextRequest) {
                     else if (integrityFilter === 'no-website') data = data.filter((p: any) => !p.website);
                 }
 
-                // 4. Outreach Stage Filter
+                // 3. Outreach Stage Filter
                 if (outreachFilter && outreachFilter !== 'all') {
                     data = data.filter((p: any) => p.lastOutreachSubject === outreachFilter);
                 }
 
-                return NextResponse.json({ success: true, data: data.slice(0, 100) });
+                // Return up to 1000 records for the Admin UI (Paged by DataTable)
+                return NextResponse.json({ success: true, data: data.slice(0, 1000) });
             }
 
             case 'getAuditLogs': {
