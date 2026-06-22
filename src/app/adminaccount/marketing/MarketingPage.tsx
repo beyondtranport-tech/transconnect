@@ -4,7 +4,7 @@
 import * as React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { BookOpen, Loader2, ClipboardCopy, SearchCode, Target, Users, LayoutDashboard, Send, Sparkles, Landmark, DollarSign, Download, MessageSquare, ClipboardList, Search } from 'lucide-react';
+import { BookOpen, Loader2, ClipboardCopy, SearchCode, Target, Users, LayoutDashboard, Send, Sparkles, Landmark, DollarSign, Download, MessageSquare, ClipboardList, Search, RefreshCcw } from 'lucide-react';
 import { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -35,35 +35,33 @@ import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import dynamic from 'next/dynamic';
 
 // Content components
-import CompanyProfile from './content/CompanyProfile';
-import TechArchitecture from './content/TechArchitecture';
-import RevenueModel from './content/RevenueModel';
-import PitchDeck from './content/PitchDeck';
-import Framework from './content/Framework';
+const CompanyProfile = dynamic(() => import('./content/CompanyProfile'), { loading: () => <Loader2 className="animate-spin" /> });
+const TechArchitecture = dynamic(() => import('./content/TechArchitecture'), { loading: () => <Loader2 className="animate-spin" /> });
+const RevenueModel = dynamic(() => import('./content/RevenueModel'), { loading: () => <Loader2 className="animate-spin" /> });
+const PitchDeck = dynamic(() => import('./content/PitchDeck'), { loading: () => <Loader2 className="animate-spin" /> });
+const Framework = dynamic(() => import('./content/Framework'), { loading: () => <Loader2 className="animate-spin" /> });
 
 // Offers
-import PartnerOffer from './offers/PartnerOffer';
-import InvestorOffer from './offers/InvestorOffer';
-import DeveloperOffer from './offers/DeveloperOffer';
-import SupplierOffer from './offers/SupplierOffer';
-import TransporterOffer from './offers/TransporterOffer';
+const PartnerOffer = dynamic(() => import('./offers/PartnerOffer'), { loading: () => <Loader2 className="animate-spin" /> });
+const InvestorOffer = dynamic(() => import('./offers/InvestorOffer'), { loading: () => <Loader2 className="animate-spin" /> });
+const DeveloperOffer = dynamic(() => import('./offers/DeveloperOffer'), { loading: () => <Loader2 className="animate-spin" /> });
+const SupplierOffer = dynamic(() => import('./offers/SupplierOffer'), { loading: () => <Loader2 className="animate-spin" /> });
+const TransporterOffer = dynamic(() => import('./offers/TransporterOffer'), { loading: () => <Loader2 className="animate-spin" /> });
 
 // Emails
-import PartnerEmails from './emails/PartnerEmails';
-import SupplierEmails from './emails/SupplierEmails';
-import TransporterEmails from './emails/TransporterEmails';
-import InvestorEmails from './emails/InvestorEmails';
-import DeveloperEmails from './emails/DeveloperEmails';
+const PartnerEmails = dynamic(() => import('./emails/PartnerEmails'), { loading: () => <Loader2 className="animate-spin" /> });
+const SupplierEmails = dynamic(() => import('./emails/SupplierEmails'), { loading: () => <Loader2 className="animate-spin" /> });
+const TransporterEmails = dynamic(() => import('./emails/TransporterEmails'), { loading: () => <Loader2 className="animate-spin" /> });
+const InvestorEmails = dynamic(() => import('./emails/InvestorEmails'), { loading: () => <Loader2 className="animate-spin" /> });
+const DeveloperEmails = dynamic(() => import('./emails/DeveloperEmails'), { loading: () => <Loader2 className="animate-spin" /> });
 
 // Management
-import PartnerManagement from './partner-management';
-import ISAManagement from './isa-management';
-import InvestorManagement from './investor-management';
-import DeveloperManagement from './developer-management';
-import SupplierManagement from './supplier-management';
-import TransporterManagement from './transporter-management';
-import FinanceManagement from './finance-management';
-import DriverManagement from './driver-management';
+const PartnerManagement = dynamic(() => import('./partner-management'), { loading: () => <Loader2 className="animate-spin" /> });
+const ISAManagement = dynamic(() => import('./isa-management'), { loading: () => <Loader2 className="animate-spin" /> });
+const InvestorManagement = dynamic(() => import('./investor-management'), { loading: () => <Loader2 className="animate-spin" /> });
+const DeveloperManagement = dynamic(() => import('./developer-management'), { loading: () => <Loader2 className="animate-spin" /> });
+const SupplierManagement = dynamic(() => import('./supplier-management'), { loading: () => <Loader2 className="animate-spin" /> });
+const TransporterManagement = dynamic(() => import('./transporter-management'), { loading: () => <Loader2 className="animate-spin" /> });
 
 // Global Audience Tables
 const AudienceCommunicationsTable = dynamic(() => import('./AudienceCommunicationsTable'), { loading: () => <Loader2 className="animate-spin" /> });
@@ -82,8 +80,8 @@ const audienceConfig: Record<string, any> = {
     isa: { title: 'ISA Agents', icon: Target, Offer: PartnerOffer, Emails: PartnerEmails, Management: ISAManagement },
     suppliers: { title: 'Suppliers', icon: SearchCode, Offer: SupplierOffer, Emails: SupplierEmails, Management: SupplierManagement, Pitch: SupplierPitch, Discovery: DiscoveryEngine },
     transporters: { title: 'Transporters', icon: Send, Offer: TransporterOffer, Emails: TransporterEmails, Management: TransporterManagement, Discovery: TransporterDiscoveryEngine },
-    finance: { title: 'Finance Companies', icon: Landmark, Offer: InvestorOffer, Emails: InvestorEmails, Management: FinanceManagement, Discovery: FinanceDiscoveryEngine },
-    drivers: { title: 'Drivers', icon: Users, Offer: PartnerOffer, Emails: PartnerEmails, Management: DriverManagement, Discovery: DriverDiscoveryEngine },
+    finance: { title: 'Finance Companies', icon: Landmark, Offer: InvestorOffer, Emails: InvestorEmails, Management: null, Discovery: FinanceDiscoveryEngine },
+    drivers: { title: 'Drivers', icon: Users, Offer: PartnerOffer, Emails: PartnerEmails, Management: null, Discovery: DriverDiscoveryEngine },
     investors: { title: 'App Launch Investors', icon: DollarSign, Offer: InvestorOffer, Emails: InvestorEmails, Management: InvestorManagement, Discovery: InvestorDiscoveryEngine },
     developers: { title: 'Developers', icon: LayoutDashboard, Offer: DeveloperOffer, Emails: DeveloperEmails, Management: DeveloperManagement },
 };
@@ -140,7 +138,7 @@ function LogAndCopyDialog({ open, onOpenChange, partners, isLoadingPartners, act
             <DialogContent className="text-left text-foreground">
                 <DialogHeader>
                     <DialogTitle>Log and Copy Content</DialogTitle>
-                    <DialogDescription>Select a partner to log this communication against before copying.</DialogDescription>
+                    <DialogDescription>Select a record to log this communication against before copying.</DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 py-4 text-left">
@@ -150,7 +148,12 @@ function LogAndCopyDialog({ open, onOpenChange, partners, isLoadingPartners, act
                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                                     <FormControl><SelectTrigger disabled={isLoadingPartners}><SelectValue placeholder={isLoadingPartners ? "Loading..." : `Select a ${singularAudience.toLowerCase()}...`} /></SelectTrigger></FormControl>
                                     <SelectContent>
-                                        {partners.map((p: any) => <SelectItem key={p.id} value={p.id}>{p.firstName} {p.lastName} ({p.companyName || 'N/A'})</SelectItem>)}
+                                        {partners.map((p: any) => (
+                                            <SelectItem key={p.id} value={p.id}>
+                                                {p.companyName || p.contactPerson || `${p.firstName || ''} ${p.lastName || ''}`.trim() || 'Unknown'} 
+                                                ({p.source || 'Registry'})
+                                            </SelectItem>
+                                        ))}
                                     </SelectContent>
                                 </Select>
                                 <FormMessage />
@@ -221,8 +224,11 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
     try {
         const token = await getClientSideAuthToken();
         if (!token) return;
+        const apiType = audience === 'isa' ? 'isa' : (audience === 'finance' ? 'finance' : (audience === 'drivers' ? 'driver' : audience.slice(0, -1)));
+        
+        // Fetch unified partners/leads
         const result = await performAdminAction(token, 'getPartnersByType', { 
-            type: audience === 'isa' ? 'isa' : (audience === 'finance' ? 'finance' : (audience === 'drivers' ? 'driver' : audience.slice(0, -1)))
+            type: apiType
         });
         setPartners(result.data || []);
     } catch (e: any) {
@@ -233,16 +239,6 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
   }, [audience]);
 
   useEffect(() => { fetchPartners(); }, [fetchPartners]);
-
-  const handleExport = () => {
-      if (partners.length === 0) {
-          toast({ variant: 'destructive', title: "No Data", description: "The registry is empty or not loaded." });
-          return;
-      }
-      const filename = `logistics-flow-${audience}-backup-${new Date().toISOString().split('T')[0]}.csv`;
-      downloadDataAsCSV(partners, filename);
-      toast({ title: "Backup Exported", description: `${partners.length} records saved to CSV.` });
-  };
 
   const handleLogAndCopy = async (logData: any) => {
     try {
@@ -281,7 +277,7 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
     <div className="space-y-6 text-left">
         <LogAndCopyDialog open={isLogDialogOpen} onOpenChange={setIsLogDialogOpen} partners={partners} isLoadingPartners={isLoadingPartners} activeTabLabel={activeTab} onLogAndCopy={handleLogAndCopy} audienceTitle={audienceConfig[audience].title} />
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div className="flex items-center gap-4 text-left">
+            <div className="flex items-center gap-4 text-left text-foreground">
                 <div className="bg-primary/10 p-3 rounded-lg">
                     {AudienceIcon && React.createElement(AudienceIcon, { className: "h-6 w-6 text-primary" })}
                 </div>
@@ -291,16 +287,13 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
                 </div>
             </div>
             <div className="flex items-center gap-2 text-left">
-                <Button variant="outline" onClick={handleExport} disabled={isLoadingPartners}>
-                    <Download className="mr-2 h-4 w-4" /> Backup (CSV)
-                </Button>
                 {Discovery && (
                     <Button variant="outline" onClick={() => handleTabChange('discovery')} className={cn(activeTab === 'discovery' && "bg-primary text-white hover:bg-primary/90")}>
                         <Sparkles className="mr-2 h-4 w-4" /> Discovery Engine
                     </Button>
                 )}
                 {isContentTab && (
-                    <Button variant="outline" onClick={() => setIsLogDialogOpen(true)} disabled={isLoadingPartners || (partners.length === 0 && !!Management)}>
+                    <Button variant="outline" onClick={() => setIsLogDialogOpen(true)} disabled={isLoadingPartners || (partners.length === 0)}>
                         <ClipboardCopy className="mr-2 h-4 w-4" /> Log & Copy Content
                     </Button>
                 )}

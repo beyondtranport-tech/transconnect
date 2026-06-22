@@ -24,9 +24,6 @@ function serializeTimestamps(docData: any): any {
     return docData;
 }
 
-/**
- * Helper to chunk arrays for Firestore 'in' queries (max 30 items)
- */
 const chunkArray = (arr: any[], size: number) => 
   Array.from({ length: Math.ceil(arr.length / size) }, (v, i) =>
     arr.slice(i * size, i * size + size)
@@ -64,55 +61,42 @@ export async function POST(req: NextRequest) {
                     outreachFilter 
                 } = payload;
                 
-                const collectionName = (type === 'lead') ? 'leads' : 'partners';
-                let query: any = db.collection(collectionName);
-                
-                if (category && category !== 'all') {
-                    query = query.where('industrial_category', '==', category);
-                } else if (type && type !== 'all' && type !== 'lead') {
-                    query = query.where('type', '==', type);
-                }
+                // Fetch from both sources for a unified view
+                const [partnersSnap, leadsSnap] = await Promise.all([
+                    db.collection('partners').limit(500).get(),
+                    db.collection('leads').limit(500).get()
+                ]);
 
-                // CAPPED READ: Limit to 1000 to prevent resource exhaustion
-                const snap = await query.orderBy('updatedAt', 'desc').limit(1000).get();
-                
-                let data = snap.docs.map((d: QueryDocumentSnapshot) => ({ 
-                    id: d.id, 
-                    ...serializeTimestamps(d.data()) 
-                }));
+                let data = [
+                    ...partnersSnap.docs.map(d => ({ id: d.id, source: 'partners', ...serializeTimestamps(d.data()) })),
+                    ...leadsSnap.docs.map(d => ({ id: d.id, source: 'leads', ...serializeTimestamps(d.data()) }))
+                ];
+
+                // Filter by type/category
+                if (type && type !== 'all' && type !== 'lead') {
+                    data = data.filter(p => 
+                        (p.type?.toLowerCase() === type.toLowerCase()) || 
+                        (p.role?.toLowerCase() === type.toLowerCase())
+                    );
+                }
+                if (category && category !== 'all') {
+                    data = data.filter(p => p.industrial_category === category || p.category === category);
+                }
 
                 if (searchCompany) {
                     const low = searchCompany.toLowerCase();
-                    data = data.filter((item: any) => 
-                        (item.companyName || item.company_name || '').toLowerCase().includes(low)
-                    );
+                    data = data.filter(item => (item.companyName || item.company_name || '').toLowerCase().includes(low));
                 }
                 
                 if (searchKeyword) {
                     const low = searchKeyword.toLowerCase();
-                    data = data.filter((item: any) => 
-                        (item.minedServiceWording || item.notes || '').toLowerCase().includes(low)
-                    );
-                }
-
-                if (searchTag) {
-                    const low = searchTag.toLowerCase();
-                    data = data.filter((item: any) => 
-                        (item.industrialTags || []).some((t: string) => t.toLowerCase().includes(low))
-                    );
+                    data = data.filter(item => (item.minedServiceWording || item.notes || '').toLowerCase().includes(low));
                 }
 
                 if (integrityFilter && integrityFilter !== 'all') {
-                    if (integrityFilter === 'has-email') data = data.filter((p: any) => !!p.email);
-                    else if (integrityFilter === 'no-email') data = data.filter((p: any) => !p.email);
-                    else if (integrityFilter === 'has-phone') data = data.filter((p: any) => !!(p.phone || p.mobile));
-                    else if (integrityFilter === 'no-phone') data = data.filter((p: any) => !(p.phone || p.mobile));
-                    else if (integrityFilter === 'has-website') data = data.filter((p: any) => !!p.website);
-                    else if (integrityFilter === 'no-website') data = data.filter((p: any) => !p.website);
-                }
-
-                if (outreachFilter && outreachFilter !== 'all') {
-                    data = data.filter((p: any) => p.lastOutreachSubject === outreachFilter);
+                    if (integrityFilter === 'has-email') data = data.filter(p => !!p.email);
+                    else if (integrityFilter === 'no-email') data = data.filter(p => !p.email);
+                    else if (integrityFilter === 'has-website') data = data.filter(p => !!p.website);
                 }
 
                 return NextResponse.json({ success: true, data: data.slice(0, 500) });
@@ -124,8 +108,8 @@ export async function POST(req: NextRequest) {
                 
                 if (commsSnap.empty) return NextResponse.json({ success: true, data: [] });
 
-                const parentIds = [...new Set(commsSnap.docs.map(d => d.ref.path.split('/').slice(-3, -2)[0]))];
-                
+                // Use ref.parent.parent to get ID
+                const parentIds = [...new Set(commsSnap.docs.map(d => d.ref.parent.parent!.id))];
                 const parentIdChunks = chunkArray(parentIds, 30);
                 const entities: any[] = [];
 
@@ -141,16 +125,14 @@ export async function POST(req: NextRequest) {
                 const entityMap = new Map(entities.map(e => [e.id, e]));
 
                 const data = commsSnap.docs.map(d => {
-                    const entId = d.ref.path.split('/').slice(-3, -2)[0];
+                    const entId = d.ref.parent.parent!.id;
                     const entity = entityMap.get(entId);
-                    
-                    // SMART CATEGORIZATION: Use type, then role, then industrial_category
                     const partnerType = entity?.type || entity?.role || entity?.industrial_category || 'lead';
 
                     return {
                         id: d.id,
                         partnerId: entId,
-                        partnerName: entity?.companyName || entity?.trading_name || entity?.company_name || `${entity?.firstName || ''} ${entity?.lastName || ''}`.trim() || 'Unknown',
+                        partnerName: entity?.companyName || entity?.trading_name || `${entity?.firstName || ''} ${entity?.lastName || ''}`.trim() || 'Unknown',
                         partnerType: partnerType,
                         ...serializeTimestamps(d.data())
                     };
@@ -169,7 +151,7 @@ export async function POST(req: NextRequest) {
                 
                 if (tasksSnap.empty) return NextResponse.json({ success: true, data: [] });
 
-                const parentIds = [...new Set(tasksSnap.docs.map(d => d.ref.path.split('/').slice(-3, -2)[0]))];
+                const parentIds = [...new Set(tasksSnap.docs.map(d => d.ref.parent.parent!.id))];
                 const parentIdChunks = chunkArray(parentIds, 30);
                 const entities: any[] = [];
 
@@ -188,15 +170,14 @@ export async function POST(req: NextRequest) {
 
                 const data = tasksSnap.docs.map(d => {
                     const taskData = d.data();
-                    const entId = d.ref.path.split('/').slice(-3, -2)[0];
+                    const entId = d.ref.parent.parent!.id;
                     const entity = entityMap.get(entId);
-                    
                     const partnerType = entity?.type || entity?.role || entity?.industrial_category || 'lead';
 
                     return {
                         id: d.id,
                         partnerId: entId,
-                        partnerName: entity?.companyName || entity?.trading_name || entity?.company_name || `${entity?.firstName || ''} ${entity?.lastName || ''}`.trim() || 'Unknown',
+                        partnerName: entity?.companyName || `${entity?.firstName || ''} ${entity?.lastName || ''}`.trim() || 'Unknown',
                         partnerType: partnerType,
                         assigneeName: staffMap.get(taskData.assigneeId) || 'Unassigned',
                         ...serializeTimestamps(taskData)
@@ -208,6 +189,61 @@ export async function POST(req: NextRequest) {
                     : data;
 
                 return NextResponse.json({ success: true, data: filtered });
+            }
+
+            case 'logCommunication': {
+                const { partnerId, type, subject, notes, collection: collName } = payload;
+                
+                // If collection isn't specified, try to find the record first
+                let targetColl = collName;
+                if (!targetColl) {
+                    const [pDoc, lDoc] = await Promise.all([
+                        db.collection('partners').doc(partnerId).get(),
+                        db.collection('leads').doc(partnerId).get()
+                    ]);
+                    targetColl = pDoc.exists ? 'partners' : (lDoc.exists ? 'leads' : 'partners');
+                }
+
+                const logRef = db.collection(targetColl).doc(partnerId).collection('communications').doc();
+                const batch = db.batch();
+                
+                batch.set(logRef, {
+                    type, subject, notes,
+                    timestamp: FieldValue.serverTimestamp(),
+                    adminId: decodedToken.uid
+                });
+                
+                batch.update(db.collection(targetColl).doc(partnerId), {
+                    lastOutreachSubject: subject,
+                    lastOutreachAt: FieldValue.serverTimestamp(),
+                    updatedAt: FieldValue.serverTimestamp()
+                });
+
+                await batch.commit();
+                return NextResponse.json({ success: true });
+            }
+
+            case 'getPartnersByType': {
+                const { type } = payload;
+                const [pSnap, lSnap] = await Promise.all([
+                    db.collection('partners').limit(500).get(),
+                    db.collection('leads').limit(500).get()
+                ]);
+
+                let data = [
+                    ...pSnap.docs.map(d => ({ id: d.id, ...d.data() })),
+                    ...lSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+                ];
+
+                if (type && type !== 'all') {
+                    data = data.filter((p: any) => 
+                        p.type === type || 
+                        p.role?.toLowerCase() === type.toLowerCase() ||
+                        p.industrial_category?.toLowerCase().includes(type.toLowerCase())
+                    );
+                }
+
+                return NextResponse.json({ success: true, data: serializeTimestamps(data) });
             }
 
             case 'getAuditLogs': {
@@ -226,61 +262,6 @@ export async function POST(req: NextRequest) {
                 const snap = await db.collection('companies').orderBy('updatedAt', 'desc').limit(100).get();
                 const data = snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...serializeTimestamps(d.data()) }));
                 return NextResponse.json({ success: true, data });
-            }
-
-            case 'getPartnersByType': {
-                const type = payload.type || 'all';
-                let q: any = db.collection('partners');
-                if (type !== 'all') {
-                    q = q.where('type', '==', type);
-                }
-                const snap = await q.orderBy('updatedAt', 'desc').limit(100).get();
-                const data = snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...serializeTimestamps(d.data()) }));
-                return NextResponse.json({ success: true, data });
-            }
-
-            case 'getContributions': {
-                const snap = await db.collection('contributions').orderBy('createdAt', 'desc').limit(100).get();
-                const data = snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...serializeTimestamps(d.data()) }));
-                return NextResponse.json({ success: true, data });
-            }
-
-            case 'getShops': {
-                const snap = await db.collectionGroup('shops').orderBy('updatedAt', 'desc').limit(100).get();
-                const data = snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...serializeTimestamps(d.data()) }));
-                return NextResponse.json({ success: true, data });
-            }
-
-            case 'logCommunication': {
-                const { partnerId, type, subject, notes, collection: collName = 'partners' } = payload;
-                const logRef = db.collection(collName).doc(partnerId).collection('communications').doc();
-                
-                const batch = db.batch();
-                batch.set(logRef, {
-                    type, subject, notes,
-                    timestamp: FieldValue.serverTimestamp(),
-                    adminId: decodedToken.uid
-                });
-                
-                batch.update(db.collection(collName).doc(partnerId), {
-                    lastOutreachSubject: subject,
-                    lastOutreachAt: FieldValue.serverTimestamp(),
-                    updatedAt: FieldValue.serverTimestamp()
-                });
-
-                await batch.commit();
-                return NextResponse.json({ success: true });
-            }
-
-            case 'savePartner': {
-                const { partner } = payload;
-                const id = partner.id || db.collection('partners').doc().id;
-                await db.collection('partners').doc(id).set({
-                    ...partner,
-                    id,
-                    updatedAt: FieldValue.serverTimestamp()
-                }, { merge: true });
-                return NextResponse.json({ success: true, id });
             }
 
             default:
