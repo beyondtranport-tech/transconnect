@@ -1,3 +1,4 @@
+
 'use client';
 
 import ImageGeneratorCard from "@/app/backend/image-generator-card";
@@ -6,7 +7,7 @@ import VideoGeneratorCard from "@/app/backend/video-generator-card";
 import IconGeneratorCard from "@/app/backend/icon-generator-card";
 import { Card, CardDescription, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Palette, BrainCircuit, Globe, Film } from "lucide-react";
+import { Palette, BrainCircuit, Ship, Film, Truck, Phone, MessageSquare } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 
 // Placeholder for new components
@@ -38,33 +39,39 @@ export default function BrandingStudio() {
                     <div className="text-left">
                         <CardTitle className="text-2xl font-black font-headline">AI Content & Branding Studio</CardTitle>
                         <CardDescription>
-                            Create professional marketing assets, logos, and high-fidelity video briefings.
+                            Produce the 60-second "Driver Narrative" and forensic marketing assets.
                         </CardDescription>
                     </div>
                 </div>
             </CardHeader>
 
-            <div className="space-y-4">
-                <h3 className="text-sm font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Primary Marketing Assets</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="space-y-4 text-left">
+                <h3 className="text-sm font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Production Suite: Driver Narrative (Scene-by-Scene)</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <VideoGeneratorCard 
-                        title="Ecosystem Overview Video"
-                        description="Generate the 60-second 'Platform in Motion' video used in Step 1 (Company Profile) outreach."
-                        icon={Globe}
-                        presetPrompt="ACT AS A HIGH-END CINEMATIC LOGISTICS BRAND DIRECTOR. Create an 8-second professional marketing sequence for 'Logistics Flow'. SCENE: Start with a dark, high-tech industrial map of South Africa. ACTION: Glowing data points pulse and connect across the provinces (JHB, CPT, DUR). The camera pulls back to reveal a clean, modern dashboard titled 'THE INDUSTRIAL BRAIN' being used in a sleek corporate office. AESTHETIC: High-contrast, forest green and slate grey tones. Professional 4K cinematic look. Focus on precision and connection."
+                        title="Scene 1: The Harbor Meeting"
+                        description="A truck enters a depot near a harbor. Two drivers high-five and start a conversation."
+                        icon={Ship}
+                        presetPrompt="ACT AS A CINEMATIC FILM DIRECTOR. SCENE: A dusty, high-activity container depot near a major harbor (Durban/Cape Town). ACTION: A modern heavy-duty truck drives into the depot and stops. The driver gets out. Another driver in professional industrial gear walks up. They high-five and begin talking. AESTHETIC: Natural daylight, gritty but professional industrial look. 4K high detail."
                     />
                     <VideoGeneratorCard 
-                        title="Intelligence Briefing Video"
-                        description="Generate the high-velocity registry scan video used in Step 0 (Digital Handshake) outreach."
-                        icon={BrainCircuit}
-                        presetPrompt="SCENE: A close-up of a futuristic glass tablet displaying the Logistics Flow secure registry. ACTION: A fingerprint scan confirms access, and the screen instantly populates with a deep-scroll list of thousands of verified transport company names, direct emails, and mobile numbers. TEXT OVERLAY (Subtle, professional): 'ABSOLUTE TRANSPARENCY'. AESTHETIC: Tech-noir, sharp focus, very high detail on the digital UI elements. Cyber-security and industrial intelligence theme."
+                        title="Scene 2: Forensic Registry"
+                        description="A close-up of a futuristic phone displaying the secure industrial registry."
+                        icon={Phone}
+                        presetPrompt="SCENE: A tight close-up of a futuristic glass mobile device held by a driver. ACTION: A fingerprint scan pulses and confirms access. The screen instantly populates with a deep-scroll list of thousands of verified transport company names, direct emails, and mobile numbers. TEXT OVERLAY (Subtle, professional): 'ABSOLUTE TRANSPARENCY'. AESTHETIC: Tech-noir, sharp focus on the digital UI elements. Cyber-security theme."
+                    />
+                    <VideoGeneratorCard 
+                        title="Scene 3: WhatsApp Outreach"
+                        description="Showing the simple generation of a WhatsApp invite link on the device."
+                        icon={MessageSquare}
+                        presetPrompt="SCENE: Close-up of the mobile device. ACTION: The driver taps a button. A WhatsApp invite link is instantly generated and sent to the second driver's phone. The phone beeps. The screen then shows a 'Product Catalogue' and 'Supplier Registry' search bar. AESTHETIC: Clean UI/UX design, high-velocity movement, modern tech feel."
                     />
                 </div>
             </div>
 
             <Separator className="my-8" />
 
-            <div className="space-y-4">
+            <div className="space-y-4 text-left">
                 <h3 className="text-sm font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">General Creative Tools</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     <ImageGeneratorCard />

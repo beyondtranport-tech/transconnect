@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -18,12 +19,10 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Sparkles, Video, Download, PlayCircle, Save, RefreshCcw } from 'lucide-react';
 import { generateVideo } from '@/ai/flows/video-generation-flow';
-import type { VideoGenerateInput } from '@/ai/schemas';
 import Link from 'next/link';
 import React from 'react';
 import { Textarea } from '@/components/ui/textarea';
@@ -103,16 +102,16 @@ export default function VideoGeneratorCard({
   };
 
   return (
-    <Card className={presetPrompt ? "border-primary/20 bg-primary/5" : ""}>
+    <Card className={cn("text-left", presetPrompt ? "border-primary/20 bg-primary/5" : "")}>
       <CardHeader className="text-left">
-        <CardTitle className="flex items-center gap-2">
+        <CardTitle className="flex items-center gap-2 text-left">
           <Icon className={presetPrompt ? "text-primary h-6 w-6" : "h-5 w-5"} /> {title}
         </CardTitle>
-        <CardDescription>
+        <CardDescription className="text-left">
           {description}
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="text-left">
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogTrigger asChild>
             <Button className="w-full" variant={presetPrompt ? "default" : "outline"}>
@@ -121,14 +120,14 @@ export default function VideoGeneratorCard({
           </DialogTrigger>
           <DialogContent className="sm:max-w-[725px] flex flex-col max-h-[90vh] text-left text-foreground">
             <DialogHeader>
-              <DialogTitle>AI Video Studio: {title}</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className="text-left">AI Video Studio: {title}</DialogTitle>
+              <DialogDescription className="text-left">
                 Review the command and generate your industrial asset. For best results, keep the cinematic keywords intact.
               </DialogDescription>
             </DialogHeader>
             <div className="flex-1 overflow-y-auto py-4 space-y-6 pr-2 text-left">
                 <div className="space-y-2 text-left">
-                  <Label htmlFor="generate-prompt" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">AI Forensic Command</Label>
+                  <Label htmlFor="generate-prompt" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">AI Forensic Command</Label>
                   <Textarea 
                     id="generate-prompt" 
                     value={prompt} 
@@ -149,18 +148,18 @@ export default function VideoGeneratorCard({
                     ) : (
                         <div className="text-center opacity-30 space-y-2">
                             <PlayCircle className="h-16 w-16 mx-auto" />
-                            <p className="text-[10px] font-black uppercase tracking-widest">Asset Preview</p>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-center">Asset Preview</p>
                         </div>
                     )}
                 </div>
 
                 {generatedVideo && (
-                    <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
+                    <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg text-left">
                         <h4 className="text-xs font-black uppercase text-primary mb-2 flex items-center gap-2">
                             <Save className="h-3.5 w-3.5" />
                             Recommended Storage
                         </h4>
-                        <p className="text-[11px] text-muted-foreground leading-relaxed">
+                        <p className="text-[11px] text-muted-foreground leading-relaxed text-left">
                             Since this is a high-fidelity intelligence asset, we recommend downloading it and uploading it to your <strong>Google Cloud Storage</strong> bucket. This provides a direct, unbranded link you can use in your forensic email sequences.
                         </p>
                     </div>
@@ -189,4 +188,8 @@ export default function VideoGeneratorCard({
       </CardContent>
     </Card>
   );
+}
+
+function cn(...classes: any[]) {
+    return classes.filter(Boolean).join(' ');
 }
