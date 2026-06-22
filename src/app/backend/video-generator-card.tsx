@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -22,31 +21,37 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Sparkles, Video, Download, PlayCircle, Zap } from 'lucide-react';
+import { Loader2, Sparkles, Video, Download, PlayCircle, Zap, Save, RefreshCcw } from 'lucide-react';
 import { generateVideo } from '@/ai/flows/video-generation-flow';
 import type { VideoGenerateInput } from '@/ai/schemas';
 import Link from 'next/link';
 import React from 'react';
+import { Textarea } from '@/components/ui/textarea';
 
-const PRESETS = [
-    { 
-        id: 'overview', 
-        label: '60s Ecosystem Overview', 
-        prompt: 'A cinematic high-tech map of South Africa with glowing trade routes connecting major hubs like JHB, CPT, and Durban. Camera zooms into a modern logistics control center.' 
-    },
-    { 
-        id: 'intelligence', 
-        label: 'Intelligence Briefing', 
-        prompt: 'Macro shot of a high-speed digital registry being scanned. Thousands of verified company names and direct contact details scroll past at high velocity.' 
-    },
-];
+interface VideoGeneratorCardProps {
+    title?: string;
+    description?: string;
+    icon?: any;
+    presetPrompt?: string;
+}
 
-export default function VideoGeneratorCard() {
+export default function VideoGeneratorCard({ 
+    title = "AI Video Studio", 
+    description = "Create high-impact industrial overviews using Gemini Veo.",
+    icon: Icon = Video,
+    presetPrompt = ""
+}: VideoGeneratorCardProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [prompt, setPrompt] = useState('');
+  const [prompt, setPrompt] = useState(presetPrompt);
   const [isLoading, setIsLoading] = useState(false);
   const [generatedVideo, setGeneratedVideo] = useState<string | null>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (isOpen && presetPrompt && !prompt) {
+        setPrompt(presetPrompt);
+    }
+  }, [isOpen, presetPrompt, prompt]);
 
   const handleGenerate = async (customPrompt?: string) => {
     const finalPrompt = customPrompt || prompt;
@@ -91,92 +96,92 @@ export default function VideoGeneratorCard() {
     if (!generatedVideo) return;
     const link = document.createElement('a');
     link.href = generatedVideo;
-    link.download = `lf-showcase-${Date.now()}.mp4`;
+    link.download = `lf-asset-${Date.now()}.mp4`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className={presetPrompt ? "border-primary/20 bg-primary/5" : ""}>
+      <CardHeader className="text-left">
         <CardTitle className="flex items-center gap-2">
-          <Video /> AI Video Studio
+          <Icon className={presetPrompt ? "text-primary h-6 w-6" : "h-5 w-5"} /> {title}
         </CardTitle>
         <CardDescription>
-          Create high-impact industrial overviews using Gemini Veo.
+          {description}
         </CardDescription>
       </CardHeader>
       <CardContent>
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogTrigger asChild>
-            <Button className="w-full">Open Video Studio</Button>
+            <Button className="w-full" variant={presetPrompt ? "default" : "outline"}>
+                {presetPrompt ? "Configure & Generate" : "Open Video Studio"}
+            </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[725px] flex flex-col max-h-[90vh]">
+          <DialogContent className="sm:max-w-[725px] flex flex-col max-h-[90vh] text-left text-foreground">
             <DialogHeader>
-              <DialogTitle>AI Video Studio (Text-to-Video)</DialogTitle>
+              <DialogTitle>AI Video Studio: {title}</DialogTitle>
               <DialogDescription>
-                Use presets for your pitch library or write a custom prompt.
+                Review the command and generate your industrial asset. For best results, keep the cinematic keywords intact.
               </DialogDescription>
             </DialogHeader>
-            <div className="flex-1 overflow-y-auto py-4 space-y-6 pr-2">
-                <div className="space-y-3">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-primary">Forensic Presets</Label>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        {PRESETS.map(preset => (
-                            <Button 
-                                key={preset.id} 
-                                variant="outline" 
-                                className="justify-start gap-2 h-auto py-3 px-4 border-dashed"
-                                onClick={() => { setPrompt(preset.prompt); handleGenerate(preset.prompt); }}
-                                disabled={isLoading}
-                            >
-                                <Zap className="h-4 w-4 text-amber-500" />
-                                <div className="text-left">
-                                    <p className="text-xs font-bold">{preset.label}</p>
-                                    <p className="text-[10px] text-muted-foreground">Pre-tuned prompt</p>
-                                </div>
-                            </Button>
-                        ))}
-                    </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="generate-prompt" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Custom Industrial Command</Label>
-                  <Input 
+            <div className="flex-1 overflow-y-auto py-4 space-y-6 pr-2 text-left">
+                <div className="space-y-2 text-left">
+                  <Label htmlFor="generate-prompt" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">AI Forensic Command</Label>
+                  <Textarea 
                     id="generate-prompt" 
                     value={prompt} 
                     onChange={(e) => setPrompt(e.target.value)} 
-                    placeholder="e.g. Cinematic overhead shot of a truck fleet on the N3 highway..." 
-                    className="h-10 bg-slate-50"
+                    placeholder="Describe your industrial sequence..." 
+                    className="min-h-[150px] font-mono text-xs leading-relaxed bg-slate-50"
                   />
                 </div>
                 
-                <div className="relative aspect-video w-full rounded-xl border-2 border-dashed flex items-center justify-center bg-muted overflow-hidden shadow-inner">
+                <div className="relative aspect-video w-full rounded-xl border-2 border-dashed flex flex-col items-center justify-center bg-muted overflow-hidden shadow-inner">
                      {isLoading ? (
                         <div className="text-center space-y-2">
                             <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto" />
-                            <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Rendering Video...</p>
+                            <p className="text-xs font-black uppercase tracking-widest text-muted-foreground animate-pulse">Rendering 4K Sequence...</p>
                         </div>
                     ) : generatedVideo ? (
                         <video src={generatedVideo} controls autoPlay className="w-full h-full object-cover" />
                     ) : (
-                        <div className="text-center opacity-20">
-                            <PlayCircle className="h-16 w-16 mx-auto mb-2" />
-                            <p className="text-sm font-bold uppercase tracking-widest">Asset Preview</p>
+                        <div className="text-center opacity-30 space-y-2">
+                            <PlayCircle className="h-16 w-16 mx-auto" />
+                            <p className="text-[10px] font-black uppercase tracking-widest">Asset Preview</p>
                         </div>
                     )}
                 </div>
+
+                {generatedVideo && (
+                    <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
+                        <h4 className="text-xs font-black uppercase text-primary mb-2 flex items-center gap-2">
+                            <Save className="h-3.5 w-3.5" />
+                            Recommended Storage
+                        </h4>
+                        <p className="text-[11px] text-muted-foreground leading-relaxed">
+                            Since this is a high-fidelity intelligence asset, we recommend downloading it and uploading it to your <strong>Google Cloud Storage</strong> bucket. This provides a direct, unbranded link you can use in your forensic email sequences.
+                        </p>
+                    </div>
+                )}
             </div>
             <DialogFooter className="mt-auto pt-4 border-t justify-between">
-              {generatedVideo && (
-                <Button variant="secondary" onClick={handleDownload} disabled={isLoading}>
-                  <Download className="mr-2 h-4 w-4" /> Download Asset
-                </Button>
-              )}
+              <div className="flex gap-2">
+                {generatedVideo && (
+                    <Button variant="secondary" onClick={handleDownload} disabled={isLoading}>
+                    <Download className="mr-2 h-4 w-4" /> Download MP4
+                    </Button>
+                )}
+                {presetPrompt && (
+                    <Button variant="ghost" onClick={() => setPrompt(presetPrompt)} disabled={isLoading}>
+                        <RefreshCcw className="mr-2 h-4 w-4" /> Reset Prompt
+                    </Button>
+                )}
+              </div>
               <Button onClick={() => handleGenerate()} disabled={isLoading} className={!generatedVideo ? 'w-full' : 'ml-auto'}>
                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                {generatedVideo ? 'Generate Different Angle' : 'Generate Custom Video'}
+                {generatedVideo ? 'Re-generate Asset' : 'Trigger AI Generation'}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -185,3 +190,5 @@ export default function VideoGeneratorCard() {
     </Card>
   );
 }
+
+import { Textarea } from "@/components/ui/textarea";
