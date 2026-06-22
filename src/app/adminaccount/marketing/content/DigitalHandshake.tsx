@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from "react";
@@ -33,6 +34,18 @@ export default function DigitalHandshake({ partner, audience }: { partner?: any,
                 For too long, the transport industry has been held back by fragmentation and information gaps. Logistics Flow exists to break these constraints by building a unified digital ecosystem that combines forensic intelligence with transactional power.
             </p>
 
+            <div style={{ margin: '0 0 14pt 0', padding: '12pt', border: '1px solid #eeeeee', borderRadius: '8pt', backgroundColor: '#f9f9f9', textAlign: 'center' }}>
+                <p style={{ margin: '0 0 7pt 0', fontWeight: 'bold' }}>Watch: The Industrial Brain in Motion</p>
+                <a 
+                    href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    style={{ color: '#0000FF', fontWeight: 'bold', textDecoration: 'underline' }}
+                >
+                    View the 60-Second Intelligence Briefing
+                </a>
+            </div>
+
             {isSupplier ? (
                 <div style={{ margin: '0 0 14pt 0', padding: '12pt', border: '1px dashed #228B22', backgroundColor: '#f0fdf4' }}>
                     <p style={{ margin: '0 0 7pt 0', fontWeight: 'bold', color: '#166534' }}>Ecosystem Snapshot:</p>
@@ -48,20 +61,6 @@ export default function DigitalHandshake({ partner, audience }: { partner?: any,
                     We provide the infrastructure to connect vetted hauliers with high-fidelity cargo opportunities and specialized funding partners, creating a continuous flow of commerce and capital.
                 </p>
             )}
-
-            <p style={{ margin: '0 0 14pt 0', fontWeight: 'bold' }}>Visual Overview: The Intelligence in Motion</p>
-            <p style={{ margin: '0 0 14pt 0' }}>
-                Before we proceed, please view this 60-second brief on how the ecosystem functions:
-                <br />
-                <a 
-                    href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
-                    style={{ color: '#0000FF', textDecoration: 'underline' }}
-                >
-                    Watch: The Logistics Flow Intelligence Briefing
-                </a>
-            </p>
 
             <p style={{ margin: '0 0 14pt 0' }}>
                 Before we initiate commercial discussions or grant access to our forensic industrial registries, we require a formal Digital Handshake. This ensures our partnership is founded on data integrity and full POPI compliance.
