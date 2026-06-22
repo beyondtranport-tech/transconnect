@@ -64,6 +64,9 @@ Hi [Name],
 
 Inefficiency is a silent tax on your transport business. Logistics Flow is a unified digital ecosystem designed to break the constraints of high operating costs and empty miles.
 
+[SEE THE PLATFORM IN MOTION - 60S BRIEFING]
+https://www.youtube.com/watch?v=dQw4w9WgXcQ
+
 Before we can send you matching freight loads or group discount offers for your [Your Company] fleet, we require a formal "Digital Handshake."
 
 Please take 30 seconds to establish the connection here:
@@ -88,7 +91,7 @@ How much do empty miles cost [Your Company] each month?
 
 For just R100/mo, our Intelligence Membership provides you with the tools to map the entire industrial landscape. Identify freight providers, find specialized suppliers, and connect directly with funders who understood the trucking sector.
 
-Stop operating in the dark. Join the intelligence flow: [Sign-up Link]
+Join the intelligence flow: [Sign-up Link]
 
 Best regards,
 

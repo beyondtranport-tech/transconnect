@@ -27,7 +27,7 @@ const EmailTemplate = ({ subject, content, partner, referralLink }: { subject: s
     return (
         <Card className="border-none shadow-none bg-transparent text-left">
             <CardHeader className="px-0 text-left">
-                <div className="flex items-center justify-between text-left">
+                <div className="flex items-center justify-between text-left text-foreground">
                     <div className="text-left">
                         <CardTitle className="text-lg text-left text-foreground">Email Subject</CardTitle>
                         <CardDescription className="font-medium text-foreground select-all text-left">{subject}</CardDescription>
@@ -65,6 +65,9 @@ const templates = {
 Hi [Partner Name],
 
 The transport industry has long been held back by an "Information Divide." Large players have the data; smaller hauliers and vendors are left in the dark. Logistics Flow exists to break this constraint.
+
+[WATCH: THE INDUSTRIAL BRAIN IN MOTION]
+https://www.youtube.com/watch?v=dQw4w9WgXcQ
 
 Before we provide you with access to our forensic industrial registry or match you with our funding syndicate, we require a formal "Digital Handshake." This establishes a secure, POPI-compliant connection between your business and our industrial brain.
 

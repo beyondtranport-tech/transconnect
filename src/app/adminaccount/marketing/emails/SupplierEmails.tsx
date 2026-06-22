@@ -64,6 +64,9 @@ Fragmented industrial maps lead to inefficient sales cycles. Logistics Flow exis
 
 We want to open this base directly to [Your Company] as a preferred supply partner. 
 
+[WATCH: HOW IT WORKS IN 60 SECONDS]
+https://www.youtube.com/watch?v=dQw4w9WgXcQ
+
 Crucially, we have solved the payment bottleneck: we provide direct funding to these transporters specifically to increase their capacity to purchase from our vetted suppliers. You get paid in full, upfront, while they get the equipment they need to scale.
 
 Before we can deliver high-intent RFQs to your dashboard or invite you to publish your digital branch, we require a formal "Digital Handshake."

@@ -4,7 +4,7 @@ import React from "react";
 
 /**
  * Professional Digital Handshake Content
- * Tailored by audience to include specific ecosystem stats.
+ * Tailored by audience to include specific ecosystem stats and a video CTA.
  */
 export default function DigitalHandshake({ partner, audience }: { partner?: any, audience?: string }) {
     const firstName = partner?.firstName || (partner?.contactPerson ? partner.contactPerson.split(' ')[0] : 'Partner');
@@ -48,6 +48,13 @@ export default function DigitalHandshake({ partner, audience }: { partner?: any,
                     We provide the infrastructure to connect vetted hauliers with high-fidelity cargo opportunities and specialized funding partners, creating a continuous flow of commerce and capital.
                 </p>
             )}
+
+            <p style={{ margin: '0 0 14pt 0', fontWeight: 'bold' }}>Visual Overview: The Intelligence in Motion</p>
+            <p style={{ margin: '0 0 14pt 0' }}>
+                Before we proceed, please view this 60-second brief on how the ecosystem functions:
+                <br />
+                <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" style={{ color: '#0000FF', textDecoration: 'underline' }}>Watch: The Logistics Flow Intelligence Briefing</a>
+            </p>
 
             <p style={{ margin: '0 0 14pt 0' }}>
                 Before we initiate commercial discussions or grant access to our forensic industrial registries, we require a formal Digital Handshake. This ensures our partnership is founded on data integrity and full POPI compliance.
