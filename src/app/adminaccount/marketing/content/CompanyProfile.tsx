@@ -1,10 +1,9 @@
-
 'use client';
 
 import React from "react";
 
 /**
- * Enhanced Company Profile with Intelligence and Video Focus
+ * Enhanced Company Profile with Intelligence Focus
  */
 export default function CompanyProfile({ audience, partner }: { audience: string; partner?: any }) {
     const firstName = partner?.firstName || (partner?.contactPerson ? partner.contactPerson.split(' ')[0] : 'Member');
@@ -28,31 +27,6 @@ export default function CompanyProfile({ audience, partner }: { audience: string
             <p style={{ margin: '0 0 14pt 0' }}>
                 Logistics Flow is a Data-as-a-Service (DaaS) ecosystem designed to break the constraints of the South African transport industry. We have digitized the industrial map of the country, integrating commerce, capital, and forensic intelligence into a single flow of opportunity.
             </p>
-
-            <div style={{ margin: '0 0 14pt 0', padding: '16pt', border: '2px solid #228B22', borderRadius: '10pt', backgroundColor: '#f0fdf4', textAlign: 'center' }}>
-                <p style={{ margin: '0 0 7pt 0', fontWeight: 'bold', textTransform: 'uppercase', fontSize: '10pt', color: '#166534' }}>Visual Validation Briefing</p>
-                <p style={{ margin: '0 0 12pt 0', fontSize: '11pt' }}>See how our forensic industrial registry is digitizing the national transport grid.</p>
-                <div style={{ margin: '0 auto', maxWidth: '300pt' }}>
-                    <a 
-                        href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" 
-                        target="_blank" 
-                        rel="noopener noreferrer" 
-                        style={{ 
-                            backgroundColor: '#228B22', 
-                            color: '#ffffff', 
-                            padding: '10pt 20pt', 
-                            borderRadius: '5pt', 
-                            textDecoration: 'none', 
-                            fontWeight: 'bold', 
-                            display: 'inline-block',
-                            fontSize: '12pt'
-                        }}
-                    >
-                        Watch the 60-Second Overview
-                    </a>
-                </div>
-                <p style={{ margin: '8pt 0 0 0', fontSize: '9pt', color: '#666666', fontStyle: 'italic' }}>Note: Replace the link above with your generated AI showcase video once ready.</p>
-            </div>
 
             <p style={{ margin: '0 0 7pt 0', fontWeight: 'bold' }}>Our Pillars of Flow</p>
             <p style={{ margin: '0 0 14pt 0' }}>We empower the transport community through four integrated divisions:</p>

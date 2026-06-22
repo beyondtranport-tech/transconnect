@@ -41,7 +41,7 @@ const EmailTemplate = ({ subject, content, partner, referralLink }: { subject: s
                 </div>
             </CardHeader>
             <CardContent className="px-0 text-left text-foreground">
-                <div className="p-6 bg-white border rounded-md whitespace-pre-wrap font-sans text-sm shadow-inner min-h-[300px] text-left text-foreground text-foreground">
+                <div className="p-6 bg-white border rounded-md whitespace-pre-wrap font-sans text-sm shadow-inner min-h-[300px] text-left text-foreground">
                     {personalizedContent.trim()}
                 </div>
             </CardContent>
@@ -63,9 +63,6 @@ Hi [Supplier Name],
 Fragmented industrial maps lead to inefficient sales cycles. Logistics Flow exists to break this constraint. We have cataloged the national transport grid and currently host over 5,400+ verified transport companies in our community.
 
 We want to open this base directly to [Your Company] as a preferred supply partner. 
-
-[WATCH: HOW IT WORKS IN 60 SECONDS]
-https://www.youtube.com/watch?v=dQw4w9WgXcQ
 
 Crucially, we have solved the payment bottleneck: we provide direct funding to these transporters specifically to increase their capacity to purchase from our vetted suppliers. You get paid in full, upfront, while they get the equipment they need to scale.
 

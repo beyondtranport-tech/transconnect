@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from "react";
@@ -31,34 +30,6 @@ export default function DigitalHandshake({ partner, audience }: { partner?: any,
             <p style={{ margin: '0 0 14pt 0' }}>
                 The industry is talking. At container depots and harbors across the country, the question is being asked: <strong>"Have you seen the new Logistics Flow app?"</strong>
             </p>
-
-            <div style={{ margin: '0 0 18pt 0', padding: '20pt', border: '2px solid #228B22', borderRadius: '12pt', backgroundColor: '#f0fdf4', textAlign: 'center' }}>
-                <p style={{ margin: '0 0 10pt 0', fontWeight: 'bold', color: '#166534', fontSize: '11pt', textTransform: 'uppercase' }}>Visual Presentation: The Peer-to-Peer Network</p>
-                <p style={{ margin: '0 0 15pt 0', fontStyle: 'italic', fontSize: '10pt' }}>Watch how our authorized ISA Agents are digitalizing the harbor front.</p>
-                <div style={{ margin: '0 auto', maxWidth: '350pt' }}>
-                    <a 
-                        href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" 
-                        target="_blank" 
-                        rel="noopener noreferrer" 
-                        style={{ 
-                            backgroundColor: '#228B22', 
-                            color: '#ffffff', 
-                            padding: '12pt 24pt', 
-                            borderRadius: '6pt', 
-                            textDecoration: 'none', 
-                            fontWeight: 'bold', 
-                            display: 'inline-block',
-                            fontSize: '13pt',
-                            boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
-                        }}
-                    >
-                        Watch the 60-Second Narrative Overview
-                    </a>
-                </div>
-                <p style={{ margin: '10pt 0 0 0', fontSize: '9pt', color: '#666666' }}>
-                    [REPLACE WITH YOUR GOOGLE CLOUD STORAGE LINK ONCE SCENES ARE GENERATED]
-                </p>
-            </div>
 
             <p style={{ margin: '0 0 14pt 0' }}>
                 As an authorized Independent Sales Agent, we are opening our secure network to foundational stakeholders like {companyName}. This is more than an app—it is an earning platform where you can build a network and generate passive revenue through community transparency.

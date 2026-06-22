@@ -66,9 +66,6 @@ Hi [Partner Name],
 
 The transport industry has long been held back by an "Information Divide." Large players have the data; smaller hauliers and vendors are left in the dark. Logistics Flow exists to break this constraint.
 
-[WATCH: THE INDUSTRIAL BRAIN IN MOTION]
-https://www.youtube.com/watch?v=dQw4w9WgXcQ
-
 Before we provide you with access to our forensic industrial registry or match you with our funding syndicate, we require a formal "Digital Handshake." This establishes a secure, POPI-compliant connection between your business and our industrial brain.
 
 Establish the connection in 30 seconds here:

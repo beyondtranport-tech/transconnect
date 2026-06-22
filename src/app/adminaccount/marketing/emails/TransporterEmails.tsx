@@ -64,9 +64,6 @@ Hi [Name],
 
 Inefficiency is a silent tax on your transport business. Logistics Flow is a unified digital ecosystem designed to break the constraints of high operating costs and empty miles.
 
-[SEE THE PLATFORM IN MOTION - 60S BRIEFING]
-https://www.youtube.com/watch?v=dQw4w9WgXcQ
-
 Before we can send you matching freight loads or group discount offers for your [Your Company] fleet, we require a formal "Digital Handshake."
 
 Please take 30 seconds to establish the connection here:
