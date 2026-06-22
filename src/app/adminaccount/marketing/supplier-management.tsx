@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -170,9 +171,14 @@ export default function SupplierManagement() {
   const [staff, setStaff] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasLoaded, setHasLoaded] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | null, data?: any, initialIndex?: number }>({ type: null });
+
+  // Independent Search States
+  const [searchCompany, setSearchCompany] = useState('');
+  const [searchKeyword, setSearchKeyword] = useState('');
+  const [searchTag, setSearchTag] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('all');
 
   const [statusFilter, setStatusFilter] = useState('all');
   const [assigneeFilter, setAssigneeFilter] = useState('all');
@@ -185,7 +191,15 @@ export default function SupplierManagement() {
       const token = await getClientSideAuthToken();
       if (!token) return;
       const [res, staffRes] = await Promise.all([
-        performAdminAction(token, 'searchRegistry', { type: 'supplier', term: searchTerm, integrityFilter, outreachFilter }),
+        performAdminAction(token, 'searchRegistry', { 
+            type: 'supplier', 
+            searchCompany, 
+            searchKeyword, 
+            searchTag,
+            category: categoryFilter,
+            integrityFilter, 
+            outreachFilter 
+        }),
         performAdminAction(token, 'getPlatformStaff', {})
       ]);
       setPartners(res.data || []);
@@ -196,7 +210,7 @@ export default function SupplierManagement() {
     } finally {
       setIsLoading(false);
     }
-  }, [searchTerm, integrityFilter, outreachFilter, toast]);
+  }, [searchCompany, searchKeyword, searchTag, categoryFilter, integrityFilter, outreachFilter, toast]);
 
   useEffect(() => { 
     if (hasLoaded) fetchData(); 
@@ -343,14 +357,33 @@ export default function SupplierManagement() {
              <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground">
                 <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
                 <h2 className="text-2xl font-black font-headline mb-2 text-foreground text-center">Registry Forensic Search</h2>
-                <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center">Scan the master database of 20,000+ suppliers. Targeted searches preserve your daily data quota.</p>
-                <div className="flex flex-col md:flex-row justify-center gap-4 max-w-4xl mx-auto text-left">
-                    <div className="flex-1 space-y-2 text-left">
-                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Company, Keyword, or Tag</Label>
-                        <Input placeholder="Type company name or product to search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && fetchData()} className="h-12 text-lg bg-white" />
+                <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center">Scan the master database of 20,000+ suppliers. Independent variables ensure high-precision filtering.</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto text-left">
+                    <div className="space-y-2 text-left">
+                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Company Name</Label>
+                        <Input placeholder="Search entity names..." value={searchCompany} onChange={(e) => setSearchCompany(e.target.value)} className="h-12 bg-white" />
                     </div>
-                    <div className="w-40 space-y-2 text-left">
-                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Integrity</Label>
+                    <div className="space-y-2 text-left">
+                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Keywords (About Text)</Label>
+                        <Input placeholder="Search services/bios..." value={searchKeyword} onChange={(e) => setSearchKeyword(e.target.value)} className="h-12 bg-white" />
+                    </div>
+                    <div className="space-y-2 text-left">
+                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Industrial Tags</Label>
+                        <Input placeholder="Search ML tags..." value={searchTag} onChange={(e) => setSearchTag(e.target.value)} className="h-12 bg-white" />
+                    </div>
+                    <div className="space-y-2 text-left">
+                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Industrial Category</Label>
+                        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                            <SelectTrigger className="h-12 bg-white"><SelectValue placeholder="All Categories" /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Categories</SelectItem>
+                                {supplierCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="space-y-2 text-left">
+                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Data Integrity</Label>
                         <Select value={integrityFilter} onValueChange={setIntegrityFilter}>
                             <SelectTrigger className="h-12 bg-white text-left"><SelectValue placeholder="All" /></SelectTrigger>
                             <SelectContent>
@@ -361,7 +394,7 @@ export default function SupplierManagement() {
                             </SelectContent>
                         </Select>
                     </div>
-                    <div className="w-56 space-y-2 text-left">
+                    <div className="space-y-2 text-left">
                         <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Outreach Stage</Label>
                         <Select value={outreachFilter} onValueChange={setOutreachFilter}>
                             <SelectTrigger className="h-12 bg-white text-left"><SelectValue placeholder="All Stages" /></SelectTrigger>
@@ -377,10 +410,13 @@ export default function SupplierManagement() {
                             </SelectContent>
                         </Select>
                     </div>
-                    <Button size="lg" onClick={fetchData} disabled={isLoading} className="h-12 px-8 self-end font-bold">
-                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4" />}
-                        Execute Scan
-                    </Button>
+                    
+                    <div className="lg:col-span-2 flex items-end">
+                        <Button size="lg" onClick={fetchData} disabled={isLoading} className="h-12 w-full font-black uppercase tracking-widest gap-2 shadow-lg">
+                            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4" />}
+                            Execute Deep Scan
+                        </Button>
+                    </div>
                 </div>
             </Card>
         ) : (
@@ -411,38 +447,42 @@ export default function SupplierManagement() {
 
                 <Card className="border-primary/10 shadow-sm overflow-hidden text-left">
                     <CardContent className="pt-6 text-left text-foreground">
-                        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
-                            <div className="md:col-span-2 space-y-2 text-left text-foreground">
-                                <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5 text-left"><Search className="h-3 w-3"/> Forensic Search</Label>
-                                <div className="flex gap-2 text-left text-foreground">
-                                    <Input placeholder="Refine your current scan..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && fetchData()} />
-                                    <Button onClick={fetchData} disabled={isLoading} className="text-foreground"><Search className="h-4 w-4"/></Button>
-                                </div>
+                        <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
+                            <div className="space-y-2 text-left">
+                                <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Company</Label>
+                                <Input placeholder="Filter..." value={searchCompany} onChange={(e) => setSearchCompany(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && fetchData()} />
                             </div>
-                            <div className="space-y-2 text-left text-foreground">
-                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left"><Filter className="h-3 w-3"/> Integrity</Label>
+                            <div className="space-y-2 text-left">
+                                <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Keywords</Label>
+                                <Input placeholder="Filter..." value={searchKeyword} onChange={(e) => setSearchKeyword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && fetchData()} />
+                            </div>
+                            <div className="space-y-2 text-left">
+                                <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Tags</Label>
+                                <Input placeholder="Filter..." value={searchTag} onChange={(e) => setSearchTag(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && fetchData()} />
+                            </div>
+                            <div className="space-y-2 text-left">
+                                <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Category</Label>
+                                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                                    <SelectTrigger className="bg-white"><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All</SelectItem>
+                                        {supplierCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2 text-left">
+                                <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Integrity</Label>
                                 <Select value={integrityFilter} onValueChange={setIntegrityFilter}>
-                                    <SelectTrigger className="bg-white text-left"><SelectValue placeholder="All" /></SelectTrigger>
+                                    <SelectTrigger className="bg-white"><SelectValue /></SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="all">All Records</SelectItem>
+                                        <SelectItem value="all">All</SelectItem>
                                         <SelectItem value="has-email">Has Email</SelectItem>
-                                        <SelectItem value="no-email">No Email</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <div className="space-y-2 text-left text-foreground">
-                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left"><Send className="h-3 w-3"/> Outreach</Label>
-                                <Select value={outreachFilter} onValueChange={setOutreachFilter}>
-                                    <SelectTrigger className="bg-white text-left"><SelectValue placeholder="All Stages" /></SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">All Stages</SelectItem>
-                                        <SelectItem value="Digital Handshake">Handshake</SelectItem>
-                                        <SelectItem value="Company Profile">Profile</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="flex items-end text-left">
-                                <Button variant="outline" onClick={() => setHasLoaded(false)} className="h-10 w-full text-foreground"><RotateCcw className="mr-1 h-3 w-3" /> New Search</Button>
+                            <div className="flex items-end text-left gap-2">
+                                <Button onClick={fetchData} disabled={isLoading} className="flex-1"><RefreshCcw className={cn("h-4 w-4", isLoading && "animate-spin")} /></Button>
+                                <Button variant="outline" onClick={() => setHasLoaded(false)} className="flex-1"><RotateCcw className="h-4 w-4" /></Button>
                             </div>
                         </div>
                         {isLoading ? <div className="flex justify-center items-center py-10 text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />}

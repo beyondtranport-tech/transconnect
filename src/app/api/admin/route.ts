@@ -46,7 +46,16 @@ export async function POST(req: NextRequest) {
 
         switch (action) {
             case 'searchRegistry': {
-                const { term, type, integrityFilter, outreachFilter } = payload;
+                const { 
+                    searchCompany, 
+                    searchKeyword, 
+                    searchTag, 
+                    category, 
+                    type, 
+                    integrityFilter, 
+                    outreachFilter 
+                } = payload;
+                
                 const collectionName = (type === 'lead') ? 'leads' : 'partners';
                 
                 let query: any = db.collection(collectionName);
@@ -54,6 +63,7 @@ export async function POST(req: NextRequest) {
                     query = query.where('type', '==', type);
                 }
 
+                // Initial high-volume pull
                 const snap = await query.orderBy('updatedAt', 'desc').limit(1000).get();
                 
                 let data = snap.docs.map((d: QueryDocumentSnapshot) => ({ 
@@ -61,20 +71,37 @@ export async function POST(req: NextRequest) {
                     ...serializeTimestamps(d.data()) 
                 }));
 
-                // Apply text search
-                if (term && term.length > 0) {
-                    const lowTerm = term.toLowerCase();
-                    data = data.filter((item: any) => {
-                        const name = (item.companyName || item.company_name || '').toLowerCase();
-                        const email = (item.email || '').toLowerCase();
-                        const contact = (item.contactPerson || '').toLowerCase();
-                        const tags = (item.industrialTags || []).join(' ').toLowerCase();
-                        const notes = (item.minedServiceWording || item.notes || '').toLowerCase();
-                        return name.includes(lowTerm) || email.includes(lowTerm) || contact.includes(lowTerm) || tags.includes(lowTerm) || notes.includes(lowTerm);
-                    });
+                // 1. Independent Text Search Variables
+                if (searchCompany) {
+                    const low = searchCompany.toLowerCase();
+                    data = data.filter((item: any) => 
+                        (item.companyName || item.company_name || '').toLowerCase().includes(low)
+                    );
+                }
+                
+                if (searchKeyword) {
+                    const low = searchKeyword.toLowerCase();
+                    data = data.filter((item: any) => 
+                        (item.minedServiceWording || item.notes || '').toLowerCase().includes(low)
+                    );
                 }
 
-                // Apply integrity filter
+                if (searchTag) {
+                    const low = searchTag.toLowerCase();
+                    data = data.filter((item: any) => 
+                        (item.industrialTags || []).some((t: string) => t.toLowerCase().includes(low))
+                    );
+                }
+
+                // 2. Industrial Category Filter
+                if (category && category !== 'all') {
+                    const low = category.toLowerCase();
+                    data = data.filter((item: any) => 
+                        (item.industrial_category || item.category || '').toLowerCase() === low
+                    );
+                }
+
+                // 3. Integrity Filter
                 if (integrityFilter && integrityFilter !== 'all') {
                     if (integrityFilter === 'has-email') data = data.filter((p: any) => !!p.email);
                     else if (integrityFilter === 'no-email') data = data.filter((p: any) => !p.email);
@@ -84,7 +111,7 @@ export async function POST(req: NextRequest) {
                     else if (integrityFilter === 'no-website') data = data.filter((p: any) => !p.website);
                 }
 
-                // Apply outreach filter
+                // 4. Outreach Stage Filter
                 if (outreachFilter && outreachFilter !== 'all') {
                     data = data.filter((p: any) => p.lastOutreachSubject === outreachFilter);
                 }
@@ -132,7 +159,6 @@ export async function POST(req: NextRequest) {
                     adminId: decodedToken.uid
                 });
                 
-                // Update the parent with the last outreach metadata for filtering
                 batch.update(db.collection(collName).doc(partnerId), {
                     lastOutreachSubject: subject,
                     lastOutreachAt: FieldValue.serverTimestamp(),
