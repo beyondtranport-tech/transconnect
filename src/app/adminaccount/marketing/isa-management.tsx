@@ -44,7 +44,6 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { BulkImportDialog } from './BulkImportDialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Checkbox } from '@/components/ui/checkbox';
 
 async function performAdminAction(token: string, action: string, payload: any) {
   const response = await fetch('/api/admin', {
@@ -73,115 +72,6 @@ const partnerSchema = z.object({
   type: z.literal('isa'),
 });
 type PartnerFormValues = z.infer<typeof partnerSchema>;
-
-function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
-    const [isOpen, setIsOpen] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
-    const [duplicates, setDuplicates] = useState<any[][]>([]);
-    const [incomplete, setIncomplete] = useState<any[]>([]);
-    const [selections, setSelections] = useState<Record<number, string>>({});
-    const { toast } = useToast();
-
-    const findDuplicates = async () => {
-        setIsLoading(true);
-        try {
-            const token = await getClientSideAuthToken();
-            if (!token) return;
-            const res = await performAdminAction(token, 'findDuplicatePartners', { type: 'isa' });
-            setDuplicates(res.duplicates || []);
-            setIncomplete(res.incomplete || []);
-            setIsOpen(true);
-        } catch (e: any) {
-            toast({ variant: 'destructive', title: "Search Error", description: e.message });
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const handleClean = async (target: 'duplicates' | 'incomplete') => {
-        setIsLoading(true);
-        try {
-            const token = await getClientSideAuthToken();
-            if (!token) return;
-            
-            let idsToDelete: string[] = [];
-            if (target === 'duplicates') {
-                idsToDelete = duplicates.flatMap((group, idx) => {
-                    const keepId = selections[idx];
-                    if (!keepId) return [];
-                    return group.filter(p => p.id !== keepId).map(p => p.id);
-                });
-            } else {
-                idsToDelete = incomplete.map(p => p.id);
-            }
-
-            if (idsToDelete.length === 0) {
-                toast({ title: "No records selected for deletion." });
-                setIsLoading(false);
-                return;
-            }
-
-            await performAdminAction(token, 'deletePartners', { partnerIds: idsToDelete });
-            toast({ title: "Cleaned!", description: `${idsToDelete.length} records removed.` });
-            onComplete();
-            setIsOpen(false);
-        } catch (e: any) {
-            toast({ variant: 'destructive', title: "Cleanup Error", description: e.message });
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    return (
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <Button variant="outline" onClick={findDuplicates} disabled={isLoading} className="gap-2">
-                {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <Trash2 className="h-4 w-4"/>}
-                Registry Cleaner
-            </Button>
-            <DialogContent className="sm:max-w-4xl max-h-[85vh] flex flex-col text-left">
-                <DialogHeader>
-                    <DialogTitle>ISA Registry Health Tool</DialogTitle>
-                </DialogHeader>
-                <ScrollArea className="flex-1 p-4 text-left">
-                    <div className="space-y-8 text-left">
-                        {incomplete.length > 0 && (
-                            <div className="space-y-4 text-left">
-                                <h3 className="font-bold text-destructive flex items-center gap-2 text-left"><AlertTriangle className="h-5 w-5" /> Incomplete Records ({incomplete.length})</h3>
-                                <Button variant="destructive" size="sm" onClick={() => handleClean('incomplete')} disabled={isLoading}>Delete All Incomplete</Button>
-                            </div>
-                        )}
-                        {duplicates.length > 0 && (
-                            <div className="space-y-4 text-left">
-                                <h3 className="font-bold text-amber-600 flex items-center gap-2 text-left"><Tag className="h-5 w-5" /> Duplicates</h3>
-                                {duplicates.map((group, idx) => (
-                                    <div key={idx} className="p-4 border rounded-lg bg-muted/20 space-y-2 text-left text-foreground">
-                                        <p className="font-bold text-sm text-left">{group[0].companyName}</p>
-                                        <div className="space-y-1 text-left">
-                                            {group.map(p => (
-                                                <div key={p.id} className="flex items-center gap-2 text-xs text-left">
-                                                    <Checkbox checked={selections[idx] === p.id} onCheckedChange={() => setSelections({...selections, [idx]: p.id})}/>
-                                                    <span className="text-muted-foreground font-mono">{p.id}</span>
-                                                    <span>{p.email || 'No Email'}</span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                ))}
-                                <Button variant="secondary" className="w-full" onClick={() => handleClean('duplicates')} disabled={isLoading}>Clean Selected</Button>
-                            </div>
-                        )}
-                        {incomplete.length === 0 && duplicates.length === 0 && (
-                            <div className="text-center py-20 text-left">
-                                <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
-                                <p className="text-lg font-bold">Registry is Clean!</p>
-                            </div>
-                        )}
-                    </div>
-                </ScrollArea>
-            </DialogContent>
-        </Dialog>
-    );
-}
 
 function ISADialog({ open, onOpenChange, partner, onSave }: { open: boolean; onOpenChange: (open: boolean) => void; partner?: any; onSave: () => void; }) {
   const [isLoading, setIsLoading] = useState(false);
@@ -233,7 +123,7 @@ function ISADialog({ open, onOpenChange, partner, onSave }: { open: boolean; onO
                 <FormItem className="text-left text-foreground">
                     <FormLabel>Status</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl><SelectTrigger className="bg-white"><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
+                        <FormControl><SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
                         <SelectContent>
                             <SelectItem value="new">New Lead</SelectItem>
                             <SelectItem value="contacted">Researching</SelectItem>
@@ -367,12 +257,12 @@ export default function ISAManagement() {
 
   return (
     <div className="space-y-6 text-left">
-      <BatchResearchDialog open={dialog.type === 'batch'} onOpenChange={(o: boolean) => !o && setDialog({ type: null })} selectedLeads={allRecords.filter(r => selectedIds.includes(r.id))} onComplete={fetchData} />
-      <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o: boolean) => !o && setDialog({ type: null })} partner={dialog.data} audience="isa" onEngageSuccess={fetchData} />
-      <ISADialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o: boolean) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={fetchData} />
+      <BatchResearchDialog open={dialog.type === 'batch'} onOpenChange={(o) => !o && setDialog({ type: null })} selectedLeads={allRecords.filter(r => selectedIds.includes(r.id))} onComplete={fetchData} />
+      <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.data} audience="isa" onEngageSuccess={fetchData} />
+      <ISADialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={fetchData} />
       
-      <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o: boolean) => !o && setDialog({ type: null })}>
-        <AlertDialogContent>
+      <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
+        <AlertDialogContent className="text-left">
           <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Delete record?</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel>
@@ -395,7 +285,6 @@ export default function ISAManagement() {
                 <CardDescription className="text-left text-foreground">Full database of Independent Sales Agents ({allRecords.length} records).</CardDescription>
             </div>
             <div className="flex flex-wrap items-center gap-2 text-left">
-                <DuplicateCleaner onComplete={fetchData} />
                 {selectedIds.length > 0 && (
                     <div className="flex gap-2 animate-in fade-in zoom-in duration-200">
                         <Button variant="secondary" onClick={() => setDialog({ type: 'batch' })}><Zap className="mr-2 h-4 w-4" /> Batch Research ({selectedIds.length})</Button>
@@ -417,7 +306,7 @@ export default function ISAManagement() {
             <CardContent className="pt-6 text-left text-foreground">
                 <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
                     <div className="flex-1 space-y-2 text-left text-foreground">
-                        <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status</Label>
+                        <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Filter className="h-3 w-3"/> Status</Label>
                         <Select value={statusFilter} onValueChange={setStatusFilter}>
                             <SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="All Statuses" /></SelectTrigger>
                             <SelectContent>
@@ -429,7 +318,7 @@ export default function ISAManagement() {
                         </Select>
                     </div>
                     <div className="flex-1 space-y-2 text-left text-foreground">
-                        <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Users className="h-3 w-3"/> Assignee</Label>
+                        <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Users className="h-3 w-3"/> Assignee</Label>
                         <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
                             <SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="All Staff" /></SelectTrigger>
                             <SelectContent>

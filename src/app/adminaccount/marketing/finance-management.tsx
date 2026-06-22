@@ -28,7 +28,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, Landmark, Edit, Trash2, Send, Download, Save, Search, Globe, RefreshCcw, Database, Filter, Users, Upload, Copy, Tag, AlertTriangle, CheckCircle, Sparkles } from 'lucide-react';
+import { Loader2, PlusCircle, Landmark, Edit, Trash2, Send, Download, Save, Search, Globe, RefreshCcw, Database, Filter, Users, Upload, Copy, Tag, AlertTriangle, CheckCircle, Sparkles, RotateCcw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -75,115 +75,6 @@ const partnerSchema = z.object({
   type: z.literal('finance'),
 });
 type PartnerFormValues = z.infer<typeof partnerSchema>;
-
-function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
-    const [isOpen, setIsOpen] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
-    const [duplicates, setDuplicates] = useState<any[][]>([]);
-    const [incomplete, setIncomplete] = useState<any[]>([]);
-    const [selections, setSelections] = useState<Record<number, string>>({});
-    const { toast } = useToast();
-
-    const findDuplicates = async () => {
-        setIsLoading(true);
-        try {
-            const token = await getClientSideAuthToken();
-            if (!token) return;
-            const res = await performAdminAction(token, 'findDuplicatePartners', { type: 'finance' });
-            setDuplicates(res.duplicates || []);
-            setIncomplete(res.incomplete || []);
-            setIsOpen(true);
-        } catch (e: any) {
-            toast({ variant: 'destructive', title: "Search Error", description: e.message });
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const handleClean = async (target: 'duplicates' | 'incomplete') => {
-        setIsLoading(true);
-        try {
-            const token = await getClientSideAuthToken();
-            if (!token) return;
-            
-            let idsToDelete: string[] = [];
-            if (target === 'duplicates') {
-                idsToDelete = duplicates.flatMap((group, idx) => {
-                    const keepId = selections[idx];
-                    if (!keepId) return [];
-                    return group.filter(p => p.id !== keepId).map(p => p.id);
-                });
-            } else {
-                idsToDelete = incomplete.map(p => p.id);
-            }
-
-            if (idsToDelete.length === 0) {
-                toast({ title: "No records selected for deletion." });
-                setIsLoading(false);
-                return;
-            }
-
-            await performAdminAction(token, 'deletePartners', { partnerIds: idsToDelete });
-            toast({ title: "Cleaned!", description: `${idsToDelete.length} records removed.` });
-            onComplete();
-            setIsOpen(false);
-        } catch (e: any) {
-            toast({ variant: 'destructive', title: "Cleanup Error", description: e.message });
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    return (
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <Button variant="outline" onClick={findDuplicates} disabled={isLoading} className="gap-2">
-                {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <Trash2 className="h-4 w-4"/>}
-                Registry Cleaner
-            </Button>
-            <DialogContent className="sm:max-w-4xl max-h-[85vh] flex flex-col text-left">
-                <DialogHeader>
-                    <DialogTitle>Finance Registry Health Tool</DialogTitle>
-                </DialogHeader>
-                <ScrollArea className="flex-1 p-4 text-left">
-                    <div className="space-y-8 text-left">
-                        {incomplete.length > 0 && (
-                            <div className="space-y-4 text-left">
-                                <h3 className="font-bold text-destructive flex items-center gap-2 text-left"><AlertTriangle className="h-5 w-5" /> Incomplete Records ({incomplete.length})</h3>
-                                <Button variant="destructive" size="sm" onClick={() => handleClean('incomplete')} disabled={isLoading}>Delete Broken Records</Button>
-                            </div>
-                        )}
-                        {duplicates.length > 0 && (
-                            <div className="space-y-4 text-left text-foreground">
-                                <h3 className="font-bold text-amber-600 flex items-center gap-2 text-left"><Tag className="h-5 w-5" /> Duplicates</h3>
-                                {duplicates.map((group, idx) => (
-                                    <div key={idx} className="p-4 border rounded-lg bg-muted/20 space-y-2 text-left">
-                                        <p className="font-bold text-sm text-left">{group[0].companyName}</p>
-                                        <div className="space-y-1 text-left">
-                                            {group.map(p => (
-                                                <div key={p.id} className="flex items-center gap-2 text-xs text-left">
-                                                    <Checkbox checked={selections[idx] === p.id} onCheckedChange={() => setSelections({...selections, [idx]: p.id})}/>
-                                                    <span className="text-muted-foreground font-mono">{p.id}</span>
-                                                    <span>{p.email || 'No Email'}</span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                ))}
-                                <Button variant="secondary" className="w-full" onClick={() => handleClean('duplicates')} disabled={isLoading}>Clean Selected</Button>
-                            </div>
-                        )}
-                        {incomplete.length === 0 && duplicates.length === 0 && (
-                            <div className="text-center py-20 text-left">
-                                <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
-                                <p className="text-lg font-bold">Registry is Clean!</p>
-                            </div>
-                        )}
-                    </div>
-                </ScrollArea>
-            </DialogContent>
-        </Dialog>
-    );
-}
 
 function FinanceDialog({ open, onOpenChange, partner, onSave }: { open: boolean; onOpenChange: (open: boolean) => void; partner?: any; onSave: () => void; }) {
   const [isLoading, setIsLoading] = useState(false);
@@ -430,12 +321,12 @@ export default function FinanceManagement() {
 
   return (
     <div className="space-y-6 text-left">
-      <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o: boolean) => !o && setDialog({ type: null })} partner={dialog.data} audience="finance" onEngageSuccess={fetchData} />
-      <FinanceDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o: boolean) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={fetchData} />
+      <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.data} audience="finance" onEngageSuccess={fetchData} />
+      <FinanceDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={fetchData} />
       
-      <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o: boolean) => !o && setDialog({ type: null })}>
+      <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
         <AlertDialogContent>
-          <AlertDialogHeader><AlertDialogTitle>Delete Record(s)?</AlertDialogTitle><AlertDialogDescription>Delete {selectedIds.length > 0 ? `${selectedIds.length} records` : 'record'}?</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogHeader><AlertDialogTitle>Delete Record(s)?</AlertDialogTitle><AlertDialogDescription>Delete Selected?</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={selectedIds.length > 0 ? handleDeleteBatch : async () => {
@@ -457,7 +348,6 @@ export default function FinanceManagement() {
                 <CardDescription className="text-left text-foreground">Full database view of lending and finance entities ({partners.length} records).</CardDescription>
             </div>
             <div className="flex items-center gap-2 text-left">
-                <DuplicateCleaner onComplete={fetchData} />
                 {selectedIds.length > 0 && (
                     <Button variant="destructive" onClick={() => setDialog({ type: 'delete' })} className="gap-2 text-left">
                         <Trash2 className="h-4 w-4" /> Delete Selected ({selectedIds.length})

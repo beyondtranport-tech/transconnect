@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -25,7 +24,6 @@ import { BatchResearchDialog } from './BatchResearchDialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { BulkImportDialog } from './BulkImportDialog';
-import { useConfig } from '@/hooks/use-config';
 import { transporterCategories } from './transporter-discovery';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -33,6 +31,7 @@ import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 
 async function performAdminAction(token: string, action: string, payload: any) {
   const response = await fetch('/api/admin', {
@@ -63,116 +62,8 @@ const partnerSchema = z.object({
   status: z.enum(['active', 'inactive', 'contacted', 'new', 'qualified', 'invited', 'registered']),
   type: z.literal('transporter'),
 });
+
 type PartnerFormValues = z.infer<typeof partnerSchema>;
-
-function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
-    const [isOpen, setIsOpen] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
-    const [duplicates, setDuplicates] = useState<any[][]>([]);
-    const [incomplete, setIncomplete] = useState<any[]>([]);
-    const [selections, setSelections] = useState<Record<number, string>>({});
-    const { toast } = useToast();
-
-    const findDuplicates = async () => {
-        setIsLoading(true);
-        try {
-            const token = await getClientSideAuthToken();
-            if (!token) return;
-            const res = await performAdminAction(token, 'findDuplicatePartners', { type: 'transporter' });
-            setDuplicates(res.duplicates || []);
-            setIncomplete(res.incomplete || []);
-            setIsOpen(true);
-        } catch (e: any) {
-            toast({ variant: 'destructive', title: "Search Error", description: e.message });
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const handleClean = async (target: 'duplicates' | 'incomplete') => {
-        setIsLoading(true);
-        try {
-            const token = await getClientSideAuthToken();
-            if (!token) return;
-            
-            let idsToDelete: string[] = [];
-            if (target === 'duplicates') {
-                idsToDelete = duplicates.flatMap((group, idx) => {
-                    const keepId = selections[idx];
-                    if (!keepId) return [];
-                    return group.filter(p => p.id !== keepId).map(p => p.id);
-                });
-            } else {
-                idsToDelete = incomplete.map(p => p.id);
-            }
-
-            if (idsToDelete.length === 0) {
-                toast({ title: "No records selected for deletion." });
-                setIsLoading(false);
-                return;
-            }
-
-            await performAdminAction(token, 'deletePartners', { partnerIds: idsToDelete });
-            toast({ title: "Cleaned!", description: `${idsToDelete.length} records removed.` });
-            onComplete();
-            setIsOpen(false);
-        } catch (e: any) {
-            toast({ variant: 'destructive', title: "Cleanup Error", description: e.message });
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    return (
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <Button variant="outline" onClick={findDuplicates} disabled={isLoading} className="gap-2 text-foreground">
-                {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <Trash2 className="h-4 w-4"/>}
-                Registry Cleaner
-            </Button>
-            <DialogContent className="sm:max-w-4xl max-h-[85vh] flex flex-col text-left text-foreground">
-                <DialogHeader>
-                    <DialogTitle>Registry Health Tool</DialogTitle>
-                </DialogHeader>
-                <ScrollArea className="flex-1 p-4 text-left">
-                    <div className="space-y-8 text-left text-foreground">
-                        {incomplete.length > 0 && (
-                            <div className="space-y-4 text-left">
-                                <h3 className="font-bold text-destructive flex items-center gap-2 text-left text-foreground"><AlertTriangle className="h-5 w-5" /> Incomplete Records ({incomplete.length})</h3>
-                                <Button variant="destructive" size="sm" onClick={() => handleClean('incomplete')} disabled={isLoading}>Delete All Incomplete</Button>
-                            </div>
-                        )}
-                        {duplicates.length > 0 && (
-                            <div className="space-y-4 text-left text-foreground">
-                                <h3 className="font-bold text-amber-600 flex items-center gap-2 text-left text-foreground"><Tag className="h-5 w-5" /> Duplicates</h3>
-                                {duplicates.map((group, idx) => (
-                                    <div key={idx} className="p-4 border rounded-lg bg-muted/20 space-y-2 text-left text-foreground">
-                                        <p className="font-bold text-sm text-left">{group[0].companyName}</p>
-                                        <div className="space-y-1 text-left">
-                                            {group.map(p => (
-                                                <div key={p.id} className="flex items-center gap-2 text-xs text-left">
-                                                    <Checkbox checked={selections[idx] === p.id} onCheckedChange={() => setSelections({...selections, [idx]: p.id})}/>
-                                                    <span className="text-muted-foreground font-mono">{p.id}</span>
-                                                    <span>{p.email || 'No Email'}</span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                ))}
-                                <Button variant="secondary" className="w-full" onClick={() => handleClean('duplicates')} disabled={isLoading}>Clean Selected</Button>
-                            </div>
-                        )}
-                        {incomplete.length === 0 && duplicates.length === 0 && (
-                            <div className="text-center py-20 text-left">
-                                <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
-                                <p className="text-lg font-bold">Registry is Clean!</p>
-                            </div>
-                        )}
-                    </div>
-                </ScrollArea>
-            </DialogContent>
-        </Dialog>
-    );
-}
 
 function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: boolean; onOpenChange: (open: boolean) => void; partner?: any; onSave: () => void; }) {
   const [isLoading, setIsLoading] = useState(false);
@@ -228,7 +119,7 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
               <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="industrial_category" render={({ field }) => (
                     <FormItem className="text-left text-foreground">
-                        <FormLabel>Category</Label>
+                        <FormLabel>Category</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl><SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="Classify..." /></SelectTrigger></FormControl>
                             <SelectContent>
@@ -247,7 +138,7 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
                 <FormField control={form.control} name="minedServiceWording" render={({ field }) => (
                     <FormItem>
                         <FormLabel>Scraped About/Hero Text</FormLabel>
-                        <FormControl><Textarea placeholder="Deep-crawled operational and fleet capability statements..." className="min-h-[150px]" {...field} /></FormControl>
+                        <FormControl><Textarea placeholder="Deep-crawled operational and fleet capability statements..." className="min-h-[120px]" {...field} /></FormControl>
                         <FormMessage />
                     </FormItem>
                 )} />
@@ -281,7 +172,7 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
             )} />
             <DialogFooter className="pt-4 border-t text-left">
               <Button type="submit" disabled={isLoading}>
-                {isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />} Save
+                {isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />} Save Record
               </Button>
             </DialogFooter>
           </form>
@@ -297,16 +188,12 @@ export default function TransporterManagement() {
   const [staff, setStaff] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasLoaded, setHasLoaded] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | 'batch' | null, data?: any }>({ type: null });
 
   const [statusFilter, setStatusFilter] = useState('all');
   const [assigneeFilter, setAssigneeFilter] = useState('all');
-
-  const { data: statsData, forceRefresh: refreshStats } = useConfig<any>('transporterDiscoveryStats');
-  const counts = statsData?.counts || {};
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
@@ -327,20 +214,7 @@ export default function TransporterManagement() {
     }
   }, [searchTerm, toast]);
 
-  const handleRefreshTally = async () => {
-    setIsRefreshing(true);
-    try {
-        const token = await getClientSideAuthToken();
-        if (!token) return;
-        await performAdminAction(token, 'refreshTransporterCategoryCounts', {});
-        toast({ title: "Tally Updated" });
-        refreshStats();
-    } catch (e: any) {
-        toast({ variant: 'destructive', title: "Tally Failed", description: e.message });
-    } finally {
-        setIsRefreshing(false);
-    }
-  };
+  useEffect(() => { fetchData(); }, [fetchData]);
 
   const filteredRecords = useMemo(() => {
     return allRecords.filter(r => {
@@ -422,7 +296,7 @@ export default function TransporterManagement() {
       
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
         <AlertDialogContent className="text-left text-foreground">
-          <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Delete Record(s)?</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogHeader><AlertDialogTitle>Delete Record(s)?</AlertDialogTitle><AlertDialogDescription>Delete Selected?</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={selectedIds.length > 0 ? handleDeleteBatch : async () => {
@@ -459,7 +333,6 @@ export default function TransporterManagement() {
                         <CardDescription className="text-left text-foreground">Unified database view ({allRecords.length} matches found).</CardDescription>
                     </div>
                     <div className="flex flex-wrap items-center gap-2 text-left text-foreground">
-                        <DuplicateCleaner onComplete={fetchData} />
                         {selectedIds.length > 0 && (
                             <Button variant="destructive" onClick={() => setDialog({ type: 'delete' })} className="gap-2">
                                 <Trash2 className="h-4 w-4" /> Delete Selected ({selectedIds.length})
@@ -474,26 +347,6 @@ export default function TransporterManagement() {
                 </CardHeader>
 
                 <Card className="border-primary/10 shadow-sm overflow-hidden text-left text-foreground">
-                    <CardHeader className="bg-muted/30 border-b text-left text-foreground">
-                         <div className="flex items-center justify-between text-left">
-                            <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
-                                <Database className="h-3 w-3" /> Category Tally
-                            </Label>
-                            <Button variant="ghost" size="sm" onClick={handleRefreshTally} className="h-6 text-[9px] uppercase font-black tracking-tighter text-foreground" disabled={isRefreshing}>
-                                {isRefreshing ? <Loader2 className="mr-1 h-2.5 w-2.5 animate-spin"/> : <RefreshCcw className="mr-1 h-2.5 w-2.5"/>} Refresh Tally
-                            </Button>
-                        </div>
-                        <div className="flex flex-wrap gap-2 mt-3 text-left">
-                            {transporterCategories.map(cat => (
-                                <div key={cat} className="flex items-center bg-white border rounded-full pl-3 pr-1 py-0.5 shadow-sm text-left">
-                                    <span className="text-[9px] font-bold text-slate-600 mr-2 text-left">{cat}</span>
-                                    <Badge className="bg-primary/10 text-primary border-none text-[9px] font-black h-4 px-1.5 min-w-[20px] justify-center">
-                                        {counts[cat] || 0}
-                                    </Badge>
-                                </div>
-                            ))}
-                        </div>
-                    </CardHeader>
                     <CardContent className="pt-6 text-left text-foreground">
                         <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
                             <div className="flex-1 space-y-2 text-left">
@@ -515,7 +368,7 @@ export default function TransporterManagement() {
                                 </Select>
                             </div>
                             <div className="flex items-end">
-                                <Button variant="outline" onClick={() => setHasLoaded(false)} className="h-10 w-full"><RotateCcw className="mr-1 h-3 w-3" /> New Search</Button>
+                                <Button variant="outline" onClick={() => setHasLoaded(false)} className="h-10 w-full text-foreground"><RotateCcw className="mr-1 h-3 w-3" /> New Search</Button>
                             </div>
                         </div>
                         {isLoading ? <div className="flex justify-center items-center py-10 text-foreground text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />}
