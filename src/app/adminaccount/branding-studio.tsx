@@ -6,7 +6,8 @@ import VideoGeneratorCard from "@/app/backend/video-generator-card";
 import IconGeneratorCard from "@/app/backend/icon-generator-card";
 import { Card, CardDescription, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Image as ImageIcon, Wand2, Video, Film, Palette, BrainCircuit, Globe } from "lucide-react";
+import { Palette, BrainCircuit, Globe, Film } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
 
 // Placeholder for new components
 const VideoAnimatorCard = () => (
@@ -31,8 +32,10 @@ export default function BrandingStudio() {
         <div className="space-y-8 text-left">
             <CardHeader className="px-0">
                 <div className="flex items-center gap-4">
-                    <Palette className="h-8 w-8 text-primary"/>
-                    <div>
+                    <div className="bg-primary/10 p-3 rounded-xl">
+                        <Palette className="h-8 w-8 text-primary"/>
+                    </div>
+                    <div className="text-left">
                         <CardTitle className="text-2xl font-black font-headline">AI Content & Branding Studio</CardTitle>
                         <CardDescription>
                             Create professional marketing assets, logos, and high-fidelity video briefings.
@@ -74,5 +77,3 @@ export default function BrandingStudio() {
         </div>
     );
 }
-
-import { Separator } from "@/components/ui/separator";

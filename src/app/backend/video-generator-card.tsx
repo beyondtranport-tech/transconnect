@@ -21,7 +21,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Sparkles, Video, Download, PlayCircle, Zap, Save, RefreshCcw } from 'lucide-react';
+import { Loader2, Sparkles, Video, Download, PlayCircle, Save, RefreshCcw } from 'lucide-react';
 import { generateVideo } from '@/ai/flows/video-generation-flow';
 import type { VideoGenerateInput } from '@/ai/schemas';
 import Link from 'next/link';
@@ -190,5 +190,3 @@ export default function VideoGeneratorCard({
     </Card>
   );
 }
-
-import { Textarea } from "@/components/ui/textarea";
