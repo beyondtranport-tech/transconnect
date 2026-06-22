@@ -136,7 +136,7 @@ export default function MembershipPage() {
         </div>
         
         <div className="mt-20 max-w-3xl mx-auto">
-             <Alert className="bg-primary/5 border-primary/20 p-6 text-left">
+             <Alert className="bg-primary/5 border-primary/20 p-6 text-left text-foreground">
                 <ShieldCheck className="h-6 w-6 text-primary" />
                 <AlertTitle className="text-lg font-bold ml-2">Why R100?</AlertTitle>
                 <AlertDescription className="mt-2 text-muted-foreground ml-2">

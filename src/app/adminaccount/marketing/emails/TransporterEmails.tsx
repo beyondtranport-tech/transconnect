@@ -1,9 +1,8 @@
-
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ClipboardCopy, Mail, UserCheck, ShieldCheck } from 'lucide-react';
+import { ClipboardCopy, Mail, UserCheck, ShieldCheck, Zap } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import React from 'react';
@@ -28,12 +27,12 @@ const EmailTemplate = ({ subject, content, partner, referralLink }: { subject: s
     }, [content, partner, referralLink]);
 
     return (
-        <Card className="border-none shadow-none bg-transparent">
-            <CardHeader className="px-0">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <CardTitle className="text-lg">Email Subject</CardTitle>
-                        <CardDescription className="font-medium text-foreground select-all">{subject}</CardDescription>
+        <Card className="border-none shadow-none bg-transparent text-left">
+            <CardHeader className="px-0 text-left">
+                <div className="flex items-center justify-between text-left text-foreground">
+                    <div className="text-left">
+                        <CardTitle className="text-lg text-left text-foreground">Email Subject</CardTitle>
+                        <CardDescription className="font-medium text-foreground select-all text-left">{subject}</CardDescription>
                     </div>
                     {partner && (
                          <div className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5 border border-green-200">
@@ -42,8 +41,8 @@ const EmailTemplate = ({ subject, content, partner, referralLink }: { subject: s
                     )}
                 </div>
             </CardHeader>
-            <CardContent className="px-0">
-                <div className="p-6 bg-white border rounded-md whitespace-pre-wrap font-sans text-sm shadow-inner min-h-[300px]">
+            <CardContent className="px-0 text-left text-foreground">
+                <div className="p-6 bg-white border rounded-md whitespace-pre-wrap font-sans text-sm shadow-inner min-h-[300px] text-left text-foreground">
                     {personalizedContent.trim()}
                 </div>
             </CardContent>
@@ -58,53 +57,37 @@ const EmailTemplate = ({ subject, content, partner, referralLink }: { subject: s
 
 const getTemplates = (transporterType: string) => ({
     handshake: {
-        subject: "The Digital Handshake: [Your Company] Transporter Access",
+        subject: "The Digital Handshake: Optimized Transport Capacity",
         content: `
 Hi [Name],
 
-Inefficiency is a silent tax on your transport business. Logistics Flow is a unified digital ecosystem designed to break the constraints of high operating costs and empty miles. We connect you with a network of vetted suppliers and matching freight opportunities, using collective power to boost your bottom line.
+Inefficiency is a silent tax on your transport business. Logistics Flow is a unified digital ecosystem designed to break the constraints of high operating costs and empty miles.
 
-Before we can send you matching freight loads or group discount offers, we require a "Digital Handshake" to establish a compliant, secure connection and ensure we are POPI-compliant.
+Before we can send you matching freight loads or group discount offers for your [Your Company] fleet, we require a formal "Digital Handshake."
 
 Please take 30 seconds to establish the connection here:
 [Opt-in Link]
 
-By accepting this handshake, you unlock:
-- Access to community-negotiated parts and tire discounts.
-- AI-matched freight load alerts to reduce empty miles.
-- A secure place in our priority communication pipeline.
+By establishing this handshake, you unlock:
+- Capacity Intelligence: Proactive AI alerts for loads that match your empty legs.
+- Funder Visibility: Start building a digital track record for asset finance.
+- Forensic Savings: Access community-negotiated parts and tire discounts.
 
 Best regards,
 
 The Logistics Flow Team
         `
     },
-    intro: {
-        subject: `Reduce Daily Operating Costs for [Your Company]`,
+    efficiency: {
+        subject: `Operating Efficiency: The Intelligence Tier for [Your Company]`,
         content: `
 Hi [Name],
 
-I'm reaching out from Logistics Flow with a simple proposition to help reduce your daily operating costs by leveraging the power of our community network.
+How much do empty miles cost [Your Company] each month?
 
-Take control and join for free: [Sign-up Link]
+For just R100/mo, our Intelligence Membership provides you with the tools to map the entire industrial landscape. Identify freight providers, find specialized suppliers, and connect directly with funders who understood the trucking sector.
 
-Best regards,
-
-[Your Name]
-        `
-    },
-    loads: {
-        subject: `Find More Work and Reduce Empty Miles`,
-        content: `
-Hi [Name],
-
-Following up on my last email, I wanted to focus on how Logistics Flow directly helps [Your Company] find more work and reduce empty miles.
-
-Our platform includes:
-- **AI Freight Matcher:** Our intelligent system connects your available trucks with suitable loads.
-- **Subcontracting Mall:** Find and collaborate with other members who need reliable transporters.
-
-Join for free and see the opportunities: [Sign-up Link]
+Stop operating in the dark. Join the intelligence flow: [Sign-up Link]
 
 Best regards,
 
@@ -115,8 +98,7 @@ Best regards,
 
 const tabs = [
     { value: "handshake", label: "0. Digital Handshake", icon: ShieldCheck },
-    { value: "intro", label: "1. Cost Savings" },
-    { value: "loads", label: "2. Load Matching" },
+    { value: "efficiency", label: "1. Efficiency Pitch", icon: Zap },
 ];
 
 
@@ -133,9 +115,9 @@ export default function TransporterEmails({ partner }: { partner?: any }) {
     }, [partner, baseUrl]);
 
     return (
-        <div className="space-y-8">
-            <Tabs defaultValue="handshake" className="w-full">
-                <TabsList className="h-auto flex-wrap justify-start bg-muted/30">
+        <div className="space-y-8 text-left">
+            <Tabs defaultValue="handshake" className="w-full text-left">
+                <TabsList className="h-auto flex-wrap justify-start bg-muted/30 text-left text-foreground">
                    {tabs.map(tab => (
                        <TabsTrigger key={tab.value} value={tab.value} className="gap-2 text-xs">
                            {tab.icon && <tab.icon className="h-3 w-3" />}
@@ -144,10 +126,10 @@ export default function TransporterEmails({ partner }: { partner?: any }) {
                    ))}
                 </TabsList>
                 {Object.entries(templates).map(([key, t]) => (
-                    <TabsContent key={key} value={key} className="mt-6">
+                    <TabsContent key={key} value={key} className="mt-6 text-left text-foreground">
                         <EmailTemplate 
                             subject={t.subject.replace(/\[Your Company\]/g, partner?.companyName || 'your business')} 
-                            content={t.content.replace(/\[Your Name\]/g, user?.displayName || 'TransConnect Team')} 
+                            content={t.content.replace(/\[Your Name\]/g, user?.displayName || 'Logistics Flow Team')} 
                             partner={partner} 
                             referralLink={referralLink}
                         />

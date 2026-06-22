@@ -1,148 +1,85 @@
 'use client';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Truck, CheckCircle, ShieldCheck, Zap, Users, BarChart3 } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Truck, CheckCircle, ShieldCheck, Zap, Users, BarChart3, Search, Landmark } from "lucide-react";
 import React from "react";
 
 /**
- * Tailored Transporter Offer
- * Dynamically adjusts based on the single-word industry tag.
+ * Enhanced Transporter Offer with Intelligence Focus
  */
 export default function TransporterOffer({ partner }: { partner?: any }) {
     const companyName = partner?.companyName || 'your business';
-    const industryTag = partner?.entryType || 'General';
     
-    const isForwarder = industryTag === 'Forwarder';
-    const isDistribution = industryTag === 'Distribution';
-
-    // 1. Logic for Freight Forwarders
-    if (isForwarder) {
-        return (
-            <div className="space-y-8">
-                <div>
-                    <h1 className="text-3xl font-bold font-headline">The Forwarder Empowerment Offer</h1>
-                    <p className="text-lg text-muted-foreground mt-2">
-                        Logistics Flow is your digital operational backbone for appointing and managing hauliers.
-                    </p>
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-8">
-                    <Card className="flex flex-col border-primary/20 bg-primary/5">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-3">
-                                <Users className="h-6 w-6 text-primary" />
-                                Vetted Capacity Access
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="flex-grow space-y-3">
-                            <li className="flex items-start">
-                                <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-1 flex-shrink-0" />
-                                <span className="text-sm">Access a database of verified hauliers with pre-vetted compliance documents.</span>
-                            </li>
-                            <li className="flex items-start">
-                                <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-1 flex-shrink-0" />
-                                <span className="text-sm">Reduce the risk of 'ghost' transporters and document fraud.</span>
-                            </li>
-                        </CardContent>
-                    </Card>
-
-                    <Card className="flex flex-col">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-3">
-                                <Zap className="h-6 w-6 text-primary" />
-                                Digital Appointment Flow
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="flex-grow space-y-3">
-                            <li className="flex items-start">
-                                <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-1 flex-shrink-0" />
-                                <span className="text-sm">Digitalize your subcontracting process to eliminate manual phone calls and emails.</span>
-                            </li>
-                            <li className="flex items-start">
-                                <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-1 flex-shrink-0" />
-                                <span className="text-sm">Manage BOLs and PODs on a secure digital ledger for instant proof-of-delivery.</span>
-                            </li>
-                        </CardContent>
-                    </Card>
-                </div>
-
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-3">
-                            <ShieldCheck className="h-6 w-6 text-primary" />
-                            Monetize Your Subcontractor Base
-                        </CardTitle>
-                        <CardDescription>How {companyName} earns from the hauliers you appoint.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="text-muted-foreground">
-                        <p>When you onboard your regular hauliers to Logistics Flow, you not only improve their efficiency but also create a new revenue stream for your business. You earn a recurring commission on their membership fees and a share of the platform revenue whenever they use our Malls for tires, parts, or finance.</p>
-                    </CardContent>
-                </Card>
-            </div>
-        );
-    }
-
-    // 2. Logic for Standard Transport / Trucking Companies
     return (
-        <div className="space-y-8">
-            <div>
-                <h1 className="text-3xl font-bold font-headline">The Transport Profitability Offer</h1>
-                <p className="text-lg text-muted-foreground mt-2">
-                    Break the constraints of high operating costs and wasted capacity with our unified haulier tools.
+        <div className="space-y-8 text-left text-foreground">
+            <div className="text-left">
+                <h1 className="text-3xl font-bold font-headline text-left">The Intelligence-Driven Haulier Offer</h1>
+                <p className="text-lg text-muted-foreground mt-2 text-left">
+                    Break the constraints of empty miles and high operating costs with our unified intelligence ecosystem.
                 </p>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-8">
-                <Card className="flex flex-col border-primary/20 bg-primary/5">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-3">
-                            <BarChart3 className="h-6 w-6 text-primary" />
-                            Cost Reduction Engine
+            <div className="grid md:grid-cols-2 gap-8 text-left">
+                <Card className="flex flex-col border-primary/20 bg-primary/5 text-left">
+                    <CardHeader className="text-left">
+                        <CardTitle className="flex items-center gap-3 text-left">
+                            <Search className="h-6 w-6 text-primary" />
+                            Capacity Matching Intelligence
                         </CardTitle>
+                        <CardDescription className="text-left">Maximize vehicle utilization automatically.</CardDescription>
                     </CardHeader>
-                    <CardContent className="flex-grow space-y-3">
-                        <li className="flex items-start">
-                            <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-1 flex-shrink-0" />
-                            <span className="text-sm">Leverage community buying power for deep discounts on tires, fuel, and engine parts.</span>
-                        </li>
-                        <li className="flex items-start">
-                            <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-1 flex-shrink-0" />
-                            <span className="text-sm">Access specialized insurance products tailored for the trucking sector.</span>
-                        </li>
+                    <CardContent className="flex-grow space-y-3 text-left">
+                        <div className="flex items-start gap-3 text-left">
+                            <CheckCircle className="h-5 w-5 text-green-500 mt-1 shrink-0" />
+                            <span className="text-sm">Our AI scans the network to find available loads that match your empty leg routes.</span>
+                        </div>
+                        <div className="flex items-start gap-3 text-left">
+                            <CheckCircle className="h-5 w-5 text-green-500 mt-1 shrink-0" />
+                            <span className="text-sm">Connect with cargo owners directly, bypassing traditional brokerage middle-men.</span>
+                        </div>
                     </CardContent>
                 </Card>
 
-                <Card className="flex flex-col">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-3">
-                            <Truck className="h-6 w-6 text-primary" />
-                            AI Load Matching
+                <Card className="flex flex-col text-left">
+                    <CardHeader className="text-left">
+                        <CardTitle className="flex items-center gap-3 text-left">
+                            <Landmark className="h-6 w-6 text-primary" />
+                            Capital Intelligence
                         </CardTitle>
+                        <CardDescription className="text-left">Real data de-risks your business for funding.</CardDescription>
                     </CardHeader>
-                    <CardContent className="flex-grow space-y-3">
-                        <li className="flex items-start">
-                            <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-1 flex-shrink-0" />
-                            <span className="text-sm">Our AI scans the network to find available loads that match your empty legs.</span>
-                        </li>
-                        <li className="flex items-start">
-                            <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-1 flex-shrink-0" />
-                            <span className="text-sm">Maximize vehicle utilization and eliminate deadhead miles.</span>
-                        </li>
+                    <CardContent className="flex-grow space-y-3 text-left">
+                        <div className="flex items-start gap-3 text-left">
+                            <CheckCircle className="h-5 w-5 text-green-500 mt-1 shrink-0" />
+                            <span className="text-sm">Your operational performance on our platform creates a digital track record.</span>
+                        </div>
+                        <div className="flex items-start gap-3 text-left">
+                            <CheckCircle className="h-5 w-5 text-green-500 mt-1 shrink-0" />
+                            <span className="text-sm font-bold">Use this "Validated Standing" to unlock asset finance and working capital from our 85+ specialized lenders.</span>
+                        </div>
                     </CardContent>
                 </Card>
             </div>
 
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-3">
-                        <Users className="h-6 w-6 text-primary" />
-                        A pathway to Funding
+            <Card className="border-2 border-primary text-left">
+                <CardHeader className="text-left">
+                    <CardTitle className="flex items-center gap-3 text-left">
+                        <BarChart3 className="h-6 w-6 text-primary" />
+                        Forensic Cost Reduction
                     </CardTitle>
-                    <CardDescription>Real data leads to real capital for {companyName}.</CardDescription>
+                    <CardDescription className="text-left">Leverage community buying power to slash overheads.</CardDescription>
                 </CardHeader>
-                <CardContent className="text-muted-foreground">
-                    <p>By operating on our platform, you build a digital track record of performance. We use this data to de-risk your business for our funding partners, helping you secure asset finance and working capital that traditional banks might decline.</p>
+                <CardContent className="text-left">
+                    <p className="text-muted-foreground leading-relaxed text-left">
+                        By joining our member syndicate, you tap into pre-negotiated group rates for tires, fuel, and parts. Our Intelligence engine identifies which members use the same equipment, allowing us to negotiate bulk discounts that independent hauliers could never secure alone.
+                    </p>
                 </CardContent>
+                <CardFooter className="bg-slate-50 border-t p-6 text-left">
+                    <div className="flex items-center gap-3 text-left">
+                        <ShieldCheck className="h-5 w-5 text-primary" />
+                        <p className="text-sm font-bold text-left">Activate "Intelligence Access" for R100/mo to view the full supplier contact registry.</p>
+                    </div>
+                </CardFooter>
             </Card>
         </div>
     );

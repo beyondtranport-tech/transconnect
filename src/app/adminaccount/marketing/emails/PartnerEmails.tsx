@@ -1,8 +1,7 @@
-
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardFooter, CardTitle } from '@/components/ui/card';
-import { Mail, UserCheck, Link as LinkIcon, ShieldCheck } from 'lucide-react';
+import { Mail, UserCheck, Link as LinkIcon, ShieldCheck, Zap } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import React from 'react';
 import { useUser } from '@/firebase';
@@ -25,12 +24,12 @@ const EmailTemplate = ({ subject, content, partner, referralLink }: { subject: s
     }, [content, partner, referralLink]);
 
     return (
-        <Card className="border-none shadow-none bg-transparent">
-            <CardHeader className="px-0">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <CardTitle className="text-lg">Email Subject</CardTitle>
-                        <CardDescription className="font-medium text-foreground select-all">{subject}</CardDescription>
+        <Card className="border-none shadow-none bg-transparent text-left">
+            <CardHeader className="px-0 text-left">
+                <div className="flex items-center justify-between text-left">
+                    <div className="text-left">
+                        <CardTitle className="text-lg text-left text-foreground">Email Subject</CardTitle>
+                        <CardDescription className="font-medium text-foreground select-all text-left">{subject}</CardDescription>
                     </div>
                     {partner && (
                          <div className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5 border border-green-200">
@@ -39,18 +38,18 @@ const EmailTemplate = ({ subject, content, partner, referralLink }: { subject: s
                     )}
                 </div>
             </CardHeader>
-            <CardContent className="px-0">
-                <div className="p-6 bg-white border rounded-md whitespace-pre-wrap font-sans text-sm shadow-inner min-h-[300px]">
+            <CardContent className="px-0 text-left text-foreground">
+                <div className="p-6 bg-white border rounded-md whitespace-pre-wrap font-sans text-sm shadow-inner min-h-[300px] text-left text-foreground">
                     {personalizedContent.trim()}
                 </div>
             </CardContent>
             {partner && (
-                <CardFooter className="px-0 pt-4 border-t mt-4">
-                    <div className="w-full flex items-center justify-between text-xs text-muted-foreground">
-                        <div className="flex items-center gap-4">
-                            <span className="flex items-center gap-1"><LinkIcon className="h-3 w-3"/> Referral ID: <span className="font-mono text-primary font-bold">{partner.id}</span></span>
+                <CardFooter className="px-0 pt-4 border-t mt-4 text-left">
+                    <div className="w-full flex items-center justify-between text-xs text-muted-foreground text-left">
+                        <div className="flex items-center gap-4 text-left">
+                            <span className="flex items-center gap-1 text-left"><LinkIcon className="h-3 w-3"/> Referral ID: <span className="font-mono text-primary font-bold">{partner.id}</span></span>
                         </div>
-                        <span className="italic">Establish the handshake to activate the communication pipeline.</span>
+                        <span className="italic text-left">Establish the handshake to activate the intelligence pipeline.</span>
                     </div>
                 </CardFooter>
             )}
@@ -60,77 +59,42 @@ const EmailTemplate = ({ subject, content, partner, referralLink }: { subject: s
 
 const templates = {
     handshake: {
-        subject: "The Digital Handshake: Connecting with Logistics Flow",
+        subject: "The Digital Handshake: Absolute Industrial Transparency",
         content: `
 Hi [Partner Name],
 
-For too long, the transport industry has been held back by fragmentation and high operating costs. Logistics Flow exists to break these constraints. We have built a unified digital ecosystem that combines collective buying power with AI-driven efficiency to help you move more with less.
+The transport industry has long been held back by an "Information Divide." Large players have the data; smaller hauliers and vendors are left in the dark. Logistics Flow exists to break this constraint.
 
-Before we move into commercial discussions, we believe in a "Digital Handshake" to establish a compliant, secure connection and ensure we are fully aligned with your privacy preferences and the POPI Act.
+Before we provide you with access to our forensic industrial registry or match you with our funding syndicate, we require a formal "Digital Handshake." This establishes a secure, POPI-compliant connection between your business and our industrial brain.
 
-Please take 30 seconds to establish the connection here:
+Establish the connection in 30 seconds here:
 [Opt-in Link]
 
-Establish this foundation now to:
-- Receive matched partnership alerts.
-- Access community-negotiated benefits.
-- Secure your place in our priority communication pipeline.
+Why establish this foundation?
+- Intelligence Access: Unlock direct contacts for 22,000+ industry decision-makers.
+- Synergy Matching: Proactive alerts for load matches and group discounts.
+- Verified Standing: Start building a digital track record for future capital access.
 
 Best regards,
 
 The Logistics Flow Team
         `
     },
-    intro: {
-        subject: "Partnership Opportunity with Logistics Flow",
+    intelligence: {
+        subject: "Mapping the Industry: The Intelligence Advantage",
         content: `
 Dear [Partner Name],
 
-I hope this email finds you well.
+Information is the only true hedge against rising operating costs.
 
-My name is [Your Name], and I'm reaching out from Logistics Flow. We've developed a comprehensive digital ecosystem specifically for the transport industry, designed to solve the key challenges transporters face every day: accessing capital, finding work, and reducing operational costs.
+Logistics Flow gives your business a dedicated "Industrial Intelligence" division for just R100/month. We have mapped the entire South African transport grid, cataloging every haulier, supplier, and lender into a forensic database.
 
-Would you be open to a brief chat next week to explore how a partnership could be mutually beneficial for [Your Company]?
+Sign up now to unlock:
+- Direct E-mail & Mobile numbers for leadership at top firms.
+- AI-powered capacity matching to eliminate empty miles.
+- Instant introductions to our 85+ specialized finance partners.
 
-Best regards,
-
-[Your Name]
-        `
-    },
-    proposal: {
-        subject: "Following Up: The Logistics Flow Partnership Proposal",
-        content: `
-Dear [Partner Name],
-
-Following up on our brief chat, here is a bit more detail on what a partnership with Logistics Flow entails.
-
-What is Logistics Flow?
-
-An all-in-one platform that brings together:
-- A Funding Division: Flexible finance solutions where traditional banks often can't.
-- A Network of Malls: Specialized marketplaces for parts, vehicles, and services with group-negotiated discounts.
-- A Value-Added Marketplace: We provide essential third-party products, like the Mahala Hub for drivers, which offers benefits and rewards.
-- Powerful Tech Tools: Including an AI-powered system to match available trucks with freight loads.
-
-This is a true business partnership where your earnings grow with your network's activity.
-
-I would be delighted to schedule a more detailed call to walk you through the platform and the commission structure.
-
-Best regards,
-
-[Your Name]
-        `
-    },
-    invitation: {
-        subject: "Invite Your Network to Join You on Logistics Flow",
-        content: `
-Hi [Partner Name],
-
-The transport industry thrives on relationships. You already have a network of transporters, suppliers, and contacts that you've built over years. Logistics Flow provides the tools to turn those relationships into a powerful, automated revenue engine.
-
-Your unique referral link is ready: [Referral Link]
-
-Ready to leverage your most valuable asset?
+Access the registry here: [Sign-up Link]
 
 Best regards,
 
@@ -141,9 +105,7 @@ Best regards,
 
 const tabs = [
     { value: "handshake", label: "0. Digital Handshake", icon: ShieldCheck },
-    { value: "intro", label: "1. Intro" },
-    { value: "proposal", label: "2. Proposal" },
-    { value: "invitation", label: "3. Invite Link" },
+    { value: "intelligence", label: "1. The Intelligence Pitch", icon: Zap },
 ];
 
 
@@ -157,9 +119,9 @@ export default function PartnerEmails({ partner }: { partner?: any }) {
     }, [partner, baseUrl]);
 
     return (
-        <div className="space-y-6">
-            <Tabs defaultValue="handshake" className="w-full">
-                <TabsList className="h-auto flex-wrap justify-start bg-muted/30">
+        <div className="space-y-6 text-left">
+            <Tabs defaultValue="handshake" className="w-full text-left">
+                <TabsList className="h-auto flex-wrap justify-start bg-muted/30 text-left">
                    {tabs.map(tab => {
                        const Icon = tab.icon;
                        return (
@@ -171,10 +133,10 @@ export default function PartnerEmails({ partner }: { partner?: any }) {
                    })}
                 </TabsList>
                 {Object.entries(templates).map(([key, t]) => (
-                    <TabsContent key={key} value={key} className="mt-6">
+                    <TabsContent key={key} value={key} className="mt-6 text-left">
                         <EmailTemplate 
                             subject={t.subject} 
-                            content={t.content.replace(/\[Your Name\]/g, user?.displayName || 'TransConnect Team')} 
+                            content={t.content.replace(/\[Your Name\]/g, user?.displayName || 'Logistics Flow Team')} 
                             partner={partner} 
                             referralLink={referralLink}
                         />
