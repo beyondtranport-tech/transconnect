@@ -6,7 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Loader2, ExternalLink, Send, ChevronLeft, ChevronRight, CheckCircle2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
-import { copyHtmlToClipboard } from '@/lib/utils';
+import { copyHtmlToClipboard, cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 // Content components located in content/ sub-folder
 import DigitalHandshake from './content/DigitalHandshake';
@@ -33,7 +35,7 @@ import DeveloperEmails from './emails/DeveloperEmails';
 interface EngageDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  partners: any[]; // Now accepts an array for wizard mode
+  partners: any[]; // Array for wizard mode
   initialIndex?: number;
   audience: "partners" | "isa" | "transporters" | "suppliers" | "investors" | "developers" | "drivers" | "finance";
   onEngageSuccess?: () => void;
@@ -74,7 +76,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
   const audienceLabel = useMemo(() => {
     if (audience === 'isa') return 'ISA Agent';
     if (audience === 'suppliers') return 'Supplier';
-    if (audience === 'transporters') return currentPartner?.entryType || 'Transporter';
+    if (audience === 'transporters') return currentPartner?.industrial_category || 'Transporter';
     if (audience === 'drivers') return 'Professional Driver';
     if (audience === 'finance') return 'Finance Partner';
     return audience.slice(0, -1).charAt(0).toUpperCase() + audience.slice(1, -1);
@@ -125,7 +127,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
             partnerId: currentPartner.id,
             type: 'Email',
             subject: subjectLabel,
-            notes: `System generated engagement for ${currentPartner.firstName || ''} (${currentPartner.entryType || 'General'}).`,
+            notes: `System generated engagement for ${currentPartner.firstName || ''} (${currentPartner.industrial_category || 'General'}).`,
             collection: (!currentPartner.type || currentPartner.type === 'lead') ? 'leads' : 'partners'
         });
 
