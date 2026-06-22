@@ -31,7 +31,14 @@ export default function CompanyProfile({ audience, partner }: { audience: string
             <div style={{ margin: '0 0 14pt 0', padding: '12pt', border: '1px solid #eeeeee', borderRadius: '8pt', backgroundColor: '#f9f9f9', textAlign: 'center' }}>
                 <p style={{ margin: '0 0 7pt 0', fontWeight: 'bold' }}>Visual Walkthrough:</p>
                 <p style={{ margin: '0 0 7pt 0', fontSize: '10pt' }}>See how we are digitizing the South African transport grid.</p>
-                <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" style={{ color: '#0000FF', fontWeight: 'bold', textDecoration: 'underline' }}>Watch the 60-Second Ecosystem Overview</a>
+                <a 
+                    href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    style={{ color: '#0000FF', fontWeight: 'bold', textDecoration: 'underline' }}
+                >
+                    Watch the 60-Second Ecosystem Overview
+                </a>
             </div>
 
             <p style={{ margin: '0 0 7pt 0', fontWeight: 'bold' }}>Our Pillars of Flow</p>

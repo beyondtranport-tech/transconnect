@@ -53,7 +53,14 @@ export default function DigitalHandshake({ partner, audience }: { partner?: any,
             <p style={{ margin: '0 0 14pt 0' }}>
                 Before we proceed, please view this 60-second brief on how the ecosystem functions:
                 <br />
-                <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" style={{ color: '#0000FF', textDecoration: 'underline' }}>Watch: The Logistics Flow Intelligence Briefing</a>
+                <a 
+                    href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    style={{ color: '#0000FF', textDecoration: 'underline' }}
+                >
+                    Watch: The Logistics Flow Intelligence Briefing
+                </a>
             </p>
 
             <p style={{ margin: '0 0 14pt 0' }}>
