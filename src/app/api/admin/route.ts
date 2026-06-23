@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue, QueryDocumentSnapshot } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -56,8 +55,8 @@ export async function POST(req: NextRequest) {
 
         switch (action) {
             /**
-             * UNIFIED REGISTRY SEARCH
-             * Merges leads and partners to provide a single source of truth for marketing.
+             * HIGH-EFFICIENCY REGISTRY SEARCH
+             * Uses targeted queries when category or search terms are provided to avoid capping issues.
              */
             case 'searchRegistry': {
                 const { 
@@ -70,18 +69,33 @@ export async function POST(req: NextRequest) {
                     outreachFilter 
                 } = payload;
                 
-                // Fetch latest 500 from both for immediate dashboard responsiveness
-                const [partnersSnap, leadsSnap] = await Promise.all([
-                    db.collection('partners').limit(500).get(),
-                    db.collection('leads').limit(500).get()
-                ]);
+                let partnersPromise;
+                let leadsPromise;
+
+                // 1. If category is specified, perform targeted queries
+                if (category && category !== 'all') {
+                    partnersPromise = db.collection('partners')
+                        .where('industrial_category', '==', category)
+                        .get();
+                    leadsPromise = db.collection('leads')
+                        .where('industrial_category', '==', category)
+                        .get();
+                } else {
+                    // Fallback to recent items if no category is picked
+                    partnersPromise = db.collection('partners').orderBy('updatedAt', 'desc').limit(1000).get();
+                    leadsPromise = db.collection('leads').orderBy('updatedAt', 'desc').limit(1000).get();
+                }
+
+                const [partnersSnap, leadsSnap] = await Promise.all([partnersPromise, leadsPromise]);
 
                 let data = [
                     ...partnersSnap.docs.map(d => ({ id: d.id, source: 'partners', ...serializeTimestamps(d.data()) })),
                     ...leadsSnap.docs.map(d => ({ id: d.id, source: 'leads', ...serializeTimestamps(d.data()) }))
                 ];
 
-                // 1. Audience / Type Filter
+                // 2. Client-side filtration for complex variables (type, text search, integrity)
+                
+                // Audience / Type Filter
                 if (type && type !== 'all' && type !== 'lead') {
                     const lowType = type.toLowerCase();
                     data = data.filter(p => 
@@ -92,16 +106,7 @@ export async function POST(req: NextRequest) {
                     );
                 }
 
-                // 2. Industrial Category Filter
-                if (category && category !== 'all') {
-                    const lowCat = category.toLowerCase();
-                    data = data.filter(p => 
-                        (p.industrial_category?.toLowerCase() === lowCat) || 
-                        (p.category?.toLowerCase() === lowCat)
-                    );
-                }
-
-                // 3. Text Search
+                // Text Search
                 if (searchCompany) {
                     const low = searchCompany.toLowerCase();
                     data = data.filter(item => (item.companyName || item.company_name || '').toLowerCase().includes(low));
@@ -112,11 +117,15 @@ export async function POST(req: NextRequest) {
                     data = data.filter(item => (item.minedServiceWording || item.notes || '').toLowerCase().includes(low));
                 }
 
-                // 4. Data Integrity Filters
+                // Data Integrity Filters
                 if (integrityFilter && integrityFilter !== 'all') {
-                    if (integrityFilter === 'has-email') data = data.filter(p => !!p.email);
-                    else if (integrityFilter === 'no-email') data = data.filter(p => !p.email);
-                    else if (integrityFilter === 'has-website') data = data.filter(p => !!p.website || !!p.website_url);
+                    if (integrityFilter === 'has-email') {
+                        data = data.filter(p => !!p.email && p.email.includes('@'));
+                    } else if (integrityFilter === 'no-email') {
+                        data = data.filter(p => !p.email);
+                    } else if (integrityFilter === 'has-website') {
+                        data = data.filter(p => !!p.website || !!p.website_url);
+                    }
                 }
 
                 return NextResponse.json({ success: true, data: data.slice(0, 1000) });
@@ -124,7 +133,6 @@ export async function POST(req: NextRequest) {
 
             /**
              * UNIFIED COMMUNICATIONS FEED
-             * Pulls interaction logs from all entities matching the audience type.
              */
             case 'getAudienceCommunications': {
                 const { type } = payload;
@@ -132,7 +140,6 @@ export async function POST(req: NextRequest) {
                 
                 if (commsSnap.empty) return NextResponse.json({ success: true, data: [] });
 
-                // Find unique parents
                 const parentIds = [...new Set(commsSnap.docs.map(d => d.ref.parent.parent!.id))];
                 const parentIdChunks = chunkArray(parentIds, 30);
                 const entities: any[] = [];
@@ -151,8 +158,6 @@ export async function POST(req: NextRequest) {
                 const data = commsSnap.docs.map(d => {
                     const entId = d.ref.parent.parent!.id;
                     const entity = entityMap.get(entId);
-                    
-                    // Intelligent Role Mapping
                     const partnerType = entity?.type || entity?.role || entity?.industrial_category || 'lead';
 
                     return {
@@ -164,7 +169,6 @@ export async function POST(req: NextRequest) {
                     };
                 });
 
-                // Filter by audience if requested
                 const filtered = type && type !== 'all' 
                     ? data.filter(c => {
                         const lowType = type.toLowerCase();
@@ -231,7 +235,6 @@ export async function POST(req: NextRequest) {
 
             /**
              * ROBUST COMMUNICATION LOGGING
-             * Detects source collection automatically to prevent orphaned logs.
              */
             case 'logCommunication': {
                 const { partnerId, type, subject, notes, collection: collName } = payload;
@@ -263,58 +266,6 @@ export async function POST(req: NextRequest) {
 
                 await batch.commit();
                 return NextResponse.json({ success: true });
-            }
-
-            case 'logForensicInitiated': {
-                const { partnerId, isLead } = payload;
-                const coll = isLead ? 'leads' : 'partners';
-                await db.collection(coll).doc(partnerId).update({
-                    researchStatus: 'searching',
-                    lastForensicAt: FieldValue.serverTimestamp(),
-                    updatedAt: FieldValue.serverTimestamp()
-                });
-                return NextResponse.json({ success: true });
-            }
-
-            case 'bulkLogForensicInitiated': {
-                const { leadIds, type } = payload;
-                const coll = type === 'lead' ? 'leads' : 'partners';
-                const chunks = chunkArray(leadIds, 400);
-                
-                for (const chunk of chunks) {
-                    const batch = db.batch();
-                    chunk.forEach((id: string) => {
-                        batch.update(db.collection(coll).doc(id), {
-                            researchStatus: 'searching',
-                            lastForensicAt: FieldValue.serverTimestamp(),
-                            updatedAt: FieldValue.serverTimestamp()
-                        });
-                    });
-                    await batch.commit();
-                }
-                return NextResponse.json({ success: true });
-            }
-
-            case 'bulkSavePartners': {
-                const { partners, type } = payload;
-                const coll = type === 'lead' ? 'leads' : 'partners';
-                const chunks = chunkArray(partners, 400);
-                
-                for (const chunk of chunks) {
-                    const batch = db.batch();
-                    chunk.forEach((p: any) => {
-                        const docRef = db.collection(coll).doc(p.record_id || p.id || db.collection(coll).doc().id);
-                        batch.set(docRef, {
-                            ...p,
-                            status: p.status || 'new',
-                            type: type,
-                            createdAt: FieldValue.serverTimestamp(),
-                            updatedAt: FieldValue.serverTimestamp()
-                        }, { merge: true });
-                    });
-                    await batch.commit();
-                }
-                return NextResponse.json({ success: true, count: partners.length });
             }
 
             case 'getAuditLogs': {

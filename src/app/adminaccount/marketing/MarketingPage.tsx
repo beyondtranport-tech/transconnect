@@ -1,15 +1,14 @@
-
 'use client';
 
 import * as React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { BookOpen, Loader2, ClipboardCopy, SearchCode, Target, Users, LayoutDashboard, Send, Sparkles, Landmark, DollarSign, Download, MessageSquare, ClipboardList, Search, RefreshCcw } from 'lucide-react';
-import { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
-import { copyHtmlToClipboard, cn, downloadDataAsCSV } from '@/lib/utils';
+import { copyHtmlToClipboard, cn } from '@/lib/utils';
 import {
   Dialog,
   DialogContent,
@@ -204,7 +203,7 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
   const [partners, setPartners] = useState<any[]>([]);
   const [isLoadingPartners, setIsLoadingPartners] = useState(true);
 
-  // Sync tab with URL
+  // Sync state with URL when parameter changes
   useEffect(() => {
     if (subview && subview !== activeTab) {
         setActiveTab(subview);
