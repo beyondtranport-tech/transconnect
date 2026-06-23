@@ -71,7 +71,6 @@ const AudienceOversightTable = dynamic(() => import('./AudienceOversightTable'),
 import SupplierPitch from '@/app/adminaccount/supplier-pitch';
 import DiscoveryEngine from './discovery-engine';
 import FinanceDiscoveryEngine from './finance-discovery';
-import InvestorDiscoveryEngine from './investor-discovery';
 import TransporterDiscoveryEngine from './transporter-discovery';
 import DriverDiscoveryEngine from './driver-discovery';
 
@@ -82,7 +81,7 @@ const audienceConfig: Record<string, any> = {
     transporters: { title: 'Transporters', icon: Send, Offer: TransporterOffer, Emails: TransporterEmails, Management: TransporterManagement, Discovery: TransporterDiscoveryEngine },
     finance: { title: 'Finance Companies', icon: Landmark, Offer: InvestorOffer, Emails: InvestorEmails, Management: null, Discovery: FinanceDiscoveryEngine },
     drivers: { title: 'Drivers', icon: Users, Offer: PartnerOffer, Emails: PartnerEmails, Management: null, Discovery: DriverDiscoveryEngine },
-    investors: { title: 'App Launch Investors', icon: DollarSign, Offer: InvestorOffer, Emails: InvestorEmails, Management: InvestorManagement, Discovery: InvestorDiscoveryEngine },
+    investors: { title: 'App Launch Investors', icon: DollarSign, Offer: InvestorOffer, Emails: InvestorEmails, Management: InvestorManagement },
     developers: { title: 'Developers', icon: LayoutDashboard, Offer: DeveloperOffer, Emails: DeveloperEmails, Management: DeveloperManagement },
 };
 
@@ -202,7 +201,7 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
   
   const [isLogDialogOpen, setIsLogDialogOpen] = useState(false);
   const [partners, setPartners] = useState<any[]>([]);
-  const [isLoadingPartners, setIsLoadingPartners] = useState(true);
+  const [isLoadingPartners, setIsLoadingPartners] = useState(false);
 
   // Sync state with URL when parameter changes
   useEffect(() => {
@@ -218,7 +217,9 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   }
 
-  const fetchPartners = useCallback(async () => {
+  const fetchPartnersForLogging = useCallback(async () => {
+    if (!Management || isLoadingPartners) return;
+    
     setIsLoadingPartners(true);
     try {
         const token = await getClientSideAuthToken();
@@ -234,9 +235,14 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
     } finally {
         setIsLoadingPartners(false);
     }
-  }, [audience]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [audience, Management]);
 
-  useEffect(() => { fetchPartners(); }, [fetchPartners]);
+  useEffect(() => { 
+    if (isLogDialogOpen && partners.length === 0) {
+        fetchPartnersForLogging(); 
+    }
+  }, [isLogDialogOpen, partners.length, fetchPartnersForLogging]);
 
   const handleLogAndCopy = async (logData: any) => {
     try {
@@ -291,7 +297,7 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
                     </Button>
                 )}
                 {isContentTab && (
-                    <Button variant="outline" onClick={() => setIsLogDialogOpen(true)} disabled={isLoadingPartners || (partners.length === 0)}>
+                    <Button variant="outline" onClick={() => setIsLogDialogOpen(true)} disabled={isLoadingPartners}>
                         <ClipboardCopy className="mr-2 h-4 w-4" /> Log & Copy Content
                     </Button>
                 )}

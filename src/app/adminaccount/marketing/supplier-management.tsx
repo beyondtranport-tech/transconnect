@@ -186,6 +186,7 @@ export default function SupplierManagement() {
   const [outreachFilter, setOutreachFilter] = useState('all');
 
   const fetchData = useCallback(async () => {
+    if (isLoading) return;
     setIsLoading(true);
     try {
       const token = await getClientSideAuthToken();
@@ -210,11 +211,12 @@ export default function SupplierManagement() {
     } finally {
       setIsLoading(false);
     }
-  }, [searchCompany, searchKeyword, searchTag, categoryFilter, integrityFilter, outreachFilter, toast]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchCompany, searchKeyword, searchTag, categoryFilter, integrityFilter, outreachFilter]);
 
   useEffect(() => { 
     if (hasLoaded) fetchData(); 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [integrityFilter, outreachFilter, statusFilter, assigneeFilter]);
 
   const filteredRecords = useMemo(() => {
@@ -479,7 +481,7 @@ export default function SupplierManagement() {
                             <div className="space-y-2 text-left">
                                 <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Integrity</Label>
                                 <Select value={integrityFilter} onValueChange={setIntegrityFilter}>
-                                    <SelectTrigger className="bg-white"><SelectValue /></SelectTrigger>
+                                    <SelectTrigger className="bg-white"><SelectValue placeholder="All" /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">All</SelectItem>
                                         <SelectItem value="has-email">Has Email</SelectItem>

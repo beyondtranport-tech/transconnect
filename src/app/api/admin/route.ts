@@ -56,8 +56,8 @@ export async function POST(req: NextRequest) {
         switch (action) {
             /**
              * TARGETED REGISTRY SCAN
-             * Replaces the "Capped Scan" with a "Variable Scan".
-             * No data is loaded until a search term, category, or filter is provided.
+             * Variable Scan only retrieves data when specific criteria are met.
+             * Returns 100 results per query to protect Firestore Quota.
              */
             case 'searchRegistry': {
                 const { 
@@ -84,14 +84,9 @@ export async function POST(req: NextRequest) {
                     leadsQuery = leadsQuery.where('industrial_category', '==', category);
                 }
 
-                // If no filters provided, we don't return 9000 records (prevents 429)
-                const isSearching = !!(term || searchCompany || searchKeyword || searchTag || (category && category !== 'all'));
-                
-                if (!isSearching) {
-                    // Default view: latest 100 to show activity
-                    partnersQuery = partnersQuery.orderBy('updatedAt', 'desc').limit(100);
-                    leadsQuery = leadsQuery.orderBy('updatedAt', 'desc').limit(100);
-                }
+                // Enforce limit of 100 to prevent quota exhaustion (429)
+                partnersQuery = partnersQuery.orderBy('updatedAt', 'desc').limit(100);
+                leadsQuery = leadsQuery.orderBy('updatedAt', 'desc').limit(100);
 
                 const [pSnap, lSnap] = await Promise.all([partnersQuery.get(), leadsQuery.get()]);
 
@@ -100,7 +95,7 @@ export async function POST(req: NextRequest) {
                     ...lSnap.docs.map(d => ({ id: d.id, source: 'leads', ...serializeTimestamps(d.data()) }))
                 ];
 
-                // Perform normalization of keys (handle companyName vs company_name etc)
+                // Perform normalization of keys for consistent UI filtering
                 data = data.map(item => ({
                     ...item,
                     companyName: item.companyName || item.company_name || item.trading_name || '',
@@ -130,7 +125,7 @@ export async function POST(req: NextRequest) {
                 if (integrityFilter === 'no-email') data = data.filter(p => !p.email);
                 if (outreachFilter && outreachFilter !== 'all') data = data.filter(p => p.lastOutreachSubject === outreachFilter);
 
-                return NextResponse.json({ success: true, data: data.slice(0, 500) });
+                return NextResponse.json({ success: true, data: data });
             }
 
             /**
@@ -171,7 +166,7 @@ export async function POST(req: NextRequest) {
             }
 
             case 'getAudienceCommunications': {
-                const commsSnap = await db.collectionGroup('communications').orderBy('timestamp', 'desc').limit(200).get();
+                const commsSnap = await db.collectionGroup('communications').orderBy('timestamp', 'desc').limit(100).get();
                 const entities: any[] = [];
                 const parentIds = [...new Set(commsSnap.docs.map(d => d.ref.parent.parent!.id))];
                 
@@ -203,7 +198,7 @@ export async function POST(req: NextRequest) {
             }
 
             case 'getAuditLogs': {
-                const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(100).get();
+                const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(50).get();
                 return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
             }
 
