@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -9,7 +10,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, Truck, Edit, Trash2, Send, Download, Save, Search, Filter, Users, Zap, Globe, RefreshCcw, Database, Upload, Copy, Tag, AlertTriangle, CheckCircle, Sparkles, RotateCcw } from 'lucide-react';
+import { Loader2, PlusCircle, Truck, Edit, Trash2, Send, Download, Save, Search, Filter, Users, Zap, Globe, RefreshCcw, Database, Upload, Copy, Tag, AlertTriangle, CheckCircle, Sparkles, RotateCcw, UserCheck } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -288,13 +289,19 @@ export default function TransporterManagement() {
     { accessorKey: 'mobile', header: 'Mobile' },
     { accessorKey: 'email', header: 'Email' },
     { 
-        header: 'Outreach',
+        header: 'Outreach & Result',
         cell: ({ row }) => {
             if (!row.original.lastOutreachSubject) return <span className="text-[10px] text-muted-foreground italic text-left">None</span>;
             return (
                 <div className="flex flex-col text-left">
                     <Badge variant="outline" className="text-[9px] h-4 border-primary/20 text-primary uppercase font-bold truncate max-w-[100px]">{row.original.lastOutreachSubject}</Badge>
                     <span className="text-[8px] text-muted-foreground mt-0.5">{formatDateSafe(row.original.lastOutreachAt, "dd/MM")}</span>
+                    {row.original.lastOpenedAt && (
+                        <div className="flex items-center gap-1 text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100 mt-1 w-fit">
+                            <UserCheck className="h-2.5 w-2.5" />
+                            Read {formatDateSafe(row.original.lastOpenedAt, "dd/MM")}
+                        </div>
+                    )}
                 </div>
             );
         }
@@ -346,7 +353,7 @@ export default function TransporterManagement() {
       
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
         <AlertDialogContent className="text-left text-foreground">
-          <AlertDialogHeader><AlertDialogTitle>Delete Record(s)?</AlertDialogTitle><AlertDialogDescription>Delete Selected?</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Delete Record(s)?</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={selectedIds.length > 0 ? handleDeleteBatch : async () => {
@@ -391,7 +398,7 @@ export default function TransporterManagement() {
                             <SelectContent>
                                 <SelectItem value="all">All Stages</SelectItem>
                                 <SelectItem value="Digital Handshake">Step 0: Handshake</SelectItem>
-                                <SelectItem value="Company Profile">Step 1: Profile</SelectItem>
+                                <SelectItem value="Company Profile">Step 1: Profile sent</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
@@ -419,6 +426,10 @@ export default function TransporterManagement() {
                                 </Button>
                             </>
                         )}
+                        <div className="relative w-64 text-left text-foreground">
+                            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <Input placeholder="Search criteria..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8 bg-white" />
+                        </div>
                         <Button variant="outline" onClick={handleExport} disabled={isLoading} className="text-foreground">
                             <Download className="mr-2 h-4 w-4" /> Export Filtered
                         </Button>
@@ -429,7 +440,7 @@ export default function TransporterManagement() {
 
                 <Card className="border-primary/10 shadow-sm overflow-hidden text-left text-foreground">
                     <CardContent className="pt-6 text-left text-foreground">
-                        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
+                        <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
                             <div className="md:col-span-2 space-y-2 text-left">
                                 <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Search className="h-3 w-3"/> Forensic Search</Label>
                                 <div className="flex gap-2 text-left text-foreground">

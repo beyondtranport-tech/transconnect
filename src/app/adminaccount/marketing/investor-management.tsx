@@ -37,7 +37,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
-import { Loader2, PlusCircle, DollarSign, Edit, Trash2, Send, Globe, Search, Download, Save, Filter, Users } from 'lucide-react';
+import { Loader2, PlusCircle, DollarSign, Edit, Trash2, Send, Globe, Search, Download, Save, Filter, Users, UserCheck } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DataTable } from '@/components/ui/data-table';
@@ -241,6 +241,24 @@ export default function InvestorManagement() {
     { accessorKey: 'phone', header: 'Landline' },
     { accessorKey: 'mobile', header: 'Mobile' },
     { accessorKey: 'email', header: 'Email' },
+    { 
+        header: 'Outreach & Result',
+        cell: ({ row }) => {
+            if (!row.original.lastOutreachSubject) return <span className="text-[10px] text-muted-foreground italic text-left">None</span>;
+            return (
+                <div className="flex flex-col text-left">
+                    <Badge variant="outline" className="text-[9px] h-4 border-primary/20 text-primary uppercase font-bold truncate max-w-[100px]">{row.original.lastOutreachSubject}</Badge>
+                    <span className="text-[8px] text-muted-foreground mt-0.5">{formatDateSafe(row.original.lastOutreachAt, "dd/MM")}</span>
+                    {row.original.lastOpenedAt && (
+                        <div className="flex items-center gap-1 text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100 mt-1 w-fit">
+                            <UserCheck className="h-2.5 w-2.5" />
+                            Read {formatDateSafe(row.original.lastOpenedAt, "dd/MM")}
+                        </div>
+                    )}
+                </div>
+            );
+        }
+    },
     { accessorKey: 'status', header: 'Status', cell: ({row}) => <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge>},
     { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
       <div className="flex justify-end items-center gap-1 text-left text-foreground">
@@ -257,7 +275,7 @@ export default function InvestorManagement() {
 
   return (
     <div className="space-y-6 text-left text-foreground">
-      <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o: boolean) => !o && setDialog({ type: null })} partner={dialog.data} audience="investors" onEngageSuccess={fetchData} />
+      <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o: boolean) => !o && setDialog({ type: null })} partners={[dialog.data]} audience="investors" onEngageSuccess={fetchData} />
       <InvestorDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o: boolean) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={fetchData} />
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o: boolean) => !o && setDialog({ type: null })}>
         <AlertDialogContent>
@@ -269,7 +287,7 @@ export default function InvestorManagement() {
         </AlertDialogContent>
       </AlertDialog>
       
-      <div className="space-y-6 text-left">
+      <div className="space-y-6 text-left text-foreground">
         <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left text-foreground">
           <div className="text-left text-foreground"><CardTitle className="flex items-center gap-2 text-left text-foreground"><DollarSign /> App Launch Investors</CardTitle><CardDescription className="text-left text-foreground">Registry view ({partners.length} records).</CardDescription></div>
           <div className="flex gap-2 text-left">

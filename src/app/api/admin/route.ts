@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue, QueryDocumentSnapshot } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -57,6 +58,7 @@ export async function POST(req: NextRequest) {
             /**
              * HIGH-EFFICIENCY REGISTRY SEARCH
              * Normalized for Lead and Partner data keys.
+             * Enhanced for Category Deep-Scans.
              */
             case 'searchRegistry': {
                 const { 
@@ -72,7 +74,9 @@ export async function POST(req: NextRequest) {
                 let partnersPromise;
                 let leadsPromise;
 
+                // PERFORMANCE OPTIMIZATION: If a category is picked, we perform targeted scans
                 if (category && category !== 'all') {
+                    // Search in both common field names used by leads and partners
                     partnersPromise = db.collection('partners').where('industrial_category', '==', category).get();
                     leadsPromise = db.collection('leads').where('industrial_category', '==', category).get();
                 } else {
@@ -123,7 +127,12 @@ export async function POST(req: NextRequest) {
                     );
                 }
 
-                // Text Search
+                // 3. Fallback Category Filter (In-code for records with 'category' instead of 'industrial_category')
+                if (category && category !== 'all') {
+                    data = data.filter(p => (p.industrial_category === category || p.category === category));
+                }
+
+                // 4. Text Search
                 if (searchCompany) {
                     const low = searchCompany.toLowerCase();
                     data = data.filter(item => (item.companyName || '').toLowerCase().includes(low));
@@ -134,7 +143,7 @@ export async function POST(req: NextRequest) {
                     data = data.filter(item => (item.minedServiceWording || item.notes || '').toLowerCase().includes(low));
                 }
 
-                // Data Integrity Filters (Using normalized keys)
+                // 5. Data Integrity Filters (Using normalized keys)
                 if (integrityFilter && integrityFilter !== 'all') {
                     if (integrityFilter === 'has-email') {
                         data = data.filter(p => !!p.email && p.email.includes('@'));
