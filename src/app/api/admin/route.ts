@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
         switch (action) {
             /**
              * HIGH-EFFICIENCY REGISTRY SEARCH
-             * Uses targeted queries when category or search terms are provided to avoid capping issues.
+             * Normalized for Lead and Partner data keys.
              */
             case 'searchRegistry': {
                 const { 
@@ -72,30 +72,47 @@ export async function POST(req: NextRequest) {
                 let partnersPromise;
                 let leadsPromise;
 
-                // 1. If category is specified, perform targeted queries
                 if (category && category !== 'all') {
-                    partnersPromise = db.collection('partners')
-                        .where('industrial_category', '==', category)
-                        .get();
-                    leadsPromise = db.collection('leads')
-                        .where('industrial_category', '==', category)
-                        .get();
+                    partnersPromise = db.collection('partners').where('industrial_category', '==', category).get();
+                    leadsPromise = db.collection('leads').where('industrial_category', '==', category).get();
                 } else {
-                    // Fallback to recent items if no category is picked
                     partnersPromise = db.collection('partners').orderBy('updatedAt', 'desc').limit(1000).get();
                     leadsPromise = db.collection('leads').orderBy('updatedAt', 'desc').limit(1000).get();
                 }
 
                 const [partnersSnap, leadsSnap] = await Promise.all([partnersPromise, leadsPromise]);
 
+                // Normalize data structures so UI components use consistent keys
                 let data = [
-                    ...partnersSnap.docs.map(d => ({ id: d.id, source: 'partners', ...serializeTimestamps(d.data()) })),
-                    ...leadsSnap.docs.map(d => ({ id: d.id, source: 'leads', ...serializeTimestamps(d.data()) }))
+                    ...partnersSnap.docs.map(d => {
+                        const raw = d.data();
+                        return { 
+                            id: d.id, 
+                            source: 'partners', 
+                            email: raw.email || raw.email_address || '',
+                            phone: raw.phone || raw.telephone_number || '',
+                            mobile: raw.mobile || raw.registry_line || '',
+                            companyName: raw.companyName || raw.company_name || raw.trading_name || '',
+                            contactPerson: raw.contactPerson || raw.contact_person || '',
+                            ...serializeTimestamps(raw) 
+                        };
+                    }),
+                    ...leadsSnap.docs.map(d => {
+                        const raw = d.data();
+                        return { 
+                            id: d.id, 
+                            source: 'leads', 
+                            email: raw.email || raw.email_address || '',
+                            phone: raw.phone || raw.telephone_number || '',
+                            mobile: raw.mobile || raw.registry_line || '',
+                            companyName: raw.companyName || raw.company_name || raw.trading_name || '',
+                            contactPerson: raw.contactPerson || raw.contact_person || '',
+                            ...serializeTimestamps(raw) 
+                        };
+                    })
                 ];
 
-                // 2. Client-side filtration for complex variables (type, text search, integrity)
-                
-                // Audience / Type Filter
+                // 2. Audience / Type Filter
                 if (type && type !== 'all' && type !== 'lead') {
                     const lowType = type.toLowerCase();
                     data = data.filter(p => 
@@ -109,7 +126,7 @@ export async function POST(req: NextRequest) {
                 // Text Search
                 if (searchCompany) {
                     const low = searchCompany.toLowerCase();
-                    data = data.filter(item => (item.companyName || item.company_name || '').toLowerCase().includes(low));
+                    data = data.filter(item => (item.companyName || '').toLowerCase().includes(low));
                 }
                 
                 if (searchKeyword) {
@@ -117,7 +134,7 @@ export async function POST(req: NextRequest) {
                     data = data.filter(item => (item.minedServiceWording || item.notes || '').toLowerCase().includes(low));
                 }
 
-                // Data Integrity Filters
+                // Data Integrity Filters (Using normalized keys)
                 if (integrityFilter && integrityFilter !== 'all') {
                     if (integrityFilter === 'has-email') {
                         data = data.filter(p => !!p.email && p.email.includes('@'));
