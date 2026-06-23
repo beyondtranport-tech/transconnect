@@ -151,7 +151,6 @@ function LogAndCopyDialog({ open, onOpenChange, partners, isLoadingPartners, act
                                         {partners.map((p: any) => (
                                             <SelectItem key={p.id} value={p.id}>
                                                 {p.companyName || p.contactPerson || `${p.firstName || ''} ${p.lastName || ''}`.trim() || 'Unknown'} 
-                                                ({p.source || 'Registry'})
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
@@ -226,7 +225,6 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
         if (!token) return;
         const apiType = audience === 'isa' ? 'isa' : (audience === 'finance' ? 'finance' : (audience === 'drivers' ? 'driver' : audience.slice(0, -1)));
         
-        // Fetch unified partners/leads
         const result = await performAdminAction(token, 'getPartnersByType', { 
             type: apiType
         });
