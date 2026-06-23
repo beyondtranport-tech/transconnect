@@ -6,6 +6,10 @@ import { getAdminApp } from '@/lib/firebase-admin';
 
 export const dynamic = 'force-dynamic';
 
+/**
+ * LOGGING HELPER
+ * Serializes Firestore Timestamps into ISO strings for client consumption.
+ */
 function serializeTimestamps(docData: any): any {
     if (!docData) return docData;
     if (docData instanceof Timestamp) {
@@ -41,6 +45,7 @@ export async function POST(req: NextRequest) {
         const adminAuth = getAuth(app);
         const decodedToken = await adminAuth.verifyIdToken(token);
         
+        // Admin authorization
         const isAdmin = decodedToken.email === 'beyondtransport@gmail.com' || decodedToken.email === 'mkoton100@gmail.com';
         if (!isAdmin) throw new Error("Forbidden: Admin access required.");
 
@@ -50,6 +55,10 @@ export async function POST(req: NextRequest) {
         const db = getFirestore(app);
 
         switch (action) {
+            /**
+             * UNIFIED REGISTRY SEARCH
+             * Merges leads and partners to provide a single source of truth for marketing.
+             */
             case 'searchRegistry': {
                 const { 
                     searchCompany, 
@@ -61,6 +70,7 @@ export async function POST(req: NextRequest) {
                     outreachFilter 
                 } = payload;
                 
+                // Fetch latest 500 from both for immediate dashboard responsiveness
                 const [partnersSnap, leadsSnap] = await Promise.all([
                     db.collection('partners').limit(500).get(),
                     db.collection('leads').limit(500).get()
@@ -71,18 +81,27 @@ export async function POST(req: NextRequest) {
                     ...leadsSnap.docs.map(d => ({ id: d.id, source: 'leads', ...serializeTimestamps(d.data()) }))
                 ];
 
+                // 1. Audience / Type Filter
                 if (type && type !== 'all' && type !== 'lead') {
                     const lowType = type.toLowerCase();
                     data = data.filter(p => 
                         (p.type?.toLowerCase() === lowType) || 
                         (p.role?.toLowerCase() === lowType) ||
-                        (p.source === 'leads' && (p.industrial_category?.toLowerCase().includes(lowType) || p.category?.toLowerCase().includes(lowType)))
+                        (p.industrial_category?.toLowerCase().includes(lowType)) ||
+                        (p.category?.toLowerCase().includes(lowType))
                     );
                 }
+
+                // 2. Industrial Category Filter
                 if (category && category !== 'all') {
-                    data = data.filter(p => p.industrial_category === category || p.category === category);
+                    const lowCat = category.toLowerCase();
+                    data = data.filter(p => 
+                        (p.industrial_category?.toLowerCase() === lowCat) || 
+                        (p.category?.toLowerCase() === lowCat)
+                    );
                 }
 
+                // 3. Text Search
                 if (searchCompany) {
                     const low = searchCompany.toLowerCase();
                     data = data.filter(item => (item.companyName || item.company_name || '').toLowerCase().includes(low));
@@ -93,21 +112,27 @@ export async function POST(req: NextRequest) {
                     data = data.filter(item => (item.minedServiceWording || item.notes || '').toLowerCase().includes(low));
                 }
 
+                // 4. Data Integrity Filters
                 if (integrityFilter && integrityFilter !== 'all') {
                     if (integrityFilter === 'has-email') data = data.filter(p => !!p.email);
                     else if (integrityFilter === 'no-email') data = data.filter(p => !p.email);
-                    else if (integrityFilter === 'has-website') data = data.filter(p => !!p.website);
+                    else if (integrityFilter === 'has-website') data = data.filter(p => !!p.website || !!p.website_url);
                 }
 
                 return NextResponse.json({ success: true, data: data.slice(0, 1000) });
             }
 
+            /**
+             * UNIFIED COMMUNICATIONS FEED
+             * Pulls interaction logs from all entities matching the audience type.
+             */
             case 'getAudienceCommunications': {
                 const { type } = payload;
                 const commsSnap = await db.collectionGroup('communications').orderBy('timestamp', 'desc').limit(200).get();
                 
                 if (commsSnap.empty) return NextResponse.json({ success: true, data: [] });
 
+                // Find unique parents
                 const parentIds = [...new Set(commsSnap.docs.map(d => d.ref.parent.parent!.id))];
                 const parentIdChunks = chunkArray(parentIds, 30);
                 const entities: any[] = [];
@@ -126,6 +151,8 @@ export async function POST(req: NextRequest) {
                 const data = commsSnap.docs.map(d => {
                     const entId = d.ref.parent.parent!.id;
                     const entity = entityMap.get(entId);
+                    
+                    // Intelligent Role Mapping
                     const partnerType = entity?.type || entity?.role || entity?.industrial_category || 'lead';
 
                     return {
@@ -137,13 +164,21 @@ export async function POST(req: NextRequest) {
                     };
                 });
 
+                // Filter by audience if requested
                 const filtered = type && type !== 'all' 
-                    ? data.filter(c => c.partnerType?.toLowerCase().includes(type.toLowerCase())) 
+                    ? data.filter(c => {
+                        const lowType = type.toLowerCase();
+                        const lowPartnerType = c.partnerType?.toLowerCase() || '';
+                        return lowPartnerType.includes(lowType) || (lowType === 'supplier' && lowPartnerType !== 'transporter');
+                    })
                     : data;
 
                 return NextResponse.json({ success: true, data: filtered });
             }
 
+            /**
+             * UNIFIED TASK FEED
+             */
             case 'getAudienceTasks': {
                 const { type } = payload;
                 const tasksSnap = await db.collectionGroup('tasks').orderBy('createdAt', 'desc').limit(200).get();
@@ -184,12 +219,20 @@ export async function POST(req: NextRequest) {
                 });
 
                 const filtered = type && type !== 'all' 
-                    ? data.filter(t => t.partnerType?.toLowerCase().includes(type.toLowerCase())) 
+                    ? data.filter(t => {
+                        const lowType = type.toLowerCase();
+                        const lowPartnerType = t.partnerType?.toLowerCase() || '';
+                        return lowPartnerType.includes(lowType) || (lowType === 'supplier' && lowPartnerType !== 'transporter');
+                    })
                     : data;
 
                 return NextResponse.json({ success: true, data: filtered });
             }
 
+            /**
+             * ROBUST COMMUNICATION LOGGING
+             * Detects source collection automatically to prevent orphaned logs.
+             */
             case 'logCommunication': {
                 const { partnerId, type, subject, notes, collection: collName } = payload;
                 
@@ -272,68 +315,6 @@ export async function POST(req: NextRequest) {
                     await batch.commit();
                 }
                 return NextResponse.json({ success: true, count: partners.length });
-            }
-
-            case 'bulkUpdateOutreach': {
-                const { entries, subject } = payload;
-                const [pSnap, lSnap] = await Promise.all([
-                    db.collection('partners').get(),
-                    db.collection('leads').get()
-                ]);
-
-                const allRecords = [
-                    ...pSnap.docs.map(d => ({ id: d.id, ref: d.ref, ...d.data() })),
-                    ...lSnap.docs.map(d => ({ id: d.id, ref: d.ref, ...d.data() }))
-                ];
-
-                const batch = db.batch();
-                let count = 0;
-
-                entries.forEach((entry: string) => {
-                    const lowEntry = entry.toLowerCase();
-                    const match = allRecords.find(r => 
-                        r.companyName?.toLowerCase() === lowEntry || 
-                        r.company_name?.toLowerCase() === lowEntry ||
-                        r.email?.toLowerCase() === lowEntry
-                    );
-
-                    if (match) {
-                        batch.update(match.ref, {
-                            status: 'contacted',
-                            lastOutreachSubject: subject,
-                            lastOutreachAt: FieldValue.serverTimestamp(),
-                            updatedAt: FieldValue.serverTimestamp()
-                        });
-                        count++;
-                    }
-                });
-
-                if (count > 0) await batch.commit();
-                return NextResponse.json({ success: true, count });
-            }
-
-            case 'getPartnersByType': {
-                const { type } = payload;
-                const [pSnap, lSnap] = await Promise.all([
-                    db.collection('partners').limit(500).get(),
-                    db.collection('leads').limit(500).get()
-                ]);
-
-                let data = [
-                    ...pSnap.docs.map(d => ({ id: d.id, source: 'partners', ...d.data() })),
-                    ...lSnap.docs.map(d => ({ id: d.id, source: 'leads', ...d.data() }))
-                ];
-
-                if (type && type !== 'all') {
-                    const lowType = type.toLowerCase();
-                    data = data.filter((p: any) => 
-                        (p.type?.toLowerCase() === lowType) || 
-                        (p.role?.toLowerCase() === lowType) ||
-                        (p.source === 'leads' && (p.industrial_category?.toLowerCase().includes(lowType) || p.category?.toLowerCase().includes(lowType)))
-                    );
-                }
-
-                return NextResponse.json({ success: true, data: serializeTimestamps(data) });
             }
 
             case 'getAuditLogs': {
