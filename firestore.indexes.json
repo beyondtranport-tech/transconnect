@@ -9,6 +9,21 @@
       ]
     },
     {
+      "collectionId": "partners",
+      "fields": [
+        { "fieldPath": "type", "order": "ASCENDING" },
+        { "fieldPath": "industrial_category", "order": "ASCENDING" },
+        { "fieldPath": "updatedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionId": "leads",
+      "fields": [
+        { "fieldPath": "industrial_category", "order": "ASCENDING" },
+        { "fieldPath": "updatedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
       "collectionId": "leads",
       "fields": [
         { "fieldPath": "status", "order": "ASCENDING" },

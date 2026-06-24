@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -55,14 +56,16 @@ export async function POST(req: NextRequest) {
                 let partnersQuery: any = db.collection('partners');
                 let leadsQuery: any = db.collection('leads');
 
-                if (type && type !== 'all' && type !== 'lead') {
-                    const typeLower = type.toLowerCase();
-                    partnersQuery = partnersQuery.where('type', '==', typeLower);
-                }
-
+                // Apply high-precision industrial category filters (Requires composite index)
                 if (category && category !== 'all') {
                     partnersQuery = partnersQuery.where('industrial_category', '==', category);
                     leadsQuery = leadsQuery.where('industrial_category', '==', category);
+                }
+
+                // Apply audience type filters (Requires composite index)
+                if (type && type !== 'all' && type !== 'lead') {
+                    const typeLower = type.toLowerCase();
+                    partnersQuery = partnersQuery.where('type', '==', typeLower);
                 }
 
                 const limitValue = requestedLimit || 100;
@@ -85,9 +88,11 @@ export async function POST(req: NextRequest) {
                     phone: item.phone || item.telephone_number || '',
                     mobile: item.mobile || item.registry_line || '',
                     contactPerson: item.contactPerson || item.contact_person || (item.firstName ? `${item.firstName} ${item.lastName}` : ''),
-                    status: item.status || 'new'
+                    status: item.status || 'new',
+                    entryType: item.industrial_category || item.category || 'General'
                 }));
 
+                // In-memory forensic deep-scan for keywords and tags
                 if (term || searchCompany || searchKeyword || searchTag) {
                     const lowTerm = (term || searchCompany || '').toLowerCase();
                     const lowKey = (searchKeyword || '').toLowerCase();
@@ -105,7 +110,6 @@ export async function POST(req: NextRequest) {
                 if (integrityFilter === 'no-email') data = data.filter(p => !p.email);
                 if (outreachFilter && outreachFilter !== 'all') data = data.filter(p => p.lastOutreachSubject === outreachFilter);
 
-                // Sort by updatedAt again after merging collections and filtering in memory
                 data.sort((a,b) => new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime());
 
                 return NextResponse.json({ success: true, data: data.slice(0, limitValue) });
@@ -168,15 +172,14 @@ export async function POST(req: NextRequest) {
                     const ent = entityMap.get(entId);
                     return {
                         id: d.id,
-                        partnerName: ent?.companyName || ent?.company_name || 'Unknown',
-                        partnerType: ent?.type || ent?.role || 'lead',
+                        partnerName: ent?.companyName || ent?.company_name || ent?.trading_name || 'Unknown',
+                        partnerType: ent?.type || ent?.role || ent?.industrial_category || ent?.category || 'lead',
                         ...serializeTimestamps(d.data())
                     };
                 });
 
-                // Server-side audience filter
                 if (type && type !== 'all') {
-                    const filter = type.toLowerCase();
+                    const filter = type.toLowerCase().replace(/s$/, ''); // Handle pluralization (suppliers -> supplier)
                     data = data.filter(item => {
                         const pType = String(item.partnerType || '').toLowerCase();
                         return pType.includes(filter) || filter.includes(pType);
@@ -210,14 +213,14 @@ export async function POST(req: NextRequest) {
                     const ent = entityMap.get(entId);
                     return {
                         id: d.id,
-                        partnerName: ent?.companyName || ent?.company_name || 'Unknown',
-                        partnerType: ent?.type || ent?.role || 'lead',
+                        partnerName: ent?.companyName || ent?.company_name || ent?.trading_name || 'Unknown',
+                        partnerType: ent?.type || ent?.role || ent?.industrial_category || ent?.category || 'lead',
                         ...serializeTimestamps(d.data())
                     };
                 });
 
                 if (type && type !== 'all') {
-                    const filter = type.toLowerCase();
+                    const filter = type.toLowerCase().replace(/s$/, '');
                     data = data.filter(item => {
                         const pType = String(item.partnerType || '').toLowerCase();
                         return pType.includes(filter) || filter.includes(pType);
@@ -239,16 +242,6 @@ export async function POST(req: NextRequest) {
 
             case 'getMembers': {
                 const snap = await db.collection('companies').orderBy('updatedAt', 'desc').limit(100).get();
-                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
-            }
-
-            case 'getShops': {
-                const snap = await db.collectionGroup('shops').orderBy('updatedAt', 'desc').limit(100).get();
-                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
-            }
-
-            case 'getContributions': {
-                const snap = await db.collection('contributions').orderBy('createdAt', 'desc').limit(100).get();
                 return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
             }
 
