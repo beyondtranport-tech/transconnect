@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -89,17 +90,21 @@ import PlatformStaffManagement from '@/app/adminaccount/platform-staff';
 function AdminAuthGuard({ children }: { children: React.ReactNode }) {
     const { user, isUserLoading } = useUser();
     const router = useRouter();
+    
+    // Stabilize check with primitive values to prevent loop
+    const uid = user?.uid;
+    const email = user?.email;
 
     useEffect(() => {
         if (isUserLoading) return;
-        if (!user) {
+        if (!uid) {
             router.replace('/signin?redirect=/adminaccount');
-        } else if (user.email !== 'mkoton100@gmail.com' && user.email !== 'beyondtransport@gmail.com') {
+        } else if (email !== 'mkoton100@gmail.com' && email !== 'beyondtransport@gmail.com') {
             router.replace('/account'); 
         }
-    }, [user, isUserLoading, router]);
+    }, [uid, email, isUserLoading, router]);
 
-    if (isUserLoading || !user || (user.email !== 'mkoton100@gmail.com' && user.email !== 'beyondtransport@gmail.com')) {
+    if (isUserLoading || !uid || (email !== 'mkoton100@gmail.com' && email !== 'beyondtransport@gmail.com')) {
         return (
             <div className="flex flex-col justify-center items-center min-h-[calc(100vh-8rem)] text-foreground">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />

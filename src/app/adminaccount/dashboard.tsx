@@ -31,13 +31,16 @@ export default function DashboardContent() {
     const [companies, setCompanies] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    
+    // Stabilize UID for dependency array to prevent loop
+    const uid = user?.uid;
 
     const loadData = useCallback(async () => {
         setIsLoading(true);
         setError(null);
         try {
             const token = await getClientSideAuthToken();
-            if (!token) throw new Error("Auth failed");
+            if (!token) return;
             
             // Capped read for dashboard stats
             const [leadsRes, membersRes] = await Promise.all([
@@ -55,8 +58,10 @@ export default function DashboardContent() {
     }, []);
 
     useEffect(() => {
-        if (!isUserLoading && user) loadData();
-    }, [isUserLoading, user, loadData]);
+        if (!isUserLoading && uid) {
+            loadData();
+        }
+    }, [isUserLoading, uid, loadData]);
 
     const funnelData = useMemo(() => {
         const total = leads.length;

@@ -183,8 +183,6 @@ function LogAndCopyDialog({ open, onOpenChange, partners, isLoadingPartners, act
 
 function MarketingPageContent({ audience }: MarketingPageProps) {
   const config = audienceConfig[audience];
-  const Offer = (config as any).Offer as React.ComponentType<any>;
-  const Emails = (config as any).Emails as React.ComponentType<any>;
   const Management = (config as any).Management as React.ComponentType<any> | undefined;
   const Pitch = (config as any).Pitch as React.ComponentType<any> | undefined;
   const Discovery = (config as any).Discovery as React.ComponentType<any> | undefined;
@@ -203,19 +201,19 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
   const [partners, setPartners] = useState<any[]>([]);
   const [isLoadingPartners, setIsLoadingPartners] = useState(false);
 
-  // Sync state with URL when parameter changes
+  // Sync state with URL when parameter changes, preventing loop by checking identity
   useEffect(() => {
     if (subview && subview !== activeTab) {
         setActiveTab(subview);
     }
   }, [subview, activeTab]);
 
-  const handleTabChange = (val: string) => {
+  const handleTabChange = useCallback((val: string) => {
     setActiveTab(val);
-    const params = new URLSearchParams(searchParams.toString());
+    const params = new URLSearchParams(window.location.search);
     params.set('subview', val);
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-  }
+  }, [pathname, router]);
 
   const fetchPartnersForLogging = useCallback(async () => {
     if (!Management || isLoadingPartners) return;
@@ -235,8 +233,7 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
     } finally {
         setIsLoadingPartners(false);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [audience, Management]);
+  }, [audience, Management, isLoadingPartners]);
 
   useEffect(() => { 
     if (isLogDialogOpen && partners.length === 0) {
@@ -274,7 +271,6 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
   };
 
   const isContentTab = ['company-profile', 'tech-architecture', 'revenue-model', 'offer', 'pitch', 'framework', 'emails'].includes(activeTab);
-
   const AudienceIcon = audienceConfig[audience].icon;
 
   return (
