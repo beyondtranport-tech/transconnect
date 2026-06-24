@@ -29,6 +29,9 @@ const chunkArray = (arr: any[], size: number) =>
     arr.slice(i * size, i * size + size)
   );
 
+const supplierCategories = ["Accessories", "Air", "Anti-Theft Devices", "Auto Electrical", "Batteries", "Brakes", "Cleaning Products", "Diesel", "Differential", "Engine Refurbish", "Filters", "Injectors", "Lights", "Mechanical repairs", "Oils & Lubricants", "Parts", "Prop Shafts", "Second Hand Trailers", "Second Hand Trucks", "Transport", "Tarpaulins", "Tow in", "Trailer repairs", "Truck Accessories", "Truck Parts", "Truck repairs", "Turbo", "Tyres"];
+const transporterCategories = ["Long Haul", "Refrigerated", "Flatbed", "Tipper", "Hazmat", "LTL", "Cross-Border", "Local Distribution", "Container Transport", "Abnormal Loads"];
+
 export async function POST(req: NextRequest) {
     try {
         const { app, error: initError } = getAdminApp();
@@ -56,13 +59,13 @@ export async function POST(req: NextRequest) {
                 let partnersQuery: any = db.collection('partners');
                 let leadsQuery: any = db.collection('leads');
 
-                // Apply high-precision industrial category filters (Requires composite index)
+                // Apply high-precision industrial category filters (Uses newly created indexes)
                 if (category && category !== 'all') {
                     partnersQuery = partnersQuery.where('industrial_category', '==', category);
                     leadsQuery = leadsQuery.where('industrial_category', '==', category);
                 }
 
-                // Apply audience type filters (Requires composite index)
+                // Apply audience type filters (Uses newly created indexes)
                 if (type && type !== 'all' && type !== 'lead') {
                     const typeLower = type.toLowerCase();
                     partnersQuery = partnersQuery.where('type', '==', typeLower);
@@ -80,7 +83,7 @@ export async function POST(req: NextRequest) {
                     ...lSnap.docs.map(d => ({ id: d.id, source: 'leads', ...serializeTimestamps(d.data()) }))
                 ];
 
-                // Data Normalization
+                // Data Normalization & Forensic Mapping
                 data = data.map(item => ({
                     ...item,
                     companyName: item.companyName || item.company_name || item.trading_name || '',
@@ -92,7 +95,7 @@ export async function POST(req: NextRequest) {
                     entryType: item.industrial_category || item.category || 'General'
                 }));
 
-                // In-memory forensic deep-scan for keywords and tags
+                // In-memory filter for broad searches
                 if (term || searchCompany || searchKeyword || searchTag) {
                     const lowTerm = (term || searchCompany || '').toLowerCase();
                     const lowKey = (searchKeyword || '').toLowerCase();
@@ -116,17 +119,14 @@ export async function POST(req: NextRequest) {
             }
 
             case 'logCommunication': {
-                const { partnerId, type, subject, notes, collection: collName } = payload;
+                const { partnerId, type, subject, notes } = payload;
                 
-                let targetColl = collName;
-                if (!targetColl) {
-                    const [pDoc, lDoc] = await Promise.all([
-                        db.collection('partners').doc(partnerId).get(),
-                        db.collection('leads').doc(partnerId).get()
-                    ]);
-                    targetColl = pDoc.exists ? 'partners' : (lDoc.exists ? 'leads' : 'partners');
-                }
+                const [pDoc, lDoc] = await Promise.all([
+                    db.collection('partners').doc(partnerId).get(),
+                    db.collection('leads').doc(partnerId).get()
+                ]);
 
+                const targetColl = pDoc.exists ? 'partners' : (lDoc.exists ? 'leads' : 'partners');
                 const batch = db.batch();
                 const parentRef = db.collection(targetColl).doc(partnerId);
                 const logRef = parentRef.collection('communications').doc();
@@ -149,8 +149,8 @@ export async function POST(req: NextRequest) {
             }
 
             case 'getAudienceCommunications': {
-                const { type } = payload;
-                const commsSnap = await db.collectionGroup('communications').orderBy('timestamp', 'desc').limit(200).get();
+                const { type } = payload; // 'suppliers', 'transporters', etc.
+                const commsSnap = await db.collectionGroup('communications').orderBy('timestamp', 'desc').limit(500).get();
                 const entities: any[] = [];
                 const parentIds = [...new Set(commsSnap.docs.map(d => d.ref.parent.parent!.id))];
                 
@@ -161,8 +161,8 @@ export async function POST(req: NextRequest) {
                             db.collection('partners').where(FieldValue.documentId(), 'in', chunk).get(),
                             db.collection('leads').where(FieldValue.documentId(), 'in', chunk).get()
                         ]);
-                        entities.push(...pSnap.docs.map(d => ({ id: d.id, ...d.data() })));
-                        entities.push(...lSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+                        entities.push(...pSnap.docs.map(d => ({ id: d.id, source: 'partners', ...d.data() })));
+                        entities.push(...lSnap.docs.map(d => ({ id: d.id, source: 'leads', ...d.data() })));
                     }
                 }
                 
@@ -170,20 +170,25 @@ export async function POST(req: NextRequest) {
                 let data = commsSnap.docs.map(d => {
                     const entId = d.ref.parent.parent!.id;
                     const ent = entityMap.get(entId);
+                    
+                    // Intelligent Audience Classification for Leads
+                    let mappedType = ent?.type || 'lead';
+                    if (targetColl === 'leads' && ent?.industrial_category) {
+                        if (supplierCategories.includes(ent.industrial_category)) mappedType = 'supplier';
+                        else if (transporterCategories.includes(ent.industrial_category)) mappedType = 'transporter';
+                    }
+
                     return {
                         id: d.id,
                         partnerName: ent?.companyName || ent?.company_name || ent?.trading_name || 'Unknown',
-                        partnerType: ent?.type || ent?.role || ent?.industrial_category || ent?.category || 'lead',
+                        partnerType: mappedType,
                         ...serializeTimestamps(d.data())
                     };
                 });
 
                 if (type && type !== 'all') {
-                    const filter = type.toLowerCase().replace(/s$/, ''); // Handle pluralization (suppliers -> supplier)
-                    data = data.filter(item => {
-                        const pType = String(item.partnerType || '').toLowerCase();
-                        return pType.includes(filter) || filter.includes(pType);
-                    });
+                    const filter = type.toLowerCase().replace(/s$/, ''); 
+                    data = data.filter(item => String(item.partnerType).toLowerCase().includes(filter));
                 }
 
                 return NextResponse.json({ success: true, data: data.slice(0, 100) });
@@ -191,7 +196,7 @@ export async function POST(req: NextRequest) {
 
             case 'getAudienceTasks': {
                 const { type } = payload;
-                const tasksSnap = await db.collectionGroup('tasks').orderBy('createdAt', 'desc').limit(200).get();
+                const tasksSnap = await db.collectionGroup('tasks').orderBy('createdAt', 'desc').limit(500).get();
                 const entities: any[] = [];
                 const parentIds = [...new Set(tasksSnap.docs.map(d => d.ref.parent.parent!.id))];
                 
@@ -211,20 +216,24 @@ export async function POST(req: NextRequest) {
                 let data = tasksSnap.docs.map(d => {
                     const entId = d.ref.parent.parent!.id;
                     const ent = entityMap.get(entId);
+                    
+                    let mappedType = ent?.type || 'lead';
+                    if (ent?.industrial_category) {
+                        if (supplierCategories.includes(ent.industrial_category)) mappedType = 'supplier';
+                        else if (transporterCategories.includes(ent.industrial_category)) mappedType = 'transporter';
+                    }
+
                     return {
                         id: d.id,
                         partnerName: ent?.companyName || ent?.company_name || ent?.trading_name || 'Unknown',
-                        partnerType: ent?.type || ent?.role || ent?.industrial_category || ent?.category || 'lead',
+                        partnerType: mappedType,
                         ...serializeTimestamps(d.data())
                     };
                 });
 
                 if (type && type !== 'all') {
                     const filter = type.toLowerCase().replace(/s$/, '');
-                    data = data.filter(item => {
-                        const pType = String(item.partnerType || '').toLowerCase();
-                        return pType.includes(filter) || filter.includes(pType);
-                    });
+                    data = data.filter(item => String(item.partnerType).toLowerCase().includes(filter));
                 }
 
                 return NextResponse.json({ success: true, data: data.slice(0, 100) });
