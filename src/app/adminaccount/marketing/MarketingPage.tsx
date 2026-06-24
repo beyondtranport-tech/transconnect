@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -114,7 +113,7 @@ function LogAndCopyDialog({ open, onOpenChange, partners, isLoadingPartners, act
     const form = useForm<LogFormValues>({ resolver: zodResolver(logSchema) });
     const [isLogging, setIsLogging] = useState(false);
 
-    const singularAudience = useMemo(() => {
+    const singularAudience = React.useMemo(() => {
         if (!audienceTitle) return 'Partner';
         if (audienceTitle === 'Suppliers') return 'Supplier';
         if (audienceTitle === 'Transporters') return 'Transporter';

@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -61,12 +60,11 @@ export async function POST(req: NextRequest) {
                 }
 
                 if (category && category !== 'all') {
-                    // Check both fields for resilience
                     partnersQuery = partnersQuery.where('industrial_category', '==', category);
                     leadsQuery = leadsQuery.where('industrial_category', '==', category);
                 }
 
-                // Increase limit to 1000 for targeted searches
+                // Capped at 1000 for targeted admin searches
                 const limit = (term || searchCompany || category) ? 1000 : 100;
 
                 const [pSnap, lSnap] = await Promise.all([
@@ -79,13 +77,14 @@ export async function POST(req: NextRequest) {
                     ...lSnap.docs.map(d => ({ id: d.id, source: 'leads', ...serializeTimestamps(d.data()) }))
                 ];
 
+                // Data Normalization
                 data = data.map(item => ({
                     ...item,
                     companyName: item.companyName || item.company_name || item.trading_name || '',
                     email: item.email || item.email_address || '',
                     phone: item.phone || item.telephone_number || '',
                     mobile: item.mobile || item.registry_line || '',
-                    contactPerson: item.contactPerson || item.contact_person || '',
+                    contactPerson: item.contactPerson || item.contact_person || (item.firstName ? `${item.firstName} ${item.lastName}` : ''),
                     status: item.status || 'new'
                 }));
 
