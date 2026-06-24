@@ -50,13 +50,14 @@ export async function POST(req: NextRequest) {
 
         switch (action) {
             case 'searchRegistry': {
-                const { term, searchCompany, searchKeyword, searchTag, category, type, integrityFilter, outreachFilter } = payload;
+                const { term, searchCompany, searchKeyword, searchTag, category, type, integrityFilter, outreachFilter, limit: requestedLimit } = payload;
                 
                 let partnersQuery: any = db.collection('partners');
                 let leadsQuery: any = db.collection('leads');
 
                 if (type && type !== 'all' && type !== 'lead') {
-                    partnersQuery = partnersQuery.where('type', '==', type.toLowerCase());
+                    const typeLower = type.toLowerCase();
+                    partnersQuery = partnersQuery.where('type', '==', typeLower);
                 }
 
                 if (category && category !== 'all') {
@@ -64,12 +65,11 @@ export async function POST(req: NextRequest) {
                     leadsQuery = leadsQuery.where('industrial_category', '==', category);
                 }
 
-                // Capped at 1000 for targeted admin searches
-                const limit = (term || searchCompany || category) ? 1000 : 100;
+                const limitValue = requestedLimit || 100;
 
                 const [pSnap, lSnap] = await Promise.all([
-                    partnersQuery.orderBy('updatedAt', 'desc').limit(limit).get(),
-                    leadsQuery.orderBy('updatedAt', 'desc').limit(limit).get()
+                    partnersQuery.orderBy('updatedAt', 'desc').limit(limitValue).get(),
+                    leadsQuery.orderBy('updatedAt', 'desc').limit(limitValue).get()
                 ]);
 
                 let data = [
@@ -105,7 +105,10 @@ export async function POST(req: NextRequest) {
                 if (integrityFilter === 'no-email') data = data.filter(p => !p.email);
                 if (outreachFilter && outreachFilter !== 'all') data = data.filter(p => p.lastOutreachSubject === outreachFilter);
 
-                return NextResponse.json({ success: true, data: data.slice(0, limit) });
+                // Sort by updatedAt again after merging collections and filtering in memory
+                data.sort((a,b) => new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime());
+
+                return NextResponse.json({ success: true, data: data.slice(0, limitValue) });
             }
 
             case 'logCommunication': {
@@ -142,7 +145,8 @@ export async function POST(req: NextRequest) {
             }
 
             case 'getAudienceCommunications': {
-                const commsSnap = await db.collectionGroup('communications').orderBy('timestamp', 'desc').limit(100).get();
+                const { type } = payload;
+                const commsSnap = await db.collectionGroup('communications').orderBy('timestamp', 'desc').limit(200).get();
                 const entities: any[] = [];
                 const parentIds = [...new Set(commsSnap.docs.map(d => d.ref.parent.parent!.id))];
                 
@@ -159,7 +163,7 @@ export async function POST(req: NextRequest) {
                 }
                 
                 const entityMap = new Map(entities.map(e => [e.id, e]));
-                const data = commsSnap.docs.map(d => {
+                let data = commsSnap.docs.map(d => {
                     const entId = d.ref.parent.parent!.id;
                     const ent = entityMap.get(entId);
                     return {
@@ -170,7 +174,57 @@ export async function POST(req: NextRequest) {
                     };
                 });
 
-                return NextResponse.json({ success: true, data });
+                // Server-side audience filter
+                if (type && type !== 'all') {
+                    const filter = type.toLowerCase();
+                    data = data.filter(item => {
+                        const pType = String(item.partnerType || '').toLowerCase();
+                        return pType.includes(filter) || filter.includes(pType);
+                    });
+                }
+
+                return NextResponse.json({ success: true, data: data.slice(0, 100) });
+            }
+
+            case 'getAudienceTasks': {
+                const { type } = payload;
+                const tasksSnap = await db.collectionGroup('tasks').orderBy('createdAt', 'desc').limit(200).get();
+                const entities: any[] = [];
+                const parentIds = [...new Set(tasksSnap.docs.map(d => d.ref.parent.parent!.id))];
+                
+                if (parentIds.length > 0) {
+                    const idChunks = chunkArray(parentIds, 30);
+                    for (const chunk of idChunks) {
+                        const [pSnap, lSnap] = await Promise.all([
+                            db.collection('partners').where(FieldValue.documentId(), 'in', chunk).get(),
+                            db.collection('leads').where(FieldValue.documentId(), 'in', chunk).get()
+                        ]);
+                        entities.push(...pSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+                        entities.push(...lSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+                    }
+                }
+                
+                const entityMap = new Map(entities.map(e => [e.id, e]));
+                let data = tasksSnap.docs.map(d => {
+                    const entId = d.ref.parent.parent!.id;
+                    const ent = entityMap.get(entId);
+                    return {
+                        id: d.id,
+                        partnerName: ent?.companyName || ent?.company_name || 'Unknown',
+                        partnerType: ent?.type || ent?.role || 'lead',
+                        ...serializeTimestamps(d.data())
+                    };
+                });
+
+                if (type && type !== 'all') {
+                    const filter = type.toLowerCase();
+                    data = data.filter(item => {
+                        const pType = String(item.partnerType || '').toLowerCase();
+                        return pType.includes(filter) || filter.includes(pType);
+                    });
+                }
+
+                return NextResponse.json({ success: true, data: data.slice(0, 100) });
             }
 
             case 'getAuditLogs': {
@@ -185,6 +239,16 @@ export async function POST(req: NextRequest) {
 
             case 'getMembers': {
                 const snap = await db.collection('companies').orderBy('updatedAt', 'desc').limit(100).get();
+                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
+            }
+
+            case 'getShops': {
+                const snap = await db.collectionGroup('shops').orderBy('updatedAt', 'desc').limit(100).get();
+                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
+            }
+
+            case 'getContributions': {
+                const snap = await db.collection('contributions').orderBy('createdAt', 'desc').limit(100).get();
                 return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
             }
 

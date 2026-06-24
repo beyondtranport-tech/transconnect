@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -29,7 +28,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, Bot, Edit, Trash2, Send, Download, Save, Search, Users, Filter, Globe, Zap, Database, Upload, Copy, Tag, AlertTriangle, CheckCircle, RotateCcw, UserCheck } from 'lucide-react';
+import { Loader2, PlusCircle, Bot, Edit, Trash2, Send, Download, Save, Search, Users, Filter, Globe, Zap, Database, Upload, Copy, Tag, AlertTriangle, CheckCircle, RotateCcw, UserCheck, ChevronDown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -153,6 +152,7 @@ export default function ISAManagement() {
   const [hasLoaded, setHasLoaded] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [resultsLimit, setResultsLimit] = useState(100);
   const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | 'batch' | null, data?: any, initialIndex?: number }>({ type: null });
 
   const [statusFilter, setStatusFilter] = useState('all');
@@ -160,13 +160,13 @@ export default function ISAManagement() {
   const [integrityFilter, setIntegrityFilter] = useState('all');
   const [outreachFilter, setOutreachFilter] = useState('all');
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (limit: number = resultsLimit) => {
     setIsLoading(true);
     try {
       const token = await getClientSideAuthToken();
       if (!token) return;
       const [res, staffRes] = await Promise.all([
-        performAdminAction(token, 'searchRegistry', { type: 'isa', term: searchTerm, integrityFilter, outreachFilter }),
+        performAdminAction(token, 'searchRegistry', { type: 'isa', term: searchTerm, integrityFilter, outreachFilter, limit }),
         performAdminAction(token, 'getPlatformStaff', {})
       ]);
       setAllRecords(res.data || []);
@@ -177,12 +177,17 @@ export default function ISAManagement() {
     } finally {
       setIsLoading(false);
     }
-  }, [searchTerm, integrityFilter, outreachFilter]);
+  }, [searchTerm, integrityFilter, outreachFilter, resultsLimit]);
 
   useEffect(() => { 
     if (hasLoaded) fetchData(); 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [integrityFilter, outreachFilter, statusFilter, assigneeFilter]);
+  }, [fetchData, hasLoaded]);
+
+  const handleLoadMore = () => {
+    const newLimit = resultsLimit + 100;
+    setResultsLimit(newLimit);
+    fetchData(newLimit);
+  };
 
   const filteredRecords = useMemo(() => {
     return allRecords.filter(r => {
@@ -336,7 +341,7 @@ export default function ISAManagement() {
                 <div className="flex flex-col md:flex-row justify-center gap-4 max-w-4xl mx-auto text-left">
                     <div className="flex-1 space-y-2 text-left">
                         <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Company, Contact or ID</Label>
-                        <Input placeholder="Search criteria..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && fetchData()} className="h-12 text-lg bg-white" />
+                        <Input placeholder="Search criteria..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && fetchData(100)} className="h-12 text-lg bg-white" />
                     </div>
                      <div className="w-40 space-y-2 text-left">
                         <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Integrity</Label>
@@ -360,10 +365,15 @@ export default function ISAManagement() {
                             </SelectContent>
                         </Select>
                     </div>
-                    <Button size="lg" onClick={fetchData} disabled={isLoading} className="h-12 px-8 self-end font-bold">
-                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4" />}
-                        Execute Scan
-                    </Button>
+                    <div className="flex flex-col md:flex-row gap-2 self-end">
+                        <Button size="lg" onClick={() => { setResultsLimit(100); fetchData(100); }} disabled={isLoading} className="h-12 px-8 font-bold">
+                            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4" />}
+                            Execute Scan
+                        </Button>
+                        <Button variant="outline" size="lg" onClick={() => { setResultsLimit(100); fetchData(100); }} className="h-12">
+                             Show Recent
+                        </Button>
+                    </div>
                 </div>
             </Card>
         ) : (
@@ -373,7 +383,7 @@ export default function ISAManagement() {
                         <CardTitle className="flex items-center gap-2 text-2xl font-black font-headline text-left text-foreground"><Bot /> ISA Management</CardTitle>
                         <CardDescription className="text-left text-foreground">Full database of Independent Sales Agents ({allRecords.length} records).</CardDescription>
                     </div>
-                    <div className="flex flex-wrap items-center gap-2 text-left text-foreground text-foreground">
+                    <div className="flex flex-wrap items-center gap-2 text-left text-foreground">
                         {selectedIds.length > 0 && (
                             <>
                                 <Button variant="secondary" onClick={handleBatchEngage} className="gap-2 shadow-sm font-bold">
@@ -384,7 +394,7 @@ export default function ISAManagement() {
                                 </Button>
                             </>
                         )}
-                        <div className="relative w-64 text-left text-foreground text-foreground">
+                        <div className="relative w-64 text-left text-foreground">
                             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                             <Input placeholder="Search criteria..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8 bg-white" />
                         </div>
@@ -398,10 +408,10 @@ export default function ISAManagement() {
                 <Card className="border-primary/10 shadow-sm overflow-hidden text-left text-foreground">
                     <CardContent className="pt-6 text-left text-foreground">
                         <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
-                            <div className="flex-1 space-y-2 text-left text-foreground text-foreground">
-                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-foreground"><Filter className="h-3 w-3"/> Status</Label>
+                            <div className="flex-1 space-y-2 text-left text-foreground">
+                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Filter className="h-3 w-3"/> Status</Label>
                                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                                    <SelectTrigger className="bg-white text-left text-foreground text-foreground"><SelectValue placeholder="All Statuses" /></SelectTrigger>
+                                    <SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="All Statuses" /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">All Statuses</SelectItem>
                                         <SelectItem value="new">New Lead</SelectItem>
@@ -425,7 +435,17 @@ export default function ISAManagement() {
                                 <Button variant="outline" onClick={() => setHasLoaded(false)} className="h-10 w-full text-foreground"><RotateCcw className="mr-1 h-3 w-3" /> New Search</Button>
                             </div>
                         </div>
-                        {isLoading ? <div className="flex justify-center items-center py-10 text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />}
+                        {isLoading ? <div className="flex justify-center items-center py-10 text-foreground text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
+                            <div className="space-y-4">
+                                <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />
+                                <div className="flex justify-center pt-4">
+                                    <Button variant="outline" size="lg" onClick={handleLoadMore} disabled={isLoading} className="gap-2 min-w-[200px]">
+                                        {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <ChevronDown className="h-4 w-4" />}
+                                        Load Next 100 Records
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
             </div>

@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
 import { 
-  Loader2, PlusCircle, Building, Edit, Trash2, Send, Download, Save, Search, Filter, Users, Globe, Zap, Upload, RefreshCcw, Database, Tag, Sparkles, RotateCcw, Clock, UserCheck 
+  Loader2, PlusCircle, Building, Edit, Trash2, Send, Download, Save, Search, Filter, Users, Globe, Zap, Upload, RefreshCcw, Database, Tag, Sparkles, RotateCcw, Clock, UserCheck, ChevronDown 
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
@@ -39,7 +39,7 @@ async function performAdminAction(token: string, action: string, payload: any) {
     cache: 'no-store'
   });
   const result = await response.json();
-  if (!response.ok || !result.success) throw new Error(result.error || `API Error for action: ${action}`);
+  if (!response.ok || !result.success) throw new Error(result.error || `API Error: ${action}`);
   return result;
 }
 
@@ -171,6 +171,7 @@ export default function SupplierManagement() {
   const [isLoading, setIsLoading] = useState(false);
   const [hasLoaded, setHasLoaded] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [resultsLimit, setResultsLimit] = useState(100);
   const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | null, data?: any, initialIndex?: number }>({ type: null });
 
   // Independent Search States
@@ -184,8 +185,7 @@ export default function SupplierManagement() {
   const [integrityFilter, setIntegrityFilter] = useState('all');
   const [outreachFilter, setOutreachFilter] = useState('all');
 
-  const fetchData = useCallback(async () => {
-    if (isLoading) return;
+  const fetchData = useCallback(async (limit: number = resultsLimit) => {
     setIsLoading(true);
     try {
       const token = await getClientSideAuthToken();
@@ -198,7 +198,8 @@ export default function SupplierManagement() {
             searchTag,
             category: categoryFilter,
             integrityFilter, 
-            outreachFilter 
+            outreachFilter,
+            limit
         }),
         performAdminAction(token, 'getPlatformStaff', {})
       ]);
@@ -210,13 +211,17 @@ export default function SupplierManagement() {
     } finally {
       setIsLoading(false);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchCompany, searchKeyword, searchTag, categoryFilter, integrityFilter, outreachFilter]);
+  }, [searchCompany, searchKeyword, searchTag, categoryFilter, integrityFilter, outreachFilter, resultsLimit, toast]);
 
   useEffect(() => { 
     if (hasLoaded) fetchData(); 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [integrityFilter, outreachFilter, statusFilter, assigneeFilter]);
+  }, [fetchData, hasLoaded]);
+
+  const handleLoadMore = () => {
+    const newLimit = resultsLimit + 100;
+    setResultsLimit(newLimit);
+    fetchData(newLimit);
+  };
 
   const filteredRecords = useMemo(() => {
     return partners.filter(p => {
@@ -227,10 +232,7 @@ export default function SupplierManagement() {
   }, [partners, statusFilter, assigneeFilter]);
 
   const handleExport = () => {
-      if (filteredRecords.length === 0) {
-          toast({ variant: 'destructive', title: "No data to export" });
-          return;
-      }
+      if (filteredRecords.length === 0) return;
       downloadDataAsCSV(filteredRecords, `suppliers-export-${new Date().toISOString().split('T')[0]}.csv`);
       toast({ title: "Export Complete" });
   };
@@ -344,7 +346,7 @@ export default function SupplierManagement() {
       
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
         <AlertDialogContent className="text-left">
-          <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Delete Record(s)?</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogHeader><AlertDialogTitle>Delete Record(s)?</AlertDialogTitle><AlertDialogDescription>Delete Selected?</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={selectedIds.length > 0 ? handleDeleteBatch : async () => {
@@ -418,10 +420,13 @@ export default function SupplierManagement() {
                         </Select>
                     </div>
                     
-                    <div className="lg:col-span-2 flex items-end text-left">
-                        <Button size="lg" onClick={fetchData} disabled={isLoading} className="h-12 w-full font-black uppercase tracking-widest gap-2 shadow-lg">
+                    <div className="lg:col-span-2 flex items-end text-left gap-2">
+                        <Button size="lg" onClick={() => { setResultsLimit(100); fetchData(100); }} disabled={isLoading} className="flex-1 h-12 font-black uppercase tracking-widest gap-2 shadow-lg">
                             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4" />}
                             Execute Deep Scan
+                        </Button>
+                        <Button variant="outline" size="lg" onClick={() => { setResultsLimit(100); fetchData(100); }} className="flex-1 h-12">
+                             Show Latest 100
                         </Button>
                     </div>
                 </div>
@@ -488,11 +493,21 @@ export default function SupplierManagement() {
                                 </Select>
                             </div>
                             <div className="flex items-end text-left gap-2">
-                                <Button onClick={fetchData} disabled={isLoading} className="flex-1"><RefreshCcw className={cn("h-4 w-4", isLoading && "animate-spin")} /></Button>
+                                <Button onClick={() => fetchData()} disabled={isLoading} className="flex-1"><RefreshCcw className={cn("h-4 w-4", isLoading && "animate-spin")} /></Button>
                                 <Button variant="outline" onClick={() => setHasLoaded(false)} className="flex-1"><RotateCcw className="h-4 w-4" /></Button>
                             </div>
                         </div>
-                        {isLoading ? <div className="flex justify-center items-center py-10 text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />}
+                        {isLoading ? <div className="flex justify-center items-center py-10 text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
+                            <div className="space-y-4">
+                                <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />
+                                <div className="flex justify-center pt-4">
+                                    <Button variant="outline" size="lg" onClick={handleLoadMore} disabled={isLoading} className="gap-2 min-w-[200px]">
+                                        {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <ChevronDown className="h-4 w-4" />}
+                                        Load Next 100 Records
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
             </>

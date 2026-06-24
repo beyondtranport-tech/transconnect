@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -10,7 +9,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, Truck, Edit, Trash2, Send, Download, Save, Search, Filter, Users, Zap, Globe, RefreshCcw, Database, Upload, Copy, Tag, AlertTriangle, CheckCircle, Sparkles, RotateCcw, UserCheck } from 'lucide-react';
+import { Loader2, PlusCircle, Truck, Edit, Trash2, Send, Download, Save, Search, Filter, Users, Zap, Globe, RefreshCcw, Database, Upload, Copy, Tag, AlertTriangle, CheckCircle, Sparkles, RotateCcw, UserCheck, ChevronDown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -189,6 +188,7 @@ export default function TransporterManagement() {
   const [hasLoaded, setHasLoaded] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [resultsLimit, setResultsLimit] = useState(100);
   const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | 'batch' | null, data?: any, initialIndex?: number }>({ type: null });
 
   const [statusFilter, setStatusFilter] = useState('all');
@@ -196,13 +196,13 @@ export default function TransporterManagement() {
   const [integrityFilter, setIntegrityFilter] = useState('all');
   const [outreachFilter, setOutreachFilter] = useState('all');
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (limit: number = resultsLimit) => {
     setIsLoading(true);
     try {
       const token = await getClientSideAuthToken();
       if (!token) return;
       const [res, staffRes] = await Promise.all([
-        performAdminAction(token, 'searchRegistry', { type: 'transporter', term: searchTerm, integrityFilter, outreachFilter }),
+        performAdminAction(token, 'searchRegistry', { type: 'transporter', term: searchTerm, integrityFilter, outreachFilter, limit }),
         performAdminAction(token, 'getPlatformStaff', {})
       ]);
       setAllRecords(res.data || []);
@@ -213,12 +213,17 @@ export default function TransporterManagement() {
     } finally {
       setIsLoading(false);
     }
-  }, [searchTerm, integrityFilter, outreachFilter, toast]);
+  }, [searchTerm, integrityFilter, outreachFilter, resultsLimit, toast]);
 
   useEffect(() => { 
     if (hasLoaded) fetchData(); 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [integrityFilter, outreachFilter, statusFilter, assigneeFilter]);
+  }, [fetchData, hasLoaded]);
+
+  const handleLoadMore = () => {
+    const newLimit = resultsLimit + 100;
+    setResultsLimit(newLimit);
+    fetchData(newLimit);
+  };
 
   const filteredRecords = useMemo(() => {
     return allRecords.filter(r => {
@@ -229,10 +234,7 @@ export default function TransporterManagement() {
   }, [allRecords, statusFilter, assigneeFilter]);
 
   const handleExport = () => {
-      if (filteredRecords.length === 0) {
-          toast({ variant: 'destructive', title: "No data to export" });
-          return;
-      }
+      if (filteredRecords.length === 0) return;
       downloadDataAsCSV(filteredRecords, `transporters-export-${new Date().toISOString().split('T')[0]}.csv`);
       toast({ title: "Export Complete" });
   };
@@ -377,7 +379,7 @@ export default function TransporterManagement() {
                 <div className="flex flex-col md:flex-row justify-center gap-4 max-w-4xl mx-auto text-left">
                     <div className="flex-1 space-y-2 text-left">
                         <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Company, Category or ID</Label>
-                        <Input placeholder="Search criteria..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && fetchData()} className="h-12 text-lg bg-white" />
+                        <Input placeholder="Search criteria..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && fetchData(100)} className="h-12 text-lg bg-white" />
                     </div>
                     <div className="w-40 space-y-2 text-left">
                         <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Integrity</Label>
@@ -402,10 +404,15 @@ export default function TransporterManagement() {
                             </SelectContent>
                         </Select>
                     </div>
-                    <Button size="lg" onClick={fetchData} disabled={isLoading} className="h-12 px-8 self-end font-bold">
-                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4" />}
-                        Execute Scan
-                    </Button>
+                    <div className="flex flex-col md:flex-row gap-2 self-end">
+                        <Button size="lg" onClick={() => { setResultsLimit(100); fetchData(100); }} disabled={isLoading} className="h-12 px-8 font-bold">
+                            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4" />}
+                            Execute Scan
+                        </Button>
+                        <Button variant="outline" size="lg" onClick={() => { setResultsLimit(100); fetchData(100); }} className="h-12">
+                             Show Recent
+                        </Button>
+                    </div>
                 </div>
             </Card>
         ) : (
@@ -445,7 +452,7 @@ export default function TransporterManagement() {
                                 <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Search className="h-3 w-3"/> Forensic Search</Label>
                                 <div className="flex gap-2 text-left text-foreground">
                                     <Input placeholder="Refine current scan..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && fetchData()} />
-                                    <Button onClick={fetchData} disabled={isLoading} className="text-foreground"><Search className="h-4 w-4"/></Button>
+                                    <Button onClick={() => fetchData()} disabled={isLoading} className="text-foreground"><Search className="h-4 w-4"/></Button>
                                 </div>
                             </div>
                             <div className="flex-1 space-y-2 text-left">
@@ -472,7 +479,17 @@ export default function TransporterManagement() {
                                 <Button variant="outline" onClick={() => setHasLoaded(false)} className="h-10 w-full text-foreground"><RotateCcw className="mr-1 h-3 w-3" /> New Search</Button>
                             </div>
                         </div>
-                        {isLoading ? <div className="flex justify-center items-center py-10 text-foreground text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />}
+                        {isLoading ? <div className="flex justify-center items-center py-10 text-foreground text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
+                            <div className="space-y-4">
+                                <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />
+                                <div className="flex justify-center pt-4">
+                                    <Button variant="outline" size="lg" onClick={handleLoadMore} disabled={isLoading} className="gap-2 min-w-[200px]">
+                                        {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <ChevronDown className="h-4 w-4" />}
+                                        Load Next 100 Records
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
             </>
