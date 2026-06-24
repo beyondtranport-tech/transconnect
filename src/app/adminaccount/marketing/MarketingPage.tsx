@@ -113,7 +113,7 @@ function LogAndCopyDialog({ open, onOpenChange, partners, isLoadingPartners, act
     const form = useForm<LogFormValues>({ resolver: zodResolver(logSchema) });
     const [isLogging, setIsLogging] = useState(false);
 
-    const singularAudience = React.useMemo(() => {
+    const singularAudience = useMemo(() => {
         if (!audienceTitle) return 'Partner';
         if (audienceTitle === 'Suppliers') return 'Supplier';
         if (audienceTitle === 'Transporters') return 'Transporter';
@@ -185,11 +185,11 @@ function LogAndCopyDialog({ open, onOpenChange, partners, isLoadingPartners, act
 
 function MarketingPageContent({ audience }: MarketingPageProps) {
   const config = audienceConfig[audience];
-  const Management = (config as any).Management as React.ComponentType<any> | undefined;
-  const Pitch = (config as any).Pitch as React.ComponentType<any> | undefined;
-  const Discovery = (config as any).Discovery as React.ComponentType<any> | undefined;
-  const Offer = (config as any).Offer as React.ComponentType<any> | undefined;
-  const Emails = (config as any).Emails as React.ComponentType<any> | undefined;
+  const Management = config.Management;
+  const Pitch = config.Pitch;
+  const Discovery = config.Discovery;
+  const Offer = config.Offer;
+  const Emails = config.Emails;
   
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -205,7 +205,7 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
   const [partners, setPartners] = useState<any[]>([]);
   const [isLoadingPartners, setIsLoadingPartners] = useState(false);
 
-  // Sync state with URL when parameter changes, preventing loop by checking identity
+  // Sync state with URL when parameter changes
   useEffect(() => {
     if (subview && subview !== activeTab) {
         setActiveTab(subview);

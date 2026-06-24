@@ -485,7 +485,7 @@ export default function SupplierManagement() {
                             <div className="space-y-2 text-left">
                                 <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Integrity</Label>
                                 <Select value={integrityFilter} onValueChange={setIntegrityFilter}>
-                                    <SelectTrigger className="bg-white"><SelectValue placeholder="All" /></SelectTrigger>
+                                    <SelectTrigger className="bg-white text-left"><SelectValue placeholder="All" /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">All</SelectItem>
                                         <SelectItem value="has-email">Has Email</SelectItem>

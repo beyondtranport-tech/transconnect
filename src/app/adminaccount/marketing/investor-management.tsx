@@ -1,7 +1,7 @@
+
 'use client';
 
-import * as React from 'react';
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -65,8 +65,8 @@ async function performAdminAction(token: string, action: string, payload: any) {
 }
 
 const partnerSchema = z.object({
-  firstName: z.string().min(1, 'First name is required'),
-  lastName: z.string().min(1, 'Last name is required'),
+  firstName: z.string().min(1, 'First name is required').optional().or(z.literal('')),
+  lastName: z.string().min(1, 'Last name is required').optional().or(z.literal('')),
   email: z.string().email('Invalid email address').optional().or(z.literal('')),
   phone: z.string().optional(),
   mobile: z.string().optional(),
@@ -91,8 +91,16 @@ function InvestorDialog({ open, onOpenChange, partner, onSave }: { open: boolean
 
   useEffect(() => {
     if (open) {
-      if (partner) form.reset(partner);
-      else form.reset({ firstName: '', lastName: '', email: '', phone: '', mobile: '', contactPerson: '', companyName: '', status: 'new', type: 'investor', website: '', notes: '', address: '' });
+      if (partner) {
+        form.reset({
+          ...partner,
+          website: partner.website || '',
+          notes: partner.notes || '',
+          address: partner.address || '',
+        });
+      } else {
+        form.reset({ firstName: '', lastName: '', email: '', phone: '', mobile: '', contactPerson: '', companyName: '', status: 'new', type: 'investor', website: '', notes: '', address: '' });
+      }
     }
   }, [open, partner, form]);
 
@@ -133,7 +141,7 @@ function InvestorDialog({ open, onOpenChange, partner, onSave }: { open: boolean
                         <FormField control={form.control} name="mobile" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} /></FormControl><FormMessage /></FormItem> )} />
                         <FormField control={form.control} name="companyName" render={({ field }) => ( <FormItem><FormLabel>Fund Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                     </div>
-                    <FormField control={form.control} name="website" render={({ field }) => (<FormItem className="text-left"><FormLabel>Official Website</Label><FormControl><Input placeholder="https://..." {...field} /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name="website" render={({ field }) => (<FormItem className="text-left"><FormLabel>Official Website</FormLabel><FormControl><Input placeholder="https://..." {...field} /></FormControl><FormMessage /></FormItem>)} />
                     <FormField control={form.control} name="notes" render={({ field }) => (<FormItem className="text-left"><FormLabel>Investment Focus / Notes</FormLabel><FormControl><Textarea placeholder="Details about their portfolio and sector focus..." {...field} className="min-h-[100px]" /></FormControl><FormMessage /></FormItem>)} />
                     <FormField control={form.control} name="status" render={({ field }) => ( 
                         <FormItem className="text-left text-foreground">
@@ -171,7 +179,8 @@ export default function InvestorManagement() {
   const [hasLoaded, setHasLoaded] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [resultsLimit, setResultsLimit] = useState(100);
-  const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | null, data?: any }>({ type: null });
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | null, data?: any, initialIndex?: number }>({ type: null });
 
   const [statusFilter, setStatusFilter] = useState('all');
   const [assigneeFilter, setAssigneeFilter] = useState('all');
@@ -207,19 +216,11 @@ export default function InvestorManagement() {
 
   const filteredRecords = useMemo(() => {
     return partners.filter(r => {
-        const term = searchTerm.toLowerCase();
-        const matchesSearch = !searchTerm || 
-            (r.companyName?.toLowerCase().includes(term)) ||
-            (r.firstName?.toLowerCase().includes(term)) ||
-            (r.lastName?.toLowerCase().includes(term)) ||
-            (r.email?.toLowerCase().includes(term));
-            
         const matchesStatus = statusFilter === 'all' || r.status === statusFilter;
         const matchesAssignee = assigneeFilter === 'all' || r.assigneeId === assigneeFilter;
-        
-        return matchesSearch && matchesStatus && matchesAssignee;
+        return matchesStatus && matchesAssignee;
     });
-  }, [partners, searchTerm, statusFilter, assigneeFilter]);
+  }, [partners, statusFilter, assigneeFilter]);
 
   const handleDelete = async () => {
     if (!dialog.data) return;
@@ -233,6 +234,25 @@ export default function InvestorManagement() {
     } catch (e: any) {
         toast({ variant: 'destructive', title: 'Error', description: e.message });
     }
+  };
+
+  const handleEngage = (record: any) => {
+    const indexInSelected = selectedIds.indexOf(record.id);
+    const engageList = selectedIds.length > 0 
+        ? partners.filter(r => selectedIds.includes(r.id)) 
+        : [record];
+        
+    setDialog({ 
+        type: 'engage', 
+        data: engageList, 
+        initialIndex: Math.max(0, indexInSelected) 
+    });
+  };
+
+  const handleBatchEngage = () => {
+    if (selectedIds.length === 0) return;
+    const engageList = partners.filter(r => selectedIds.includes(r.id));
+    setDialog({ type: 'engage', data: engageList, initialIndex: 0 });
   };
 
   const columns: ColumnDef<any>[] = [
@@ -273,7 +293,7 @@ export default function InvestorManagement() {
     { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
       <div className="flex justify-end items-center gap-1 text-left text-foreground">
         <EnrichPartnerButton partner={row.original} onUpdate={fetchData} />
-        <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'engage', data: row.original })} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
+        <Button variant="ghost" size="icon" onClick={() => handleEngage(row.original)} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
         <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.firstName} />
         <PartnerTasksDialog partner={row.original} />
         <PartnerOversightDialog partner={row.original} onUpdate={fetchData} />
@@ -285,7 +305,14 @@ export default function InvestorManagement() {
 
   return (
     <div className="space-y-6 text-left text-foreground">
-      <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o: boolean) => !o && setDialog({ type: null })} partners={[dialog.data]} audience="investors" onEngageSuccess={fetchData} />
+      <EngageDialog 
+        open={dialog.type === 'engage'} 
+        onOpenChange={(o: boolean) => !o && setDialog({ type: null })} 
+        partners={Array.isArray(dialog.data) ? dialog.data : [dialog.data]} 
+        initialIndex={dialog.initialIndex}
+        audience="investors" 
+        onEngageSuccess={fetchData} 
+      />
       <InvestorDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={fetchData} />
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
         <AlertDialogContent>
@@ -323,7 +350,12 @@ export default function InvestorManagement() {
             <div className="space-y-6 text-left text-foreground">
                 <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left text-foreground">
                 <div className="text-left text-foreground"><CardTitle className="flex items-center gap-2 text-left text-foreground"><DollarSign /> App Launch Investors</CardTitle><CardDescription className="text-left text-foreground">Registry view ({partners.length} records).</CardDescription></div>
-                <div className="flex gap-2 text-left">
+                <div className="flex gap-2 text-left text-foreground text-foreground">
+                    {selectedIds.length > 0 && (
+                        <Button variant="secondary" onClick={handleBatchEngage} className="gap-2 shadow-sm font-bold">
+                            <Send className="h-4 w-4" /> Batch Engage ({selectedIds.length})
+                        </Button>
+                    )}
                     <div className="relative w-64 text-left text-foreground">
                         <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input placeholder="Filter registry..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8 bg-white" />
@@ -369,7 +401,7 @@ export default function InvestorManagement() {
                             </div>
                         ) : (
                             <div className="space-y-4">
-                                <DataTable columns={columns} data={filteredRecords} />
+                                <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />
                                 <div className="flex justify-center pt-4">
                                     <Button variant="outline" size="lg" onClick={handleLoadMore} disabled={isLoading} className="gap-2 min-w-[200px]">
                                         {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <ChevronDown className="h-4 w-4" />}
