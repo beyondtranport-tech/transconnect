@@ -172,7 +172,10 @@ function LogAndCopyDialog({ open, onOpenChange, partners, isLoadingPartners, act
                             </FormItem>
                         )} />
                         <FormField control={form.control} name="notes" render={({ field }) => (<FormItem><FormLabel>Notes (Optional)</FormLabel><FormControl><Textarea placeholder="Add details..." {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        <DialogFooter><Button type="submit" disabled={isLogging}>{isLogging && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}Log & Copy</Button></DialogFooter>
+                        <DialogFooter><Button type="submit" disabled={isLogging}>
+                            {isLogging && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+                            Log & Copy
+                        </Button></DialogFooter>
                     </form>
                 </Form>
             </DialogContent>
@@ -185,6 +188,8 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
   const Management = (config as any).Management as React.ComponentType<any> | undefined;
   const Pitch = (config as any).Pitch as React.ComponentType<any> | undefined;
   const Discovery = (config as any).Discovery as React.ComponentType<any> | undefined;
+  const Offer = (config as any).Offer as React.ComponentType<any> | undefined;
+  const Emails = (config as any).Emails as React.ComponentType<any> | undefined;
   
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -326,10 +331,10 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
                 <TabsContent value="company-profile" className="text-left"><div id="tab-content-company-profile"><CompanyProfile partner={null} audience={audience} /></div></TabsContent>
                 <TabsContent value="tech-architecture" className="text-left"><div id="tab-content-tech-architecture"><TechArchitecture partner={null} /></div></TabsContent>
                 <TabsContent value="revenue-model" className="text-left"><div id="tab-content-revenue-model"><RevenueModel partner={null} /></div></TabsContent>
-                <TabsContent value="offer" className="text-left"><div id="tab-content-offer"><Offer partner={null} /></div></TabsContent>
+                <TabsContent value="offer" className="text-left"><div id="tab-content-offer">{Offer && <Offer partner={null} />}</div></TabsContent>
                 <TabsContent value="pitch" className="text-left"><div id="tab-content-pitch"><PitchDeck partner={null} /></div></TabsContent>
                 <TabsContent value="framework" className="text-left"><div id="tab-content-framework"><Framework partner={null} /></div></TabsContent>
-                <TabsContent value="emails" className="text-left"><div id="tab-content-emails"><Emails partner={null} /></div></TabsContent>
+                <TabsContent value="emails" className="text-left"><div id="tab-content-emails">{Emails && <Emails partner={null} />}</div></TabsContent>
             </div>
         </Tabs>
     </div>
