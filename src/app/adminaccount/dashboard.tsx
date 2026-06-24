@@ -44,7 +44,7 @@ export default function DashboardContent() {
             
             // Capped read for dashboard stats
             const [leadsRes, membersRes] = await Promise.all([
-                fetchFromAdminAPI(token, 'getPartnersByType', { type: 'all' }),
+                fetchFromAdminAPI(token, 'searchRegistry', { type: 'all' }),
                 fetchFromAdminAPI(token, 'getMembers')
             ]);
             

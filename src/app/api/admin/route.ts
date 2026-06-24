@@ -1,15 +1,11 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getFirestore, Timestamp, FieldValue, QueryDocumentSnapshot } from 'firebase-admin/firestore';
+import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase-admin';
 
 export const dynamic = 'force-dynamic';
 
-/**
- * LOGGING HELPER
- * Serializes Firestore Timestamps into ISO strings for client consumption.
- */
 function serializeTimestamps(docData: any): any {
     if (!docData) return docData;
     if (docData instanceof Timestamp) {
@@ -54,48 +50,35 @@ export async function POST(req: NextRequest) {
         const db = getFirestore(app);
 
         switch (action) {
-            /**
-             * TARGETED REGISTRY SCAN
-             * Variable Scan only retrieves data when specific criteria are met.
-             * Returns 100 results per query to protect Firestore Quota.
-             */
             case 'searchRegistry': {
-                const { 
-                    term,
-                    searchCompany, 
-                    searchKeyword, 
-                    searchTag, 
-                    category, 
-                    type, 
-                    integrityFilter, 
-                    outreachFilter 
-                } = payload;
+                const { term, searchCompany, searchKeyword, searchTag, category, type, integrityFilter, outreachFilter } = payload;
                 
                 let partnersQuery: any = db.collection('partners');
                 let leadsQuery: any = db.collection('leads');
 
-                // Apply basic type filtering at the DB level
                 if (type && type !== 'all' && type !== 'lead') {
                     partnersQuery = partnersQuery.where('type', '==', type.toLowerCase());
                 }
 
                 if (category && category !== 'all') {
+                    // Check both fields for resilience
                     partnersQuery = partnersQuery.where('industrial_category', '==', category);
                     leadsQuery = leadsQuery.where('industrial_category', '==', category);
                 }
 
-                // Enforce limit of 100 to prevent quota exhaustion (429)
-                partnersQuery = partnersQuery.orderBy('updatedAt', 'desc').limit(100);
-                leadsQuery = leadsQuery.orderBy('updatedAt', 'desc').limit(100);
+                // Increase limit to 1000 for targeted searches
+                const limit = (term || searchCompany || category) ? 1000 : 100;
 
-                const [pSnap, lSnap] = await Promise.all([partnersQuery.get(), leadsQuery.get()]);
+                const [pSnap, lSnap] = await Promise.all([
+                    partnersQuery.orderBy('updatedAt', 'desc').limit(limit).get(),
+                    leadsQuery.orderBy('updatedAt', 'desc').limit(limit).get()
+                ]);
 
                 let data = [
                     ...pSnap.docs.map(d => ({ id: d.id, source: 'partners', ...serializeTimestamps(d.data()) })),
                     ...lSnap.docs.map(d => ({ id: d.id, source: 'leads', ...serializeTimestamps(d.data()) }))
                 ];
 
-                // Perform normalization of keys for consistent UI filtering
                 data = data.map(item => ({
                     ...item,
                     companyName: item.companyName || item.company_name || item.trading_name || '',
@@ -106,7 +89,6 @@ export async function POST(req: NextRequest) {
                     status: item.status || 'new'
                 }));
 
-                // In-memory refining for complex keyword/tag searches
                 if (term || searchCompany || searchKeyword || searchTag) {
                     const lowTerm = (term || searchCompany || '').toLowerCase();
                     const lowKey = (searchKeyword || '').toLowerCase();
@@ -120,18 +102,13 @@ export async function POST(req: NextRequest) {
                     });
                 }
 
-                // Final Integrity/Outreach filters
                 if (integrityFilter === 'has-email') data = data.filter(p => !!p.email);
                 if (integrityFilter === 'no-email') data = data.filter(p => !p.email);
                 if (outreachFilter && outreachFilter !== 'all') data = data.filter(p => p.lastOutreachSubject === outreachFilter);
 
-                return NextResponse.json({ success: true, data: data });
+                return NextResponse.json({ success: true, data: data.slice(0, limit) });
             }
 
-            /**
-             * HARDENED COMMUNICATION LOGGING
-             * Ensures synchronized write to parent status and sub-collection log.
-             */
             case 'logCommunication': {
                 const { partnerId, type, subject, notes, collection: collName } = payload;
                 
@@ -198,7 +175,7 @@ export async function POST(req: NextRequest) {
             }
 
             case 'getAuditLogs': {
-                const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(50).get();
+                const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(100).get();
                 return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
             }
 
@@ -210,6 +187,38 @@ export async function POST(req: NextRequest) {
             case 'getMembers': {
                 const snap = await db.collection('companies').orderBy('updatedAt', 'desc').limit(100).get();
                 return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
+            }
+
+            case 'savePartner': {
+                const { partner } = payload;
+                const ref = db.collection(partner.type === 'lead' ? 'leads' : 'partners').doc(partner.id || db.collection('partners').doc().id);
+                await ref.set({ ...partner, id: ref.id, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+                return NextResponse.json({ success: true, id: ref.id });
+            }
+
+            case 'bulkSavePartners': {
+                const { partners, type } = payload;
+                const batch = db.batch();
+                const coll = type === 'lead' ? 'leads' : 'partners';
+                partners.forEach((p: any) => {
+                    const id = p.record_id || db.collection(coll).doc().id;
+                    const ref = db.collection(coll).doc(id);
+                    batch.set(ref, { 
+                        ...p, 
+                        id, 
+                        type: type === 'lead' ? 'lead' : type,
+                        updatedAt: FieldValue.serverTimestamp() 
+                    }, { merge: true });
+                });
+                await batch.commit();
+                return NextResponse.json({ success: true, count: partners.length });
+            }
+
+            case 'logForensicInitiated': {
+                const { partnerId, isLead } = payload;
+                const ref = db.collection(isLead ? 'leads' : 'partners').doc(partnerId);
+                await ref.update({ researchStatus: 'searching', lastForensicAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
+                return NextResponse.json({ success: true });
             }
 
             default:

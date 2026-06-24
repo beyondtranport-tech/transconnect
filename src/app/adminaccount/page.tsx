@@ -269,7 +269,7 @@ function AdminAccountContent() {
             <Avatar className="h-10 w-10">
                 <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
             </Avatar>
-            <div className="flex flex-col truncate">
+            <div className="flex flex-col truncate text-left">
                 <span className="text-sm font-medium text-sidebar-foreground truncate">{user?.displayName || 'Admin'}</span>
                 <span className="text-xs text-sidebar-foreground/70 truncate">{user?.email}</span>
             </div>

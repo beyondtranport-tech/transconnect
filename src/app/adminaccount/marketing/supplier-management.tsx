@@ -40,7 +40,7 @@ async function performAdminAction(token: string, action: string, payload: any) {
     cache: 'no-store'
   });
   const result = await response.json();
-  if (!response.ok || !result.success) throw new Error(result.error || `API Error: ${action}`);
+  if (!response.ok || !result.success) throw new Error(result.error || `API Error for action: ${action}`);
   return result;
 }
 
@@ -291,7 +291,7 @@ export default function SupplierManagement() {
     { 
         header: 'Outreach & Result',
         cell: ({ row }) => {
-            if (!row.original.lastOutreachSubject) return <span className="text-[10px] text-muted-foreground italic">None</span>;
+            if (!row.original.lastOutreachSubject) return <span className="text-[10px] text-muted-foreground italic text-left">None</span>;
             return (
                 <div className="flex flex-col text-left">
                     <Badge variant="outline" className="text-[9px] h-4 border-primary/20 text-primary uppercase font-bold truncate max-w-[100px]">{row.original.lastOutreachSubject}</Badge>
@@ -419,7 +419,7 @@ export default function SupplierManagement() {
                         </Select>
                     </div>
                     
-                    <div className="lg:col-span-2 flex items-end">
+                    <div className="lg:col-span-2 flex items-end text-left">
                         <Button size="lg" onClick={fetchData} disabled={isLoading} className="h-12 w-full font-black uppercase tracking-widest gap-2 shadow-lg">
                             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4" />}
                             Execute Deep Scan
