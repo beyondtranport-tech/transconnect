@@ -57,7 +57,6 @@ const partnerSchema = z.object({
   status: z.enum(['active', 'inactive', 'contacted', 'new', 'qualified', 'invited', 'registered']),
   type: z.literal('supplier'),
 });
-
 type PartnerFormValues = z.infer<typeof partnerSchema>;
 
 function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean; onOpenChange: (open: boolean) => void; partner?: any; onSave: () => void; }) {
@@ -100,17 +99,17 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left">
-            <div className="grid grid-cols-2 gap-4 text-left">
+            <div className="grid grid-cols-2 gap-4 text-left text-foreground">
               <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Entity Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="contactPerson" render={({ field }) => (<FormItem><FormLabel>Key Decision Maker</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
-            <div className="grid grid-cols-2 gap-4 text-left">
+            <div className="grid grid-cols-2 gap-4 text-left text-foreground">
               <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Direct E-mail</FormLabel><FormControl><Input {...field} type="email" /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="mobile" render={({ field }) => (<FormItem><FormLabel>Mobile (Direct Cell)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
-            <FormField control={form.control} name="website" render={({ field }) => (<FormItem><FormLabel>Corporate Website</FormLabel><FormControl><Input placeholder="https://..." {...field} /></FormControl><FormMessage /></FormItem>)} />
+            <FormField control={form.control} name="website" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Corporate Website</FormLabel><FormControl><Input placeholder="https://..." {...field} /></FormControl><FormMessage /></FormItem>)} />
             <Separator />
-            <div className="space-y-4 text-left">
+            <div className="space-y-4 text-left text-foreground">
                 <h3 className="text-sm font-black uppercase tracking-widest text-primary flex items-center gap-2">
                     <Sparkles className="h-4 w-4"/> 
                     Forensic Technical Profile
@@ -119,7 +118,7 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
                 <FormField control={form.control} name="industrialTags" render={({ field }) => (<FormItem><FormLabel>ML Extracted Keywords</FormLabel><FormControl><Input placeholder="e.g. Parts, Tires..." value={Array.isArray(field.value) ? field.value.join(', ') : ''} onChange={(e) => field.onChange(e.target.value.split(',').map(t => t.trim()))}/></FormControl><FormMessage /></FormItem>)} />
             </div>
             <FormField control={form.control} name="status" render={({ field }) => (
-                <FormItem>
+                <FormItem className="text-left text-foreground">
                     <FormLabel>Pipeline Status</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl><SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
@@ -132,7 +131,7 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
                     </Select>
                 </FormItem>
             )} />
-            <DialogFooter className="pt-4 border-t">
+            <DialogFooter className="pt-4 border-t text-left">
               <Button type="submit" disabled={isLoading}>
                 {isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />} 
                 Save Record
@@ -160,7 +159,7 @@ export default function SupplierManagement() {
   const [outreachFilter, setOutreachFilter] = useState('all');
   const [enrichmentFilter, setEnrichmentFilter] = useState('all');
 
-  const fetchData = useCallback(async (limit: number = 20000) => {
+  const fetchData = useCallback(async (limit: number = 10000) => {
     setIsLoading(true);
     try {
       const token = await getClientSideAuthToken();
@@ -189,16 +188,19 @@ export default function SupplierManagement() {
 
   useEffect(() => { if (hasLoaded) fetchData(); }, [fetchData, hasLoaded]);
 
-  const handleExport = useCallback(() => {
-      const exportList = allRecords.filter(p => {
+  const filteredRecords = useMemo(() => {
+    return allRecords.filter(p => {
         const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
         const matchesAssignee = assigneeFilter === 'all' || p.assigneeId === assigneeFilter;
         return matchesStatus && matchesAssignee;
-      });
-      if (exportList.length === 0) return;
-      downloadDataAsCSV(exportList, `suppliers-backup-${new Date().toISOString().split('T')[0]}.csv`);
-      toast({ title: "Backup Exported" });
-  }, [allRecords, statusFilter, assigneeFilter, toast]);
+    });
+  }, [allRecords, statusFilter, assigneeFilter]);
+
+  const handleExport = useCallback(() => {
+      if (filteredRecords.length === 0) return;
+      downloadDataAsCSV(filteredRecords, `suppliers-export-${new Date().toISOString().split('T')[0]}.csv`);
+      toast({ title: "Backup Exported", description: "Filtered registry saved to CSV." });
+  }, [filteredRecords, toast]);
 
   const handleEngage = (record: any) => {
     const engageList = selectedIds.length > 0 ? allRecords.filter(r => selectedIds.includes(r.id)) : (record ? [record] : []);
@@ -211,15 +213,7 @@ export default function SupplierManagement() {
     });
   };
 
-  const filteredRecords = useMemo(() => {
-    return allRecords.filter(p => {
-        const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
-        const matchesAssignee = assigneeFilter === 'all' || p.assigneeId === assigneeFilter;
-        return matchesStatus && matchesAssignee;
-    });
-  }, [allRecords, statusFilter, assigneeFilter]);
-
-  async function handleDeleteBatch() {
+  const handleDeleteBatch = async () => {
     if (selectedIds.length === 0) return;
     try {
         const token = await getClientSideAuthToken();
@@ -232,9 +226,9 @@ export default function SupplierManagement() {
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Error', description: e.message });
     }
-  }
+  };
 
-  const columns: ColumnDef<any>[] = [
+  const columns: ColumnDef<any>[] = useMemo(() => [
     { 
         accessorKey: 'companyName', 
         header: 'Supplier Entity', 
@@ -261,7 +255,7 @@ export default function SupplierManagement() {
         cell: ({ row }) => {
             if (!row.original.lastOutreachSubject) return <span className="text-[10px] text-muted-foreground italic text-left">None</span>;
             return (
-                <div className="flex flex-col text-left">
+                <div className="flex flex-col text-left text-foreground">
                     <Badge variant="outline" className="text-[9px] h-4 border-primary/20 text-primary uppercase font-bold truncate max-w-[100px]">{row.original.lastOutreachSubject}</Badge>
                     <span className="text-[8px] text-muted-foreground mt-0.5 text-left">{formatDateSafe(row.original.lastOutreachAt, "dd/MM")}</span>
                     {row.original.lastOpenedAt && (
@@ -289,15 +283,15 @@ export default function SupplierManagement() {
         <Button variant="ghost" size="icon" onClick={() => { setDialog({ type: 'delete', data: row.original }); }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
       </div>
     )},
-  ];
+  ], [fetchData]);
 
   return (
     <div className="space-y-6 text-left">
-      <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partners={dialog.data || []} audience="suppliers" onEngageSuccess={fetchData} />
+      <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partners={dialog.data || []} initialIndex={dialog.initialIndex} audience="suppliers" onEngageSuccess={fetchData} />
       <SupplierDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={fetchData} />
       
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
-        <AlertDialogContent>
+        <AlertDialogContent className="text-left text-foreground">
           <AlertDialogHeader><AlertDialogTitle>Delete Record(s)?</AlertDialogTitle><AlertDialogDescription>This will permanently remove the selected record from the registry.</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel>
@@ -317,37 +311,37 @@ export default function SupplierManagement() {
         {!hasLoaded ? (
             <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground">
                 <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
-                <h2 className="text-2xl font-black font-headline mb-2 text-center">Supplier Registry Scan</h2>
-                <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center text-foreground">Scan the entire database. Use filters to prioritize outreach and enrichment worklists.</p>
+                <h2 className="text-2xl font-black font-headline mb-2 text-center text-foreground">Supplier Registry Scan</h2>
+                <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center text-foreground text-center">Scan the entire database. Use filters to prioritize outreach and enrichment worklists.</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto text-left">
-                    <div className="space-y-2 text-left"><Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Company Name</Label><Input placeholder="Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="h-12 bg-white" /></div>
-                    <div className="space-y-2 text-left"><Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Outreach Stage</Label><Select value={outreachFilter} onValueChange={setOutreachFilter}><SelectTrigger className="h-12 bg-white"><SelectValue placeholder="All" /></SelectTrigger><SelectContent><SelectItem value="all">All Stages</SelectItem><SelectItem value="none">No Outreach Yet</SelectItem><SelectItem value="Digital Handshake">Handshake Sent</SelectItem></SelectContent></Select></div>
-                    <div className="space-y-2 text-left"><Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Enrichment</Label><Select value={enrichmentFilter} onValueChange={setEnrichmentFilter}><SelectTrigger className="h-12 bg-white"><SelectValue placeholder="All" /></SelectTrigger><SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="enriched">Enriched</SelectItem><SelectItem value="unenriched">Unenriched</SelectItem></SelectContent></Select></div>
-                    <div className="flex items-end gap-2 text-left"><Button size="lg" onClick={() => { fetchData(); }} disabled={isLoading} className="flex-1 h-12 font-black uppercase tracking-widest gap-2 shadow-lg">{isLoading ? <Loader2 className="animate-spin h-4 w-4"/> : <Search className="h-4 w-4"/>} Scan Registry</Button></div>
+                    <div className="space-y-2 text-left text-foreground"><Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Company Name</Label><Input placeholder="Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="h-12 bg-white" /></div>
+                    <div className="space-y-2 text-left text-foreground"><Label className="text-[10px] font-black uppercase text-muted-foreground ml-1 text-left text-foreground">Outreach Stage</Label><Select value={outreachFilter} onValueChange={setOutreachFilter}><SelectTrigger className="h-12 bg-white text-left text-foreground"><SelectValue placeholder="All" /></SelectTrigger><SelectContent><SelectItem value="all">All Stages</SelectItem><SelectItem value="none">No Outreach Yet</SelectItem><SelectItem value="Digital Handshake">Handshake Sent</SelectItem></SelectContent></Select></div>
+                    <div className="space-y-2 text-left text-foreground"><Label className="text-[10px] font-black uppercase text-muted-foreground ml-1 text-left text-foreground text-left">Enrichment</Label><Select value={enrichmentFilter} onValueChange={setEnrichmentFilter}><SelectTrigger className="h-12 bg-white text-left text-foreground"><SelectValue placeholder="All" /></SelectTrigger><SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="enriched">Enriched</SelectItem><SelectItem value="unenriched">Unenriched</SelectItem></SelectContent></Select></div>
+                    <div className="flex items-end gap-2 text-left text-foreground text-foreground"><Button size="lg" onClick={() => { fetchData(); }} disabled={isLoading} className="flex-1 h-12 font-black uppercase tracking-widest gap-2 shadow-lg">{isLoading ? <Loader2 className="animate-spin h-4 w-4"/> : <Search className="h-4 w-4"/>} Scan Registry</Button></div>
                 </div>
             </Card>
       ) : (
             <div className="space-y-6 text-left text-foreground">
-                <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
-                    <div className="text-left">
-                        <CardTitle className="flex items-center gap-2 text-2xl font-black font-headline text-left"><Building /> Supplier Registry</CardTitle>
-                        <CardDescription className="text-left">Unified industrial database view ({allRecords.length} records).</CardDescription>
+                <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left text-foreground">
+                    <div className="text-left text-foreground">
+                        <CardTitle className="flex items-center gap-2 text-2xl font-black font-headline text-left text-foreground"><Building /> Supplier Registry</CardTitle>
+                        <CardDescription className="text-left text-foreground">Unified industrial database view ({filteredRecords.length} records).</CardDescription>
                     </div>
-                    <div className="flex flex-wrap items-center gap-2 text-left">
-                        {selectedIds.length > 0 && <Button variant="secondary" onClick={() => handleEngage(null)} className="gap-2 shadow-sm font-bold animate-in fade-in zoom-in"><Send className="h-4 w-4" /> Batch Engage ({selectedIds.length})</Button>}
-                        <Button variant="outline" onClick={handleExport} disabled={isLoading}><Download className="mr-2 h-4 w-4" /> Export CSV</Button>
-                        <BulkImportDialog type="supplier" onComplete={() => fetchData()}><Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
-                        <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Record</Button>
+                    <div className="flex flex-wrap items-center gap-2 text-left text-foreground">
+                        {selectedIds.length > 0 && <Button variant="secondary" onClick={() => handleEngage(null)} className="gap-2 shadow-sm font-bold animate-in fade-in zoom-in text-left text-foreground"><Send className="h-4 w-4" /> Batch Engage ({selectedIds.length})</Button>}
+                        <Button variant="outline" onClick={handleExport} disabled={isLoading} className="text-left text-foreground"><Download className="mr-2 h-4 w-4" /> Export CSV</Button>
+                        <BulkImportDialog type="supplier" onComplete={() => fetchData()}><Button variant="outline" className="text-left text-foreground"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
+                        <Button onClick={() => setDialog({ type: 'add' })} className="text-left text-foreground"><PlusCircle className="mr-2 h-4 w-4" /> Add Record</Button>
                     </div>
                 </CardHeader>
                 <Card className="text-left">
                     <CardContent className="pt-6 text-left">
-                        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left">
-                            <div className="space-y-1 text-left"><Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status</Label><Select value={statusFilter} onValueChange={setStatusFilter}><SelectTrigger className="h-9 bg-white text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="new">New</SelectItem><SelectItem value="contacted">Researching</SelectItem></SelectContent></Select></div>
-                            <div className="space-y-1 text-left"><Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Users className="h-3 w-3"/> Assignee</Label><Select value={assigneeFilter} onValueChange={setAssigneeFilter}><SelectTrigger className="h-9 bg-white text-xs"><SelectValue placeholder="All Staff" /></SelectTrigger><SelectContent><SelectItem value="all">All Staff</SelectItem><SelectItem value="none">Unallocated</SelectItem>{staff.map(s => <SelectItem key={s.id} value={s.id}>{s.firstName} {s.lastName}</SelectItem>)}</SelectContent></Select></div>
-                            <div className="space-y-1 text-left"><Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Send className="h-3 w-3"/> Outreach</Label><Select value={outreachFilter} onValueChange={setOutreachFilter}><SelectTrigger className="h-9 bg-white text-xs text-left text-foreground"><SelectValue placeholder="All" /></SelectTrigger><SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="none">No Outreach Yet</SelectItem><SelectItem value="Digital Handshake">Handshake Sent</SelectItem></SelectContent></Select></div>
-                            <div className="space-y-1 text-left"><Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Sparkles className="h-3 w-3"/> Enrichment</Label><Select value={enrichmentFilter} onValueChange={setEnrichmentFilter}><SelectTrigger className="h-9 bg-white text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="enriched">Enriched</SelectItem><SelectItem value="unenriched">Unenriched</SelectItem></SelectContent></Select></div>
-                            <div className="flex items-end"><Button variant="outline" onClick={() => setHasLoaded(false)} className="h-9 w-full text-xs font-bold uppercase tracking-widest"><RotateCcw className="mr-1 h-3 w-3" /> New Search</Button></div>
+                        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
+                            <div className="space-y-1 text-left text-foreground"><Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Filter className="h-3 w-3"/> Status</Label><Select value={statusFilter} onValueChange={setStatusFilter}><SelectTrigger className="h-9 bg-white text-xs text-left text-foreground"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="new">New</SelectItem><SelectItem value="contacted">Researching</SelectItem></SelectContent></Select></div>
+                            <div className="space-y-1 text-left text-foreground"><Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-left text-foreground"><Users className="h-3 w-3"/> Assignee</Label><Select value={assigneeFilter} onValueChange={setAssigneeFilter}><SelectTrigger className="h-9 bg-white text-xs text-left text-foreground text-left text-foreground"><SelectValue placeholder="All Staff" /></SelectTrigger><SelectContent><SelectItem value="all">All Staff</SelectItem><SelectItem value="none">Unallocated</SelectItem>{staff.map(s => <SelectItem key={s.id} value={s.id}>{s.firstName} {s.lastName}</SelectItem>)}</SelectContent></Select></div>
+                            <div className="space-y-1 text-left text-foreground text-foreground"><Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-foreground text-foreground"><Send className="h-3 w-3"/> Outreach</Label><Select value={outreachFilter} onValueChange={setOutreachFilter}><SelectTrigger className="h-9 bg-white text-xs text-left text-foreground text-left text-foreground text-foreground"><SelectValue placeholder="All" /></SelectTrigger><SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="none">No Outreach Yet</SelectItem><SelectItem value="Digital Handshake">Handshake Sent</SelectItem></SelectContent></Select></div>
+                            <div className="space-y-1 text-left text-foreground text-foreground text-foreground"><Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-foreground text-foreground text-foreground"><Sparkles className="h-3 w-3"/> Enrichment</Label><Select value={enrichmentFilter} onValueChange={setEnrichmentFilter}><SelectTrigger className="h-9 bg-white text-xs text-left text-foreground text-left text-foreground text-foreground"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="enriched">Enriched</SelectItem><SelectItem value="unenriched">Unenriched</SelectItem></SelectContent></Select></div>
+                            <div className="flex items-end text-left text-foreground text-foreground text-foreground"><Button variant="outline" onClick={() => setHasLoaded(false)} className="h-9 w-full text-xs font-bold uppercase tracking-widest text-left text-foreground text-foreground text-foreground text-foreground"><RotateCcw className="mr-1 h-3 w-3" /> New Search</Button></div>
                         </div>
                         {isLoading ? <div className="flex justify-center items-center py-20 text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
                             <div className="space-y-6 text-left">

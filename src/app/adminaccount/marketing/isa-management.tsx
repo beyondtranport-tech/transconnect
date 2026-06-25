@@ -156,12 +156,12 @@ export default function ISAManagement() {
   const [assigneeFilter, setAssigneeFilter] = useState('all');
   const [outreachFilter, setOutreachFilter] = useState('all');
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (limit: number = 10000) => {
     setIsLoading(true);
     try {
       const token = await getClientSideAuthToken();
       if (!token) return;
-      const res = await performAdminAction(token, 'searchRegistry', { type: 'isa', term: searchTerm, outreachFilter });
+      const res = await performAdminAction(token, 'searchRegistry', { type: 'isa', term: searchTerm, outreachFilter, limit });
       const staffRes = await performAdminAction(token, 'getPlatformStaff', {});
       setAllRecords(res.data || []);
       setStaff(staffRes.data || []);
@@ -183,22 +183,21 @@ export default function ISAManagement() {
     });
   }, [allRecords, statusFilter, assigneeFilter]);
 
-  const handleExport = () => {
+  const handleExport = useCallback(() => {
       if (filteredRecords.length === 0) return;
       downloadDataAsCSV(filteredRecords, `isa-export-${new Date().toISOString().split('T')[0]}.csv`);
       toast({ title: "Export Complete" });
-  };
+  }, [filteredRecords, toast]);
 
   const handleEngage = (record: any) => {
-    const indexInSelected = record ? selectedIds.indexOf(record.id) : 0;
     const engageList = selectedIds.length > 0 
         ? allRecords.filter(r => selectedIds.includes(r.id)) 
-        : [record];
+        : (record ? [record] : []);
         
     setDialog({ 
         type: 'engage', 
         data: engageList, 
-        initialIndex: Math.max(0, indexInSelected) 
+        initialIndex: record ? engageList.findIndex(r => r.id === record.id) : 0
     });
   };
 
@@ -249,6 +248,11 @@ export default function ISAManagement() {
             );
         }
     },
+    {
+        accessorKey: 'status',
+        header: 'Status',
+        cell: ({ row }) => <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge>
+    },
     { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
       <div className="flex justify-end gap-1 text-left text-foreground">
         <EnrichPartnerButton partner={row.original} onUpdate={fetchData} />
@@ -264,11 +268,11 @@ export default function ISAManagement() {
 
   return (
     <div className="space-y-6 text-left text-foreground">
-      <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partners={Array.isArray(dialog.data) ? dialog.data : [dialog.data]} initialIndex={dialog.initialIndex} audience="isa" onEngageSuccess={fetchData} />
+      <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partners={dialog.data || []} initialIndex={dialog.initialIndex} audience="isa" onEngageSuccess={fetchData} />
       <ISADialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={fetchData} />
       
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
-        <AlertDialogContent className="text-left text-foreground text-foreground">
+        <AlertDialogContent className="text-left text-foreground">
           <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Delete record?</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel>
@@ -286,7 +290,7 @@ export default function ISAManagement() {
 
       <div className="space-y-6 text-left">
         {!hasLoaded ? (
-            <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground">
+            <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground text-foreground">
                 <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
                 <h2 className="text-2xl font-black font-headline mb-2 text-foreground text-center">ISA Registry Search</h2>
                 <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center text-foreground">Scan the professional sales network. Identify targets for your next recruitment sprint.</p>
@@ -295,12 +299,12 @@ export default function ISAManagement() {
                         <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Company, Contact or ID</Label>
                         <Input placeholder="Search criteria..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && fetchData()} className="h-12 text-lg bg-white" />
                     </div>
-                    <div className="flex flex-col md:flex-row gap-2 self-end text-foreground text-foreground text-foreground">
-                        <Button size="lg" onClick={() => { fetchData(); }} disabled={isLoading} className="h-12 px-8 font-bold">
+                    <div className="flex flex-col md:flex-row gap-2 self-end">
+                        <Button size="lg" onClick={() => { fetchData(); }} disabled={isLoading} className="h-12 px-8 font-bold text-left">
                             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4" />}
                             Execute Scan
                         </Button>
-                        <Button variant="outline" size="lg" onClick={() => { fetchData(); }} className="h-12 text-foreground">
+                        <Button variant="outline" size="lg" onClick={() => { fetchData(); }} className="h-12 text-left">
                              Show Recent
                         </Button>
                     </div>
@@ -310,16 +314,16 @@ export default function ISAManagement() {
             <div className="space-y-6 text-left text-foreground">
                 <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
                     <div className="text-left">
-                        <CardTitle className="flex items-center gap-2 text-2xl font-black font-headline text-left text-foreground text-foreground"><Bot /> ISA Management</CardTitle>
+                        <CardTitle className="flex items-center gap-2 text-2xl font-black font-headline text-left text-foreground"><Bot /> ISA Management</CardTitle>
                         <CardDescription className="text-left text-foreground">Full database view ({filteredRecords.length} records).</CardDescription>
                     </div>
-                    <div className="flex flex-wrap items-center gap-2 text-left text-foreground">
+                    <div className="flex flex-wrap items-center gap-2 text-left">
                         {selectedIds.length > 0 && (
                             <>
-                                <Button variant="secondary" onClick={() => handleEngage(null)} className="gap-2 shadow-sm font-bold">
+                                <Button variant="secondary" onClick={() => handleEngage(null)} className="gap-2 shadow-sm font-bold text-left">
                                     <Send className="h-4 w-4" /> Batch Engage ({selectedIds.length})
                                 </Button>
-                                <Button variant="destructive" onClick={() => setDialog({ type: 'delete' })} className="gap-2">
+                                <Button variant="destructive" onClick={() => setDialog({ type: 'delete' })} className="gap-2 text-left">
                                     <Trash2 className="h-4 w-4" /> Delete ({selectedIds.length})
                                 </Button>
                             </>
@@ -328,18 +332,18 @@ export default function ISAManagement() {
                             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                             <Input placeholder="Filter current view..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8 bg-white" />
                         </div>
-                        <Button variant="outline" onClick={handleExport} disabled={isLoading} className="text-foreground">
+                        <Button variant="outline" onClick={handleExport} disabled={isLoading} className="text-foreground text-left">
                             <Download className="mr-2 h-4 w-4" /> Export CSV
                         </Button>
-                        <BulkImportDialog type="isa" onComplete={() => fetchData()}><Button variant="outline" className="text-foreground"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
-                        <Button onClick={() => setDialog({ type: 'add' })} className="text-foreground"><PlusCircle className="mr-2 h-4 w-4" /> Add ISA</Button>
+                        <BulkImportDialog type="isa" onComplete={() => fetchData()}><Button variant="outline" className="text-foreground text-left"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
+                        <Button onClick={() => setDialog({ type: 'add' })} className="text-foreground text-left"><PlusCircle className="mr-2 h-4 w-4" /> Add ISA</Button>
                     </div>
                 </CardHeader>
-                <Card className="border-primary/10 shadow-sm overflow-hidden text-left text-foreground text-foreground">
-                    <CardContent className="pt-6 text-left text-foreground text-foreground">
-                        <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground text-foreground text-foreground">
-                            <div className="flex-1 space-y-2 text-left text-foreground text-foreground">
-                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Filter className="h-3 w-3"/> Status</Label>
+                <Card className="border-primary/10 shadow-sm overflow-hidden text-left">
+                    <CardContent className="pt-6 text-left">
+                        <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
+                            <div className="flex-1 space-y-2 text-left">
+                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left"><Filter className="h-3 w-3"/> Status</Label>
                                 <Select value={statusFilter} onValueChange={setStatusFilter}>
                                     <SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="All Statuses" /></SelectTrigger>
                                     <SelectContent>
@@ -350,8 +354,8 @@ export default function ISAManagement() {
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <div className="flex-1 space-y-2 text-left text-foreground text-foreground">
-                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-foreground"><Users className="h-3 w-3"/> Assignee</Label>
+                            <div className="flex-1 space-y-2 text-left">
+                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left"><Users className="h-3 w-3"/> Assignee</Label>
                                 <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
                                     <SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="All Staff" /></SelectTrigger>
                                     <SelectContent>
@@ -361,12 +365,12 @@ export default function ISAManagement() {
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <div className="flex items-end text-left text-foreground text-foreground">
-                                <Button variant="outline" onClick={() => setHasLoaded(false)} className="h-10 w-full text-foreground"><RotateCcw className="mr-1 h-3 w-3" /> New Search</Button>
+                            <div className="flex items-end text-left text-foreground">
+                                <Button variant="outline" onClick={() => setHasLoaded(false)} className="h-10 w-full text-foreground text-left"><RotateCcw className="mr-1 h-3 w-3" /> New Search</Button>
                             </div>
                         </div>
-                        {isLoading ? <div className="flex justify-center items-center py-10 text-foreground text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
-                            <div className="space-y-6 text-left text-foreground">
+                        {isLoading ? <div className="flex justify-center items-center py-10 text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
+                            <div className="space-y-6 text-left">
                                 <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />
                             </div>
                         )}

@@ -1,7 +1,6 @@
 'use client';
 
-import * as React from 'react';
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -144,7 +143,7 @@ export default function TransporterManagement() {
   const [assigneeFilter, setAssigneeFilter] = useState('all');
   const [outreachFilter, setOutreachFilter] = useState('all');
 
-  const fetchData = useCallback(async (limit: number = 20000) => {
+  const fetchData = useCallback(async (limit: number = 10000) => {
     setIsLoading(true);
     try {
       const token = await getClientSideAuthToken();
@@ -163,28 +162,6 @@ export default function TransporterManagement() {
 
   useEffect(() => { if (hasLoaded) fetchData(); }, [fetchData, hasLoaded]);
 
-  const handleExport = useCallback(() => {
-      const exportList = allRecords.filter(p => {
-        const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
-        const matchesAssignee = assigneeFilter === 'all' || p.assigneeId === assigneeFilter;
-        return matchesStatus && matchesAssignee;
-      });
-      if (exportList.length === 0) return;
-      downloadDataAsCSV(exportList, `transporters-backup-${new Date().toISOString().split('T')[0]}.csv`);
-      toast({ title: "Backup Exported" });
-  }, [allRecords, statusFilter, assigneeFilter, toast]);
-
-  const handleEngage = (record: any) => {
-    const engageList = selectedIds.length > 0 ? allRecords.filter(r => selectedIds.includes(r.id)) : (record ? [record] : []);
-    if (engageList.length === 0) return;
-    
-    setDialog({ 
-        type: 'engage', 
-        data: engageList, 
-        initialIndex: record ? engageList.findIndex(r => r.id === record.id) : 0
-    });
-  };
-
   const filteredRecords = useMemo(() => {
     return (allRecords || []).filter(r => {
         const matchesStatus = statusFilter === 'all' || r.status === statusFilter;
@@ -193,7 +170,25 @@ export default function TransporterManagement() {
     });
   }, [allRecords, statusFilter, assigneeFilter]);
 
-  async function handleDeleteBatch() {
+  const handleExport = useCallback(() => {
+      if (filteredRecords.length === 0) return;
+      downloadDataAsCSV(filteredRecords, `transporters-export-${new Date().toISOString().split('T')[0]}.csv`);
+      toast({ title: "Export Complete" });
+  }, [filteredRecords, toast]);
+
+  const handleEngage = (record: any) => {
+    const engageList = selectedIds.length > 0 
+        ? allRecords.filter(r => selectedIds.includes(r.id)) 
+        : (record ? [record] : []);
+        
+    setDialog({ 
+        type: 'engage', 
+        data: engageList, 
+        initialIndex: record ? engageList.findIndex(r => r.id === record.id) : 0
+    });
+  };
+
+  const handleDeleteBatch = async () => {
     if (selectedIds.length === 0) return;
     try {
       const token = await getClientSideAuthToken();
@@ -206,9 +201,9 @@ export default function TransporterManagement() {
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Error', description: e.message });
     }
-  }
+  };
 
-  const columns: ColumnDef<any>[] = [
+  const columns: ColumnDef<any>[] = useMemo(() => [
     { 
         accessorKey: 'companyName', 
         header: 'Transporter Entity', 
@@ -263,7 +258,7 @@ export default function TransporterManagement() {
         <Button variant="ghost" size="icon" onClick={() => { setDialog({ type: 'delete', data: row.original }); }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
       </div>
     )},
-  ];
+  ], [fetchData]);
 
   return (
     <div className="space-y-6 text-left">
@@ -272,13 +267,13 @@ export default function TransporterManagement() {
       
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
         <AlertDialogContent>
-          <AlertDialogHeader><AlertDialogTitle>Delete Record(s)?</AlertDialogTitle><AlertDialogDescription>This will permanently remove the selected record from the registry.</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will permanently remove the selected record from the registry.</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={selectedIds.length > 0 ? handleDeleteBatch : async () => {
                 const token = await getClientSideAuthToken();
                 if (token && dialog.data) {
-                    await performAdminAction(token, 'deletePartners', { partnerIds: [dialog.data.id] });
+                    await performAdminAction(token, 'deletePartner', { partnerId: dialog.data.id });
                     fetchData();
                     setDialog({ type: null });
                 }
@@ -296,29 +291,29 @@ export default function TransporterManagement() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto text-left text-foreground">
                     <div className="space-y-2 text-left text-foreground"><Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Company Name</Label><Input placeholder="Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="h-12 bg-white text-foreground" /></div>
                     <div className="space-y-2 text-left text-foreground"><Label className="text-[10px] font-black uppercase text-muted-foreground ml-1 text-left text-foreground">Outreach Stage</Label><Select value={outreachFilter} onValueChange={setOutreachFilter}><SelectTrigger className="h-12 bg-white text-left text-foreground"><SelectValue placeholder="All" /></SelectTrigger><SelectContent><SelectItem value="all">All Stages</SelectItem><SelectItem value="none">No Outreach Yet</SelectItem><SelectItem value="Digital Handshake">Handshake Sent</SelectItem></SelectContent></Select></div>
-                    <div className="flex items-end gap-2 text-left text-foreground"><Button size="lg" onClick={() => { fetchData(); }} disabled={isLoading} className="flex-1 h-12 font-black uppercase tracking-widest gap-2 shadow-lg">{isLoading ? <Loader2 className="animate-spin h-4 w-4"/> : <Search className="h-4 w-4" />} Scan Registry</Button></div>
+                    <div className="flex items-end gap-2 text-left text-foreground text-foreground"><Button size="lg" onClick={() => { fetchData(); }} disabled={isLoading} className="flex-1 h-12 font-black uppercase tracking-widest gap-2 shadow-lg">{isLoading ? <Loader2 className="animate-spin h-4 w-4"/> : <Search className="h-4 w-4" />} Scan Registry</Button></div>
                 </div>
             </Card>
       ) : (
             <div className="space-y-6 text-left text-foreground">
-                <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left text-foreground text-foreground text-foreground">
-                    <div className="text-left text-foreground"><CardTitle className="flex items-center gap-2 text-left text-foreground text-foreground text-foreground"><Truck /> Transporter Registry</CardTitle><CardDescription className="text-left text-foreground text-foreground text-foreground text-foreground">Unified industrial database view ({allRecords.length} records).</CardDescription></div>
-                    <div className="flex flex-wrap items-center gap-2 text-left text-foreground text-foreground text-foreground">
-                        {selectedIds.length > 0 && <Button variant="secondary" onClick={() => handleEngage(null)} className="gap-2 shadow-sm font-bold animate-in fade-in zoom-in text-left text-foreground text-foreground"><Send className="h-4 w-4" /> Batch Engage ({selectedIds.length})</Button>}
-                        <Button variant="outline" onClick={handleExport} disabled={isLoading} className="text-left text-foreground text-foreground text-foreground text-foreground"><Download className="mr-2 h-4 w-4" /> Export CSV</Button>
-                        <BulkImportDialog type="transporter" onComplete={() => fetchData()}><Button variant="outline" className="text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
-                        <Button onClick={() => setDialog({ type: 'add' })} className="text-foreground text-left text-foreground text-foreground text-foreground text-foreground text-foreground"><PlusCircle className="mr-2 h-4 w-4" /> Add Record</Button>
+                <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
+                    <div className="text-left"><CardTitle className="flex items-center gap-2 text-left text-foreground"><Truck /> Transporter Registry</CardTitle><CardDescription className="text-left text-foreground">Unified industrial database view ({filteredRecords.length} records).</CardDescription></div>
+                    <div className="flex flex-wrap items-center gap-2 text-left text-foreground text-foreground text-foreground text-foreground text-foreground">
+                        {selectedIds.length > 0 && <Button variant="secondary" onClick={() => handleEngage(null)} className="gap-2 shadow-sm font-bold animate-in fade-in zoom-in text-left text-foreground"><Send className="h-4 w-4" /> Batch Engage ({selectedIds.length})</Button>}
+                        <Button variant="outline" onClick={handleExport} disabled={isLoading} className="text-left text-foreground text-left text-foreground"><Download className="mr-2 h-4 w-4" /> Export CSV</Button>
+                        <BulkImportDialog type="transporter" onComplete={() => fetchData()}><Button variant="outline" className="text-left text-foreground text-foreground text-left"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
+                        <Button onClick={() => setDialog({ type: 'add' })} className="text-foreground text-left text-foreground text-foreground text-foreground"><PlusCircle className="mr-2 h-4 w-4" /> Add Record</Button>
                     </div>
                 </CardHeader>
-                <Card className="text-left text-foreground">
-                    <CardContent className="pt-6 text-left text-foreground text-foreground text-foreground">
+                <Card className="text-left text-foreground text-foreground text-foreground">
+                    <CardContent className="pt-6 text-left">
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
-                            <div className="space-y-1 text-left text-foreground"><Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Filter className="h-3 w-3"/> Status</Label><Select value={statusFilter} onValueChange={setStatusFilter}><SelectTrigger className="h-9 bg-white text-xs text-left text-foreground"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="new">New</SelectItem><SelectItem value="contacted">Researching</SelectItem></SelectContent></Select></div>
-                            <div className="space-y-1 text-left text-foreground"><Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Users className="h-3 w-3"/> Assignee</Label><Select value={assigneeFilter} onValueChange={setAssigneeFilter}><SelectTrigger className="h-9 bg-white text-xs text-left text-foreground"><SelectValue placeholder="All Staff" /></SelectTrigger><SelectContent><SelectItem value="all">All Staff</SelectItem><SelectItem value="none">Unallocated</SelectItem>{staff.map(s => <SelectItem key={s.id} value={s.id}>{s.firstName} {s.lastName}</SelectItem>)}</SelectContent></Select></div>
-                            <div className="flex items-end text-left text-foreground"><Button variant="outline" onClick={() => setHasLoaded(false)} className="h-9 w-full text-xs font-bold uppercase tracking-widest text-left text-foreground"><RotateCcw className="mr-1 h-3 w-3" /> New Search</Button></div>
+                            <div className="space-y-1 text-left text-foreground text-foreground"><Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-foreground text-foreground"><Filter className="h-3 w-3"/> Status</Label><Select value={statusFilter} onValueChange={setStatusFilter}><SelectTrigger className="h-9 bg-white text-xs text-left text-foreground text-foreground"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="new">New</SelectItem><SelectItem value="contacted">Researching</SelectItem></SelectContent></Select></div>
+                            <div className="space-y-1 text-left text-foreground text-foreground"><Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-foreground text-foreground text-foreground text-foreground"><Users className="h-3 w-3"/> Assignee</Label><Select value={assigneeFilter} onValueChange={setAssigneeFilter}><SelectTrigger className="h-9 bg-white text-xs text-left text-foreground text-foreground text-foreground"><SelectValue placeholder="All Staff" /></SelectTrigger><SelectContent><SelectItem value="all">All Staff</SelectItem><SelectItem value="none">Unallocated</SelectItem>{staff.map(s => <SelectItem key={s.id} value={s.id}>{s.firstName} {s.lastName}</SelectItem>)}</SelectContent></Select></div>
+                            <div className="flex items-end text-left text-foreground text-foreground text-foreground"><Button variant="outline" onClick={() => setHasLoaded(false)} className="h-9 w-full text-xs font-bold uppercase tracking-widest text-left text-foreground text-foreground text-foreground"><RotateCcw className="mr-1 h-3 w-3" /> New Search</Button></div>
                         </div>
-                        {isLoading ? <div className="flex justify-center items-center py-20 text-foreground text-foreground text-foreground text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
-                            <div className="space-y-6 text-left text-foreground text-foreground text-foreground text-foreground">
+                        {isLoading ? <div className="flex justify-center items-center py-20 text-foreground text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
+                            <div className="space-y-6 text-left">
                                 <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />
                             </div>
                         )}
