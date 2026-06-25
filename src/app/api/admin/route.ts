@@ -46,9 +46,9 @@ export async function POST(req: NextRequest) {
 
         switch (action) {
             case 'searchRegistry': {
-                const { term, category, type, outreachFilter, enrichmentFilter, limit = 10000 } = payload;
+                const { term, type, outreachFilter, enrichmentFilter, limit = 20000 } = payload;
                 
-                // Optimized Full-Base Fetch
+                // UNRESTRICTED FULL BASE SCAN FOR ADMINS
                 const [pSnap, lSnap] = await Promise.all([
                     db.collection('partners').limit(limit).get(),
                     db.collection('leads').limit(limit).get()
@@ -66,20 +66,16 @@ export async function POST(req: NextRequest) {
                     entryType: item.industrial_category || item.category || item.entryType || item.classification || item.role || 'General'
                 }));
 
-                // Apply Deep-Scan Filtering
+                // Apply Backend Filtering
                 if (type && type !== 'all' && type !== 'lead') {
                     normalized = normalized.filter(p => p.type === type.toLowerCase());
                 } else if (type === 'lead') {
                     normalized = normalized.filter(p => p.source === 'leads');
                 }
 
-                if (category && category !== 'all') {
-                    normalized = normalized.filter(p => p.entryType === category || p.classification === category);
-                }
-
-                // Hardened "No Outreach" targeting
+                // Precision Outreach Filter
                 if (outreachFilter === 'none') {
-                    normalized = normalized.filter(p => !p.lastOutreachSubject && ['new', 'inactive'].includes(p.status));
+                    normalized = normalized.filter(p => !p.lastOutreachSubject && ['new', 'inactive', 'contacted'].includes(p.status));
                 } else if (outreachFilter && outreachFilter !== 'all') {
                     normalized = normalized.filter(p => p.lastOutreachSubject === outreachFilter);
                 }
@@ -102,7 +98,7 @@ export async function POST(req: NextRequest) {
 
                 const uniqueMap = new Map();
                 normalized.forEach(item => {
-                    const key = (item.companyName || item.email || item.id).toLowerCase();
+                    const key = (item.id || item.email || item.companyName).toLowerCase();
                     if (!uniqueMap.has(key)) {
                         uniqueMap.set(key, item);
                     }
@@ -120,19 +116,6 @@ export async function POST(req: NextRequest) {
                     data: data.map(serializeTimestamps),
                     totalCount: data.length
                 });
-            }
-
-            case 'getLeads': {
-                const snap = await db.collection('leads').orderBy('updatedAt', 'desc').limit(10000).get();
-                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
-            }
-
-            case 'getPartnersByType': {
-                const { type: pType, limit = 10000 } = payload;
-                let q: any = db.collection('partners');
-                if (pType && pType !== 'all') q = q.where('type', '==', pType);
-                const snap = await q.orderBy('updatedAt', 'desc').limit(limit).get();
-                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
             }
 
             case 'logCommunication': {
@@ -168,30 +151,29 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true });
             }
 
+            case 'getPartnersByType': {
+                const { type } = payload;
+                let q = db.collection('partners').limit(limit);
+                if (type && type !== 'all') {
+                    q = q.where('type', '==', type);
+                }
+                const snap = await q.get();
+                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
+            }
+
             case 'getPlatformStaff': {
                 const snap = await db.collection('platformStaff').orderBy('firstName', 'asc').get();
                 return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
             }
 
             case 'getMembers': {
-                const snap = await db.collection('companies').orderBy('updatedAt', 'desc').limit(10000).get();
+                const snap = await db.collection('companies').orderBy('updatedAt', 'desc').limit(20000).get();
                 return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
             }
 
             case 'getAuditLogs': {
                 const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(100).get();
                 return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
-            }
-
-            case 'deletePartners': {
-                const { partnerIds } = payload;
-                const batch = db.batch();
-                partnerIds.forEach((id: string) => {
-                    batch.delete(db.collection('partners').doc(id));
-                    batch.delete(db.collection('leads').doc(id));
-                });
-                await batch.commit();
-                return NextResponse.json({ success: true });
             }
 
             default:

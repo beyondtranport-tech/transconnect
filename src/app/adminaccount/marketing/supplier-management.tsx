@@ -29,7 +29,6 @@ import { EnrichPartnerButton } from './EnrichPartnerButton';
 import { BulkImportDialog } from './BulkImportDialog';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { supplierCategories } from './discovery-engine';
 
 async function performAdminAction(token: string, action: string, payload: any) {
   const response = await fetch('/api/admin', {
@@ -38,27 +37,21 @@ async function performAdminAction(token: string, action: string, payload: any) {
     body: JSON.stringify({ action, payload }),
     cache: 'no-store'
   });
-  
-  const contentType = response.headers.get('content-type');
-  if (!contentType || !contentType.includes('application/json')) {
-      throw new Error("Invalid server response. Please try again.");
-  }
-
   const result = await response.json();
   if (!response.ok || !result.success) throw new Error(result.error || `API Error for action: ${action}`);
   return result;
 }
 
 const partnerSchema = z.object({
-  firstName: z.string().min(1, 'First name is required').optional().or(z.literal('')),
-  lastName: z.string().min(1, 'Last name is required').optional().or(z.literal('')),
-  email: z.string().email('Invalid email address').optional().or(z.literal('')),
-  phone: z.string().optional().or(z.literal('')),
-  mobile: z.string().optional().or(z.literal('')),
-  contactPerson: z.string().optional().or(z.literal('')),
-  companyName: z.string().optional().or(z.literal('')),
+  firstName: z.string().optional().or(z.literal('')),
+  lastName: z.string().optional().or(z.literal('')),
+  email: z.string().email('Invalid email').optional().or(z.literal('')),
+  phone: z.string().optional(),
+  mobile: z.string().optional(),
+  contactPerson: z.string().optional(),
+  companyName: z.string().optional(),
   website: z.string().url("Invalid URL").optional().or(z.literal('')),
-  address: z.string().optional().or(z.literal('')),
+  address: z.string().optional(),
   minedServiceWording: z.string().optional().or(z.literal('')),
   industrialTags: z.array(z.string()).optional().default([]),
   status: z.enum(['active', 'inactive', 'contacted', 'new', 'qualified', 'invited', 'registered']),
@@ -129,7 +122,7 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
                 <FormItem>
                     <FormLabel>Pipeline Status</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl><SelectTrigger className="bg-white"><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
+                        <FormControl><SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
                         <SelectContent>
                             <SelectItem value="new">New Lead</SelectItem>
                             <SelectItem value="contacted">Researching</SelectItem>
@@ -166,9 +159,8 @@ export default function SupplierManagement() {
   const [assigneeFilter, setAssigneeFilter] = useState('all');
   const [outreachFilter, setOutreachFilter] = useState('all');
   const [enrichmentFilter, setEnrichmentFilter] = useState('all');
-  const [categoryFilter, setCategoryFilter] = useState('all');
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (limit: number = 20000) => {
     setIsLoading(true);
     try {
       const token = await getClientSideAuthToken();
@@ -178,10 +170,9 @@ export default function SupplierManagement() {
         performAdminAction(token, 'searchRegistry', { 
             type: 'supplier', 
             term: searchTerm, 
-            category: categoryFilter === 'all' ? '' : categoryFilter, 
             outreachFilter, 
             enrichmentFilter,
-            limit: 10000 
+            limit 
         }),
         performAdminAction(token, 'getPlatformStaff', {})
       ]);
@@ -194,26 +185,39 @@ export default function SupplierManagement() {
     } finally {
       setIsLoading(false);
     }
-  }, [searchTerm, categoryFilter, outreachFilter, enrichmentFilter, toast]);
+  }, [searchTerm, outreachFilter, enrichmentFilter, toast]);
 
   useEffect(() => { if (hasLoaded) fetchData(); }, [fetchData, hasLoaded]);
 
   const handleExport = useCallback(() => {
-      if (allRecords.length === 0) return;
-      downloadDataAsCSV(allRecords, `suppliers-backup-${new Date().toISOString().split('T')[0]}.csv`);
-      toast({ title: "Backup Exported", description: "Full filtered registry saved to CSV." });
-  }, [allRecords, toast]);
+      const exportList = allRecords.filter(p => {
+        const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
+        const matchesAssignee = assigneeFilter === 'all' || p.assigneeId === assigneeFilter;
+        return matchesStatus && matchesAssignee;
+      });
+      if (exportList.length === 0) return;
+      downloadDataAsCSV(exportList, `suppliers-backup-${new Date().toISOString().split('T')[0]}.csv`);
+      toast({ title: "Backup Exported" });
+  }, [allRecords, statusFilter, assigneeFilter, toast]);
 
   const handleEngage = (record: any) => {
-    const engageList = selectedIds.length > 0 
-        ? allRecords.filter(r => selectedIds.includes(r.id)) 
-        : (record ? [record] : []);
-    
+    const engageList = selectedIds.length > 0 ? allRecords.filter(r => selectedIds.includes(r.id)) : (record ? [record] : []);
     if (engageList.length === 0) return;
     
-    const indexInSelected = record ? engageList.findIndex(r => r.id === record.id) : 0;
-    setDialog({ type: 'engage', data: engageList, initialIndex: Math.max(0, indexInSelected) });
+    setDialog({ 
+        type: 'engage', 
+        data: engageList, 
+        initialIndex: record ? engageList.findIndex(r => r.id === record.id) : 0
+    });
   };
+
+  const filteredRecords = useMemo(() => {
+    return allRecords.filter(p => {
+        const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
+        const matchesAssignee = assigneeFilter === 'all' || p.assigneeId === assigneeFilter;
+        return matchesStatus && matchesAssignee;
+    });
+  }, [allRecords, statusFilter, assigneeFilter]);
 
   async function handleDeleteBatch() {
     if (selectedIds.length === 0) return;
@@ -237,7 +241,7 @@ export default function SupplierManagement() {
         cell: ({ row }) => (
             <div className="flex flex-col text-sm text-left">
                 <span className="font-bold text-foreground text-left">{row.original.companyName || 'Unnamed Entity'}</span>
-                <div className="flex items-center gap-1.5 mt-1">
+                <div className="flex items-center gap-1.5 mt-1 text-left">
                     {row.original.website && <Globe className="h-3 w-3 text-primary" />}
                     <span className="text-[10px] text-muted-foreground uppercase font-black">{row.original.entryType || 'Supplier'}</span>
                 </div>
@@ -249,30 +253,33 @@ export default function SupplierManagement() {
         header: 'Key Decision Maker',
         cell: ({ row }) => <span className="text-sm font-medium text-left">{row.original.contactPerson || 'N/A'}</span>
     },
-    { accessorKey: 'phone', header: 'Landline' },
     { accessorKey: 'mobile', header: 'Mobile' },
-    { accessorKey: 'email', header: 'Email' },
     { 
-        header: 'Status', 
+        header: 'Outreach & Result',
+        id: 'outreach',
+        accessorKey: 'lastOutreachAt',
         cell: ({ row }) => {
-            const isEnriched = !!(row.original.notes || row.original.website);
-            const isSearching = row.original.researchStatus === 'searching';
+            if (!row.original.lastOutreachSubject) return <span className="text-[10px] text-muted-foreground italic text-left">None</span>;
             return (
-                <div className="flex flex-col gap-1 items-center">
-                    <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge>
-                    {isEnriched && (
-                         <div className="flex flex-col items-center">
-                            <Badge className="bg-green-100 text-green-700 border-none text-[9px] h-4 uppercase">Enriched</Badge>
-                            <span className="text-[8px] text-muted-foreground mt-0.5">{formatDateSafe(row.original.enrichedAt, "dd/MM")}</span>
+                <div className="flex flex-col text-left">
+                    <Badge variant="outline" className="text-[9px] h-4 border-primary/20 text-primary uppercase font-bold truncate max-w-[100px]">{row.original.lastOutreachSubject}</Badge>
+                    <span className="text-[8px] text-muted-foreground mt-0.5 text-left">{formatDateSafe(row.original.lastOutreachAt, "dd/MM")}</span>
+                    {row.original.lastOpenedAt && (
+                        <div className="flex items-center gap-1 text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100 mt-1 w-fit">
+                            <UserCheck className="h-2.5 w-2.5" /> Read
                         </div>
                     )}
-                    {isSearching && <Badge className="bg-amber-100 text-amber-700 border-none text-[9px] h-4 uppercase animate-pulse">Searching</Badge>}
                 </div>
             );
         }
     },
+    {
+        accessorKey: 'status',
+        header: 'Status',
+        cell: ({ row }) => <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge>
+    },
     { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
-      <div className="flex justify-end gap-1">
+      <div className="flex justify-end gap-1 text-left text-foreground">
         <EnrichPartnerButton partner={row.original} onUpdate={fetchData} />
         <Button variant="ghost" size="icon" onClick={() => handleEngage(row.original)} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
         <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.companyName} />
@@ -284,28 +291,20 @@ export default function SupplierManagement() {
     )},
   ];
 
-  const filteredRecords = useMemo(() => {
-    return allRecords.filter(p => {
-        const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
-        const matchesAssignee = assigneeFilter === 'all' || p.assigneeId === assigneeFilter;
-        return matchesStatus && matchesAssignee;
-    });
-  }, [allRecords, statusFilter, assigneeFilter]);
-
   return (
     <div className="space-y-6 text-left">
-      <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partners={dialog.data || []} initialIndex={dialog.initialIndex} audience="suppliers" onEngageSuccess={fetchData} />
+      <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partners={dialog.data || []} audience="suppliers" onEngageSuccess={fetchData} />
       <SupplierDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={fetchData} />
       
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
         <AlertDialogContent>
-          <AlertDialogHeader><AlertDialogTitle>Delete Record(s)?</AlertDialogTitle><AlertDialogDescription>This will permanently remove the record.</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogHeader><AlertDialogTitle>Delete Record(s)?</AlertDialogTitle><AlertDialogDescription>This will permanently remove the selected record from the registry.</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={selectedIds.length > 0 ? handleDeleteBatch : async () => {
                 const token = await getClientSideAuthToken();
                 if (token && dialog.data) {
-                    await performAdminAction(token, 'deletePartners', { partnerIds: [dialog.data.id] });
+                    await performAdminAction(token, 'deletePartner', { partnerId: dialog.data.id });
                     fetchData();
                     setDialog({ type: null });
                 }
@@ -318,8 +317,8 @@ export default function SupplierManagement() {
         {!hasLoaded ? (
             <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground">
                 <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
-                <h2 className="text-2xl font-black font-headline mb-2 text-center">Supplier Registry Search</h2>
-                <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center">Scan the entire database. Use filters to prioritize outreach and enrichment worklists.</p>
+                <h2 className="text-2xl font-black font-headline mb-2 text-center">Supplier Registry Scan</h2>
+                <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center text-foreground">Scan the entire database. Use filters to prioritize outreach and enrichment worklists.</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto text-left">
                     <div className="space-y-2 text-left"><Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Company Name</Label><Input placeholder="Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="h-12 bg-white" /></div>
                     <div className="space-y-2 text-left"><Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Outreach Stage</Label><Select value={outreachFilter} onValueChange={setOutreachFilter}><SelectTrigger className="h-12 bg-white"><SelectValue placeholder="All" /></SelectTrigger><SelectContent><SelectItem value="all">All Stages</SelectItem><SelectItem value="none">No Outreach Yet</SelectItem><SelectItem value="Digital Handshake">Handshake Sent</SelectItem></SelectContent></Select></div>
@@ -334,7 +333,7 @@ export default function SupplierManagement() {
                         <CardTitle className="flex items-center gap-2 text-2xl font-black font-headline text-left"><Building /> Supplier Registry</CardTitle>
                         <CardDescription className="text-left">Unified industrial database view ({allRecords.length} records).</CardDescription>
                     </div>
-                    <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2 text-left">
                         {selectedIds.length > 0 && <Button variant="secondary" onClick={() => handleEngage(null)} className="gap-2 shadow-sm font-bold animate-in fade-in zoom-in"><Send className="h-4 w-4" /> Batch Engage ({selectedIds.length})</Button>}
                         <Button variant="outline" onClick={handleExport} disabled={isLoading}><Download className="mr-2 h-4 w-4" /> Export CSV</Button>
                         <BulkImportDialog type="supplier" onComplete={() => fetchData()}><Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>

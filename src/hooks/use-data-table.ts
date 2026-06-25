@@ -20,7 +20,7 @@ export function useDataTable<TData>(data: TData[], columns: ColumnDef<TData>[]) 
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
   const [pageIndex, setPageIndex] = useState(0);
   
-  // Professional high-density page size
+  // High-density professional page size
   const pageSize = 100;
 
   // Reset pagination when data changes or filter is applied
@@ -34,7 +34,7 @@ export function useDataTable<TData>(data: TData[], columns: ColumnDef<TData>[]) 
   };
 
   const filteredRows = useMemo(() => {
-    let processedData = [...data];
+    let processedData = [...(data || [])];
 
     // Apply global filter
     if (globalFilter) {
@@ -94,7 +94,7 @@ export function useDataTable<TData>(data: TData[], columns: ColumnDef<TData>[]) 
       });
   };
 
-  const pageCount = Math.ceil(filteredRows.length / pageSize);
+  const pageCount = Math.max(1, Math.ceil(filteredRows.length / pageSize));
   const canNextPage = pageIndex < pageCount - 1;
   const canPrevPage = pageIndex > 0;
   
