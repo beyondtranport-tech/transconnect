@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -87,7 +86,7 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl text-left">
+      <DialogContent className="sm:max-w-2xl text-left text-foreground">
         <DialogHeader><DialogTitle>{partner ? 'Edit' : 'Add'} Transporter</DialogTitle></DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left text-foreground">
@@ -213,7 +212,7 @@ export default function TransporterManagement() {
           cell: ({ row }) => (
               <div className="flex flex-col text-sm text-left">
                   <span className="font-bold text-foreground text-left">{row.original.companyName || 'Unnamed Entity'}</span>
-                  <div className="flex items-center gap-1.5 mt-1 text-left">
+                  <div className="flex items-center gap-1.5 mt-1 text-left text-foreground">
                       {row.original.website && <Globe className="h-3 w-3 text-primary" />}
                       <span className="text-[10px] text-muted-foreground uppercase font-black text-left">{row.original.industrial_category || 'Logistics'}</span>
                   </div>
@@ -235,7 +234,7 @@ export default function TransporterManagement() {
           cell: ({ row }) => {
               if (!row.original.lastOutreachSubject) return <span className="text-[10px] text-muted-foreground italic text-left">None</span>;
               return (
-                  <div className="flex flex-col text-left">
+                  <div className="flex flex-col text-left text-foreground">
                       <Badge variant="outline" className="text-[9px] h-4 uppercase font-bold truncate max-w-[100px] text-left">{row.original.lastOutreachSubject}</Badge>
                       <span className="text-[8px] text-muted-foreground mt-0.5 text-left">{formatDateSafe(row.original.lastOutreachAt, "dd/MM")}</span>
                       {row.original.lastOpenedAt && (
@@ -252,7 +251,7 @@ export default function TransporterManagement() {
           header: 'Status', 
           cell: ({ row }) => <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge> 
       },
-      { id: 'actions', header: 'Actions', cell: ({ row }) => (
+      { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
         <div className="flex justify-end gap-1 text-left text-foreground">
           <EnrichPartnerButton partner={row.original} onUpdate={() => fetchData()} />
           <Button variant="ghost" size="icon" onClick={() => handleEngage(row.original)} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
@@ -273,7 +272,7 @@ export default function TransporterManagement() {
       <TransporterDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={() => fetchData()} />
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
         <AlertDialogContent>
-          <AlertDialogHeader><AlertDialogTitle>Delete Record?</AlertDialogTitle><AlertDialogDescription>This will permanently remove the record.</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will permanently remove the record.</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter><AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -282,10 +281,10 @@ export default function TransporterManagement() {
             <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground text-left">
                 <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
                 <h2 className="text-2xl font-black font-headline mb-2 text-center text-foreground text-left">Haulier Registry Scan</h2>
-                <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center text-foreground text-left">Scan the entire national database. Identify the right capacity for your sprint.</p>
+                <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center text-foreground text-left text-foreground">Scan the entire national database. Identify the right capacity for your sprint.</p>
                 
                 <div className="max-w-5xl mx-auto space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left text-foreground">
                         <div className="space-y-1">
                             <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Outreach Stage</Label>
                             <Select value={outreachFilter} onValueChange={setOutreachFilter}>
@@ -302,7 +301,7 @@ export default function TransporterManagement() {
                             <Select value={statusFilter} onValueChange={setStatusFilter}>
                                 <SelectTrigger className="bg-white"><SelectValue placeholder="All Statuses" /></SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="all">All</SelectItem>
+                                    <SelectItem value="all">All Statuses</SelectItem>
                                     <SelectItem value="new">New Lead</SelectItem>
                                     <SelectItem value="contacted">Researching</SelectItem>
                                     <SelectItem value="qualified">Qualified</SelectItem>
@@ -323,8 +322,8 @@ export default function TransporterManagement() {
                     </div>
 
                     <div className="flex flex-col md:flex-row gap-4 items-end text-left text-foreground">
-                        <div className="flex-1 space-y-2 text-left">
-                            <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1 text-left">Search by Name or Keyword</Label>
+                        <div className="flex-1 space-y-2 text-left text-foreground">
+                            <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1 text-left text-foreground">Search by Name or Keyword</Label>
                             <Input placeholder="Search criteria..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="h-12 bg-white" onKeyDown={(e) => e.key === 'Enter' && fetchData()} />
                         </div>
                         <Button size="lg" onClick={() => fetchData()} disabled={isLoading} className="h-12 font-black uppercase tracking-widest gap-2 shadow-lg px-10">
@@ -336,20 +335,20 @@ export default function TransporterManagement() {
       ) : (
             <div className="space-y-6 text-left text-foreground">
                 <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left text-foreground">
-                    <div className="text-left text-foreground text-left"><CardTitle className="flex items-center gap-2 text-2xl font-black font-headline text-left text-foreground"><Truck /> Transporter Registry</CardTitle><CardDescription className="text-left text-muted-foreground">Unified industrial database view ({filteredRecords.length} records).</CardDescription></div>
-                    <div className="flex flex-wrap items-center gap-2 text-left text-foreground">
+                    <div className="text-left text-foreground text-left text-foreground"><CardTitle className="flex items-center gap-2 text-2xl font-black font-headline text-left text-foreground"><Truck /> Transporter Registry</CardTitle><CardDescription className="text-left text-muted-foreground text-foreground text-foreground">Unified industrial database view ({filteredRecords.length} records).</CardDescription></div>
+                    <div className="flex flex-wrap items-center gap-2 text-left text-foreground text-foreground text-foreground">
                         {selectedIds.length > 0 && <Button variant="secondary" onClick={() => handleEngage(null)} className="gap-2 shadow-sm font-bold animate-in fade-in zoom-in text-left text-foreground"><Send className="h-4 w-4" /> Batch Engage ({selectedIds.length})</Button>}
                         
                         <Popover>
                             <PopoverTrigger asChild>
                                 <Button variant="outline" className="gap-2"><Settings2 className="h-4 w-4" /> Columns</Button>
                             </PopoverTrigger>
-                            <PopoverContent className="w-56 p-2 text-left">
+                            <PopoverContent className="w-56 p-2 text-left text-foreground">
                                 <div className="space-y-1">
                                     {Object.keys(visibleColumns).map(col => (
-                                        <div key={col} className="flex items-center justify-between p-2 hover:bg-muted rounded-md cursor-pointer text-xs font-bold uppercase tracking-widest" onClick={() => setVisibleColumns(prev => ({...prev, [col]: !prev[col]}))}>
+                                        <div key={col} className="flex items-center justify-between p-2 hover:bg-muted rounded-md cursor-pointer text-[10px] font-black uppercase tracking-widest text-foreground" onClick={() => setVisibleColumns(prev => ({...prev, [col]: !prev[col]}))}>
                                             <span>{col.replace(/([A-Z])/g, ' $1')}</span>
-                                            {visibleColumns[col] && <Check className="h-3 w-3 text-primary" />}
+                                            {visibleColumns[col] && <Check className="h-3 w-3 text-primary text-foreground" />}
                                         </div>
                                     ))}
                                 </div>
@@ -362,12 +361,12 @@ export default function TransporterManagement() {
                     </div>
                 </CardHeader>
 
-                <Card className="text-left">
+                <Card className="text-left text-foreground">
                     <CardContent className="pt-6 text-left">
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground text-foreground">
                             <div className="space-y-1 text-left text-foreground text-foreground"><Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Filter className="h-3 w-3"/> Status</Label><Select value={statusFilter} onValueChange={setStatusFilter}><SelectTrigger className="h-9 bg-white text-xs text-left text-foreground"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="new">New</SelectItem><SelectItem value="contacted">Researching</SelectItem></SelectContent></Select></div>
                             <div className="space-y-1 text-left text-foreground"><Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-left text-foreground"><Users className="h-3 w-3"/> Assignee</Label><Select value={assigneeFilter} onValueChange={setAssigneeFilter}><SelectTrigger className="h-9 bg-white text-xs text-left text-foreground text-left text-foreground"><SelectValue placeholder="All Staff" /></SelectTrigger><SelectContent><SelectItem value="all">All Staff</SelectItem><SelectItem value="none">Unallocated</SelectItem>{staff.map(s => <SelectItem key={s.id} value={s.id}>{s.firstName} {s.lastName}</SelectItem>)}</SelectContent></Select></div>
-                            <div className="space-y-1 text-left text-foreground"><Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Send className="h-3 w-3"/> Outreach</Label><Select value={outreachFilter} onValueChange={setOutreachFilter}>
+                            <div className="space-y-1 text-left text-foreground"><Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-foreground text-foreground"><Send className="h-3 w-3"/> Outreach</Label><Select value={outreachFilter} onValueChange={setOutreachFilter}>
                                 <SelectTrigger className="h-9 bg-white text-xs text-left text-foreground text-left text-foreground"><SelectValue /></SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="all">All Outreach</SelectItem>
@@ -378,7 +377,7 @@ export default function TransporterManagement() {
                             <div className="flex items-end text-left text-foreground text-foreground text-foreground"><Button variant="outline" onClick={() => setHasLoaded(false)} className="h-9 w-full text-xs font-bold uppercase tracking-widest text-left text-foreground text-foreground text-foreground text-foreground"><RotateCcw className="mr-1 h-3 w-3" /> New Search</Button></div>
                         </div>
                         {isLoading ? <div className="flex justify-center items-center py-20 text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
-                            <div className="space-y-6 text-left">
+                            <div className="space-y-6 text-left text-foreground">
                                 <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />
                                 {allRecords.length >= 100 && (
                                      <div className="flex justify-center pt-4">
