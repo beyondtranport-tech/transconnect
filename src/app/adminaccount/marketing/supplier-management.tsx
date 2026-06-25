@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import React, { useState, useCallback, useEffect, useMemo, Suspense } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -122,7 +122,7 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
                 <FormItem className="text-left">
                     <FormLabel>Pipeline Status</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl><SelectTrigger className="bg-white"><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
+                        <FormControl><SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
                         <SelectContent>
                             <SelectItem value="new">New Lead</SelectItem>
                             <SelectItem value="contacted">Researching</SelectItem>
@@ -145,7 +145,7 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
   );
 }
 
-export default function SupplierManagement() {
+function SupplierManagementContent() {
   const { toast } = useToast();
   const [allRecords, setAllRecords] = useState<any[]>([]);
   const [staff, setStaff] = useState<any[]>([]);
@@ -157,26 +157,16 @@ export default function SupplierManagement() {
 
   const [statusFilter, setStatusFilter] = useState('all');
   const [assigneeFilter, setAssigneeFilter] = useState('all');
-  const [outreachFilter, setOutreachFilter] = useState('all');
-  const [enrichmentFilter, setEnrichmentFilter] = useState('all');
 
   const fetchData = useCallback(async (limit: number = 20000) => {
     setIsLoading(true);
     try {
       const token = await getClientSideAuthToken();
       if (!token) return;
-      
       const [res, staffRes] = await Promise.all([
-        performAdminAction(token, 'searchRegistry', { 
-            type: 'supplier', 
-            term: searchTerm, 
-            outreachFilter, 
-            enrichmentFilter,
-            limit 
-        }),
+        performAdminAction(token, 'searchRegistry', { type: 'supplier', term: searchTerm, limit }),
         performAdminAction(token, 'getPlatformStaff', {})
       ]);
-      
       setAllRecords(res.data || []);
       setStaff(staffRes.data || []);
       setHasLoaded(true);
@@ -185,7 +175,7 @@ export default function SupplierManagement() {
     } finally {
       setIsLoading(false);
     }
-  }, [searchTerm, outreachFilter, enrichmentFilter, toast]);
+  }, [searchTerm, toast]);
 
   useEffect(() => { if (hasLoaded) fetchData(); }, [fetchData, hasLoaded]);
 
@@ -198,27 +188,8 @@ export default function SupplierManagement() {
   const handleEngage = useCallback((record: any) => {
     const engageList = selectedIds.length > 0 ? allRecords.filter(r => selectedIds.includes(r.id)) : (record ? [record] : []);
     if (engageList.length === 0) return;
-    
-    setDialog({ 
-        type: 'engage', 
-        data: engageList, 
-        initialIndex: record ? engageList.findIndex((r: any) => r.id === record.id) : 0
-    });
+    setDialog({ type: 'engage', data: engageList, initialIndex: record ? engageList.findIndex((r: any) => r.id === record.id) : 0 });
   }, [allRecords, selectedIds]);
-
-  async function handleDelete() {
-    if (!dialog.data) return;
-    try {
-      const token = await getClientSideAuthToken();
-      if (!token) return;
-      await performAdminAction(token, 'deletePartner', { partnerId: dialog.data.id });
-      toast({ title: 'Deleted' });
-      fetchData();
-      setDialog({ type: null });
-    } catch (e: any) {
-      toast({ variant: 'destructive', title: 'Error', description: e.message });
-    }
-  }
 
   const columns: ColumnDef<any>[] = useMemo(() => [
     { 
@@ -246,7 +217,7 @@ export default function SupplierManagement() {
             if (!row.original.lastOutreachSubject) return <span className="text-[10px] text-muted-foreground italic text-left">None</span>;
             return (
                 <div className="flex flex-col text-left">
-                    <Badge variant="outline" className="text-[9px] h-4 border-primary/20 text-primary uppercase font-bold truncate max-w-[100px] text-left">{row.original.lastOutreachSubject}</Badge>
+                    <Badge variant="outline" className="text-[9px] h-4 uppercase font-bold truncate max-w-[100px] text-left">{row.original.lastOutreachSubject}</Badge>
                     <span className="text-[8px] text-muted-foreground mt-0.5 text-left">{formatDateSafe(row.original.lastOutreachAt, "dd/MM")}</span>
                     {row.original.lastOpenedAt && (
                         <div className="flex items-center gap-1 text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100 mt-1 w-fit text-left">
@@ -278,6 +249,20 @@ export default function SupplierManagement() {
     });
   }, [allRecords, statusFilter, assigneeFilter]);
 
+  async function handleDelete() {
+    if (!dialog.data) return;
+    try {
+      const token = await getClientSideAuthToken();
+      if (!token) return;
+      await performAdminAction(token, 'deletePartner', { partnerId: dialog.data.id });
+      toast({ title: 'Deleted' });
+      fetchData();
+      setDialog({ type: null });
+    } catch (e: any) {
+      toast({ variant: 'destructive', title: 'Error', description: e.message });
+    }
+  }
+
   return (
     <div className="space-y-6 text-left">
       <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partners={dialog.data || []} initialIndex={dialog.initialIndex} audience="suppliers" onEngageSuccess={() => fetchData()} />
@@ -288,6 +273,7 @@ export default function SupplierManagement() {
           <AlertDialogFooter><AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
       <div className="space-y-6 text-left">
         {!hasLoaded ? (
             <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground text-left">
@@ -296,8 +282,6 @@ export default function SupplierManagement() {
                 <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center text-foreground text-left">Scan the entire database. Use filters to prioritize outreach and enrichment worklists.</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto text-left">
                     <div className="space-y-2 text-left text-foreground"><Label className="text-[10px] font-black uppercase text-muted-foreground ml-1 text-left">Company Name</Label><Input placeholder="Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="h-12 bg-white" /></div>
-                    <div className="space-y-2 text-left text-foreground"><Label className="text-[10px] font-black uppercase text-muted-foreground ml-1 text-left text-foreground text-left">Outreach Stage</Label><Select value={outreachFilter} onValueChange={setOutreachFilter}><SelectTrigger className="h-12 bg-white text-left text-foreground"><SelectValue placeholder="All" /></SelectTrigger><SelectContent><SelectItem value="all">All Stages</SelectItem><SelectItem value="none">No Outreach Yet</SelectItem><SelectItem value="Digital Handshake">Handshake Sent</SelectItem></SelectContent></Select></div>
-                    <div className="space-y-2 text-left text-foreground"><Label className="text-[10px] font-black uppercase text-muted-foreground ml-1 text-left text-foreground text-left text-left">Enrichment</Label><Select value={enrichmentFilter} onValueChange={setEnrichmentFilter}><SelectTrigger className="h-12 bg-white text-left text-foreground"><SelectValue placeholder="All" /></SelectTrigger><SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="enriched">Enriched</SelectItem><SelectItem value="unenriched">Unenriched</SelectItem></SelectContent></Select></div>
                     <div className="flex items-end gap-2 text-left text-foreground text-foreground"><Button size="lg" onClick={() => { fetchData(); }} disabled={isLoading} className="flex-1 h-12 font-black uppercase tracking-widest gap-2 shadow-lg">{isLoading ? <Loader2 className="animate-spin h-4 w-4"/> : <Search className="h-4 w-4"/>} Scan Registry</Button></div>
                 </div>
             </Card>
@@ -306,7 +290,7 @@ export default function SupplierManagement() {
                 <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left text-foreground">
                     <div className="text-left text-foreground">
                         <CardTitle className="flex items-center gap-2 text-2xl font-black font-headline text-left text-foreground"><Building /> Supplier Registry</CardTitle>
-                        <CardDescription className="text-left text-foreground">Unified industrial database view ({filteredRecords.length} records).</CardDescription>
+                        <CardDescription className="text-left text-muted-foreground">Unified industrial database view ({filteredRecords.length} records).</CardDescription>
                     </div>
                     <div className="flex flex-wrap items-center gap-2 text-left text-foreground">
                         {selectedIds.length > 0 && <Button variant="secondary" onClick={() => handleEngage(null)} className="gap-2 shadow-sm font-bold animate-in fade-in zoom-in text-left text-foreground"><Send className="h-4 w-4" /> Batch Engage ({selectedIds.length})</Button>}
@@ -325,12 +309,6 @@ export default function SupplierManagement() {
                         {isLoading ? <div className="flex justify-center items-center py-20 text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
                             <div className="space-y-6 text-left">
                                 <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />
-                                <div className="flex justify-center pt-4">
-                                    <Button variant="outline" size="lg" onClick={() => fetchData(allRecords.length + 100)} disabled={isLoading} className="gap-2 min-w-[200px]">
-                                        {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <ChevronDown className="h-4 w-4" />}
-                                        Load Next 100 Records
-                                    </Button>
-                                </div>
                             </div>
                         )}
                     </CardContent>
@@ -341,3 +319,10 @@ export default function SupplierManagement() {
   );
 }
 
+export default function SupplierManagement() {
+    return (
+        <Suspense fallback={<div className="flex justify-center p-20"><Loader2 className="animate-spin h-10 w-10 text-primary" /></div>}>
+            <SupplierManagementContent />
+        </Suspense>
+    );
+}

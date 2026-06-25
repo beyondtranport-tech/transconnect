@@ -44,8 +44,10 @@ export async function POST(req: NextRequest) {
         const db = getFirestore(app);
 
         switch (action) {
+            case 'getPartnersByType':
             case 'searchRegistry': {
-                const { term, type, outreachFilter, enrichmentFilter, limit = 20000 } = payload;
+                // High-velocity limit for total mapping visibility (Up to 20,000 records)
+                const { term, type, outreachFilter, limit = 20000 } = payload;
                 
                 const [pSnap, lSnap] = await Promise.all([
                     db.collection('partners').limit(limit).get(),
@@ -64,9 +66,10 @@ export async function POST(req: NextRequest) {
                     entryType: item.industrial_category || item.category || item.entryType || item.classification || item.role || 'General'
                 }));
 
-                if (type && type !== 'all' && type !== 'lead') {
-                    normalized = normalized.filter(p => p.type === type.toLowerCase());
-                } else if (type === 'lead') {
+                const apiType = type || payload.type;
+                if (apiType && apiType !== 'all' && apiType !== 'lead') {
+                    normalized = normalized.filter(p => p.type === apiType.toLowerCase());
+                } else if (apiType === 'lead') {
                     normalized = normalized.filter(p => p.source === 'leads');
                 }
 
@@ -74,12 +77,6 @@ export async function POST(req: NextRequest) {
                     normalized = normalized.filter(p => !p.lastOutreachSubject && ['new', 'inactive', 'contacted'].includes(p.status));
                 } else if (outreachFilter && outreachFilter !== 'all') {
                     normalized = normalized.filter(p => p.lastOutreachSubject === outreachFilter);
-                }
-
-                if (enrichmentFilter === 'enriched') {
-                    normalized = normalized.filter(p => !!(p.minedServiceWording || p.notes || p.website));
-                } else if (enrichmentFilter === 'unenriched') {
-                    normalized = normalized.filter(p => !(p.minedServiceWording || p.notes || p.website));
                 }
 
                 if (term) {
