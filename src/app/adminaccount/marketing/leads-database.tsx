@@ -265,14 +265,14 @@ function LeadsDatabaseComponent() {
     { 
         accessorKey: 'companyName', 
         header: 'Lead Name',
-        cell: ({ row }) => <span className="font-bold">{row.original.companyName || <span className="text-destructive italic">Unnamed Lead</span>}</span>
+        cell: ({ row }) => <span className="font-bold text-left">{row.original.companyName || <span className="text-destructive italic">Unnamed Lead</span>}</span>
     },
     { 
-        header: 'Human Contact', 
+        accessorKey: 'contactPerson', 
+        header: 'Key Decision Maker',
         cell: ({ row }) => (
-            <div className="flex flex-col text-sm text-left">
-                <span className="font-medium text-left text-foreground text-foreground">{row.original.contactPerson || 'N/A'}</span>
-                <span className="text-xs text-muted-foreground text-left text-foreground">{row.original.email}</span>
+            <div className="text-sm font-medium text-left">
+                {row.original.contactPerson || <span className="text-muted-foreground italic">Missing Name</span>}
             </div>
         )
     },
@@ -361,12 +361,12 @@ function LeadsDatabaseComponent() {
                             </SelectContent>
                         </Select>
                     </div>
-                    <div className="flex flex-col md:flex-row gap-2 self-end">
-                        <Button size="lg" onClick={() => { setResultsLimit(100); fetchData(100); }} disabled={isLoading} className="h-12 px-8 font-bold">
+                    <div className="flex flex-col md:flex-row gap-2 self-end text-left text-foreground">
+                        <Button size="lg" onClick={() => { setResultsLimit(100); fetchData(100); }} disabled={isLoading} className="h-12 px-8 font-bold text-left">
                             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4" />}
                             Execute Scan
                         </Button>
-                        <Button variant="outline" size="lg" onClick={() => { setResultsLimit(100); fetchData(100); }} className="h-12">
+                        <Button variant="outline" size="lg" onClick={() => { setResultsLimit(100); fetchData(100); }} className="h-12 text-left">
                              Show Recent
                         </Button>
                     </div>
@@ -378,22 +378,22 @@ function LeadsDatabaseComponent() {
                 <div className="text-left text-foreground"><CardTitle className="flex items-center gap-2 text-left text-foreground"><Users /> Lead Pipeline</CardTitle><CardDescription className="text-left text-foreground text-foreground text-foreground">Managed prospective member registry ({allRecords.length} results).</CardDescription></div>
                 <div className="flex gap-2 text-left text-foreground text-foreground text-foreground">
                     {selectedIds.length > 0 && (
-                        <Button variant="secondary" onClick={handleBatchEngage} className="gap-2 shadow-sm font-bold">
+                        <Button variant="secondary" onClick={handleBatchEngage} className="gap-2 shadow-sm font-bold text-left">
                             <Send className="h-4 w-4" /> Batch Engage ({selectedIds.length})
                         </Button>
                     )}
-                    <Button variant="outline" onClick={handleExport} disabled={isLoading} className="text-foreground text-foreground"><Download className="mr-2 h-4 w-4" /> Export CSV</Button>
-                    <BulkImportDialog type="lead" onComplete={fetchData}><Button variant="outline" className="text-foreground text-foreground text-foreground"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
-                    <Button onClick={() => setIsAddLeadOpen(true)} className="text-foreground text-foreground text-foreground text-foreground"><PlusCircle className="mr-2 h-4 w-4" />Add Lead</Button>
+                    <Button variant="outline" onClick={handleExport} disabled={isLoading} className="text-foreground text-foreground text-left"><Download className="mr-2 h-4 w-4" /> Export CSV</Button>
+                    <BulkImportDialog type="lead" onComplete={fetchData}><Button variant="outline" className="text-foreground text-foreground text-foreground text-left"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
+                    <Button onClick={() => setIsAddLeadOpen(true)} className="text-foreground text-foreground text-foreground text-foreground text-left"><PlusCircle className="mr-2 h-4 w-4" />Add Lead</Button>
                 </div>
                 </CardHeader>
                 <Card className="text-left text-foreground text-foreground">
                     <CardContent className="pt-6 text-left text-foreground text-foreground text-foreground">
                         <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground text-foreground text-foreground text-foreground text-foreground">
-                             <div className="flex-1 space-y-2 text-left text-foreground">
-                                <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Enrichment Status</Label>
+                             <div className="flex-1 space-y-2 text-left text-foreground text-left">
+                                <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1 text-left">Enrichment Status</Label>
                                 <Select value={enrichmentFilter} onValueChange={setEnrichmentFilter}>
-                                    <SelectTrigger className="bg-white text-left"><SelectValue placeholder="All" /></SelectTrigger>
+                                    <SelectTrigger className="bg-white text-left text-foreground text-foreground text-foreground text-left"><SelectValue placeholder="All" /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">All</SelectItem>
                                         <SelectItem value="enriched">Enriched</SelectItem>
@@ -401,10 +401,10 @@ function LeadsDatabaseComponent() {
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <div className="flex-1 space-y-2 text-left text-foreground text-foreground text-foreground text-foreground">
-                                <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Outreach Stage</Label>
+                            <div className="flex-1 space-y-2 text-left text-foreground text-foreground text-foreground text-foreground text-left">
+                                <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1 text-left">Outreach Stage</Label>
                                 <Select value={outreachFilter} onValueChange={setOutreachFilter}>
-                                    <SelectTrigger className="bg-white text-left text-foreground text-foreground text-foreground"><SelectValue placeholder="All Stages" /></SelectTrigger>
+                                    <SelectTrigger className="bg-white text-left text-foreground text-foreground text-foreground text-left"><SelectValue placeholder="All Stages" /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">All Stages</SelectItem>
                                         <SelectItem value="none">No Outreach Yet</SelectItem>
@@ -412,15 +412,15 @@ function LeadsDatabaseComponent() {
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <div className="flex items-end text-left text-foreground text-foreground text-foreground text-foreground">
-                                <Button variant="outline" onClick={() => setHasLoaded(false)} className="h-10 w-full text-foreground text-foreground text-foreground"><RotateCcw className="mr-1 h-3 w-3" /> New Search</Button>
+                            <div className="flex items-end text-left text-foreground text-foreground text-foreground text-foreground text-left">
+                                <Button variant="outline" onClick={() => setHasLoaded(false)} className="h-10 w-full text-foreground text-foreground text-foreground text-left"><RotateCcw className="mr-1 h-3 w-3" /> New Search</Button>
                             </div>
                         </div>
-                        {isLoading ? <div className="flex justify-center p-10 text-foreground text-foreground text-foreground"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div> : (
-                            <div className="space-y-4">
+                        {isLoading ? <div className="flex justify-center p-10 text-foreground text-foreground text-foreground text-left"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div> : (
+                            <div className="space-y-4 text-left">
                                 <DataTable columns={columns} data={filteredLeads} onSelectionChange={setSelectedIds} />
-                                <div className="flex justify-center pt-4">
-                                    <Button variant="outline" size="lg" onClick={handleLoadMore} disabled={isLoading} className="gap-2 min-w-[200px]">
+                                <div className="flex justify-center pt-4 text-left">
+                                    <Button variant="outline" size="lg" onClick={handleLoadMore} disabled={isLoading} className="gap-2 min-w-[200px] text-left">
                                         {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <ChevronDown className="h-4 w-4" />}
                                         Load Next 100 Records
                                     </Button>
@@ -447,7 +447,7 @@ function LeadsDatabaseComponent() {
 
 export default function LeadsDatabase() {
   return (
-    <Suspense fallback={<Loader2 className="animate-spin h-10 w-10 text-primary mx-auto my-20"/>}>
+    <Suspense fallback={<Loader2 className="animate-spin h-10 w-10 text-primary mx-auto my-20 text-left"/>}>
       <LeadsDatabaseComponent />
     </Suspense>
   );

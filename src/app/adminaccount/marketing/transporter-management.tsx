@@ -130,7 +130,7 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
                 <FormItem className="text-left text-foreground">
                     <FormLabel>Status</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl><SelectTrigger className="bg-white text-left text-foreground text-foreground"><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
+                        <FormControl><SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
                         <SelectContent>
                             <SelectItem value="new">New</SelectItem>
                             <SelectItem value="contacted">Searching</SelectItem>
@@ -244,6 +244,7 @@ export default function TransporterManagement() {
 
   const columns: ColumnDef<any>[] = [
     { 
+        accessorKey: 'companyName', 
         header: 'Transporter Name', 
         cell: ({ row }) => (
             <div className="flex flex-col text-sm text-left text-foreground">
@@ -254,6 +255,15 @@ export default function TransporterManagement() {
                     {row.original.website && <Globe className="h-3 w-3 text-primary" />}
                     <span className="text-[10px] text-muted-foreground uppercase font-black">{row.original.industrial_category || 'Industrial'}</span>
                 </div>
+            </div>
+        )
+    },
+    { 
+        accessorKey: 'contactPerson', 
+        header: 'Key Decision Maker',
+        cell: ({ row }) => (
+            <div className="text-sm font-medium text-left">
+                {row.original.contactPerson || <span className="text-muted-foreground italic">Missing Name</span>}
             </div>
         )
     },
@@ -310,7 +320,7 @@ export default function TransporterManagement() {
                 <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
                 <h2 className="text-2xl font-black font-headline mb-2 text-foreground text-center">Transporter Forensic Scan</h2>
                 <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center text-foreground">Scan the haulier database. Filter by outreach or enrichment stage.</p>
-                <div className="flex flex-col md:flex-row justify-center gap-4 max-w-5xl mx-auto text-left">
+                <div className="flex flex-col md:flex-row justify-center gap-4 max-w-5xl mx-auto text-left text-foreground">
                     <div className="flex-1 space-y-2 text-left">
                         <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Company, Category or ID</Label>
                         <Input placeholder="Search criteria..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && fetchData(100)} className="h-12 text-lg bg-white" />
@@ -357,14 +367,14 @@ export default function TransporterManagement() {
                     </div>
                     <div className="flex items-center gap-2 text-left text-foreground text-foreground">
                         {selectedIds.length > 0 && (
-                            <Button variant="secondary" onClick={handleBatchEngage} className="gap-2 shadow-sm font-bold">
+                            <Button variant="secondary" onClick={handleBatchEngage} className="gap-2 shadow-sm font-bold text-left">
                                 <Send className="h-4 w-4" /> Batch Engage ({selectedIds.length})
                             </Button>
                         )}
                         <Button variant="outline" onClick={handleExport} disabled={isLoading} className="text-foreground text-foreground text-foreground">
                             <Download className="mr-2 h-4 w-4" /> Export CSV
                         </Button>
-                        <BulkImportDialog type="transporter" onComplete={fetchData}><Button variant="outline" className="text-foreground text-foreground text-foreground text-foreground"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
+                        <BulkImportDialog type="transporter" onComplete={fetchData}><Button variant="outline" className="text-foreground text-foreground text-foreground"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
                         <Button onClick={() => setDialog({ type: 'add' })} className="text-foreground text-foreground text-foreground text-foreground text-foreground"><PlusCircle className="mr-2 h-4 w-4" /> Add Record</Button>
                     </div>
                 </CardHeader>
@@ -402,7 +412,7 @@ export default function TransporterManagement() {
                         {isLoading ? <div className="flex justify-center items-center py-10 text-foreground text-foreground text-foreground text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
                             <div className="space-y-4 text-left text-foreground text-foreground">
                                 <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />
-                                <div className="flex justify-center pt-4 text-left text-foreground">
+                                <div className="flex justify-center pt-4 text-left">
                                     <Button variant="outline" size="lg" onClick={handleLoadMore} disabled={isLoading} className="gap-2 min-w-[200px] text-foreground">
                                         {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <ChevronDown className="h-4 w-4" />}
                                         Load Next 100 Records

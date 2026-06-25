@@ -204,9 +204,17 @@ export default function InvestorManagement() {
                     {row.original.companyName || <span className="text-destructive italic">Unnamed Fund</span>}
                 </span>
                 <div className="flex items-center gap-2 mt-1">
-                    <span className="text-[10px] text-muted-foreground uppercase font-black">{row.original.firstName} {row.original.lastName}</span>
                     {row.original.website && <Globe className="h-3 w-3 text-primary" />}
                 </div>
+            </div>
+        )
+    },
+    { 
+        accessorKey: 'contactPerson', 
+        header: 'Key Decision Maker',
+        cell: ({ row }) => (
+            <div className="text-sm font-medium text-left">
+                {row.original.contactPerson || `${row.original.firstName || ''} ${row.original.lastName || ''}`.trim() || <span className="text-muted-foreground italic">Missing Name</span>}
             </div>
         )
     },
@@ -248,7 +256,7 @@ export default function InvestorManagement() {
       <EngageDialog 
         open={dialog.type === 'engage'} 
         onOpenChange={(o: boolean) => !o && setDialog({ type: null })} 
-        partners={dialog.data || []} 
+        partners={Array.isArray(dialog.data) ? dialog.data : [dialog.data]} 
         audience="investors" 
         onEngageSuccess={fetchData} 
       />
@@ -318,13 +326,13 @@ export default function InvestorManagement() {
             <div className="space-y-6 text-left">
                 <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
                     <div className="text-left"><CardTitle className="flex items-center gap-2 font-black font-headline text-left"><DollarSign /> App Launch Investors</CardTitle><CardDescription className="text-left text-foreground">Registry view ({partners.length} records).</CardDescription></div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 text-left">
                         <div className="relative w-64 text-left">
                             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                             <Input placeholder="Filter registry..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8 bg-white" />
                         </div>
-                        <Button variant="outline" onClick={() => downloadDataAsCSV(partners, 'investors-export.csv')} disabled={isLoading}><Download className="mr-2 h-4 w-4"/>Export CSV</Button>
-                        <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4"/>Add Record</Button>
+                        <Button variant="outline" onClick={() => downloadDataAsCSV(partners, 'investors-export.csv')} disabled={isLoading} className="text-left"><Download className="mr-2 h-4 w-4"/>Export CSV</Button>
+                        <Button onClick={() => setDialog({ type: 'add' })} className="text-left"><PlusCircle className="mr-2 h-4 w-4"/>Add Record</Button>
                     </div>
                 </CardHeader>
                 <Card className="text-left">

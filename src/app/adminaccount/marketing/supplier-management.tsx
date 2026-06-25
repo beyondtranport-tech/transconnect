@@ -8,7 +8,7 @@ import * as z from 'zod';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from '@/hooks/use-toast';
-import { getClientSideAuthToken, useUser } from '@/firebase';
+import { getClientSideAuthToken } from '@/firebase';
 import { 
   Loader2, PlusCircle, Building, Edit, Trash2, Send, Download, Save, Search, Filter, Users, Globe, Zap, Upload, RefreshCcw, Database, Tag, Sparkles, RotateCcw, Clock, UserCheck, ChevronDown 
 } from 'lucide-react';
@@ -292,6 +292,15 @@ export default function SupplierManagement() {
             </div>
         )
     },
+    { 
+        accessorKey: 'contactPerson', 
+        header: 'Key Decision Maker',
+        cell: ({ row }) => (
+            <div className="text-sm font-medium text-left">
+                {row.original.contactPerson || <span className="text-muted-foreground italic">Missing Name</span>}
+            </div>
+        )
+    },
     { accessorKey: 'mobile', header: 'Mobile' },
     { accessorKey: 'email', header: 'Email' },
     { 
@@ -395,7 +404,7 @@ export default function SupplierManagement() {
                     <div className="space-y-2 text-left text-foreground text-foreground">
                         <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Data Integrity</Label>
                         <Select value={integrityFilter} onValueChange={setIntegrityFilter}>
-                            <SelectTrigger className="h-12 bg-white text-left text-foreground"><SelectValue placeholder="All" /></SelectTrigger>
+                            <SelectTrigger className="h-12 bg-white text-left"><SelectValue placeholder="All" /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Records</SelectItem>
                                 <SelectItem value="has-email">Has Email</SelectItem>
@@ -419,7 +428,7 @@ export default function SupplierManagement() {
                     <div className="space-y-2 text-left text-foreground text-foreground">
                         <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Enrichment Status</Label>
                         <Select value={enrichmentFilter} onValueChange={setEnrichmentFilter}>
-                            <SelectTrigger className="h-12 bg-white text-left text-foreground"><SelectValue placeholder="All" /></SelectTrigger>
+                            <SelectTrigger className="h-12 bg-white text-left"><SelectValue placeholder="All" /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All</SelectItem>
                                 <SelectItem value="enriched">Enriched</SelectItem>
@@ -482,7 +491,7 @@ export default function SupplierManagement() {
                             <div className="space-y-2 text-left text-foreground">
                                 <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Outreach</Label>
                                 <Select value={outreachFilter} onValueChange={setOutreachFilter}>
-                                    <SelectTrigger className="bg-white text-left text-foreground text-foreground text-foreground"><SelectValue placeholder="All" /></SelectTrigger>
+                                    <SelectTrigger className="bg-white text-left text-foreground text-foreground"><SelectValue placeholder="All" /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">All</SelectItem>
                                         <SelectItem value="none">No Outreach Yet</SelectItem>

@@ -38,7 +38,7 @@ async function performAdminAction(token: string, action: string, payload: any) {
     cache: 'no-store'
   });
   const result = await response.json();
-  if (!response.ok || !result.success) throw new Error(result.error || `API Error: ${action}`);
+  if (!response.ok || !result.success) throw new Error(result.error || `API Error for action: ${action}`);
   return result;
 }
 
@@ -174,7 +174,9 @@ export default function PartnerManagement() {
     }
   }, [searchTerm, outreachFilter, resultsLimit, toast]);
 
-  useEffect(() => { if (hasLoaded) fetchData(); }, [fetchData, hasLoaded]);
+  useEffect(() => { 
+    if (hasLoaded) fetchData(); 
+  }, [fetchData, hasLoaded]);
 
   const handleLoadMore = () => {
     const newLimit = resultsLimit + 100;
@@ -215,11 +217,19 @@ export default function PartnerManagement() {
         header: 'Partner Name', 
         cell: ({ row }) => (
             <div className="flex flex-col text-left text-foreground">
-                <span className="font-bold text-left">{row.original.companyName || row.original.contactPerson || `${row.original.firstName || ''} ${row.original.lastName || ''}`.trim()}</span>
-                <div className="flex items-center gap-2 mt-1">
-                    <span className="text-[10px] text-muted-foreground uppercase font-black">{row.original.firstName} {row.original.lastName}</span>
+                <span className="font-bold text-left">{row.original.companyName || <span className="text-destructive italic">Unnamed Partner</span>}</span>
+                <div className="flex items-center gap-2 mt-1 text-left">
                     {row.original.website && <Globe className="h-3 w-3 text-primary" />}
                 </div>
+            </div>
+        )
+    },
+    { 
+        accessorKey: 'contactPerson', 
+        header: 'Key Decision Maker',
+        cell: ({ row }) => (
+            <div className="text-sm font-medium text-left">
+                {row.original.contactPerson || `${row.original.firstName || ''} ${row.original.lastName || ''}`.trim() || <span className="text-muted-foreground italic">Missing Name</span>}
             </div>
         )
     },
@@ -266,7 +276,7 @@ export default function PartnerManagement() {
           <AlertDialogFooter><AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      <div className="space-y-6 text-left text-foreground">
+      <div className="space-y-6 text-left text-foreground text-foreground">
         {!hasLoaded ? (
             <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground">
                 <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
@@ -301,13 +311,13 @@ export default function PartnerManagement() {
             </Card>
         ) : (
             <div className="space-y-6 text-left text-foreground text-foreground">
-                <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
+                <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left text-foreground">
                     <div className="text-left text-foreground">
                         <CardTitle className="flex items-center gap-2 text-2xl font-black font-headline text-left text-foreground text-foreground"><Handshake /> Strategic Partners</CardTitle>
                         <CardDescription className="text-left text-foreground text-foreground text-foreground">Full registry view ({partners.length} records).</CardDescription>
                     </div>
                     <div className="flex items-center gap-2 text-left text-foreground">
-                        <Button variant="outline" onClick={handleExport} disabled={isLoading} className="text-foreground text-foreground">
+                        <Button variant="outline" onClick={() => downloadDataAsCSV(partners, 'partners-export.csv')} disabled={isLoading} className="text-foreground text-foreground">
                             <Download className="mr-2 h-4 w-4" /> Export CSV
                         </Button>
                         <BulkImportDialog type="partner" onComplete={fetchData}><Button variant="outline" className="text-foreground text-foreground text-foreground"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
@@ -342,7 +352,7 @@ export default function PartnerManagement() {
                              <div className="flex-1 space-y-2 text-left text-foreground text-foreground">
                                 <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-foreground"><Send className="h-3 w-3"/> Outreach</Label>
                                 <Select value={outreachFilter} onValueChange={setOutreachFilter}>
-                                    <SelectTrigger className="bg-white text-left text-foreground text-foreground text-foreground"><SelectValue placeholder="All" /></SelectTrigger>
+                                    <SelectTrigger className="bg-white text-left text-foreground text-foreground text-foreground text-foreground"><SelectValue placeholder="All" /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">All</SelectItem>
                                         <SelectItem value="none">No Outreach Yet</SelectItem>
@@ -351,7 +361,7 @@ export default function PartnerManagement() {
                                 </Select>
                             </div>
                             <div className="flex items-end text-left text-foreground">
-                                <Button variant="outline" onClick={() => setHasLoaded(false)} className="h-10 w-full text-foreground text-foreground"><RotateCcw className="mr-1 h-3 w-3" /> New Search</Button>
+                                <Button variant="outline" onClick={() => setHasLoaded(false)} className="h-10 w-full text-foreground"><RotateCcw className="mr-1 h-3 w-3" /> New Search</Button>
                             </div>
                         </div>
                         {isLoading ? <div className="flex justify-center items-center py-10 text-foreground text-foreground text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
