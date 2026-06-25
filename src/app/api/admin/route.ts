@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -48,6 +49,7 @@ export async function POST(req: NextRequest) {
             case 'searchRegistry': {
                 const { term, type, outreachFilter, limit = 20000 } = payload;
                 
+                // Fetching large sets for client-side processing to ensure precision pagination
                 const [pSnap, lSnap] = await Promise.all([
                     db.collection('partners').limit(limit).get(),
                     db.collection('leads').limit(limit).get()
@@ -72,6 +74,7 @@ export async function POST(req: NextRequest) {
                     normalized = normalized.filter(p => p.source === 'leads');
                 }
 
+                // Handle 'none' filter for "No Outreach Yet"
                 if (outreachFilter === 'none') {
                     normalized = normalized.filter(p => !p.lastOutreachSubject && ['new', 'inactive', 'contacted'].includes(p.status));
                 } else if (outreachFilter && outreachFilter !== 'all') {
@@ -88,6 +91,7 @@ export async function POST(req: NextRequest) {
                     );
                 }
 
+                // De-duplicate
                 const uniqueMap = new Map();
                 normalized.forEach(item => {
                     const key = (item.id || item.email || item.companyName).toLowerCase();
@@ -97,6 +101,8 @@ export async function POST(req: NextRequest) {
                 });
 
                 let data = Array.from(uniqueMap.values());
+                
+                // Sort by most recent update
                 data.sort((a,b) => {
                     const timeA = new Date(a.updatedAt || 0).getTime();
                     const timeB = new Date(b.updatedAt || 0).getTime();
@@ -159,6 +165,16 @@ export async function POST(req: NextRequest) {
             case 'deletePartner': {
                 const { partnerId } = payload;
                 await db.collection('partners').doc(partnerId).delete();
+                return NextResponse.json({ success: true });
+            }
+
+            case 'deletePartners': {
+                const { partnerIds } = payload;
+                const batch = db.batch();
+                partnerIds.forEach((id: string) => {
+                    batch.delete(db.collection('partners').doc(id));
+                });
+                await batch.commit();
                 return NextResponse.json({ success: true });
             }
 
