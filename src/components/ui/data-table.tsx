@@ -94,7 +94,7 @@ export function DataTable<TData>({ columns, data, onSelectionChange }: DataTable
             <TableRow>
               <TableHead className="w-[50px]">
                 <Checkbox 
-                  checked={filteredCount > 0 && Object.keys(rowSelection).length === rows.length}
+                  checked={filteredCount > 0 && Object.keys(rowSelection).length === pagedRowsCount()}
                   onCheckedChange={(checked) => toggleAll(!!checked)}
                 />
               </TableHead>
@@ -177,4 +177,8 @@ export function DataTable<TData>({ columns, data, onSelectionChange }: DataTable
       </div>
     </div>
   );
+
+  function pagedRowsCount() {
+    return rows.length;
+  }
 }

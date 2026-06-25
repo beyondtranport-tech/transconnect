@@ -165,10 +165,13 @@ function InvestorManagementContent() {
   useEffect(() => { if (hasLoaded) fetchData(); }, [fetchData, hasLoaded]);
 
   const handleExport = useCallback(() => {
-      if (allRecords.length === 0) return;
-      downloadDataAsCSV(allRecords, `investors-backup-${new Date().toISOString().split('T')[0]}.csv`);
+      const filtered = allRecords.filter(p => {
+          return statusFilter === 'all' || p.status === statusFilter;
+      });
+      if (filtered.length === 0) return;
+      downloadDataAsCSV(filtered, `investors-backup-${new Date().toISOString().split('T')[0]}.csv`);
       toast({ title: "Backup Exported" });
-  }, [allRecords, toast]);
+  }, [allRecords, statusFilter, toast]);
 
   const handleEngage = useCallback((record: any) => {
     const engageList = selectedIds.length > 0 
@@ -183,28 +186,6 @@ function InvestorManagementContent() {
         initialIndex: record ? engageList.findIndex((r: any) => r.id === record.id) : 0
     });
   }, [allRecords, selectedIds]);
-
-  const filteredRecords = useMemo(() => {
-    return (allRecords || []).filter(p => {
-        const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
-        return matchesStatus;
-    });
-  }, [allRecords, statusFilter]);
-
-  const handleDeleteBatch = async () => {
-    if (selectedIds.length === 0) return;
-    try {
-        const token = await getClientSideAuthToken();
-        if (!token) return;
-        await performAdminAction(token, 'deletePartners', { partnerIds: selectedIds });
-        toast({ title: 'Batch Deleted', description: `${selectedIds.length} records removed.` });
-        fetchData();
-        setSelectedIds([]);
-        setDialog({ type: null });
-    } catch (e: any) {
-      toast({ variant: 'destructive', title: 'Error', description: e.message });
-    }
-  };
 
   const columns: ColumnDef<any>[] = useMemo(() => [
     { 
@@ -253,16 +234,30 @@ function InvestorManagementContent() {
     },
     { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
       <div className="flex justify-end items-center gap-1 text-left text-foreground">
-        <EnrichPartnerButton partner={row.original} onUpdate={fetchData} />
+        <EnrichPartnerButton partner={row.original} onUpdate={() => fetchData()} />
         <Button variant="ghost" size="icon" onClick={() => handleEngage(row.original)} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
         <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.firstName} />
         <PartnerTasksDialog partner={row.original} />
-        <PartnerOversightDialog partner={row.original} onUpdate={fetchData} />
+        <PartnerOversightDialog partner={row.original} onUpdate={() => fetchData()} />
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'edit', data: row.original })}><Edit className="h-4 w-4" /></Button>
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'delete', data: row.original })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
       </div>
     ) },
   ], [fetchData, handleEngage]);
+
+  async function handleDeleteRecord() {
+    if (!dialog.data) return;
+    try {
+      const token = await getClientSideAuthToken();
+      if (!token) return;
+      await performAdminAction(token, 'deletePartner', { partnerId: dialog.data.id });
+      toast({ title: 'Deleted' });
+      fetchData();
+      setDialog({ type: null });
+    } catch (e: any) {
+      toast({ variant: 'destructive', title: 'Error', description: e.message });
+    }
+  }
 
   return (
     <div className="space-y-6 text-left text-foreground">
@@ -272,23 +267,16 @@ function InvestorManagementContent() {
         partners={dialog.data || []} 
         initialIndex={dialog.initialIndex}
         audience="investors" 
-        onEngageSuccess={fetchData} 
+        onEngageSuccess={() => fetchData()} 
       />
-      <InvestorDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={fetchData} />
+      <InvestorDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={() => fetchData()} />
       
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
         <AlertDialogContent className="text-left text-foreground">
           <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Delete record?</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={selectedIds.length > 0 ? handleDeleteBatch : async () => {
-                const token = await getClientSideAuthToken();
-                if (token && dialog.data) {
-                    await performAdminAction(token, 'deletePartner', { partnerId: dialog.data.id });
-                    fetchData();
-                    setDialog({ type: null });
-                }
-            }} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction>
+            <AlertDialogAction onClick={handleDeleteRecord} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -325,7 +313,7 @@ function InvestorManagementContent() {
                             </Button>
                         )}
                         <Button variant="outline" onClick={handleExport} disabled={isLoading} className="text-left text-foreground text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-left"><Download className="mr-2 h-4 w-4"/>Export CSV</Button>
-                        <BulkImportDialog type="investor" onComplete={fetchData}><Button variant="outline" className="text-left text-foreground text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-left"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
+                        <BulkImportDialog type="investor" onComplete={() => fetchData()}><Button variant="outline" className="text-left text-foreground text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-left"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
                         <Button onClick={() => setDialog({ type: 'add' })} className="text-left text-foreground text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-left"><PlusCircle className="mr-2 h-4 w-4"/>Add Record</Button>
                     </div>
                 </CardHeader>

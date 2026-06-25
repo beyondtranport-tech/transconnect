@@ -47,7 +47,6 @@ export async function POST(req: NextRequest) {
             case 'searchRegistry': {
                 const { term, type, outreachFilter, enrichmentFilter, limit = 20000 } = payload;
                 
-                // UNRESTRICTED FULL BASE SCAN FOR ADMINS
                 const [pSnap, lSnap] = await Promise.all([
                     db.collection('partners').limit(limit).get(),
                     db.collection('leads').limit(limit).get()
@@ -65,14 +64,12 @@ export async function POST(req: NextRequest) {
                     entryType: item.industrial_category || item.category || item.entryType || item.classification || item.role || 'General'
                 }));
 
-                // Apply Backend Filtering
                 if (type && type !== 'all' && type !== 'lead') {
                     normalized = normalized.filter(p => p.type === type.toLowerCase());
                 } else if (type === 'lead') {
                     normalized = normalized.filter(p => p.source === 'leads');
                 }
 
-                // Precision Outreach Filter
                 if (outreachFilter === 'none') {
                     normalized = normalized.filter(p => !p.lastOutreachSubject && ['new', 'inactive', 'contacted'].includes(p.status));
                 } else if (outreachFilter && outreachFilter !== 'all') {
@@ -117,6 +114,11 @@ export async function POST(req: NextRequest) {
                 });
             }
 
+            case 'getPlatformStaff': {
+                const snap = await db.collection('platformStaff').orderBy('firstName', 'asc').get();
+                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
+            }
+
             case 'logCommunication': {
                 const { partnerId, type, subject, notes, collection: providedColl } = payload;
                 const [pDoc, lDoc] = await Promise.all([
@@ -150,31 +152,6 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true });
             }
 
-            case 'getPartnersByType': {
-                const { type } = payload;
-                let q = db.collection('partners').limit(20000);
-                if (type && type !== 'all') {
-                    q = q.where('type', '==', type);
-                }
-                const snap = await q.get();
-                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
-            }
-
-            case 'getPlatformStaff': {
-                const snap = await db.collection('platformStaff').orderBy('firstName', 'asc').get();
-                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
-            }
-
-            case 'getMembers': {
-                const snap = await db.collection('companies').orderBy('updatedAt', 'desc').limit(20000).get();
-                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
-            }
-
-            case 'getAuditLogs': {
-                const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(100).get();
-                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
-            }
-
             case 'savePartner': {
                 const { partner } = payload;
                 const id = partner.id || db.collection('partners').doc().id;
@@ -186,14 +163,6 @@ export async function POST(req: NextRequest) {
             case 'deletePartner': {
                 const { partnerId } = payload;
                 await db.collection('partners').doc(partnerId).delete();
-                return NextResponse.json({ success: true });
-            }
-            
-            case 'deletePartners': {
-                const { partnerIds } = payload;
-                const batch = db.batch();
-                partnerIds.forEach((id: string) => batch.delete(db.collection('partners').doc(id)));
-                await batch.commit();
                 return NextResponse.json({ success: true });
             }
 
