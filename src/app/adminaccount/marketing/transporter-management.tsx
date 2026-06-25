@@ -10,7 +10,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, Truck, Edit, Trash2, Send, Download, Save, Search, Filter, Users, Globe, RefreshCcw, Database, Upload, RotateCcw, UserCheck, ChevronDown } from 'lucide-react';
+import { Loader2, PlusCircle, Truck, Edit, Trash2, Send, Download, Save, Search, Filter, Users, Globe, RefreshCcw, Database, Upload, RotateCcw, UserCheck, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -21,9 +21,9 @@ import { CommunicationLogDialog } from './CommunicationLogDialog';
 import { PartnerTasksDialog } from './PartnerTasksDialog';
 import { downloadDataAsCSV, formatDateSafe, cn } from '@/lib/utils';
 import { EnrichPartnerButton } from './EnrichPartnerButton';
+import { BulkImportDialog } from './BulkImportDialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { BulkImportDialog } from './BulkImportDialog';
 import { transporterCategories } from './transporter-discovery';
 import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -160,24 +160,40 @@ export default function TransporterManagement() {
   const [hasLoaded, setHasLoaded] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [resultsLimit, setResultsLimit] = useState(100);
   const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | null, data?: any }>({ type: null });
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [jumpPageInput, setJumpPageInput] = useState('1');
 
   const [statusFilter, setStatusFilter] = useState('all');
   const [assigneeFilter, setAssigneeFilter] = useState('all');
   const [outreachFilter, setOutreachFilter] = useState('all');
   const [enrichmentFilter, setEnrichmentFilter] = useState('all');
 
-  const fetchData = useCallback(async (limit: number = resultsLimit) => {
+  const fetchData = useCallback(async (page: number = 1) => {
     setIsLoading(true);
     try {
       const token = await getClientSideAuthToken();
       if (!token) return;
-      const [res, staffRes] = await Promise.all([
-        performAdminAction(token, 'searchRegistry', { type: 'transporter', term: searchTerm, outreachFilter, enrichmentFilter, limit }),
+      const res = await performAdminAction(token, 'searchRegistry', { 
+            type: 'transporter', 
+            term: searchTerm, 
+            outreachFilter, 
+            enrichmentFilter, 
+            page,
+            limit: 100 
+      });
+      const [staffRes] = await Promise.all([
         performAdminAction(token, 'getPlatformStaff', {})
       ]);
       setAllRecords(res.data || []);
+      setTotalPages(res.totalPages || 1);
+      setTotalRecords(res.totalCount || 0);
+      setCurrentPage(res.currentPage || 1);
+      setJumpPageInput(String(res.currentPage || 1));
       setStaff(staffRes.data || []);
       setHasLoaded(true);
     } catch (e: any) {
@@ -185,16 +201,20 @@ export default function TransporterManagement() {
     } finally {
       setIsLoading(false);
     }
-  }, [searchTerm, outreachFilter, enrichmentFilter, resultsLimit, toast]);
+  }, [searchTerm, outreachFilter, enrichmentFilter, toast]);
 
   useEffect(() => { 
-    if (hasLoaded) fetchData(); 
-  }, [fetchData, hasLoaded]);
+    if (hasLoaded) fetchData(currentPage); 
+  }, [currentPage, hasLoaded, fetchData]);
 
-  const handleLoadMore = () => {
-    const newLimit = resultsLimit + 100;
-    setResultsLimit(newLimit);
-    fetchData(newLimit);
+  const handleJumpPage = (e: React.FormEvent) => {
+      e.preventDefault();
+      const pageNum = parseInt(jumpPageInput, 10);
+      if (isNaN(pageNum) || pageNum < 1 || pageNum > totalPages) {
+          toast({ variant: 'destructive', title: 'Invalid Page', description: `Please enter a page between 1 and ${totalPages}.` });
+          return;
+      }
+      setCurrentPage(pageNum);
   };
 
   const filteredRecords = useMemo(() => {
@@ -211,23 +231,6 @@ export default function TransporterManagement() {
     toast({ title: "Export Complete" });
   };
 
-  const handleEngage = (record: any) => {
-    const engageList = selectedIds.length > 0 
-        ? allRecords.filter(r => selectedIds.includes(r.id)) 
-        : [record];
-        
-    setDialog({ 
-        type: 'engage', 
-        data: engageList
-    });
-  };
-
-  const handleBatchEngage = () => {
-    if (selectedIds.length === 0) return;
-    const engageList = allRecords.filter(r => selectedIds.includes(r.id));
-    setDialog({ type: 'engage', data: engageList });
-  };
-
   const handleDelete = async () => {
     if (!dialog.data) return;
     try {
@@ -235,7 +238,7 @@ export default function TransporterManagement() {
       if (!token) return;
       await performAdminAction(token, 'deleteLeads', { leadIds: [dialog.data.id] });
       toast({ title: 'Deleted' });
-      fetchData();
+      fetchData(currentPage);
       setDialog({ type: null });
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Error', description: e.message });
@@ -289,11 +292,11 @@ export default function TransporterManagement() {
     },
     { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
       <div className="flex justify-end gap-1 text-left text-foreground">
-        <EnrichPartnerButton partner={row.original} onUpdate={fetchData} />
-        <Button variant="ghost" size="icon" onClick={() => handleEngage(row.original)} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
+        <EnrichPartnerButton partner={row.original} onUpdate={() => fetchData(currentPage)} />
+        <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'engage', data: [row.original] })} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
         <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.companyName} />
         <PartnerTasksDialog partner={row.original} />
-        <PartnerOversightDialog partner={row.original} onUpdate={fetchData} />
+        <PartnerOversightDialog partner={row.original} onUpdate={() => fetchData(currentPage)} />
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'edit', data: row.original })}><Edit className="h-4 w-4" /></Button>
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'delete', data: row.original })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
       </div>
@@ -302,8 +305,8 @@ export default function TransporterManagement() {
 
   return (
     <div className="space-y-6 text-left text-foreground">
-      <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partners={dialog.data || []} audience="transporters" onEngageSuccess={fetchData} />
-      <TransporterDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={fetchData} />
+      <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partners={dialog.data || []} audience="transporters" onEngageSuccess={() => fetchData(currentPage)} />
+      <TransporterDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={() => fetchData(currentPage)} />
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
         <AlertDialogContent>
           <AlertDialogHeader><AlertDialogTitle>Delete Record?</AlertDialogTitle><AlertDialogDescription>Permanently remove record?</AlertDialogDescription></AlertDialogHeader>
@@ -323,7 +326,7 @@ export default function TransporterManagement() {
                 <div className="flex flex-col md:flex-row justify-center gap-4 max-w-5xl mx-auto text-left text-foreground">
                     <div className="flex-1 space-y-2 text-left">
                         <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Company, Category or ID</Label>
-                        <Input placeholder="Search criteria..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && fetchData(100)} className="h-12 text-lg bg-white" />
+                        <Input placeholder="Search criteria..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && fetchData(1)} className="h-12 text-lg bg-white" />
                     </div>
                     <div className="w-48 space-y-2 text-left text-foreground">
                         <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Outreach</Label>
@@ -348,11 +351,11 @@ export default function TransporterManagement() {
                         </Select>
                     </div>
                     <div className="flex flex-col md:flex-row gap-2 self-end text-foreground text-foreground text-foreground">
-                        <Button size="lg" onClick={() => { setResultsLimit(100); fetchData(100); }} disabled={isLoading} className="h-12 px-8 font-bold">
+                        <Button size="lg" onClick={() => { setCurrentPage(1); fetchData(1); }} disabled={isLoading} className="h-12 px-8 font-bold">
                             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4" />}
                             Execute Scan
                         </Button>
-                        <Button variant="outline" size="lg" onClick={() => { setResultsLimit(100); fetchData(100); }} className="h-12 text-foreground">
+                        <Button variant="outline" size="lg" onClick={() => { setCurrentPage(1); fetchData(1); }} className="h-12 text-foreground">
                              Show Recent
                         </Button>
                     </div>
@@ -363,18 +366,17 @@ export default function TransporterManagement() {
                 <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left text-foreground">
                     <div className="text-left text-foreground">
                         <CardTitle className="flex items-center gap-2 text-2xl font-black font-headline text-left text-foreground text-foreground"><Truck /> Transporter Registry</CardTitle>
-                        <CardDescription className="text-left text-foreground text-foreground text-foreground">Unified database view ({allRecords.length} records).</CardDescription>
+                        <CardDescription className="text-left text-foreground text-foreground text-foreground">Unified database view ({totalRecords.toLocaleString()} records).</CardDescription>
                     </div>
                     <div className="flex items-center gap-2 text-left text-foreground text-foreground">
-                        {selectedIds.length > 0 && (
-                            <Button variant="secondary" onClick={handleBatchEngage} className="gap-2 shadow-sm font-bold text-left">
-                                <Send className="h-4 w-4" /> Batch Engage ({selectedIds.length})
-                            </Button>
-                        )}
+                        <div className="relative w-64 text-left">
+                            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <Input placeholder="Filter registry..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8 bg-white" />
+                        </div>
                         <Button variant="outline" onClick={handleExport} disabled={isLoading} className="text-foreground text-foreground text-foreground">
                             <Download className="mr-2 h-4 w-4" /> Export CSV
                         </Button>
-                        <BulkImportDialog type="transporter" onComplete={fetchData}><Button variant="outline" className="text-foreground text-foreground text-foreground"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
+                        <BulkImportDialog type="transporter" onComplete={() => fetchData(currentPage)}><Button variant="outline" className="text-foreground text-foreground text-foreground"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
                         <Button onClick={() => setDialog({ type: 'add' })} className="text-foreground text-foreground text-foreground text-foreground text-foreground"><PlusCircle className="mr-2 h-4 w-4" /> Add Record</Button>
                     </div>
                 </CardHeader>
@@ -397,7 +399,7 @@ export default function TransporterManagement() {
                             <div className="flex-1 space-y-2 text-left text-foreground text-foreground">
                                 <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-foreground text-foreground"><Send className="h-3 w-3"/> Outreach</Label>
                                 <Select value={outreachFilter} onValueChange={setOutreachFilter}>
-                                    <SelectTrigger className="bg-white text-left text-foreground text-foreground text-foreground text-foreground text-foreground"><SelectValue placeholder="All" /></SelectTrigger>
+                                    <SelectTrigger className="bg-white text-left text-foreground text-foreground text-foreground text-foreground"><SelectValue placeholder="All" /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">All</SelectItem>
                                         <SelectItem value="none">No Outreach Yet</SelectItem>
@@ -410,11 +412,35 @@ export default function TransporterManagement() {
                             </div>
                         </div>
                         {isLoading ? <div className="flex justify-center items-center py-10 text-foreground text-foreground text-foreground text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
-                            <div className="space-y-4 text-left text-foreground text-foreground">
+                            <div className="space-y-6 text-left text-foreground text-foreground">
                                 <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />
-                                <div className="flex justify-center pt-4 text-left">
-                                    <Button variant="outline" size="lg" onClick={handleLoadMore} disabled={isLoading} className="gap-2 min-w-[200px] text-foreground">
-                                        {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <ChevronDown className="h-4 w-4" />}
+                                
+                                <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-6 border-t">
+                                    <div className="text-sm text-muted-foreground font-medium">
+                                        Showing {allRecords.length} of {totalRecords.toLocaleString()} records
+                                    </div>
+                                    
+                                    <div className="flex items-center gap-4">
+                                        <div className="flex items-center gap-2">
+                                            <Button variant="outline" size="icon" onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))} disabled={currentPage === 1}>
+                                                <ChevronLeft className="h-4 w-4" />
+                                            </Button>
+                                            <form onSubmit={handleJumpPage} className="flex items-center gap-2">
+                                                <span className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Page</span>
+                                                <Input 
+                                                    className="w-16 h-8 text-center font-bold font-mono text-foreground" 
+                                                    value={jumpPageInput} 
+                                                    onChange={e => setJumpPageInput(e.target.value)}
+                                                />
+                                                <span className="text-sm font-bold uppercase tracking-widest text-muted-foreground">of {totalPages}</span>
+                                            </form>
+                                            <Button variant="outline" size="icon" onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))} disabled={currentPage === totalPages}>
+                                                <ChevronRight className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    </div>
+
+                                    <Button variant="outline" onClick={() => setCurrentPage(prev => prev + 1)} disabled={currentPage === totalPages} className="min-w-[180px] font-bold text-foreground">
                                         Load Next 100 Records
                                     </Button>
                                 </div>

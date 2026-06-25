@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
 import { 
-  Loader2, PlusCircle, Building, Edit, Trash2, Send, Download, Save, Search, Filter, Users, Globe, Zap, Upload, RefreshCcw, Database, Tag, Sparkles, RotateCcw, Clock, UserCheck, ChevronDown 
+  Loader2, PlusCircle, Building, Edit, Trash2, Send, Download, Save, Search, Filter, Users, Globe, Zap, Upload, RefreshCcw, Database, Tag, Sparkles, RotateCcw, Clock, UserCheck, ChevronLeft, ChevronRight 
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
@@ -108,7 +108,7 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
             </div>
             <div className="grid grid-cols-2 gap-4 text-left text-foreground">
               <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Direct E-mail</FormLabel><FormControl><Input {...field} type="email" /></FormControl><FormMessage /></FormItem>)} />
-              <FormField control={form.control} name="mobile" render={({ field }) => (<FormItem><FormLabel>Mobile (Direct Cell)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} /></FormControl><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="mobile" render={({ field }) => (<FormItem className="text-left"><FormLabel>Mobile (Direct Cell)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
             <FormField control={form.control} name="website" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Corporate Website</FormLabel><FormControl><Input placeholder="https://..." {...field} /></FormControl><FormMessage /></FormItem>)} />
             
@@ -172,41 +172,50 @@ export default function SupplierManagement() {
   const [isLoading, setIsLoading] = useState(false);
   const [hasLoaded, setHasLoaded] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [resultsLimit, setResultsLimit] = useState(100);
   const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | null, data?: any, initialIndex?: number }>({ type: null });
 
-  // Independent Search States
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [jumpPageInput, setJumpPageInput] = useState('1');
+
+  // Search/Filter State
   const [searchCompany, setSearchCompany] = useState('');
   const [searchKeyword, setSearchKeyword] = useState('');
-  const [searchTag, setSearchTag] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
-
   const [statusFilter, setStatusFilter] = useState('all');
   const [assigneeFilter, setAssigneeFilter] = useState('all');
   const [integrityFilter, setIntegrityFilter] = useState('all');
   const [outreachFilter, setOutreachFilter] = useState('all');
   const [enrichmentFilter, setEnrichmentFilter] = useState('all');
 
-  const fetchData = useCallback(async (limit: number = resultsLimit) => {
+  const fetchData = useCallback(async (page: number = 1) => {
     setIsLoading(true);
     try {
       const token = await getClientSideAuthToken();
       if (!token) return;
-      const [res, staffRes] = await Promise.all([
-        performAdminAction(token, 'searchRegistry', { 
+      const res = await performAdminAction(token, 'searchRegistry', { 
             type: 'supplier', 
             searchCompany, 
             searchKeyword, 
-            searchTag,
             category: categoryFilter,
             integrityFilter, 
             outreachFilter,
             enrichmentFilter,
-            limit
-        }),
+            page,
+            limit: 100
+      });
+      
+      const [staffRes] = await Promise.all([
         performAdminAction(token, 'getPlatformStaff', {})
       ]);
+
       setPartners(res.data || []);
+      setTotalPages(res.totalPages || 1);
+      setTotalRecords(res.totalCount || 0);
+      setCurrentPage(res.currentPage || 1);
+      setJumpPageInput(String(res.currentPage || 1));
       setStaff(staffRes.data || []);
       setHasLoaded(true);
     } catch (e: any) {
@@ -214,16 +223,20 @@ export default function SupplierManagement() {
     } finally {
       setIsLoading(false);
     }
-  }, [searchCompany, searchKeyword, searchTag, categoryFilter, integrityFilter, outreachFilter, enrichmentFilter, resultsLimit, toast]);
+  }, [searchCompany, searchKeyword, categoryFilter, integrityFilter, outreachFilter, enrichmentFilter, toast]);
 
   useEffect(() => { 
-    if (hasLoaded) fetchData(); 
-  }, [fetchData, hasLoaded]);
+    if (hasLoaded) fetchData(currentPage); 
+  }, [currentPage, hasLoaded, fetchData]);
 
-  const handleLoadMore = () => {
-    const newLimit = resultsLimit + 100;
-    setResultsLimit(newLimit);
-    fetchData(newLimit);
+  const handleJumpPage = (e: React.FormEvent) => {
+      e.preventDefault();
+      const pageNum = parseInt(jumpPageInput, 10);
+      if (isNaN(pageNum) || pageNum < 1 || pageNum > totalPages) {
+          toast({ variant: 'destructive', title: 'Invalid Page', description: `Please enter a page between 1 and ${totalPages}.` });
+          return;
+      }
+      setCurrentPage(pageNum);
   };
 
   const filteredRecords = useMemo(() => {
@@ -239,40 +252,6 @@ export default function SupplierManagement() {
       downloadDataAsCSV(filteredRecords, `suppliers-export-${new Date().toISOString().split('T')[0]}.csv`);
       toast({ title: "Export Complete" });
   };
-
-  const handleEngage = (record: any) => {
-    const indexInSelected = selectedIds.indexOf(record.id);
-    const engageList = selectedIds.length > 0 
-        ? partners.filter(p => selectedIds.includes(p.id)) 
-        : [record];
-        
-    setDialog({ 
-        type: 'engage', 
-        data: engageList, 
-        initialIndex: Math.max(0, indexInSelected) 
-    });
-  };
-
-  const handleBatchEngage = () => {
-    if (selectedIds.length === 0) return;
-    const engageList = partners.filter(p => selectedIds.includes(p.id));
-    setDialog({ type: 'engage', data: engageList, initialIndex: 0 });
-  };
-
-  async function handleDeleteBatch() {
-    if (selectedIds.length === 0) return;
-    try {
-      const token = await getClientSideAuthToken();
-      if (!token) return;
-      await performAdminAction(token, 'deletePartners', { partnerIds: selectedIds });
-      toast({ title: 'Batch Deleted', description: `${selectedIds.length} records removed.` });
-      fetchData();
-      setSelectedIds([]);
-      setDialog({ type: null });
-    } catch (e: any) {
-      toast({ variant: 'destructive', title: 'Error', description: e.message });
-    }
-  }
 
   const columns: ColumnDef<any>[] = [
     { 
@@ -335,11 +314,11 @@ export default function SupplierManagement() {
     },
     { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
       <div className="flex justify-end gap-1 text-left text-foreground">
-        <EnrichPartnerButton partner={row.original} onUpdate={fetchData} />
-        <Button variant="ghost" size="icon" onClick={() => handleEngage(row.original)} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
+        <EnrichPartnerButton partner={row.original} onUpdate={() => fetchData(currentPage)} />
+        <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'engage', data: [row.original] })} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
         <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.companyName} />
         <PartnerTasksDialog partner={row.original} />
-        <PartnerOversightDialog partner={row.original} onUpdate={fetchData} />
+        <PartnerOversightDialog partner={row.original} onUpdate={() => fetchData(currentPage)} />
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'edit', data: row.original })}><Edit className="h-4 w-4" /></Button>
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'delete', data: row.original })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
       </div>
@@ -352,22 +331,21 @@ export default function SupplierManagement() {
         open={dialog.type === 'engage'} 
         onOpenChange={(o) => !o && setDialog({ type: null })} 
         partners={Array.isArray(dialog.data) ? dialog.data : [dialog.data]} 
-        initialIndex={dialog.initialIndex}
         audience="suppliers" 
-        onEngageSuccess={fetchData} 
+        onEngageSuccess={() => fetchData(currentPage)} 
       />
-      <SupplierDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={fetchData} />
+      <SupplierDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={() => fetchData(currentPage)} />
       
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
         <AlertDialogContent className="text-left text-foreground">
-          <AlertDialogHeader><AlertDialogTitle>Delete Record(s)?</AlertDialogTitle><AlertDialogDescription>Delete Selected?</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogHeader><AlertDialogTitle>Delete Record?</AlertDialogTitle><AlertDialogDescription>Delete Selected?</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={selectedIds.length > 0 ? handleDeleteBatch : async () => {
+            <AlertDialogAction onClick={async () => {
                 const token = await getClientSideAuthToken();
                 if (token && dialog.data) {
                     await performAdminAction(token, 'deletePartner', { partnerId: dialog.data.id });
-                    fetchData();
+                    fetchData(currentPage);
                     setDialog({ type: null });
                 }
             }} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction>
@@ -438,11 +416,11 @@ export default function SupplierManagement() {
                     </div>
                     
                     <div className="lg:col-span-2 flex items-end text-left gap-2 text-foreground">
-                        <Button size="lg" onClick={() => { setResultsLimit(100); fetchData(100); }} disabled={isLoading} className="flex-1 h-12 font-black uppercase tracking-widest gap-2 shadow-lg">
+                        <Button size="lg" onClick={() => { setCurrentPage(1); fetchData(1); }} disabled={isLoading} className="flex-1 h-12 font-black uppercase tracking-widest gap-2 shadow-lg">
                             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4" />}
                             Execute Deep Scan
                         </Button>
-                        <Button variant="outline" size="lg" onClick={() => { setResultsLimit(100); fetchData(100); }} className="flex-1 h-12 text-foreground">
+                        <Button variant="outline" size="lg" onClick={() => { setCurrentPage(1); fetchData(1); }} className="flex-1 h-12 text-foreground">
                              Show Recent
                         </Button>
                     </div>
@@ -453,23 +431,13 @@ export default function SupplierManagement() {
                 <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
                     <div className="text-left text-foreground">
                         <CardTitle className="flex items-center gap-2 text-2xl font-black font-headline text-left text-foreground"><Building /> Supplier Registry</CardTitle>
-                        <CardDescription className="text-left text-foreground text-foreground text-foreground">Unified industrial supply directory ({partners.length} results).</CardDescription>
+                        <CardDescription className="text-left text-foreground text-foreground text-foreground">Unified industrial supply directory ({totalRecords.toLocaleString()} results).</CardDescription>
                     </div>
                     <div className="flex flex-wrap items-center gap-2 text-left text-foreground">
-                        {selectedIds.length > 0 && (
-                            <>
-                                <Button variant="secondary" onClick={handleBatchEngage} className="gap-2 shadow-sm font-bold">
-                                    <Send className="h-4 w-4" /> Batch Engage ({selectedIds.length})
-                                </Button>
-                                <Button variant="destructive" onClick={() => setDialog({ type: 'delete' })} className="gap-2">
-                                    <Trash2 className="h-4 w-4" /> Delete ({selectedIds.length})
-                                </Button>
-                            </>
-                        )}
                         <Button variant="outline" onClick={handleExport} disabled={isLoading} className="text-foreground text-foreground">
                             <Download className="mr-2 h-4 w-4" /> Export CSV
                         </Button>
-                        <BulkImportDialog type="supplier" onComplete={fetchData}><Button variant="outline" className="text-foreground text-foreground text-foreground"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
+                        <BulkImportDialog type="supplier" onComplete={() => fetchData(currentPage)}><Button variant="outline" className="text-foreground text-foreground text-foreground"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
                         <Button onClick={() => setDialog({ type: 'add' })} className="text-foreground text-foreground"><PlusCircle className="mr-2 h-4 w-4" /> Add Record</Button>
                     </div>
                 </CardHeader>
@@ -491,7 +459,7 @@ export default function SupplierManagement() {
                             <div className="space-y-2 text-left text-foreground">
                                 <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Outreach</Label>
                                 <Select value={outreachFilter} onValueChange={setOutreachFilter}>
-                                    <SelectTrigger className="bg-white text-left text-foreground text-foreground"><SelectValue placeholder="All" /></SelectTrigger>
+                                    <SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="All" /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">All</SelectItem>
                                         <SelectItem value="none">No Outreach Yet</SelectItem>
@@ -510,16 +478,40 @@ export default function SupplierManagement() {
                                 </Select>
                             </div>
                             <div className="flex items-end text-left gap-2 text-foreground md:col-span-3">
-                                <Button onClick={() => fetchData()} disabled={isLoading} className="flex-1"><RefreshCcw className={cn("h-4 w-4", isLoading && "animate-spin")} /></Button>
+                                <Button onClick={() => fetchData(currentPage)} disabled={isLoading} className="flex-1"><RefreshCcw className={cn("h-4 w-4", isLoading && "animate-spin")} /></Button>
                                 <Button variant="outline" onClick={() => setHasLoaded(false)} className="flex-1 text-foreground"><RotateCcw className="h-4 w-4" /> New Search</Button>
                             </div>
                         </div>
                         {isLoading ? <div className="flex justify-center items-center py-10 text-foreground text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
-                            <div className="space-y-4 text-left text-foreground">
+                            <div className="space-y-6 text-left text-foreground">
                                 <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />
-                                <div className="flex justify-center pt-4 text-left">
-                                    <Button variant="outline" size="lg" onClick={handleLoadMore} disabled={isLoading} className="gap-2 min-w-[200px] text-foreground">
-                                        {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <ChevronDown className="h-4 w-4" />}
+                                
+                                <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-6 border-t">
+                                    <div className="text-sm text-muted-foreground font-medium">
+                                        Showing {partners.length} of {totalRecords.toLocaleString()} records
+                                    </div>
+                                    
+                                    <div className="flex items-center gap-4">
+                                        <div className="flex items-center gap-2">
+                                            <Button variant="outline" size="icon" onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))} disabled={currentPage === 1}>
+                                                <ChevronLeft className="h-4 w-4" />
+                                            </Button>
+                                            <form onSubmit={handleJumpPage} className="flex items-center gap-2">
+                                                <span className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Page</span>
+                                                <Input 
+                                                    className="w-16 h-8 text-center font-bold font-mono" 
+                                                    value={jumpPageInput} 
+                                                    onChange={e => setJumpPageInput(e.target.value)}
+                                                />
+                                                <span className="text-sm font-bold uppercase tracking-widest text-muted-foreground">of {totalPages}</span>
+                                            </form>
+                                            <Button variant="outline" size="icon" onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))} disabled={currentPage === totalPages}>
+                                                <ChevronRight className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    </div>
+
+                                    <Button variant="outline" onClick={() => setCurrentPage(prev => prev + 1)} disabled={currentPage === totalPages} className="min-w-[180px] font-bold">
                                         Load Next 100 Records
                                     </Button>
                                 </div>

@@ -46,8 +46,11 @@ export async function POST(req: NextRequest) {
 
         switch (action) {
             case 'searchRegistry': {
-                const { term, searchCompany, searchKeyword, searchTag, category, type, integrityFilter, outreachFilter, enrichmentFilter, limit: requestedLimit } = payload;
+                const { term, searchCompany, searchKeyword, searchTag, category, type, integrityFilter, outreachFilter, enrichmentFilter, limit: requestedLimit, page = 1 } = payload;
                 
+                const limitValue = requestedLimit || 100;
+                const offset = (page - 1) * limitValue;
+
                 let partnersQuery: any = db.collection('partners');
                 let leadsQuery: any = db.collection('leads');
 
@@ -61,11 +64,10 @@ export async function POST(req: NextRequest) {
                     partnersQuery = partnersQuery.where('type', '==', typeLower);
                 }
 
-                const limitValue = requestedLimit || 100;
-
+                // Initial fetch to get data
                 const [pSnap, lSnap] = await Promise.all([
-                    partnersQuery.orderBy('updatedAt', 'desc').limit(limitValue).get(),
-                    leadsQuery.orderBy('updatedAt', 'desc').limit(limitValue).get()
+                    partnersQuery.orderBy('updatedAt', 'desc').get(),
+                    leadsQuery.orderBy('updatedAt', 'desc').get()
                 ]);
 
                 let data = [
@@ -84,7 +86,7 @@ export async function POST(req: NextRequest) {
                     entryType: item.industrial_category || item.category || 'General'
                 }));
 
-                // Registry Forensic Filters
+                // Apply Filters
                 if (term || searchCompany || searchKeyword || searchTag) {
                     const lowTerm = (term || searchCompany || '').toLowerCase();
                     const lowKey = (searchKeyword || '').toLowerCase();
@@ -101,14 +103,12 @@ export async function POST(req: NextRequest) {
                 if (integrityFilter === 'has-email') data = data.filter(p => !!p.email);
                 if (integrityFilter === 'no-email') data = data.filter(p => !p.email);
                 
-                // Outreach Filter Logic
                 if (outreachFilter === 'none') {
                     data = data.filter(p => !p.lastOutreachSubject);
                 } else if (outreachFilter && outreachFilter !== 'all') {
                     data = data.filter(p => p.lastOutreachSubject === outreachFilter);
                 }
 
-                // Enrichment Filter Logic
                 if (enrichmentFilter === 'enriched') {
                     data = data.filter(p => !!p.minedServiceWording || !!p.website || !!p.notes);
                 } else if (enrichmentFilter === 'unenriched') {
@@ -117,7 +117,16 @@ export async function POST(req: NextRequest) {
 
                 data.sort((a,b) => new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime());
 
-                return NextResponse.json({ success: true, data: data.slice(0, limitValue) });
+                const totalCount = data.length;
+                const paginatedData = data.slice(offset, offset + limitValue);
+
+                return NextResponse.json({ 
+                    success: true, 
+                    data: paginatedData,
+                    totalCount,
+                    currentPage: page,
+                    totalPages: Math.ceil(totalCount / limitValue)
+                });
             }
 
             case 'logCommunication': {

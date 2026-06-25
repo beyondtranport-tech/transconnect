@@ -9,7 +9,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, DollarSign, Edit, Trash2, Send, Globe, Search, Download, Save, Filter, Users, UserCheck, ChevronDown, Database, RotateCcw } from 'lucide-react';
+import { Loader2, PlusCircle, DollarSign, Edit, Trash2, Send, Globe, Search, Download, Save, Filter, Users, UserCheck, ChevronDown, Database, RotateCcw, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DataTable } from '@/components/ui/data-table';
@@ -137,24 +137,33 @@ export default function InvestorManagement() {
   const [isLoading, setIsLoading] = useState(false);
   const [hasLoaded, setHasLoaded] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [resultsLimit, setResultsLimit] = useState(100);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | null, data?: any }>({ type: null });
+  const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | null, data?: any, initialIndex?: number }>({ type: null });
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [jumpPageInput, setJumpPageInput] = useState('1');
 
   const [statusFilter, setStatusFilter] = useState('all');
   const [outreachFilter, setOutreachFilter] = useState('all');
   const [enrichmentFilter, setEnrichmentFilter] = useState('all');
 
-  const fetchData = useCallback(async (limit: number = resultsLimit) => {
+  const fetchData = useCallback(async (page: number = 1) => {
     setIsLoading(true);
     try {
         const token = await getClientSideAuthToken();
         if (!token) return;
-        const [res, staffRes] = await Promise.all([
-            performAdminAction(token, 'searchRegistry', { type: 'investor', term: searchTerm, outreachFilter, enrichmentFilter, limit }),
+        const res = await performAdminAction(token, 'searchRegistry', { type: 'investor', term: searchTerm, outreachFilter, enrichmentFilter, page, limit: 100 });
+        const [staffRes] = await Promise.all([
             performAdminAction(token, 'getPlatformStaff', {})
         ]);
         setPartners(res.data || []);
+        setTotalPages(res.totalPages || 1);
+        setTotalRecords(res.totalCount || 0);
+        setCurrentPage(res.currentPage || 1);
+        setJumpPageInput(String(res.currentPage || 1));
         setStaff(staffRes.data || []);
         setHasLoaded(true);
     } catch (e: any) {
@@ -162,16 +171,20 @@ export default function InvestorManagement() {
     } finally {
         setIsLoading(false);
     }
-  }, [searchTerm, outreachFilter, enrichmentFilter, resultsLimit]);
+  }, [searchTerm, outreachFilter, enrichmentFilter]);
 
   useEffect(() => { 
-    if (hasLoaded) fetchData(); 
-  }, [fetchData, hasLoaded]);
+    if (hasLoaded) fetchData(currentPage); 
+  }, [currentPage, hasLoaded, fetchData]);
 
-  const handleLoadMore = () => {
-    const newLimit = resultsLimit + 100;
-    setResultsLimit(newLimit);
-    fetchData(newLimit);
+  const handleJumpPage = (e: React.FormEvent) => {
+      e.preventDefault();
+      const pageNum = parseInt(jumpPageInput, 10);
+      if (isNaN(pageNum) || pageNum < 1 || pageNum > totalPages) {
+          toast({ variant: 'destructive', title: 'Invalid Page', description: `Please enter a page between 1 and ${totalPages}.` });
+          return;
+      }
+      setCurrentPage(pageNum);
   };
 
   const filteredRecords = useMemo(() => {
@@ -188,7 +201,7 @@ export default function InvestorManagement() {
         if (!token) return;
         await performAdminAction(token, 'deletePartner', { partnerId: dialog.data.id });
         toast({ title: 'Deleted' });
-        fetchData();
+        fetchData(currentPage);
         setDialog({ type: null });
     } catch (e: any) {
         toast({ variant: 'destructive', title: 'Error', description: e.message });
@@ -240,11 +253,11 @@ export default function InvestorManagement() {
     { accessorKey: 'status', header: 'Status', cell: ({row}) => <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge>},
     { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
       <div className="flex justify-end items-center gap-1 text-left text-foreground text-foreground">
-        <EnrichPartnerButton partner={row.original} onUpdate={fetchData} />
+        <EnrichPartnerButton partner={row.original} onUpdate={() => fetchData(currentPage)} />
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'engage', data: [row.original] })} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
         <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.firstName} />
         <PartnerTasksDialog partner={row.original} />
-        <PartnerOversightDialog partner={row.original} onUpdate={fetchData} />
+        <PartnerOversightDialog partner={row.original} onUpdate={() => fetchData(currentPage)} />
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'edit', data: row.original })}><Edit className="h-4 w-4" /></Button>
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'delete', data: row.original })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
       </div>
@@ -258,9 +271,9 @@ export default function InvestorManagement() {
         onOpenChange={(o: boolean) => !o && setDialog({ type: null })} 
         partners={Array.isArray(dialog.data) ? dialog.data : [dialog.data]} 
         audience="investors" 
-        onEngageSuccess={fetchData} 
+        onEngageSuccess={() => fetchData(currentPage)} 
       />
-      <InvestorDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={fetchData} />
+      <InvestorDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={() => fetchData(currentPage)} />
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
         <AlertDialogContent className="text-left text-foreground">
           <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Delete record?</AlertDialogDescription></AlertDialogHeader>
@@ -270,7 +283,7 @@ export default function InvestorManagement() {
                 const token = await getClientSideAuthToken();
                 if (token && dialog.data) {
                     await performAdminAction(token, 'deletePartner', { partnerId: dialog.data.id });
-                    fetchData();
+                    fetchData(currentPage);
                     setDialog({ type: null });
                 }
             }} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction>
@@ -287,7 +300,7 @@ export default function InvestorManagement() {
                 <div className="flex flex-col md:flex-row justify-center gap-4 max-w-4xl mx-auto text-left text-foreground">
                     <div className="flex-1 space-y-2 text-left">
                         <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Name, Fund or ID</Label>
-                        <Input placeholder="Search criteria..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && fetchData(100)} className="h-12 text-lg bg-white" />
+                        <Input placeholder="Search criteria..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && fetchData(1)} className="h-12 text-lg bg-white" />
                     </div>
                      <div className="w-56 space-y-2 text-left">
                         <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Outreach Stage</Label>
@@ -312,11 +325,11 @@ export default function InvestorManagement() {
                         </Select>
                     </div>
                     <div className="flex flex-col md:flex-row gap-2 self-end">
-                        <Button size="lg" onClick={() => { setResultsLimit(100); fetchData(100); }} disabled={isLoading} className="h-12 px-8 font-bold">
+                        <Button size="lg" onClick={() => { setCurrentPage(1); fetchData(1); }} disabled={isLoading} className="h-12 px-8 font-bold">
                             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4" />}
                             Execute Scan
                         </Button>
-                        <Button variant="outline" size="lg" onClick={() => { setResultsLimit(100); fetchData(100); }} className="h-12">
+                        <Button variant="outline" size="lg" onClick={() => { setCurrentPage(1); fetchData(1); }} className="h-12">
                              Show Recent
                         </Button>
                     </div>
@@ -325,7 +338,7 @@ export default function InvestorManagement() {
         ) : (
             <div className="space-y-6 text-left">
                 <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
-                    <div className="text-left"><CardTitle className="flex items-center gap-2 font-black font-headline text-left"><DollarSign /> App Launch Investors</CardTitle><CardDescription className="text-left text-foreground">Registry view ({partners.length} records).</CardDescription></div>
+                    <div className="text-left"><CardTitle className="flex items-center gap-2 font-black font-headline text-left"><DollarSign /> App Launch Investors</CardTitle><CardDescription className="text-left text-foreground">Registry view ({totalRecords.toLocaleString()} records).</CardDescription></div>
                     <div className="flex gap-2 text-left">
                         <div className="relative w-64 text-left">
                             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -380,11 +393,35 @@ export default function InvestorManagement() {
                                 <Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" />
                             </div>
                         ) : (
-                            <div className="space-y-4 text-left">
+                            <div className="space-y-6 text-left">
                                 <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />
-                                <div className="flex justify-center pt-4 text-left">
-                                    <Button variant="outline" size="lg" onClick={handleLoadMore} disabled={isLoading} className="gap-2 min-w-[200px] text-foreground text-foreground">
-                                        {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <ChevronDown className="h-4 w-4" />}
+                                
+                                <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-6 border-t">
+                                    <div className="text-sm text-muted-foreground font-medium">
+                                        Showing {partners.length} of {totalRecords.toLocaleString()} records
+                                    </div>
+                                    
+                                    <div className="flex items-center gap-4">
+                                        <div className="flex items-center gap-2">
+                                            <Button variant="outline" size="icon" onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))} disabled={currentPage === 1}>
+                                                <ChevronLeft className="h-4 w-4" />
+                                            </Button>
+                                            <form onSubmit={handleJumpPage} className="flex items-center gap-2">
+                                                <span className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Page</span>
+                                                <Input 
+                                                    className="w-16 h-8 text-center font-bold font-mono text-foreground" 
+                                                    value={jumpPageInput} 
+                                                    onChange={e => setJumpPageInput(e.target.value)}
+                                                />
+                                                <span className="text-sm font-bold uppercase tracking-widest text-muted-foreground">of {totalPages}</span>
+                                            </form>
+                                            <Button variant="outline" size="icon" onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))} disabled={currentPage === totalPages}>
+                                                <ChevronRight className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    </div>
+
+                                    <Button variant="outline" onClick={() => setCurrentPage(prev => prev + 1)} disabled={currentPage === totalPages} className="min-w-[180px] font-bold text-foreground">
                                         Load Next 100 Records
                                     </Button>
                                 </div>

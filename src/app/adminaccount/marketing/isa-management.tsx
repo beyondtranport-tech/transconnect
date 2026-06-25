@@ -29,7 +29,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, Bot, Edit, Trash2, Send, Download, Save, Search, Users, Filter, Globe, Zap, Database, Upload, Copy, Tag, AlertTriangle, CheckCircle, RotateCcw, UserCheck, ChevronDown } from 'lucide-react';
+import { Loader2, PlusCircle, Bot, Edit, Trash2, Send, Download, Save, Search, Users, Filter, Globe, Zap, Database, Upload, Copy, Tag, AlertTriangle, CheckCircle, RotateCcw, UserCheck, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -153,24 +153,33 @@ export default function ISAManagement() {
   const [hasLoaded, setHasLoaded] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [resultsLimit, setResultsLimit] = useState(100);
   const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | 'batch' | null, data?: any, initialIndex?: number }>({ type: null });
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [jumpPageInput, setJumpPageInput] = useState('1');
 
   const [statusFilter, setStatusFilter] = useState('all');
   const [assigneeFilter, setAssigneeFilter] = useState('all');
   const [integrityFilter, setIntegrityFilter] = useState('all');
   const [outreachFilter, setOutreachFilter] = useState('all');
 
-  const fetchData = useCallback(async (limit: number = resultsLimit) => {
+  const fetchData = useCallback(async (page: number = 1) => {
     setIsLoading(true);
     try {
       const token = await getClientSideAuthToken();
       if (!token) return;
-      const [res, staffRes] = await Promise.all([
-        performAdminAction(token, 'searchRegistry', { type: 'isa', term: searchTerm, integrityFilter, outreachFilter, limit }),
+      const res = await performAdminAction(token, 'searchRegistry', { type: 'isa', term: searchTerm, integrityFilter, outreachFilter, page, limit: 100 });
+      const [staffRes] = await Promise.all([
         performAdminAction(token, 'getPlatformStaff', {})
       ]);
       setAllRecords(res.data || []);
+      setTotalPages(res.totalPages || 1);
+      setTotalRecords(res.totalCount || 0);
+      setCurrentPage(res.currentPage || 1);
+      setJumpPageInput(String(res.currentPage || 1));
       setStaff(staffRes.data || []);
       setHasLoaded(true);
     } catch (e: any) {
@@ -178,16 +187,20 @@ export default function ISAManagement() {
     } finally {
       setIsLoading(false);
     }
-  }, [searchTerm, integrityFilter, outreachFilter, resultsLimit, toast]);
+  }, [searchTerm, integrityFilter, outreachFilter, toast]);
 
   useEffect(() => { 
-    if (hasLoaded) fetchData(); 
-  }, [fetchData, hasLoaded]);
+    if (hasLoaded) fetchData(currentPage); 
+  }, [currentPage, hasLoaded, fetchData]);
 
-  const handleLoadMore = () => {
-    const newLimit = resultsLimit + 100;
-    setResultsLimit(newLimit);
-    fetchData(newLimit);
+  const handleJumpPage = (e: React.FormEvent) => {
+      e.preventDefault();
+      const pageNum = parseInt(jumpPageInput, 10);
+      if (isNaN(pageNum) || pageNum < 1 || pageNum > totalPages) {
+          toast({ variant: 'destructive', title: 'Invalid Page', description: `Please enter a page between 1 and ${totalPages}.` });
+          return;
+      }
+      setCurrentPage(pageNum);
   };
 
   const filteredRecords = useMemo(() => {
@@ -230,7 +243,7 @@ export default function ISAManagement() {
       if (!token) return;
       await performAdminAction(token, 'deletePartners', { partnerIds: selectedIds });
       toast({ title: 'Batch Deleted', description: `${selectedIds.length} records removed.` });
-      fetchData();
+      fetchData(currentPage);
       setSelectedIds([]);
       setDialog({ type: null });
     } catch (e: any) {
@@ -292,11 +305,11 @@ export default function ISAManagement() {
     },
     { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
       <div className="flex justify-end gap-1 text-left text-foreground">
-        <EnrichPartnerButton partner={row.original} onUpdate={fetchData} />
+        <EnrichPartnerButton partner={row.original} onUpdate={() => fetchData(currentPage)} />
         <Button variant="ghost" size="icon" onClick={() => handleEngage(row.original)} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
         <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.firstName} />
         <PartnerTasksDialog partner={row.original} />
-        <PartnerOversightDialog partner={row.original} onUpdate={fetchData} />
+        <PartnerOversightDialog partner={row.original} onUpdate={() => fetchData(currentPage)} />
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'edit', data: row.original })}><Edit className="h-4 w-4" /></Button>
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'delete', data: row.original })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
       </div>
@@ -305,16 +318,16 @@ export default function ISAManagement() {
 
   return (
     <div className="space-y-6 text-left text-foreground">
-      <BatchResearchDialog open={dialog.type === 'batch'} onOpenChange={(o) => !o && setDialog({ type: null })} selectedLeads={allRecords.filter(r => selectedIds.includes(r.id))} onComplete={fetchData} />
+      <BatchResearchDialog open={dialog.type === 'batch'} onOpenChange={(o) => !o && setDialog({ type: null })} selectedLeads={allRecords.filter(r => selectedIds.includes(r.id))} onComplete={() => fetchData(currentPage)} />
       <EngageDialog 
         open={dialog.type === 'engage'} 
         onOpenChange={(o) => !o && setDialog({ type: null })} 
         partners={Array.isArray(dialog.data) ? dialog.data : [dialog.data]} 
         initialIndex={dialog.initialIndex}
         audience="isa" 
-        onEngageSuccess={fetchData} 
+        onEngageSuccess={() => fetchData(currentPage)} 
       />
-      <ISADialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={fetchData} />
+      <ISADialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={() => fetchData(currentPage)} />
       
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
         <AlertDialogContent className="text-left text-foreground">
@@ -325,7 +338,7 @@ export default function ISAManagement() {
                 const token = await getClientSideAuthToken();
                 if (token && dialog.data) {
                     await performAdminAction(token, 'deletePartner', { partnerId: dialog.data.id });
-                    fetchData();
+                    fetchData(currentPage);
                     setDialog({ type: null });
                 }
             }} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction>
@@ -338,11 +351,11 @@ export default function ISAManagement() {
             <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground">
                 <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
                 <h2 className="text-2xl font-black font-headline mb-2 text-foreground text-center">Registry Search Variables</h2>
-                <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center">Enter your search criteria to load the master registry. Filter by outreach stage or data integrity.</p>
+                <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center text-foreground">Enter your search criteria to load the master registry. Filter by outreach stage or data integrity.</p>
                 <div className="flex flex-col md:flex-row justify-center gap-4 max-w-4xl mx-auto text-left text-foreground">
                     <div className="flex-1 space-y-2 text-left">
                         <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1 text-left">Company, Contact or ID</Label>
-                        <Input placeholder="Search criteria..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && fetchData(100)} className="h-12 text-lg bg-white" />
+                        <Input placeholder="Search criteria..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && fetchData(1)} className="h-12 text-lg bg-white" />
                     </div>
                      <div className="w-40 space-y-2 text-left">
                         <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1 text-left">Integrity</Label>
@@ -356,7 +369,7 @@ export default function ISAManagement() {
                         </Select>
                     </div>
                     <div className="w-56 space-y-2 text-left">
-                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1 text-left">Outreach Stage</Label>
+                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1 text-left text-foreground">Outreach Stage</Label>
                         <Select value={outreachFilter} onValueChange={setOutreachFilter}>
                             <SelectTrigger className="h-12 bg-white text-left text-foreground"><SelectValue placeholder="All Stages" /></SelectTrigger>
                             <SelectContent>
@@ -368,11 +381,11 @@ export default function ISAManagement() {
                         </Select>
                     </div>
                     <div className="flex flex-col md:flex-row gap-2 self-end text-foreground">
-                        <Button size="lg" onClick={() => { setResultsLimit(100); fetchData(100); }} disabled={isLoading} className="h-12 px-8 font-bold">
+                        <Button size="lg" onClick={() => { setCurrentPage(1); fetchData(1); }} disabled={isLoading} className="h-12 px-8 font-bold">
                             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4" />}
                             Execute Scan
                         </Button>
-                        <Button variant="outline" size="lg" onClick={() => { setResultsLimit(100); fetchData(100); }} className="h-12 text-foreground">
+                        <Button variant="outline" size="lg" onClick={() => { setCurrentPage(1); fetchData(1); }} className="h-12 text-foreground">
                              Show Recent
                         </Button>
                     </div>
@@ -383,7 +396,7 @@ export default function ISAManagement() {
                 <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
                     <div className="text-left">
                         <CardTitle className="flex items-center gap-2 text-2xl font-black font-headline text-left text-foreground"><Bot /> ISA Management</CardTitle>
-                        <CardDescription className="text-left text-foreground text-foreground">Full database of Independent Sales Agents ({allRecords.length} records).</CardDescription>
+                        <CardDescription className="text-left text-foreground text-foreground">Full database of Independent Sales Agents ({totalRecords.toLocaleString()} records).</CardDescription>
                     </div>
                     <div className="flex flex-wrap items-center gap-2 text-left text-foreground">
                         {selectedIds.length > 0 && (
@@ -403,7 +416,7 @@ export default function ISAManagement() {
                         <Button variant="outline" onClick={handleExport} disabled={isLoading} className="text-foreground">
                             <Download className="mr-2 h-4 w-4" /> Export Filtered
                         </Button>
-                        <BulkImportDialog type="isa" onComplete={fetchData}><Button variant="outline" className="text-foreground text-foreground text-foreground"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
+                        <BulkImportDialog type="isa" onComplete={() => fetchData(currentPage)}><Button variant="outline" className="text-foreground text-foreground text-foreground"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
                         <Button onClick={() => setDialog({ type: 'add' })} className="text-foreground text-foreground"><PlusCircle className="mr-2 h-4 w-4" /> Add ISA</Button>
                     </div>
                 </CardHeader>
@@ -434,7 +447,7 @@ export default function ISAManagement() {
                                 </Select>
                             </div>
                             <div className="flex-1 space-y-2 text-left text-foreground">
-                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-foreground"><Send className="h-3 w-3"/> Outreach</Label>
+                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Send className="h-3 w-3"/> Outreach</Label>
                                 <Select value={outreachFilter} onValueChange={setOutreachFilter}>
                                     <SelectTrigger className="bg-white text-left text-foreground text-foreground"><SelectValue placeholder="All" /></SelectTrigger>
                                     <SelectContent>
@@ -449,11 +462,35 @@ export default function ISAManagement() {
                             </div>
                         </div>
                         {isLoading ? <div className="flex justify-center items-center py-10 text-foreground text-foreground text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
-                            <div className="space-y-4 text-left text-foreground">
+                            <div className="space-y-6 text-left text-foreground">
                                 <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />
-                                <div className="flex justify-center pt-4 text-left">
-                                    <Button variant="outline" size="lg" onClick={handleLoadMore} disabled={isLoading} className="gap-2 min-w-[200px] text-foreground">
-                                        {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <ChevronDown className="h-4 w-4" />}
+                                
+                                <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-6 border-t">
+                                    <div className="text-sm text-muted-foreground font-medium">
+                                        Showing {allRecords.length} of {totalRecords.toLocaleString()} records
+                                    </div>
+                                    
+                                    <div className="flex items-center gap-4">
+                                        <div className="flex items-center gap-2">
+                                            <Button variant="outline" size="icon" onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))} disabled={currentPage === 1}>
+                                                <ChevronLeft className="h-4 w-4" />
+                                            </Button>
+                                            <form onSubmit={handleJumpPage} className="flex items-center gap-2">
+                                                <span className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Page</span>
+                                                <Input 
+                                                    className="w-16 h-8 text-center font-bold font-mono text-foreground" 
+                                                    value={jumpPageInput} 
+                                                    onChange={e => setJumpPageInput(e.target.value)}
+                                                />
+                                                <span className="text-sm font-bold uppercase tracking-widest text-muted-foreground">of {totalPages}</span>
+                                            </form>
+                                            <Button variant="outline" size="icon" onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))} disabled={currentPage === totalPages}>
+                                                <ChevronRight className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    </div>
+
+                                    <Button variant="outline" onClick={() => setCurrentPage(prev => prev + 1)} disabled={currentPage === totalPages} className="min-w-[180px] font-bold text-foreground">
                                         Load Next 100 Records
                                     </Button>
                                 </div>
