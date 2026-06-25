@@ -395,11 +395,11 @@ export default function SupplierManagement() {
                     <div className="space-y-2 text-left text-foreground text-foreground">
                         <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Data Integrity</Label>
                         <Select value={integrityFilter} onValueChange={setIntegrityFilter}>
-                            <SelectTrigger className="h-12 bg-white text-left text-foreground text-foreground"><SelectValue placeholder="All" /></SelectTrigger>
+                            <SelectTrigger className="h-12 bg-white text-left text-foreground"><SelectValue placeholder="All" /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Records</SelectItem>
                                 <SelectItem value="has-email">Has Email</SelectItem>
-                                <SelectItem value="no-email">No Email</SelectItem>
+                                <SelectItem value="no-email">Missing Email</SelectItem>
                                 <SelectItem value="has-website">Has WWW</SelectItem>
                             </SelectContent>
                         </Select>
@@ -407,17 +407,12 @@ export default function SupplierManagement() {
                     <div className="space-y-2 text-left text-foreground text-foreground">
                         <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Outreach Stage</Label>
                         <Select value={outreachFilter} onValueChange={setOutreachFilter}>
-                            <SelectTrigger className="h-12 bg-white text-left text-foreground text-foreground"><SelectValue placeholder="All Stages" /></SelectTrigger>
+                            <SelectTrigger className="h-12 bg-white text-left text-foreground"><SelectValue placeholder="All Stages" /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Stages</SelectItem>
                                 <SelectItem value="none">No Outreach Yet</SelectItem>
                                 <SelectItem value="Digital Handshake">Step 0: Handshake</SelectItem>
                                 <SelectItem value="Company Profile">Step 1: Profile</SelectItem>
-                                <SelectItem value="Tech Architecture">Step 2: Tech</SelectItem>
-                                <SelectItem value="Revenue Model">Step 3: Revenue</SelectItem>
-                                <SelectItem value="The Offer">Step 4: Offer</SelectItem>
-                                <SelectItem value="The Pitch">Step 5: Pitch</SelectItem>
-                                <SelectItem value="The Framework">Step 6: Framework</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
@@ -491,7 +486,7 @@ export default function SupplierManagement() {
                                     <SelectContent>
                                         <SelectItem value="all">All</SelectItem>
                                         <SelectItem value="none">No Outreach Yet</SelectItem>
-                                        <SelectItem value="Digital Handshake">Handshake</SelectItem>
+                                        <SelectItem value="Digital Handshake">Handshake Sent</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>

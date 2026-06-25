@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -6,33 +5,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button, buttonVariants } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
@@ -49,18 +21,20 @@ import { downloadDataAsCSV, formatDateSafe, cn } from '@/lib/utils';
 import { EnrichPartnerButton } from './EnrichPartnerButton';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Input } from '@/components/ui/input';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 
 async function performAdminAction(token: string, action: string, payload: any) {
     const response = await fetch('/api/admin', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ action, payload }),
+        cache: 'no-store'
     });
-
     const result = await response.json();
-    if (!response.ok || !result.success) {
-        throw new Error(result.error || `API Error for action: ${action}`);
-    }
+    if (!response.ok || !result.success) throw new Error(result.error || `API Error for action: ${action}`);
     return result;
 }
 
@@ -78,29 +52,20 @@ const partnerSchema = z.object({
   notes: z.string().optional(),
   address: z.string().optional(),
 });
-
 type PartnerFormValues = z.infer<typeof partnerSchema>;
 
 function InvestorDialog({ open, onOpenChange, partner, onSave }: { open: boolean; onOpenChange: (open: boolean) => void; partner?: any; onSave: () => void; }) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const form = useForm<PartnerFormValues>({
+  const form = useForm<PartnerFormValues>({ 
     resolver: zodResolver(partnerSchema),
     defaultValues: { type: 'investor', status: 'new' }
   });
 
   useEffect(() => {
     if (open) {
-      if (partner) {
-        form.reset({
-          ...partner,
-          website: partner.website || '',
-          notes: partner.notes || '',
-          address: partner.address || '',
-        });
-      } else {
-        form.reset({ firstName: '', lastName: '', email: '', phone: '', mobile: '', contactPerson: '', companyName: '', status: 'new', type: 'investor', website: '', notes: '', address: '' });
-      }
+      if (partner) form.reset(partner);
+      else form.reset({ firstName: '', lastName: '', email: '', phone: '', mobile: '', contactPerson: '', companyName: '', status: 'new', type: 'investor', website: '', notes: '', address: '' });
     }
   }, [open, partner, form]);
 
@@ -238,22 +203,14 @@ export default function InvestorManagement() {
   };
 
   const handleEngage = (record: any) => {
-    const indexInSelected = selectedIds.indexOf(record.id);
     const engageList = selectedIds.length > 0 
         ? partners.filter(r => selectedIds.includes(r.id)) 
         : [record];
         
     setDialog({ 
         type: 'engage', 
-        data: engageList, 
-        initialIndex: Math.max(0, indexInSelected) 
+        data: engageList
     });
-  };
-
-  const handleBatchEngage = () => {
-    if (selectedIds.length === 0) return;
-    const engageList = partners.filter(r => selectedIds.includes(r.id));
-    setDialog({ type: 'engage', data: engageList, initialIndex: 0 });
   };
 
   const columns: ColumnDef<any>[] = [
@@ -275,7 +232,7 @@ export default function InvestorManagement() {
     { 
         header: 'Outreach & Result',
         cell: ({ row }) => {
-            if (!row.original.lastOutreachSubject) return <span className="text-[10px] text-muted-foreground italic text-left">None</span>;
+            if (!row.original.lastOutreachSubject) return <span className="text-[10px] text-muted-foreground italic text-left text-foreground">None</span>;
             return (
                 <div className="flex flex-col text-left text-foreground">
                     <Badge variant="outline" className="text-[9px] h-4 border-primary/20 text-primary uppercase font-bold truncate max-w-[100px]">{row.original.lastOutreachSubject}</Badge>
@@ -309,8 +266,7 @@ export default function InvestorManagement() {
       <EngageDialog 
         open={dialog.type === 'engage'} 
         onOpenChange={(o: boolean) => !o && setDialog({ type: null })} 
-        partners={Array.isArray(dialog.data) ? dialog.data : [dialog.data]} 
-        initialIndex={dialog.initialIndex}
+        partners={dialog.data || []} 
         audience="investors" 
         onEngageSuccess={fetchData} 
       />
@@ -334,10 +290,10 @@ export default function InvestorManagement() {
       
       <div className="space-y-6 text-left">
         {!hasLoaded ? (
-            <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground">
+            <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground text-foreground">
                 <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
                 <h2 className="text-2xl font-black font-headline mb-2 text-foreground text-center">App Launch Registry</h2>
-                <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center">Scan your equity partner pipeline. Filter by engagement status to track your launch progress.</p>
+                <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center text-foreground">Scan your equity partner pipeline. Filter by engagement status to track your launch progress.</p>
                 <div className="flex flex-col md:flex-row justify-center gap-4 max-w-4xl mx-auto text-left text-foreground">
                     <div className="flex-1 space-y-2 text-left text-foreground">
                         <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Name, Fund or ID</Label>
@@ -355,39 +311,39 @@ export default function InvestorManagement() {
                             </SelectContent>
                         </Select>
                     </div>
-                    <div className="flex flex-col md:flex-row gap-2 self-end text-foreground text-foreground">
+                    <div className="flex flex-col md:flex-row gap-2 self-end text-foreground text-foreground text-foreground">
                         <Button size="lg" onClick={() => { setResultsLimit(100); fetchData(100); }} disabled={isLoading} className="h-12 px-8 font-bold">
                             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4" />}
                             Execute Scan
                         </Button>
-                        <Button variant="outline" size="lg" onClick={() => { setResultsLimit(100); fetchData(100); }} className="h-12">
+                        <Button variant="outline" size="lg" onClick={() => { setResultsLimit(100); fetchData(100); }} className="h-12 text-foreground">
                              Show Recent
                         </Button>
                     </div>
                 </div>
             </Card>
         ) : (
-            <div className="space-y-6 text-left text-foreground text-foreground">
+            <div className="space-y-6 text-left text-foreground text-foreground text-foreground text-foreground">
                 <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left text-foreground text-foreground">
-                <div className="text-left text-foreground text-foreground"><CardTitle className="flex items-center gap-2 font-black font-headline text-left text-foreground text-foreground"><DollarSign /> App Launch Investors</CardTitle><CardDescription className="text-left text-foreground text-foreground text-foreground text-foreground">Registry view ({partners.length} records).</CardDescription></div>
-                <div className="flex gap-2 text-left text-foreground text-foreground text-foreground text-foreground">
+                <div className="text-left text-foreground text-foreground"><CardTitle className="flex items-center gap-2 font-black font-headline text-left text-foreground text-foreground"><DollarSign /> App Launch Investors</CardTitle><CardDescription className="text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground">Registry view ({partners.length} records).</CardDescription></div>
+                <div className="flex gap-2 text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground">
                     {selectedIds.length > 0 && (
-                        <Button variant="secondary" onClick={handleBatchEngage} className="gap-2 shadow-sm font-bold">
+                        <Button variant="secondary" onClick={handleBatchEngage} className="gap-2 shadow-sm font-bold text-foreground">
                             <Send className="h-4 w-4" /> Batch Engage ({selectedIds.length})
                         </Button>
                     )}
-                    <div className="relative w-64 text-left text-foreground text-foreground">
+                    <div className="relative w-64 text-left text-foreground text-foreground text-foreground text-foreground">
                         <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input placeholder="Filter registry..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8 bg-white" />
                     </div>
-                    <Button variant="outline" onClick={() => downloadDataAsCSV(partners, 'investors-export.csv')} disabled={isLoading}><Download className="mr-2 h-4 w-4"/>Export CSV</Button>
-                    <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4"/>Add Record</Button>
+                    <Button variant="outline" onClick={() => downloadDataAsCSV(partners, 'investors-export.csv')} disabled={isLoading} className="text-foreground"><Download className="mr-2 h-4 w-4"/>Export CSV</Button>
+                    <Button onClick={() => setDialog({ type: 'add' })} className="text-foreground"><PlusCircle className="mr-2 h-4 w-4"/>Add Record</Button>
                 </div>
                 </CardHeader>
-                <Card className="text-left text-foreground text-foreground">
-                    <CardContent className="pt-6 text-left text-foreground text-foreground">
-                        <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground text-foreground">
-                            <div className="flex-1 space-y-2 text-left text-foreground">
+                <Card className="text-left text-foreground text-foreground text-foreground">
+                    <CardContent className="pt-6 text-left text-foreground text-foreground text-foreground text-foreground">
+                        <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground text-foreground text-foreground">
+                            <div className="flex-1 space-y-2 text-left text-foreground text-foreground">
                                 <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Filter className="h-3 w-3"/> Status</Label>
                                 <Select value={statusFilter} onValueChange={setStatusFilter}>
                                     <SelectTrigger className="bg-white text-left text-foreground text-foreground"><SelectValue placeholder="All Statuses" /></SelectTrigger>
@@ -400,8 +356,8 @@ export default function InvestorManagement() {
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <div className="flex-1 space-y-2 text-left text-foreground">
-                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Users className="h-3 w-3"/> Assignee</Label>
+                            <div className="flex-1 space-y-2 text-left text-foreground text-foreground">
+                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-foreground"><Users className="h-3 w-3"/> Assignee</Label>
                                 <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
                                     <SelectTrigger className="bg-white text-left text-foreground text-foreground"><SelectValue placeholder="All Staff" /></SelectTrigger>
                                     <SelectContent>
@@ -411,10 +367,10 @@ export default function InvestorManagement() {
                                     </SelectContent>
                                 </Select>
                             </div>
-                             <div className="flex-1 space-y-2 text-left text-foreground">
-                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Send className="h-3 w-3"/> Outreach</Label>
+                             <div className="flex-1 space-y-2 text-left text-foreground text-foreground">
+                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-foreground text-foreground"><Send className="h-3 w-3"/> Outreach</Label>
                                 <Select value={outreachFilter} onValueChange={setOutreachFilter}>
-                                    <SelectTrigger className="bg-white text-left text-foreground text-foreground"><SelectValue placeholder="All" /></SelectTrigger>
+                                    <SelectTrigger className="bg-white text-left text-foreground text-foreground text-foreground text-foreground"><SelectValue placeholder="All" /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">All</SelectItem>
                                         <SelectItem value="none">No Outreach Yet</SelectItem>
@@ -422,19 +378,19 @@ export default function InvestorManagement() {
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <div className="flex items-end text-left">
+                            <div className="flex items-end text-left text-foreground">
                                 <Button variant="outline" onClick={() => setHasLoaded(false)} className="h-10 w-full text-foreground"><RotateCcw className="mr-1 h-3 w-3" /> New Search</Button>
                             </div>
                         </div>
                         {isLoading ? (
-                            <div className="flex justify-center items-center py-10 text-foreground text-foreground">
+                            <div className="flex justify-center items-center py-10 text-foreground text-foreground text-foreground">
                                 <Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" />
                             </div>
                         ) : (
-                            <div className="space-y-4 text-left">
+                            <div className="space-y-4 text-left text-foreground text-foreground">
                                 <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />
-                                <div className="flex justify-center pt-4 text-left">
-                                    <Button variant="outline" size="lg" onClick={handleLoadMore} disabled={isLoading} className="gap-2 min-w-[200px]">
+                                <div className="flex justify-center pt-4 text-left text-foreground">
+                                    <Button variant="outline" size="lg" onClick={handleLoadMore} disabled={isLoading} className="gap-2 min-w-[200px] text-foreground">
                                         {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <ChevronDown className="h-4 w-4" />}
                                         Load Next 100 Records
                                     </Button>
