@@ -89,7 +89,7 @@ function InvestorDialog({ open, onOpenChange, partner, onSave }: { open: boolean
     <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-[700px] text-left text-foreground">
             <DialogHeader>
-                <DialogTitle>{partner ? 'Edit' : 'Add'} App Launch Investor</DialogTitle>
+                <DialogTitle>Edit App Launch Investor</DialogTitle>
             </DialogHeader>
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left">
@@ -98,7 +98,7 @@ function InvestorDialog({ open, onOpenChange, partner, onSave }: { open: boolean
                         <FormField control={form.control} name="lastName" render={({ field }) => ( <FormItem><FormLabel>Last Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                     </div>
                     <FormField control={form.control} name="companyName" render={({ field }) => ( <FormItem><FormLabel>Fund Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
-                    <div className="grid grid-cols-2 gap-4 text-foreground">
+                    <div className="grid grid-cols-2 gap-4">
                         <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email"/></FormControl><FormMessage /></FormItem> )} />
                         <FormField control={form.control} name="mobile" render={({ field }) => ( <FormItem><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} /></FormControl><FormMessage /></FormItem> )} />
                     </div>
@@ -106,7 +106,7 @@ function InvestorDialog({ open, onOpenChange, partner, onSave }: { open: boolean
                         <FormItem>
                             <FormLabel>Pipeline Status</FormLabel>
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl><SelectTrigger className="bg-white text-left text-foreground text-foreground"><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
+                                <FormControl><SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
                                 <SelectContent>
                                     <SelectItem value="new">New</SelectItem>
                                     <SelectItem value="contacted">Researching</SelectItem>
@@ -131,7 +131,7 @@ function InvestorDialog({ open, onOpenChange, partner, onSave }: { open: boolean
 
 export default function InvestorManagement() {
   const { toast } = useToast();
-  const [partners, setPartners] = useState<any[]>([]);
+  const [allRecords, setAllRecords] = useState<any[]>([]);
   const [staff, setStaff] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasLoaded, setHasLoaded] = useState(false);
@@ -158,7 +158,7 @@ export default function InvestorManagement() {
         const [staffRes] = await Promise.all([
             performAdminAction(token, 'getPlatformStaff', {})
         ]);
-        setPartners(res.data || []);
+        setAllRecords(res.data || []);
         setTotalPages(res.totalPages || 1);
         setTotalRecords(res.totalCount || 0);
         setCurrentPage(res.currentPage || 1);
@@ -166,11 +166,11 @@ export default function InvestorManagement() {
         setStaff(staffRes.data || []);
         setHasLoaded(true);
     } catch (e: any) {
-        console.error("Fetch Error:", e);
+        toast({ variant: 'destructive', title: 'Fetch Error', description: e.message });
     } finally {
         setIsLoading(false);
     }
-  }, [searchTerm, outreachFilter, enrichmentFilter]);
+  }, [searchTerm, outreachFilter, enrichmentFilter, toast]);
 
   useEffect(() => { 
     if (hasLoaded) fetchData(currentPage); 
@@ -187,11 +187,11 @@ export default function InvestorManagement() {
   };
 
   const filteredRecords = useMemo(() => {
-    return partners.filter(r => {
+    return allRecords.filter(r => {
         const matchesStatus = statusFilter === 'all' || r.status === statusFilter;
         return matchesStatus;
     });
-  }, [partners, statusFilter]);
+  }, [allRecords, statusFilter]);
 
   const handleDelete = async () => {
     if (!dialog.data) return;
@@ -210,7 +210,7 @@ export default function InvestorManagement() {
   const handleEngage = (record: any) => {
     const indexInSelected = selectedIds.indexOf(record.id);
     const engageList = selectedIds.length > 0 
-        ? partners.filter(r => selectedIds.includes(r.id)) 
+        ? allRecords.filter(r => selectedIds.includes(r.id)) 
         : [record];
         
     setDialog({ 
@@ -222,7 +222,7 @@ export default function InvestorManagement() {
 
   const handleBatchEngage = () => {
     if (selectedIds.length === 0) return;
-    const engageList = partners.filter(r => selectedIds.includes(r.id));
+    const engageList = allRecords.filter(r => selectedIds.includes(r.id));
     setDialog({ type: 'engage', data: engageList, initialIndex: 0 });
   };
 
@@ -230,9 +230,9 @@ export default function InvestorManagement() {
     { 
         header: 'Investor Entity', 
         cell: ({row}) => (
-            <div className="flex flex-col text-left">
+            <div className="flex flex-col text-left text-foreground text-foreground">
                 <span className="font-bold text-left text-foreground">
-                    {row.original.companyName || <span className="text-destructive italic">Unnamed Fund</span>}
+                    {row.original.companyName || <span className="text-muted-foreground italic">Unnamed Fund</span>}
                 </span>
                 <div className="flex items-center gap-2 mt-1">
                     {row.original.website && <Globe className="h-3 w-3 text-primary" />}
@@ -241,10 +241,9 @@ export default function InvestorManagement() {
         )
     },
     { 
-        accessorKey: 'contactPerson', 
         header: 'Key Decision Maker',
         cell: ({ row }) => (
-            <div className="text-sm font-medium text-left">
+            <div className="text-sm font-medium text-left text-foreground">
                 {row.original.contactPerson || `${row.original.firstName || ''} ${row.original.lastName || ''}`.trim() || <span className="text-muted-foreground italic">Missing Name</span>}
             </div>
         )
@@ -253,7 +252,7 @@ export default function InvestorManagement() {
     { 
         header: 'Outreach',
         cell: ({ row }) => {
-            if (!row.original.lastOutreachSubject) return <span className="text-[10px] text-muted-foreground italic text-left text-foreground">None</span>;
+            if (!row.original.lastOutreachSubject) return <span className="text-[10px] text-muted-foreground italic text-left text-foreground text-foreground">None</span>;
             return (
                 <div className="flex flex-col text-left text-foreground text-foreground">
                     <Badge variant="outline" className="text-[9px] h-4 border-primary/20 text-primary uppercase font-bold truncate max-w-[100px]">{row.original.lastOutreachSubject}</Badge>
@@ -283,7 +282,7 @@ export default function InvestorManagement() {
   ];
 
   return (
-    <div className="space-y-6 text-left text-foreground">
+    <div className="space-y-6 text-left text-foreground text-foreground">
       <EngageDialog 
         open={dialog.type === 'engage'} 
         onOpenChange={(o) => !o && setDialog({ type: null })} 
@@ -294,7 +293,7 @@ export default function InvestorManagement() {
       />
       <InvestorDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={() => fetchData(currentPage)} />
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
-        <AlertDialogContent className="text-left text-foreground">
+        <AlertDialogContent className="text-left text-foreground text-foreground">
           <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Delete record?</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel>
@@ -310,7 +309,7 @@ export default function InvestorManagement() {
         </AlertDialogContent>
       </AlertDialog>
       
-      <div className="space-y-6 text-left">
+      <div className="space-y-6 text-left text-foreground">
         {!hasLoaded ? (
             <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground text-foreground text-foreground">
                 <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
@@ -319,12 +318,12 @@ export default function InvestorManagement() {
                 <div className="flex flex-col md:flex-row justify-center gap-4 max-w-4xl mx-auto text-left text-foreground text-foreground">
                     <div className="flex-1 space-y-2 text-left text-foreground">
                         <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Name, Fund or ID</Label>
-                        <Input placeholder="Search criteria..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && fetchData(1)} className="h-12 text-lg bg-white" />
+                        <Input placeholder="Search criteria..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && fetchData(1)} className="h-12 text-lg bg-white text-foreground" />
                     </div>
                      <div className="w-56 space-y-2 text-left text-foreground">
                         <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1 text-foreground">Outreach Stage</Label>
                         <Select value={outreachFilter} onValueChange={setOutreachFilter}>
-                            <SelectTrigger className="h-12 bg-white text-left text-foreground text-foreground"><SelectValue placeholder="All Stages" /></SelectTrigger>
+                            <SelectTrigger className="h-12 bg-white text-left text-foreground text-foreground text-foreground"><SelectValue placeholder="All Stages" /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Stages</SelectItem>
                                 <SelectItem value="none">No Outreach Yet</SelectItem>
@@ -335,7 +334,7 @@ export default function InvestorManagement() {
                     <div className="w-48 space-y-2 text-left text-foreground">
                         <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1 text-foreground">Enrichment</Label>
                         <Select value={enrichmentFilter} onValueChange={setEnrichmentFilter}>
-                            <SelectTrigger className="h-12 bg-white text-left text-foreground text-foreground"><SelectValue placeholder="All" /></SelectTrigger>
+                            <SelectTrigger className="h-12 bg-white text-left text-foreground text-foreground text-foreground text-foreground"><SelectValue placeholder="All" /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All</SelectItem>
                                 <SelectItem value="enriched">Enriched</SelectItem>
@@ -364,21 +363,21 @@ export default function InvestorManagement() {
                                 <Send className="h-4 w-4" /> Batch Engage ({selectedIds.length})
                             </Button>
                         )}
-                        <div className="relative w-64 text-left text-foreground">
+                        <div className="relative w-64 text-left text-foreground text-foreground">
                             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                            <Input placeholder="Filter registry..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8 bg-white" />
+                            <Input placeholder="Filter registry..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8 bg-white text-foreground" />
                         </div>
-                        <Button variant="outline" onClick={() => downloadDataAsCSV(partners, 'investors-export.csv')} disabled={isLoading} className="text-left text-foreground text-foreground"><Download className="mr-2 h-4 w-4"/>Export CSV</Button>
+                        <Button variant="outline" onClick={() => downloadDataAsCSV(allRecords, 'investors-export.csv')} disabled={isLoading} className="text-left text-foreground text-foreground"><Download className="mr-2 h-4 w-4"/>Export CSV</Button>
                         <Button onClick={() => setDialog({ type: 'add' })} className="text-left text-foreground text-foreground text-foreground"><PlusCircle className="mr-2 h-4 w-4"/>Add Record</Button>
                     </div>
                 </CardHeader>
                 <Card className="text-left text-foreground text-foreground text-foreground">
-                    <CardContent className="pt-6 text-left text-foreground text-foreground text-foreground">
+                    <CardContent className="pt-6 text-left text-foreground text-foreground text-foreground text-foreground text-foreground">
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground text-foreground text-foreground">
-                            <div className="space-y-2 text-left text-foreground text-foreground">
+                            <div className="space-y-2 text-left text-foreground text-foreground text-foreground">
                                 <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Filter className="h-3 w-3"/> Status</Label>
                                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                                    <SelectTrigger className="bg-white text-left text-foreground text-foreground text-foreground"><SelectValue placeholder="All Statuses" /></SelectTrigger>
+                                    <SelectTrigger className="bg-white text-left text-foreground text-foreground text-foreground text-foreground"><SelectValue placeholder="All Statuses" /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">All Statuses</SelectItem>
                                         <SelectItem value="new">New</SelectItem>
@@ -386,10 +385,10 @@ export default function InvestorManagement() {
                                     </SelectContent>
                                 </Select>
                             </div>
-                             <div className="space-y-2 text-left text-foreground text-foreground text-foreground">
+                             <div className="space-y-2 text-left text-foreground text-foreground text-foreground text-foreground">
                                 <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-foreground"><Send className="h-3 w-3"/> Outreach</Label>
                                 <Select value={outreachFilter} onValueChange={setOutreachFilter}>
-                                    <SelectTrigger className="bg-white text-left text-foreground text-foreground text-foreground text-foreground text-foreground"><SelectValue placeholder="All" /></SelectTrigger>
+                                    <SelectTrigger className="bg-white text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><SelectValue placeholder="All" /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">All</SelectItem>
                                         <SelectItem value="none">No Outreach Yet</SelectItem>
@@ -397,10 +396,10 @@ export default function InvestorManagement() {
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <div className="space-y-2 text-left text-foreground text-foreground">
+                            <div className="space-y-2 text-left text-foreground text-foreground text-foreground">
                                 <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-foreground"><Sparkles className="h-3 w-3"/> Enrichment</Label>
                                 <Select value={enrichmentFilter} onValueChange={setEnrichmentFilter}>
-                                    <SelectTrigger className="bg-white text-left text-foreground text-foreground text-foreground text-foreground"><SelectValue placeholder="All" /></SelectTrigger>
+                                    <SelectTrigger className="bg-white text-left text-foreground text-foreground text-foreground text-foreground text-foreground"><SelectValue placeholder="All" /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">All</SelectItem>
                                         <SelectItem value="enriched">Enriched</SelectItem>
@@ -408,32 +407,32 @@ export default function InvestorManagement() {
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <div className="flex items-end text-left text-foreground text-foreground text-foreground text-foreground">
-                                <Button variant="outline" onClick={() => setHasLoaded(false)} className="h-10 w-full text-foreground text-foreground text-foreground text-foreground"><RotateCcw className="mr-1 h-3 w-3" /> New Search</Button>
+                            <div className="flex items-end text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground">
+                                <Button variant="outline" onClick={() => setHasLoaded(false)} className="h-10 w-full text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><RotateCcw className="mr-1 h-3 w-3" /> New Search</Button>
                             </div>
                         </div>
                         {isLoading ? (
-                            <div className="flex justify-center items-center py-10 text-foreground text-foreground text-foreground">
+                            <div className="flex justify-center items-center py-10 text-foreground text-foreground text-foreground text-foreground text-foreground">
                                 <Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" />
                             </div>
                         ) : (
                             <div className="space-y-6 text-left text-foreground text-foreground text-foreground">
                                 <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />
                                 
-                                <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-6 border-t text-foreground">
-                                    <div className="text-sm text-muted-foreground font-medium text-foreground text-foreground">
-                                        Showing {partners.length} of {totalRecords.toLocaleString()} records
+                                <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-6 border-t text-foreground text-foreground text-foreground">
+                                    <div className="text-sm text-muted-foreground font-medium text-foreground text-foreground text-foreground">
+                                        Showing {allRecords.length} of {totalRecords.toLocaleString()} records
                                     </div>
                                     
-                                    <div className="flex items-center gap-4 text-foreground text-foreground">
-                                        <div className="flex items-center gap-2 text-foreground text-foreground">
+                                    <div className="flex items-center gap-4 text-foreground text-foreground text-foreground">
+                                        <div className="flex items-center gap-2 text-foreground text-foreground text-foreground">
                                             <Button variant="outline" size="icon" onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))} disabled={currentPage === 1}>
                                                 <ChevronLeft className="h-4 w-4" />
                                             </Button>
-                                            <form onSubmit={handleJumpPage} className="flex items-center gap-2 text-foreground text-foreground">
+                                            <form onSubmit={handleJumpPage} className="flex items-center gap-2 text-foreground text-foreground text-foreground">
                                                 <span className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Page</span>
                                                 <Input 
-                                                    className="w-16 h-8 text-center font-bold font-mono text-foreground" 
+                                                    className="w-16 h-8 text-center font-bold font-mono text-foreground text-foreground" 
                                                     value={jumpPageInput} 
                                                     onChange={e => setJumpPageInput(e.target.value)}
                                                 />
@@ -445,7 +444,7 @@ export default function InvestorManagement() {
                                         </div>
                                     </div>
 
-                                    <Button variant="outline" onClick={() => setCurrentPage(prev => prev + 1)} disabled={currentPage === totalPages} className="min-w-[180px] font-bold text-foreground text-foreground">
+                                    <Button variant="outline" onClick={() => setCurrentPage(prev => prev + 1)} disabled={currentPage === totalPages} className="min-w-[180px] font-bold text-foreground text-foreground text-foreground">
                                         Load Next 100 Records
                                     </Button>
                                 </div>

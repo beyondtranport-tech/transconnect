@@ -9,7 +9,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, Truck, Edit, Trash2, Send, Download, Save, Search, Filter, Users, Globe, RefreshCcw, Database, Upload, RotateCcw, UserCheck, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Loader2, PlusCircle, Truck, Edit, Trash2, Send, Download, Save, Search, Filter, Users, Globe, RefreshCcw, Database, Upload, RotateCcw, UserCheck, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -117,7 +117,7 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
                     <FormItem className="text-left text-foreground text-foreground">
                         <FormLabel>Category</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl><SelectTrigger className="bg-white text-left text-foreground text-foreground"><SelectValue placeholder="Classify..." /></SelectTrigger></FormControl>
+                            <FormControl><SelectTrigger className="bg-white text-left text-foreground text-foreground text-foreground"><SelectValue placeholder="Classify..." /></SelectTrigger></FormControl>
                             <SelectContent>
                                 {transporterCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
                             </SelectContent>
@@ -265,14 +265,13 @@ export default function TransporterManagement() {
 
   const columns: ColumnDef<any>[] = [
     { 
-        accessorKey: 'companyName', 
-        header: 'Transporter Name', 
+        header: 'Entity Name', 
         cell: ({ row }) => (
             <div className="flex flex-col text-sm text-left text-foreground">
                 <span className="font-bold text-left">
-                    {row.original.companyName || <span className="text-destructive italic">Unnamed Entity</span>}
+                    {row.original.companyName || <span className="text-muted-foreground italic">Unnamed Entity</span>}
                 </span>
-                <div className="flex items-center gap-1.5 mt-1">
+                <div className="flex items-center gap-1.5 mt-1 text-left">
                     {row.original.website && <Globe className="h-3 w-3 text-primary" />}
                     <span className="text-[10px] text-muted-foreground uppercase font-black">{row.original.industrial_category || 'Industrial'}</span>
                 </div>
@@ -280,7 +279,6 @@ export default function TransporterManagement() {
         )
     },
     { 
-        accessorKey: 'contactPerson', 
         header: 'Key Decision Maker',
         cell: ({ row }) => (
             <div className="text-sm font-medium text-left">
@@ -333,7 +331,7 @@ export default function TransporterManagement() {
       />
       <TransporterDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={() => fetchData(currentPage)} />
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
-        <AlertDialogContent>
+        <AlertDialogContent className="text-left text-foreground">
           <AlertDialogHeader><AlertDialogTitle>Delete Record?</AlertDialogTitle><AlertDialogDescription>Permanently remove record?</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel>
@@ -356,14 +354,14 @@ export default function TransporterManagement() {
                 <h2 className="text-2xl font-black font-headline mb-2 text-foreground text-center">Transporter Forensic Scan</h2>
                 <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center text-foreground">Scan the haulier database. Filter by outreach or enrichment stage.</p>
                 <div className="flex flex-col md:flex-row justify-center gap-4 max-w-5xl mx-auto text-left text-foreground">
-                    <div className="flex-1 space-y-2 text-left">
+                    <div className="flex-1 space-y-2 text-left text-foreground">
                         <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Company, Category or ID</Label>
                         <Input placeholder="Search criteria..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && fetchData(1)} className="h-12 text-lg bg-white" />
                     </div>
-                    <div className="w-48 space-y-2 text-left text-foreground text-foreground">
+                    <div className="w-48 space-y-2 text-left text-foreground text-foreground text-foreground">
                         <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Outreach</Label>
                         <Select value={outreachFilter} onValueChange={setOutreachFilter}>
-                            <SelectTrigger className="h-12 bg-white"><SelectValue placeholder="All" /></SelectTrigger>
+                            <SelectTrigger className="h-12 bg-white text-left text-foreground text-foreground text-foreground"><SelectValue placeholder="All" /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All</SelectItem>
                                 <SelectItem value="none">No Outreach Yet</SelectItem>
@@ -406,11 +404,11 @@ export default function TransporterManagement() {
                                 <Send className="h-4 w-4" /> Batch Engage ({selectedIds.length})
                             </Button>
                         )}
-                        <div className="relative w-64 text-left text-foreground">
+                        <div className="relative w-64 text-left text-foreground text-foreground">
                             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                             <Input placeholder="Filter registry..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8 bg-white" />
                         </div>
-                        <Button variant="outline" onClick={handleExport} disabled={isLoading} className="text-foreground text-foreground">
+                        <Button variant="outline" onClick={() => downloadDataAsCSV(allRecords, 'transporters-export.csv')} disabled={isLoading} className="text-foreground text-foreground text-foreground">
                             <Download className="mr-2 h-4 w-4" /> Export CSV
                         </Button>
                         <BulkImportDialog type="transporter" onComplete={() => fetchData(currentPage)}><Button variant="outline" className="text-foreground text-foreground text-foreground"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
@@ -419,11 +417,11 @@ export default function TransporterManagement() {
                 </CardHeader>
                 <Card className="text-left text-foreground text-foreground">
                     <CardContent className="pt-6 text-left text-foreground text-foreground text-foreground text-foreground">
-                        <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground text-foreground">
-                            <div className="flex-1 space-y-2 text-left text-foreground text-foreground">
+                        <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground text-foreground text-foreground">
+                            <div className="flex-1 space-y-2 text-left text-foreground text-foreground text-foreground">
                                 <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-foreground"><Filter className="h-3 w-3"/> Status</Label>
                                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                                    <SelectTrigger className="bg-white text-left text-foreground text-foreground text-foreground text-foreground"><SelectValue placeholder="All Statuses" /></SelectTrigger>
+                                    <SelectTrigger className="bg-white text-left text-foreground text-foreground text-foreground text-foreground text-foreground"><SelectValue placeholder="All Statuses" /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">All Statuses</SelectItem>
                                         <SelectItem value="new">New</SelectItem>
@@ -453,7 +451,7 @@ export default function TransporterManagement() {
                                 <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />
                                 
                                 <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-6 border-t">
-                                    <div className="text-sm text-muted-foreground font-medium text-foreground">
+                                    <div className="text-sm text-muted-foreground font-medium text-foreground text-foreground">
                                         Showing {allRecords.length} of {totalRecords.toLocaleString()} records
                                     </div>
                                     
@@ -477,7 +475,7 @@ export default function TransporterManagement() {
                                         </div>
                                     </div>
 
-                                    <Button variant="outline" onClick={() => setCurrentPage(prev => prev + 1)} disabled={currentPage === totalPages} className="min-w-[180px] font-bold">
+                                    <Button variant="outline" onClick={() => setCurrentPage(prev => prev + 1)} disabled={currentPage === totalPages} className="min-w-[180px] font-bold text-foreground">
                                         Load Next 100 Records
                                     </Button>
                                 </div>

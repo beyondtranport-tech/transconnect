@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -101,7 +100,7 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
           <DialogDescription>Update verified record details.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left">
+          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left text-foreground">
             <div className="grid grid-cols-2 gap-4 text-left text-foreground">
               <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Entity Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="contactPerson" render={({ field }) => (<FormItem><FormLabel>Key Decision Maker</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
@@ -167,7 +166,7 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
 
 export default function SupplierManagement() {
   const { toast } = useToast();
-  const [partners, setPartners] = useState<any[]>([]);
+  const [allRecords, setAllRecords] = useState<any[]>([]);
   const [staff, setStaff] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasLoaded, setHasLoaded] = useState(false);
@@ -211,7 +210,7 @@ export default function SupplierManagement() {
         performAdminAction(token, 'getPlatformStaff', {})
       ]);
 
-      setPartners(res.data || []);
+      setAllRecords(res.data || []);
       setTotalPages(res.totalPages || 1);
       setTotalRecords(res.totalCount || 0);
       setCurrentPage(res.currentPage || 1);
@@ -240,12 +239,12 @@ export default function SupplierManagement() {
   };
 
   const filteredRecords = useMemo(() => {
-    return partners.filter(p => {
+    return allRecords.filter(p => {
         const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
         const matchesAssignee = assigneeFilter === 'all' || p.assigneeId === assigneeFilter;
         return matchesStatus && matchesAssignee;
     });
-  }, [partners, statusFilter, assigneeFilter]);
+  }, [allRecords, statusFilter, assigneeFilter]);
 
   const handleExport = () => {
       if (filteredRecords.length === 0) return;
@@ -256,7 +255,7 @@ export default function SupplierManagement() {
   const handleEngage = (record: any) => {
     const indexInSelected = selectedIds.indexOf(record.id);
     const engageList = selectedIds.length > 0 
-        ? partners.filter(r => selectedIds.includes(r.id)) 
+        ? allRecords.filter(r => selectedIds.includes(r.id)) 
         : [record];
         
     setDialog({ 
@@ -268,18 +267,17 @@ export default function SupplierManagement() {
 
   const handleBatchEngage = () => {
     if (selectedIds.length === 0) return;
-    const engageList = partners.filter(r => selectedIds.includes(r.id));
+    const engageList = allRecords.filter(r => selectedIds.includes(r.id));
     setDialog({ type: 'engage', data: engageList, initialIndex: 0 });
   };
 
   const columns: ColumnDef<any>[] = [
     { 
-        accessorKey: 'companyName', 
         header: 'Supplier Name', 
         cell: ({ row }) => (
             <div className="flex flex-col text-sm text-left text-foreground">
-                <span className="font-bold text-left">
-                    {row.original.companyName || <span className="text-destructive italic">Unnamed Entity</span>}
+                <span className="font-bold text-left text-foreground">
+                    {row.original.companyName || <span className="text-muted-foreground italic">Unnamed Entity</span>}
                 </span>
                 <div className="flex flex-wrap gap-1 mt-1 text-left">
                     {row.original.industrialTags?.slice(0, 3).map((tag: string) => (
@@ -291,10 +289,9 @@ export default function SupplierManagement() {
         )
     },
     { 
-        accessorKey: 'contactPerson', 
         header: 'Key Decision Maker',
         cell: ({ row }) => (
-            <div className="text-sm font-medium text-left">
+            <div className="text-sm font-medium text-left text-foreground">
                 {row.original.contactPerson || <span className="text-muted-foreground italic">Missing Name</span>}
             </div>
         )
