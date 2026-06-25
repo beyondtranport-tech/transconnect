@@ -143,7 +143,7 @@ export default function TransporterManagement() {
   const [assigneeFilter, setAssigneeFilter] = useState('all');
   const [outreachFilter, setOutreachFilter] = useState('all');
 
-  const fetchData = useCallback(async (limit: number = 10000) => {
+  const fetchData = useCallback(async (limit: number = 20000) => {
     setIsLoading(true);
     try {
       const token = await getClientSideAuthToken();
@@ -162,6 +162,29 @@ export default function TransporterManagement() {
 
   useEffect(() => { if (hasLoaded) fetchData(); }, [fetchData, hasLoaded]);
 
+  const handleExport = useCallback(() => {
+    const dataToExport = allRecords.filter(r => {
+        const matchesStatus = statusFilter === 'all' || r.status === statusFilter;
+        const matchesAssignee = assigneeFilter === 'all' || r.assigneeId === assigneeFilter;
+        return matchesStatus && matchesAssignee;
+    });
+    if (dataToExport.length === 0) return;
+    downloadDataAsCSV(dataToExport, `transporters-export-${new Date().toISOString().split('T')[0]}.csv`);
+    toast({ title: "Export Complete" });
+  }, [allRecords, statusFilter, assigneeFilter, toast]);
+
+  const handleEngage = useCallback((record: any) => {
+    const engageList = selectedIds.length > 0 
+        ? allRecords.filter(r => selectedIds.includes(r.id)) 
+        : (record ? [record] : []);
+        
+    setDialog({ 
+        type: 'engage', 
+        data: engageList, 
+        initialIndex: record ? engageList.findIndex((r: any) => r.id === record.id) : 0
+    });
+  }, [allRecords, selectedIds]);
+
   const filteredRecords = useMemo(() => {
     return (allRecords || []).filter(r => {
         const matchesStatus = statusFilter === 'all' || r.status === statusFilter;
@@ -170,25 +193,7 @@ export default function TransporterManagement() {
     });
   }, [allRecords, statusFilter, assigneeFilter]);
 
-  const handleExport = useCallback(() => {
-      if (filteredRecords.length === 0) return;
-      downloadDataAsCSV(filteredRecords, `transporters-export-${new Date().toISOString().split('T')[0]}.csv`);
-      toast({ title: "Export Complete" });
-  }, [filteredRecords, toast]);
-
-  const handleEngage = (record: any) => {
-    const engageList = selectedIds.length > 0 
-        ? allRecords.filter(r => selectedIds.includes(r.id)) 
-        : (record ? [record] : []);
-        
-    setDialog({ 
-        type: 'engage', 
-        data: engageList, 
-        initialIndex: record ? engageList.findIndex(r => r.id === record.id) : 0
-    });
-  };
-
-  const handleDeleteBatch = async () => {
+  async function handleDeleteBatch() {
     if (selectedIds.length === 0) return;
     try {
       const token = await getClientSideAuthToken();
@@ -201,7 +206,7 @@ export default function TransporterManagement() {
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Error', description: e.message });
     }
-  };
+  }
 
   const columns: ColumnDef<any>[] = useMemo(() => [
     { 
@@ -258,7 +263,7 @@ export default function TransporterManagement() {
         <Button variant="ghost" size="icon" onClick={() => { setDialog({ type: 'delete', data: row.original }); }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
       </div>
     )},
-  ], [fetchData]);
+  ], [fetchData, handleEngage]);
 
   return (
     <div className="space-y-6 text-left">
@@ -284,20 +289,20 @@ export default function TransporterManagement() {
 
       <div className="space-y-6 text-left">
         {!hasLoaded ? (
-            <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground">
+            <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground text-left">
                 <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
-                <h2 className="text-2xl font-black font-headline mb-2 text-foreground text-center">Haulier Registry Scan</h2>
-                <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center text-foreground">Scan the entire national database. Use filters to build targeted outreach worklists.</p>
+                <h2 className="text-2xl font-black font-headline mb-2 text-foreground text-center text-left">Haulier Registry Scan</h2>
+                <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center text-foreground text-left">Scan the entire national database. Use filters to build targeted outreach worklists.</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto text-left text-foreground">
-                    <div className="space-y-2 text-left text-foreground"><Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Company Name</Label><Input placeholder="Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="h-12 bg-white text-foreground" /></div>
-                    <div className="space-y-2 text-left text-foreground"><Label className="text-[10px] font-black uppercase text-muted-foreground ml-1 text-left text-foreground">Outreach Stage</Label><Select value={outreachFilter} onValueChange={setOutreachFilter}><SelectTrigger className="h-12 bg-white text-left text-foreground"><SelectValue placeholder="All" /></SelectTrigger><SelectContent><SelectItem value="all">All Stages</SelectItem><SelectItem value="none">No Outreach Yet</SelectItem><SelectItem value="Digital Handshake">Handshake Sent</SelectItem></SelectContent></Select></div>
-                    <div className="flex items-end gap-2 text-left text-foreground text-foreground"><Button size="lg" onClick={() => { fetchData(); }} disabled={isLoading} className="flex-1 h-12 font-black uppercase tracking-widest gap-2 shadow-lg">{isLoading ? <Loader2 className="animate-spin h-4 w-4"/> : <Search className="h-4 w-4" />} Scan Registry</Button></div>
+                    <div className="space-y-2 text-left text-foreground"><Label className="text-[10px] font-black uppercase text-muted-foreground ml-1 text-left">Company Name</Label><Input placeholder="Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="h-12 bg-white text-foreground" /></div>
+                    <div className="space-y-2 text-left text-foreground"><Label className="text-[10px] font-black uppercase text-muted-foreground ml-1 text-left text-foreground text-left">Outreach Stage</Label><Select value={outreachFilter} onValueChange={setOutreachFilter}><SelectTrigger className="h-12 bg-white text-left text-foreground"><SelectValue placeholder="All" /></SelectTrigger><SelectContent><SelectItem value="all">All Stages</SelectItem><SelectItem value="none">No Outreach Yet</SelectItem><SelectItem value="Digital Handshake">Handshake Sent</SelectItem></SelectContent></Select></div>
+                    <div className="flex items-end gap-2 text-left text-foreground text-foreground"><Button size="lg" onClick={() => { fetchData(); }} disabled={isLoading} className="flex-1 h-12 font-black uppercase tracking-widest gap-2 shadow-lg">{isLoading ? <Loader2 className="animate-spin h-4 w-4"/> : <Search className="h-4 w-4"/>} Scan Registry</Button></div>
                 </div>
             </Card>
       ) : (
             <div className="space-y-6 text-left text-foreground">
-                <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
-                    <div className="text-left"><CardTitle className="flex items-center gap-2 text-left text-foreground"><Truck /> Transporter Registry</CardTitle><CardDescription className="text-left text-foreground">Unified industrial database view ({filteredRecords.length} records).</CardDescription></div>
+                <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left text-foreground">
+                    <div className="text-left text-foreground"><CardTitle className="flex items-center gap-2 text-left text-foreground"><Truck /> Transporter Registry</CardTitle><CardDescription className="text-left text-foreground">Unified industrial database view ({filteredRecords.length} records).</CardDescription></div>
                     <div className="flex flex-wrap items-center gap-2 text-left text-foreground text-foreground text-foreground text-foreground text-foreground">
                         {selectedIds.length > 0 && <Button variant="secondary" onClick={() => handleEngage(null)} className="gap-2 shadow-sm font-bold animate-in fade-in zoom-in text-left text-foreground"><Send className="h-4 w-4" /> Batch Engage ({selectedIds.length})</Button>}
                         <Button variant="outline" onClick={handleExport} disabled={isLoading} className="text-left text-foreground text-left text-foreground"><Download className="mr-2 h-4 w-4" /> Export CSV</Button>
@@ -308,7 +313,7 @@ export default function TransporterManagement() {
                 <Card className="text-left text-foreground text-foreground text-foreground">
                     <CardContent className="pt-6 text-left">
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
-                            <div className="space-y-1 text-left text-foreground text-foreground"><Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-foreground text-foreground"><Filter className="h-3 w-3"/> Status</Label><Select value={statusFilter} onValueChange={setStatusFilter}><SelectTrigger className="h-9 bg-white text-xs text-left text-foreground text-foreground"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="new">New</SelectItem><SelectItem value="contacted">Researching</SelectItem></SelectContent></Select></div>
+                            <div className="space-y-1 text-left text-foreground text-foreground"><Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-foreground text-foreground"><Filter className="h-3 w-3"/> Status</Label><Select value={statusFilter} onValueChange={setStatusFilter}><SelectTrigger className="h-9 bg-white text-xs text-left text-foreground text-foreground"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="new">New</SelectItem><SelectItem value="contacted">Searching</SelectItem></SelectContent></Select></div>
                             <div className="space-y-1 text-left text-foreground text-foreground"><Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-foreground text-foreground text-foreground text-foreground"><Users className="h-3 w-3"/> Assignee</Label><Select value={assigneeFilter} onValueChange={setAssigneeFilter}><SelectTrigger className="h-9 bg-white text-xs text-left text-foreground text-foreground text-foreground"><SelectValue placeholder="All Staff" /></SelectTrigger><SelectContent><SelectItem value="all">All Staff</SelectItem><SelectItem value="none">Unallocated</SelectItem>{staff.map(s => <SelectItem key={s.id} value={s.id}>{s.firstName} {s.lastName}</SelectItem>)}</SelectContent></Select></div>
                             <div className="flex items-end text-left text-foreground text-foreground text-foreground"><Button variant="outline" onClick={() => setHasLoaded(false)} className="h-9 w-full text-xs font-bold uppercase tracking-widest text-left text-foreground text-foreground text-foreground"><RotateCcw className="mr-1 h-3 w-3" /> New Search</Button></div>
                         </div>

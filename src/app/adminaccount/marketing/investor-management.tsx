@@ -98,7 +98,7 @@ function InvestorDialog({ open, onOpenChange, partner, onSave }: { open: boolean
                         <FormField control={form.control} name="lastName" render={({ field }) => ( <FormItem><FormLabel>Last Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                     </div>
                     <FormField control={form.control} name="companyName" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Fund Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
-                    <div className="grid grid-cols-2 gap-4 text-left text-foreground text-foreground">
+                    <div className="grid grid-cols-2 gap-4 text-left text-foreground text-foreground text-foreground">
                         <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email"/></FormControl><FormMessage /></FormItem> )} />
                         <FormField control={form.control} name="mobile" render={({ field }) => ( <FormItem><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} /></FormControl><FormMessage /></FormItem> )} />
                     </div>
@@ -170,7 +170,7 @@ export default function InvestorManagement() {
       toast({ title: "Backup Exported" });
   }, [allRecords, toast]);
 
-  const handleEngage = (record: any) => {
+  const handleEngage = useCallback((record: any) => {
     const engageList = selectedIds.length > 0 
         ? allRecords.filter(r => selectedIds.includes(r.id)) 
         : (record ? [record] : []);
@@ -180,9 +180,9 @@ export default function InvestorManagement() {
     setDialog({ 
         type: 'engage', 
         data: engageList, 
-        initialIndex: record ? engageList.findIndex(r => r.id === record.id) : 0
+        initialIndex: record ? engageList.findIndex((r: any) => r.id === record.id) : 0
     });
-  };
+  }, [allRecords, selectedIds]);
 
   const filteredRecords = useMemo(() => {
     return (allRecords || []).filter(p => {
@@ -215,7 +215,7 @@ export default function InvestorManagement() {
                 <span className="font-bold text-left text-foreground">
                     {row.original.companyName || 'Unnamed Entity'}
                 </span>
-                <div className="flex items-center gap-2 mt-1 text-left">
+                <div className="flex items-center gap-2 mt-1 text-left text-foreground">
                     {row.original.website && <Globe className="h-3 w-3 text-primary" />}
                     <Badge variant="outline" className="text-[10px] h-3.5 border-primary/20 text-primary uppercase font-bold">Investor</Badge>
                 </div>
@@ -261,13 +261,13 @@ export default function InvestorManagement() {
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'delete', data: row.original })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
       </div>
     ) },
-  ], [fetchData]);
+  ], [fetchData, handleEngage]);
 
   return (
     <div className="space-y-6 text-left text-foreground">
       <EngageDialog 
         open={dialog.type === 'engage'} 
-        onOpenChange={(o) => !o && setDialog({ type: null })} 
+        onOpenChange={(o: boolean) => !o && setDialog({ type: null })} 
         partners={dialog.data || []} 
         initialIndex={dialog.initialIndex}
         audience="investors" 
@@ -293,12 +293,12 @@ export default function InvestorManagement() {
       </AlertDialog>
 
       {!hasLoaded ? (
-            <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground text-foreground">
+            <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground text-foreground text-left">
                 <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
-                <h2 className="text-2xl font-black font-headline mb-2 text-center text-foreground text-center">App Launch Registry Scan</h2>
-                <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center text-foreground text-center text-center">Scan your equity partner pipeline. Use filters to prioritize outreach.</p>
-                <div className="flex flex-col md:flex-row justify-center gap-4 max-w-4xl mx-auto text-left text-foreground text-left text-foreground text-foreground">
-                    <div className="flex-1 space-y-2 text-left">
+                <h2 className="text-2xl font-black font-headline mb-2 text-center text-foreground text-center text-left">App Launch Registry Scan</h2>
+                <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center text-foreground text-center text-center text-left">Scan your equity partner pipeline. Use filters to prioritize outreach.</p>
+                <div className="flex flex-col md:flex-row justify-center gap-4 max-w-4xl mx-auto text-left text-foreground text-left text-foreground text-foreground text-left">
+                    <div className="flex-1 space-y-2 text-left text-foreground">
                         <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1 text-left">Name, Fund or ID</Label>
                         <Input placeholder="Search criteria..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && fetchData()} className="h-12 text-lg bg-white" />
                     </div>
@@ -307,7 +307,7 @@ export default function InvestorManagement() {
                             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4" />}
                             Execute Scan
                         </Button>
-                        <Button variant="outline" size="lg" onClick={() => { fetchData(); }} className="h-12 text-left text-left">
+                        <Button variant="outline" size="lg" onClick={() => { fetchData(); }} className="h-12 text-left text-left text-foreground text-left">
                              Show Recent
                         </Button>
                     </div>
@@ -316,7 +316,7 @@ export default function InvestorManagement() {
       ) : (
             <div className="space-y-6 text-left text-foreground text-left">
                 <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left text-foreground text-foreground">
-                    <div className="text-left text-foreground text-left"><CardTitle className="flex items-center gap-2 font-black font-headline text-left text-foreground"><DollarSign /> App Launch Investors</CardTitle><CardDescription className="text-left text-foreground text-left text-foreground text-foreground text-left">Registry view ({allRecords.length} records).</CardDescription></div>
+                    <div className="text-left text-foreground text-left"><CardTitle className="flex items-center gap-2 font-black font-headline text-left text-foreground text-left"><DollarSign /> App Launch Investors</CardTitle><CardDescription className="text-left text-foreground text-left text-foreground text-foreground text-left text-left text-left">Registry view ({allRecords.length} records).</CardDescription></div>
                     <div className="flex gap-2 text-left text-foreground text-foreground text-foreground">
                         {selectedIds.length > 0 && (
                             <Button variant="secondary" onClick={() => handleEngage(null)} className="gap-2 shadow-sm font-bold text-left animate-in fade-in zoom-in text-left">
@@ -330,8 +330,8 @@ export default function InvestorManagement() {
                 </CardHeader>
                 <Card className="text-left text-left text-foreground text-foreground text-foreground">
                     <CardContent className="pt-6 text-left">
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground text-left text-foreground text-foreground">
-                            <div className="space-y-2 text-left text-foreground">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground text-left text-foreground text-foreground text-left">
+                            <div className="space-y-2 text-left text-foreground text-left">
                                 <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-foreground text-left"><Filter className="h-3 w-3"/> Status</Label>
                                 <Select value={statusFilter} onValueChange={setStatusFilter}>
                                     <SelectTrigger className="bg-white text-left text-foreground text-foreground text-foreground"><SelectValue placeholder="All Statuses" /></SelectTrigger>
