@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -129,7 +129,7 @@ function InvestorDialog({ open, onOpenChange, partner, onSave }: { open: boolean
   );
 }
 
-function InvestorManagementContent() {
+export default function InvestorManagement() {
   const { toast } = useToast();
   const [allRecords, setAllRecords] = useState<any[]>([]);
   const [staff, setStaff] = useState<any[]>([]);
@@ -146,12 +146,10 @@ function InvestorManagementContent() {
     try {
         const token = await getClientSideAuthToken();
         if (!token) return;
-        const res = await performAdminAction(token, 'searchRegistry', { 
-            type: 'investor', 
-            term: searchTerm, 
-            limit 
-        });
-        const staffRes = await performAdminAction(token, 'getPlatformStaff', {});
+        const [res, staffRes] = await Promise.all([
+          performAdminAction(token, 'searchRegistry', { type: 'investor', term: searchTerm, limit }),
+          performAdminAction(token, 'getPlatformStaff', {})
+        ]);
         setAllRecords(res.data || []);
         setStaff(staffRes.data || []);
         setHasLoaded(true);
@@ -305,13 +303,5 @@ function InvestorManagementContent() {
             </div>
       )}
     </div>
-  );
-}
-
-export default function InvestorManagement() {
-  return (
-    <Suspense fallback={<div className="flex justify-center py-20"><Loader2 className="animate-spin h-10 w-10 text-primary" /></div>}>
-      <InvestorManagementContent />
-    </Suspense>
   );
 }

@@ -46,7 +46,6 @@ export async function POST(req: NextRequest) {
         switch (action) {
             case 'getPartnersByType':
             case 'searchRegistry': {
-                // High-velocity limit for total mapping visibility (Up to 20,000 records)
                 const { term, type, outreachFilter, limit = 20000 } = payload;
                 
                 const [pSnap, lSnap] = await Promise.all([
