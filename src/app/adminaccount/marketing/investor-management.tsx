@@ -35,7 +35,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { getClientSideAuthToken } from '@/firebase';
+import { getClientSideAuthToken, useUser } from '@/firebase';
 import { Loader2, PlusCircle, DollarSign, Edit, Trash2, Send, Globe, Search, Download, Save, Filter, Users, UserCheck, ChevronDown, Database, RotateCcw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -141,7 +141,7 @@ function InvestorDialog({ open, onOpenChange, partner, onSave }: { open: boolean
                         <FormField control={form.control} name="mobile" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} /></FormControl><FormMessage /></FormItem> )} />
                         <FormField control={form.control} name="companyName" render={({ field }) => ( <FormItem><FormLabel>Fund Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                     </div>
-                    <FormField control={form.control} name="website" render={({ field }) => (<FormItem className="text-left"><FormLabel>Official Website</FormLabel><FormControl><Input placeholder="https://..." {...field} /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name="website" render={({ field }) => (<FormItem className="text-left"><FormLabel>Official Website</Label><FormControl><Input placeholder="https://..." {...field} /></FormControl><FormMessage /></FormItem>)} />
                     <FormField control={form.control} name="notes" render={({ field }) => (<FormItem className="text-left"><FormLabel>Investment Focus / Notes</FormLabel><FormControl><Textarea placeholder="Details about their portfolio and sector focus..." {...field} className="min-h-[100px]" /></FormControl><FormMessage /></FormItem>)} />
                     <FormField control={form.control} name="status" render={({ field }) => ( 
                         <FormItem className="text-left text-foreground">
@@ -184,6 +184,7 @@ export default function InvestorManagement() {
 
   const [statusFilter, setStatusFilter] = useState('all');
   const [assigneeFilter, setAssigneeFilter] = useState('all');
+  const [outreachFilter, setOutreachFilter] = useState('all');
 
   const fetchData = useCallback(async (limit: number = resultsLimit) => {
     setIsLoading(true);
@@ -191,7 +192,7 @@ export default function InvestorManagement() {
         const token = await getClientSideAuthToken();
         if (!token) return;
         const [res, staffRes] = await Promise.all([
-            performAdminAction(token, 'searchRegistry', { type: 'investor', term: searchTerm, limit }),
+            performAdminAction(token, 'searchRegistry', { type: 'investor', term: searchTerm, outreachFilter, limit }),
             performAdminAction(token, 'getPlatformStaff', {})
         ]);
         setPartners(res.data || []);
@@ -202,7 +203,7 @@ export default function InvestorManagement() {
     } finally {
         setIsLoading(false);
     }
-  }, [searchTerm, resultsLimit]);
+  }, [searchTerm, outreachFilter, resultsLimit]);
 
   useEffect(() => { 
     if (hasLoaded) fetchData(); 
@@ -319,7 +320,14 @@ export default function InvestorManagement() {
           <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Delete record?</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction>
+            <AlertDialogAction onClick={async () => {
+                const token = await getClientSideAuthToken();
+                if (token && dialog.data) {
+                    await performAdminAction(token, 'deletePartner', { partnerId: dialog.data.id });
+                    fetchData();
+                    setDialog({ type: null });
+                }
+            }} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -334,6 +342,18 @@ export default function InvestorManagement() {
                     <div className="flex-1 space-y-2 text-left">
                         <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Name, Fund or ID</Label>
                         <Input placeholder="Search criteria..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && fetchData(100)} className="h-12 text-lg bg-white" />
+                    </div>
+                     <div className="w-56 space-y-2 text-left">
+                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Outreach Stage</Label>
+                        <Select value={outreachFilter} onValueChange={setOutreachFilter}>
+                            <SelectTrigger className="h-12 bg-white text-left"><SelectValue placeholder="All Stages" /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Stages</SelectItem>
+                                <SelectItem value="none">No Outreach Yet</SelectItem>
+                                <SelectItem value="Digital Handshake">Step 0: Handshake</SelectItem>
+                                <SelectItem value="Company Profile">Step 1: Profile sent</SelectItem>
+                            </SelectContent>
+                        </Select>
                     </div>
                     <div className="flex flex-col md:flex-row gap-2 self-end">
                         <Button size="lg" onClick={() => { setResultsLimit(100); fetchData(100); }} disabled={isLoading} className="h-12 px-8 font-bold">
@@ -388,6 +408,17 @@ export default function InvestorManagement() {
                                         <SelectItem value="all">All Staff</SelectItem>
                                         <SelectItem value="none">Unallocated</SelectItem>
                                         {staff.map(s => <SelectItem key={s.id} value={s.id}>{s.firstName} {s.lastName}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                             <div className="flex-1 space-y-2 text-left text-foreground">
+                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Send className="h-3 w-3"/> Outreach</Label>
+                                <Select value={outreachFilter} onValueChange={setOutreachFilter}>
+                                    <SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="All" /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All</SelectItem>
+                                        <SelectItem value="none">No Outreach Yet</SelectItem>
+                                        <SelectItem value="Digital Handshake">Handshake</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>

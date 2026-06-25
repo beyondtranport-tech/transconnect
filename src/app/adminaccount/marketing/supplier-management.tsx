@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -409,6 +410,7 @@ export default function SupplierManagement() {
                             <SelectTrigger className="h-12 bg-white text-left"><SelectValue placeholder="All Stages" /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Stages</SelectItem>
+                                <SelectItem value="none">No Outreach Yet</SelectItem>
                                 <SelectItem value="Digital Handshake">Step 0: Handshake</SelectItem>
                                 <SelectItem value="Company Profile">Step 1: Profile</SelectItem>
                                 <SelectItem value="Tech Architecture">Step 2: Tech</SelectItem>
@@ -483,12 +485,13 @@ export default function SupplierManagement() {
                                 </Select>
                             </div>
                             <div className="space-y-2 text-left">
-                                <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Integrity</Label>
-                                <Select value={integrityFilter} onValueChange={setIntegrityFilter}>
+                                <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Outreach</Label>
+                                <Select value={outreachFilter} onValueChange={setOutreachFilter}>
                                     <SelectTrigger className="bg-white text-left"><SelectValue placeholder="All" /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">All</SelectItem>
-                                        <SelectItem value="has-email">Has Email</SelectItem>
+                                        <SelectItem value="none">No Outreach Yet</SelectItem>
+                                        <SelectItem value="Digital Handshake">Handshake</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>

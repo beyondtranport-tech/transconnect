@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -360,6 +361,7 @@ export default function ISAManagement() {
                             <SelectTrigger className="h-12 bg-white text-left"><SelectValue placeholder="All Stages" /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Stages</SelectItem>
+                                <SelectItem value="none">No Outreach Yet</SelectItem>
                                 <SelectItem value="Digital Handshake">Step 0: Handshake</SelectItem>
                                 <SelectItem value="Company Profile">Step 1: Profile Sent</SelectItem>
                             </SelectContent>
@@ -428,6 +430,17 @@ export default function ISAManagement() {
                                         <SelectItem value="all">All Staff</SelectItem>
                                         <SelectItem value="none">Unallocated</SelectItem>
                                         {staff.map(s => <SelectItem key={s.id} value={s.id}>{s.firstName} {s.lastName}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="flex-1 space-y-2 text-left text-foreground">
+                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Send className="h-3 w-3"/> Outreach</Label>
+                                <Select value={outreachFilter} onValueChange={setOutreachFilter}>
+                                    <SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="All" /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All</SelectItem>
+                                        <SelectItem value="none">No Outreach Yet</SelectItem>
+                                        <SelectItem value="Digital Handshake">Handshake</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>

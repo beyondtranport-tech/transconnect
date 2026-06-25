@@ -59,13 +59,11 @@ export async function POST(req: NextRequest) {
                 let partnersQuery: any = db.collection('partners');
                 let leadsQuery: any = db.collection('leads');
 
-                // Apply high-precision industrial category filters (Uses newly created indexes)
                 if (category && category !== 'all') {
                     partnersQuery = partnersQuery.where('industrial_category', '==', category);
                     leadsQuery = leadsQuery.where('industrial_category', '==', category);
                 }
 
-                // Apply audience type filters (Uses newly created indexes)
                 if (type && type !== 'all' && type !== 'lead') {
                     const typeLower = type.toLowerCase();
                     partnersQuery = partnersQuery.where('type', '==', typeLower);
@@ -83,7 +81,6 @@ export async function POST(req: NextRequest) {
                     ...lSnap.docs.map(d => ({ id: d.id, source: 'leads', ...serializeTimestamps(d.data()) }))
                 ];
 
-                // Data Normalization & Forensic Mapping
                 data = data.map(item => ({
                     ...item,
                     companyName: item.companyName || item.company_name || item.trading_name || '',
@@ -95,7 +92,6 @@ export async function POST(req: NextRequest) {
                     entryType: item.industrial_category || item.category || 'General'
                 }));
 
-                // In-memory filter for broad searches
                 if (term || searchCompany || searchKeyword || searchTag) {
                     const lowTerm = (term || searchCompany || '').toLowerCase();
                     const lowKey = (searchKeyword || '').toLowerCase();
@@ -111,7 +107,13 @@ export async function POST(req: NextRequest) {
 
                 if (integrityFilter === 'has-email') data = data.filter(p => !!p.email);
                 if (integrityFilter === 'no-email') data = data.filter(p => !p.email);
-                if (outreachFilter && outreachFilter !== 'all') data = data.filter(p => p.lastOutreachSubject === outreachFilter);
+                
+                // NEW: Handle "No Outreach" filter
+                if (outreachFilter === 'none') {
+                    data = data.filter(p => !p.lastOutreachSubject);
+                } else if (outreachFilter && outreachFilter !== 'all') {
+                    data = data.filter(p => p.lastOutreachSubject === outreachFilter);
+                }
 
                 data.sort((a,b) => new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime());
 
@@ -149,7 +151,7 @@ export async function POST(req: NextRequest) {
             }
 
             case 'getAudienceCommunications': {
-                const { type } = payload; // 'suppliers', 'transporters', etc.
+                const { type } = payload;
                 const commsSnap = await db.collectionGroup('communications').orderBy('timestamp', 'desc').limit(500).get();
                 const entities: any[] = [];
                 const parentIds = [...new Set(commsSnap.docs.map(d => d.ref.parent.parent!.id))];
@@ -161,8 +163,8 @@ export async function POST(req: NextRequest) {
                             db.collection('partners').where(FieldValue.documentId(), 'in', chunk).get(),
                             db.collection('leads').where(FieldValue.documentId(), 'in', chunk).get()
                         ]);
-                        entities.push(...pSnap.docs.map(d => ({ id: d.id, source: 'partners', ...d.data() })));
-                        entities.push(...lSnap.docs.map(d => ({ id: d.id, source: 'leads', ...d.data() })));
+                        entities.push(...pSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+                        entities.push(...lSnap.docs.map(d => ({ id: d.id, ...d.data() })));
                     }
                 }
                 
@@ -171,9 +173,8 @@ export async function POST(req: NextRequest) {
                     const entId = d.ref.parent.parent!.id;
                     const ent = entityMap.get(entId);
                     
-                    // Intelligent Audience Classification for Leads
                     let mappedType = ent?.type || 'lead';
-                    if (targetColl === 'leads' && ent?.industrial_category) {
+                    if (ent?.industrial_category) {
                         if (supplierCategories.includes(ent.industrial_category)) mappedType = 'supplier';
                         else if (transporterCategories.includes(ent.industrial_category)) mappedType = 'transporter';
                     }

@@ -343,7 +343,6 @@ export default function TransporterManagement() {
 
   return (
     <div className="space-y-6 text-left text-foreground">
-      <BatchResearchDialog open={dialog.type === 'batch'} onOpenChange={(o) => !o && setDialog({ type: null })} selectedLeads={allRecords.filter(r => selectedIds.includes(r.id))} onComplete={fetchData} />
       <EngageDialog 
         open={dialog.type === 'engage'} 
         onOpenChange={(o) => !o && setDialog({ type: null })} 
@@ -400,6 +399,7 @@ export default function TransporterManagement() {
                             <SelectTrigger className="h-12 bg-white text-left"><SelectValue placeholder="All Stages" /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Stages</SelectItem>
+                                <SelectItem value="none">No Outreach Yet</SelectItem>
                                 <SelectItem value="Digital Handshake">Step 0: Handshake</SelectItem>
                                 <SelectItem value="Company Profile">Step 1: Profile sent</SelectItem>
                             </SelectContent>
@@ -469,9 +469,10 @@ export default function TransporterManagement() {
                              <div className="flex-1 space-y-2 text-left">
                                 <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Send className="h-3 w-3"/> Outreach</Label>
                                 <Select value={outreachFilter} onValueChange={setOutreachFilter}>
-                                    <SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="All Stages" /></SelectTrigger>
+                                    <SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="All" /></SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="all">All Stages</SelectItem>
+                                        <SelectItem value="all">All</SelectItem>
+                                        <SelectItem value="none">No Outreach Yet</SelectItem>
                                         <SelectItem value="Digital Handshake">Handshake</SelectItem>
                                     </SelectContent>
                                 </Select>

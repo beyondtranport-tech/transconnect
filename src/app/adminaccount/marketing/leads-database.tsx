@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -338,6 +339,7 @@ function LeadsDatabaseComponent() {
                             <SelectTrigger className="h-12 bg-white text-left text-foreground text-foreground text-foreground"><SelectValue placeholder="All Stages" /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Stages</SelectItem>
+                                <SelectItem value="none">No Outreach Yet</SelectItem>
                                 <SelectItem value="Digital Handshake">Step 0: Handshake</SelectItem>
                                 <SelectItem value="Company Profile">Step 1: Profile Sent</SelectItem>
                             </SelectContent>
@@ -380,7 +382,7 @@ function LeadsDatabaseComponent() {
                                 </div>
                             </div>
                             <div className="space-y-2 text-left text-foreground text-foreground text-foreground text-foreground">
-                                <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-foreground"><Tag className="h-3 w-3"/> Integrity</Label>
+                                <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-foreground text-foreground"><Tag className="h-3 w-3"/> Integrity</Label>
                                 <Select value={integrityFilter} onValueChange={setIntegrityFilter}>
                                     <SelectTrigger className="h-10 text-xs bg-white text-foreground text-left text-foreground text-foreground text-foreground"><SelectValue placeholder="All Records" /></SelectTrigger>
                                     <SelectContent>
@@ -393,9 +395,10 @@ function LeadsDatabaseComponent() {
                             <div className="space-y-2 text-left text-foreground text-foreground text-foreground text-foreground text-foreground">
                                 <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-foreground text-foreground"><Send className="h-3 w-3"/> Outreach</Label>
                                 <Select value={outreachFilter} onValueChange={setOutreachFilter}>
-                                    <SelectTrigger className="h-10 text-xs bg-white text-foreground text-left text-foreground text-foreground text-foreground text-foreground"><SelectValue placeholder="All Stages" /></SelectTrigger>
+                                    <SelectTrigger className="h-10 text-xs bg-white text-foreground text-left text-foreground text-foreground text-foreground"><SelectValue placeholder="All Stages" /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">All Stages</SelectItem>
+                                        <SelectItem value="none">No Outreach Yet</SelectItem>
                                         <SelectItem value="Digital Handshake">Handshake Sent</SelectItem>
                                     </SelectContent>
                                 </Select>
