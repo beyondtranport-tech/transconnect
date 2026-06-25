@@ -194,23 +194,9 @@ export default function InvestorManagement() {
   }, [allRecords, statusFilter]);
 
   const handleExport = () => {
-      if (filteredRecords.length === 0) return;
-      downloadDataAsCSV(filteredRecords, `investors-backup-${new Date().toISOString().split('T')[0]}.csv`);
+      if (allRecords.length === 0) return;
+      downloadDataAsCSV(allRecords, `investors-backup-${new Date().toISOString().split('T')[0]}.csv`);
       toast({ title: "Backup Exported", description: "Filtered registry saved to CSV." });
-  };
-
-  const handleDelete = async () => {
-    if (!dialog.data) return;
-    try {
-        const token = await getClientSideAuthToken();
-        if (!token) return;
-        await performAdminAction(token, 'deletePartner', { partnerId: dialog.data.id });
-        toast({ title: 'Deleted' });
-        fetchData(currentPage);
-        setDialog({ type: null });
-    } catch (e: any) {
-        toast({ variant: 'destructive', title: 'Error', description: e.message });
-    }
   };
 
   const handleEngage = (record: any) => {
@@ -362,7 +348,7 @@ export default function InvestorManagement() {
             <div className="space-y-6 text-left text-foreground text-foreground">
                 <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
                     <div className="text-left text-foreground"><CardTitle className="flex items-center gap-2 font-black font-headline text-left text-foreground text-foreground text-foreground"><DollarSign /> App Launch Investors</CardTitle><CardDescription className="text-left text-foreground text-foreground text-foreground">Registry view ({totalRecords.toLocaleString()} records).</CardDescription></div>
-                    <div className="flex gap-2 text-left text-foreground text-foreground text-foreground">
+                    <div className="flex gap-2 text-left text-foreground text-foreground text-foreground text-foreground">
                         {selectedIds.length > 0 && (
                             <Button variant="secondary" onClick={() => handleEngage(null)} className="gap-2 shadow-sm font-bold text-left animate-in fade-in zoom-in text-foreground">
                                 <Send className="h-4 w-4" /> Batch Engage ({selectedIds.length})
@@ -377,7 +363,7 @@ export default function InvestorManagement() {
                         <Button onClick={() => setDialog({ type: 'add' })} className="text-left text-foreground text-foreground"><PlusCircle className="mr-2 h-4 w-4"/>Add Record</Button>
                     </div>
                 </CardHeader>
-                <Card className="text-left text-foreground text-foreground text-foreground">
+                <Card className="text-left text-foreground text-foreground text-foreground text-foreground">
                     <CardContent className="pt-6 text-left text-foreground text-foreground text-foreground text-foreground text-foreground">
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
                             <div className="space-y-2 text-left text-foreground">

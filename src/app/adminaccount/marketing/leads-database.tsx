@@ -203,40 +203,9 @@ function LeadsDatabaseComponent() {
       setCurrentPage(pageNum);
   };
 
-  const newLeadDefaults = useMemo(() => {
-    const companyName = searchParams.get('newCompanyName');
-    if (companyName) {
-      return { 
-        companyName, 
-        role: searchParams.get('newRole') || '', 
-        address: searchParams.get('newAddress') || '', 
-        website: searchParams.get('newWebsite') || '',
-        phone: searchParams.get('newPhone') || '',
-        email: searchParams.get('newEmail') || '',
-        contactPerson: searchParams.get('newContactPerson') || '',
-      };
-    }
-    return undefined;
-  }, [searchParams]);
-
-  useEffect(() => {
-    if (searchParams.get('action') === 'add-member' || newLeadDefaults) {
-      setIsAddLeadOpen(true);
-      const newPath = `${window.location.pathname}?view=leads-database`;
-      router.replace(newPath, { scroll: false });
-    }
-  }, [searchParams, newLeadDefaults, router]);
-
-  const filteredLeads = useMemo(() => {
-    return allRecords.filter(r => {
-        const matchesStatus = statusFilter === 'all' || r.status === statusFilter;
-        return matchesStatus;
-    });
-  }, [allRecords, statusFilter]);
-
   const handleExport = () => {
-      if (filteredLeads.length === 0) return;
-      downloadDataAsCSV(filteredLeads, `leads-backup-${new Date().toISOString().split('T')[0]}.csv`);
+      if (allRecords.length === 0) return;
+      downloadDataAsCSV(allRecords, `leads-backup-${new Date().toISOString().split('T')[0]}.csv`);
       toast({ title: "Backup Exported" });
   };
 
@@ -388,7 +357,7 @@ function LeadsDatabaseComponent() {
                 <div className="text-left text-foreground text-left"><CardTitle className="flex items-center gap-2 text-left text-foreground"><Users /> Lead Pipeline</CardTitle><CardDescription className="text-left text-foreground text-foreground text-foreground">Managed prospective member registry ({totalRecords.toLocaleString()} results).</CardDescription></div>
                 <div className="flex gap-2 text-left text-foreground text-foreground text-foreground">
                     {selectedIds.length > 0 && (
-                        <Button variant="secondary" onClick={handleBatchEngage} className="gap-2 shadow-sm font-bold text-left">
+                        <Button variant="secondary" onClick={handleEngage} className="gap-2 shadow-sm font-bold text-left">
                             <Send className="h-4 w-4" /> Batch Engage ({selectedIds.length})
                         </Button>
                     )}

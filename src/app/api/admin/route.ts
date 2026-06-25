@@ -51,58 +51,48 @@ export async function POST(req: NextRequest) {
                 const limitValue = requestedLimit || 100;
                 const offset = (page - 1) * limitValue;
 
-                let pRef: any = db.collection('partners');
-                let lRef: any = db.collection('leads');
-
-                // High-velocity deep scan for unengaged records
-                if (outreachFilter === 'none') {
-                    pRef = pRef.where('status', '==', 'new');
-                    lRef = lRef.where('status', '==', 'new');
-                } else {
-                    pRef = pRef.orderBy('updatedAt', 'desc');
-                    lRef = lRef.orderBy('updatedAt', 'desc');
-                }
-
-                // Increase scan limit to cover 9,000+ record database for prototype
+                // Increase scan limit to cover full 9,000+ record database
                 const [pSnap, lSnap] = await Promise.all([
-                    pRef.limit(10000).get(),
-                    lRef.limit(10000).get()
+                    db.collection('partners').limit(10000).get(),
+                    db.collection('leads').limit(10000).get()
                 ]);
 
-                const normalized = [
+                let normalized = [
                     ...pSnap.docs.map(d => ({ id: d.id, source: 'partners', ...d.data() })),
                     ...lSnap.docs.map(d => ({ id: d.id, source: 'leads', ...d.data() }))
                 ].map(item => ({
                     ...item,
                     companyName: (item.companyName || item.company_name || item.trading_name || '').trim(),
                     email: (item.email || item.email_address || '').trim().toLowerCase(),
-                    contactPerson: item.contactPerson || item.contact_person || (item.firstName ? `${item.firstName} ${item.lastName}` : '').trim(),
+                    contactPerson: (item.contactPerson || item.contact_person || (item.firstName ? `${item.firstName} ${item.lastName}` : '')).trim(),
                     status: item.status || 'new',
                     entryType: item.industrial_category || item.category || 'General'
                 }));
 
-                // Absolute De-duplication
-                const uniqueMap = new Map();
-                normalized.forEach(item => {
-                    const key = (item.companyName || item.email || item.id).toLowerCase();
-                    if (!uniqueMap.has(key) || item.source === 'partners') {
-                        uniqueMap.set(key, item);
-                    }
-                });
-
-                let data = Array.from(uniqueMap.values());
-
+                // Apply Filters on the full dataset before de-duplication
                 if (type && type !== 'all' && type !== 'lead') {
-                    data = data.filter(p => p.type === type.toLowerCase());
+                    normalized = normalized.filter(p => p.type === type.toLowerCase());
                 }
 
                 if (category && category !== 'all') {
-                    data = data.filter(p => p.entryType === category);
+                    normalized = normalized.filter(p => p.entryType === category);
+                }
+
+                if (outreachFilter === 'none') {
+                    normalized = normalized.filter(p => !p.lastOutreachSubject && p.status === 'new');
+                } else if (outreachFilter && outreachFilter !== 'all') {
+                    normalized = normalized.filter(p => p.lastOutreachSubject === outreachFilter);
+                }
+
+                if (enrichmentFilter === 'enriched') {
+                    normalized = normalized.filter(p => !!p.minedServiceWording || !!p.website || !!p.notes);
+                } else if (enrichmentFilter === 'unenriched') {
+                    normalized = normalized.filter(p => !p.minedServiceWording && !p.website && !p.notes);
                 }
 
                 if (term) {
                     const lowTerm = term.toLowerCase();
-                    data = data.filter(p => 
+                    normalized = normalized.filter(p => 
                         p.companyName.toLowerCase().includes(lowTerm) || 
                         p.id.toLowerCase().includes(lowTerm) || 
                         p.email.toLowerCase().includes(lowTerm) ||
@@ -110,21 +100,21 @@ export async function POST(req: NextRequest) {
                     );
                 }
 
-                if (integrityFilter === 'has-email') data = data.filter(p => !!p.email);
-                if (integrityFilter === 'no-email') data = data.filter(p => !p.email);
-                
-                if (outreachFilter === 'none') {
-                    data = data.filter(p => !p.lastOutreachSubject);
-                } else if (outreachFilter && outreachFilter !== 'all') {
-                    data = data.filter(p => p.lastOutreachSubject === outreachFilter);
-                }
+                if (integrityFilter === 'has-email') normalized = normalized.filter(p => !!p.email);
+                if (integrityFilter === 'no-email') normalized = normalized.filter(p => !p.email);
 
-                if (enrichmentFilter === 'enriched') {
-                    data = data.filter(p => !!p.minedServiceWording || !!p.website || !!p.notes);
-                } else if (enrichmentFilter === 'unenriched') {
-                    data = data.filter(p => !p.minedServiceWording && !p.website && !p.notes);
-                }
+                // De-duplication Logic
+                const uniqueMap = new Map();
+                normalized.forEach(item => {
+                    const key = (item.companyName || item.email || item.id).toLowerCase();
+                    if (!uniqueMap.has(key)) {
+                        uniqueMap.set(key, item);
+                    }
+                });
 
+                let data = Array.from(uniqueMap.values());
+
+                // Final Sort
                 data.sort((a,b) => {
                     const timeA = a.updatedAt?._seconds || 0;
                     const timeB = b.updatedAt?._seconds || 0;
@@ -206,8 +196,8 @@ export async function POST(req: NextRequest) {
             case 'getPartnersByType': {
                 const { type: pType } = payload;
                 let q: any = db.collection('partners');
-                if (pType !== 'all') q = q.where('type', '==', pType);
-                const snap = await q.orderBy('updatedAt', 'desc').limit(100).get();
+                if (pType && pType !== 'all') q = q.where('type', '==', pType);
+                const snap = await q.orderBy('updatedAt', 'desc').limit(500).get();
                 return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
             }
 

@@ -40,7 +40,7 @@ async function performAdminAction(token: string, action: string, payload: any) {
     cache: 'no-store'
   });
   const result = await response.json();
-  if (!response.ok || !result.success) throw new Error(result.error || `API Error: ${action}`);
+  if (!response.ok || !result.success) throw new Error(result.error || `API Error for action: ${action}`);
   return result;
 }
 
@@ -97,7 +97,7 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
       <DialogContent className="sm:max-w-3xl text-left text-foreground">
         <DialogHeader><DialogTitle>{partner ? 'Edit' : 'Add'} Supplier</DialogTitle></DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left">
+          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left text-foreground">
             <div className="grid grid-cols-2 gap-4 text-left">
               <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Entity Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="contactPerson" render={({ field }) => (<FormItem><FormLabel>Key Decision Maker</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
@@ -178,23 +178,15 @@ export default function SupplierManagement() {
       e.preventDefault();
       const pageNum = parseInt(jumpPageInput, 10);
       if (isNaN(pageNum) || pageNum < 1 || pageNum > totalPages) {
-          toast({ variant: 'destructive', title: 'Invalid Page', description: `Page must be between 1 and ${totalPages}.` });
+          toast({ variant: 'destructive', title: 'Invalid Page', description: `Please enter a page between 1 and ${totalPages}.` });
           return;
       }
       setCurrentPage(pageNum);
   };
 
-  const filteredRecords = useMemo(() => {
-    return allRecords.filter(p => {
-        const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
-        const matchesAssignee = assigneeFilter === 'all' || p.assigneeId === assigneeFilter;
-        return matchesStatus && matchesAssignee;
-    });
-  }, [allRecords, statusFilter, assigneeFilter]);
-
   const handleExport = () => {
-      if (filteredRecords.length === 0) return;
-      downloadDataAsCSV(filteredRecords, `suppliers-backup-${new Date().toISOString().split('T')[0]}.csv`);
+      if (allRecords.length === 0) return;
+      downloadDataAsCSV(allRecords, `suppliers-backup-${new Date().toISOString().split('T')[0]}.csv`);
       toast({ title: "Backup Exported", description: "Filtered registry saved to CSV." });
   };
 
@@ -204,11 +196,7 @@ export default function SupplierManagement() {
         ? allRecords.filter(r => selectedIds.includes(r.id)) 
         : (record ? [record] : []);
     
-    if (engageList.length === 0) {
-        toast({ variant: 'destructive', title: "No Selection", description: "Please select records to engage." });
-        return;
-    }
-    
+    if (engageList.length === 0) return;
     setDialog({ type: 'engage', data: engageList, initialIndex: Math.max(0, indexInSelected) });
   };
 
@@ -278,7 +266,7 @@ export default function SupplierManagement() {
                     <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Company Name</Label><Input placeholder="Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="h-12 bg-white" /></div>
                     <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Outreach Stage</Label><Select value={outreachFilter} onValueChange={setOutreachFilter}><SelectTrigger className="h-12 bg-white"><SelectValue placeholder="All" /></SelectTrigger><SelectContent><SelectItem value="all">All Stages</SelectItem><SelectItem value="none">No Outreach Yet</SelectItem><SelectItem value="Digital Handshake">Handshake Sent</SelectItem></SelectContent></Select></div>
                     <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Enrichment</Label><Select value={enrichmentFilter} onValueChange={setEnrichmentFilter}><SelectTrigger className="h-12 bg-white"><SelectValue placeholder="All" /></SelectTrigger><SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="enriched">Enriched</SelectItem><SelectItem value="unenriched">Unenriched</SelectItem></SelectContent></Select></div>
-                    <div className="flex items-end gap-2"><Button size="lg" onClick={() => { setCurrentPage(1); fetchData(1); }} disabled={isLoading} className="flex-1 h-12 font-black uppercase tracking-widest gap-2 shadow-lg">{isLoading ? <Loader2 className="animate-spin h-4 w-4"/> : <Search className="h-4 w-4"/>} Scan</Button><Button variant="outline" size="lg" onClick={() => { fetchData(1); }} className="h-12">Recent</Button></div>
+                    <div className="flex items-end gap-2"><Button size="lg" onClick={() => { setCurrentPage(1); fetchData(1); }} disabled={isLoading} className="flex-1 h-12 font-black uppercase tracking-widest gap-2 shadow-lg">{isLoading ? <Loader2 className="animate-spin h-4 w-4"/> : <Search className="h-4 w-4"/>} Scan</Button><Button variant="outline" size="lg" onClick={() => { setCurrentPage(1); fetchData(1); }} className="h-12">Recent</Button></div>
                 </div>
             </Card>
       ) : (

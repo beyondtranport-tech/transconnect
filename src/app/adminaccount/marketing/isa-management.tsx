@@ -212,13 +212,13 @@ export default function ISAManagement() {
   }, [allRecords, statusFilter, assigneeFilter]);
 
   const handleExport = () => {
-      if (filteredRecords.length === 0) return;
-      downloadDataAsCSV(filteredRecords, `isa-export-${new Date().toISOString().split('T')[0]}.csv`);
+      if (allRecords.length === 0) return;
+      downloadDataAsCSV(allRecords, `isa-export-${new Date().toISOString().split('T')[0]}.csv`);
       toast({ title: "Export Complete" });
   };
 
   const handleEngage = (record: any) => {
-    const indexInSelected = selectedIds.indexOf(record.id);
+    const indexInSelected = record ? selectedIds.indexOf(record.id) : 0;
     const engageList = selectedIds.length > 0 
         ? allRecords.filter(r => selectedIds.includes(r.id)) 
         : [record];
