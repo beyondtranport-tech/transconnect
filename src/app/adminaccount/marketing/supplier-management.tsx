@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -353,7 +354,7 @@ export default function SupplierManagement() {
         audience="suppliers" 
         onEngageSuccess={() => fetchData(currentPage)} 
       />
-      <SupplierDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={() => fetchData(currentPage)} />
+      <SupplierDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={fetchData} />
       
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
         <AlertDialogContent className="text-left text-foreground">
@@ -512,7 +513,7 @@ export default function SupplierManagement() {
                                 
                                 <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-6 border-t">
                                     <div className="text-sm text-muted-foreground font-medium">
-                                        Showing {partners.length} of {totalRecords.toLocaleString()} records
+                                        Showing {allRecords.length} of {totalRecords.toLocaleString()} records
                                     </div>
                                     
                                     <div className="flex items-center gap-4">
