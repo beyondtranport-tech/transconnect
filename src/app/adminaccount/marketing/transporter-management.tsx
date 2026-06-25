@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -9,7 +10,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, Truck, Edit, Trash2, Send, Download, Save, Search, Filter, Users, Globe, RefreshCcw, Database, Upload, RotateCcw, UserCheck, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Loader2, PlusCircle, Truck, Edit, Trash2, Send, Download, Save, Search, Filter, Users, Globe, RefreshCcw, Database, Upload, RotateCcw, UserCheck, ChevronDown, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -57,28 +58,16 @@ const partnerSchema = z.object({
   status: z.enum(['active', 'inactive', 'contacted', 'new', 'qualified', 'invited', 'registered']),
   type: z.literal('transporter'),
 });
-
 type PartnerFormValues = z.infer<typeof partnerSchema>;
 
 function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: boolean; onOpenChange: (open: boolean) => void; partner?: any; onSave: () => void; }) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const form = useForm<PartnerFormValues>({ 
-    resolver: zodResolver(partnerSchema),
-    defaultValues: { type: 'transporter', status: 'new' }
-  });
+  const form = useForm<PartnerFormValues>({ resolver: zodResolver(partnerSchema), defaultValues: { type: 'transporter', status: 'new' } });
 
   useEffect(() => {
     if (open) {
-      if (partner) {
-        form.reset({
-            ...partner,
-            website: partner.website || '',
-            notes: partner.notes || '',
-            address: partner.address || '',
-            industrial_category: partner.industrial_category || partner.category || '',
-        });
-      }
+      if (partner) form.reset(partner);
       else form.reset({ firstName: '', lastName: '', email: '', phone: '', mobile: '', contactPerson: '', companyName: '', status: 'new', type: 'transporter' });
     }
   }, [open, partner, form]);
@@ -102,48 +91,23 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-3xl text-left text-foreground">
-        <DialogHeader>
-          <DialogTitle>{partner ? 'Edit' : 'Add'} Transporter</DialogTitle>
-        </DialogHeader>
+        <DialogHeader><DialogTitle>{partner ? 'Edit' : 'Add'} Transporter</DialogTitle></DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left text-foreground">
-            <div className="grid grid-cols-2 gap-4 text-left text-foreground">
+          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left">
+            <div className="grid grid-cols-2 gap-4 text-left">
               <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Entity Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="contactPerson" render={({ field }) => (<FormItem><FormLabel>Key Contact</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
             <div className="grid grid-cols-2 gap-4 text-left">
               <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="industrial_category" render={({ field }) => (
-                    <FormItem className="text-left text-foreground text-foreground">
-                        <FormLabel>Category</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl><SelectTrigger className="bg-white text-left text-foreground text-foreground text-foreground"><SelectValue placeholder="Classify..." /></SelectTrigger></FormControl>
-                            <SelectContent>
-                                {transporterCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
-                            </SelectContent>
-                        </Select>
-                    </FormItem>
-                )} />
+                <FormItem><FormLabel>Category</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="bg-white"><SelectValue placeholder="Classify..." /></SelectTrigger></FormControl><SelectContent>{transporterCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent></Select></FormItem>
+              )} />
             </div>
             <FormField control={form.control} name="status" render={({ field }) => (
-                <FormItem className="text-left text-foreground">
-                    <FormLabel>Status</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl><SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
-                        <SelectContent>
-                            <SelectItem value="new">New</SelectItem>
-                            <SelectItem value="contacted">Searching</SelectItem>
-                            <SelectItem value="qualified">Qualified</SelectItem>
-                            <SelectItem value="active">Active Haulier</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </FormItem>
+                <FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="bg-white"><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="new">New</SelectItem><SelectItem value="contacted">Searching</SelectItem><SelectItem value="qualified">Qualified</SelectItem><SelectItem value="active">Active Haulier</SelectItem></SelectContent></Select></FormItem>
             )} />
-            <DialogFooter className="pt-4 border-t text-left">
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />} Save Record
-              </Button>
-            </DialogFooter>
+            <DialogFooter className="pt-4 border-t text-left"><Button type="submit" disabled={isLoading}>{isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />} Save Record</Button></DialogFooter>
           </form>
         </Form>
       </DialogContent>
@@ -161,7 +125,6 @@ export default function TransporterManagement() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | null, data?: any, initialIndex?: number }>({ type: null });
 
-  // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
@@ -177,17 +140,8 @@ export default function TransporterManagement() {
     try {
       const token = await getClientSideAuthToken();
       if (!token) return;
-      const res = await performAdminAction(token, 'searchRegistry', { 
-            type: 'transporter', 
-            term: searchTerm, 
-            outreachFilter, 
-            enrichmentFilter, 
-            page,
-            limit: 100 
-      });
-      const [staffRes] = await Promise.all([
-        performAdminAction(token, 'getPlatformStaff', {})
-      ]);
+      const res = await performAdminAction(token, 'searchRegistry', { type: 'transporter', term: searchTerm, outreachFilter, enrichmentFilter, page, limit: 100 });
+      const staffRes = await performAdminAction(token, 'getPlatformStaff', {});
       setAllRecords(res.data || []);
       setTotalPages(res.totalPages || 1);
       setTotalRecords(res.totalCount || 0);
@@ -202,15 +156,13 @@ export default function TransporterManagement() {
     }
   }, [searchTerm, outreachFilter, enrichmentFilter, toast]);
 
-  useEffect(() => { 
-    if (hasLoaded) fetchData(currentPage); 
-  }, [currentPage, hasLoaded, fetchData]);
+  useEffect(() => { if (hasLoaded) fetchData(currentPage); }, [currentPage, hasLoaded, fetchData]);
 
   const handleJumpPage = (e: React.FormEvent) => {
       e.preventDefault();
       const pageNum = parseInt(jumpPageInput, 10);
       if (isNaN(pageNum) || pageNum < 1 || pageNum > totalPages) {
-          toast({ variant: 'destructive', title: 'Invalid Page', description: `Please enter a page between 1 and ${totalPages}.` });
+          toast({ variant: 'destructive', title: 'Invalid Page', description: `Page must be between 1 and ${totalPages}.` });
           return;
       }
       setCurrentPage(pageNum);
@@ -224,54 +176,20 @@ export default function TransporterManagement() {
     });
   }, [allRecords, statusFilter, assigneeFilter]);
 
-  const handleExport = () => {
-    if (filteredRecords.length === 0) return;
-    downloadDataAsCSV(filteredRecords, `transporters-export-${new Date().toISOString().split('T')[0]}.csv`);
-    toast({ title: "Export Complete" });
-  };
-
   const handleEngage = (record: any) => {
     const indexInSelected = selectedIds.indexOf(record.id);
-    const engageList = selectedIds.length > 0 
-        ? allRecords.filter(r => selectedIds.includes(r.id)) 
-        : [record];
-        
-    setDialog({ 
-        type: 'engage', 
-        data: engageList, 
-        initialIndex: Math.max(0, indexInSelected) 
-    });
-  };
-
-  const handleBatchEngage = () => {
-    if (selectedIds.length === 0) return;
-    const engageList = allRecords.filter(r => selectedIds.includes(r.id));
-    setDialog({ type: 'engage', data: engageList, initialIndex: 0 });
-  };
-
-  const handleDelete = async () => {
-    if (!dialog.data) return;
-    try {
-      const token = await getClientSideAuthToken();
-      if (!token) return;
-      await performAdminAction(token, 'deleteLeads', { leadIds: [dialog.data.id] });
-      toast({ title: 'Deleted' });
-      fetchData(currentPage);
-      setDialog({ type: null });
-    } catch (e: any) {
-      toast({ variant: 'destructive', title: 'Error', description: e.message });
-    }
+    const engageList = selectedIds.length > 0 ? allRecords.filter(r => selectedIds.includes(r.id)) : [record];
+    setDialog({ type: 'engage', data: engageList, initialIndex: Math.max(0, indexInSelected) });
   };
 
   const columns: ColumnDef<any>[] = [
     { 
-        header: 'Entity Name', 
+        accessorKey: 'companyName', 
+        header: 'Supplier Name', 
         cell: ({ row }) => (
-            <div className="flex flex-col text-sm text-left text-foreground">
-                <span className="font-bold text-left">
-                    {row.original.companyName || <span className="text-muted-foreground italic">Unnamed Entity</span>}
-                </span>
-                <div className="flex items-center gap-1.5 mt-1 text-left">
+            <div className="flex flex-col text-sm text-left">
+                <span className="font-bold text-foreground">{row.original.companyName || <span className="text-destructive italic font-normal">Unnamed Entity</span>}</span>
+                <div className="flex items-center gap-1.5 mt-1">
                     {row.original.website && <Globe className="h-3 w-3 text-primary" />}
                     <span className="text-[10px] text-muted-foreground uppercase font-black">{row.original.industrial_category || 'Industrial'}</span>
                 </div>
@@ -279,27 +197,24 @@ export default function TransporterManagement() {
         )
     },
     { 
+        accessorKey: 'contactPerson', 
         header: 'Key Decision Maker',
-        cell: ({ row }) => (
-            <div className="text-sm font-medium text-left">
-                {row.original.contactPerson || <span className="text-muted-foreground italic">Missing Name</span>}
-            </div>
-        )
+        cell: ({ row }) => <span className="text-sm font-medium">{row.original.contactPerson || 'N/A'}</span>
     },
     { accessorKey: 'mobile', header: 'Mobile' },
     { accessorKey: 'email', header: 'Email' },
     { 
+        accessorKey: 'lastOutreachAt',
         header: 'Outreach & Result',
         cell: ({ row }) => {
-            if (!row.original.lastOutreachSubject) return <span className="text-[10px] text-muted-foreground italic text-left text-foreground">None</span>;
+            if (!row.original.lastOutreachSubject) return <span className="text-[10px] text-muted-foreground italic">None</span>;
             return (
-                <div className="flex flex-col text-left text-foreground">
+                <div className="flex flex-col text-left">
                     <Badge variant="outline" className="text-[9px] h-4 border-primary/20 text-primary uppercase font-bold truncate max-w-[100px]">{row.original.lastOutreachSubject}</Badge>
                     <span className="text-[8px] text-muted-foreground mt-0.5">{formatDateSafe(row.original.lastOutreachAt, "dd/MM")}</span>
                     {row.original.lastOpenedAt && (
                         <div className="flex items-center gap-1 text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100 mt-1 w-fit">
-                            <UserCheck className="h-2.5 w-2.5" />
-                            Read {formatDateSafe(row.original.lastOpenedAt, "dd/MM")}
+                            <UserCheck className="h-2.5 w-2.5" /> Read
                         </div>
                     )}
                 </div>
@@ -307,7 +222,7 @@ export default function TransporterManagement() {
         }
     },
     { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
-      <div className="flex justify-end gap-1 text-left text-foreground">
+      <div className="flex justify-end gap-1">
         <EnrichPartnerButton partner={row.original} onUpdate={() => fetchData(currentPage)} />
         <Button variant="ghost" size="icon" onClick={() => handleEngage(row.original)} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
         <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.companyName} />
@@ -321,171 +236,61 @@ export default function TransporterManagement() {
 
   return (
     <div className="space-y-6 text-left text-foreground">
-      <EngageDialog 
-        open={dialog.type === 'engage'} 
-        onOpenChange={(o) => !o && setDialog({ type: null })} 
-        partners={Array.isArray(dialog.data) ? dialog.data : [dialog.data]} 
-        initialIndex={dialog.initialIndex}
-        audience="transporters" 
-        onEngageSuccess={() => fetchData(currentPage)} 
-      />
+      <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partners={dialog.data || []} initialIndex={dialog.initialIndex} audience="transporters" onEngageSuccess={() => fetchData(currentPage)} />
       <TransporterDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={() => fetchData(currentPage)} />
-      <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
-        <AlertDialogContent className="text-left text-foreground">
-          <AlertDialogHeader><AlertDialogTitle>Delete Record?</AlertDialogTitle><AlertDialogDescription>Permanently remove record?</AlertDialogDescription></AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={async () => {
-                const token = await getClientSideAuthToken();
-                if (token && dialog.data) {
-                    await performAdminAction(token, 'deleteLeads', { leadIds: [dialog.data.id] });
-                    fetchData(currentPage);
-                    setDialog({ type: null });
-                }
-            }} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
       
-      <div className="space-y-6 text-left">
-        {!hasLoaded ? (
-            <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground text-foreground">
+      {!hasLoaded ? (
+            <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground">
                 <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
-                <h2 className="text-2xl font-black font-headline mb-2 text-foreground text-center">Transporter Forensic Scan</h2>
-                <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center text-foreground">Scan the haulier database. Filter by outreach or enrichment stage.</p>
-                <div className="flex flex-col md:flex-row justify-center gap-4 max-w-5xl mx-auto text-left text-foreground">
-                    <div className="flex-1 space-y-2 text-left text-foreground">
-                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Company, Category or ID</Label>
-                        <Input placeholder="Search criteria..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && fetchData(1)} className="h-12 text-lg bg-white" />
-                    </div>
-                    <div className="w-48 space-y-2 text-left text-foreground text-foreground text-foreground">
-                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Outreach</Label>
-                        <Select value={outreachFilter} onValueChange={setOutreachFilter}>
-                            <SelectTrigger className="h-12 bg-white text-left text-foreground text-foreground text-foreground"><SelectValue placeholder="All" /></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All</SelectItem>
-                                <SelectItem value="none">No Outreach Yet</SelectItem>
-                                <SelectItem value="Digital Handshake">Handshake Sent</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div className="w-48 space-y-2 text-left text-foreground">
-                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Enrichment</Label>
-                        <Select value={enrichmentFilter} onValueChange={setEnrichmentFilter}>
-                            <SelectTrigger className="h-12 bg-white text-left text-foreground"><SelectValue placeholder="All" /></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All</SelectItem>
-                                <SelectItem value="enriched">Enriched</SelectItem>
-                                <SelectItem value="unenriched">Unenriched</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div className="flex flex-col md:flex-row gap-2 self-end text-foreground text-foreground">
-                        <Button size="lg" onClick={() => { setCurrentPage(1); fetchData(1); }} disabled={isLoading} className="h-12 px-8 font-bold">
-                            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4" />}
-                            Execute Scan
-                        </Button>
-                        <Button variant="outline" size="lg" onClick={() => { setCurrentPage(1); fetchData(1); }} className="h-12">
-                             Show Recent
-                        </Button>
-                    </div>
+                <h2 className="text-2xl font-black font-headline mb-2 text-center">Haulier Registry Scan</h2>
+                <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center">Scan the national transporter database. Filter by Outreach or Enrichment to prioritize your workflow.</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto text-left">
+                    <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Haulier Name</Label><Input placeholder="Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="h-12 bg-white" /></div>
+                    <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Outreach Stage</Label><Select value={outreachFilter} onValueChange={setOutreachFilter}><SelectTrigger className="h-12 bg-white"><SelectValue placeholder="All" /></SelectTrigger><SelectContent><SelectItem value="all">All Stages</SelectItem><SelectItem value="none">No Outreach Yet</SelectItem><SelectItem value="Digital Handshake">Handshake Sent</SelectItem></SelectContent></Select></div>
+                    <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Enrichment</Label><Select value={enrichmentFilter} onValueChange={setEnrichmentFilter}><SelectTrigger className="h-12 bg-white"><SelectValue placeholder="All" /></SelectTrigger><SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="enriched">Enriched</SelectItem><SelectItem value="unenriched">Unenriched</SelectItem></SelectContent></Select></div>
+                    <div className="flex items-end gap-2"><Button size="lg" onClick={() => { setCurrentPage(1); fetchData(1); }} disabled={isLoading} className="flex-1 h-12 font-black uppercase tracking-widest gap-2 shadow-lg">{isLoading ? <Loader2 className="animate-spin h-4 w-4"/> : <Search className="mr-2 h-4 w-4" />} Scan</Button><Button variant="outline" size="lg" onClick={() => fetchData(1)} className="h-12">Recent</Button></div>
                 </div>
             </Card>
-        ) : (
-            <div className="space-y-6 text-left text-foreground text-foreground">
+      ) : (
+            <div className="space-y-6">
                 <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
-                    <div className="text-left text-foreground">
-                        <CardTitle className="flex items-center gap-2 text-2xl font-black font-headline text-left text-foreground text-foreground"><Truck /> Transporter Registry</CardTitle>
-                        <CardDescription className="text-left text-foreground text-foreground text-foreground">Unified database view ({totalRecords.toLocaleString()} records).</CardDescription>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2 text-left text-foreground text-foreground">
-                        {selectedIds.length > 0 && (
-                            <Button variant="secondary" onClick={handleBatchEngage} className="gap-2 shadow-sm font-bold animate-in fade-in zoom-in">
-                                <Send className="h-4 w-4" /> Batch Engage ({selectedIds.length})
-                            </Button>
-                        )}
-                        <div className="relative w-64 text-left text-foreground text-foreground">
-                            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                            <Input placeholder="Filter registry..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8 bg-white" />
-                        </div>
-                        <Button variant="outline" onClick={() => downloadDataAsCSV(allRecords, 'transporters-export.csv')} disabled={isLoading} className="text-foreground text-foreground text-foreground">
-                            <Download className="mr-2 h-4 w-4" /> Export CSV
-                        </Button>
-                        <BulkImportDialog type="transporter" onComplete={() => fetchData(currentPage)}><Button variant="outline" className="text-foreground text-foreground text-foreground"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
-                        <Button onClick={() => setDialog({ type: 'add' })} className="text-foreground text-foreground text-foreground text-foreground"><PlusCircle className="mr-2 h-4 w-4" /> Add Record</Button>
+                    <div className="text-left"><CardTitle className="text-2xl font-black font-headline flex items-center gap-2"><Truck /> Transporter Registry</CardTitle><CardDescription>High-fidelity database view ({totalRecords.toLocaleString()} records).</CardDescription></div>
+                    <div className="flex flex-wrap items-center gap-2 text-left">
+                        {selectedIds.length > 0 && <Button variant="secondary" onClick={() => handleEngage(null)} className="gap-2 shadow-sm font-bold animate-in fade-in zoom-in"><Send className="h-4 w-4" /> Batch Engage ({selectedIds.length})</Button>}
+                        <Button variant="outline" onClick={() => downloadDataAsCSV(allRecords, 'transporters-export.csv')} disabled={isLoading}><Download className="mr-2 h-4 w-4" /> Export CSV</Button>
+                        <BulkImportDialog type="transporter" onComplete={() => fetchData(currentPage)}><Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
+                        <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Record</Button>
                     </div>
                 </CardHeader>
-                <Card className="text-left text-foreground text-foreground">
-                    <CardContent className="pt-6 text-left text-foreground text-foreground text-foreground text-foreground">
-                        <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground text-foreground text-foreground">
-                            <div className="flex-1 space-y-2 text-left text-foreground text-foreground text-foreground">
-                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-foreground"><Filter className="h-3 w-3"/> Status</Label>
-                                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                                    <SelectTrigger className="bg-white text-left text-foreground text-foreground text-foreground text-foreground text-foreground"><SelectValue placeholder="All Statuses" /></SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">All Statuses</SelectItem>
-                                        <SelectItem value="new">New</SelectItem>
-                                        <SelectItem value="contacted">Searching</SelectItem>
-                                        <SelectItem value="qualified">Qualified</SelectItem>
-                                        <SelectItem value="active">Active Haulier</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="flex-1 space-y-2 text-left text-foreground text-foreground">
-                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-foreground text-foreground"><Send className="h-3 w-3"/> Outreach</Label>
-                                <Select value={outreachFilter} onValueChange={setOutreachFilter}>
-                                    <SelectTrigger className="bg-white text-left text-foreground text-foreground text-foreground text-foreground"><SelectValue placeholder="All" /></SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">All</SelectItem>
-                                        <SelectItem value="none">No Outreach Yet</SelectItem>
-                                        <SelectItem value="Digital Handshake">Handshake Sent</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="flex items-end text-left text-foreground text-foreground">
-                                <Button variant="outline" onClick={() => setHasLoaded(false)} className="h-10 w-full text-foreground text-foreground text-foreground"><RotateCcw className="mr-1 h-3 w-3" /> New Search</Button>
-                            </div>
+                <Card>
+                    <CardContent className="pt-6">
+                        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left">
+                            <div className="space-y-1"><Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status</Label><Select value={statusFilter} onValueChange={setStatusFilter}><SelectTrigger className="h-9 bg-white text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="new">New</SelectItem><SelectItem value="contacted">Researching</SelectItem></SelectContent></Select></div>
+                            <div className="space-y-1"><Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Users className="h-3 w-3"/> Assignee</Label><Select value={assigneeFilter} onValueChange={setAssigneeFilter}><SelectTrigger className="h-9 bg-white text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All Staff</SelectItem><SelectItem value="none">Unallocated</SelectItem>{staff.map(s => <SelectItem key={s.id} value={s.id}>{s.firstName} {s.lastName}</SelectItem>)}</SelectContent></Select></div>
+                            <div className="space-y-1"><Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Send className="h-3 w-3"/> Outreach</Label><Select value={outreachFilter} onValueChange={setOutreachFilter}><SelectTrigger className="h-9 bg-white text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="none">No Outreach Yet</SelectItem><SelectItem value="Digital Handshake">Handshake Sent</SelectItem></SelectContent></Select></div>
+                            <div className="space-y-1"><Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Sparkles className="h-3 w-3"/> Enrichment</Label><Select value={enrichmentFilter} onValueChange={setEnrichmentFilter}><SelectTrigger className="h-9 bg-white text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="enriched">Enriched</SelectItem><SelectItem value="unenriched">Unenriched</SelectItem></SelectContent></Select></div>
+                            <div className="flex items-end"><Button variant="outline" onClick={() => setHasLoaded(false)} className="h-9 w-full text-xs font-bold uppercase tracking-widest"><RotateCcw className="mr-1 h-3 w-3" /> Reset Variables</Button></div>
                         </div>
-                        {isLoading ? <div className="flex justify-center items-center py-10 text-foreground text-foreground text-foreground text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
-                            <div className="space-y-6 text-left text-foreground text-foreground">
+                        {isLoading ? <div className="flex justify-center items-center py-20 text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
+                            <div className="space-y-6 text-left">
                                 <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />
-                                
                                 <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-6 border-t">
-                                    <div className="text-sm text-muted-foreground font-medium text-foreground text-foreground">
-                                        Showing {allRecords.length} of {totalRecords.toLocaleString()} records
-                                    </div>
-                                    
-                                    <div className="flex items-center gap-4 text-foreground">
+                                    <div className="text-sm text-muted-foreground font-medium">Showing {allRecords.length} of {totalRecords.toLocaleString()} records</div>
+                                    <div className="flex items-center gap-4">
                                         <div className="flex items-center gap-2">
-                                            <Button variant="outline" size="icon" onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))} disabled={currentPage === 1}>
-                                                <ChevronLeft className="h-4 w-4" />
-                                            </Button>
-                                            <form onSubmit={handleJumpPage} className="flex items-center gap-2">
-                                                <span className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Page</span>
-                                                <Input 
-                                                    className="w-16 h-8 text-center font-bold font-mono" 
-                                                    value={jumpPageInput} 
-                                                    onChange={e => setJumpPageInput(e.target.value)}
-                                                />
-                                                <span className="text-sm font-bold uppercase tracking-widest text-muted-foreground">of {totalPages}</span>
-                                            </form>
-                                            <Button variant="outline" size="icon" onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))} disabled={currentPage === totalPages}>
-                                                <ChevronRight className="h-4 w-4" />
-                                            </Button>
+                                            <Button variant="outline" size="icon" onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))} disabled={currentPage === 1}><ChevronLeft className="h-4 w-4" /></Button>
+                                            <form onSubmit={handleJumpPage} className="flex items-center gap-2"><span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Page</span><Input className="w-16 h-8 text-center font-bold font-mono" value={jumpPageInput} onChange={e => setJumpPageInput(e.target.value)}/><span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">of {totalPages}</span></form>
+                                            <Button variant="outline" size="icon" onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))} disabled={currentPage === totalPages}><ChevronRight className="h-4 w-4" /></Button>
                                         </div>
                                     </div>
-
-                                    <Button variant="outline" onClick={() => setCurrentPage(prev => prev + 1)} disabled={currentPage === totalPages} className="min-w-[180px] font-bold text-foreground">
-                                        Load Next 100 Records
-                                    </Button>
+                                    <Button variant="outline" onClick={() => setCurrentPage(prev => prev + 1)} disabled={currentPage === totalPages} className="min-w-[180px] font-bold">Load Next 100 Records</Button>
                                 </div>
                             </div>
                         )}
                     </CardContent>
                 </Card>
             </div>
-        )}
-      </div>
+      )}
     </div>
   );
 }

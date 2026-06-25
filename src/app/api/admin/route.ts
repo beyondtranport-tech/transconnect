@@ -51,22 +51,21 @@ export async function POST(req: NextRequest) {
                 const limitValue = requestedLimit || 100;
                 const offset = (page - 1) * limitValue;
 
-                // 1. Optimized Fetch Strategy
-                // If filtering for "No Outreach", we prioritize 'new' status to bypass worked-on records
                 let pRef: any = db.collection('partners');
                 let lRef: any = db.collection('leads');
 
+                // OPTIMIZATION: If filtering for "No Outreach", prioritize status 'new'
+                // This helps Firestore bypass thousands of records you've already touched
                 if (outreachFilter === 'none') {
-                    // Try to find specifically un-engaged records using status as a proxy for speed
-                    lRef = lRef.where('status', '==', 'new');
+                    pRef = pRef.where('status', 'in', ['new', 'inactive']);
+                    lRef = lRef.where('status', 'in', ['new', 'inactive']);
                 }
 
                 const [pSnap, lSnap] = await Promise.all([
-                    pRef.orderBy('updatedAt', 'desc').limit(2000).get(),
-                    lRef.orderBy('updatedAt', 'desc').limit(2000).get()
+                    pRef.orderBy('updatedAt', 'desc').limit(3000).get(),
+                    lRef.orderBy('updatedAt', 'desc').limit(3000).get()
                 ]);
 
-                // 2. Normalize and merge
                 const normalized = [
                     ...pSnap.docs.map(d => ({ id: d.id, source: 'partners', ...d.data() })),
                     ...lSnap.docs.map(d => ({ id: d.id, source: 'leads', ...d.data() }))
@@ -79,7 +78,7 @@ export async function POST(req: NextRequest) {
                     entryType: item.industrial_category || item.category || 'General'
                 }));
 
-                // 3. Absolute De-duplication (Priority: Partners > Leads)
+                // Absolute De-duplication
                 const uniqueMap = new Map();
                 normalized.forEach(item => {
                     const key = (item.companyName || item.email || item.id).toLowerCase();
@@ -90,12 +89,10 @@ export async function POST(req: NextRequest) {
 
                 let data = Array.from(uniqueMap.values());
 
-                // 4. Apply Tab Type Filtering
                 if (type && type !== 'all' && type !== 'lead') {
                     data = data.filter(p => p.type === type.toLowerCase());
                 }
 
-                // 5. Apply Forensic Variable Filters
                 if (category && category !== 'all') {
                     data = data.filter(p => p.entryType === category);
                 }
@@ -113,7 +110,7 @@ export async function POST(req: NextRequest) {
                 if (integrityFilter === 'no-email') data = data.filter(p => !p.email);
                 
                 if (outreachFilter === 'none') {
-                    data = data.filter(p => !p.lastOutreachSubject && ['new', 'inactive', 'contacted'].includes(p.status));
+                    data = data.filter(p => !p.lastOutreachSubject);
                 } else if (outreachFilter && outreachFilter !== 'all') {
                     data = data.filter(p => p.lastOutreachSubject === outreachFilter);
                 }
@@ -124,7 +121,6 @@ export async function POST(req: NextRequest) {
                     data = data.filter(p => !p.minedServiceWording && !p.website && !p.notes);
                 }
 
-                // 6. Sort and Paginate
                 data.sort((a,b) => {
                     const timeA = a.updatedAt?._seconds || 0;
                     const timeB = b.updatedAt?._seconds || 0;
