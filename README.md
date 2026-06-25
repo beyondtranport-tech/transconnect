@@ -17,7 +17,7 @@ git add .
 ### Step 2: Save Your Changes
 Commit your changes with a descriptive message.
 ```bash
-git commit -m "Admin Portal Stabilization: Fixed build crashes and verified tracking"
+git commit -m "Global Architecture Synchronization: Applied high-capacity registry structure across all Marketing Library modules"
 ```
 
 ### Step 3: Push Your Backup to GitHub
@@ -30,8 +30,14 @@ git push
 
 ---
 
-## Recent Updates: Admin Portal Stabilization
-- **Fixed Build Failures**: Resolved "Unexpected token div" and "Dialog" errors caused by malformed JSX closures in the management modules.
-- **Full-Base Visibility**: Re-engineered the registry to load up to 20,000 records, ensuring total visibility of all 5,400+ industrial entries.
-- **Forensic Tracking**: Verified and embedded hidden tracking pixels in all 6 core engagement templates for real-time "Read" status monitoring.
+## Recent Updates: Global Architecture Synchronization
+- **Unified Registry Structure**: Applied the high-capacity architecture from the Supplier module to all other Marketing Library subdirectories (Partners, ISA, Transporters, Investors, Finance, Drivers).
+- **Integrated Pre-Scan Filters**: Status, Outreach, and Assignee filters are now available on the initial scan screen for all modules.
+- **Interactive Column Visibility**: Added a custom column toggle to all industrial tables, allowing selective data point visibility.
+- **Full-Base Visibility (20k Records)**: All modules now retrieve the entire industrial record base in a single session for accurate pagination and filtering.
+- **Restored Forensic Logic**: Re-implemented sortable outreach columns and strict Entity/Contact separation across the platform.
+
+## Earlier Updates: Admin Portal Stabilization
+- **Fixed Build Failures**: Resolved "Unexpected token div" and "Dialog" errors caused by malformed JSX closures.
+- **Forensic Tracking**: Embedded hidden tracking pixels in all 6 core engagement templates for real-time monitoring.
 - **Interactive Pagination**: Restored manual page-jump inputs and accurate result counts in the DataTable component.
