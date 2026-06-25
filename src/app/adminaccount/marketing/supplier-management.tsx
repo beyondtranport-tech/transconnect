@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
 import { 
-  Loader2, PlusCircle, Building, Edit, Trash2, Send, Download, Save, Search, Filter, Users, Globe, Zap, Upload, RefreshCcw, Database, Tag, Sparkles, RotateCcw, UserCheck, ChevronDown, ChevronLeft, ChevronRight 
+  Loader2, PlusCircle, Building, Edit, Trash2, Send, Download, Save, Search, Filter, Users, Globe, Zap, Upload, RefreshCcw, Database, Tag, Sparkles, RotateCcw, UserCheck 
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
@@ -188,6 +188,14 @@ export default function SupplierManagement() {
     setDialog({ type: 'engage', data: engageList, initialIndex: Math.max(0, indexInSelected) });
   };
 
+  const filteredRecords = useMemo(() => {
+    return allRecords.filter(p => {
+        const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
+        const matchesAssignee = assigneeFilter === 'all' || p.assigneeId === assigneeFilter;
+        return matchesStatus && matchesAssignee;
+    });
+  }, [allRecords, statusFilter, assigneeFilter]);
+
   async function handleDeleteBatch() {
     if (selectedIds.length === 0) return;
     try {
@@ -268,7 +276,7 @@ export default function SupplierManagement() {
             <AlertDialogAction onClick={selectedIds.length > 0 ? handleDeleteBatch : async () => {
                 const token = await getClientSideAuthToken();
                 if (token && dialog.data) {
-                    await performAdminAction(token, 'deletePartner', { partnerId: dialog.data.id });
+                    await performAdminAction(token, 'deletePartners', { partnerIds: [dialog.data.id] });
                     fetchData();
                     setDialog({ type: null });
                 }

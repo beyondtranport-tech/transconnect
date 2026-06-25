@@ -29,8 +29,7 @@ function serializeTimestamps(docData: any): any {
 
 /**
  * ADMIN API ENDPOINT
- * Optimized for high-velocity registry operations across 9,000+ records.
- * Returns full datasets for local filtering and discrete pagination.
+ * Re-engineered for high-velocity full-base loading (up to 10,000 records).
  */
 export async function POST(req: NextRequest) {
     try {
@@ -56,8 +55,7 @@ export async function POST(req: NextRequest) {
             case 'searchRegistry': {
                 const { term, category, type, outreachFilter, enrichmentFilter } = payload;
                 
-                // Fetch full collections to satisfy "Load Full Base" requirement
-                // Limit set to 10,000 to cover existing 9,000 records safely.
+                // Load full base (up to 10k) to satisfy requirement for client-side snappiness
                 const [pSnap, lSnap] = await Promise.all([
                     db.collection('partners').limit(10000).get(),
                     db.collection('leads').limit(10000).get()
@@ -72,7 +70,7 @@ export async function POST(req: NextRequest) {
                     email: (item.email || item.email_address || '').trim().toLowerCase(),
                     contactPerson: (item.contactPerson || item.contact_person || (item.firstName ? `${item.firstName} ${item.lastName}` : '')).trim(),
                     status: item.status || 'new',
-                    entryType: item.industrial_category || item.category || 'General'
+                    entryType: item.industrial_category || item.category || item.type || 'General'
                 }));
 
                 // 1. Filter by Primary Type
@@ -87,7 +85,7 @@ export async function POST(req: NextRequest) {
                     normalized = normalized.filter(p => p.entryType === category || p.classification === category);
                 }
 
-                // 3. Filter by Outreach Stage (Reliability Fix)
+                // 3. Filter by Outreach Stage
                 if (outreachFilter === 'none') {
                     normalized = normalized.filter(p => !p.lastOutreachSubject && p.status === 'new');
                 } else if (outreachFilter && outreachFilter !== 'all') {
@@ -96,12 +94,12 @@ export async function POST(req: NextRequest) {
 
                 // 4. Filter by Enrichment Status
                 if (enrichmentFilter === 'enriched') {
-                    normalized = normalized.filter(p => !!p.minedServiceWording || !!p.website || !!p.notes);
+                    normalized = normalized.filter(p => !!(p.minedServiceWording || p.notes || p.website));
                 } else if (enrichmentFilter === 'unenriched') {
-                    normalized = normalized.filter(p => !p.minedServiceWording && !p.website && !p.notes);
+                    normalized = normalized.filter(p => !(p.minedServiceWording || p.notes || p.website));
                 }
 
-                // 5. Text Search Bypass
+                // 5. Text Search
                 if (term) {
                     const lowTerm = term.toLowerCase();
                     normalized = normalized.filter(p => 
@@ -112,7 +110,7 @@ export async function POST(req: NextRequest) {
                     );
                 }
 
-                // 6. Final De-duplication
+                // 6. De-duplication
                 const uniqueMap = new Map();
                 normalized.forEach(item => {
                     const key = (item.companyName || item.email || item.id).toLowerCase();
@@ -123,10 +121,10 @@ export async function POST(req: NextRequest) {
 
                 let data = Array.from(uniqueMap.values());
 
-                // 7. Standardized Sorting
+                // 7. Sort
                 data.sort((a,b) => {
-                    const timeA = a.updatedAt?._seconds || 0;
-                    const timeB = b.updatedAt?._seconds || 0;
+                    const timeA = new Date(a.updatedAt || 0).getTime();
+                    const timeB = new Date(b.updatedAt || 0).getTime();
                     return timeB - timeA;
                 });
                 
@@ -170,6 +168,19 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true });
             }
 
+            case 'getPlatformStaff': {
+                const snap = await db.collection('platformStaff').orderBy('firstName', 'asc').get();
+                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
+            }
+
+            case 'getPartnersByType': {
+                const { type: pType } = payload;
+                let q: any = db.collection('partners');
+                if (pType && pType !== 'all') q = q.where('type', '==', pType);
+                const snap = await q.orderBy('updatedAt', 'desc').limit(10000).get();
+                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
+            }
+            
             case 'getMembers': {
                 const snap = await db.collection('companies').orderBy('updatedAt', 'desc').limit(1000).get();
                 return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
@@ -180,40 +191,13 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
             }
 
-            case 'getPlatformStaff': {
-                const snap = await db.collection('platformStaff').orderBy('firstName', 'asc').get();
-                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
-            }
-
-            case 'getPartnersByType': {
-                const { type: pType } = payload;
-                let q: any = db.collection('partners');
-                if (pType && pType !== 'all') q = q.where('type', '==', pType);
-                const snap = await q.orderBy('updatedAt', 'desc').limit(1000).get();
-                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
-            }
-            
-            case 'getLeads': {
-                const snap = await db.collection('leads').orderBy('updatedAt', 'desc').limit(1000).get();
-                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
-            }
-
-            case 'savePartner': {
-                const { partner } = payload;
-                const coll = (partner.type === 'lead' || !partner.type) ? 'leads' : 'partners';
-                const ref = partner.id ? db.collection(coll).doc(partner.id) : db.collection(coll).doc();
-                await ref.set({
-                    ...partner,
-                    id: ref.id,
-                    updatedAt: FieldValue.serverTimestamp()
-                }, { merge: true });
-                return NextResponse.json({ success: true });
-            }
-
-            case 'deleteLeads': {
-                const { leadIds } = payload;
+            case 'deletePartners': {
+                const { partnerIds } = payload;
                 const batch = db.batch();
-                leadIds.forEach((id: string) => batch.delete(db.collection('leads').doc(id)));
+                partnerIds.forEach((id: string) => {
+                    batch.delete(db.collection('partners').doc(id));
+                    batch.delete(db.collection('leads').doc(id));
+                });
                 await batch.commit();
                 return NextResponse.json({ success: true });
             }
