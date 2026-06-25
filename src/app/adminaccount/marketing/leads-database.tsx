@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -27,7 +26,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { getClientSideAuthToken } from '@/firebase';
-import { Loader2, PlusCircle, Users, Edit, Trash2, Search, Send, Download, Upload, Save, RefreshCcw, Filter, RotateCcw, Tag, Database, ChevronDown, UserCheck, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Loader2, PlusCircle, Users, Edit, Trash2, Search, Send, Download, Upload, Save, RefreshCcw, Filter, RotateCcw, Tag, Database, UserCheck, Sparkles } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -110,19 +109,19 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[60vh] overflow-y-auto pr-2 text-left">
             <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Company Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-            <div className="grid grid-cols-2 gap-4 text-left">
+            <div className="grid grid-cols-2 gap-4 text-left text-foreground">
               <FormField control={form.control} name="firstName" render={({ field }) => (<FormItem><FormLabel>First Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="lastName" render={({ field }) => (<FormItem><FormLabel>Last Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
-            <div className="grid grid-cols-2 gap-4 text-left">
+            <div className="grid grid-cols-2 gap-4 text-left text-foreground">
               <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Landline</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="mobile" render={({ field }) => (<FormItem><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
             <FormField control={form.control} name="email" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" /></FormControl><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="website" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Website</FormLabel><FormControl><Input {...field} type="url" placeholder="https://..." /></FormControl><FormMessage /></FormItem>)} />
-             <div className="grid grid-cols-2 gap-4 text-left">
+             <div className="grid grid-cols-2 gap-4 text-left text-foreground">
               <FormField control={form.control} name="role" render={({ field }) => (
-                <FormItem className="text-left"><FormLabel>Potential Role</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormItem className="text-left text-foreground"><FormLabel>Potential Role</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl><SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="Select..." /></SelectTrigger></FormControl>
                     <SelectContent>{roles.map(r => <SelectItem key={r.id} value={r.title}>{r.title}</SelectItem>)}</SelectContent>
                 </Select></FormItem>
@@ -134,7 +133,7 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
                 </Select></FormItem>
               )} />
             </div>
-            <DialogFooter className="pt-4 border-t text-left"><Button type="submit" disabled={isLoading}>
+            <DialogFooter className="pt-4 border-t text-left text-foreground"><Button type="submit" disabled={isLoading}>
                 {isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />} Save Record
             </Button></DialogFooter>
           </form>
@@ -154,12 +153,6 @@ function LeadsDatabaseComponent() {
   const [hasLoaded, setHasLoaded] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-
-  // Pagination State
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalRecords, setTotalRecords] = useState(0);
-  const [jumpPageInput, setJumpPageInput] = useState('1');
   
   const [statusFilter, setStatusFilter] = useState('all');
   const [outreachFilter, setOutreachFilter] = useState('all');
@@ -170,17 +163,19 @@ function LeadsDatabaseComponent() {
   const [deleteLead, setDeleteLead] = useState<any | null>(null);
   const [engageDialog, setEngageDialog] = useState<{ open: boolean, data?: any[], initialIndex?: number }>({ open: false });
 
-  const fetchData = useCallback(async (page: number = 1) => {
+  const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
       const token = await getClientSideAuthToken();
       if (!token) return;
-      const res = await performAdminAction(token, 'searchRegistry', { type: 'lead', term: searchTerm, outreachFilter, enrichmentFilter, page, limit: 100 });
+      const res = await performAdminAction(token, 'searchRegistry', { 
+          type: 'lead', 
+          term: searchTerm, 
+          outreachFilter, 
+          enrichmentFilter,
+          limit: 10000 // Full record base
+      });
       setAllRecords(res.data || []);
-      setTotalPages(res.totalPages || 1);
-      setTotalRecords(res.totalCount || 0);
-      setCurrentPage(res.currentPage || 1);
-      setJumpPageInput(String(res.currentPage || 1));
       setHasLoaded(true);
     } catch (e: any) {
         toast({ variant: 'destructive', title: 'Fetch Error', description: e.message });
@@ -190,18 +185,8 @@ function LeadsDatabaseComponent() {
   }, [searchTerm, outreachFilter, enrichmentFilter, toast]);
 
   useEffect(() => {
-    if (hasLoaded) fetchData(currentPage);
-  }, [currentPage, hasLoaded, fetchData]);
-
-  const handleJumpPage = (e: React.FormEvent) => {
-      e.preventDefault();
-      const pageNum = parseInt(jumpPageInput, 10);
-      if (isNaN(pageNum) || pageNum < 1 || pageNum > totalPages) {
-          toast({ variant: 'destructive', title: 'Invalid Page', description: `Page must be between 1 and ${totalPages}.` });
-          return;
-      }
-      setCurrentPage(pageNum);
-  };
+    if (hasLoaded) fetchData();
+  }, [hasLoaded, fetchData]);
 
   const handleExport = () => {
       if (allRecords.length === 0) return;
@@ -231,7 +216,7 @@ function LeadsDatabaseComponent() {
       if (!token) throw new Error("Auth failed");
       await performAdminAction(token, 'deleteLeads', { leadIds: [deleteLead.id] });
       toast({ title: 'Lead Deleted' });
-      fetchData(currentPage);
+      fetchData();
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Delete Failed', description: e.message });
     } finally {
@@ -243,26 +228,26 @@ function LeadsDatabaseComponent() {
     { 
         accessorKey: 'companyName', 
         header: 'Lead Name',
-        cell: ({ row }) => <span className="font-bold text-left">{row.original.companyName || <span className="text-destructive italic">Unnamed Lead</span>}</span>
+        cell: ({ row }) => <span className="font-bold text-left">{row.original.companyName || 'Unnamed Entity'}</span>
     },
     { 
         accessorKey: 'contactPerson', 
         header: 'Key Decision Maker',
         cell: ({ row }) => (
             <div className="text-sm font-medium text-left">
-                {row.original.contactPerson || <span className="text-muted-foreground italic">Missing Name</span>}
+                {row.original.contactPerson || 'N/A'}
             </div>
         )
     },
     { accessorKey: 'mobile', header: 'Mobile' },
     {
-        header: 'Outreach',
+        header: 'Outreach & Result',
         cell: ({ row }) => {
             if (!row.original.lastOutreachSubject) return <span className="text-[10px] text-muted-foreground italic text-left">None</span>;
             return (
                 <div className="flex flex-col text-left">
                     <Badge variant="outline" className="text-[9px] h-4 uppercase font-bold truncate max-w-[100px]">{row.original.lastOutreachSubject}</Badge>
-                    <span className="text-[8px] text-muted-foreground mt-0.5">{formatDateSafe(row.original.lastOutreachAt, "dd/MM")}</span>
+                    <span className="text-[8px] text-muted-foreground mt-0.5 text-left">{formatDateSafe(row.original.lastOutreachAt, "dd/MM")}</span>
                     {row.original.lastOpenedAt && (
                         <div className="flex items-center gap-1 text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100 mt-1 w-fit">
                             <UserCheck className="h-2.5 w-2.5" />
@@ -283,17 +268,40 @@ function LeadsDatabaseComponent() {
       header: <div className="text-right">Actions</div>,
       cell: ({ row }) => (
         <div className="text-right flex items-center justify-end gap-1 text-foreground">
-          <EnrichPartnerButton partner={row.original} onUpdate={() => fetchData(currentPage)} />
+          <EnrichPartnerButton partner={row.original} onUpdate={fetchData} />
           <Button variant="ghost" size="icon" onClick={() => handleEngage(row.original)} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
           <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.companyName} />
           <PartnerTasksDialog partner={row.original} />
-          <PartnerOversightDialog partner={row.original} onUpdate={() => fetchData(currentPage)} />
+          <PartnerOversightDialog partner={row.original} onUpdate={fetchData} />
           <Button variant="ghost" size="icon" onClick={() => { setEditLead(row.original); }}><Edit className="h-4 w-4" /></Button>
           <Button variant="ghost" size="icon" onClick={() => { setDeleteLead(row.original); }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
         </div>
       )
     },
-  ], [fetchData, currentPage, selectedIds]);
+  ], [fetchData]);
+
+  const filteredRecords = useMemo(() => {
+    return allRecords.filter(p => {
+        const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
+        return matchesStatus;
+    });
+  }, [allRecords, statusFilter]);
+
+  const newLeadDefaults = useMemo(() => {
+    const companyName = searchParams.get('newCompanyName');
+    if (companyName) {
+      return { 
+        companyName, 
+        role: searchParams.get('newRole') || '', 
+        address: searchParams.get('newAddress') || '', 
+        website: searchParams.get('newWebsite') || '',
+        phone: searchParams.get('newPhone') || '',
+        email: searchParams.get('newEmail') || '',
+        contactPerson: searchParams.get('newContactPerson') || '',
+      };
+    }
+    return undefined;
+  }, [searchParams]);
 
   return (
     <>
@@ -303,20 +311,20 @@ function LeadsDatabaseComponent() {
         partners={engageDialog.data || []} 
         initialIndex={engageDialog.initialIndex}
         audience="suppliers" 
-        onEngageSuccess={() => fetchData(currentPage)} 
+        onEngageSuccess={fetchData} 
       />
-      <LeadDialog open={isAddLeadOpen || !!editLead} onOpenChange={(o) => { if(!o) { setEditLead(null); setIsAddLeadOpen(false); } }} lead={editLead} onSave={() => fetchData(currentPage)} defaultValues={newLeadDefaults} />
+      <LeadDialog open={isAddLeadOpen || !!editLead} onOpenChange={(o) => { if(!o) { setEditLead(null); setIsAddLeadOpen(false); } }} lead={editLead} onSave={fetchData} defaultValues={newLeadDefaults} />
       
       <div className="space-y-6 text-left">
         {!hasLoaded ? (
-            <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground text-foreground">
+            <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground">
                 <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
                 <h2 className="text-2xl font-black font-headline mb-2 text-foreground text-center">Lead Registry Scan</h2>
-                <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center text-foreground text-center">Scan your prospective member pipeline. Use filters to prioritize outreach and enrichment.</p>
+                <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center text-foreground text-center">Scan your prospective member pipeline. Use filters to prioritize outreach and enrichment worklists.</p>
                 <div className="flex flex-col md:flex-row justify-center gap-4 max-w-5xl mx-auto text-left">
                     <div className="flex-1 space-y-2 text-left">
                         <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Name, Email or ID</Label>
-                        <Input placeholder="Type criteria..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && fetchData(1)} className="h-12 text-lg bg-white" />
+                        <Input placeholder="Type criteria..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && fetchData()} className="h-12 text-lg bg-white" />
                     </div>
                      <div className="w-48 space-y-2 text-left">
                         <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Outreach</Label>
@@ -330,9 +338,9 @@ function LeadsDatabaseComponent() {
                         </Select>
                     </div>
                     <div className="w-48 space-y-2 text-left">
-                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1 text-left">Enrichment</Label>
+                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1 text-left text-foreground">Enrichment</Label>
                         <Select value={enrichmentFilter} onValueChange={setEnrichmentFilter}>
-                            <SelectTrigger className="h-12 bg-white text-left"><SelectValue placeholder="All" /></SelectTrigger>
+                            <SelectTrigger className="h-12 bg-white text-left text-foreground"><SelectValue placeholder="All" /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All</SelectItem>
                                 <SelectItem value="enriched">Enriched</SelectItem>
@@ -341,11 +349,11 @@ function LeadsDatabaseComponent() {
                         </Select>
                     </div>
                     <div className="flex flex-col md:flex-row gap-2 self-end text-left text-foreground">
-                        <Button size="lg" onClick={() => { fetchData(1); }} disabled={isLoading} className="h-12 px-8 font-bold text-left">
+                        <Button size="lg" onClick={() => { fetchData(); }} disabled={isLoading} className="h-12 px-8 font-bold text-left">
                             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4" />}
                             Execute Scan
                         </Button>
-                        <Button variant="outline" size="lg" onClick={() => { fetchData(1); }} className="h-12 text-left">
+                        <Button variant="outline" size="lg" onClick={() => { fetchData(); }} className="h-12 text-left">
                              Show Recent
                         </Button>
                     </div>
@@ -354,7 +362,7 @@ function LeadsDatabaseComponent() {
         ) : (
             <div className="space-y-6 text-left text-foreground">
                 <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
-                <div className="text-left text-foreground text-left"><CardTitle className="flex items-center gap-2 text-left text-foreground"><Users /> Lead Pipeline</CardTitle><CardDescription className="text-left text-foreground text-foreground text-foreground">Managed prospective member registry ({totalRecords.toLocaleString()} results).</CardDescription></div>
+                <div className="text-left text-foreground text-left"><CardTitle className="flex items-center gap-2 text-left text-foreground"><Users /> Lead Pipeline</CardTitle><CardDescription className="text-left text-foreground text-foreground text-foreground text-left">Managed prospective member registry ({filteredRecords.length} results).</CardDescription></div>
                 <div className="flex gap-2 text-left text-foreground text-foreground text-foreground">
                     {selectedIds.length > 0 && (
                         <Button variant="secondary" onClick={handleEngage} className="gap-2 shadow-sm font-bold text-left">
@@ -362,7 +370,7 @@ function LeadsDatabaseComponent() {
                         </Button>
                     )}
                     <Button variant="outline" onClick={handleExport} disabled={isLoading} className="text-foreground text-foreground text-left"><Download className="mr-2 h-4 w-4" /> Export CSV</Button>
-                    <BulkImportDialog type="lead" onComplete={() => fetchData(currentPage)}><Button variant="outline" className="text-foreground text-foreground text-foreground text-left"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
+                    <BulkImportDialog type="lead" onComplete={() => fetchData()}><Button variant="outline" className="text-foreground text-foreground text-foreground text-left"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
                     <Button onClick={() => setIsAddLeadOpen(true)} className="text-foreground text-foreground text-foreground text-foreground text-left text-foreground"><PlusCircle className="mr-2 h-4 w-4" />Add Lead</Button>
                 </div>
                 </CardHeader>
@@ -370,9 +378,9 @@ function LeadsDatabaseComponent() {
                     <CardContent className="pt-6 text-left text-foreground text-foreground text-foreground">
                         <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground text-foreground text-foreground text-foreground text-foreground">
                              <div className="flex-1 space-y-2 text-left text-foreground text-left">
-                                <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1 text-left">Enrichment Status</Label>
+                                <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1 text-left text-foreground">Enrichment Status</Label>
                                 <Select value={enrichmentFilter} onValueChange={setEnrichmentFilter}>
-                                    <SelectTrigger className="bg-white text-left text-foreground text-foreground text-foreground text-left text-foreground"><SelectValue placeholder="All" /></SelectTrigger>
+                                    <SelectTrigger className="bg-white text-left text-foreground text-foreground text-left text-foreground"><SelectValue placeholder="All" /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">All</SelectItem>
                                         <SelectItem value="enriched">Enriched</SelectItem>
@@ -381,9 +389,9 @@ function LeadsDatabaseComponent() {
                                 </Select>
                             </div>
                             <div className="flex-1 space-y-2 text-left text-foreground text-foreground text-foreground text-foreground text-left text-foreground">
-                                <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1 text-left">Outreach Stage</Label>
+                                <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1 text-left text-foreground">Outreach Stage</Label>
                                 <Select value={outreachFilter} onValueChange={setOutreachFilter}>
-                                    <SelectTrigger className="bg-white text-left text-foreground text-foreground text-foreground text-left text-foreground"><SelectValue placeholder="All Stages" /></SelectTrigger>
+                                    <SelectTrigger className="bg-white text-left text-foreground text-foreground text-left text-foreground"><SelectValue placeholder="All Stages" /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">All Stages</SelectItem>
                                         <SelectItem value="none">No Outreach Yet</SelectItem>
@@ -397,37 +405,7 @@ function LeadsDatabaseComponent() {
                         </div>
                         {isLoading ? <div className="flex justify-center p-10 text-foreground text-foreground text-foreground text-left text-foreground"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div> : (
                             <div className="space-y-6 text-left">
-                                <DataTable columns={columns} data={filteredLeads} onSelectionChange={setSelectedIds} />
-                                
-                                <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-6 border-t">
-                                    <div className="text-sm text-muted-foreground font-medium">
-                                        Showing {allRecords.length} of {totalRecords.toLocaleString()} records
-                                    </div>
-                                    
-                                    <div className="flex items-center gap-4">
-                                        <div className="flex items-center gap-2">
-                                            <Button variant="outline" size="icon" onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))} disabled={currentPage === 1}>
-                                                <ChevronLeft className="h-4 w-4" />
-                                            </Button>
-                                            <form onSubmit={handleJumpPage} className="flex items-center gap-2">
-                                                <span className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Page</span>
-                                                <Input 
-                                                    className="w-16 h-8 text-center font-bold font-mono text-foreground" 
-                                                    value={jumpPageInput} 
-                                                    onChange={e => setJumpPageInput(e.target.value)}
-                                                />
-                                                <span className="text-sm font-bold uppercase tracking-widest text-muted-foreground">of {totalPages}</span>
-                                            </form>
-                                            <Button variant="outline" size="icon" onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))} disabled={currentPage === totalPages}>
-                                                <ChevronRight className="h-4 w-4" />
-                                            </Button>
-                                        </div>
-                                    </div>
-
-                                    <Button variant="outline" onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))} disabled={currentPage === totalPages} className="min-w-[180px] font-bold text-foreground">
-                                        Load Next 100 Records
-                                    </Button>
-                                </div>
+                                <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />
                             </div>
                         )}
                     </CardContent>
@@ -450,8 +428,9 @@ function LeadsDatabaseComponent() {
 
 export default function LeadsDatabase() {
   return (
-    <Suspense fallback={<Loader2 className="animate-spin h-10 w-10 text-primary mx-auto my-20 text-left"/>}>
+    <Suspense fallback={<Loader2 className="animate-spin h-10 w-10 text-primary mx-auto my-20 text-left text-foreground"/>}>
       <LeadsDatabaseComponent />
     </Suspense>
   );
 }
+

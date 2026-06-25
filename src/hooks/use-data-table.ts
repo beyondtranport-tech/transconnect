@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -20,7 +19,8 @@ export function useDataTable<TData>(data: TData[], columns: ColumnDef<TData>[]) 
   const [globalFilter, setGlobalFilter] = useState('');
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
   const [pageIndex, setPageIndex] = useState(0);
-  // Increased page size for higher information density in professional workflows
+  
+  // Professional high-density page size
   const pageSize = 100;
 
   // Reset pagination when data changes or filter is applied

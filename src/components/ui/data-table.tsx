@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -12,7 +11,7 @@ import {
 import { useDataTable, type ColumnDef } from '@/hooks/use-data-table';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { ArrowUpDown, ChevronLeft, ChevronRight, Hash } from 'lucide-react';
+import { ArrowUpDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import { Checkbox } from './checkbox';
 
@@ -132,7 +131,7 @@ export function DataTable<TData>({ columns, data, onSelectionChange }: DataTable
                       />
                   </TableCell>
                   {columns.map(column => (
-                    <TableCell key={(column.id || column.accessorKey) as string} className="py-3">
+                    <TableCell key={(column.id || column.accessorKey) as string} className="py-3 text-foreground">
                       {column.cell ? column.cell({ row }) : getNestedValue(row.original, column.accessorKey as string)}
                     </TableCell>
                   ))}

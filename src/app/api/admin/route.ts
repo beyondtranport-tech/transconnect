@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -6,9 +5,6 @@ import { getAdminApp } from '@/lib/firebase-admin';
 
 export const dynamic = 'force-dynamic';
 
-/**
- * Serializes Firestore Timestamps to ISO strings for JSON transmission.
- */
 function serializeTimestamps(docData: any): any {
     if (!docData) return docData;
     if (docData instanceof Timestamp) {
@@ -27,10 +23,6 @@ function serializeTimestamps(docData: any): any {
     return docData;
 }
 
-/**
- * ADMIN API ENDPOINT
- * Re-engineered for high-velocity full-base loading (up to 10,000 records).
- */
 export async function POST(req: NextRequest) {
     try {
         const { app, error: initError } = getAdminApp();
@@ -53,12 +45,12 @@ export async function POST(req: NextRequest) {
 
         switch (action) {
             case 'searchRegistry': {
-                const { term, category, type, outreachFilter, enrichmentFilter } = payload;
+                const { term, category, type, outreachFilter, enrichmentFilter, limit = 10000 } = payload;
                 
-                // Load full base (up to 10k) to satisfy requirement for client-side snappiness
+                // Optimized Full Loading Strategy: Fetch entire segments as requested
                 const [pSnap, lSnap] = await Promise.all([
-                    db.collection('partners').limit(10000).get(),
-                    db.collection('leads').limit(10000).get()
+                    db.collection('partners').limit(limit).get(),
+                    db.collection('leads').limit(limit).get()
                 ]);
 
                 let normalized = [
@@ -70,36 +62,34 @@ export async function POST(req: NextRequest) {
                     email: (item.email || item.email_address || '').trim().toLowerCase(),
                     contactPerson: (item.contactPerson || item.contact_person || (item.firstName ? `${item.firstName} ${item.lastName}` : '')).trim(),
                     status: item.status || 'new',
-                    entryType: item.industrial_category || item.category || item.type || 'General'
+                    entryType: item.industrial_category || item.category || item.entryType || item.classification || item.role || 'General'
                 }));
 
-                // 1. Filter by Primary Type
+                // 1. Primary Collection Filtering
                 if (type && type !== 'all' && type !== 'lead') {
                     normalized = normalized.filter(p => p.type === type.toLowerCase());
                 } else if (type === 'lead') {
                     normalized = normalized.filter(p => p.source === 'leads');
                 }
 
-                // 2. Filter by Category
+                // 2. Specific Logic Filtering
                 if (category && category !== 'all') {
                     normalized = normalized.filter(p => p.entryType === category || p.classification === category);
                 }
 
-                // 3. Filter by Outreach Stage
                 if (outreachFilter === 'none') {
-                    normalized = normalized.filter(p => !p.lastOutreachSubject && p.status === 'new');
+                    normalized = normalized.filter(p => !p.lastOutreachSubject && (p.status === 'new' || p.status === 'contacted'));
                 } else if (outreachFilter && outreachFilter !== 'all') {
                     normalized = normalized.filter(p => p.lastOutreachSubject === outreachFilter);
                 }
 
-                // 4. Filter by Enrichment Status
                 if (enrichmentFilter === 'enriched') {
                     normalized = normalized.filter(p => !!(p.minedServiceWording || p.notes || p.website));
                 } else if (enrichmentFilter === 'unenriched') {
                     normalized = normalized.filter(p => !(p.minedServiceWording || p.notes || p.website));
                 }
 
-                // 5. Text Search
+                // 3. Search Term
                 if (term) {
                     const lowTerm = term.toLowerCase();
                     normalized = normalized.filter(p => 
@@ -110,7 +100,7 @@ export async function POST(req: NextRequest) {
                     );
                 }
 
-                // 6. De-duplication
+                // 4. Global De-duplication Logic
                 const uniqueMap = new Map();
                 normalized.forEach(item => {
                     const key = (item.companyName || item.email || item.id).toLowerCase();
@@ -121,7 +111,7 @@ export async function POST(req: NextRequest) {
 
                 let data = Array.from(uniqueMap.values());
 
-                // 7. Sort
+                // 5. Final Sort
                 data.sort((a,b) => {
                     const timeA = new Date(a.updatedAt || 0).getTime();
                     const timeB = new Date(b.updatedAt || 0).getTime();
@@ -174,15 +164,15 @@ export async function POST(req: NextRequest) {
             }
 
             case 'getPartnersByType': {
-                const { type: pType } = payload;
+                const { type: pType, limit = 10000 } = payload;
                 let q: any = db.collection('partners');
                 if (pType && pType !== 'all') q = q.where('type', '==', pType);
-                const snap = await q.orderBy('updatedAt', 'desc').limit(10000).get();
+                const snap = await q.orderBy('updatedAt', 'desc').limit(limit).get();
                 return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
             }
             
             case 'getMembers': {
-                const snap = await db.collection('companies').orderBy('updatedAt', 'desc').limit(1000).get();
+                const snap = await db.collection('companies').orderBy('updatedAt', 'desc').limit(10000).get();
                 return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
             }
 

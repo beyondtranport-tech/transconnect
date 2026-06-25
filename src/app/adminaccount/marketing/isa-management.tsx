@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -29,7 +28,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, Bot, Edit, Trash2, Send, Download, Save, Search, Users, Filter, Globe, Zap, Database, Upload, Copy, Tag, AlertTriangle, CheckCircle, RotateCcw, UserCheck, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Loader2, PlusCircle, Bot, Edit, Trash2, Send, Download, Save, Search, Users, Filter, Globe, Zap, Database, Upload, Copy, Tag, AlertTriangle, CheckCircle, RotateCcw, UserCheck, Sparkles } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -40,11 +39,9 @@ import { CommunicationLogDialog } from './CommunicationLogDialog';
 import { PartnerTasksDialog } from './PartnerTasksDialog';
 import { downloadDataAsCSV, formatDateSafe, cn } from '@/lib/utils';
 import { EnrichPartnerButton } from './EnrichPartnerButton';
-import { BatchResearchDialog } from './BatchResearchDialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { BulkImportDialog } from './BulkImportDialog';
-import { Separator } from '@/components/ui/separator';
 
 async function performAdminAction(token: string, action: string, payload: any) {
   const response = await fetch('/api/admin', {
@@ -110,13 +107,13 @@ function ISADialog({ open, onOpenChange, partner, onSave }: { open: boolean; onO
       <DialogContent className="sm:max-w-2xl text-left text-foreground">
         <DialogHeader><DialogTitle>{partner ? 'Edit' : 'Add'} ISA</DialogTitle></DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left">
-            <div className="grid grid-cols-2 gap-4 text-left text-foreground">
+          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left text-foreground">
+            <div className="grid grid-cols-2 gap-4 text-left">
               <FormField control={form.control} name="firstName" render={({ field }) => (<FormItem><FormLabel>First Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="lastName" render={({ field }) => (<FormItem><FormLabel>Last Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
-            <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem className="text-left"><FormLabel>Agency / Company Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-            <div className="grid grid-cols-2 gap-4 text-left">
+            <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Agency / Company Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+            <div className="grid grid-cols-2 gap-4 text-left text-foreground">
               <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="mobile" render={({ field }) => (<FormItem className="text-left"><FormLabel>Mobile (Direct Cell)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
@@ -153,33 +150,20 @@ export default function ISAManagement() {
   const [hasLoaded, setHasLoaded] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | 'batch' | null, data?: any, initialIndex?: number }>({ type: null });
-
-  // Pagination State
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalRecords, setTotalRecords] = useState(0);
-  const [jumpPageInput, setJumpPageInput] = useState('1');
+  const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | null, data?: any, initialIndex?: number }>({ type: null });
 
   const [statusFilter, setStatusFilter] = useState('all');
   const [assigneeFilter, setAssigneeFilter] = useState('all');
-  const [integrityFilter, setIntegrityFilter] = useState('all');
   const [outreachFilter, setOutreachFilter] = useState('all');
 
-  const fetchData = useCallback(async (page: number = 1) => {
+  const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
       const token = await getClientSideAuthToken();
       if (!token) return;
-      const res = await performAdminAction(token, 'searchRegistry', { type: 'isa', term: searchTerm, integrityFilter, outreachFilter, page, limit: 100 });
-      const [staffRes] = await Promise.all([
-        performAdminAction(token, 'getPlatformStaff', {})
-      ]);
+      const res = await performAdminAction(token, 'searchRegistry', { type: 'isa', term: searchTerm, outreachFilter });
+      const staffRes = await performAdminAction(token, 'getPlatformStaff', {});
       setAllRecords(res.data || []);
-      setTotalPages(res.totalPages || 1);
-      setTotalRecords(res.totalCount || 0);
-      setCurrentPage(res.currentPage || 1);
-      setJumpPageInput(String(res.currentPage || 1));
       setStaff(staffRes.data || []);
       setHasLoaded(true);
     } catch (e: any) {
@@ -187,21 +171,9 @@ export default function ISAManagement() {
     } finally {
       setIsLoading(false);
     }
-  }, [searchTerm, integrityFilter, outreachFilter, toast]);
+  }, [searchTerm, outreachFilter, toast]);
 
-  useEffect(() => { 
-    if (hasLoaded) fetchData(currentPage); 
-  }, [currentPage, hasLoaded, fetchData]);
-
-  const handleJumpPage = (e: React.FormEvent) => {
-      e.preventDefault();
-      const pageNum = parseInt(jumpPageInput, 10);
-      if (isNaN(pageNum) || pageNum < 1 || pageNum > totalPages) {
-          toast({ variant: 'destructive', title: 'Invalid Page', description: `Please enter a page between 1 and ${totalPages}.` });
-          return;
-      }
-      setCurrentPage(pageNum);
-  };
+  useEffect(() => { if (hasLoaded) fetchData(); }, [fetchData, hasLoaded]);
 
   const filteredRecords = useMemo(() => {
     return allRecords.filter(r => {
@@ -212,8 +184,8 @@ export default function ISAManagement() {
   }, [allRecords, statusFilter, assigneeFilter]);
 
   const handleExport = () => {
-      if (allRecords.length === 0) return;
-      downloadDataAsCSV(allRecords, `isa-export-${new Date().toISOString().split('T')[0]}.csv`);
+      if (filteredRecords.length === 0) return;
+      downloadDataAsCSV(filteredRecords, `isa-export-${new Date().toISOString().split('T')[0]}.csv`);
       toast({ title: "Export Complete" });
   };
 
@@ -230,12 +202,6 @@ export default function ISAManagement() {
     });
   };
 
-  const handleBatchEngage = () => {
-    if (selectedIds.length === 0) return;
-    const engageList = allRecords.filter(r => selectedIds.includes(r.id));
-    setDialog({ type: 'engage', data: engageList, initialIndex: 0 });
-  };
-
   async function handleDeleteBatch() {
     if (selectedIds.length === 0) return;
     try {
@@ -243,7 +209,7 @@ export default function ISAManagement() {
       if (!token) return;
       await performAdminAction(token, 'deletePartners', { partnerIds: selectedIds });
       toast({ title: 'Batch Deleted', description: `${selectedIds.length} records removed.` });
-      fetchData(currentPage);
+      fetchData();
       setSelectedIds([]);
       setDialog({ type: null });
     } catch (e: any) {
@@ -269,47 +235,27 @@ export default function ISAManagement() {
     { 
         header: 'Outreach & Result',
         cell: ({ row }) => {
-            if (!row.original.lastOutreachSubject) return <span className="text-[10px] text-muted-foreground italic text-left text-foreground">None</span>;
+            if (!row.original.lastOutreachSubject) return <span className="text-[10px] text-muted-foreground italic text-left">None</span>;
             return (
                 <div className="flex flex-col text-left text-foreground">
                     <Badge variant="outline" className="text-[9px] h-4 border-primary/20 text-primary uppercase font-bold truncate max-w-[100px]">{row.original.lastOutreachSubject}</Badge>
-                    <span className="text-[8px] text-muted-foreground mt-0.5">{formatDateSafe(row.original.lastOutreachAt, "dd/MM")}</span>
+                    <span className="text-[8px] text-muted-foreground mt-0.5 text-left">{formatDateSafe(row.original.lastOutreachAt, "dd/MM")}</span>
                     {row.original.lastOpenedAt && (
                         <div className="flex items-center gap-1 text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100 mt-1 w-fit">
-                            <UserCheck className="h-2.5 w-2.5" />
-                            Read {formatDateSafe(row.original.lastOpenedAt, "dd/MM")}
+                            <UserCheck className="h-2.5 w-2.5" /> Read
                         </div>
                     )}
-                </div>
-            );
-        }
-    },
-    { 
-        header: 'Status', 
-        cell: ({ row }) => {
-            const isEnriched = !!(row.original.notes || row.original.website);
-            const isSearching = row.original.researchStatus === 'searching';
-            return (
-                <div className="flex flex-col gap-1 items-center">
-                    <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge>
-                    {isEnriched && (
-                        <div className="flex flex-col items-center">
-                            <Badge className="bg-green-100 text-green-700 border-none text-[9px] h-4 uppercase">Enriched</Badge>
-                            <span className="text-[8px] text-muted-foreground mt-0.5">{formatDateSafe(row.original.enrichedAt, "dd/MM")}</span>
-                        </div>
-                    )}
-                    {isSearching && <Badge className="bg-amber-100 text-amber-700 border-none text-[9px] h-4 uppercase animate-pulse">Searching</Badge>}
                 </div>
             );
         }
     },
     { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
       <div className="flex justify-end gap-1 text-left text-foreground">
-        <EnrichPartnerButton partner={row.original} onUpdate={() => fetchData(currentPage)} />
+        <EnrichPartnerButton partner={row.original} onUpdate={fetchData} />
         <Button variant="ghost" size="icon" onClick={() => handleEngage(row.original)} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
         <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.firstName} />
         <PartnerTasksDialog partner={row.original} />
-        <PartnerOversightDialog partner={row.original} onUpdate={() => fetchData(currentPage)} />
+        <PartnerOversightDialog partner={row.original} onUpdate={fetchData} />
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'edit', data: row.original })}><Edit className="h-4 w-4" /></Button>
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'delete', data: row.original })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
       </div>
@@ -318,19 +264,11 @@ export default function ISAManagement() {
 
   return (
     <div className="space-y-6 text-left text-foreground">
-      <BatchResearchDialog open={dialog.type === 'batch'} onOpenChange={(o) => !o && setDialog({ type: null })} selectedLeads={allRecords.filter(r => selectedIds.includes(r.id))} onComplete={() => fetchData(currentPage)} />
-      <EngageDialog 
-        open={dialog.type === 'engage'} 
-        onOpenChange={(o) => !o && setDialog({ type: null })} 
-        partners={Array.isArray(dialog.data) ? dialog.data : [dialog.data]} 
-        initialIndex={dialog.initialIndex}
-        audience="isa" 
-        onEngageSuccess={() => fetchData(currentPage)} 
-      />
-      <ISADialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={() => fetchData(currentPage)} />
+      <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partners={Array.isArray(dialog.data) ? dialog.data : [dialog.data]} initialIndex={dialog.initialIndex} audience="isa" onEngageSuccess={fetchData} />
+      <ISADialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={fetchData} />
       
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
-        <AlertDialogContent className="text-left text-foreground">
+        <AlertDialogContent className="text-left text-foreground text-foreground">
           <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Delete record?</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel>
@@ -338,7 +276,7 @@ export default function ISAManagement() {
                 const token = await getClientSideAuthToken();
                 if (token && dialog.data) {
                     await performAdminAction(token, 'deletePartner', { partnerId: dialog.data.id });
-                    fetchData(currentPage);
+                    fetchData();
                     setDialog({ type: null });
                 }
             }} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction>
@@ -350,42 +288,19 @@ export default function ISAManagement() {
         {!hasLoaded ? (
             <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground">
                 <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
-                <h2 className="text-2xl font-black font-headline mb-2 text-foreground text-center">Registry Search Variables</h2>
-                <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center text-foreground">Enter your search criteria to load the master registry. Filter by outreach stage or data integrity.</p>
+                <h2 className="text-2xl font-black font-headline mb-2 text-foreground text-center">ISA Registry Search</h2>
+                <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center text-foreground">Scan the professional sales network. Identify targets for your next recruitment sprint.</p>
                 <div className="flex flex-col md:flex-row justify-center gap-4 max-w-4xl mx-auto text-left text-foreground">
                     <div className="flex-1 space-y-2 text-left">
-                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1 text-left">Company, Contact or ID</Label>
-                        <Input placeholder="Search criteria..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && fetchData(1)} className="h-12 text-lg bg-white" />
+                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Company, Contact or ID</Label>
+                        <Input placeholder="Search criteria..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && fetchData()} className="h-12 text-lg bg-white" />
                     </div>
-                     <div className="w-40 space-y-2 text-left">
-                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1 text-left">Integrity</Label>
-                        <Select value={integrityFilter} onValueChange={setIntegrityFilter}>
-                            <SelectTrigger className="h-12 bg-white text-left"><SelectValue placeholder="All" /></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All Records</SelectItem>
-                                <SelectItem value="has-email">Has Email</SelectItem>
-                                <SelectItem value="no-email">No Email</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div className="w-56 space-y-2 text-left">
-                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1 text-left text-foreground">Outreach Stage</Label>
-                        <Select value={outreachFilter} onValueChange={setOutreachFilter}>
-                            <SelectTrigger className="h-12 bg-white text-left text-foreground"><SelectValue placeholder="All Stages" /></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All Stages</SelectItem>
-                                <SelectItem value="none">No Outreach Yet</SelectItem>
-                                <SelectItem value="Digital Handshake">Step 0: Handshake</SelectItem>
-                                <SelectItem value="Company Profile">Step 1: Profile Sent</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div className="flex flex-col md:flex-row gap-2 self-end text-foreground">
-                        <Button size="lg" onClick={() => { setCurrentPage(1); fetchData(1); }} disabled={isLoading} className="h-12 px-8 font-bold">
+                    <div className="flex flex-col md:flex-row gap-2 self-end text-foreground text-foreground text-foreground">
+                        <Button size="lg" onClick={() => { fetchData(); }} disabled={isLoading} className="h-12 px-8 font-bold">
                             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4" />}
                             Execute Scan
                         </Button>
-                        <Button variant="outline" size="lg" onClick={() => { setCurrentPage(1); fetchData(1); }} className="h-12 text-foreground">
+                        <Button variant="outline" size="lg" onClick={() => { fetchData(); }} className="h-12 text-foreground">
                              Show Recent
                         </Button>
                     </div>
@@ -395,13 +310,13 @@ export default function ISAManagement() {
             <div className="space-y-6 text-left text-foreground">
                 <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
                     <div className="text-left">
-                        <CardTitle className="flex items-center gap-2 text-2xl font-black font-headline text-left text-foreground"><Bot /> ISA Management</CardTitle>
-                        <CardDescription className="text-left text-foreground text-foreground">Full database of Independent Sales Agents ({totalRecords.toLocaleString()} records).</CardDescription>
+                        <CardTitle className="flex items-center gap-2 text-2xl font-black font-headline text-left text-foreground text-foreground"><Bot /> ISA Management</CardTitle>
+                        <CardDescription className="text-left text-foreground">Full database view ({filteredRecords.length} records).</CardDescription>
                     </div>
                     <div className="flex flex-wrap items-center gap-2 text-left text-foreground">
                         {selectedIds.length > 0 && (
                             <>
-                                <Button variant="secondary" onClick={handleBatchEngage} className="gap-2 shadow-sm font-bold">
+                                <Button variant="secondary" onClick={() => handleEngage(null)} className="gap-2 shadow-sm font-bold">
                                     <Send className="h-4 w-4" /> Batch Engage ({selectedIds.length})
                                 </Button>
                                 <Button variant="destructive" onClick={() => setDialog({ type: 'delete' })} className="gap-2">
@@ -411,22 +326,22 @@ export default function ISAManagement() {
                         )}
                         <div className="relative w-64 text-left">
                             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                            <Input placeholder="Filter registry..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8 bg-white" />
+                            <Input placeholder="Filter current view..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8 bg-white" />
                         </div>
                         <Button variant="outline" onClick={handleExport} disabled={isLoading} className="text-foreground">
-                            <Download className="mr-2 h-4 w-4" /> Export Filtered
+                            <Download className="mr-2 h-4 w-4" /> Export CSV
                         </Button>
-                        <BulkImportDialog type="isa" onComplete={() => fetchData(currentPage)}><Button variant="outline" className="text-foreground text-foreground text-foreground"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
-                        <Button onClick={() => setDialog({ type: 'add' })} className="text-foreground text-foreground"><PlusCircle className="mr-2 h-4 w-4" /> Add ISA</Button>
+                        <BulkImportDialog type="isa" onComplete={() => fetchData()}><Button variant="outline" className="text-foreground"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
+                        <Button onClick={() => setDialog({ type: 'add' })} className="text-foreground"><PlusCircle className="mr-2 h-4 w-4" /> Add ISA</Button>
                     </div>
                 </CardHeader>
-                <Card className="border-primary/10 shadow-sm overflow-hidden text-left text-foreground">
-                    <CardContent className="pt-6 text-left text-foreground">
-                        <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
-                            <div className="flex-1 space-y-2 text-left">
-                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left"><Filter className="h-3 w-3"/> Status</Label>
+                <Card className="border-primary/10 shadow-sm overflow-hidden text-left text-foreground text-foreground">
+                    <CardContent className="pt-6 text-left text-foreground text-foreground">
+                        <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground text-foreground text-foreground">
+                            <div className="flex-1 space-y-2 text-left text-foreground text-foreground">
+                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Filter className="h-3 w-3"/> Status</Label>
                                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                                    <SelectTrigger className="bg-white text-left text-foreground text-foreground"><SelectValue placeholder="All Statuses" /></SelectTrigger>
+                                    <SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="All Statuses" /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">All Statuses</SelectItem>
                                         <SelectItem value="new">New Lead</SelectItem>
@@ -435,10 +350,10 @@ export default function ISAManagement() {
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <div className="flex-1 space-y-2 text-left text-foreground">
-                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Users className="h-3 w-3"/> Assignee</Label>
+                            <div className="flex-1 space-y-2 text-left text-foreground text-foreground">
+                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-foreground"><Users className="h-3 w-3"/> Assignee</Label>
                                 <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-                                    <SelectTrigger className="bg-white text-left text-foreground text-foreground"><SelectValue placeholder="All Staff" /></SelectTrigger>
+                                    <SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="All Staff" /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">All Staff</SelectItem>
                                         <SelectItem value="none">Unallocated</SelectItem>
@@ -446,54 +361,13 @@ export default function ISAManagement() {
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <div className="flex-1 space-y-2 text-left text-foreground">
-                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Send className="h-3 w-3"/> Outreach</Label>
-                                <Select value={outreachFilter} onValueChange={setOutreachFilter}>
-                                    <SelectTrigger className="bg-white text-left text-foreground text-foreground"><SelectValue placeholder="All" /></SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">All</SelectItem>
-                                        <SelectItem value="none">No Outreach Yet</SelectItem>
-                                        <SelectItem value="Digital Handshake">Handshake</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="flex items-end text-left text-foreground">
+                            <div className="flex items-end text-left text-foreground text-foreground">
                                 <Button variant="outline" onClick={() => setHasLoaded(false)} className="h-10 w-full text-foreground"><RotateCcw className="mr-1 h-3 w-3" /> New Search</Button>
                             </div>
                         </div>
-                        {isLoading ? <div className="flex justify-center items-center py-10 text-foreground text-foreground text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
+                        {isLoading ? <div className="flex justify-center items-center py-10 text-foreground text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
                             <div className="space-y-6 text-left text-foreground">
                                 <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />
-                                
-                                <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-6 border-t">
-                                    <div className="text-sm text-muted-foreground font-medium">
-                                        Showing {allRecords.length} of {totalRecords.toLocaleString()} records
-                                    </div>
-                                    
-                                    <div className="flex items-center gap-4">
-                                        <div className="flex items-center gap-2">
-                                            <Button variant="outline" size="icon" onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))} disabled={currentPage === 1}>
-                                                <ChevronLeft className="h-4 w-4" />
-                                            </Button>
-                                            <form onSubmit={handleJumpPage} className="flex items-center gap-2">
-                                                <span className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Page</span>
-                                                <Input 
-                                                    className="w-16 h-8 text-center font-bold font-mono text-foreground" 
-                                                    value={jumpPageInput} 
-                                                    onChange={e => setJumpPageInput(e.target.value)}
-                                                />
-                                                <span className="text-sm font-bold uppercase tracking-widest text-muted-foreground">of {totalPages}</span>
-                                            </form>
-                                            <Button variant="outline" size="icon" onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))} disabled={currentPage === totalPages}>
-                                                <ChevronRight className="h-4 w-4" />
-                                            </Button>
-                                        </div>
-                                    </div>
-
-                                    <Button variant="outline" onClick={() => setCurrentPage(prev => prev + 1)} disabled={currentPage === totalPages} className="min-w-[180px] font-bold text-foreground">
-                                        Load Next 100 Records
-                                    </Button>
-                                </div>
                             </div>
                         )}
                     </CardContent>
