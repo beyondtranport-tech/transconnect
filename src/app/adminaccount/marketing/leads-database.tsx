@@ -27,7 +27,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { getClientSideAuthToken } from '@/firebase';
-import { Loader2, PlusCircle, Users, Edit, Trash2, Search, Send, Download, Upload, Save, RefreshCcw, Filter, RotateCcw, Tag, Database, ChevronDown } from 'lucide-react';
+import { Loader2, PlusCircle, Users, Edit, Trash2, Search, Send, Download, Upload, Save, RefreshCcw, Filter, RotateCcw, Tag, Database, ChevronDown, UserCheck } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -114,15 +114,12 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
               <FormField control={form.control} name="firstName" render={({ field }) => (<FormItem><FormLabel>First Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="lastName" render={({ field }) => (<FormItem><FormLabel>Last Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
-            <FormField control={form.control} name="contactPerson" render={({ field }) => (<FormItem className="text-left"><FormLabel>Alternative Contact Name</FormLabel><FormControl><Input placeholder="Full Name" {...field} /></FormControl><FormMessage /></FormItem>)} />
             <div className="grid grid-cols-2 gap-4 text-left text-foreground">
               <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Landline</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="mobile" render={({ field }) => (<FormItem><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
             <FormField control={form.control} name="email" render={({ field }) => (<FormItem className="text-left text-foreground text-foreground"><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" /></FormControl><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="website" render={({ field }) => (<FormItem className="text-left text-foreground text-foreground"><FormLabel>Website</FormLabel><FormControl><Input {...field} type="url" placeholder="https://..." /></FormControl><FormMessage /></FormItem>)} />
-            <FormField control={form.control} name="address" render={({ field }) => (<FormItem className="text-left text-foreground text-foreground text-foreground"><FormLabel>Address</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>)} />
-            <FormField control={form.control} name="notes" render={({ field }) => (<FormItem className="text-left text-foreground text-foreground text-foreground"><FormLabel>Mined Service wording</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>)} />
              <div className="grid grid-cols-2 gap-4 text-left text-foreground text-foreground">
               <FormField control={form.control} name="role" render={({ field }) => (
                 <FormItem className="text-left text-foreground text-foreground"><FormLabel>Potential Role</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
@@ -160,8 +157,8 @@ function LeadsDatabaseComponent() {
   const [resultsLimit, setResultsLimit] = useState(100);
   
   const [statusFilter, setStatusFilter] = useState('all');
-  const [integrityFilter, setIntegrityFilter] = useState('all');
   const [outreachFilter, setOutreachFilter] = useState('all');
+  const [enrichmentFilter, setEnrichmentFilter] = useState('all');
   
   const [isAddLeadOpen, setIsAddLeadOpen] = useState(false);
   const [editLead, setEditLead] = useState<any | null>(null);
@@ -173,7 +170,7 @@ function LeadsDatabaseComponent() {
     try {
       const token = await getClientSideAuthToken();
       if (!token) return;
-      const res = await performAdminAction(token, 'searchRegistry', { type: 'lead', term: searchTerm, integrityFilter, outreachFilter, limit });
+      const res = await performAdminAction(token, 'searchRegistry', { type: 'lead', term: searchTerm, outreachFilter, enrichmentFilter, limit });
       setAllRecords(res.data || []);
       setHasLoaded(true);
     } catch (e: any) {
@@ -181,7 +178,7 @@ function LeadsDatabaseComponent() {
     } finally {
       setIsLoading(false);
     }
-  }, [searchTerm, integrityFilter, outreachFilter, resultsLimit, toast]);
+  }, [searchTerm, outreachFilter, enrichmentFilter, resultsLimit, toast]);
 
   useEffect(() => {
     if (hasLoaded) fetchData();
@@ -265,18 +262,38 @@ function LeadsDatabaseComponent() {
   };
 
   const columns: ColumnDef<any>[] = useMemo(() => [
-    { accessorKey: 'companyName', header: 'Company Name' },
+    { 
+        accessorKey: 'companyName', 
+        header: 'Lead Name',
+        cell: ({ row }) => <span className="font-bold">{row.original.companyName || <span className="text-destructive italic">Unnamed Lead</span>}</span>
+    },
     { 
         header: 'Human Contact', 
         cell: ({ row }) => (
             <div className="flex flex-col text-sm text-left">
-                <span className="font-bold text-left text-foreground text-foreground">{row.original.contactPerson || `${row.original.firstName || ''} ${row.original.lastName || ''}`.trim() || 'N/A'}</span>
+                <span className="font-medium text-left text-foreground text-foreground">{row.original.contactPerson || 'N/A'}</span>
                 <span className="text-xs text-muted-foreground text-left text-foreground">{row.original.email}</span>
             </div>
         )
     },
-    { accessorKey: 'phone', header: 'Landline' },
     { accessorKey: 'mobile', header: 'Mobile' },
+    {
+        header: 'Outreach',
+        cell: ({ row }) => {
+            if (!row.original.lastOutreachSubject) return <span className="text-[10px] text-muted-foreground italic">None</span>;
+            return (
+                <div className="flex flex-col text-left">
+                    <Badge variant="outline" className="text-[9px] h-4 uppercase font-bold truncate max-w-[100px]">{row.original.lastOutreachSubject}</Badge>
+                    {row.original.lastOpenedAt && (
+                        <div className="flex items-center gap-1 text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100 mt-1 w-fit">
+                            <UserCheck className="h-2.5 w-2.5" />
+                            Read
+                        </div>
+                    )}
+                </div>
+            );
+        }
+    },
     {
         accessorKey: 'status',
         header: 'Status',
@@ -315,33 +332,32 @@ function LeadsDatabaseComponent() {
         {!hasLoaded ? (
             <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground">
                 <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
-                <h2 className="text-2xl font-black font-headline mb-2 text-foreground text-center">Registry Search Variables</h2>
-                <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center">Enter your search criteria to load the master registry. Filter by outreach stage or data integrity.</p>
-                <div className="flex flex-col md:flex-row justify-center gap-4 max-w-4xl mx-auto text-left">
+                <h2 className="text-2xl font-black font-headline mb-2 text-foreground text-center">Lead Registry Scan</h2>
+                <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center">Scan your prospective member pipeline. Use filters to prioritize outreach and enrichment.</p>
+                <div className="flex flex-col md:flex-row justify-center gap-4 max-w-5xl mx-auto text-left">
                     <div className="flex-1 space-y-2 text-left">
-                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Company, Contact or ID</Label>
-                        <Input placeholder="Type company name or ID to search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && fetchData(100)} className="h-12 text-lg bg-white" />
+                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Name, Email or ID</Label>
+                        <Input placeholder="Type criteria..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && fetchData(100)} className="h-12 text-lg bg-white" />
                     </div>
-                    <div className="w-40 space-y-2 text-left">
-                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Integrity</Label>
-                        <Select value={integrityFilter} onValueChange={setIntegrityFilter}>
-                            <SelectTrigger className="h-12 bg-white text-left"><SelectValue placeholder="All" /></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All Records</SelectItem>
-                                <SelectItem value="has-email">Has Email</SelectItem>
-                                <SelectItem value="no-email">Missing Email</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div className="w-56 space-y-2 text-left">
-                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Outreach Stage</Label>
+                     <div className="w-48 space-y-2 text-left">
+                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Outreach</Label>
                         <Select value={outreachFilter} onValueChange={setOutreachFilter}>
-                            <SelectTrigger className="h-12 bg-white text-left text-foreground text-foreground text-foreground"><SelectValue placeholder="All Stages" /></SelectTrigger>
+                            <SelectTrigger className="h-12 bg-white text-left text-foreground"><SelectValue placeholder="All Stages" /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Stages</SelectItem>
                                 <SelectItem value="none">No Outreach Yet</SelectItem>
-                                <SelectItem value="Digital Handshake">Step 0: Handshake</SelectItem>
-                                <SelectItem value="Company Profile">Step 1: Profile Sent</SelectItem>
+                                <SelectItem value="Digital Handshake">Handshake Sent</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="w-48 space-y-2 text-left">
+                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Enrichment</Label>
+                        <Select value={enrichmentFilter} onValueChange={setEnrichmentFilter}>
+                            <SelectTrigger className="h-12 bg-white text-left"><SelectValue placeholder="All" /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All</SelectItem>
+                                <SelectItem value="enriched">Enriched</SelectItem>
+                                <SelectItem value="unenriched">Unenriched</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
@@ -359,7 +375,7 @@ function LeadsDatabaseComponent() {
         ) : (
             <div className="space-y-6 text-left text-foreground">
                 <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
-                <div className="text-left text-foreground"><CardTitle className="flex items-center gap-2 text-left text-foreground"><Users /> Lead Database</CardTitle><CardDescription className="text-left text-foreground text-foreground text-foreground">Unified registry view of prospective members ({allRecords.length} results).</CardDescription></div>
+                <div className="text-left text-foreground"><CardTitle className="flex items-center gap-2 text-left text-foreground"><Users /> Lead Pipeline</CardTitle><CardDescription className="text-left text-foreground text-foreground text-foreground">Managed prospective member registry ({allRecords.length} results).</CardDescription></div>
                 <div className="flex gap-2 text-left text-foreground text-foreground text-foreground">
                     {selectedIds.length > 0 && (
                         <Button variant="secondary" onClick={handleBatchEngage} className="gap-2 shadow-sm font-bold">
@@ -373,29 +389,22 @@ function LeadsDatabaseComponent() {
                 </CardHeader>
                 <Card className="text-left text-foreground text-foreground">
                     <CardContent className="pt-6 text-left text-foreground text-foreground text-foreground">
-                        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground text-foreground text-foreground text-foreground text-foreground">
-                            <div className="md:col-span-2 space-y-2 text-left text-foreground text-foreground text-foreground">
-                                <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-foreground text-foreground"><Search className="h-3 w-3"/> Registry Search</Label>
-                                <div className="flex gap-2 text-left text-foreground text-foreground text-foreground">
-                                    <Input placeholder="Refine your search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && fetchData()} />
-                                    <Button onClick={() => fetchData()} disabled={isLoading} className="text-foreground text-foreground text-foreground"><Search className="h-4 w-4"/></Button>
-                                </div>
-                            </div>
-                            <div className="space-y-2 text-left text-foreground text-foreground text-foreground text-foreground">
-                                <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-foreground text-foreground"><Tag className="h-3 w-3"/> Integrity</Label>
-                                <Select value={integrityFilter} onValueChange={setIntegrityFilter}>
-                                    <SelectTrigger className="h-10 text-xs bg-white text-foreground text-left text-foreground text-foreground text-foreground"><SelectValue placeholder="All Records" /></SelectTrigger>
+                        <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground text-foreground text-foreground text-foreground text-foreground">
+                             <div className="flex-1 space-y-2 text-left text-foreground">
+                                <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Enrichment Status</Label>
+                                <Select value={enrichmentFilter} onValueChange={setEnrichmentFilter}>
+                                    <SelectTrigger className="bg-white text-left"><SelectValue placeholder="All" /></SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="all">All Records</SelectItem>
-                                        <SelectItem value="has-email">Has Email</SelectItem>
-                                        <SelectItem value="no-email">Missing Email</SelectItem>
+                                        <SelectItem value="all">All</SelectItem>
+                                        <SelectItem value="enriched">Enriched</SelectItem>
+                                        <SelectItem value="unenriched">Unenriched</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <div className="space-y-2 text-left text-foreground text-foreground text-foreground text-foreground text-foreground">
-                                <Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-foreground text-foreground"><Send className="h-3 w-3"/> Outreach</Label>
+                            <div className="flex-1 space-y-2 text-left text-foreground text-foreground text-foreground text-foreground">
+                                <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Outreach Stage</Label>
                                 <Select value={outreachFilter} onValueChange={setOutreachFilter}>
-                                    <SelectTrigger className="h-10 text-xs bg-white text-foreground text-left text-foreground text-foreground text-foreground"><SelectValue placeholder="All Stages" /></SelectTrigger>
+                                    <SelectTrigger className="bg-white text-left text-foreground text-foreground text-foreground"><SelectValue placeholder="All Stages" /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">All Stages</SelectItem>
                                         <SelectItem value="none">No Outreach Yet</SelectItem>
@@ -425,7 +434,7 @@ function LeadsDatabaseComponent() {
       </div>
       <AlertDialog open={!!deleteLead} onOpenChange={(o) => { if(!o) setDeleteLead(null); }}>
         <AlertDialogContent className="text-left text-foreground text-foreground text-foreground">
-          <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Permanently remove record?</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Permanently remove lead?</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction>

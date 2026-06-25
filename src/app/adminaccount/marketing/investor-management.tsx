@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -90,7 +91,6 @@ function InvestorDialog({ open, onOpenChange, partner, onSave }: { open: boolean
         <DialogContent className="sm:max-w-[700px] text-left text-foreground">
             <DialogHeader>
                 <DialogTitle>{partner ? 'Edit' : 'Add'} App Launch Investor</DialogTitle>
-                <DialogDescription>Enter details for the capital partner.</DialogDescription>
             </DialogHeader>
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left">
@@ -98,16 +98,11 @@ function InvestorDialog({ open, onOpenChange, partner, onSave }: { open: boolean
                         <FormField control={form.control} name="firstName" render={({ field }) => ( <FormItem><FormLabel>First Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                         <FormField control={form.control} name="lastName" render={({ field }) => ( <FormItem><FormLabel>Last Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <FormField control={form.control} name="companyName" render={({ field }) => ( <FormItem><FormLabel>Fund Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+                    <div className="grid grid-cols-2 gap-4 text-foreground">
                         <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email"/></FormControl><FormMessage /></FormItem> )} />
-                        <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel>Landline</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
                         <FormField control={form.control} name="mobile" render={({ field }) => ( <FormItem><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} /></FormControl><FormMessage /></FormItem> )} />
-                        <FormField control={form.control} name="companyName" render={({ field }) => ( <FormItem><FormLabel>Fund Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                     </div>
-                    <FormField control={form.control} name="website" render={({ field }) => (<FormItem><FormLabel>Official Website</FormLabel><FormControl><Input placeholder="https://..." {...field} /></FormControl><FormMessage /></FormItem>)} />
-                    <FormField control={form.control} name="notes" render={({ field }) => (<FormItem><FormLabel>Investment Focus / Notes</FormLabel><FormControl><Textarea placeholder="Details about their portfolio and sector focus..." {...field} className="min-h-[100px]" /></FormControl><FormMessage /></FormItem>)} />
                     <FormField control={form.control} name="status" render={({ field }) => ( 
                         <FormItem>
                             <FormLabel>Pipeline Status</FormLabel>
@@ -117,7 +112,6 @@ function InvestorDialog({ open, onOpenChange, partner, onSave }: { open: boolean
                                     <SelectItem value="new">New</SelectItem>
                                     <SelectItem value="contacted">Researching</SelectItem>
                                     <SelectItem value="qualified">Qualified</SelectItem>
-                                    <SelectItem value="invited">Invited</SelectItem>
                                     <SelectItem value="active">Active Partner</SelectItem>
                                 </SelectContent>
                             </Select>
@@ -145,11 +139,11 @@ export default function InvestorManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [resultsLimit, setResultsLimit] = useState(100);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | null, data?: any, initialIndex?: number }>({ type: null });
+  const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | null, data?: any }>({ type: null });
 
   const [statusFilter, setStatusFilter] = useState('all');
-  const [assigneeFilter, setAssigneeFilter] = useState('all');
   const [outreachFilter, setOutreachFilter] = useState('all');
+  const [enrichmentFilter, setEnrichmentFilter] = useState('all');
 
   const fetchData = useCallback(async (limit: number = resultsLimit) => {
     setIsLoading(true);
@@ -157,7 +151,7 @@ export default function InvestorManagement() {
         const token = await getClientSideAuthToken();
         if (!token) return;
         const [res, staffRes] = await Promise.all([
-            performAdminAction(token, 'searchRegistry', { type: 'investor', term: searchTerm, outreachFilter, limit }),
+            performAdminAction(token, 'searchRegistry', { type: 'investor', term: searchTerm, outreachFilter, enrichmentFilter, limit }),
             performAdminAction(token, 'getPlatformStaff', {})
         ]);
         setPartners(res.data || []);
@@ -168,7 +162,7 @@ export default function InvestorManagement() {
     } finally {
         setIsLoading(false);
     }
-  }, [searchTerm, outreachFilter, resultsLimit]);
+  }, [searchTerm, outreachFilter, enrichmentFilter, resultsLimit]);
 
   useEffect(() => { 
     if (hasLoaded) fetchData(); 
@@ -183,10 +177,9 @@ export default function InvestorManagement() {
   const filteredRecords = useMemo(() => {
     return partners.filter(r => {
         const matchesStatus = statusFilter === 'all' || r.status === statusFilter;
-        const matchesAssignee = assigneeFilter === 'all' || r.assigneeId === assigneeFilter;
-        return matchesStatus && matchesAssignee;
+        return matchesStatus;
     });
-  }, [partners, statusFilter, assigneeFilter]);
+  }, [partners, statusFilter]);
 
   const handleDelete = async () => {
     if (!dialog.data) return;
@@ -202,23 +195,14 @@ export default function InvestorManagement() {
     }
   };
 
-  const handleEngage = (record: any) => {
-    const engageList = selectedIds.length > 0 
-        ? partners.filter(r => selectedIds.includes(r.id)) 
-        : [record];
-        
-    setDialog({ 
-        type: 'engage', 
-        data: engageList
-    });
-  };
-
   const columns: ColumnDef<any>[] = [
     { 
         header: 'Investor Entity', 
         cell: ({row}) => (
             <div className="flex flex-col text-left">
-                <span className="font-bold text-left text-foreground">{row.original.companyName || `${row.original.firstName} ${row.original.lastName}`}</span>
+                <span className="font-bold text-left text-foreground">
+                    {row.original.companyName || <span className="text-destructive italic">Unnamed Fund</span>}
+                </span>
                 <div className="flex items-center gap-2 mt-1">
                     <span className="text-[10px] text-muted-foreground uppercase font-black">{row.original.firstName} {row.original.lastName}</span>
                     {row.original.website && <Globe className="h-3 w-3 text-primary" />}
@@ -226,11 +210,9 @@ export default function InvestorManagement() {
             </div>
         )
     },
-    { accessorKey: 'phone', header: 'Landline' },
-    { accessorKey: 'mobile', header: 'Mobile' },
     { accessorKey: 'email', header: 'Email' },
     { 
-        header: 'Outreach & Result',
+        header: 'Outreach',
         cell: ({ row }) => {
             if (!row.original.lastOutreachSubject) return <span className="text-[10px] text-muted-foreground italic text-left text-foreground">None</span>;
             return (
@@ -240,7 +222,7 @@ export default function InvestorManagement() {
                     {row.original.lastOpenedAt && (
                         <div className="flex items-center gap-1 text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100 mt-1 w-fit">
                             <UserCheck className="h-2.5 w-2.5" />
-                            Read {formatDateSafe(row.original.lastOpenedAt, "dd/MM")}
+                            Read
                         </div>
                     )}
                 </div>
@@ -249,9 +231,9 @@ export default function InvestorManagement() {
     },
     { accessorKey: 'status', header: 'Status', cell: ({row}) => <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge>},
     { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
-      <div className="flex justify-end items-center gap-1 text-left text-foreground">
+      <div className="flex justify-end items-center gap-1 text-left text-foreground text-foreground">
         <EnrichPartnerButton partner={row.original} onUpdate={fetchData} />
-        <Button variant="ghost" size="icon" onClick={() => handleEngage(row.original)} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
+        <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'engage', data: [row.original] })} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
         <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.firstName} />
         <PartnerTasksDialog partner={row.original} />
         <PartnerOversightDialog partner={row.original} onUpdate={fetchData} />
@@ -293,88 +275,91 @@ export default function InvestorManagement() {
             <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground text-foreground">
                 <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
                 <h2 className="text-2xl font-black font-headline mb-2 text-foreground text-center">App Launch Registry</h2>
-                <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center text-foreground">Scan your equity partner pipeline. Filter by engagement status to track your launch progress.</p>
+                <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center text-foreground">Scan your equity partner pipeline. Use filters to prioritize outreach.</p>
                 <div className="flex flex-col md:flex-row justify-center gap-4 max-w-4xl mx-auto text-left text-foreground">
-                    <div className="flex-1 space-y-2 text-left text-foreground">
+                    <div className="flex-1 space-y-2 text-left">
                         <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Name, Fund or ID</Label>
                         <Input placeholder="Search criteria..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && fetchData(100)} className="h-12 text-lg bg-white" />
                     </div>
-                     <div className="w-56 space-y-2 text-left text-foreground">
+                     <div className="w-56 space-y-2 text-left">
                         <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Outreach Stage</Label>
                         <Select value={outreachFilter} onValueChange={setOutreachFilter}>
-                            <SelectTrigger className="h-12 bg-white text-left text-foreground text-foreground"><SelectValue placeholder="All Stages" /></SelectTrigger>
+                            <SelectTrigger className="h-12 bg-white text-left"><SelectValue placeholder="All Stages" /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Stages</SelectItem>
                                 <SelectItem value="none">No Outreach Yet</SelectItem>
-                                <SelectItem value="Digital Handshake">Step 0: Handshake</SelectItem>
-                                <SelectItem value="Company Profile">Step 1: Profile sent</SelectItem>
+                                <SelectItem value="Digital Handshake">Handshake sent</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
-                    <div className="flex flex-col md:flex-row gap-2 self-end text-foreground text-foreground text-foreground">
+                    <div className="w-48 space-y-2 text-left">
+                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Enrichment</Label>
+                        <Select value={enrichmentFilter} onValueChange={setEnrichmentFilter}>
+                            <SelectTrigger className="h-12 bg-white text-left"><SelectValue placeholder="All" /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All</SelectItem>
+                                <SelectItem value="enriched">Enriched</SelectItem>
+                                <SelectItem value="unenriched">Unenriched</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="flex flex-col md:flex-row gap-2 self-end">
                         <Button size="lg" onClick={() => { setResultsLimit(100); fetchData(100); }} disabled={isLoading} className="h-12 px-8 font-bold">
                             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4" />}
                             Execute Scan
                         </Button>
-                        <Button variant="outline" size="lg" onClick={() => { setResultsLimit(100); fetchData(100); }} className="h-12 text-foreground">
+                        <Button variant="outline" size="lg" onClick={() => { setResultsLimit(100); fetchData(100); }} className="h-12">
                              Show Recent
                         </Button>
                     </div>
                 </div>
             </Card>
         ) : (
-            <div className="space-y-6 text-left text-foreground text-foreground text-foreground text-foreground">
-                <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left text-foreground text-foreground">
-                <div className="text-left text-foreground text-foreground"><CardTitle className="flex items-center gap-2 font-black font-headline text-left text-foreground text-foreground"><DollarSign /> App Launch Investors</CardTitle><CardDescription className="text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground">Registry view ({partners.length} records).</CardDescription></div>
-                <div className="flex gap-2 text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground">
-                    {selectedIds.length > 0 && (
-                        <Button variant="secondary" onClick={handleBatchEngage} className="gap-2 shadow-sm font-bold text-foreground">
-                            <Send className="h-4 w-4" /> Batch Engage ({selectedIds.length})
-                        </Button>
-                    )}
-                    <div className="relative w-64 text-left text-foreground text-foreground text-foreground text-foreground">
-                        <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                        <Input placeholder="Filter registry..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8 bg-white" />
+            <div className="space-y-6 text-left">
+                <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
+                    <div className="text-left"><CardTitle className="flex items-center gap-2 font-black font-headline text-left"><DollarSign /> App Launch Investors</CardTitle><CardDescription className="text-left text-foreground">Registry view ({partners.length} records).</CardDescription></div>
+                    <div className="flex gap-2">
+                        <div className="relative w-64 text-left">
+                            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <Input placeholder="Filter registry..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8 bg-white" />
+                        </div>
+                        <Button variant="outline" onClick={() => downloadDataAsCSV(partners, 'investors-export.csv')} disabled={isLoading}><Download className="mr-2 h-4 w-4"/>Export CSV</Button>
+                        <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4"/>Add Record</Button>
                     </div>
-                    <Button variant="outline" onClick={() => downloadDataAsCSV(partners, 'investors-export.csv')} disabled={isLoading} className="text-foreground"><Download className="mr-2 h-4 w-4"/>Export CSV</Button>
-                    <Button onClick={() => setDialog({ type: 'add' })} className="text-foreground"><PlusCircle className="mr-2 h-4 w-4"/>Add Record</Button>
-                </div>
                 </CardHeader>
-                <Card className="text-left text-foreground text-foreground text-foreground">
-                    <CardContent className="pt-6 text-left text-foreground text-foreground text-foreground text-foreground">
-                        <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground text-foreground text-foreground">
-                            <div className="flex-1 space-y-2 text-left text-foreground text-foreground">
-                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Filter className="h-3 w-3"/> Status</Label>
+                <Card className="text-left">
+                    <CardContent className="pt-6 text-left">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left">
+                            <div className="space-y-2 text-left">
+                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status</Label>
                                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                                    <SelectTrigger className="bg-white text-left text-foreground text-foreground"><SelectValue placeholder="All Statuses" /></SelectTrigger>
+                                    <SelectTrigger className="bg-white text-left"><SelectValue placeholder="All Statuses" /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">All Statuses</SelectItem>
                                         <SelectItem value="new">New</SelectItem>
-                                        <SelectItem value="contacted">Researching</SelectItem>
-                                        <SelectItem value="qualified">Qualified</SelectItem>
                                         <SelectItem value="active">Active Participant</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <div className="flex-1 space-y-2 text-left text-foreground text-foreground">
-                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-foreground"><Users className="h-3 w-3"/> Assignee</Label>
-                                <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-                                    <SelectTrigger className="bg-white text-left text-foreground text-foreground"><SelectValue placeholder="All Staff" /></SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">All Staff</SelectItem>
-                                        <SelectItem value="none">Unallocated</SelectItem>
-                                        {staff.map(s => <SelectItem key={s.id} value={s.id}>{s.firstName} {s.lastName}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                             <div className="flex-1 space-y-2 text-left text-foreground text-foreground">
-                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-foreground text-foreground"><Send className="h-3 w-3"/> Outreach</Label>
+                             <div className="space-y-2 text-left">
+                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Send className="h-3 w-3"/> Outreach</Label>
                                 <Select value={outreachFilter} onValueChange={setOutreachFilter}>
-                                    <SelectTrigger className="bg-white text-left text-foreground text-foreground text-foreground text-foreground"><SelectValue placeholder="All" /></SelectTrigger>
+                                    <SelectTrigger className="bg-white text-left"><SelectValue placeholder="All" /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">All</SelectItem>
                                         <SelectItem value="none">No Outreach Yet</SelectItem>
-                                        <SelectItem value="Digital Handshake">Handshake</SelectItem>
+                                        <SelectItem value="Digital Handshake">Handshake Sent</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2 text-left">
+                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Sparkles className="h-3 w-3"/> Enrichment</Label>
+                                <Select value={enrichmentFilter} onValueChange={setEnrichmentFilter}>
+                                    <SelectTrigger className="bg-white text-left"><SelectValue placeholder="All" /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All</SelectItem>
+                                        <SelectItem value="enriched">Enriched</SelectItem>
+                                        <SelectItem value="unenriched">Unenriched</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -383,14 +368,14 @@ export default function InvestorManagement() {
                             </div>
                         </div>
                         {isLoading ? (
-                            <div className="flex justify-center items-center py-10 text-foreground text-foreground text-foreground">
+                            <div className="flex justify-center items-center py-10">
                                 <Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" />
                             </div>
                         ) : (
-                            <div className="space-y-4 text-left text-foreground text-foreground">
+                            <div className="space-y-4 text-left">
                                 <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />
-                                <div className="flex justify-center pt-4 text-left text-foreground">
-                                    <Button variant="outline" size="lg" onClick={handleLoadMore} disabled={isLoading} className="gap-2 min-w-[200px] text-foreground">
+                                <div className="flex justify-center pt-4 text-left">
+                                    <Button variant="outline" size="lg" onClick={handleLoadMore} disabled={isLoading} className="gap-2 min-w-[200px] text-foreground text-foreground">
                                         {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <ChevronDown className="h-4 w-4" />}
                                         Load Next 100 Records
                                     </Button>

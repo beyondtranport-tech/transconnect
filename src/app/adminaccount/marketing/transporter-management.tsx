@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -165,6 +166,7 @@ export default function TransporterManagement() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [assigneeFilter, setAssigneeFilter] = useState('all');
   const [outreachFilter, setOutreachFilter] = useState('all');
+  const [enrichmentFilter, setEnrichmentFilter] = useState('all');
 
   const fetchData = useCallback(async (limit: number = resultsLimit) => {
     setIsLoading(true);
@@ -172,7 +174,7 @@ export default function TransporterManagement() {
       const token = await getClientSideAuthToken();
       if (!token) return;
       const [res, staffRes] = await Promise.all([
-        performAdminAction(token, 'searchRegistry', { type: 'transporter', term: searchTerm, outreachFilter, limit }),
+        performAdminAction(token, 'searchRegistry', { type: 'transporter', term: searchTerm, outreachFilter, enrichmentFilter, limit }),
         performAdminAction(token, 'getPlatformStaff', {})
       ]);
       setAllRecords(res.data || []);
@@ -183,7 +185,7 @@ export default function TransporterManagement() {
     } finally {
       setIsLoading(false);
     }
-  }, [searchTerm, outreachFilter, resultsLimit, toast]);
+  }, [searchTerm, outreachFilter, enrichmentFilter, resultsLimit, toast]);
 
   useEffect(() => { 
     if (hasLoaded) fetchData(); 
@@ -245,7 +247,9 @@ export default function TransporterManagement() {
         header: 'Transporter Name', 
         cell: ({ row }) => (
             <div className="flex flex-col text-sm text-left text-foreground">
-                <span className="font-bold text-left">{row.original.companyName || row.original.contactPerson || 'N/A'}</span>
+                <span className="font-bold text-left">
+                    {row.original.companyName || <span className="text-destructive italic">Unnamed Entity</span>}
+                </span>
                 <div className="flex items-center gap-1.5 mt-1">
                     {row.original.website && <Globe className="h-3 w-3 text-primary" />}
                     <span className="text-[10px] text-muted-foreground uppercase font-black">{row.original.industrial_category || 'Industrial'}</span>
@@ -305,20 +309,31 @@ export default function TransporterManagement() {
             <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground">
                 <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
                 <h2 className="text-2xl font-black font-headline mb-2 text-foreground text-center">Transporter Forensic Scan</h2>
-                <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center text-foreground">Scan the haulier database. Filter by outreach stage to focus on new records.</p>
-                <div className="flex flex-col md:flex-row justify-center gap-4 max-w-4xl mx-auto text-left">
+                <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center text-foreground">Scan the haulier database. Filter by outreach or enrichment stage.</p>
+                <div className="flex flex-col md:flex-row justify-center gap-4 max-w-5xl mx-auto text-left">
                     <div className="flex-1 space-y-2 text-left">
                         <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Company, Category or ID</Label>
                         <Input placeholder="Search criteria..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && fetchData(100)} className="h-12 text-lg bg-white" />
                     </div>
-                    <div className="w-56 space-y-2 text-left">
-                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1 text-left text-foreground text-foreground">Outreach Stage</Label>
+                    <div className="w-48 space-y-2 text-left text-foreground">
+                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Outreach</Label>
                         <Select value={outreachFilter} onValueChange={setOutreachFilter}>
-                            <SelectTrigger className="h-12 bg-white text-left text-foreground text-foreground"><SelectValue placeholder="All Stages" /></SelectTrigger>
+                            <SelectTrigger className="h-12 bg-white"><SelectValue placeholder="All" /></SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">All Stages</SelectItem>
+                                <SelectItem value="all">All</SelectItem>
                                 <SelectItem value="none">No Outreach Yet</SelectItem>
                                 <SelectItem value="Digital Handshake">Handshake Sent</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="w-48 space-y-2 text-left text-foreground">
+                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Enrichment</Label>
+                        <Select value={enrichmentFilter} onValueChange={setEnrichmentFilter}>
+                            <SelectTrigger className="h-12 bg-white"><SelectValue placeholder="All" /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All</SelectItem>
+                                <SelectItem value="enriched">Enriched</SelectItem>
+                                <SelectItem value="unenriched">Unenriched</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>

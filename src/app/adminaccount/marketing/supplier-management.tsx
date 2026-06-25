@@ -185,6 +185,7 @@ export default function SupplierManagement() {
   const [assigneeFilter, setAssigneeFilter] = useState('all');
   const [integrityFilter, setIntegrityFilter] = useState('all');
   const [outreachFilter, setOutreachFilter] = useState('all');
+  const [enrichmentFilter, setEnrichmentFilter] = useState('all');
 
   const fetchData = useCallback(async (limit: number = resultsLimit) => {
     setIsLoading(true);
@@ -200,6 +201,7 @@ export default function SupplierManagement() {
             category: categoryFilter,
             integrityFilter, 
             outreachFilter,
+            enrichmentFilter,
             limit
         }),
         performAdminAction(token, 'getPlatformStaff', {})
@@ -212,7 +214,7 @@ export default function SupplierManagement() {
     } finally {
       setIsLoading(false);
     }
-  }, [searchCompany, searchKeyword, searchTag, categoryFilter, integrityFilter, outreachFilter, resultsLimit, toast]);
+  }, [searchCompany, searchKeyword, searchTag, categoryFilter, integrityFilter, outreachFilter, enrichmentFilter, resultsLimit, toast]);
 
   useEffect(() => { 
     if (hasLoaded) fetchData(); 
@@ -278,7 +280,9 @@ export default function SupplierManagement() {
         header: 'Supplier Name', 
         cell: ({ row }) => (
             <div className="flex flex-col text-sm text-left text-foreground">
-                <span className="font-bold text-left">{row.original.companyName || row.original.contactPerson || 'Incomplete Record'}</span>
+                <span className="font-bold text-left">
+                    {row.original.companyName || <span className="text-destructive italic">Unnamed Entity</span>}
+                </span>
                 <div className="flex flex-wrap gap-1 mt-1 text-left">
                     {row.original.industrialTags?.slice(0, 3).map((tag: string) => (
                         <Badge key={tag} variant="secondary" className="text-[8px] h-3.5 bg-slate-100 text-slate-600 border-none px-1.5 uppercase font-black">{tag}</Badge>
@@ -293,7 +297,7 @@ export default function SupplierManagement() {
     { 
         header: 'Outreach & Result',
         cell: ({ row }) => {
-            if (!row.original.lastOutreachSubject) return <span className="text-[10px] text-muted-foreground italic text-left">None</span>;
+            if (!row.original.lastOutreachSubject) return <span className="text-[10px] text-muted-foreground italic text-left text-foreground">None</span>;
             return (
                 <div className="flex flex-col text-left text-foreground">
                     <Badge variant="outline" className="text-[9px] h-4 border-primary/20 text-primary uppercase font-bold truncate max-w-[100px]">{row.original.lastOutreachSubject}</Badge>
@@ -370,19 +374,15 @@ export default function SupplierManagement() {
                 <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center">Scan the master database of 20,000+ suppliers. Independent variables ensure high-precision filtering.</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto text-left text-foreground">
                     <div className="space-y-2 text-left text-foreground">
-                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Company Name</Label>
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Company Name</Label>
                         <Input placeholder="Search entity names..." value={searchCompany} onChange={(e) => setSearchCompany(e.target.value)} className="h-12 bg-white" />
                     </div>
                     <div className="space-y-2 text-left text-foreground">
-                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Keywords (About Text)</Label>
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Keywords (About Text)</Label>
                         <Input placeholder="Search services/bios..." value={searchKeyword} onChange={(e) => setSearchKeyword(e.target.value)} className="h-12 bg-white" />
                     </div>
                     <div className="space-y-2 text-left text-foreground text-foreground">
-                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Industrial Tags</Label>
-                        <Input placeholder="Search ML tags..." value={searchTag} onChange={(e) => setSearchTag(e.target.value)} className="h-12 bg-white" />
-                    </div>
-                    <div className="space-y-2 text-left text-foreground text-foreground">
-                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Industrial Category</Label>
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Industrial Category</Label>
                         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
                             <SelectTrigger className="h-12 bg-white text-left text-foreground"><SelectValue placeholder="All Categories" /></SelectTrigger>
                             <SelectContent>
@@ -393,7 +393,7 @@ export default function SupplierManagement() {
                     </div>
 
                     <div className="space-y-2 text-left text-foreground text-foreground">
-                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Data Integrity</Label>
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Data Integrity</Label>
                         <Select value={integrityFilter} onValueChange={setIntegrityFilter}>
                             <SelectTrigger className="h-12 bg-white text-left text-foreground"><SelectValue placeholder="All" /></SelectTrigger>
                             <SelectContent>
@@ -405,7 +405,7 @@ export default function SupplierManagement() {
                         </Select>
                     </div>
                     <div className="space-y-2 text-left text-foreground text-foreground">
-                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Outreach Stage</Label>
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Outreach Stage</Label>
                         <Select value={outreachFilter} onValueChange={setOutreachFilter}>
                             <SelectTrigger className="h-12 bg-white text-left text-foreground"><SelectValue placeholder="All Stages" /></SelectTrigger>
                             <SelectContent>
@@ -416,6 +416,17 @@ export default function SupplierManagement() {
                             </SelectContent>
                         </Select>
                     </div>
+                    <div className="space-y-2 text-left text-foreground text-foreground">
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Enrichment Status</Label>
+                        <Select value={enrichmentFilter} onValueChange={setEnrichmentFilter}>
+                            <SelectTrigger className="h-12 bg-white text-left text-foreground"><SelectValue placeholder="All" /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All</SelectItem>
+                                <SelectItem value="enriched">Enriched</SelectItem>
+                                <SelectItem value="unenriched">Unenriched</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
                     
                     <div className="lg:col-span-2 flex items-end text-left gap-2 text-foreground">
                         <Button size="lg" onClick={() => { setResultsLimit(100); fetchData(100); }} disabled={isLoading} className="flex-1 h-12 font-black uppercase tracking-widest gap-2 shadow-lg">
@@ -423,7 +434,7 @@ export default function SupplierManagement() {
                             Execute Deep Scan
                         </Button>
                         <Button variant="outline" size="lg" onClick={() => { setResultsLimit(100); fetchData(100); }} className="flex-1 h-12 text-foreground">
-                             Show Latest 100
+                             Show Recent
                         </Button>
                     </div>
                 </div>
@@ -458,24 +469,13 @@ export default function SupplierManagement() {
                     <CardContent className="pt-6 text-left text-foreground">
                         <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground text-foreground">
                             <div className="space-y-2 text-left text-foreground">
-                                <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Company</Label>
-                                <Input placeholder="Filter..." value={searchCompany} onChange={(e) => setSearchCompany(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && fetchData()} />
-                            </div>
-                            <div className="space-y-2 text-left text-foreground">
-                                <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Keywords</Label>
-                                <Input placeholder="Filter..." value={searchKeyword} onChange={(e) => setSearchKeyword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && fetchData()} />
-                            </div>
-                            <div className="space-y-2 text-left text-foreground text-foreground">
-                                <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Tags</Label>
-                                <Input placeholder="Filter..." value={searchTag} onChange={(e) => setSearchTag(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && fetchData()} />
-                            </div>
-                            <div className="space-y-2 text-left text-foreground">
-                                <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Category</Label>
-                                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                                <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Enrichment</Label>
+                                <Select value={enrichmentFilter} onValueChange={setEnrichmentFilter}>
                                     <SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="All" /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">All</SelectItem>
-                                        {supplierCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
+                                        <SelectItem value="enriched">Enriched</SelectItem>
+                                        <SelectItem value="unenriched">Unenriched</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -490,9 +490,19 @@ export default function SupplierManagement() {
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <div className="flex items-end text-left gap-2 text-foreground">
+                            <div className="space-y-2 text-left text-foreground">
+                                <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Category</Label>
+                                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                                    <SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="All" /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All</SelectItem>
+                                        {supplierCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="flex items-end text-left gap-2 text-foreground md:col-span-3">
                                 <Button onClick={() => fetchData()} disabled={isLoading} className="flex-1"><RefreshCcw className={cn("h-4 w-4", isLoading && "animate-spin")} /></Button>
-                                <Button variant="outline" onClick={() => setHasLoaded(false)} className="flex-1 text-foreground"><RotateCcw className="h-4 w-4" /></Button>
+                                <Button variant="outline" onClick={() => setHasLoaded(false)} className="flex-1 text-foreground"><RotateCcw className="h-4 w-4" /> New Search</Button>
                             </div>
                         </div>
                         {isLoading ? <div className="flex justify-center items-center py-10 text-foreground text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (

@@ -24,14 +24,6 @@ function serializeTimestamps(docData: any): any {
     return docData;
 }
 
-const chunkArray = (arr: any[], size: number) => 
-  Array.from({ length: Math.ceil(arr.length / size) }, (v, i) =>
-    arr.slice(i * size, i * size + size)
-  );
-
-const supplierCategories = ["Accessories", "Air", "Anti-Theft Devices", "Auto Electrical", "Batteries", "Brakes", "Cleaning Products", "Diesel", "Differential", "Engine Refurbish", "Filters", "Injectors", "Lights", "Mechanical repairs", "Oils & Lubricants", "Parts", "Prop Shafts", "Second Hand Trailers", "Second Hand Trucks", "Transport", "Tarpaulins", "Tow in", "Trailer repairs", "Truck Accessories", "Truck Parts", "Truck repairs", "Turbo", "Tyres"];
-const transporterCategories = ["Long Haul", "Refrigerated", "Flatbed", "Tipper", "Hazmat", "LTL", "Cross-Border", "Local Distribution", "Container Transport", "Abnormal Loads"];
-
 export async function POST(req: NextRequest) {
     try {
         const { app, error: initError } = getAdminApp();
@@ -54,7 +46,7 @@ export async function POST(req: NextRequest) {
 
         switch (action) {
             case 'searchRegistry': {
-                const { term, searchCompany, searchKeyword, searchTag, category, type, integrityFilter, outreachFilter, limit: requestedLimit } = payload;
+                const { term, searchCompany, searchKeyword, searchTag, category, type, integrityFilter, outreachFilter, enrichmentFilter, limit: requestedLimit } = payload;
                 
                 let partnersQuery: any = db.collection('partners');
                 let leadsQuery: any = db.collection('leads');
@@ -92,6 +84,7 @@ export async function POST(req: NextRequest) {
                     entryType: item.industrial_category || item.category || 'General'
                 }));
 
+                // Registry Forensic Filters
                 if (term || searchCompany || searchKeyword || searchTag) {
                     const lowTerm = (term || searchCompany || '').toLowerCase();
                     const lowKey = (searchKeyword || '').toLowerCase();
@@ -115,6 +108,13 @@ export async function POST(req: NextRequest) {
                     data = data.filter(p => p.lastOutreachSubject === outreachFilter);
                 }
 
+                // Enrichment Filter Logic
+                if (enrichmentFilter === 'enriched') {
+                    data = data.filter(p => !!p.minedServiceWording || !!p.website || !!p.notes);
+                } else if (enrichmentFilter === 'unenriched') {
+                    data = data.filter(p => !p.minedServiceWording && !p.website && !p.notes);
+                }
+
                 data.sort((a,b) => new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime());
 
                 return NextResponse.json({ success: true, data: data.slice(0, limitValue) });
@@ -136,7 +136,9 @@ export async function POST(req: NextRequest) {
                 batch.set(logRef, {
                     type, subject, notes,
                     timestamp: FieldValue.serverTimestamp(),
-                    adminId: decodedToken.uid
+                    adminId: decodedToken.uid,
+                    partnerId,
+                    partnerName: (targetColl === 'partners' ? pDoc.data()?.companyName : lDoc.data()?.companyName) || 'Unknown Entity'
                 });
                 
                 batch.update(parentRef, {
