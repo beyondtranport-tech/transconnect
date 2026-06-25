@@ -61,7 +61,7 @@ const partnerSchema = z.object({
   address: z.string().optional().or(z.literal('')),
   minedServiceWording: z.string().optional().or(z.literal('')),
   industrialTags: z.array(z.string()).optional().default([]),
-  status: z.enum(['active', 'inactive', 'contacted', 'new', 'qualified', 'invited']),
+  status: z.enum(['active', 'inactive', 'contacted', 'new', 'qualified', 'invited', 'registered']),
   type: z.literal('supplier'),
 });
 type PartnerFormValues = z.infer<typeof partnerSchema>;
@@ -143,7 +143,6 @@ export default function SupplierManagement() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | null, data?: any, initialIndex?: number }>({ type: null });
 
-  // Filter State
   const [statusFilter, setStatusFilter] = useState('all');
   const [assigneeFilter, setAssigneeFilter] = useState('all');
   const [outreachFilter, setOutreachFilter] = useState('all');
@@ -161,7 +160,7 @@ export default function SupplierManagement() {
             category: categoryFilter === 'all' ? '' : categoryFilter, 
             outreachFilter, 
             enrichmentFilter,
-            limit: 10000 // Load full record base as requested
+            limit: 10000 
       });
       const staffRes = await performAdminAction(token, 'getPlatformStaff', {});
       setAllRecords(res.data || []);
@@ -176,10 +175,18 @@ export default function SupplierManagement() {
 
   useEffect(() => { if (hasLoaded) fetchData(); }, [fetchData, hasLoaded]);
 
+  const filteredRecords = useMemo(() => {
+    return allRecords.filter(p => {
+        const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
+        const matchesAssignee = assigneeFilter === 'all' || p.assigneeId === assigneeFilter;
+        return matchesStatus && matchesAssignee;
+    });
+  }, [allRecords, statusFilter, assigneeFilter]);
+
   const handleExport = () => {
-      if (allRecords.length === 0) return;
-      downloadDataAsCSV(allRecords, `suppliers-backup-${new Date().toISOString().split('T')[0]}.csv`);
-      toast({ title: "Backup Exported", description: "Full registry segment saved to CSV." });
+      if (filteredRecords.length === 0) return;
+      downloadDataAsCSV(filteredRecords, `suppliers-backup-${new Date().toISOString().split('T')[0]}.csv`);
+      toast({ title: "Backup Exported" });
   };
 
   const handleEngage = (record: any) => {
@@ -192,14 +199,6 @@ export default function SupplierManagement() {
     setDialog({ type: 'engage', data: engageList, initialIndex: Math.max(0, indexInSelected) });
   };
 
-  const filteredRecords = useMemo(() => {
-    return allRecords.filter(p => {
-        const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
-        const matchesAssignee = assigneeFilter === 'all' || p.assigneeId === assigneeFilter;
-        return matchesStatus && matchesAssignee;
-    });
-  }, [allRecords, statusFilter, assigneeFilter]);
-
   async function handleDeleteBatch() {
     if (selectedIds.length === 0) return;
     try {
@@ -211,7 +210,7 @@ export default function SupplierManagement() {
         setSelectedIds([]);
         setDialog({ type: null });
     } catch (e: any) {
-        toast({ variant: 'destructive', title: 'Error', description: e.message });
+      toast({ variant: 'destructive', title: 'Error', description: e.message });
     }
   }
 
@@ -243,7 +242,7 @@ export default function SupplierManagement() {
         cell: ({ row }) => {
             if (!row.original.lastOutreachSubject) return <span className="text-[10px] text-muted-foreground italic text-left">None</span>;
             return (
-                <div className="flex flex-col text-left">
+                <div className="flex flex-col text-left text-foreground">
                     <Badge variant="outline" className="text-[9px] h-4 border-primary/20 text-primary uppercase font-bold truncate max-w-[100px]">{row.original.lastOutreachSubject}</Badge>
                     <span className="text-[8px] text-muted-foreground mt-0.5 text-left">{formatDateSafe(row.original.lastOutreachAt, "dd/MM")}</span>
                     {row.original.lastOpenedAt && (
@@ -293,10 +292,10 @@ export default function SupplierManagement() {
       {!hasLoaded ? (
             <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground">
                 <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
-                <h2 className="text-2xl font-black font-headline mb-2 text-center text-foreground text-foreground">Supplier Registry Search</h2>
-                <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center text-foreground text-foreground">Scan the entire database. Use filters to prioritize outreach and enrichment worklists.</p>
+                <h2 className="text-2xl font-black font-headline mb-2 text-center text-foreground text-foreground text-center">Supplier Registry Search</h2>
+                <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center text-foreground text-foreground text-center">Scan the entire database. Use filters to prioritize outreach and enrichment worklists.</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto text-left text-foreground text-foreground">
-                    <div className="space-y-2 text-left text-foreground text-foreground"><Label className="text-[10px] font-black uppercase text-muted-foreground ml-1 text-left text-foreground">Company Name</Label><Input placeholder="Search..." value={searchTerm} onChange={(e) => setSearchInput(e.target.value)} className="h-12 bg-white" /></div>
+                    <div className="space-y-2 text-left text-foreground text-foreground"><Label className="text-[10px] font-black uppercase text-muted-foreground ml-1 text-left text-foreground">Company Name</Label><Input placeholder="Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="h-12 bg-white" /></div>
                     <div className="space-y-2 text-left text-foreground text-foreground"><Label className="text-[10px] font-black uppercase text-muted-foreground ml-1 text-left text-foreground">Outreach Stage</Label><Select value={outreachFilter} onValueChange={setOutreachFilter}><SelectTrigger className="h-12 bg-white text-left text-foreground text-foreground"><SelectValue placeholder="All" /></SelectTrigger><SelectContent><SelectItem value="all">All Stages</SelectItem><SelectItem value="none">No Outreach Yet</SelectItem><SelectItem value="Digital Handshake">Handshake Sent</SelectItem></SelectContent></Select></div>
                     <div className="space-y-2 text-left text-foreground text-foreground"><Label className="text-[10px] font-black uppercase text-muted-foreground ml-1 text-left text-foreground">Enrichment</Label><Select value={enrichmentFilter} onValueChange={setEnrichmentFilter}><SelectTrigger className="h-12 bg-white text-left text-foreground text-foreground"><SelectValue placeholder="All" /></SelectTrigger><SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="enriched">Enriched</SelectItem><SelectItem value="unenriched">Unenriched</SelectItem></SelectContent></Select></div>
                     <div className="flex items-end gap-2 text-left text-foreground text-foreground"><Button size="lg" onClick={() => { fetchData(); }} disabled={isLoading} className="flex-1 h-12 font-black uppercase tracking-widest gap-2 shadow-lg text-foreground text-foreground">{isLoading ? <Loader2 className="animate-spin h-4 w-4"/> : <Search className="h-4 w-4"/>} Scan Registry</Button></div>
@@ -305,11 +304,11 @@ export default function SupplierManagement() {
       ) : (
             <div className="space-y-6 text-left text-foreground">
                 <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left text-foreground">
-                    <div className="text-left text-foreground">
+                    <div className="text-left text-foreground text-left">
                         <CardTitle className="flex items-center gap-2 text-2xl font-black font-headline flex items-center gap-2 text-left text-foreground"><Building /> Supplier Registry</CardTitle>
-                        <CardDescription className="text-left text-foreground">Unified industrial database view ({allRecords.length} records).</CardDescription>
+                        <CardDescription className="text-left text-foreground text-foreground text-left text-foreground">Unified industrial database view ({filteredRecords.length} records).</CardDescription>
                     </div>
-                    <div className="flex flex-wrap items-center gap-2 text-left text-foreground">
+                    <div className="flex flex-wrap items-center gap-2 text-left text-foreground text-foreground text-foreground">
                         {selectedIds.length > 0 && <Button variant="secondary" onClick={() => handleEngage(null)} className="gap-2 shadow-sm font-bold animate-in fade-in zoom-in text-left text-foreground text-foreground"><Send className="h-4 w-4" /> Batch Engage ({selectedIds.length})</Button>}
                         <Button variant="outline" onClick={handleExport} disabled={isLoading} className="text-foreground text-foreground"><Download className="mr-2 h-4 w-4" /> Export CSV</Button>
                         <BulkImportDialog type="supplier" onComplete={() => fetchData()}><Button variant="outline" className="text-foreground text-foreground"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
@@ -337,4 +336,3 @@ export default function SupplierManagement() {
     </div>
   );
 }
-

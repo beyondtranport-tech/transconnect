@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
             case 'searchRegistry': {
                 const { term, category, type, outreachFilter, enrichmentFilter, limit = 10000 } = payload;
                 
-                // Optimized Full Loading Strategy: Fetch entire segments as requested
+                // Load the full record base per source
                 const [pSnap, lSnap] = await Promise.all([
                     db.collection('partners').limit(limit).get(),
                     db.collection('leads').limit(limit).get()
@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
                     normalized = normalized.filter(p => p.source === 'leads');
                 }
 
-                // 2. Specific Logic Filtering
+                // 2. Variable Logic Filtering
                 if (category && category !== 'all') {
                     normalized = normalized.filter(p => p.entryType === category || p.classification === category);
                 }
@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
                     normalized = normalized.filter(p => !(p.minedServiceWording || p.notes || p.website));
                 }
 
-                // 3. Search Term
+                // 3. Search Term (Client-side usually handles this better, but we filter here for deep-scan)
                 if (term) {
                     const lowTerm = term.toLowerCase();
                     normalized = normalized.filter(p => 
@@ -100,7 +100,7 @@ export async function POST(req: NextRequest) {
                     );
                 }
 
-                // 4. Global De-duplication Logic
+                // 4. Global De-duplication
                 const uniqueMap = new Map();
                 normalized.forEach(item => {
                     const key = (item.companyName || item.email || item.id).toLowerCase();
@@ -111,7 +111,7 @@ export async function POST(req: NextRequest) {
 
                 let data = Array.from(uniqueMap.values());
 
-                // 5. Final Sort
+                // 5. Final Sort (Newest first)
                 data.sort((a,b) => {
                     const timeA = new Date(a.updatedAt || 0).getTime();
                     const timeB = new Date(b.updatedAt || 0).getTime();
