@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -153,7 +152,7 @@ export async function POST(req: NextRequest) {
 
             case 'getPartnersByType': {
                 const { type } = payload;
-                let q = db.collection('partners').limit(limit);
+                let q = db.collection('partners').limit(20000);
                 if (type && type !== 'all') {
                     q = q.where('type', '==', type);
                 }
@@ -174,6 +173,28 @@ export async function POST(req: NextRequest) {
             case 'getAuditLogs': {
                 const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(100).get();
                 return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
+            }
+
+            case 'savePartner': {
+                const { partner } = payload;
+                const id = partner.id || db.collection('partners').doc().id;
+                const ref = db.collection('partners').doc(id);
+                await ref.set({ ...partner, id, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+                return NextResponse.json({ success: true, id });
+            }
+
+            case 'deletePartner': {
+                const { partnerId } = payload;
+                await db.collection('partners').doc(partnerId).delete();
+                return NextResponse.json({ success: true });
+            }
+            
+            case 'deletePartners': {
+                const { partnerIds } = payload;
+                const batch = db.batch();
+                partnerIds.forEach((id: string) => batch.delete(db.collection('partners').doc(id)));
+                await batch.commit();
+                return NextResponse.json({ success: true });
             }
 
             default:

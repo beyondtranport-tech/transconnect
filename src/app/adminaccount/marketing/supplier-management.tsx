@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useCallback, useEffect, Suspense } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -144,7 +144,7 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
   );
 }
 
-function SupplierManagementContent() {
+export default function SupplierManagement() {
   const { toast } = useToast();
   const [allRecords, setAllRecords] = useState<any[]>([]);
   const [staff, setStaff] = useState<any[]>([]);
@@ -188,11 +188,19 @@ function SupplierManagementContent() {
 
   useEffect(() => { if (hasLoaded) fetchData(); }, [fetchData, hasLoaded]);
 
+  const filteredRecords = useMemo(() => {
+    return allRecords.filter(p => {
+        const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
+        const matchesAssignee = assigneeFilter === 'all' || p.assigneeId === assigneeFilter;
+        return matchesStatus && matchesAssignee;
+    });
+  }, [allRecords, statusFilter, assigneeFilter]);
+
   const handleExport = useCallback(() => {
-      if (allRecords.length === 0) return;
-      downloadDataAsCSV(allRecords, `suppliers-export-${new Date().toISOString().split('T')[0]}.csv`);
+      if (filteredRecords.length === 0) return;
+      downloadDataAsCSV(filteredRecords, `suppliers-export-${new Date().toISOString().split('T')[0]}.csv`);
       toast({ title: "Backup Exported", description: "Filtered registry saved to CSV." });
-  }, [allRecords, toast]);
+  }, [filteredRecords, toast]);
 
   const handleEngage = useCallback((record: any) => {
     const engageList = selectedIds.length > 0 ? allRecords.filter(r => selectedIds.includes(r.id)) : (record ? [record] : []);
@@ -204,14 +212,6 @@ function SupplierManagementContent() {
         initialIndex: record ? engageList.findIndex((r: any) => r.id === record.id) : 0
     });
   }, [allRecords, selectedIds]);
-
-  const filteredRecords = useMemo(() => {
-    return allRecords.filter(p => {
-        const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
-        const matchesAssignee = assigneeFilter === 'all' || p.assigneeId === assigneeFilter;
-        return matchesStatus && matchesAssignee;
-    });
-  }, [allRecords, statusFilter, assigneeFilter]);
 
   async function handleDeleteBatch() {
     if (selectedIds.length === 0) return;
@@ -237,7 +237,7 @@ function SupplierManagementContent() {
                 <span className="font-bold text-foreground text-left">{row.original.companyName || 'Unnamed Entity'}</span>
                 <div className="flex items-center gap-1.5 mt-1 text-left">
                     {row.original.website && <Globe className="h-3 w-3 text-primary" />}
-                    <span className="text-[10px] text-muted-foreground uppercase font-black">{row.original.entryType || 'Supplier'}</span>
+                    <span className="text-[10px] text-muted-foreground uppercase font-black text-left">{row.original.entryType || 'Supplier'}</span>
                 </div>
             </div>
         )
@@ -256,10 +256,10 @@ function SupplierManagementContent() {
             if (!row.original.lastOutreachSubject) return <span className="text-[10px] text-muted-foreground italic text-left">None</span>;
             return (
                 <div className="flex flex-col text-left text-foreground">
-                    <Badge variant="outline" className="text-[9px] h-4 border-primary/20 text-primary uppercase font-bold truncate max-w-[100px]">{row.original.lastOutreachSubject}</Badge>
+                    <Badge variant="outline" className="text-[9px] h-4 border-primary/20 text-primary uppercase font-bold truncate max-w-[100px] text-left">{row.original.lastOutreachSubject}</Badge>
                     <span className="text-[8px] text-muted-foreground mt-0.5 text-left">{formatDateSafe(row.original.lastOutreachAt, "dd/MM")}</span>
                     {row.original.lastOpenedAt && (
-                        <div className="flex items-center gap-1 text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100 mt-1 w-fit">
+                        <div className="flex items-center gap-1 text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100 mt-1 w-fit text-left">
                             <UserCheck className="h-2.5 w-2.5" /> Read
                         </div>
                     )}
@@ -346,6 +346,12 @@ function SupplierManagementContent() {
                         {isLoading ? <div className="flex justify-center items-center py-20 text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
                             <div className="space-y-6 text-left">
                                 <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />
+                                <div className="flex justify-center pt-4">
+                                    <Button variant="outline" size="lg" onClick={() => fetchData(allRecords.length + 100)} disabled={isLoading} className="gap-2 min-w-[200px]">
+                                        {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <ChevronDown className="h-4 w-4" />}
+                                        Load Next 100 Records
+                                    </Button>
+                                </div>
                             </div>
                         )}
                     </CardContent>
@@ -356,10 +362,3 @@ function SupplierManagementContent() {
   );
 }
 
-export default function SupplierManagement() {
-  return (
-    <Suspense fallback={<div className="flex justify-center py-20"><Loader2 className="animate-spin h-10 w-10 text-primary" /></div>}>
-      <SupplierManagementContent />
-    </Suspense>
-  );
-}
