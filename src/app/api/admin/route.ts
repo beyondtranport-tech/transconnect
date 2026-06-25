@@ -47,7 +47,6 @@ export async function POST(req: NextRequest) {
             case 'searchRegistry': {
                 const { term, category, type, outreachFilter, enrichmentFilter, limit = 10000 } = payload;
                 
-                // Load the full record base per source
                 const [pSnap, lSnap] = await Promise.all([
                     db.collection('partners').limit(limit).get(),
                     db.collection('leads').limit(limit).get()
@@ -65,20 +64,18 @@ export async function POST(req: NextRequest) {
                     entryType: item.industrial_category || item.category || item.entryType || item.classification || item.role || 'General'
                 }));
 
-                // 1. Primary Collection Filtering
                 if (type && type !== 'all' && type !== 'lead') {
                     normalized = normalized.filter(p => p.type === type.toLowerCase());
                 } else if (type === 'lead') {
                     normalized = normalized.filter(p => p.source === 'leads');
                 }
 
-                // 2. Variable Logic Filtering
                 if (category && category !== 'all') {
                     normalized = normalized.filter(p => p.entryType === category || p.classification === category);
                 }
 
                 if (outreachFilter === 'none') {
-                    normalized = normalized.filter(p => !p.lastOutreachSubject && (p.status === 'new' || p.status === 'contacted'));
+                    normalized = normalized.filter(p => !p.lastOutreachSubject);
                 } else if (outreachFilter && outreachFilter !== 'all') {
                     normalized = normalized.filter(p => p.lastOutreachSubject === outreachFilter);
                 }
@@ -89,7 +86,6 @@ export async function POST(req: NextRequest) {
                     normalized = normalized.filter(p => !(p.minedServiceWording || p.notes || p.website));
                 }
 
-                // 3. Search Term (Client-side usually handles this better, but we filter here for deep-scan)
                 if (term) {
                     const lowTerm = term.toLowerCase();
                     normalized = normalized.filter(p => 
@@ -100,7 +96,6 @@ export async function POST(req: NextRequest) {
                     );
                 }
 
-                // 4. Global De-duplication
                 const uniqueMap = new Map();
                 normalized.forEach(item => {
                     const key = (item.companyName || item.email || item.id).toLowerCase();
@@ -110,8 +105,6 @@ export async function POST(req: NextRequest) {
                 });
 
                 let data = Array.from(uniqueMap.values());
-
-                // 5. Final Sort (Newest first)
                 data.sort((a,b) => {
                     const timeA = new Date(a.updatedAt || 0).getTime();
                     const timeB = new Date(b.updatedAt || 0).getTime();

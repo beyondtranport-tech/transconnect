@@ -7,7 +7,7 @@ import * as z from 'zod';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from '@/hooks/use-toast';
-import { getClientSideAuthToken } from '@/firebase';
+import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
   Loader2, PlusCircle, Building, Edit, Trash2, Send, Download, Save, Search, Filter, Users, Globe, Zap, Upload, RefreshCcw, Database, Tag, Sparkles, RotateCcw, UserCheck, ChevronDown 
 } from 'lucide-react';
@@ -64,6 +64,7 @@ const partnerSchema = z.object({
   status: z.enum(['active', 'inactive', 'contacted', 'new', 'qualified', 'invited', 'registered']),
   type: z.literal('supplier'),
 });
+
 type PartnerFormValues = z.infer<typeof partnerSchema>;
 
 function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean; onOpenChange: (open: boolean) => void; partner?: any; onSave: () => void; }) {
@@ -183,11 +184,11 @@ export default function SupplierManagement() {
     });
   }, [allRecords, statusFilter, assigneeFilter]);
 
-  const handleExport = () => {
+  const handleExport = useCallback(() => {
       if (filteredRecords.length === 0) return;
       downloadDataAsCSV(filteredRecords, `suppliers-backup-${new Date().toISOString().split('T')[0]}.csv`);
       toast({ title: "Backup Exported" });
-  };
+  }, [filteredRecords, toast]);
 
   const handleEngage = (record: any) => {
     const indexInSelected = record ? selectedIds.indexOf(record.id) : 0;
