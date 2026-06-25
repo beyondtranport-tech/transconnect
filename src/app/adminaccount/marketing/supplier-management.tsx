@@ -8,7 +8,7 @@ import * as z from 'zod';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from '@/hooks/use-toast';
-import { getClientSideAuthToken, useUser } from '@/firebase';
+import { getClientSideAuthToken } from '@/firebase';
 import { 
   Loader2, PlusCircle, Building, Edit, Trash2, Send, Download, Save, Search, Filter, Users, Globe, Zap, Upload, RefreshCcw, Database, Tag, Sparkles, RotateCcw, UserCheck, ChevronDown, ChevronLeft, ChevronRight 
 } from 'lucide-react';
@@ -39,14 +39,8 @@ async function performAdminAction(token: string, action: string, payload: any) {
     body: JSON.stringify({ action, payload }),
     cache: 'no-store'
   });
-
-  const contentType = response.headers.get('content-type');
-  if (!contentType || !contentType.includes('application/json')) {
-      throw new Error("Server returned non-JSON response. Check network for HTML error page.");
-  }
-
   const result = await response.json();
-  if (!response.ok || !result.success) throw new Error(result.error || `API Error for action: ${action}`);
+  if (!response.ok || !result.success) throw new Error(result.error || `API Error: ${action}`);
   return result;
 }
 
@@ -112,10 +106,10 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
               <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Direct E-mail</FormLabel><FormControl><Input {...field} type="email" /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="mobile" render={({ field }) => (<FormItem className="text-left"><FormLabel>Mobile (Direct Cell)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
-            <FormField control={form.control} name="website" render={({ field }) => (<FormItem className="text-left"><FormLabel>Corporate Website</FormLabel><FormControl><Input placeholder="https://..." {...field} /></FormControl><FormMessage /></FormItem>)} />
+            <FormField control={form.control} name="website" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Corporate Website</FormLabel><FormControl><Input placeholder="https://..." {...field} /></FormControl><FormMessage /></FormItem>)} />
             <Separator />
-            <div className="space-y-4 text-left">
-                <h3 className="text-sm font-black uppercase tracking-widest text-primary flex items-center gap-2 text-left"><Sparkles className="h-4 w-4"/> Forensic Technical Profile</h3>
+            <div className="space-y-4 text-left text-foreground">
+                <h3 className="text-sm font-black uppercase tracking-widest text-primary flex items-center gap-2"><Sparkles className="h-4 w-4"/> Forensic Technical Profile</h3>
                 <FormField control={form.control} name="minedServiceWording" render={({ field }) => (<FormItem><FormLabel>Scraped About/Hero Text</FormLabel><FormControl><Textarea placeholder="Deep-crawled statements..." className="min-h-[150px]" {...field} /></FormControl><FormMessage /></FormItem>)} />
                 <FormField control={form.control} name="industrialTags" render={({ field }) => (<FormItem><FormLabel>ML Extracted Keywords</FormLabel><FormControl><Input placeholder="e.g. Parts, Tires..." value={Array.isArray(field.value) ? field.value.join(', ') : ''} onChange={(e) => field.onChange(e.target.value.split(',').map(t => t.trim()))}/></FormControl><FormMessage /></FormItem>)} />
             </div>
@@ -205,10 +199,16 @@ export default function SupplierManagement() {
   };
 
   const handleEngage = (record: any) => {
-    const indexInSelected = selectedIds.indexOf(record.id);
+    const indexInSelected = record ? selectedIds.indexOf(record.id) : 0;
     const engageList = selectedIds.length > 0 
         ? allRecords.filter(r => selectedIds.includes(r.id)) 
-        : [record];
+        : (record ? [record] : []);
+    
+    if (engageList.length === 0) {
+        toast({ variant: 'destructive', title: "No Selection", description: "Please select records to engage." });
+        return;
+    }
+    
     setDialog({ type: 'engage', data: engageList, initialIndex: Math.max(0, indexInSelected) });
   };
 
@@ -278,7 +278,7 @@ export default function SupplierManagement() {
                     <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Company Name</Label><Input placeholder="Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="h-12 bg-white" /></div>
                     <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Outreach Stage</Label><Select value={outreachFilter} onValueChange={setOutreachFilter}><SelectTrigger className="h-12 bg-white"><SelectValue placeholder="All" /></SelectTrigger><SelectContent><SelectItem value="all">All Stages</SelectItem><SelectItem value="none">No Outreach Yet</SelectItem><SelectItem value="Digital Handshake">Handshake Sent</SelectItem></SelectContent></Select></div>
                     <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Enrichment</Label><Select value={enrichmentFilter} onValueChange={setEnrichmentFilter}><SelectTrigger className="h-12 bg-white"><SelectValue placeholder="All" /></SelectTrigger><SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="enriched">Enriched</SelectItem><SelectItem value="unenriched">Unenriched</SelectItem></SelectContent></Select></div>
-                    <div className="flex items-end gap-2"><Button size="lg" onClick={() => { setCurrentPage(1); fetchData(1); }} disabled={isLoading} className="flex-1 h-12 font-black uppercase tracking-widest gap-2 shadow-lg">{isLoading ? <Loader2 className="animate-spin h-4 w-4"/> : <Search className="h-4 w-4"/>} Scan</Button><Button variant="outline" size="lg" onClick={() => { setResultsLimit(100); fetchData(1); }} className="h-12">Recent</Button></div>
+                    <div className="flex items-end gap-2"><Button size="lg" onClick={() => { setCurrentPage(1); fetchData(1); }} disabled={isLoading} className="flex-1 h-12 font-black uppercase tracking-widest gap-2 shadow-lg">{isLoading ? <Loader2 className="animate-spin h-4 w-4"/> : <Search className="h-4 w-4"/>} Scan</Button><Button variant="outline" size="lg" onClick={() => { fetchData(1); }} className="h-12">Recent</Button></div>
                 </div>
             </Card>
       ) : (
@@ -313,7 +313,7 @@ export default function SupplierManagement() {
                                             <Button variant="outline" size="icon" onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))} disabled={currentPage === totalPages}><ChevronRight className="h-4 w-4" /></Button>
                                         </div>
                                     </div>
-                                    <Button variant="outline" onClick={() => setCurrentPage(prev => prev + 1)} disabled={currentPage === totalPages} className="min-w-[180px] font-bold text-foreground text-foreground">Load Next 100 Records</Button>
+                                    <Button variant="outline" onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))} disabled={currentPage === totalPages} className="min-w-[180px] font-bold text-foreground text-foreground">Load Next 100 Records</Button>
                                 </div>
                             </div>
                         )}

@@ -114,27 +114,27 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
               <FormField control={form.control} name="firstName" render={({ field }) => (<FormItem><FormLabel>First Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="lastName" render={({ field }) => (<FormItem><FormLabel>Last Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
-            <div className="grid grid-cols-2 gap-4 text-left text-foreground">
+            <div className="grid grid-cols-2 gap-4 text-left">
               <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Landline</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="mobile" render={({ field }) => (<FormItem><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
-            <FormField control={form.control} name="email" render={({ field }) => (<FormItem className="text-left text-foreground text-foreground"><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" /></FormControl><FormMessage /></FormItem>)} />
-            <FormField control={form.control} name="website" render={({ field }) => (<FormItem className="text-left text-foreground text-foreground"><FormLabel>Website</FormLabel><FormControl><Input {...field} type="url" placeholder="https://..." /></FormControl><FormMessage /></FormItem>)} />
-             <div className="grid grid-cols-2 gap-4 text-left text-foreground text-foreground">
+            <FormField control={form.control} name="email" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" /></FormControl><FormMessage /></FormItem>)} />
+            <FormField control={form.control} name="website" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Website</FormLabel><FormControl><Input {...field} type="url" placeholder="https://..." /></FormControl><FormMessage /></FormItem>)} />
+             <div className="grid grid-cols-2 gap-4 text-left">
               <FormField control={form.control} name="role" render={({ field }) => (
-                <FormItem className="text-left text-foreground text-foreground"><FormLabel>Potential Role</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl><SelectTrigger className="bg-white text-left text-foreground text-foreground text-foreground"><SelectValue placeholder="Select..." /></SelectTrigger></FormControl>
+                <FormItem className="text-left"><FormLabel>Potential Role</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl><SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="Select..." /></SelectTrigger></FormControl>
                     <SelectContent>{roles.map(r => <SelectItem key={r.id} value={r.title}>{r.title}</SelectItem>)}</SelectContent>
                 </Select></FormItem>
               )} />
               <FormField control={form.control} name="status" render={({ field }) => (
-                <FormItem className="text-left text-foreground text-foreground text-foreground"><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl><SelectTrigger className="bg-white text-left text-foreground text-foreground text-foreground"><SelectValue /></SelectTrigger></FormControl>
+                <FormItem className="text-left text-foreground"><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl><SelectTrigger className="bg-white text-left text-foreground"><SelectValue /></SelectTrigger></FormControl>
                     <SelectContent><SelectItem value="new">New</SelectItem><SelectItem value="contacted">Researching</SelectItem><SelectItem value="qualified">Qualified</SelectItem></SelectContent>
                 </Select></FormItem>
               )} />
             </div>
-            <DialogFooter className="pt-4 border-t text-left text-foreground"><Button type="submit" disabled={isLoading}>
+            <DialogFooter className="pt-4 border-t text-left"><Button type="submit" disabled={isLoading}>
                 {isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />} Save Record
             </Button></DialogFooter>
           </form>
@@ -197,7 +197,7 @@ function LeadsDatabaseComponent() {
       e.preventDefault();
       const pageNum = parseInt(jumpPageInput, 10);
       if (isNaN(pageNum) || pageNum < 1 || pageNum > totalPages) {
-          toast({ variant: 'destructive', title: 'Invalid Page', description: `Please enter a page between 1 and ${totalPages}.` });
+          toast({ variant: 'destructive', title: 'Invalid Page', description: `Page must be between 1 and ${totalPages}.` });
           return;
       }
       setCurrentPage(pageNum);
@@ -241,22 +241,18 @@ function LeadsDatabaseComponent() {
   };
 
   const handleEngage = (record: any) => {
-    const indexInSelected = selectedIds.indexOf(record.id);
+    const indexInSelected = record ? selectedIds.indexOf(record.id) : 0;
     const engageList = selectedIds.length > 0 
         ? allRecords.filter(r => selectedIds.includes(r.id)) 
-        : [record];
+        : (record ? [record] : []);
+    
+    if (engageList.length === 0) return;
         
     setEngageDialog({ 
         open: true, 
         data: engageList, 
         initialIndex: Math.max(0, indexInSelected) 
     });
-  };
-
-  const handleBatchEngage = () => {
-    if (selectedIds.length === 0) return;
-    const engageList = allRecords.filter(r => selectedIds.includes(r.id));
-    setEngageDialog({ open: true, data: engageList, initialIndex: 0 });
   };
 
   const handleDelete = async () => {
@@ -376,11 +372,11 @@ function LeadsDatabaseComponent() {
                         </Select>
                     </div>
                     <div className="flex flex-col md:flex-row gap-2 self-end text-left text-foreground">
-                        <Button size="lg" onClick={() => { setCurrentPage(1); fetchData(1); }} disabled={isLoading} className="h-12 px-8 font-bold text-left">
+                        <Button size="lg" onClick={() => { fetchData(1); }} disabled={isLoading} className="h-12 px-8 font-bold text-left">
                             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4" />}
                             Execute Scan
                         </Button>
-                        <Button variant="outline" size="lg" onClick={() => { setCurrentPage(1); fetchData(1); }} className="h-12 text-left">
+                        <Button variant="outline" size="lg" onClick={() => { fetchData(1); }} className="h-12 text-left">
                              Show Recent
                         </Button>
                     </div>
@@ -459,7 +455,7 @@ function LeadsDatabaseComponent() {
                                         </div>
                                     </div>
 
-                                    <Button variant="outline" onClick={() => setCurrentPage(prev => prev + 1)} disabled={currentPage === totalPages} className="min-w-[180px] font-bold text-foreground">
+                                    <Button variant="outline" onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))} disabled={currentPage === totalPages} className="min-w-[180px] font-bold text-foreground">
                                         Load Next 100 Records
                                     </Button>
                                 </div>

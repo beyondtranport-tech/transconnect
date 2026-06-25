@@ -39,7 +39,7 @@ async function performAdminAction(token: string, action: string, payload: any) {
     cache: 'no-store'
   });
   const result = await response.json();
-  if (!response.ok || !result.success) throw new Error(result.error || `API Error for action: ${action}`);
+  if (!response.ok || !result.success) throw new Error(result.error || `API Error: ${action}`);
   return result;
 }
 
@@ -183,20 +183,21 @@ export default function TransporterManagement() {
   };
 
   const handleEngage = (record: any) => {
-    const indexInSelected = selectedIds.indexOf(record.id);
-    const engageList = selectedIds.length > 0 ? allRecords.filter(r => selectedIds.includes(r.id)) : [record];
+    const indexInSelected = record ? selectedIds.indexOf(record.id) : 0;
+    const engageList = selectedIds.length > 0 ? allRecords.filter(r => selectedIds.includes(r.id)) : (record ? [record] : []);
+    if (engageList.length === 0) return;
     setDialog({ type: 'engage', data: engageList, initialIndex: Math.max(0, indexInSelected) });
   };
 
-  async function handleDeleteBatch() {
-      if (selectedIds.length === 0) return;
+  async function handleDelete() {
+      if (!dialog.data) return;
       try {
           const token = await getClientSideAuthToken();
           if (!token) return;
-          await performAdminAction(token, 'deletePartners', { partnerIds: selectedIds });
-          toast({ title: 'Batch Deleted' });
+          await performAdminAction(token, 'deletePartner', { partnerId: dialog.data.id });
+          toast({ title: 'Deleted' });
           fetchData(currentPage);
-          setSelectedIds([]);
+          setDialog({ type: null });
       } catch (e: any) {
           toast({ variant: 'destructive', title: 'Error', description: e.message });
       }
@@ -208,10 +209,10 @@ export default function TransporterManagement() {
         header: 'Transporter Name', 
         cell: ({ row }) => (
             <div className="flex flex-col text-sm text-left text-foreground">
-                <span className="font-bold text-foreground">{row.original.companyName || <span className="text-destructive italic font-normal">Unnamed Entity</span>}</span>
-                <div className="flex items-center gap-1.5 mt-1">
+                <span className="font-bold text-foreground text-left">{row.original.companyName || <span className="text-destructive italic font-normal">Unnamed Entity</span>}</span>
+                <div className="flex items-center gap-1.5 mt-1 text-left">
                     {row.original.website && <Globe className="h-3 w-3 text-primary" />}
-                    <span className="text-[10px] text-muted-foreground uppercase font-black">{row.original.industrial_category || 'Logistics'}</span>
+                    <span className="text-[10px] text-muted-foreground uppercase font-black text-left">{row.original.industrial_category || 'Logistics'}</span>
                 </div>
             </div>
         )
@@ -257,21 +258,14 @@ export default function TransporterManagement() {
   return (
     <div className="space-y-6 text-left text-foreground">
       <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partners={dialog.data || []} initialIndex={dialog.initialIndex} audience="transporters" onEngageSuccess={() => fetchData(currentPage)} />
-      <TransporterDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={fetchData} />
+      <TransporterDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={() => fetchData(currentPage)} />
       
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
         <AlertDialogContent>
-          <AlertDialogHeader><AlertDialogTitle>Delete Record(s)?</AlertDialogTitle><AlertDialogDescription>This will permanently delete the record.</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will permanently delete the record.</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={selectedIds.length > 0 ? handleDeleteBatch : async () => {
-                const token = await getClientSideAuthToken();
-                if (token && dialog.data) {
-                    await performAdminAction(token, 'deletePartner', { partnerId: dialog.data.id });
-                    fetchData(currentPage);
-                    setDialog({ type: null });
-                }
-            }} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction>
+            <AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -279,39 +273,39 @@ export default function TransporterManagement() {
       {!hasLoaded ? (
             <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground">
                 <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
-                <h2 className="text-2xl font-black font-headline mb-2 text-center">Transporter Registry Scan</h2>
+                <h2 className="text-2xl font-black font-headline mb-2 text-center text-foreground">Transporter Registry Scan</h2>
                 <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center text-foreground">Scan the national transporter database. Use targeted variables like "No Outreach Yet" to build efficient worklists.</p>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto text-left text-foreground">
-                    <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Haulier Name</Label><Input placeholder="Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="h-12 bg-white" /></div>
-                    <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Outreach Stage</Label><Select value={outreachFilter} onValueChange={setOutreachFilter}><SelectTrigger className="h-12 bg-white text-left text-foreground"><SelectValue placeholder="All" /></SelectTrigger><SelectContent><SelectItem value="all">All Stages</SelectItem><SelectItem value="none">No Outreach Yet</SelectItem><SelectItem value="Digital Handshake">Handshake Sent</SelectItem></SelectContent></Select></div>
-                    <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Enrichment</Label><Select value={enrichmentFilter} onValueChange={setEnrichmentFilter}><SelectTrigger className="h-12 bg-white text-left text-foreground"><SelectValue placeholder="All" /></SelectTrigger><SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="enriched">Enriched</SelectItem><SelectItem value="unenriched">Unenriched</SelectItem></SelectContent></Select></div>
-                    <div className="flex items-end gap-2"><Button size="lg" onClick={() => { setCurrentPage(1); fetchData(1); }} disabled={isLoading} className="flex-1 h-12 font-black uppercase tracking-widest gap-2 shadow-lg">{isLoading ? <Loader2 className="animate-spin h-4 w-4"/> : <Search className="h-4 w-4" />} Scan</Button><Button variant="outline" size="lg" onClick={() => fetchData(1)} className="h-12 text-foreground">Recent</Button></div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto text-left text-foreground text-left">
+                    <div className="space-y-2 text-left"><Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Haulier Name</Label><Input placeholder="Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="h-12 bg-white" /></div>
+                    <div className="space-y-2 text-left"><Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Outreach Stage</Label><Select value={outreachFilter} onValueChange={setOutreachFilter}><SelectTrigger className="h-12 bg-white text-left text-foreground"><SelectValue placeholder="All" /></SelectTrigger><SelectContent><SelectItem value="all">All Stages</SelectItem><SelectItem value="none">No Outreach Yet</SelectItem><SelectItem value="Digital Handshake">Handshake Sent</SelectItem></SelectContent></Select></div>
+                    <div className="space-y-2 text-left"><Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Enrichment</Label><Select value={enrichmentFilter} onValueChange={setEnrichmentFilter}><SelectTrigger className="h-12 bg-white text-left text-foreground"><SelectValue placeholder="All" /></SelectTrigger><SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="enriched">Enriched</SelectItem><SelectItem value="unenriched">Unenriched</SelectItem></SelectContent></Select></div>
+                    <div className="flex items-end gap-2 text-left"><Button size="lg" onClick={() => { fetchData(1); }} disabled={isLoading} className="flex-1 h-12 font-black uppercase tracking-widest gap-2 shadow-lg">{isLoading ? <Loader2 className="animate-spin h-4 w-4"/> : <Search className="h-4 w-4" />} Scan</Button><Button variant="outline" size="lg" onClick={() => fetchData(1)} className="h-12 text-foreground">Recent</Button></div>
                 </div>
             </Card>
       ) : (
-            <div className="space-y-6">
+            <div className="space-y-6 text-left">
                 <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
-                    <div className="text-left text-foreground"><CardTitle className="text-2xl font-black font-headline flex items-center gap-2 text-left"><Truck /> Transporter Registry</CardTitle><CardDescription className="text-left text-foreground">Full haulier database view ({totalRecords.toLocaleString()} records).</CardDescription></div>
-                    <div className="flex flex-wrap items-center gap-2 text-left text-foreground">
-                        {selectedIds.length > 0 && <Button variant="secondary" onClick={() => handleEngage(null)} className="gap-2 shadow-sm font-bold animate-in fade-in zoom-in text-left"><Send className="h-4 w-4" /> Batch Engage ({selectedIds.length})</Button>}
+                    <div className="text-left text-foreground"><CardTitle className="flex items-center gap-2 text-2xl font-black font-headline text-left text-foreground"><Truck /> Transporter Registry</CardTitle><CardDescription className="text-left text-foreground text-foreground">Full haulier database view ({totalRecords.toLocaleString()} records).</CardDescription></div>
+                    <div className="flex flex-wrap items-center gap-2 text-left text-foreground text-foreground">
+                        {selectedIds.length > 0 && <Button variant="secondary" onClick={() => handleEngage(null)} className="gap-2 shadow-sm font-bold animate-in fade-in zoom-in text-left text-foreground"><Send className="h-4 w-4" /> Batch Engage ({selectedIds.length})</Button>}
                         <Button variant="outline" onClick={handleExport} disabled={isLoading} className="text-left text-foreground"><Download className="mr-2 h-4 w-4" /> Export CSV</Button>
-                        <BulkImportDialog type="transporter" onComplete={() => fetchData(currentPage)}><Button variant="outline" className="text-left text-foreground"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
-                        <Button onClick={() => setDialog({ type: 'add' })} className="text-left text-foreground"><PlusCircle className="mr-2 h-4 w-4" /> Add Record</Button>
+                        <BulkImportDialog type="transporter" onComplete={() => fetchData(currentPage)}><Button variant="outline" className="text-left text-foreground text-foreground"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
+                        <Button onClick={() => setDialog({ type: 'add' })} className="text-left text-foreground text-foreground"><PlusCircle className="mr-2 h-4 w-4" /> Add Record</Button>
                     </div>
                 </CardHeader>
-                <Card className="text-left text-foreground">
+                <Card className="text-left text-foreground text-foreground">
                     <CardContent className="pt-6 text-left text-foreground">
-                        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left">
+                        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
                             <div className="space-y-1 text-left"><Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5 text-left"><Filter className="h-3 w-3"/> Status</Label><Select value={statusFilter} onValueChange={setStatusFilter}><SelectTrigger className="bg-white text-xs text-left text-foreground"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="new">New</SelectItem><SelectItem value="contacted">Researching</SelectItem></SelectContent></Select></div>
                             <div className="space-y-1 text-left"><Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5 text-left"><Users className="h-3 w-3"/> Assignee</Label><Select value={assigneeFilter} onValueChange={setAssigneeFilter}><SelectTrigger className="bg-white text-xs text-left text-foreground"><SelectValue placeholder="All Staff" /></SelectTrigger><SelectContent><SelectItem value="all">All Staff</SelectItem><SelectItem value="none">Unallocated</SelectItem>{staff.map(s => <SelectItem key={s.id} value={s.id}>{s.firstName} {s.lastName}</SelectItem>)}</SelectContent></Select></div>
-                            <div className="space-y-1 text-left"><Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5 text-left"><Send className="h-3 w-3"/> Outreach</Label><Select value={outreachFilter} onValueChange={setOutreachFilter}><SelectTrigger className="bg-white text-xs text-left text-foreground"><SelectValue placeholder="All" /></SelectTrigger><SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="none">No Outreach Yet</SelectItem><SelectItem value="Digital Handshake">Handshake Sent</SelectItem></SelectContent></Select></div>
-                            <div className="space-y-1 text-left"><Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5 text-left"><Sparkles className="h-3 w-3"/> Enrichment</Label><Select value={enrichmentFilter} onValueChange={setEnrichmentFilter}><SelectTrigger className="bg-white text-xs text-left text-foreground"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="enriched">Enriched</SelectItem><SelectItem value="unenriched">Unenriched</SelectItem></SelectContent></Select></div>
+                            <div className="space-y-1 text-left"><Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Send className="h-3 w-3"/> Outreach</Label><Select value={outreachFilter} onValueChange={setOutreachFilter}><SelectTrigger className="bg-white text-xs text-left text-foreground"><SelectValue placeholder="All" /></SelectTrigger><SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="none">No Outreach Yet</SelectItem><SelectItem value="Digital Handshake">Handshake Sent</SelectItem></SelectContent></Select></div>
+                            <div className="space-y-1 text-left"><Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Sparkles className="h-3 w-3"/> Enrichment</Label><Select value={enrichmentFilter} onValueChange={setEnrichmentFilter}><SelectTrigger className="bg-white text-xs text-left text-foreground"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="enriched">Enriched</SelectItem><SelectItem value="unenriched">Unenriched</SelectItem></SelectContent></Select></div>
                             <div className="flex items-end text-left"><Button variant="outline" onClick={() => setHasLoaded(false)} className="h-9 w-full text-xs font-bold uppercase tracking-widest text-left text-foreground"><RotateCcw className="mr-1 h-3 w-3" /> Reset Variables</Button></div>
                         </div>
-                        {isLoading ? <div className="flex justify-center items-center py-20 text-foreground text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
+                        {isLoading ? <div className="flex justify-center items-center py-20 text-foreground text-foreground text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
                             <div className="space-y-6 text-left">
                                 <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />
-                                <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-6 border-t text-left">
+                                <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-6 border-t text-left text-foreground">
                                     <div className="text-sm text-muted-foreground font-medium text-left text-foreground">Showing {allRecords.length} of {totalRecords.toLocaleString()} records</div>
                                     <div className="flex items-center gap-4 text-left text-foreground">
                                         <div className="flex items-center gap-2 text-left">
@@ -320,7 +314,7 @@ export default function TransporterManagement() {
                                             <Button variant="outline" size="icon" onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))} disabled={currentPage === totalPages}><ChevronRight className="h-4 w-4" /></Button>
                                         </div>
                                     </div>
-                                    <Button variant="outline" onClick={() => setCurrentPage(prev => prev + 1)} disabled={currentPage === totalPages} className="min-w-[180px] font-bold text-left text-foreground">Load Next 100 Records</Button>
+                                    <Button variant="outline" onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))} disabled={currentPage === totalPages} className="min-w-[180px] font-bold text-left text-foreground text-foreground text-foreground">Load Next 100 Records</Button>
                                 </div>
                             </div>
                         )}
