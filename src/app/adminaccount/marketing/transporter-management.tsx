@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import React, { useState, useCallback, useEffect, useMemo, Suspense } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -35,7 +35,6 @@ async function performAdminAction(token: string, action: string, payload: any) {
     body: JSON.stringify({ action, payload }),
     cache: 'no-store'
   });
-  
   const result = await response.json();
   if (!response.ok || !result.success) throw new Error(result.error || `API Error for action: ${action}`);
   return result;
@@ -92,9 +91,7 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-3xl text-left text-foreground">
-        <DialogHeader>
-            <DialogTitle>{partner ? 'Edit' : 'Add'} Transporter</DialogTitle>
-        </DialogHeader>
+        <DialogHeader><DialogTitle>{partner ? 'Edit' : 'Add'} Transporter</DialogTitle></DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left text-foreground">
             <div className="grid grid-cols-2 gap-4 text-left">
@@ -129,7 +126,7 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
   );
 }
 
-export default function TransporterManagement() {
+function TransporterManagementContent() {
   const { toast } = useToast();
   const [allRecords, setAllRecords] = useState<any[]>([]);
   const [staff, setStaff] = useState<any[]>([]);
@@ -148,8 +145,10 @@ export default function TransporterManagement() {
     try {
       const token = await getClientSideAuthToken();
       if (!token) return;
-      const res = await performAdminAction(token, 'searchRegistry', { type: 'transporter', term: searchTerm, outreachFilter, limit });
-      const staffRes = await performAdminAction(token, 'getPlatformStaff', {});
+      const [res, staffRes] = await Promise.all([
+        performAdminAction(token, 'searchRegistry', { type: 'transporter', term: searchTerm, outreachFilter, limit }),
+        performAdminAction(token, 'getPlatformStaff', {})
+      ]);
       setAllRecords(res.data || []);
       setStaff(staffRes.data || []);
       setHasLoaded(true);
@@ -163,21 +162,15 @@ export default function TransporterManagement() {
   useEffect(() => { if (hasLoaded) fetchData(); }, [fetchData, hasLoaded]);
 
   const handleExport = useCallback(() => {
-    const dataToExport = allRecords.filter(r => {
-        const matchesStatus = statusFilter === 'all' || r.status === statusFilter;
-        const matchesAssignee = assigneeFilter === 'all' || r.assigneeId === assigneeFilter;
-        return matchesStatus && matchesAssignee;
-    });
-    if (dataToExport.length === 0) return;
-    downloadDataAsCSV(dataToExport, `transporters-export-${new Date().toISOString().split('T')[0]}.csv`);
+    if (allRecords.length === 0) return;
+    downloadDataAsCSV(allRecords, `transporters-export-${new Date().toISOString().split('T')[0]}.csv`);
     toast({ title: "Export Complete" });
-  }, [allRecords, statusFilter, assigneeFilter, toast]);
+  }, [allRecords, toast]);
 
   const handleEngage = useCallback((record: any) => {
-    const engageList = selectedIds.length > 0 
-        ? allRecords.filter(r => selectedIds.includes(r.id)) 
-        : (record ? [record] : []);
-        
+    const engageList = selectedIds.length > 0 ? allRecords.filter(r => selectedIds.includes(r.id)) : (record ? [record] : []);
+    if (engageList.length === 0) return;
+    
     setDialog({ 
         type: 'engage', 
         data: engageList, 
@@ -186,7 +179,7 @@ export default function TransporterManagement() {
   }, [allRecords, selectedIds]);
 
   const filteredRecords = useMemo(() => {
-    return (allRecords || []).filter(r => {
+    return allRecords.filter(r => {
         const matchesStatus = statusFilter === 'all' || r.status === statusFilter;
         const matchesAssignee = assigneeFilter === 'all' || r.assigneeId === assigneeFilter;
         return matchesStatus && matchesAssignee;
@@ -231,7 +224,7 @@ export default function TransporterManagement() {
     { 
         header: 'Outreach & Result',
         id: 'outreach',
-        accessorKey: 'lastOutreachAt',
+        accessorKey: 'lastOutreachSubject',
         cell: ({ row }) => {
             if (!row.original.lastOutreachSubject) return <span className="text-[10px] text-muted-foreground italic text-left">None</span>;
             return (
@@ -291,7 +284,7 @@ export default function TransporterManagement() {
         {!hasLoaded ? (
             <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground text-left">
                 <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
-                <h2 className="text-2xl font-black font-headline mb-2 text-foreground text-center text-left">Haulier Registry Scan</h2>
+                <h2 className="text-2xl font-black font-headline mb-2 text-center text-foreground text-left">Haulier Registry Scan</h2>
                 <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center text-foreground text-left">Scan the entire national database. Use filters to build targeted outreach worklists.</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto text-left text-foreground">
                     <div className="space-y-2 text-left text-foreground"><Label className="text-[10px] font-black uppercase text-muted-foreground ml-1 text-left">Company Name</Label><Input placeholder="Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="h-12 bg-white text-foreground" /></div>
@@ -327,5 +320,13 @@ export default function TransporterManagement() {
             </div>
       )}
     </div>
+  );
+}
+
+export default function TransporterManagement() {
+  return (
+    <Suspense fallback={<div className="flex justify-center py-20"><Loader2 className="animate-spin h-10 w-10 text-primary" /></div>}>
+      <TransporterManagementContent />
+    </Suspense>
   );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -129,7 +129,7 @@ function InvestorDialog({ open, onOpenChange, partner, onSave }: { open: boolean
   );
 }
 
-export default function InvestorManagement() {
+function InvestorManagementContent() {
   const { toast } = useToast();
   const [allRecords, setAllRecords] = useState<any[]>([]);
   const [staff, setStaff] = useState<any[]>([]);
@@ -233,8 +233,9 @@ export default function InvestorManagement() {
     },
     { accessorKey: 'email', header: 'Email' },
     { 
-        accessorKey: 'lastOutreachAt',
         header: 'Outreach & Result',
+        id: 'outreach',
+        accessorKey: 'lastOutreachSubject',
         cell: ({ row }) => {
             if (!row.original.lastOutreachSubject) return <span className="text-[10px] text-muted-foreground italic text-left">None</span>;
             return (
@@ -362,5 +363,13 @@ export default function InvestorManagement() {
             </div>
       )}
     </div>
+  );
+}
+
+export default function InvestorManagement() {
+  return (
+    <Suspense fallback={<div className="flex justify-center py-20"><Loader2 className="animate-spin h-10 w-10 text-primary" /></div>}>
+      <InvestorManagementContent />
+    </Suspense>
   );
 }
