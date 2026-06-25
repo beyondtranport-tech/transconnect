@@ -2,9 +2,14 @@
 
 import React from "react";
 
+/**
+ * Partnership Framework Content
+ * Includes forensic tracking pixel.
+ */
 export default function Framework({ partner }: { partner?: any }) {
     const firstName = partner?.firstName || (partner?.contactPerson ? partner.contactPerson.split(' ')[0] : 'Partner');
     const companyName = partner?.companyName || 'your business';
+    const pixelUrl = `/api/trackEmailOpen/${partner?.id || 'anonymous'}`;
 
     return (
         <div style={{ 
@@ -43,9 +48,12 @@ export default function Framework({ partner }: { partner?: any }) {
             <p style={{ margin: '0 0 14pt 0' }}>
                 Regards,
             </p>
-            <p style={{ margin: '0' }}>
+            <p style={{ margin: '0 0 14pt 0' }}>
                 The Logistics Flow Management Team
             </p>
+
+            {/* Forensic Tracking Pixel */}
+            <img src={pixelUrl} width="1" height="1" style={{ display: 'none' }} alt="" />
         </div>
     );
 }

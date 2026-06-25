@@ -2,8 +2,13 @@
 
 import React from "react";
 
+/**
+ * Technical Architecture Content
+ * Includes forensic tracking pixel.
+ */
 export default function TechArchitecture({ partner }: { partner?: any }) {
     const companyName = partner?.companyName || 'your business';
+    const pixelUrl = `/api/trackEmailOpen/${partner?.id || 'anonymous'}`;
 
     return (
         <div style={{ 
@@ -37,9 +42,12 @@ export default function TechArchitecture({ partner }: { partner?: any }) {
             <p style={{ margin: '0 0 14pt 0' }}>
                 Regards,
             </p>
-            <p style={{ margin: '0' }}>
+            <p style={{ margin: '0 0 14pt 0' }}>
                 The Logistics Flow Technical Division
             </p>
+
+            {/* Forensic Tracking Pixel */}
+            <img src={pixelUrl} width="1" height="1" style={{ display: 'none' }} alt="" />
         </div>
     );
 }

@@ -4,11 +4,13 @@ import React from "react";
 
 /**
  * Enhanced Company Profile with Intelligence Focus
+ * Includes forensic tracking pixel.
  */
 export default function CompanyProfile({ audience, partner }: { audience: string; partner?: any }) {
     const firstName = partner?.firstName || (partner?.contactPerson ? partner.contactPerson.split(' ')[0] : 'Member');
     const email = partner?.email || '';
     const lastName = partner?.lastName || '';
+    const pixelUrl = `/api/trackEmailOpen/${partner?.id || 'anonymous'}`;
     
     const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://studio--ecosystem-hub.us-central1.hosted.app';
     const signupLink = `${baseUrl}/join?email=${encodeURIComponent(email)}&firstName=${encodeURIComponent(firstName)}&lastName=${encodeURIComponent(lastName)}`;
@@ -56,7 +58,10 @@ export default function CompanyProfile({ audience, partner }: { audience: string
             <p style={{ margin: '0 0 14pt 0' }}>Please sign in to access your personal secure portal. This is your command center for industrial growth and data-driven profitability.</p>
             
             <p style={{ margin: '0 0 14pt 0' }}>Regards,</p>
-            <p style={{ margin: '0' }}>The Logistics Flow Team</p>
+            <p style={{ margin: '0 0 14pt 0' }}>The Logistics Flow Team</p>
+
+            {/* Forensic Tracking Pixel */}
+            <img src={pixelUrl} width="1" height="1" style={{ display: 'none' }} alt="" />
         </div>
     );
 }

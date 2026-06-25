@@ -1,17 +1,18 @@
 'use client';
 
 import React from "react";
-import { cn } from "@/lib/utils";
 
 /**
  * Narrative-Driven Digital Handshake
  * Optimized for Supplier Sales Growth and Market Access.
+ * Includes forensic tracking pixel.
  */
 export default function DigitalHandshake({ partner, audience }: { partner?: any, audience?: string }) {
     const firstName = partner?.firstName || (partner?.contactPerson ? partner.contactPerson.split(' ')[0] : 'Partner');
     const companyName = partner?.companyName || 'your business';
     const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://studio--ecosystem-hub.us-central1.hosted.app';
     const optInLink = `${baseUrl}/join?ref=${partner?.id || 'PROSPECT'}`;
+    const pixelUrl = `/api/trackEmailOpen/${partner?.id || 'anonymous'}`;
 
     const isSupplier = audience === 'suppliers';
 
@@ -96,6 +97,9 @@ export default function DigitalHandshake({ partner, audience }: { partner?: any,
                     LOGISTICS FLOW SECURE NETWORK | AUTHORIZED INDUSTRIAL SESSION | ALL RIGHTS RESERVED
                 </p>
             </div>
+
+            {/* Forensic Tracking Pixel */}
+            <img src={pixelUrl} width="1" height="1" style={{ display: 'none' }} alt="" />
         </div>
     );
 }
