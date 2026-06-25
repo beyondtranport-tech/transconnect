@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -10,7 +11,7 @@ import { copyHtmlToClipboard, cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
-// Content components located in content/ sub-folder
+// Content components
 import DigitalHandshake from './content/DigitalHandshake';
 import CompanyProfile from './content/CompanyProfile';
 import TechArchitecture from './content/TechArchitecture';
@@ -35,7 +36,7 @@ import DeveloperEmails from './emails/DeveloperEmails';
 interface EngageDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  partners: any[]; // Array for wizard mode
+  partners: any[]; 
   initialIndex?: number;
   audience: "partners" | "isa" | "transporters" | "suppliers" | "investors" | "developers" | "drivers" | "finance";
   onEngageSuccess?: () => void;
@@ -48,6 +49,14 @@ async function performAdminAction(token: string, action: string, payload: any) {
         body: JSON.stringify({ action, payload }),
         cache: 'no-store'
     });
+
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+        const errorText = await response.text();
+        console.error("Non-JSON response received:", errorText.slice(0, 200));
+        throw new Error("The server returned an invalid response. This may be due to a timeout with large data segments.");
+    }
+
     const result = await response.json();
     if (!response.ok || !result.success) {
         throw new Error(result.error || `API Error for action: ${action}`);
@@ -61,7 +70,6 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
   const [activeTab, setActiveTab] = useState('digital-handshake');
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Sync currentIndex with initialIndex when the dialog opens
   useEffect(() => {
     if (open) {
       setCurrentIndex(initialIndex);
@@ -122,7 +130,6 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
         
         const subjectLabel = activeTab.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 
-        // 1. Log communication
         await performAdminAction(token, 'logCommunication', {
             partnerId: currentPartner.id,
             type: 'Email',
@@ -131,7 +138,6 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
             collection: (!currentPartner.type || currentPartner.type === 'lead') ? 'leads' : 'partners'
         });
 
-        // 2. Prepare HTML for clipboard
         const contentClone = contentElement.cloneNode(true) as HTMLElement;
         const origin = window.location.origin;
         
@@ -143,13 +149,11 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
 
         const wrappedHtml = `<div style="font-family: Calibri, sans-serif; font-size: 12pt; color: #000000; line-height: 1.2; text-align: left;">${contentClone.innerHTML}</div>`;
 
-        // 3. Copy HTML
         const success = await copyHtmlToClipboard(wrappedHtml);
         if (!success) throw new Error("Clipboard failed.");
 
         toast({ title: "Content Ready", description: "Interaction logged and formatted HTML copied to clipboard." });
 
-        // 4. Launch Client
         const mailtoUrl = `mailto:${currentPartner.email}?subject=${encodeURIComponent(getSubject())}`;
         window.location.href = mailtoUrl;
         
@@ -180,22 +184,22 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-6xl h-[90vh] flex flex-col p-0 text-left overflow-hidden">
-            <DialogHeader className="p-6 border-b bg-muted/50 text-left">
-                <div className="flex justify-between items-center">
+            <DialogHeader className="p-6 border-b bg-muted/50 text-left text-foreground">
+                <div className="flex justify-between items-center text-left">
                     <div className="text-left text-foreground space-y-1">
-                        <DialogTitle className="text-2xl font-bold flex items-center gap-2">
+                        <DialogTitle className="text-2xl font-bold flex items-center gap-2 text-left">
                             <Send className="h-6 w-6 text-primary" />
                             Engagement Wizard: {partnerDisplayName}
                         </DialogTitle>
-                        <div className="flex items-center gap-2 text-sm">
+                        <div className="flex items-center gap-2 text-sm text-left">
                            <Badge variant="secondary" className="uppercase font-black text-[10px] tracking-widest">{audienceLabel}</Badge>
                            <span className="text-muted-foreground">•</span>
                            <span className="text-muted-foreground font-medium">{currentPartner.email || 'No email recorded'}</span>
                         </div>
                     </div>
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-4 text-left">
                         {partners.length > 1 && (
-                            <div className="flex items-center bg-background border rounded-lg p-1 mr-4 shadow-sm">
+                            <div className="flex items-center bg-background border rounded-lg p-1 mr-4 shadow-sm text-left">
                                 <Button variant="ghost" size="icon" onClick={prevRecord} disabled={currentIndex === 0}>
                                     <ChevronLeft className="h-4 w-4" />
                                 </Button>
@@ -216,9 +220,9 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
             </DialogHeader>
 
             <div className="flex-1 flex overflow-hidden text-left text-foreground">
-                <div className="w-64 border-r bg-muted/20 p-4 space-y-4 overflow-y-auto text-left">
-                    <div className="space-y-1">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-2 mb-2 block">Step 1: Selection</label>
+                <div className="w-64 border-r bg-muted/20 p-4 space-y-4 overflow-y-auto text-left text-foreground">
+                    <div className="space-y-1 text-left">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-2 mb-2 block text-left">Step 1: Selection</label>
                         {[
                             { id: 'digital-handshake', label: '0. Digital Handshake' },
                             { id: 'company-profile', label: '1. Company Profile' },
@@ -244,16 +248,16 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                     </div>
 
                     {partners.length > 1 && (
-                         <div className="pt-4 space-y-1">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-2 mb-2 block">Step 2: Batch Queue</label>
-                            <ScrollArea className="h-64 pr-2">
-                                <div className="space-y-1">
+                         <div className="pt-4 space-y-1 text-left">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-2 mb-2 block text-left text-foreground">Step 2: Batch Queue</label>
+                            <ScrollArea className="h-64 pr-2 text-left">
+                                <div className="space-y-1 text-left">
                                     {partners.map((p, idx) => (
                                         <Button
                                             key={p.id}
                                             variant="ghost"
                                             className={cn(
-                                                "w-full justify-start text-[10px] h-8 px-2 truncate",
+                                                "w-full justify-start text-[10px] h-8 px-2 truncate text-left",
                                                 currentIndex === idx ? "bg-primary/10 text-primary font-bold" : "opacity-60"
                                             )}
                                             onClick={() => setCurrentIndex(idx)}

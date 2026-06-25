@@ -51,10 +51,10 @@ export async function POST(req: NextRequest) {
                 const limitValue = requestedLimit || 100;
                 const offset = (page - 1) * limitValue;
 
-                // 1. Fetch raw data from both sources
+                // 1. Fetch raw data from both sources (Capped at 1000 per source for stability)
                 const [pSnap, lSnap] = await Promise.all([
-                    db.collection('partners').orderBy('updatedAt', 'desc').get(),
-                    db.collection('leads').orderBy('updatedAt', 'desc').get()
+                    db.collection('partners').orderBy('updatedAt', 'desc').limit(1000).get(),
+                    db.collection('leads').orderBy('updatedAt', 'desc').limit(1000).get()
                 ]);
 
                 // 2. Normalize and merge
@@ -104,7 +104,7 @@ export async function POST(req: NextRequest) {
                 if (integrityFilter === 'no-email') data = data.filter(p => !p.email);
                 
                 if (outreachFilter === 'none') {
-                    data = data.filter(p => !p.lastOutreachSubject && ['new', 'inactive'].includes(p.status));
+                    data = data.filter(p => !p.lastOutreachSubject && ['new', 'inactive', 'contacted'].includes(p.status));
                 } else if (outreachFilter && outreachFilter !== 'all') {
                     data = data.filter(p => p.lastOutreachSubject === outreachFilter);
                 }
@@ -116,7 +116,12 @@ export async function POST(req: NextRequest) {
                 }
 
                 // 6. Sort and Paginate
-                data.sort((a,b) => new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime());
+                data.sort((a,b) => {
+                    const timeA = a.updatedAt?._seconds || 0;
+                    const timeB = b.updatedAt?._seconds || 0;
+                    return timeB - timeA;
+                });
+                
                 const totalCount = data.length;
                 const paginatedData = data.slice(offset, offset + limitValue).map(serializeTimestamps);
 
@@ -127,6 +132,39 @@ export async function POST(req: NextRequest) {
                     currentPage: page,
                     totalPages: Math.ceil(totalCount / limitValue)
                 });
+            }
+
+            case 'logCommunication': {
+                const { partnerId, type, subject, notes, collection: providedColl } = payload;
+                const [pDoc, lDoc] = await Promise.all([
+                    db.collection('partners').doc(partnerId).get(),
+                    db.collection('leads').doc(partnerId).get()
+                ]);
+
+                const targetColl = providedColl || (pDoc.exists ? 'partners' : (lDoc.exists ? 'leads' : 'partners'));
+                const batch = db.batch();
+                const parentRef = db.collection(targetColl).doc(partnerId);
+                const logRef = parentRef.collection('communications').doc();
+                
+                const partnerName = (targetColl === 'partners' ? pDoc.data()?.companyName : lDoc.data()?.companyName) || 'Unknown Entity';
+
+                batch.set(logRef, {
+                    type, subject, notes,
+                    timestamp: FieldValue.serverTimestamp(),
+                    adminId: decodedToken.uid,
+                    partnerId,
+                    partnerName: partnerName
+                });
+                
+                batch.set(parentRef, {
+                    lastOutreachSubject: subject,
+                    lastOutreachAt: FieldValue.serverTimestamp(),
+                    status: 'contacted',
+                    updatedAt: FieldValue.serverTimestamp()
+                }, { merge: true });
+
+                await batch.commit();
+                return NextResponse.json({ success: true });
             }
 
             case 'getPlatformStaff': {
@@ -158,8 +196,8 @@ export async function POST(req: NextRequest) {
 
             case 'savePartner': {
                 const { partner } = payload;
-                const type = partner.type || 'lead';
-                const collectionName = type === 'lead' ? 'leads' : 'partners';
+                const pType = partner.type || 'lead';
+                const collectionName = pType === 'lead' ? 'leads' : 'partners';
                 const ref = partner.id ? db.collection(collectionName).doc(partner.id) : db.collection(collectionName).doc();
                 
                 const dataToSave = {
@@ -184,46 +222,15 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true });
             }
 
-            case 'logCommunication': {
-                const { partnerId, type, subject, notes, collection: providedColl } = payload;
-                const [pDoc, lDoc] = await Promise.all([
-                    db.collection('partners').doc(partnerId).get(),
-                    db.collection('leads').doc(partnerId).get()
-                ]);
-
-                const targetColl = providedColl || (pDoc.exists ? 'partners' : (lDoc.exists ? 'leads' : 'partners'));
-                const batch = db.batch();
-                const parentRef = db.collection(targetColl).doc(partnerId);
-                const logRef = parentRef.collection('communications').doc();
-                
-                batch.set(logRef, {
-                    type, subject, notes,
-                    timestamp: FieldValue.serverTimestamp(),
-                    adminId: decodedToken.uid,
-                    partnerId,
-                    partnerName: (targetColl === 'partners' ? pDoc.data()?.companyName : lDoc.data()?.companyName) || 'Unknown Entity'
-                });
-                
-                batch.update(parentRef, {
-                    lastOutreachSubject: subject,
-                    lastOutreachAt: FieldValue.serverTimestamp(),
-                    status: 'contacted',
-                    updatedAt: FieldValue.serverTimestamp()
-                });
-
-                await batch.commit();
-                return NextResponse.json({ success: true });
-            }
-
             case 'logForensicInitiated': {
                 const { partnerId, isLead } = payload;
                 const ref = db.collection(isLead ? 'leads' : 'partners').doc(partnerId);
-                await ref.update({
+                await ref.set({
                     researchStatus: 'searching',
                     status: 'contacted',
                     lastForensicAt: FieldValue.serverTimestamp(),
                     updatedAt: FieldValue.serverTimestamp()
-                });
+                }, { merge: true });
                 return NextResponse.json({ success: true });
             }
 
@@ -238,9 +245,9 @@ export async function POST(req: NextRequest) {
             }
 
             case 'getPartnersByType': {
-                const { type } = payload;
+                const { type: pType } = payload;
                 let q: any = db.collection('partners');
-                if (type !== 'all') q = q.where('type', '==', type);
+                if (pType !== 'all') q = q.where('type', '==', pType);
                 const snap = await q.orderBy('updatedAt', 'desc').limit(100).get();
                 return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
             }

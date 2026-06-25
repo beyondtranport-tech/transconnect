@@ -96,6 +96,14 @@ async function performAdminAction(token: string, action: string, payload: any) {
         body: JSON.stringify({ action, payload }),
         cache: 'no-store'
     });
+
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+        const errorText = await response.text();
+        console.error("Non-JSON response received:", errorText.slice(0, 200));
+        throw new Error("The server returned an invalid response. This may be due to a timeout with large data segments.");
+    }
+
     const result = await response.json();
     if (!response.ok || !result.success) {
         throw new Error(result.error || `API Error for action: ${action}`);
@@ -281,7 +289,7 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
   return (
     <div className="space-y-6 text-left">
         <LogAndCopyDialog open={isLogDialogOpen} onOpenChange={setIsLogDialogOpen} partners={partners} isLoadingPartners={isLoadingPartners} activeTabLabel={activeTab} onLogAndCopy={handleLogAndCopy} audienceTitle={audienceConfig[audience].title} />
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 text-left">
             <div className="flex items-center gap-4 text-left text-foreground">
                 <div className="bg-primary/10 p-3 rounded-lg">
                     {AudienceIcon && React.createElement(AudienceIcon, { className: "h-6 w-6 text-primary" })}
