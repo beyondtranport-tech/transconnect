@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -160,7 +159,7 @@ export default function TransporterManagement() {
   const [hasLoaded, setHasLoaded] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | null, data?: any }>({ type: null });
+  const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | null, data?: any, initialIndex?: number }>({ type: null });
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
@@ -231,6 +230,25 @@ export default function TransporterManagement() {
     toast({ title: "Export Complete" });
   };
 
+  const handleEngage = (record: any) => {
+    const indexInSelected = selectedIds.indexOf(record.id);
+    const engageList = selectedIds.length > 0 
+        ? allRecords.filter(r => selectedIds.includes(r.id)) 
+        : [record];
+        
+    setDialog({ 
+        type: 'engage', 
+        data: engageList, 
+        initialIndex: Math.max(0, indexInSelected) 
+    });
+  };
+
+  const handleBatchEngage = () => {
+    if (selectedIds.length === 0) return;
+    const engageList = allRecords.filter(r => selectedIds.includes(r.id));
+    setDialog({ type: 'engage', data: engageList, initialIndex: 0 });
+  };
+
   const handleDelete = async () => {
     if (!dialog.data) return;
     try {
@@ -293,7 +311,7 @@ export default function TransporterManagement() {
     { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
       <div className="flex justify-end gap-1 text-left text-foreground">
         <EnrichPartnerButton partner={row.original} onUpdate={() => fetchData(currentPage)} />
-        <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'engage', data: [row.original] })} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
+        <Button variant="ghost" size="icon" onClick={() => handleEngage(row.original)} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
         <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.companyName} />
         <PartnerTasksDialog partner={row.original} />
         <PartnerOversightDialog partner={row.original} onUpdate={() => fetchData(currentPage)} />
@@ -305,21 +323,35 @@ export default function TransporterManagement() {
 
   return (
     <div className="space-y-6 text-left text-foreground">
-      <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partners={dialog.data || []} audience="transporters" onEngageSuccess={() => fetchData(currentPage)} />
+      <EngageDialog 
+        open={dialog.type === 'engage'} 
+        onOpenChange={(o) => !o && setDialog({ type: null })} 
+        partners={Array.isArray(dialog.data) ? dialog.data : [dialog.data]} 
+        initialIndex={dialog.initialIndex}
+        audience="transporters" 
+        onEngageSuccess={() => fetchData(currentPage)} 
+      />
       <TransporterDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={() => fetchData(currentPage)} />
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
         <AlertDialogContent>
           <AlertDialogHeader><AlertDialogTitle>Delete Record?</AlertDialogTitle><AlertDialogDescription>Permanently remove record?</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction>
+            <AlertDialogAction onClick={async () => {
+                const token = await getClientSideAuthToken();
+                if (token && dialog.data) {
+                    await performAdminAction(token, 'deleteLeads', { leadIds: [dialog.data.id] });
+                    fetchData(currentPage);
+                    setDialog({ type: null });
+                }
+            }} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
       
       <div className="space-y-6 text-left">
         {!hasLoaded ? (
-            <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground">
+            <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground text-foreground">
                 <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
                 <h2 className="text-2xl font-black font-headline mb-2 text-foreground text-center">Transporter Forensic Scan</h2>
                 <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center text-foreground">Scan the haulier database. Filter by outreach or enrichment stage.</p>
@@ -328,7 +360,7 @@ export default function TransporterManagement() {
                         <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Company, Category or ID</Label>
                         <Input placeholder="Search criteria..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && fetchData(1)} className="h-12 text-lg bg-white" />
                     </div>
-                    <div className="w-48 space-y-2 text-left text-foreground">
+                    <div className="w-48 space-y-2 text-left text-foreground text-foreground">
                         <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Outreach</Label>
                         <Select value={outreachFilter} onValueChange={setOutreachFilter}>
                             <SelectTrigger className="h-12 bg-white"><SelectValue placeholder="All" /></SelectTrigger>
@@ -342,7 +374,7 @@ export default function TransporterManagement() {
                     <div className="w-48 space-y-2 text-left text-foreground">
                         <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Enrichment</Label>
                         <Select value={enrichmentFilter} onValueChange={setEnrichmentFilter}>
-                            <SelectTrigger className="h-12 bg-white"><SelectValue placeholder="All" /></SelectTrigger>
+                            <SelectTrigger className="h-12 bg-white text-left text-foreground"><SelectValue placeholder="All" /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All</SelectItem>
                                 <SelectItem value="enriched">Enriched</SelectItem>
@@ -350,12 +382,12 @@ export default function TransporterManagement() {
                             </SelectContent>
                         </Select>
                     </div>
-                    <div className="flex flex-col md:flex-row gap-2 self-end text-foreground text-foreground text-foreground">
+                    <div className="flex flex-col md:flex-row gap-2 self-end text-foreground text-foreground">
                         <Button size="lg" onClick={() => { setCurrentPage(1); fetchData(1); }} disabled={isLoading} className="h-12 px-8 font-bold">
                             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4" />}
                             Execute Scan
                         </Button>
-                        <Button variant="outline" size="lg" onClick={() => { setCurrentPage(1); fetchData(1); }} className="h-12 text-foreground">
+                        <Button variant="outline" size="lg" onClick={() => { setCurrentPage(1); fetchData(1); }} className="h-12">
                              Show Recent
                         </Button>
                     </div>
@@ -363,25 +395,30 @@ export default function TransporterManagement() {
             </Card>
         ) : (
             <div className="space-y-6 text-left text-foreground text-foreground">
-                <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left text-foreground">
+                <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
                     <div className="text-left text-foreground">
                         <CardTitle className="flex items-center gap-2 text-2xl font-black font-headline text-left text-foreground text-foreground"><Truck /> Transporter Registry</CardTitle>
                         <CardDescription className="text-left text-foreground text-foreground text-foreground">Unified database view ({totalRecords.toLocaleString()} records).</CardDescription>
                     </div>
-                    <div className="flex items-center gap-2 text-left text-foreground text-foreground">
-                        <div className="relative w-64 text-left">
+                    <div className="flex flex-wrap items-center gap-2 text-left text-foreground text-foreground">
+                        {selectedIds.length > 0 && (
+                            <Button variant="secondary" onClick={handleBatchEngage} className="gap-2 shadow-sm font-bold animate-in fade-in zoom-in">
+                                <Send className="h-4 w-4" /> Batch Engage ({selectedIds.length})
+                            </Button>
+                        )}
+                        <div className="relative w-64 text-left text-foreground">
                             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                             <Input placeholder="Filter registry..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8 bg-white" />
                         </div>
-                        <Button variant="outline" onClick={handleExport} disabled={isLoading} className="text-foreground text-foreground text-foreground">
+                        <Button variant="outline" onClick={handleExport} disabled={isLoading} className="text-foreground text-foreground">
                             <Download className="mr-2 h-4 w-4" /> Export CSV
                         </Button>
                         <BulkImportDialog type="transporter" onComplete={() => fetchData(currentPage)}><Button variant="outline" className="text-foreground text-foreground text-foreground"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
-                        <Button onClick={() => setDialog({ type: 'add' })} className="text-foreground text-foreground text-foreground text-foreground text-foreground"><PlusCircle className="mr-2 h-4 w-4" /> Add Record</Button>
+                        <Button onClick={() => setDialog({ type: 'add' })} className="text-foreground text-foreground text-foreground text-foreground"><PlusCircle className="mr-2 h-4 w-4" /> Add Record</Button>
                     </div>
                 </CardHeader>
                 <Card className="text-left text-foreground text-foreground">
-                    <CardContent className="pt-6 text-left text-foreground text-foreground">
+                    <CardContent className="pt-6 text-left text-foreground text-foreground text-foreground text-foreground">
                         <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground text-foreground">
                             <div className="flex-1 space-y-2 text-left text-foreground text-foreground">
                                 <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-foreground"><Filter className="h-3 w-3"/> Status</Label>
@@ -416,11 +453,11 @@ export default function TransporterManagement() {
                                 <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />
                                 
                                 <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-6 border-t">
-                                    <div className="text-sm text-muted-foreground font-medium">
+                                    <div className="text-sm text-muted-foreground font-medium text-foreground">
                                         Showing {allRecords.length} of {totalRecords.toLocaleString()} records
                                     </div>
                                     
-                                    <div className="flex items-center gap-4">
+                                    <div className="flex items-center gap-4 text-foreground">
                                         <div className="flex items-center gap-2">
                                             <Button variant="outline" size="icon" onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))} disabled={currentPage === 1}>
                                                 <ChevronLeft className="h-4 w-4" />
@@ -428,7 +465,7 @@ export default function TransporterManagement() {
                                             <form onSubmit={handleJumpPage} className="flex items-center gap-2">
                                                 <span className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Page</span>
                                                 <Input 
-                                                    className="w-16 h-8 text-center font-bold font-mono text-foreground" 
+                                                    className="w-16 h-8 text-center font-bold font-mono" 
                                                     value={jumpPageInput} 
                                                     onChange={e => setJumpPageInput(e.target.value)}
                                                 />
@@ -440,7 +477,7 @@ export default function TransporterManagement() {
                                         </div>
                                     </div>
 
-                                    <Button variant="outline" onClick={() => setCurrentPage(prev => prev + 1)} disabled={currentPage === totalPages} className="min-w-[180px] font-bold text-foreground">
+                                    <Button variant="outline" onClick={() => setCurrentPage(prev => prev + 1)} disabled={currentPage === totalPages} className="min-w-[180px] font-bold">
                                         Load Next 100 Records
                                     </Button>
                                 </div>

@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -253,6 +252,25 @@ export default function SupplierManagement() {
       toast({ title: "Export Complete" });
   };
 
+  const handleEngage = (record: any) => {
+    const indexInSelected = selectedIds.indexOf(record.id);
+    const engageList = selectedIds.length > 0 
+        ? partners.filter(r => selectedIds.includes(r.id)) 
+        : [record];
+        
+    setDialog({ 
+        type: 'engage', 
+        data: engageList, 
+        initialIndex: Math.max(0, indexInSelected) 
+    });
+  };
+
+  const handleBatchEngage = () => {
+    if (selectedIds.length === 0) return;
+    const engageList = partners.filter(r => selectedIds.includes(r.id));
+    setDialog({ type: 'engage', data: engageList, initialIndex: 0 });
+  };
+
   const columns: ColumnDef<any>[] = [
     { 
         accessorKey: 'companyName', 
@@ -315,7 +333,7 @@ export default function SupplierManagement() {
     { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
       <div className="flex justify-end gap-1 text-left text-foreground">
         <EnrichPartnerButton partner={row.original} onUpdate={() => fetchData(currentPage)} />
-        <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'engage', data: [row.original] })} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
+        <Button variant="ghost" size="icon" onClick={() => handleEngage(row.original)} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
         <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.companyName} />
         <PartnerTasksDialog partner={row.original} />
         <PartnerOversightDialog partner={row.original} onUpdate={() => fetchData(currentPage)} />
@@ -331,6 +349,7 @@ export default function SupplierManagement() {
         open={dialog.type === 'engage'} 
         onOpenChange={(o) => !o && setDialog({ type: null })} 
         partners={Array.isArray(dialog.data) ? dialog.data : [dialog.data]} 
+        initialIndex={dialog.initialIndex}
         audience="suppliers" 
         onEngageSuccess={() => fetchData(currentPage)} 
       />
@@ -338,7 +357,7 @@ export default function SupplierManagement() {
       
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
         <AlertDialogContent className="text-left text-foreground">
-          <AlertDialogHeader><AlertDialogTitle>Delete Record?</AlertDialogTitle><AlertDialogDescription>Delete Selected?</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Delete Record?</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={async () => {
@@ -358,7 +377,7 @@ export default function SupplierManagement() {
              <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground">
                 <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
                 <h2 className="text-2xl font-black font-headline mb-2 text-foreground text-center">Registry Forensic Search</h2>
-                <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center">Scan the master database of 20,000+ suppliers. Independent variables ensure high-precision filtering.</p>
+                <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center text-foreground">Scan the master database of 20,000+ suppliers. Independent variables ensure high-precision filtering.</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto text-left text-foreground">
                     <div className="space-y-2 text-left text-foreground">
                         <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Company Name</Label>
@@ -434,6 +453,11 @@ export default function SupplierManagement() {
                         <CardDescription className="text-left text-foreground text-foreground text-foreground">Unified industrial supply directory ({totalRecords.toLocaleString()} results).</CardDescription>
                     </div>
                     <div className="flex flex-wrap items-center gap-2 text-left text-foreground">
+                        {selectedIds.length > 0 && (
+                            <Button variant="secondary" onClick={handleBatchEngage} className="gap-2 shadow-sm font-bold animate-in fade-in zoom-in">
+                                <Send className="h-4 w-4" /> Batch Engage ({selectedIds.length})
+                            </Button>
+                        )}
                         <Button variant="outline" onClick={handleExport} disabled={isLoading} className="text-foreground text-foreground">
                             <Download className="mr-2 h-4 w-4" /> Export CSV
                         </Button>
