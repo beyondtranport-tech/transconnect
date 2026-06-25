@@ -149,6 +149,7 @@ export default function SupplierManagement() {
 
   const [statusFilter, setStatusFilter] = useState('all');
   const [assigneeFilter, setAssigneeFilter] = useState('all');
+  const [outreachFilter, setOutreachFilter] = useState('all');
 
   const fetchData = useCallback(async (limit: number = 20000) => {
     setIsLoading(true);
@@ -171,13 +172,40 @@ export default function SupplierManagement() {
 
   useEffect(() => { if (hasLoaded) fetchData(); }, [fetchData, hasLoaded]);
 
+  const filteredRecords = useMemo(() => {
+    return allRecords.filter(p => {
+        const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
+        const matchesAssignee = assigneeFilter === 'all' || p.assigneeId === assigneeFilter;
+        
+        let matchesOutreach = true;
+        if (outreachFilter === 'none') matchesOutreach = !p.lastOutreachSubject && ['new', 'inactive', 'contacted'].includes(p.status);
+        else if (outreachFilter !== 'all') matchesOutreach = p.lastOutreachSubject === outreachFilter;
+
+        return matchesStatus && matchesAssignee && matchesOutreach;
+    });
+  }, [allRecords, statusFilter, assigneeFilter, outreachFilter]);
+
   const handleEngage = useCallback((record: any) => {
     const engageList = selectedIds.length > 0 ? allRecords.filter(r => selectedIds.includes(r.id)) : (record ? [record] : []);
     if (engageList.length === 0) return;
     setDialog({ type: 'engage', data: engageList, initialIndex: record ? engageList.findIndex((r: any) => r.id === record.id) : 0 });
   }, [allRecords, selectedIds]);
 
-  const columns: ColumnDef<any>[] = useMemo(() => [
+  async function handleDelete() {
+    if (!dialog.data) return;
+    try {
+      const token = await getClientSideAuthToken();
+      if (!token) return;
+      await performAdminAction(token, 'deletePartner', { partnerId: dialog.data.id });
+      toast({ title: 'Deleted' });
+      fetchData();
+      setDialog({ type: null });
+    } catch (e: any) {
+      toast({ variant: 'destructive', title: 'Error', description: e.message });
+    }
+  }
+
+  const columns: ColumnDef<any>[] = [
     { 
         accessorKey: 'companyName', 
         header: 'Supplier Entity', 
@@ -225,29 +253,7 @@ export default function SupplierManagement() {
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'delete', data: row.original })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
       </div>
     )},
-  ], [fetchData, handleEngage]);
-
-  const filteredRecords = useMemo(() => {
-    return allRecords.filter(p => {
-        const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
-        const matchesAssignee = assigneeFilter === 'all' || p.assigneeId === assigneeFilter;
-        return matchesStatus && matchesAssignee;
-    });
-  }, [allRecords, statusFilter, assigneeFilter]);
-
-  async function handleDelete() {
-    if (!dialog.data) return;
-    try {
-      const token = await getClientSideAuthToken();
-      if (!token) return;
-      await performAdminAction(token, 'deletePartner', { partnerId: dialog.data.id });
-      toast({ title: 'Deleted' });
-      fetchData();
-      setDialog({ type: null });
-    } catch (e: any) {
-      toast({ variant: 'destructive', title: 'Error', description: e.message });
-    }
-  }
+  ];
 
   return (
     <div className="space-y-6 text-left">
@@ -286,6 +292,7 @@ export default function SupplierManagement() {
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
                             <div className="space-y-1 text-left text-foreground text-foreground"><Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Filter className="h-3 w-3"/> Status</Label><Select value={statusFilter} onValueChange={setStatusFilter}><SelectTrigger className="h-9 bg-white text-xs text-left text-foreground"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="new">New</SelectItem><SelectItem value="contacted">Researching</SelectItem></SelectContent></Select></div>
                             <div className="space-y-1 text-left text-foreground"><Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-left text-foreground"><Users className="h-3 w-3"/> Assignee</Label><Select value={assigneeFilter} onValueChange={setAssigneeFilter}><SelectTrigger className="h-9 bg-white text-xs text-left text-foreground text-left text-foreground"><SelectValue placeholder="All Staff" /></SelectTrigger><SelectContent><SelectItem value="all">All Staff</SelectItem><SelectItem value="none">Unallocated</SelectItem>{staff.map(s => <SelectItem key={s.id} value={s.id}>{s.firstName} {s.lastName}</SelectItem>)}</SelectContent></Select></div>
+                            <div className="space-y-1 text-left text-foreground"><Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Send className="h-3 w-3"/> Outreach</Label><Select value={outreachFilter} onValueChange={setOutreachFilter}><SelectTrigger className="h-9 bg-white text-xs text-left text-foreground text-left text-foreground"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All Outreach</SelectItem><SelectItem value="none">No Outreach Yet</SelectItem><SelectItem value="Digital Handshake">Handshake Sent</SelectItem></SelectContent></Select></div>
                             <div className="flex items-end text-left text-foreground text-foreground text-foreground"><Button variant="outline" onClick={() => setHasLoaded(false)} className="h-9 w-full text-xs font-bold uppercase tracking-widest text-left text-foreground text-foreground text-foreground text-foreground"><RotateCcw className="mr-1 h-3 w-3" /> New Search</Button></div>
                         </div>
                         {isLoading ? <div className="flex justify-center items-center py-20 text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (

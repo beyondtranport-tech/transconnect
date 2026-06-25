@@ -140,6 +140,7 @@ export default function InvestorManagement() {
   const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | null, data?: any, initialIndex?: number }>({ type: null });
 
   const [statusFilter, setStatusFilter] = useState('all');
+  const [outreachFilter, setOutreachFilter] = useState('all');
 
   const fetchData = useCallback(async (limit: number = 20000) => {
     setIsLoading(true);
@@ -174,6 +175,18 @@ export default function InvestorManagement() {
     if (engageList.length === 0) return;
     setDialog({ type: 'engage', data: engageList, initialIndex: record ? engageList.findIndex((r: any) => r.id === record.id) : 0 });
   }, [allRecords, selectedIds]);
+
+  const filteredRecords = useMemo(() => {
+    return allRecords.filter(p => {
+        const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
+        
+        let matchesOutreach = true;
+        if (outreachFilter === 'none') matchesOutreach = !p.lastOutreachSubject && ['new', 'inactive', 'contacted'].includes(p.status);
+        else if (outreachFilter !== 'all') matchesOutreach = p.lastOutreachSubject === outreachFilter;
+
+        return matchesStatus && matchesOutreach;
+    });
+  }, [allRecords, statusFilter, outreachFilter]);
 
   const columns: ColumnDef<any>[] = useMemo(() => [
     { 
@@ -241,10 +254,6 @@ export default function InvestorManagement() {
     }
   }
 
-  const filteredRecords = useMemo(() => {
-    return allRecords.filter(p => statusFilter === 'all' || p.status === statusFilter);
-  }, [allRecords, statusFilter]);
-
   return (
     <div className="space-y-6 text-left text-foreground">
       <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partners={dialog.data || []} initialIndex={dialog.initialIndex} audience="investors" onEngageSuccess={() => fetchData()} />
@@ -283,14 +292,21 @@ export default function InvestorManagement() {
                 <Card className="text-left">
                     <CardContent className="pt-6 text-left">
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
-                            <div className="space-y-2 text-left text-foreground">
+                            <div className="space-y-1 text-left text-foreground">
                                 <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left"><Filter className="h-3 w-3"/> Status</Label>
                                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                                    <SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="All Statuses" /></SelectTrigger>
+                                    <SelectTrigger className="h-9 bg-white text-xs"><SelectValue placeholder="All Statuses" /></SelectTrigger>
                                     <SelectContent><SelectItem value="all">All Statuses</SelectItem><SelectItem value="new">New</SelectItem><SelectItem value="active">Active Participant</SelectItem></SelectContent>
                                 </Select>
                             </div>
-                            <div className="flex items-end text-left"><Button variant="outline" onClick={() => setHasLoaded(false)} className="h-10 w-full text-foreground text-left"><RotateCcw className="mr-1 h-3 w-3" /> New Search</Button></div>
+                            <div className="space-y-1 text-left text-foreground">
+                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left"><Send className="h-3 w-3"/> Outreach</Label>
+                                <Select value={outreachFilter} onValueChange={setOutreachFilter}>
+                                    <SelectTrigger className="h-9 bg-white text-xs"><SelectValue placeholder="All Outreach" /></SelectTrigger>
+                                    <SelectContent><SelectItem value="all">All Outreach</SelectItem><SelectItem value="none">No Outreach Yet</SelectItem></SelectContent>
+                                </Select>
+                            </div>
+                            <div className="flex items-end text-left"><Button variant="outline" onClick={() => setHasLoaded(false)} className="h-9 w-full text-xs font-bold uppercase tracking-widest"><RotateCcw className="mr-1 h-3 w-3" /> New Search</Button></div>
                         </div>
                         {isLoading ? <div className="flex justify-center items-center py-10 text-foreground text-left"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
                             <div className="space-y-6 text-left">

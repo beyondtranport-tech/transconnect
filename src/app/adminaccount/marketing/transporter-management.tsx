@@ -8,7 +8,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, Truck, Edit, Trash2, Send, Download, Save, Search, Filter, Users, Globe, RefreshCcw, Database, Upload, RotateCcw, UserCheck, Sparkles, ChevronDown } from 'lucide-react';
+import { Loader2, PlusCircle, Truck, Edit, Trash2, Send, Download, Save, Search, Filter, Users, Globe, RefreshCcw, Database, Upload, RotateCcw, UserCheck, ChevronDown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -90,17 +90,16 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left text-foreground">
             <div className="grid grid-cols-2 gap-4 text-left">
-              <FormField control={form.control} name="firstName" render={({ field }) => (<FormItem><FormLabel>First Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-              <FormField control={form.control} name="lastName" render={({ field }) => (<FormItem><FormLabel>Last Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Entity Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="contactPerson" render={({ field }) => (<FormItem><FormLabel>Key Contact Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
-            <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem className="text-left"><FormLabel>Company Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-            <div className="grid grid-cols-2 gap-4 text-left text-foreground">
+            <div className="grid grid-cols-2 gap-4 text-left">
               <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="mobile" render={({ field }) => (<FormItem><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
             <FormField control={form.control} name="status" render={({ field }) => (
                 <FormItem className="text-left">
-                    <FormLabel>Status</FormLabel>
+                    <FormLabel>Pipeline Status</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl><SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
                         <SelectContent>
@@ -133,12 +132,14 @@ export default function TransporterManagement() {
   const [hasLoaded, setHasLoaded] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [resultsLimit, setResultsLimit] = useState(20000);
   const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | null, data?: any, initialIndex?: number }>({ type: null });
 
   const [statusFilter, setStatusFilter] = useState('all');
   const [assigneeFilter, setAssigneeFilter] = useState('all');
+  const [outreachFilter, setOutreachFilter] = useState('all');
 
-  const fetchData = useCallback(async (limit: number = 20000) => {
+  const fetchData = useCallback(async (limit: number = resultsLimit) => {
     setIsLoading(true);
     try {
       const token = await getClientSideAuthToken();
@@ -155,9 +156,22 @@ export default function TransporterManagement() {
     } finally {
       setIsLoading(false);
     }
-  }, [searchTerm, toast]);
+  }, [searchTerm, resultsLimit, toast]);
 
   useEffect(() => { if (hasLoaded) fetchData(); }, [fetchData, hasLoaded]);
+
+  const filteredRecords = useMemo(() => {
+    return allRecords.filter(p => {
+        const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
+        const matchesAssignee = assigneeFilter === 'all' || p.assigneeId === assigneeFilter;
+        
+        let matchesOutreach = true;
+        if (outreachFilter === 'none') matchesOutreach = !p.lastOutreachSubject && ['new', 'inactive', 'contacted'].includes(p.status);
+        else if (outreachFilter !== 'all') matchesOutreach = p.lastOutreachSubject === outreachFilter;
+
+        return matchesStatus && matchesAssignee && matchesOutreach;
+    });
+  }, [allRecords, statusFilter, assigneeFilter, outreachFilter]);
 
   const handleEngage = useCallback((record: any) => {
     const engageList = selectedIds.length > 0 ? allRecords.filter(r => selectedIds.includes(r.id)) : (record ? [record] : []);
@@ -165,7 +179,21 @@ export default function TransporterManagement() {
     setDialog({ type: 'engage', data: engageList, initialIndex: record ? engageList.findIndex((r: any) => r.id === record.id) : 0 });
   }, [allRecords, selectedIds]);
 
-  const columns: ColumnDef<any>[] = useMemo(() => [
+  async function handleDelete() {
+    if (!dialog.data) return;
+    try {
+      const token = await getClientSideAuthToken();
+      if (!token) return;
+      await performAdminAction(token, 'deletePartner', { partnerId: dialog.data.id });
+      toast({ title: 'Deleted' });
+      fetchData();
+      setDialog({ type: null });
+    } catch (e: any) {
+      toast({ variant: 'destructive', title: 'Error', description: e.message });
+    }
+  }
+
+  const columns: ColumnDef<any>[] = [
     { 
         accessorKey: 'companyName', 
         header: 'Haulier Entity', 
@@ -213,29 +241,7 @@ export default function TransporterManagement() {
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'delete', data: row.original })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
       </div>
     )},
-  ], [fetchData, handleEngage]);
-
-  const filteredRecords = useMemo(() => {
-    return allRecords.filter(p => {
-        const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
-        const matchesAssignee = assigneeFilter === 'all' || p.assigneeId === assigneeFilter;
-        return matchesStatus && matchesAssignee;
-    });
-  }, [allRecords, statusFilter, assigneeFilter]);
-
-  async function handleDelete() {
-    if (!dialog.data) return;
-    try {
-      const token = await getClientSideAuthToken();
-      if (!token) return;
-      await performAdminAction(token, 'deletePartner', { partnerId: dialog.data.id });
-      toast({ title: 'Deleted' });
-      fetchData();
-      setDialog({ type: null });
-    } catch (e: any) {
-      toast({ variant: 'destructive', title: 'Error', description: e.message });
-    }
-  }
+  ];
 
   return (
     <div className="space-y-6 text-left">
@@ -255,16 +261,13 @@ export default function TransporterManagement() {
                 <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center text-foreground text-left">Scan the entire national database. Identify the right capacity for your sprint.</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto text-left">
                     <div className="space-y-2 text-left text-foreground"><Label className="text-[10px] font-black uppercase text-muted-foreground ml-1 text-left">Company Name</Label><Input placeholder="Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="h-12 bg-white" /></div>
-                    <div className="flex items-end gap-2 text-left text-foreground text-foreground"><Button size="lg" onClick={() => { fetchData(); }} disabled={isLoading} className="flex-1 h-12 font-black uppercase tracking-widest gap-2 shadow-lg">{isLoading ? <Loader2 className="animate-spin h-4 w-4"/> : <Search className="mr-2 h-4 w-4"/>} Scan Registry</Button></div>
+                    <div className="flex items-end gap-2 text-left text-foreground text-foreground"><Button size="lg" onClick={() => { fetchData(); }} disabled={isLoading} className="flex-1 h-12 font-black uppercase tracking-widest gap-2 shadow-lg">{isLoading ? <Loader2 className="animate-spin h-4 w-4"/> : <Search className="h-4 w-4"/>} Scan Registry</Button></div>
                 </div>
             </Card>
       ) : (
             <div className="space-y-6 text-left text-foreground">
                 <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left text-foreground">
-                    <div className="text-left text-foreground">
-                        <CardTitle className="flex items-center gap-2 text-2xl font-black font-headline text-left text-foreground"><Truck /> Transporter Registry</CardTitle>
-                        <CardDescription className="text-left text-muted-foreground">Unified industrial database view ({filteredRecords.length} records).</CardDescription>
-                    </div>
+                    <div className="text-left text-foreground text-left"><CardTitle className="flex items-center gap-2 text-2xl font-black font-headline text-left text-foreground"><Truck /> Transporter Registry</CardTitle><CardDescription className="text-left text-muted-foreground">Unified industrial database view ({filteredRecords.length} records).</CardDescription></div>
                     <div className="flex flex-wrap items-center gap-2 text-left text-foreground">
                         {selectedIds.length > 0 && <Button variant="secondary" onClick={() => handleEngage(null)} className="gap-2 shadow-sm font-bold animate-in fade-in zoom-in text-left text-foreground"><Send className="h-4 w-4" /> Batch Engage ({selectedIds.length})</Button>}
                         <Button variant="outline" onClick={() => downloadDataAsCSV(allRecords, 'transporters-export.csv')} disabled={isLoading} className="text-left text-foreground"><Download className="mr-2 h-4 w-4" /> Export CSV</Button>
@@ -277,6 +280,7 @@ export default function TransporterManagement() {
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
                             <div className="space-y-1 text-left text-foreground text-foreground"><Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Filter className="h-3 w-3"/> Status</Label><Select value={statusFilter} onValueChange={setStatusFilter}><SelectTrigger className="h-9 bg-white text-xs text-left text-foreground"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="new">New</SelectItem><SelectItem value="contacted">Researching</SelectItem></SelectContent></Select></div>
                             <div className="space-y-1 text-left text-foreground text-foreground"><Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-left text-foreground"><Users className="h-3 w-3"/> Assignee</Label><Select value={assigneeFilter} onValueChange={setAssigneeFilter}><SelectTrigger className="h-9 bg-white text-xs text-left text-foreground text-left text-foreground"><SelectValue placeholder="All Staff" /></SelectTrigger><SelectContent><SelectItem value="all">All Staff</SelectItem><SelectItem value="none">Unallocated</SelectItem>{staff.map(s => <SelectItem key={s.id} value={s.id}>{s.firstName} {s.lastName}</SelectItem>)}</SelectContent></Select></div>
+                            <div className="space-y-1 text-left text-foreground"><Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Send className="h-3 w-3"/> Outreach</Label><Select value={outreachFilter} onValueChange={setOutreachFilter}><SelectTrigger className="h-9 bg-white text-xs text-left text-foreground text-left text-foreground"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All Outreach</SelectItem><SelectItem value="none">No Outreach Yet</SelectItem><SelectItem value="Digital Handshake">Handshake Sent</SelectItem></SelectContent></Select></div>
                             <div className="flex items-end text-left text-foreground text-foreground text-foreground"><Button variant="outline" onClick={() => setHasLoaded(false)} className="h-9 w-full text-xs font-bold uppercase tracking-widest text-left text-foreground text-foreground text-foreground text-foreground"><RotateCcw className="mr-1 h-3 w-3" /> New Search</Button></div>
                         </div>
                         {isLoading ? <div className="flex justify-center items-center py-20 text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
