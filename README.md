@@ -1,37 +1,37 @@
-# Firebase Studio
+# Logistics Flow
 
-This is a NextJS starter in Firebase Studio.
-
-To get started, take a look at src/app/page.tsx.
+This is the stabilized version of the Logistics Flow application, featuring the industrial registry, automated AI discovery, and the forensic engagement engine.
 
 ---
 
-## Backing Up Your Code to GitHub
+## Maintenance & Backups
 
-Here are the commands to back up your current work to your GitHub repository. Please run these commands in your terminal.
+To save your current work and push your changes to GitHub, run the following sequence in your terminal:
 
 ### Step 1: Stage All Your Changes
-
 This command adds all new and modified files to be included in your backup.
-
 ```bash
 git add .
 ```
 
 ### Step 2: Save Your Changes
-
-This command saves your staged changes with a descriptive message. You can change the message to describe what you've done.
-
+Commit your changes with a descriptive message.
 ```bash
-git commit -m "Stable version for partner demos"
+git commit -m "Admin Portal Stabilization: Fixed build crashes and verified tracking"
 ```
 
 ### Step 3: Push Your Backup to GitHub
-
-This command uploads your saved changes to your remote GitHub repository, creating a secure backup.
-
+This uploads your saved changes to your remote repository.
 ```bash
 git push
 ```
 
-After running these three commands, your code will be safely backed up.
+*Note: If prompted for credentials, follow the guide in `docs/git-auth-troubleshooting.md` to use a GitHub Personal Access Token (PAT).*
+
+---
+
+## Recent Updates: Admin Portal Stabilization
+- **Fixed Build Failures**: Resolved "Unexpected token div" and "Dialog" errors caused by malformed JSX closures in the management modules.
+- **Full-Base Visibility**: Re-engineered the registry to load up to 20,000 records, ensuring total visibility of all 5,400+ industrial entries.
+- **Forensic Tracking**: Verified and embedded hidden tracking pixels in all 6 core engagement templates for real-time "Read" status monitoring.
+- **Interactive Pagination**: Restored manual page-jump inputs and accurate result counts in the DataTable component.
