@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 
 export interface ColumnDef<TData> {
   accessorKey?: keyof TData | string;
@@ -19,8 +20,13 @@ export function useDataTable<TData>(data: TData[], columns: ColumnDef<TData>[]) 
   const [globalFilter, setGlobalFilter] = useState('');
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
   const [pageIndex, setPageIndex] = useState(0);
-  // Set to 25 to align with recommended AI batch sizes
-  const pageSize = 25;
+  // Increased page size for higher information density in professional workflows
+  const pageSize = 100;
+
+  // Reset pagination when data changes or filter is applied
+  useEffect(() => {
+    setPageIndex(0);
+  }, [data.length, globalFilter]);
 
   const getNestedValue = (obj: any, path?: string): any => {
     if (!path || obj === null || obj === undefined) return undefined;
@@ -36,7 +42,7 @@ export function useDataTable<TData>(data: TData[], columns: ColumnDef<TData>[]) 
         columns.some(column => {
           if (!column.accessorKey) return false;
           const value = getNestedValue(row, column.accessorKey as string);
-          return String(value).toLowerCase().includes(globalFilter.toLowerCase());
+          return String(value || '').toLowerCase().includes(globalFilter.toLowerCase());
         })
       );
     }
@@ -107,6 +113,7 @@ export function useDataTable<TData>(data: TData[], columns: ColumnDef<TData>[]) 
     toggleAll,
     toggleRow,
     pageIndex,
+    setPageIndex,
     pageCount,
     pageSize,
     nextPage,

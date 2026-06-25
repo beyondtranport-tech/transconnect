@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -11,8 +12,8 @@ import {
 import { useDataTable, type ColumnDef } from '@/hooks/use-data-table';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { ArrowUpDown, ChevronLeft, ChevronRight } from 'lucide-react';
-import React from 'react';
+import { ArrowUpDown, ChevronLeft, ChevronRight, Hash } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
 import { Checkbox } from './checkbox';
 
 // Helper to safely access nested properties
@@ -39,6 +40,7 @@ export function DataTable<TData>({ columns, data, onSelectionChange }: DataTable
     toggleAll,
     toggleRow,
     pageIndex,
+    setPageIndex,
     pageCount,
     pageSize,
     nextPage,
@@ -47,9 +49,25 @@ export function DataTable<TData>({ columns, data, onSelectionChange }: DataTable
     canPrevPage
   } = useDataTable(data, columns);
 
+  const [jumpInput, setJumpInput] = useState(String(pageIndex + 1));
+
+  useEffect(() => {
+    setJumpInput(String(pageIndex + 1));
+  }, [pageIndex]);
+
   const handleSort = (columnId: string) => {
     const isAsc = sorting.length > 0 && sorting[0].id === columnId && !sorting[0].desc;
     setSorting([{ id: columnId, desc: isAsc }]);
+  };
+
+  const handleJumpSubmit = (e: React.FormEvent) => {
+      e.preventDefault();
+      const val = parseInt(jumpInput, 10);
+      if (!isNaN(val) && val >= 1 && val <= pageCount) {
+          setPageIndex(val - 1);
+      } else {
+          setJumpInput(String(pageIndex + 1));
+      }
   };
 
   React.useEffect(() => {
@@ -62,27 +80,27 @@ export function DataTable<TData>({ columns, data, onSelectionChange }: DataTable
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-4">
           <Input
-            placeholder="Filter all columns..."
+            placeholder="Filter current view..."
             value={globalFilter}
             onChange={e => setGlobalFilter(e.target.value)}
-            className="max-w-sm"
+            className="max-w-sm h-9"
           />
-          <div className="text-sm text-muted-foreground whitespace-nowrap">
+          <div className="text-xs font-black uppercase tracking-widest text-muted-foreground whitespace-nowrap bg-muted px-3 py-1.5 rounded-full">
             {Object.keys(rowSelection).length} of {filteredCount} selected
           </div>
       </div>
-      <div className="rounded-md border">
+      <div className="rounded-md border overflow-hidden bg-white">
         <Table>
-          <TableHeader>
+          <TableHeader className="bg-slate-50">
             <TableRow>
               <TableHead className="w-[50px]">
                 <Checkbox 
-                  checked={filteredCount > 0 && Object.keys(rowSelection).length === filteredCount}
+                  checked={filteredCount > 0 && Object.keys(rowSelection).length === rows.length}
                   onCheckedChange={(checked) => toggleAll(!!checked)}
                 />
               </TableHead>
               {columns.map(column => (
-                <TableHead key={(column.id || column.accessorKey) as string}>
+                <TableHead key={(column.id || column.accessorKey) as string} className="text-[10px] font-black uppercase tracking-widest text-muted-foreground py-3">
                   {column.header ? (
                     column.id === 'actions' ? (
                       <div className="text-right">{column.header}</div>
@@ -90,10 +108,10 @@ export function DataTable<TData>({ columns, data, onSelectionChange }: DataTable
                       <Button
                           variant="ghost"
                           onClick={() => handleSort(column.accessorKey as string)}
-                          className="-ml-4 h-8"
+                          className="-ml-4 h-8 text-[10px] font-black uppercase tracking-widest hover:bg-transparent hover:text-primary"
                       >
                           {column.header}
-                          <ArrowUpDown className="ml-2 h-4 w-4" />
+                          <ArrowUpDown className="ml-1 h-3 w-3" />
                       </Button>
                     ) : (
                       column.header
@@ -106,7 +124,7 @@ export function DataTable<TData>({ columns, data, onSelectionChange }: DataTable
           <TableBody>
             {rows.length > 0 ? (
               rows.map((row, index) => (
-                <TableRow key={(row.original as any).id || index} data-state={rowSelection[(row.original as any).id] ? 'selected' : ''}>
+                <TableRow key={(row.original as any).id || index} data-state={rowSelection[(row.original as any).id] ? 'selected' : ''} className="hover:bg-slate-50/50">
                   <TableCell>
                       <Checkbox 
                         checked={!!rowSelection[(row.original as any).id]}
@@ -114,7 +132,7 @@ export function DataTable<TData>({ columns, data, onSelectionChange }: DataTable
                       />
                   </TableCell>
                   {columns.map(column => (
-                    <TableCell key={(column.id || column.accessorKey) as string}>
+                    <TableCell key={(column.id || column.accessorKey) as string} className="py-3">
                       {column.cell ? column.cell({ row }) : getNestedValue(row.original, column.accessorKey as string)}
                     </TableCell>
                   ))}
@@ -122,8 +140,8 @@ export function DataTable<TData>({ columns, data, onSelectionChange }: DataTable
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length + 1} className="h-24 text-center">
-                  No results.
+                <TableCell colSpan={columns.length + 1} className="h-32 text-center text-muted-foreground italic">
+                  No records match your filters in this registry segment.
                 </TableCell>
               </TableRow>
             )}
@@ -131,18 +149,31 @@ export function DataTable<TData>({ columns, data, onSelectionChange }: DataTable
         </Table>
       </div>
       
-      <div className="flex items-center justify-between px-2">
-        <div className="text-sm text-muted-foreground">
+      <div className="flex flex-col md:flex-row items-center justify-between gap-4 px-2 pt-2">
+        <div className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
             Showing {pageIndex * pageSize + 1} to {Math.min((pageIndex + 1) * pageSize, filteredCount)} of {filteredCount} entries
         </div>
-        <div className="flex items-center space-x-2">
-            <Button variant="outline" size="sm" onClick={prevPage} disabled={!canPrevPage}>
-                <ChevronLeft className="h-4 w-4 mr-1" /> Previous
-            </Button>
-            <div className="text-sm font-medium px-4">Page {pageIndex + 1} of {pageCount || 1}</div>
-            <Button variant="outline" size="sm" onClick={nextPage} disabled={!canNextPage}>
-                Next <ChevronRight className="h-4 w-4 ml-1" />
-            </Button>
+        
+        <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 bg-muted/50 p-1 rounded-lg border">
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={prevPage} disabled={!canPrevPage}>
+                    <ChevronLeft className="h-4 w-4" />
+                </Button>
+                
+                <form onSubmit={handleJumpSubmit} className="flex items-center gap-2 px-2">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Page</span>
+                    <Input 
+                        className="w-14 h-8 text-center font-bold font-mono text-xs border-primary/20 bg-white" 
+                        value={jumpInput} 
+                        onChange={e => setJumpInput(e.target.value)}
+                    />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">of {pageCount || 1}</span>
+                </form>
+
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={nextPage} disabled={!canNextPage}>
+                    <ChevronRight className="h-4 w-4" />
+                </Button>
+            </div>
         </div>
       </div>
     </div>
