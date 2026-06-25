@@ -51,10 +51,19 @@ export async function POST(req: NextRequest) {
                 const limitValue = requestedLimit || 100;
                 const offset = (page - 1) * limitValue;
 
-                // 1. Fetch raw data from both sources (Capped at 1000 per source for stability)
+                // 1. Optimized Fetch Strategy
+                // If filtering for "No Outreach", we prioritize 'new' status to bypass worked-on records
+                let pRef: any = db.collection('partners');
+                let lRef: any = db.collection('leads');
+
+                if (outreachFilter === 'none') {
+                    // Try to find specifically un-engaged records using status as a proxy for speed
+                    lRef = lRef.where('status', '==', 'new');
+                }
+
                 const [pSnap, lSnap] = await Promise.all([
-                    db.collection('partners').orderBy('updatedAt', 'desc').limit(1000).get(),
-                    db.collection('leads').orderBy('updatedAt', 'desc').limit(1000).get()
+                    pRef.orderBy('updatedAt', 'desc').limit(2000).get(),
+                    lRef.orderBy('updatedAt', 'desc').limit(2000).get()
                 ]);
 
                 // 2. Normalize and merge

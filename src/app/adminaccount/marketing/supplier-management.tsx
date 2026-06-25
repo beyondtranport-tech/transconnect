@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -7,9 +8,9 @@ import * as z from 'zod';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from '@/hooks/use-toast';
-import { getClientSideAuthToken } from '@/firebase';
+import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
-  Loader2, PlusCircle, Building, Edit, Trash2, Send, Download, Save, Search, Filter, Users, Globe, Zap, Upload, RefreshCcw, Database, Tag, Sparkles, RotateCcw, Clock, UserCheck, ChevronLeft, ChevronRight 
+  Loader2, PlusCircle, Building, Edit, Trash2, Send, Download, Save, Search, Filter, Users, Globe, Zap, Upload, RefreshCcw, Database, Tag, Sparkles, RotateCcw, Clock, UserCheck, ChevronDown, ChevronLeft, ChevronRight 
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
@@ -38,6 +39,12 @@ async function performAdminAction(token: string, action: string, payload: any) {
     body: JSON.stringify({ action, payload }),
     cache: 'no-store'
   });
+
+  const contentType = response.headers.get('content-type');
+  if (!contentType || !contentType.includes('application/json')) {
+      throw new Error("Server returned non-JSON response. This may be a temporary timeout.");
+  }
+
   const result = await response.json();
   if (!response.ok || !result.success) throw new Error(result.error || `API Error for action: ${action}`);
   return result;
@@ -100,7 +107,7 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
           <DialogDescription>Update verified record details.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left text-foreground">
+          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left text-foreground text-foreground">
             <div className="grid grid-cols-2 gap-4 text-left text-foreground">
               <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Entity Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="contactPerson" render={({ field }) => (<FormItem><FormLabel>Key Decision Maker</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
@@ -112,7 +119,7 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
             <FormField control={form.control} name="website" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Corporate Website</FormLabel><FormControl><Input placeholder="https://..." {...field} /></FormControl><FormMessage /></FormItem>)} />
             
             <Separator />
-            <div className="space-y-4 text-left text-foreground text-foreground">
+            <div className="space-y-4 text-left text-foreground">
                 <h3 className="text-sm font-black uppercase tracking-widest text-primary flex items-center gap-2 text-left">
                     <Sparkles className="h-4 w-4"/> Forensic Technical Profile
                 </h3>
@@ -139,10 +146,10 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
             </div>
 
             <FormField control={form.control} name="status" render={({ field }) => (
-                <FormItem className="text-left text-foreground text-foreground">
+                <FormItem className="text-left text-foreground">
                     <FormLabel>Pipeline Status</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl><SelectTrigger className="bg-white text-left text-foreground text-foreground"><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
+                        <FormControl><SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
                         <SelectContent>
                             <SelectItem value="new">New Lead</SelectItem>
                             <SelectItem value="contacted">Researching</SelectItem>
@@ -206,9 +213,7 @@ export default function SupplierManagement() {
             limit: 100
       });
       
-      const [staffRes] = await Promise.all([
-        performAdminAction(token, 'getPlatformStaff', {})
-      ]);
+      const staffRes = await performAdminAction(token, 'getPlatformStaff', {});
 
       setAllRecords(res.data || []);
       setTotalPages(res.totalPages || 1);
@@ -385,7 +390,7 @@ export default function SupplierManagement() {
                         <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Keywords (About Text)</Label>
                         <Input placeholder="Search services/bios..." value={searchKeyword} onChange={(e) => setSearchKeyword(e.target.value)} className="h-12 bg-white" />
                     </div>
-                    <div className="space-y-2 text-left text-foreground text-foreground">
+                    <div className="space-y-2 text-left text-foreground">
                         <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Industrial Category</Label>
                         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
                             <SelectTrigger className="h-12 bg-white text-left text-foreground"><SelectValue placeholder="All Categories" /></SelectTrigger>
@@ -396,7 +401,7 @@ export default function SupplierManagement() {
                         </Select>
                     </div>
 
-                    <div className="space-y-2 text-left text-foreground text-foreground">
+                    <div className="space-y-2 text-left text-foreground">
                         <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Data Integrity</Label>
                         <Select value={integrityFilter} onValueChange={setIntegrityFilter}>
                             <SelectTrigger className="h-12 bg-white text-left"><SelectValue placeholder="All" /></SelectTrigger>
@@ -408,7 +413,7 @@ export default function SupplierManagement() {
                             </SelectContent>
                         </Select>
                     </div>
-                    <div className="space-y-2 text-left text-foreground text-foreground">
+                    <div className="space-y-2 text-left text-foreground">
                         <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Outreach Stage</Label>
                         <Select value={outreachFilter} onValueChange={setOutreachFilter}>
                             <SelectTrigger className="h-12 bg-white text-left text-foreground"><SelectValue placeholder="All Stages" /></SelectTrigger>
@@ -420,7 +425,7 @@ export default function SupplierManagement() {
                             </SelectContent>
                         </Select>
                     </div>
-                    <div className="space-y-2 text-left text-foreground text-foreground">
+                    <div className="space-y-2 text-left text-foreground">
                         <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Enrichment Status</Label>
                         <Select value={enrichmentFilter} onValueChange={setEnrichmentFilter}>
                             <SelectTrigger className="h-12 bg-white text-left"><SelectValue placeholder="All" /></SelectTrigger>
@@ -446,7 +451,7 @@ export default function SupplierManagement() {
         ) : (
             <>
                 <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
-                    <div className="text-left text-foreground">
+                    <div className="text-left text-foreground text-foreground text-foreground text-foreground">
                         <CardTitle className="flex items-center gap-2 text-2xl font-black font-headline text-left text-foreground"><Building /> Supplier Registry</CardTitle>
                         <CardDescription className="text-left text-foreground text-foreground text-foreground">Unified industrial supply directory ({totalRecords.toLocaleString()} results).</CardDescription>
                     </div>
@@ -508,24 +513,24 @@ export default function SupplierManagement() {
                             <div className="space-y-6 text-left text-foreground">
                                 <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />
                                 
-                                <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-6 border-t">
+                                <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-6 border-t text-foreground">
                                     <div className="text-sm text-muted-foreground font-medium">
                                         Showing {allRecords.length} of {totalRecords.toLocaleString()} records
                                     </div>
                                     
-                                    <div className="flex items-center gap-4">
+                                    <div className="flex items-center gap-4 text-foreground">
                                         <div className="flex items-center gap-2">
                                             <Button variant="outline" size="icon" onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))} disabled={currentPage === 1}>
                                                 <ChevronLeft className="h-4 w-4" />
                                             </Button>
-                                            <form onSubmit={handleJumpPage} className="flex items-center gap-2">
+                                            <form onSubmit={handleJumpPage} className="flex items-center gap-2 text-foreground">
                                                 <span className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Page</span>
                                                 <Input 
-                                                    className="w-16 h-8 text-center font-bold font-mono" 
+                                                    className="w-16 h-8 text-center font-bold font-mono text-foreground" 
                                                     value={jumpPageInput} 
                                                     onChange={e => setJumpPageInput(e.target.value)}
                                                 />
-                                                <span className="text-sm font-bold uppercase tracking-widest text-muted-foreground">of {totalPages}</span>
+                                                <span className="text-sm font-bold uppercase tracking-widest text-muted-foreground text-foreground">of {totalPages}</span>
                                             </form>
                                             <Button variant="outline" size="icon" onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))} disabled={currentPage === totalPages}>
                                                 <ChevronRight className="h-4 w-4" />
@@ -533,7 +538,7 @@ export default function SupplierManagement() {
                                         </div>
                                     </div>
 
-                                    <Button variant="outline" onClick={() => setCurrentPage(prev => prev + 1)} disabled={currentPage === totalPages} className="min-w-[180px] font-bold">
+                                    <Button variant="outline" onClick={() => setCurrentPage(prev => prev + 1)} disabled={currentPage === totalPages} className="min-w-[180px] font-bold text-foreground">
                                         Load Next 100 Records
                                     </Button>
                                 </div>
