@@ -67,7 +67,10 @@ type PartnerFormValues = z.infer<typeof partnerSchema>;
 function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: boolean; onOpenChange: (open: boolean) => void; partner?: any; onSave: () => void; }) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const form = useForm<PartnerFormValues>({ resolver: zodResolver(partnerSchema), defaultValues: { type: 'transporter', status: 'new' } });
+  const form = useForm<PartnerFormValues>({ 
+    resolver: zodResolver(partnerSchema), 
+    defaultValues: { type: 'transporter', status: 'new' } 
+  });
 
   useEffect(() => {
     if (open) {
@@ -102,17 +105,20 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
               <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Entity Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="contactPerson" render={({ field }) => (<FormItem><FormLabel>Key Contact</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
-            <div className="grid grid-cols-2 gap-4 text-left text-foreground text-foreground">
+            <div className="grid grid-cols-2 gap-4 text-left text-foreground">
               <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="industrial_category" render={({ field }) => (
                 <FormItem><FormLabel>Category</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl><SelectTrigger className="bg-white"><SelectValue placeholder="Classify..." /></SelectTrigger></FormControl>
+                    <FormControl><SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="Classify..." /></SelectTrigger></FormControl>
                     <SelectContent>{transporterCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent>
                 </Select></FormItem>
               )} />
             </div>
             <FormField control={form.control} name="status" render={({ field }) => (
-                <FormItem className="text-left text-foreground"><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="new">New</SelectItem><SelectItem value="contacted">Searching</SelectItem><SelectItem value="qualified">Qualified</SelectItem><SelectItem value="active">Active Haulier</SelectItem></SelectContent></FormItem>
+                <FormItem className="text-left text-foreground"><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl><SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
+                    <SelectContent><SelectItem value="new">New</SelectItem><SelectItem value="contacted">Searching</SelectItem><SelectItem value="qualified">Qualified</SelectItem><SelectItem value="active">Active Haulier</SelectItem></SelectContent>
+                </Select></FormItem>
             )} />
             <DialogFooter className="pt-4 border-t text-left text-foreground">
               <Button type="submit" disabled={isLoading}>
@@ -170,23 +176,16 @@ export default function TransporterManagement() {
   const handleExport = useCallback(() => {
       if (allRecords.length === 0) return;
       downloadDataAsCSV(allRecords, `transporters-backup-${new Date().toISOString().split('T')[0]}.csv`);
-      toast({ title: "Backup Exported" });
+      toast({ title: "Backup Exported", description: "Full filtered registry saved to CSV." });
   }, [allRecords, toast]);
 
   const handleEngage = (record: any) => {
-    const indexInSelected = record ? selectedIds.indexOf(record.id) : 0;
     const engageList = selectedIds.length > 0 ? allRecords.filter(r => selectedIds.includes(r.id)) : (record ? [record] : []);
     if (engageList.length === 0) return;
+    
+    const indexInSelected = record ? engageList.findIndex(r => r.id === record.id) : 0;
     setDialog({ type: 'engage', data: engageList, initialIndex: Math.max(0, indexInSelected) });
   };
-
-  const filteredRecords = useMemo(() => {
-    return allRecords.filter(p => {
-        const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
-        const matchesAssignee = assigneeFilter === 'all' || p.assigneeId === assigneeFilter;
-        return matchesStatus && matchesAssignee;
-    });
-  }, [allRecords, statusFilter, assigneeFilter]);
 
   async function handleDeleteBatch() {
       if (selectedIds.length === 0) return;
@@ -206,7 +205,7 @@ export default function TransporterManagement() {
   const columns: ColumnDef<any>[] = [
     { 
         accessorKey: 'companyName', 
-        header: 'Transporter Name', 
+        header: 'Transporter Entity', 
         cell: ({ row }) => (
             <div className="flex flex-col text-sm text-left">
                 <span className="font-bold text-foreground text-left">{row.original.companyName || 'Unnamed Entity'}</span>
@@ -226,8 +225,8 @@ export default function TransporterManagement() {
     { accessorKey: 'mobile', header: 'Mobile' },
     { accessorKey: 'email', header: 'Email' },
     { 
-        accessorKey: 'lastOutreachAt',
         header: 'Outreach & Result',
+        accessorKey: 'lastOutreachAt',
         cell: ({ row }) => {
             if (!row.original.lastOutreachSubject) return <span className="text-[10px] text-muted-foreground italic text-left">None</span>;
             return (
@@ -256,6 +255,14 @@ export default function TransporterManagement() {
     )},
   ];
 
+  const filteredRecords = useMemo(() => {
+    return allRecords.filter(p => {
+        const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
+        const matchesAssignee = assigneeFilter === 'all' || p.assigneeId === assigneeFilter;
+        return matchesStatus && matchesAssignee;
+    });
+  }, [allRecords, statusFilter, assigneeFilter]);
+
   return (
     <div className="space-y-6 text-left text-foreground">
       <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partners={dialog.data || []} initialIndex={dialog.initialIndex} audience="transporters" onEngageSuccess={fetchData} />
@@ -263,7 +270,7 @@ export default function TransporterManagement() {
       
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
         <AlertDialogContent>
-          <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will permanently delete the record.</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogHeader><AlertDialogTitle>Delete Record(s)?</AlertDialogTitle><AlertDialogDescription>This will permanently delete the record.</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={selectedIds.length > 0 ? handleDeleteBatch : async () => {
@@ -278,10 +285,11 @@ export default function TransporterManagement() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {!hasLoaded ? (
+      <div className="space-y-6 text-left text-foreground text-foreground">
+        {!hasLoaded ? (
             <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground text-foreground">
                 <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
-                <h2 className="text-2xl font-black font-headline mb-2 text-center text-foreground text-foreground text-center">Haulier Registry Deep-Scan</h2>
+                <h2 className="text-2xl font-black font-headline mb-2 text-center text-foreground text-foreground text-center">Haulier Registry Scan</h2>
                 <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center text-foreground text-foreground text-center">Scan the entire national database. Use filters to build targeted outreach worklists.</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto text-left text-foreground text-left text-foreground">
                     <div className="space-y-2 text-left text-foreground text-foreground"><Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Company Name</Label><Input placeholder="Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="h-12 bg-white" /></div>
@@ -293,7 +301,7 @@ export default function TransporterManagement() {
       ) : (
             <div className="space-y-6 text-left text-foreground text-foreground">
                 <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left text-foreground">
-                    <div className="text-left text-foreground text-foreground text-left text-foreground"><CardTitle className="flex items-center gap-2 text-2xl font-black font-headline text-left text-foreground text-foreground text-left text-foreground"><Truck /> Transporter Registry</CardTitle><CardDescription className="text-left text-foreground text-foreground text-foreground text-foreground text-left text-foreground">Unified industrial database view ({filteredRecords.length} records).</CardDescription></div>
+                    <div className="text-left text-foreground text-foreground text-left text-foreground"><CardTitle className="flex items-center gap-2 text-left text-foreground text-foreground text-left text-foreground"><Truck /> Transporter Registry</CardTitle><CardDescription className="text-left text-foreground text-foreground text-foreground text-foreground text-left text-foreground">Unified industrial database view ({allRecords.length} records).</CardDescription></div>
                     <div className="flex flex-wrap items-center gap-2 text-left text-foreground text-foreground text-foreground text-foreground">
                         {selectedIds.length > 0 && <Button variant="secondary" onClick={() => handleEngage(null)} className="gap-2 shadow-sm font-bold animate-in fade-in zoom-in text-left text-foreground text-foreground"><Send className="h-4 w-4" /> Batch Engage ({selectedIds.length})</Button>}
                         <Button variant="outline" onClick={handleExport} disabled={isLoading} className="text-left text-foreground text-foreground text-foreground text-foreground text-foreground"><Download className="mr-2 h-4 w-4" /> Export CSV</Button>
@@ -302,7 +310,7 @@ export default function TransporterManagement() {
                     </div>
                 </CardHeader>
                 <Card className="text-left text-foreground">
-                    <CardContent className="pt-6 text-left text-foreground">
+                    <CardContent className="pt-6 text-left">
                         <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
                             <div className="space-y-1 text-left text-foreground text-foreground"><Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-foreground"><Filter className="h-3 w-3"/> Status</Label><Select value={statusFilter} onValueChange={setStatusFilter}><SelectTrigger className="h-9 bg-white text-xs text-left text-foreground text-foreground text-foreground"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="new">New</SelectItem><SelectItem value="contacted">Researching</SelectItem></SelectContent></Select></div>
                             <div className="space-y-1 text-left text-foreground text-foreground"><Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-foreground text-foreground"><Users className="h-3 w-3"/> Assignee</Label><Select value={assigneeFilter} onValueChange={setAssigneeFilter}><SelectTrigger className="h-9 bg-white text-xs text-left text-foreground text-foreground text-foreground"><SelectValue placeholder="All Staff" /></SelectTrigger><SelectContent><SelectItem value="all">All Staff</SelectItem><SelectItem value="none">Unallocated</SelectItem>{staff.map(s => <SelectItem key={s.id} value={s.id}>{s.firstName} {s.lastName}</SelectItem>)}</SelectContent></Select></div>
@@ -318,7 +326,8 @@ export default function TransporterManagement() {
                     </CardContent>
                 </Card>
             </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

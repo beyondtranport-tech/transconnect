@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -173,7 +174,7 @@ function LeadsDatabaseComponent() {
           term: searchTerm, 
           outreachFilter, 
           enrichmentFilter,
-          limit: 10000 // Full record base
+          limit: 10000 
       });
       setAllRecords(res.data || []);
       setHasLoaded(true);
@@ -188,14 +189,13 @@ function LeadsDatabaseComponent() {
     if (hasLoaded) fetchData();
   }, [hasLoaded, fetchData]);
 
-  const handleExport = () => {
+  const handleExport = useCallback(() => {
       if (allRecords.length === 0) return;
       downloadDataAsCSV(allRecords, `leads-backup-${new Date().toISOString().split('T')[0]}.csv`);
       toast({ title: "Backup Exported" });
-  };
+  }, [allRecords, toast]);
 
   const handleEngage = (record: any) => {
-    const indexInSelected = record ? selectedIds.indexOf(record.id) : 0;
     const engageList = selectedIds.length > 0 
         ? allRecords.filter(r => selectedIds.includes(r.id)) 
         : (record ? [record] : []);
@@ -205,7 +205,7 @@ function LeadsDatabaseComponent() {
     setEngageDialog({ 
         open: true, 
         data: engageList, 
-        initialIndex: Math.max(0, indexInSelected) 
+        initialIndex: record ? engageList.findIndex(r => r.id === record.id) : 0
     });
   };
 
@@ -242,6 +242,7 @@ function LeadsDatabaseComponent() {
     { accessorKey: 'mobile', header: 'Mobile' },
     {
         header: 'Outreach & Result',
+        accessorKey: 'lastOutreachAt',
         cell: ({ row }) => {
             if (!row.original.lastOutreachSubject) return <span className="text-[10px] text-muted-foreground italic text-left">None</span>;
             return (
@@ -278,7 +279,7 @@ function LeadsDatabaseComponent() {
         </div>
       )
     },
-  ], [fetchData]);
+  ], [fetchData, handleEngage]);
 
   const filteredRecords = useMemo(() => {
     return allRecords.filter(p => {
@@ -365,7 +366,7 @@ function LeadsDatabaseComponent() {
                 <div className="text-left text-foreground text-left"><CardTitle className="flex items-center gap-2 text-left text-foreground"><Users /> Lead Pipeline</CardTitle><CardDescription className="text-left text-foreground text-foreground text-foreground text-left">Managed prospective member registry ({filteredRecords.length} results).</CardDescription></div>
                 <div className="flex gap-2 text-left text-foreground text-foreground text-foreground">
                     {selectedIds.length > 0 && (
-                        <Button variant="secondary" onClick={handleEngage} className="gap-2 shadow-sm font-bold text-left">
+                        <Button variant="secondary" onClick={() => handleEngage(null)} className="gap-2 shadow-sm font-bold text-left">
                             <Send className="h-4 w-4" /> Batch Engage ({selectedIds.length})
                         </Button>
                     )}
@@ -433,4 +434,3 @@ export default function LeadsDatabase() {
     </Suspense>
   );
 }
-

@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -47,6 +48,7 @@ export async function POST(req: NextRequest) {
             case 'searchRegistry': {
                 const { term, category, type, outreachFilter, enrichmentFilter, limit = 10000 } = payload;
                 
+                // Optimized Full-Base Fetch
                 const [pSnap, lSnap] = await Promise.all([
                     db.collection('partners').limit(limit).get(),
                     db.collection('leads').limit(limit).get()
@@ -64,6 +66,7 @@ export async function POST(req: NextRequest) {
                     entryType: item.industrial_category || item.category || item.entryType || item.classification || item.role || 'General'
                 }));
 
+                // Apply Deep-Scan Filtering
                 if (type && type !== 'all' && type !== 'lead') {
                     normalized = normalized.filter(p => p.type === type.toLowerCase());
                 } else if (type === 'lead') {
@@ -74,8 +77,9 @@ export async function POST(req: NextRequest) {
                     normalized = normalized.filter(p => p.entryType === category || p.classification === category);
                 }
 
+                // Hardened "No Outreach" targeting
                 if (outreachFilter === 'none') {
-                    normalized = normalized.filter(p => !p.lastOutreachSubject);
+                    normalized = normalized.filter(p => !p.lastOutreachSubject && ['new', 'inactive'].includes(p.status));
                 } else if (outreachFilter && outreachFilter !== 'all') {
                     normalized = normalized.filter(p => p.lastOutreachSubject === outreachFilter);
                 }
@@ -118,6 +122,19 @@ export async function POST(req: NextRequest) {
                 });
             }
 
+            case 'getLeads': {
+                const snap = await db.collection('leads').orderBy('updatedAt', 'desc').limit(10000).get();
+                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
+            }
+
+            case 'getPartnersByType': {
+                const { type: pType, limit = 10000 } = payload;
+                let q: any = db.collection('partners');
+                if (pType && pType !== 'all') q = q.where('type', '==', pType);
+                const snap = await q.orderBy('updatedAt', 'desc').limit(limit).get();
+                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
+            }
+
             case 'logCommunication': {
                 const { partnerId, type, subject, notes, collection: providedColl } = payload;
                 const [pDoc, lDoc] = await Promise.all([
@@ -156,14 +173,6 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
             }
 
-            case 'getPartnersByType': {
-                const { type: pType, limit = 10000 } = payload;
-                let q: any = db.collection('partners');
-                if (pType && pType !== 'all') q = q.where('type', '==', pType);
-                const snap = await q.orderBy('updatedAt', 'desc').limit(limit).get();
-                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
-            }
-            
             case 'getMembers': {
                 const snap = await db.collection('companies').orderBy('updatedAt', 'desc').limit(10000).get();
                 return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
