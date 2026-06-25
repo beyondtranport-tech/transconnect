@@ -120,7 +120,7 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
                 <FormField control={form.control} name="industrialTags" render={({ field }) => (<FormItem><FormLabel>ML Extracted Keywords</FormLabel><FormControl><Input placeholder="e.g. Parts, Tires..." value={Array.isArray(field.value) ? field.value.join(', ') : ''} onChange={(e) => field.onChange(e.target.value.split(',').map(t => t.trim()))}/></FormControl><FormMessage /></FormItem>)} />
             </div>
             <FormField control={form.control} name="status" render={({ field }) => (
-                <FormItem className="text-left"><FormLabel>Pipeline Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="bg-white"><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="new">New Lead</SelectItem><SelectItem value="contacted">Researching</SelectItem><SelectItem value="qualified">Qualified</SelectItem><SelectItem value="active">Active Provider</SelectItem></SelectContent></Select></FormItem>
+                <FormItem className="text-left"><FormLabel>Pipeline Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="new">New Lead</SelectItem><SelectItem value="contacted">Researching</SelectItem><SelectItem value="qualified">Qualified</SelectItem><SelectItem value="active">Active Provider</SelectItem></SelectContent></Select></FormItem>
             )} />
             <DialogFooter className="pt-4 border-t text-left">
               <Button type="submit" disabled={isLoading}>{isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />} Save Record</Button>
@@ -198,6 +198,12 @@ export default function SupplierManagement() {
     });
   }, [allRecords, statusFilter, assigneeFilter]);
 
+  const handleExport = () => {
+      if (filteredRecords.length === 0) return;
+      downloadDataAsCSV(filteredRecords, `suppliers-backup-${new Date().toISOString().split('T')[0]}.csv`);
+      toast({ title: "Backup Exported", description: "Filtered registry saved to CSV." });
+  };
+
   const handleEngage = (record: any) => {
     const indexInSelected = selectedIds.indexOf(record.id);
     const engageList = selectedIds.length > 0 
@@ -253,7 +259,7 @@ export default function SupplierManagement() {
         <PartnerTasksDialog partner={row.original} />
         <PartnerOversightDialog partner={row.original} onUpdate={() => fetchData(currentPage)} />
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'edit', data: row.original })}><Edit className="h-4 w-4" /></Button>
-        <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'delete', data: row.original })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+        <Button variant="ghost" size="icon" onClick={() => { setDialog({ type: 'delete', data: row.original }); }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
       </div>
     )},
   ];
@@ -272,7 +278,7 @@ export default function SupplierManagement() {
                     <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Company Name</Label><Input placeholder="Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="h-12 bg-white" /></div>
                     <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Outreach Stage</Label><Select value={outreachFilter} onValueChange={setOutreachFilter}><SelectTrigger className="h-12 bg-white"><SelectValue placeholder="All" /></SelectTrigger><SelectContent><SelectItem value="all">All Stages</SelectItem><SelectItem value="none">No Outreach Yet</SelectItem><SelectItem value="Digital Handshake">Handshake Sent</SelectItem></SelectContent></Select></div>
                     <div className="space-y-2"><Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Enrichment</Label><Select value={enrichmentFilter} onValueChange={setEnrichmentFilter}><SelectTrigger className="h-12 bg-white"><SelectValue placeholder="All" /></SelectTrigger><SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="enriched">Enriched</SelectItem><SelectItem value="unenriched">Unenriched</SelectItem></SelectContent></Select></div>
-                    <div className="flex items-end gap-2"><Button size="lg" onClick={() => { setCurrentPage(1); fetchData(1); }} disabled={isLoading} className="flex-1 h-12 font-black uppercase tracking-widest gap-2 shadow-lg">{isLoading ? <Loader2 className="animate-spin h-4 w-4"/> : <Search className="h-4 w-4"/>} Scan</Button><Button variant="outline" size="lg" onClick={() => fetchData(1)} className="h-12">Recent</Button></div>
+                    <div className="flex items-end gap-2"><Button size="lg" onClick={() => { setCurrentPage(1); fetchData(1); }} disabled={isLoading} className="flex-1 h-12 font-black uppercase tracking-widest gap-2 shadow-lg">{isLoading ? <Loader2 className="animate-spin h-4 w-4"/> : <Search className="h-4 w-4"/>} Scan</Button><Button variant="outline" size="lg" onClick={() => { setResultsLimit(100); fetchData(1); }} className="h-12">Recent</Button></div>
                 </div>
             </Card>
       ) : (
@@ -289,25 +295,25 @@ export default function SupplierManagement() {
                 <Card>
                     <CardContent className="pt-6">
                         <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left">
-                            <div className="space-y-1"><Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status</Label><Select value={statusFilter} onValueChange={setStatusFilter}><SelectTrigger className="h-9 bg-white text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="new">New</SelectItem><SelectItem value="contacted">Researching</SelectItem></SelectContent></Select></div>
-                            <div className="space-y-1"><Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Users className="h-3 w-3"/> Assignee</Label><Select value={assigneeFilter} onValueChange={setAssigneeFilter}><SelectTrigger className="h-9 bg-white text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All Staff</SelectItem><SelectItem value="none">Unallocated</SelectItem>{staff.map(s => <SelectItem key={s.id} value={s.id}>{s.firstName} {s.lastName}</SelectItem>)}</SelectContent></Select></div>
-                            <div className="space-y-1"><Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Send className="h-3 w-3"/> Outreach</Label><Select value={outreachFilter} onValueChange={setOutreachFilter}><SelectTrigger className="h-9 bg-white text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="none">No Outreach Yet</SelectItem><SelectItem value="Digital Handshake">Handshake Sent</SelectItem></SelectContent></Select></div>
-                            <div className="space-y-1"><Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Sparkles className="h-3 w-3"/> Enrichment</Label><Select value={enrichmentFilter} onValueChange={setEnrichmentFilter}><SelectTrigger className="h-9 bg-white text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="enriched">Enriched</SelectItem><SelectItem value="unenriched">Unenriched</SelectItem></SelectContent></Select></div>
-                            <div className="flex items-end"><Button variant="outline" onClick={() => setHasLoaded(false)} className="h-9 w-full text-xs font-bold uppercase tracking-widest"><RotateCcw className="mr-1 h-3 w-3" /> Reset Variables</Button></div>
+                            <div className="space-y-1"><Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status</Label><Select value={statusFilter} onValueChange={setStatusFilter}><SelectTrigger className="h-9 bg-white text-xs text-foreground"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="new">New</SelectItem><SelectItem value="contacted">Researching</SelectItem></SelectContent></Select></div>
+                            <div className="space-y-1"><Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Users className="h-3 w-3"/> Assignee</Label><Select value={assigneeFilter} onValueChange={setAssigneeFilter}><SelectTrigger className="h-9 bg-white text-xs text-foreground"><SelectValue placeholder="All Staff" /></SelectTrigger><SelectContent><SelectItem value="all">All Staff</SelectItem><SelectItem value="none">Unallocated</SelectItem>{staff.map(s => <SelectItem key={s.id} value={s.id}>{s.firstName} {s.lastName}</SelectItem>)}</SelectContent></Select></div>
+                            <div className="space-y-1"><Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Send className="h-3 w-3"/> Outreach</Label><Select value={outreachFilter} onValueChange={setOutreachFilter}><SelectTrigger className="h-9 bg-white text-xs text-foreground"><SelectValue placeholder="All" /></SelectTrigger><SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="none">No Outreach Yet</SelectItem><SelectItem value="Digital Handshake">Handshake Sent</SelectItem></SelectContent></Select></div>
+                            <div className="space-y-1"><Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5"><Sparkles className="h-3 w-3"/> Enrichment</Label><Select value={enrichmentFilter} onValueChange={setEnrichmentFilter}><SelectTrigger className="h-9 bg-white text-xs text-foreground"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="enriched">Enriched</SelectItem><SelectItem value="unenriched">Unenriched</SelectItem></SelectContent></Select></div>
+                            <div className="flex items-end"><Button variant="outline" onClick={() => setHasLoaded(false)} className="h-9 w-full text-xs font-bold uppercase tracking-widest text-foreground"><RotateCcw className="mr-1 h-3 w-3" /> Reset Variables</Button></div>
                         </div>
                         {isLoading ? <div className="flex justify-center items-center py-20 text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
                             <div className="space-y-6">
                                 <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />
                                 <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-6 border-t">
-                                    <div className="text-sm text-muted-foreground font-medium">Showing {allRecords.length} of {totalRecords.toLocaleString()} records</div>
-                                    <div className="flex items-center gap-4">
+                                    <div className="text-sm text-muted-foreground font-medium text-foreground">Showing {allRecords.length} of {totalRecords.toLocaleString()} records</div>
+                                    <div className="flex items-center gap-4 text-foreground">
                                         <div className="flex items-center gap-2">
                                             <Button variant="outline" size="icon" onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))} disabled={currentPage === 1}><ChevronLeft className="h-4 w-4" /></Button>
-                                            <form onSubmit={handleJumpPage} className="flex items-center gap-2"><span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Page</span><Input className="w-16 h-8 text-center font-bold font-mono" value={jumpPageInput} onChange={e => setJumpPageInput(e.target.value)}/><span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">of {totalPages}</span></form>
+                                            <form onSubmit={handleJumpPage} className="flex items-center gap-2"><span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Page</span><Input className="w-16 h-8 text-center font-bold font-mono text-foreground" value={jumpPageInput} onChange={e => setJumpPageInput(e.target.value)}/><span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">of {totalPages}</span></form>
                                             <Button variant="outline" size="icon" onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))} disabled={currentPage === totalPages}><ChevronRight className="h-4 w-4" /></Button>
                                         </div>
                                     </div>
-                                    <Button variant="outline" onClick={() => setCurrentPage(prev => prev + 1)} disabled={currentPage === totalPages} className="min-w-[180px] font-bold">Load Next 100 Records</Button>
+                                    <Button variant="outline" onClick={() => setCurrentPage(prev => prev + 1)} disabled={currentPage === totalPages} className="min-w-[180px] font-bold text-foreground text-foreground">Load Next 100 Records</Button>
                                 </div>
                             </div>
                         )}
