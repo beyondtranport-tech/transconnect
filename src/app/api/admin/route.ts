@@ -103,7 +103,6 @@ export async function POST(req: NextRequest) {
                 if (integrityFilter === 'has-email') data = data.filter(p => !!p.email);
                 if (integrityFilter === 'no-email') data = data.filter(p => !p.email);
                 
-                // CRITICAL: Robust Outreach Filter
                 if (outreachFilter === 'none') {
                     data = data.filter(p => !p.lastOutreachSubject && ['new', 'inactive'].includes(p.status));
                 } else if (outreachFilter && outreachFilter !== 'all') {
@@ -130,9 +129,63 @@ export async function POST(req: NextRequest) {
                 });
             }
 
+            case 'getPlatformStaff': {
+                const snap = await db.collection('platformStaff').orderBy('firstName', 'asc').get();
+                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
+            }
+
+            case 'savePlatformStaff': {
+                const { staff } = payload;
+                const ref = staff.id ? db.collection('platformStaff').doc(staff.id) : db.collection('platformStaff').doc();
+                await ref.set({
+                    ...staff,
+                    id: ref.id,
+                    updatedAt: FieldValue.serverTimestamp()
+                }, { merge: true });
+                return NextResponse.json({ success: true });
+            }
+
+            case 'deletePlatformStaff': {
+                const { staffId } = payload;
+                await db.collection('platformStaff').doc(staffId).delete();
+                return NextResponse.json({ success: true });
+            }
+
+            case 'getLeads': {
+                const snap = await db.collection('leads').orderBy('updatedAt', 'desc').limit(100).get();
+                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
+            }
+
+            case 'savePartner': {
+                const { partner } = payload;
+                const type = partner.type || 'lead';
+                const collectionName = type === 'lead' ? 'leads' : 'partners';
+                const ref = partner.id ? db.collection(collectionName).doc(partner.id) : db.collection(collectionName).doc();
+                
+                const dataToSave = {
+                    ...partner,
+                    id: ref.id,
+                    updatedAt: FieldValue.serverTimestamp(),
+                };
+                
+                if (!partner.id) {
+                    dataToSave.createdAt = FieldValue.serverTimestamp();
+                }
+
+                await ref.set(dataToSave, { merge: true });
+                return NextResponse.json({ success: true, id: ref.id });
+            }
+
+            case 'deleteLeads': {
+                const { leadIds } = payload;
+                const batch = db.batch();
+                leadIds.forEach((id: string) => batch.delete(db.collection('leads').doc(id)));
+                await batch.commit();
+                return NextResponse.json({ success: true });
+            }
+
             case 'logCommunication': {
                 const { partnerId, type, subject, notes, collection: providedColl } = payload;
-                
                 const [pDoc, lDoc] = await Promise.all([
                     db.collection('partners').doc(partnerId).get(),
                     db.collection('leads').doc(partnerId).get()
@@ -174,48 +227,9 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true });
             }
 
-            case 'bulkLogForensicInitiated': {
-                const { leadIds, type } = payload;
-                const coll = type === 'lead' ? 'leads' : 'partners';
-                const batch = db.batch();
-                leadIds.forEach((id: string) => {
-                    batch.update(db.collection(coll).doc(id), {
-                        researchStatus: 'searching',
-                        status: 'contacted',
-                        lastForensicAt: FieldValue.serverTimestamp(),
-                        updatedAt: FieldValue.serverTimestamp()
-                    });
-                });
-                await batch.commit();
-                return NextResponse.json({ success: true });
-            }
-
-            case 'getAudienceCommunications': {
-                const { type } = payload;
-                const snap = await db.collectionGroup('communications')
-                    .orderBy('timestamp', 'desc')
-                    .limit(200)
-                    .get();
-                
-                let data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                
-                // Filter by audience logic (e.g. transporters or suppliers)
-                if (type && type !== 'all') {
-                    // Logic would go here to filter by partner/lead type associated with the log
-                }
-
-                return NextResponse.json({ success: true, data: serializeTimestamps(data) });
-            }
-
-            case 'getAudienceTasks': {
-                const { type } = payload;
-                const snap = await db.collectionGroup('tasks')
-                    .where('status', '==', 'pending')
-                    .orderBy('createdAt', 'desc')
-                    .limit(100)
-                    .get();
-                
-                return NextResponse.json({ success: true, data: serializeTimestamps(snap.docs.map(d => d.data())) });
+            case 'getPendingAgreements': {
+                const snap = await db.collectionGroup('agreements').where('status', '==', 'proposed').get();
+                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
             }
 
             case 'getMembers': {
