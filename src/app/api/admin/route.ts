@@ -8,7 +8,7 @@ import { enrichPartner } from '@/ai/flows/enrich-partner-flow';
 export const dynamic = 'force-dynamic';
 
 /**
- * UTILITY: Serialize Timestamps
+ * UTILITY: Serialize Timestamps for JSON transport
  */
 function serializeTimestamps(docData: any): any {
     if (!docData) return docData;
@@ -66,6 +66,11 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: data.map(serializeTimestamps) });
             }
 
+            case 'getAuditLogs': {
+                const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(100).get();
+                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
+            }
+
             case 'getPartnersByType': {
                 const { type, limit = 100 } = payload;
                 let query: any = db.collection('partners');
@@ -89,6 +94,34 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: results.map(serializeTimestamps) });
             }
 
+            case 'logCommunication': {
+                const { partnerId, type, subject, notes, collection: collName = 'partners' } = payload;
+                if (!partnerId || !type || !subject) throw new Error("Missing log data.");
+                
+                const parentRef = db.collection(collName).doc(partnerId);
+                const logRef = parentRef.collection('communications').doc();
+                
+                const batch = db.batch();
+                batch.set(logRef, {
+                    id: logRef.id,
+                    type,
+                    subject,
+                    notes,
+                    timestamp: FieldValue.serverTimestamp(),
+                    adminId: decodedToken.uid
+                });
+                
+                batch.update(parentRef, {
+                    lastOutreachAt: FieldValue.serverTimestamp(),
+                    lastOutreachSubject: subject,
+                    status: 'contacted',
+                    updatedAt: FieldValue.serverTimestamp()
+                });
+                
+                await batch.commit();
+                return NextResponse.json({ success: true });
+            }
+
             case 'autoEnrichRecord': {
                 const { id, type } = payload;
                 const coll = (type === 'lead') ? 'leads' : 'partners';
@@ -99,10 +132,8 @@ export async function POST(req: NextRequest) {
                 const data = docSnap.data()!;
                 const companyName = data.companyName || data.company_name || data.trading_name || `${data.firstName} ${data.lastName}`;
                 
-                // Call high-intelligence AI flow
                 const enrichment = await enrichPartner({ companyName });
                 
-                // Patch the record with verified data
                 const update = {
                     ...enrichment,
                     status: enrichment.email ? 'qualified' : 'contacted',
@@ -127,9 +158,109 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...d.data() })) });
             }
 
+            case 'getLendingData': {
+                const { collectionName } = payload;
+                const snap = await db.collection(collectionName).get();
+                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
+            }
+
+            case 'approveWalletPayment': {
+                const { companyId, paymentId, amount, description, reconciliationId } = payload;
+                const companyRef = db.collection('companies').doc(companyId);
+                const paymentRef = companyRef.collection('walletPayments').doc(paymentId);
+                const transactionRef = companyRef.collection('transactions').doc();
+                
+                await db.runTransaction(async (t) => {
+                    t.update(companyRef, {
+                        walletBalance: FieldValue.increment(amount),
+                        availableBalance: FieldValue.increment(amount),
+                        updatedAt: FieldValue.serverTimestamp()
+                    });
+                    t.delete(paymentRef);
+                    t.set(transactionRef, {
+                        transactionId: transactionRef.id,
+                        type: 'credit',
+                        amount,
+                        description: `EFT Top-up: ${description}`,
+                        date: FieldValue.serverTimestamp(),
+                        status: 'allocated',
+                        reconciliationId
+                    });
+                });
+                return NextResponse.json({ success: true });
+            }
+
+            case 'listAllUsers': {
+                const listUsersResult = await adminAuth.listUsers(1000);
+                const users = listUsersResult.users.map(u => ({
+                    uid: u.uid,
+                    email: u.email,
+                    displayName: u.displayName,
+                    disabled: u.disabled,
+                    creationTime: u.metadata.creationTime,
+                    lastSignInTime: u.metadata.lastSignInTime
+                }));
+                return NextResponse.json({ success: true, data: users });
+            }
+
+            case 'getAudienceCommunications': {
+                const snap = await db.collectionGroup('communications').orderBy('timestamp', 'desc').limit(200).get();
+                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
+            }
+
+            case 'getAudienceTasks': {
+                const snap = await db.collectionGroup('tasks').orderBy('dueDate', 'asc').limit(200).get();
+                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
+            }
+
+            case 'bulkLogForensicInitiated': {
+                const { leadIds, type } = payload;
+                const coll = (type === 'lead') ? 'leads' : 'partners';
+                const batch = db.batch();
+                leadIds.forEach((id: string) => {
+                    const ref = db.collection(coll).doc(id);
+                    batch.update(ref, {
+                        status: 'contacted',
+                        updatedAt: FieldValue.serverTimestamp()
+                    });
+                });
+                await batch.commit();
+                return NextResponse.json({ success: true });
+            }
+
+            case 'logForensicInitiated': {
+                const { partnerId, isLead } = payload;
+                const coll = isLead ? 'leads' : 'partners';
+                await db.collection(coll).doc(partnerId).update({
+                    status: 'contacted',
+                    updatedAt: FieldValue.serverTimestamp()
+                });
+                return NextResponse.json({ success: true });
+            }
+
+            case 'invitePartner': {
+                const { partnerId } = payload;
+                await db.collection('partners').doc(partnerId).update({
+                    invitationStatus: 'invited',
+                    updatedAt: FieldValue.serverTimestamp()
+                });
+                return NextResponse.json({ success: true });
+            }
+
+            case 'getStaff': {
+                const snap = await db.collectionGroup('staff').get();
+                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
+            }
+
+            case 'getPendingAgreements': {
+                const snap = await db.collectionGroup('agreements').where('status', '==', 'proposed').get();
+                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
+            }
+
             default: return NextResponse.json({ success: false, error: "Action invalid." }, { status: 400 });
         }
     } catch (error: any) {
+        console.error("Admin API Error:", error);
         return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
 }
