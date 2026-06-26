@@ -32,7 +32,7 @@ export default function DigitalHandshake({ partner, audience, version = 'v1' }: 
                 </p>
 
                 <p style={{ margin: '0 0 14pt 0', fontWeight: 'bold' }}>
-                    "This is more than a registry—it is a high-velocity growth engine. We provide you with the forensic data to find your most profitable customers and the embedded finance to ensure they have the capital to buy from you upfront and in full."
+                    "This is more than a registry, it is a high-velocity growth engine. We provide you with the forensic data to find your most profitable customers and the embedded finance to ensure they have the capital to buy from you upfront and in full."
                 </p>
 
                 <p style={{ margin: '0 0 7pt 0', fontWeight: 'bold' }}>The Supplier Advantage:</p>
