@@ -3,7 +3,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Loader2, ExternalLink, Send, ChevronLeft, ChevronRight, CheckCircle2, Zap } from 'lucide-react';
+import { Loader2, ExternalLink, Send, ChevronLeft, ChevronRight, CheckCircle2, Zap, AlertTriangle, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
 import { copyHtmlToClipboard, cn } from '@/lib/utils';
@@ -11,6 +11,8 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import Link from 'next/link';
 
 // Content components
 import DigitalHandshake from './content/DigitalHandshake';
@@ -220,6 +222,14 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
 
             <div className="flex-1 flex overflow-hidden text-left text-foreground">
                 <div className="w-64 border-r bg-muted/20 p-4 space-y-4 overflow-y-auto text-left text-foreground">
+                    <Alert variant="destructive" className="bg-destructive/5 py-2 border-destructive/20">
+                        <AlertTriangle className="h-3 w-3" />
+                        <AlertTitle className="text-[10px] font-black uppercase tracking-widest">Sender Reputation</AlertTitle>
+                        <AlertDescription className="text-[9px]">
+                            Sending >20/hr via Outlook may block your account. <Link href="/docs/outlook-sending-guide.md" className="underline font-bold">Read Guide</Link>
+                        </AlertDescription>
+                    </Alert>
+
                     <div className="space-y-1 text-left">
                         <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-2 mb-2 block text-left">Step 1: Selection</label>
                         {[
@@ -272,14 +282,14 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                 </div>
 
                 <div className="flex-1 overflow-y-auto bg-slate-50 p-8 text-left">
-                    <div className="max-w-[850px] mx-auto space-y-6">
+                    <div className="max-w-[850px] mx-auto space-y-6 text-left">
                         {activeTab === 'digital-handshake' && (
                             <div data-id="version-selector-ui" className="bg-amber-50 border border-amber-200 p-4 rounded-xl flex items-center justify-between mb-4">
                                 <div className="flex items-center gap-3">
                                     <div className="bg-amber-100 p-2 rounded-lg"><Zap className="h-5 w-5 text-amber-600" /></div>
                                     <div>
-                                        <p className="text-sm font-bold text-amber-900">Follow-up Strategy</p>
-                                        <p className="text-[10px] text-amber-700">Select a pitch version to test different incentives.</p>
+                                        <p className="text-sm font-bold text-amber-900">Anti-Spam Variance</p>
+                                        <p className="text-[10px] text-amber-700">Text varies Deterministically by Partner ID to bypass Outlook filters.</p>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-3">

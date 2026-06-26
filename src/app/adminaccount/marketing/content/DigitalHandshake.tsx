@@ -1,6 +1,6 @@
 'use client';
 
-import React from "react";
+import React, { useMemo } from "react";
 
 interface HandshakeContent {
     headline: string;
@@ -116,17 +116,35 @@ const transporterPitches: Record<string, HandshakeContent> = {
 };
 
 /**
- * Narrative-Driven Digital Handshake (Versioned for A/B Testing)
+ * NARRATIVE VARIANCE ENGINE
+ * Generates unique greetings and closings based on ID to avoid spam fingerprinting.
  */
+function getVariance(id: string) {
+    const greetings = ["Good day", "Good morning", "Greetings", "Hello"];
+    const closings = ["Regards,", "Best regards,", "Sincerely,", "Kind regards,"];
+    const signoffs = ["The Logistics Flow Team", "Logistics Flow Management", "The Growth Team", "Platform Operations"];
+    
+    // Deterministic selection based on ID hash
+    const charCodeSum = id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    
+    return {
+        greeting: greetings[charCodeSum % greetings.length],
+        closing: closings[charCodeSum % closings.length],
+        signoff: signoffs[charCodeSum % signoffs.length]
+    };
+}
+
 export default function DigitalHandshake({ partner, audience, version = 'v1' }: { partner?: any, audience?: string, version?: string }) {
     const firstName = partner?.firstName || (partner?.contactPerson ? partner.contactPerson.split(' ')[0] : 'Partner');
     const companyName = partner?.companyName || 'your business';
     const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://studio--ecosystem-hub.us-central1.hosted.app';
-    const optInLink = `${baseUrl}/join?ref=${partner?.id || 'PROSPECT'}`;
-    const pixelUrl = `/api/trackEmailOpen/${partner?.id || 'anonymous'}`;
+    const optInLink = `${baseUrl}/opt-in/${partner?.id || 'PROSPECT'}`;
+    const pixelUrl = `${baseUrl}/api/trackEmailOpen/${partner?.id || 'anonymous'}`;
 
     const isSupplier = audience === 'suppliers';
     const pitch = isSupplier ? (supplierPitches[version] || supplierPitches.v1) : (transporterPitches[version] || transporterPitches.v1);
+    
+    const variance = useMemo(() => getVariance(partner?.id || 'TEST'), [partner?.id]);
 
     return (
         <div style={{ 
@@ -141,7 +159,7 @@ export default function DigitalHandshake({ partner, audience, version = 'v1' }: 
                 {pitch.headline}: {companyName.toUpperCase()}
             </p>
 
-            <p style={{ margin: '0 0 14pt 0' }}>Good day {firstName},</p>
+            <p style={{ margin: '0 0 14pt 0' }}>{variance.greeting} {firstName},</p>
 
             <p style={{ margin: '0 0 14pt 0' }}>{pitch.intro}</p>
 
@@ -175,6 +193,9 @@ export default function DigitalHandshake({ partner, audience, version = 'v1' }: 
                 By establishing this handshake, you confirm your standing in our secure industrial communication pipeline.
             </p>
 
+            <p style={{ margin: '0 0 1pt 0' }}>{variance.closing}</p>
+            <p style={{ margin: '0 0 14pt 0', fontWeight: 'bold' }}>{variance.signoff}</p>
+
             <div style={{ borderTop: '1px solid #eeeeee', paddingTop: '10pt', marginTop: '20pt' }}>
                 <p style={{ fontSize: '9pt', color: '#999999', margin: '0' }}>
                     LOGISTICS FLOW SECURE NETWORK | AUTHORIZED INDUSTRIAL SESSION | ALL RIGHTS RESERVED
@@ -182,7 +203,7 @@ export default function DigitalHandshake({ partner, audience, version = 'v1' }: 
             </div>
 
             {/* Forensic Tracking Pixel */}
-            <img src={pixelUrl} width="1" height="1" style={{ display: 'none' }} alt="" />
+            <img src={pixelUrl} width="1" height="1" style={{ display: 'none' }} alt="Logistics Flow Tracking" />
         </div>
     );
 }
