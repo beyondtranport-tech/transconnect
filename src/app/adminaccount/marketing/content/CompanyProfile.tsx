@@ -2,6 +2,10 @@
 
 import React from "react";
 
+/**
+ * STRATEGIC COMPANY PROFILE
+ * Reinstated approved DaaS and Flow Pillars narrative.
+ */
 export default function CompanyProfile({ audience, partner }: { audience: string; partner?: any }) {
     const firstName = partner?.firstName || (partner?.contactPerson ? partner.contactPerson.split(' ')[0] : 'Member');
     const email = partner?.email || '';
@@ -27,7 +31,7 @@ export default function CompanyProfile({ audience, partner }: { audience: string
             <p style={{ margin: '0 0 14pt 0' }}>Good day {firstName}, we write to introduce the Logistics Flow ecosystem to your business.</p>
             
             <p style={{ margin: '0 0 14pt 0' }}>
-                Logistics Flow is a Data-as-a-Service (DaaS) ecosystem designed to break the constraints of the South African transport industry. We have digitized the industrial map of the country, integrating commerce, capital, and forensic intelligence into a single flow of opportunity.
+                Logistics Flow is a <strong>Data-as-a-Service (DaaS)</strong> ecosystem designed to break the constraints of the South African transport industry. We have digitized the industrial map of the country, integrating commerce, capital, and forensic intelligence into a single flow of opportunity.
             </p>
 
             <p style={{ margin: '0 0 7pt 0', fontWeight: 'bold' }}>Our Four Pillars of Flow</p>
@@ -41,7 +45,7 @@ export default function CompanyProfile({ audience, partner }: { audience: string
 
             <p style={{ margin: '0 0 7pt 0', fontWeight: 'bold' }}>The Intelligence Tier</p>
             <p style={{ margin: '0 0 14pt 0' }}>
-                For just R100/month, our <strong>Intelligence Access</strong> tier gives you the keys to the kingdom. No more cold calling generic support lines. You get the map to the industry's leadership, allowing you to build relationships that drive revenue.
+                Our <strong>Intelligence Access</strong> tier gives you the "Keys to the Kingdom." No more cold calling generic support lines. You get the map to the industry's leadership, allowing you to build relationships that drive revenue.
             </p>
 
             <p style={{ margin: '0 0 14pt 0' }}>
@@ -59,7 +63,7 @@ export default function CompanyProfile({ audience, partner }: { audience: string
             <p style={{ margin: '0 0 14pt 0' }}>Regards,</p>
             <p style={{ margin: '0 0 14pt 0', fontWeight: 'bold' }}>The Logistics Flow Team</p>
 
-            <img src={pixelUrl} width="1" height="1" style={{ display: 'none' }} alt="" />
+            <img src={pixelUrl} width="1" height="1" style={{ display: 'none' }} alt="Tracking" />
         </div>
     );
 }
