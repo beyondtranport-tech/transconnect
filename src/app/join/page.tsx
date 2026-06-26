@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, Suspense, useEffect } from 'react';
@@ -34,7 +33,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Eye, EyeOff, Lock, ShoppingCart, Truck, ShieldCheck, Briefcase, Bot, Users, Code, ArrowRight } from 'lucide-center';
+import { Loader2, Eye, EyeOff, Lock, ShoppingCart, Truck, ShieldCheck, Briefcase, Bot, Users, Code, ArrowRight } from 'lucide-react';
 import { roles } from '@/lib/roles';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
@@ -233,7 +232,7 @@ function JoinFormComponent() {
                 <FormControl><div className="relative"><Input type={showPassword ? "text" : "password"} {...field} className="h-11" autoComplete="new-password" /><Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0 h-11" onClick={() => setShowPassword(!showPassword)}>{showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</Button></div></FormControl><FormMessage /></FormItem>
             )} />
             <Button type="submit" className="w-full h-14 text-lg font-black uppercase tracking-tight mt-6 shadow-xl" disabled={isLoading}>
-              {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <ArrowRight className="mr-2 h-5 w-5" />}
+              {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ArrowRight className="mr-2 h-4 w-4" />}
               Activate Membership
             </Button>
           </form>
