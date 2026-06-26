@@ -6,6 +6,10 @@ import { getAdminApp } from '@/lib/firebase-admin';
 
 export const dynamic = 'force-dynamic';
 
+/**
+ * UTILITY: Serialize Timestamps
+ * Ensures Firestore data is JSON-compatible for the frontend.
+ */
 function serializeTimestamps(docData: any): any {
     if (!docData) return docData;
     if (docData instanceof Timestamp) {
@@ -36,6 +40,7 @@ export async function POST(req: NextRequest) {
         const adminAuth = getAuth(app);
         const decodedToken = await adminAuth.verifyIdToken(token);
         
+        // Root Admin Emails
         const isAdmin = decodedToken.email === 'beyondtransport@gmail.com' || decodedToken.email === 'mkoton100@gmail.com';
         if (!isAdmin) throw new Error("Forbidden: Admin access required.");
 
@@ -45,11 +50,58 @@ export async function POST(req: NextRequest) {
         const db = getFirestore(app);
 
         switch (action) {
+            /**
+             * MEMBER ROSTER & DASHBOARD
+             */
+            case 'getMembers': {
+                const companiesSnap = await db.collection('companies').orderBy('updatedAt', 'desc').limit(1000).get();
+                
+                // Enrichment: Join with owner profile data
+                const ownerIds = companiesSnap.docs.map(d => d.data().ownerId).filter(id => !!id);
+                const userDetailsMap = new Map();
+                
+                if (ownerIds.length > 0) {
+                    // Firebase 'in' query limit is 30.
+                    const chunks = [];
+                    for (let i = 0; i < ownerIds.length; i += 30) {
+                        chunks.push(ownerIds.slice(i, i + 30));
+                    }
+                    
+                    const userSnaps = await Promise.all(chunks.map(chunk => 
+                        db.collection('users').where(FieldValue.documentId(), 'in', chunk).get()
+                    ));
+
+                    userSnaps.forEach(snap => {
+                        snap.forEach(d => {
+                            const data = d.data();
+                            userDetailsMap.set(d.id, { 
+                                firstName: data.firstName, 
+                                lastName: data.lastName, 
+                                email: data.email 
+                            });
+                        });
+                    });
+                }
+
+                const data = companiesSnap.docs.map(doc => {
+                    const companyData = doc.data();
+                    const owner = userDetailsMap.get(companyData.ownerId) || {};
+                    return {
+                        id: doc.id,
+                        ...companyData,
+                        ...owner 
+                    };
+                });
+
+                return NextResponse.json({ success: true, data: data.map(serializeTimestamps) });
+            }
+
+            /**
+             * REGISTRY & LEADS
+             */
             case 'getPartnersByType':
             case 'searchRegistry': {
                 const { term, type, outreachFilter, limit = 20000 } = payload;
-                
-                // Fetching large sets for client-side processing to ensure precision pagination
                 const [pSnap, lSnap] = await Promise.all([
                     db.collection('partners').limit(limit).get(),
                     db.collection('leads').limit(limit).get()
@@ -74,7 +126,6 @@ export async function POST(req: NextRequest) {
                     normalized = normalized.filter(p => p.source === 'leads');
                 }
 
-                // Handle 'none' filter for "No Outreach Yet"
                 if (outreachFilter === 'none') {
                     normalized = normalized.filter(p => !p.lastOutreachSubject && ['new', 'inactive', 'contacted'].includes(p.status));
                 } else if (outreachFilter && outreachFilter !== 'all') {
@@ -91,29 +142,34 @@ export async function POST(req: NextRequest) {
                     );
                 }
 
-                // De-duplicate
                 const uniqueMap = new Map();
                 normalized.forEach(item => {
                     const key = (item.id || item.email || item.companyName).toLowerCase();
-                    if (!uniqueMap.has(key)) {
-                        uniqueMap.set(key, item);
-                    }
+                    if (!uniqueMap.has(key)) uniqueMap.set(key, item);
                 });
 
                 let data = Array.from(uniqueMap.values());
+                data.sort((a,b) => new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime());
                 
-                // Sort by most recent update
-                data.sort((a,b) => {
-                    const timeA = new Date(a.updatedAt || 0).getTime();
-                    const timeB = new Date(b.updatedAt || 0).getTime();
-                    return timeB - timeA;
-                });
-                
-                return NextResponse.json({ 
-                    success: true, 
-                    data: data.map(serializeTimestamps),
-                    totalCount: data.length
-                });
+                return NextResponse.json({ success: true, data: data.map(serializeTimestamps) });
+            }
+
+            /**
+             * OPS & AUDIT
+             */
+            case 'getAuditLogs': {
+                const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(100).get();
+                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
+            }
+
+            case 'getContributions': {
+                const snap = await db.collection('contributions').orderBy('createdAt', 'desc').limit(500).get();
+                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
+            }
+
+            case 'getShops': {
+                const snap = await db.collectionGroup('shops').get();
+                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
             }
 
             case 'getPlatformStaff': {
@@ -133,14 +189,12 @@ export async function POST(req: NextRequest) {
                 const parentRef = db.collection(targetColl).doc(partnerId);
                 const logRef = parentRef.collection('communications').doc();
                 
-                const partnerName = (targetColl === 'partners' ? pDoc.data()?.companyName : lDoc.data()?.companyName) || 'Unknown Entity';
-
                 batch.set(logRef, {
                     type, subject, notes,
                     timestamp: FieldValue.serverTimestamp(),
                     adminId: decodedToken.uid,
                     partnerId,
-                    partnerName: partnerName
+                    partnerName: (targetColl === 'partners' ? pDoc.data()?.companyName : lDoc.data()?.companyName) || 'Unknown Entity'
                 });
                 
                 batch.set(parentRef, {
@@ -168,18 +222,8 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true });
             }
 
-            case 'deletePartners': {
-                const { partnerIds } = payload;
-                const batch = db.batch();
-                partnerIds.forEach((id: string) => {
-                    batch.delete(db.collection('partners').doc(id));
-                });
-                await batch.commit();
-                return NextResponse.json({ success: true });
-            }
-
             default:
-                return NextResponse.json({ success: false, error: `Action "${action}" unknown.` }, { status: 400 });
+                return NextResponse.json({ success: false, error: `Action "${action}" not implemented.` }, { status: 400 });
         }
     } catch (error: any) {
         console.error(`Admin API Error:`, error);
