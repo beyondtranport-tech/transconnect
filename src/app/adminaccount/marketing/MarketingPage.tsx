@@ -1,10 +1,9 @@
-
 'use client';
 
 import * as React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { BookOpen, Loader2, ClipboardCopy, SearchCode, Target, Users, LayoutDashboard, Send, Sparkles, Landmark, DollarSign, MessageSquare, ClipboardList, Search, RefreshCcw, RotateCcw } from 'lucide-react';
+import { BookOpen, Loader2, ClipboardCopy, SearchCode, Target, Users, LayoutDashboard, Send, Sparkles, Landmark, DollarSign, MessageSquare, ClipboardList, Search, RefreshCcw, RotateCcw, ExternalLink } from 'lucide-react';
 import { useState, useEffect, useCallback, useMemo, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -183,7 +182,7 @@ function LogAndCopyDialog({ open, onOpenChange, partners, isLoadingPartners, act
                         <FormField control={form.control} name="notes" render={({ field }) => (<FormItem><FormLabel>Notes (Optional)</FormLabel><FormControl><Textarea placeholder="Add details..." {...field} /></FormControl><FormMessage /></FormItem>)} />
                         <DialogFooter><Button type="submit" disabled={isLogging}>
                             {isLogging && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
-                            Log & Copy
+                            Log, Copy & Open Gmail
                         </Button></DialogFooter>
                     </form>
                 </Form>
@@ -276,7 +275,16 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
         const success = await copyHtmlToClipboard(wrappedHtml);
         if (!success) throw new Error("Copy failed.");
 
-        toast({ title: 'Logged and Copied!', description: 'Interaction recorded. Content ready for paste into your email client.' });
+        toast({ title: 'Logged and Copied!', description: 'Interaction recorded. Opening Gmail...' });
+        
+        // Interim Gmail Integration for Library view
+        const partner = partners.find(p => p.id === logData.partnerId);
+        if (partner?.email) {
+            const fullSubject = `Logistics Flow: ${subjectLabel} for ${partner.companyName || 'your business'}`;
+            const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${partner.email}&su=${encodeURIComponent(fullSubject)}`;
+            window.open(gmailUrl, '_blank');
+        }
+
         setIsLogDialogOpen(false);
     } catch (e: any) {
         toast({ variant: 'destructive', title: 'Action Failed', description: e.message });
