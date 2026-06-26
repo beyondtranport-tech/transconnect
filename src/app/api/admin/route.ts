@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
                 await db.collection(coll).doc(partnerId).set({
                     status: 'contacted',
                     notes: 'Forensic research initiated via AI Gap-Analysis.',
-                    updatedAt: FieldValue.serverTimestamp()
+                    updatedAt: serverTimestamp()
                 }, { merge: true });
                 return NextResponse.json({ success: true });
             }
