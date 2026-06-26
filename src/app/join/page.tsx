@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, Suspense, useEffect } from 'react';
@@ -33,7 +34,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Eye, EyeOff, Lock, ShoppingCart, Truck, ShieldCheck, Briefcase, Bot, Users, Code, ArrowRight } from 'lucide-react';
+import { Loader2, Eye, EyeOff, Lock, ShoppingCart, Truck, ShieldCheck, Briefcase, Bot, Users, Code, ArrowRight } from 'lucide-center';
 import { roles } from '@/lib/roles';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
@@ -162,12 +163,12 @@ function JoinFormComponent() {
   if (!selectedPosition) {
       return (
           <div className="container mx-auto flex min-h-[calc(100vh-8rem)] items-center justify-center px-4 py-16 text-left">
-          <Card className="w-full max-w-2xl text-left border-none shadow-2xl overflow-hidden">
-            <CardHeader className="text-center bg-slate-900 text-white p-10">
-                <CardTitle className="text-3xl font-black font-headline">Secure Your Digital Node</CardTitle>
-                <CardDescription className="text-slate-400 mt-2">Select your primary function to optimize your ecosystem experience.</CardDescription>
+          <Card className="w-full max-w-2xl text-left border-none shadow-2xl overflow-hidden text-left">
+            <CardHeader className="text-center bg-slate-900 text-white p-10 text-left">
+                <CardTitle className="text-3xl font-black font-headline text-left">Secure Your Digital Node</CardTitle>
+                <CardDescription className="text-slate-400 mt-2 text-left">Select your primary function to optimize your ecosystem experience.</CardDescription>
             </CardHeader>
-            <CardContent className="p-8">
+            <CardContent className="p-8 text-left">
                 <ScrollArea className="h-[50vh] pr-4 text-left">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-4 text-left">
                         {roles.map((role) => {
@@ -216,20 +217,20 @@ function JoinFormComponent() {
             <Button variant="link" size="sm" className="px-1 h-auto text-[10px] font-bold uppercase text-primary" onClick={() => setSelectedPosition(null)}>Change Role</Button>
         </CardDescription>
       </CardHeader>
-      <CardContent className="p-8">
+      <CardContent className="p-8 text-left">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 text-left">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 text-left">
-              <FormField control={form.control} name="firstName" render={({ field }) => ( <FormItem><FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">First Name</FormLabel><FormControl><Input placeholder="John" {...field} className="h-11"/></FormControl><FormMessage /></FormItem> )} />
-              <FormField control={form.control} name="lastName" render={({ field }) => ( <FormItem><FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Last Name</FormLabel><FormControl><Input placeholder="Doe" {...field} className="h-11"/></FormControl><FormMessage /></FormItem> )} />
+              <FormField control={form.control} name="firstName" render={({ field }) => ( <FormItem><FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">First Name</FormLabel><FormControl><Input placeholder="John" {...field} className="h-11" autoComplete="given-name" /></FormControl><FormMessage /></FormItem> )} />
+              <FormField control={form.control} name="lastName" render={({ field }) => ( <FormItem><FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Last Name</FormLabel><FormControl><Input placeholder="Doe" {...field} className="h-11" autoComplete="family-name" /></FormControl><FormMessage /></FormItem> )} />
             </div>
             <FormField control={form.control} name="email" render={({ field }) => (
-                <FormItem><FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Business Email</FormLabel><FormControl><div className="relative"><Input {...field} disabled={!!emailParam} className="h-11"/>{!!emailParam && <Lock className="absolute right-3 top-3.5 h-4 w-4 text-muted-foreground" />}</div></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Business Email</FormLabel><FormControl><div className="relative"><Input {...field} disabled={!!emailParam} className="h-11" autoComplete="email" />{!!emailParam && <Lock className="absolute right-3 top-3.5 h-4 w-4 text-muted-foreground" />}</div></FormControl><FormMessage /></FormItem>
             )} />
-            <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Mobile Number</FormLabel><FormControl><Input {...field} className="h-11" placeholder="+27..."/></FormControl><FormMessage /></FormItem> )} />
+            <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Mobile Number</FormLabel><FormControl><Input {...field} className="h-11" placeholder="+27..." autoComplete="tel" /></FormControl><FormMessage /></FormItem> )} />
             <FormField control={form.control} name="password" render={({ field }) => (
                 <FormItem><div className="flex items-center justify-between"><FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Secure Password</FormLabel><button type="button" onClick={handlePasswordReset} className="text-[10px] font-bold text-primary uppercase underline">Forgot?</button></div>
-                <FormControl><div className="relative"><Input type={showPassword ? "text" : "password"} {...field} className="h-11"/><Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0 h-11" onClick={() => setShowPassword(!showPassword)}>{showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</Button></div></FormControl><FormMessage /></FormItem>
+                <FormControl><div className="relative"><Input type={showPassword ? "text" : "password"} {...field} className="h-11" autoComplete="new-password" /><Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0 h-11" onClick={() => setShowPassword(!showPassword)}>{showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</Button></div></FormControl><FormMessage /></FormItem>
             )} />
             <Button type="submit" className="w-full h-14 text-lg font-black uppercase tracking-tight mt-6 shadow-xl" disabled={isLoading}>
               {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <ArrowRight className="mr-2 h-5 w-5" />}
