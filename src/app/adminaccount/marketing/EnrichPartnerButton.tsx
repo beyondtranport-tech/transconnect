@@ -17,7 +17,7 @@ async function performAdminAction(token: string, action: string, payload: any) {
     });
     const result = await response.json();
     if (!response.ok || !result.success) {
-        throw new Error(result.error || `API Error: ${action}`);
+        throw new Error(result.error || `API Error for action: ${action}`);
     }
     return result;
 }

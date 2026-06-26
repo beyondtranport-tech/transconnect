@@ -25,7 +25,7 @@ async function performAdminAction(token: string, action: string, payload: any) {
     });
     const result = await response.json();
     if (!response.ok || !result.success) {
-        throw new Error(result.error || `API Error: ${action}`);
+        throw new Error(result.error || `API Error for action: ${action}`);
     }
     return result;
 }
@@ -54,7 +54,7 @@ INVESTIGATIVE PROTOCOL:
 3. EXTRACT PHYSICAL ADDRESS: Find the EXACT OPERATIONAL ADDRESS (Street, Suburb, City, Province, Post Code).
 4. IDENTIFY LEADERSHIP: Find the ACTUAL NAME (First and Last) of the CEO, MD, or Owner via LinkedIn.
 5. MAP CONTACTS: Identify professional email and a direct mobile number (+27 format).
-6. MINE TECHNICAL STANDING: In "notes", provide a 2-3 sentence summary of their SPECIFIC TECHNICAL CAPABILITIES. Include truck makes (e.g. Scania/Volvo) or specific SADC corridors they service.
+6. MINE TECHNICAL STANDING: In "notes", provide a 2-3 sentence summary of THEIR SPECIFIC TECHNICAL CAPABILITIES. Include truck makes (e.g. Scania/Volvo) or specific SADC corridors they service.
 
 REQUIRED JSON FIELDS:
 - "record_id": (Return exactly the KEY provided in the list below)
@@ -105,11 +105,11 @@ ${companyList}`;
         <Dialog open={open} onOpenChange={(o) => !isLoading && onOpenChange(o)}>
             <DialogContent className="sm:max-w-2xl text-left">
                 <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2">
+                    <DialogTitle className="flex items-center gap-2 text-left">
                         <Globe className="h-5 w-5 text-primary" />
                         Forensic Batch Discovery ({selectedLeads.length})
                     </DialogTitle>
-                    <DialogDescription>
+                    <DialogDescription className="text-left">
                         Copy this forensic command to bridge gaps for addresses, websites, and technical categories using the provided record keys.
                     </DialogDescription>
                 </DialogHeader>
@@ -135,8 +135,8 @@ ${companyList}`;
 
                     <div className="space-y-2 text-left">
                         <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">AI Forensic Command</label>
-                        <ScrollArea className="h-64 w-full border rounded-md p-3 bg-muted/30">
-                            <pre className="text-[11px] whitespace-pre-wrap font-mono leading-relaxed text-foreground">{aiPrompt}</pre>
+                        <ScrollArea className="h-64 w-full border rounded-md p-3 bg-muted/30 text-left">
+                            <pre className="text-[11px] whitespace-pre-wrap font-mono leading-relaxed text-foreground text-left">{aiPrompt}</pre>
                         </ScrollArea>
                     </div>
                 </div>
