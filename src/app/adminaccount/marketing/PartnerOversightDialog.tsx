@@ -5,7 +5,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, MessageSquare, ClipboardList, CheckCircle, Circle, Clock, Activity, AlertTriangle, Eye, Globe, BookOpen } from 'lucide-react';
+import { Loader2, MessageSquare, ClipboardList, CheckCircle, Circle, Clock, Activity, AlertTriangle, Eye, Globe, BookOpen, Smartphone } from 'lucide-react';
 import { getClientSideAuthToken, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { collection, query, orderBy, serverTimestamp, limit } from 'firebase/firestore';
@@ -59,6 +59,14 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
     }, [firestore, partner?.id, isOpen, parentCollection]);
     const { data: tasks, isLoading: isLoadingTasks, error: tasksError, forceRefresh: refreshTasks } = useCollection(tasksQuery);
 
+    /**
+     * ENHANCED TIMELINE LOGIC
+     * Includes:
+     * - Email Open Tracking (Pixel)
+     * - App Access Tracking (Ping)
+     * - Task Completion
+     * - Communication Logs
+     */
     const timeline = useMemo(() => {
         const events: any[] = [];
         if (isOpen && !isLoadingLogs && !isLoadingTasks) {
@@ -77,9 +85,19 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
                 events.push({
                     id: 'pixel-open',
                     type: 'tracking',
-                    subject: 'Email Open Tracked',
-                    notes: 'The recipient has opened an engagement email containing a tracking pixel.',
+                    subject: 'Email Opened',
+                    notes: 'The recipient has opened an engagement email (Pixel fired).',
                     date: partner.lastOpenedAt
+                });
+            }
+
+            if (partner.lastAccessedAt) {
+                events.push({
+                    id: 'app-access',
+                    type: 'access',
+                    subject: 'App Link Accessed',
+                    notes: 'The lead clicked the handshake link and landed on the app.',
+                    date: partner.lastAccessedAt
                 });
             }
         }
@@ -89,7 +107,7 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
             const dateB = b.date?.toDate ? b.date.toDate() : new Date(b.date || 0);
             return dateB.getTime() - dateA.getTime();
         });
-    }, [logs, tasks, isOpen, isLoadingLogs, isLoadingTasks, partner.lastOpenedAt]);
+    }, [logs, tasks, isOpen, isLoadingLogs, isLoadingTasks, partner.lastOpenedAt, partner.lastAccessedAt]);
 
     const fetchStaff = useCallback(async () => {
         if (!isOpen) return;
@@ -156,15 +174,15 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
                     <Clock className="h-4 w-4" />
                 </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-4xl h-[85vh] flex flex-col p-0">
+            <DialogContent className="max-w-4xl h-[85vh] flex flex-col p-0 text-left text-foreground">
                 <DialogHeader className="p-6 border-b bg-muted/30">
-                    <div className="flex justify-between items-start">
+                    <div className="flex justify-between items-start text-left">
                         <div className="text-left">
-                            <DialogTitle className="text-2xl font-bold flex items-center gap-2">
+                            <DialogTitle className="text-2xl font-bold flex items-center gap-2 text-left">
                                 <Clock className="h-6 w-6 text-primary" />
                                 Oversight: {partner.companyName || `${partner.firstName} ${partner.lastName}`}
                             </DialogTitle>
-                            <DialogDescription className="mt-1">Full engagement history and technical profile.</DialogDescription>
+                            <DialogDescription className="mt-1 text-left">Full engagement history and technical profile.</DialogDescription>
                         </div>
                         <div className="space-y-2 text-right">
                              <Label className="text-xs font-bold uppercase text-muted-foreground">Allocated Staff</Label>
@@ -183,7 +201,7 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
 
                 <div className="flex-1 overflow-y-auto p-6 space-y-8 bg-slate-50/50 text-left">
                     {/* Technical Profile Section */}
-                    <div className="space-y-4">
+                    <div className="space-y-4 text-left">
                         <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
                             <BookOpen className="h-4 w-4 text-primary"/>
                             Forensic & Technical Profile
@@ -240,7 +258,9 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
                                         <div className={cn(
                                             "absolute left-2 top-1.5 h-4 w-4 rounded-full border-2 border-background z-10",
                                             event.type === 'task' ? (event.status === 'completed' ? "bg-green-500" : "bg-amber-500") : 
-                                            event.type === 'tracking' ? "bg-blue-600" : "bg-primary"
+                                            event.type === 'tracking' ? "bg-blue-600" : 
+                                            event.type === 'access' ? "bg-purple-600" :
+                                            "bg-primary"
                                         )} />
                                         <Card className="shadow-none">
                                             <CardContent className="p-4 text-left">
@@ -249,6 +269,7 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
                                                         <div className="flex items-center gap-2">
                                                             {event.type === 'task' ? <ClipboardList className="h-3.5 w-3.5 text-amber-600" /> : 
                                                              event.type === 'tracking' ? <Eye className="h-3.5 w-3.5 text-blue-600" /> :
+                                                             event.type === 'access' ? <Smartphone className="h-3.5 w-3.5 text-purple-600" /> :
                                                              <MessageSquare className="h-3.5 w-3.5 text-primary" />}
                                                             <span className="font-bold text-sm">{event.subject || event.title}</span>
                                                             <Badge variant="outline" className="text-[10px] h-4 uppercase">{event.type}</Badge>

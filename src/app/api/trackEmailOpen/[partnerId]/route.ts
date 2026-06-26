@@ -3,19 +3,24 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAdminApp } from '@/lib/firebase-admin';
 
 /**
- * EMAIL TRACKING PIXEL
- * Returns a 1x1 transparent GIF while logging the open event in Firestore.
+ * INTERACTION TRACKING ENDPOINT
+ * Handles both 1x1 hidden pixels (Email Opens) and Client-side Pings (App Access).
+ * distinguish via ?source=app or ?source=email
  */
 export async function GET(req: NextRequest, { params }: { params: { partnerId: string } }) {
   const { partnerId } = params;
+  const { searchParams } = new URL(req.url);
+  const source = searchParams.get('source') || 'email';
   const { app } = getAdminApp();
 
   if (app && partnerId) {
     try {
         const db = getFirestore(app);
         
+        const fieldToUpdate = source === 'app' ? 'lastAccessedAt' : 'lastOpenedAt';
+        
         const update = {
-            lastOpenedAt: FieldValue.serverTimestamp(),
+            [fieldToUpdate]: FieldValue.serverTimestamp(),
             updatedAt: FieldValue.serverTimestamp()
         };
 
@@ -26,7 +31,7 @@ export async function GET(req: NextRequest, { params }: { params: { partnerId: s
         ]);
         
     } catch (e) {
-        console.error("Tracking pixel error:", e);
+        console.error("Tracking pixel/ping error:", e);
     }
   }
 

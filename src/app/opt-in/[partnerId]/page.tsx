@@ -35,6 +35,16 @@ export default function OptInPage() {
 
     const { data: partner, isLoading } = useDoc(partnerRef);
 
+    /**
+     * FORENSIC PING: Log that the lead has landed on the app.
+     */
+    useEffect(() => {
+        if (partnerId) {
+            fetch(`/api/trackEmailOpen/${partnerId}?source=app`)
+                .catch(err => console.warn("Forensic ping failed", err));
+        }
+    }, [partnerId]);
+
     // Logic: All three boxes must be checked to enable the established handshake
     const canAccept = useMemo(() => {
         return marketingConsent && popiConsent && termsConsent;
@@ -128,7 +138,7 @@ export default function OptInPage() {
                 </CardHeader>
                 
                 <CardContent className="py-8 space-y-8 bg-white">
-                    <div className="space-y-6">
+                    <div className="space-y-6 text-left">
                         {/* 1. Marketing Consent */}
                         <div className="flex items-start gap-4 p-4 border rounded-lg hover:bg-slate-50 transition-colors bg-white">
                             <input 

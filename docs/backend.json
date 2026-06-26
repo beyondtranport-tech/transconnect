@@ -20,29 +20,11 @@
       },
       "required": ["id", "firstName", "lastName", "email", "role"]
     },
-    "Task": {
-        "$schema": "http://json-schema.org/draft-07/schema#",
-        "title": "Task",
-        "description": "Represents a single task or reminder for a user.",
-        "type": "object",
-        "properties": {
-            "id": { "type": "string" },
-            "title": { "type": "string" },
-            "relatedToName": { "type": "string" },
-            "description": { "type": "string" },
-            "dueDate": { "type": "string", "format": "date-time" },
-            "status": { "type": "string", "enum": ["pending", "completed"] },
-            "assigneeId": { "type": "string" },
-            "createdAt": { "type": "object" },
-            "updatedAt": { "type": "object" }
-        },
-        "required": ["id", "title", "status", "assigneeId"]
-    },
     "Partner": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Partner",
       "type": "object",
-      "description": "Represents a strategic partner, ISA, Investor, Developer, Supplier, Finance Co or Transporter in the system.",
+      "description": "Represents a strategic partner, ISA, Investor, Developer, Supplier, Finance Co or Transporter.",
       "properties": {
         "id": { "type": "string" },
         "firstName": { "type": "string" },
@@ -51,14 +33,15 @@
         "phone": { "type": "string" },
         "mobile": { "type": "string" },
         "companyName": { "type": "string" },
-        "status": { "type": "string", "enum": ["active", "inactive", "contacted", "new", "qualified", "invited"] },
-        "invitationStatus": { "type": "string", "enum": ["pending", "invited", "registered"] },
-        "consentStatus": { "type": "string", "enum": ["pending", "accepted", "declined"] },
+        "status": { "type": "string", "enum": ["active", "inactive", "contacted", "new", "qualified", "invited", "registered"] },
         "type": { "type": "string", "enum": ["partner", "isa", "investor", "developer", "supplier", "transporter", "finance"] },
         "minedServiceWording": { "type": "string", "description": "Full technical profile and about text scraped from the website hero sections." },
         "industrialTags": { "type": "array", "items": { "type": "string" }, "description": "ML-extracted keywords for search indexing." },
         "address": { "type": "string" },
         "website": { "type": "string" },
+        "assigneeId": { "type": "string", "description": "UID of the allocated platform staff member." },
+        "lastOpenedAt": { "type": "object", "description": "Timestamp of the last email open event." },
+        "lastAccessedAt": { "type": "object", "description": "Timestamp of the last app landing event." },
         "createdAt": { "type": "object" },
         "updatedAt": { "type": "object" }
       },
@@ -79,6 +62,6 @@
         "definition": { "entityName": "Partner", "schema": { "$ref": "#/entities/Partner" }, "description": "Consolidated industrial registry." }
       }
     ],
-    "reasoning": "Added minedServiceWording and industrialTags to support high-fidelity technical data capture."
+    "reasoning": "Added lastOpenedAt and lastAccessedAt to support forensic tracking of lead engagement across email and app visits."
   }
 }
