@@ -10,8 +10,6 @@ import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { getClientSideAuthToken } from '@/firebase';
-import { useConfig } from '@/hooks/use-config';
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
@@ -20,7 +18,7 @@ export const transporterCategories = [
 ];
 
 function generateDiscoveryPrompt(category: string, startPage: number) {
-    const startSeq = (startPage - 1) * 100 + 1;
+    const startSeq = (startPage - 1) * 30 + 1;
 
     return `ACT AS AN ELITE INDUSTRIAL FORENSIC INVESTIGATOR.
 RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
@@ -28,9 +26,9 @@ RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
 CRITICAL INTEGRITY SHIELD: 
 DO NOT RETURN MOCK OR PLACEHOLDER DATA. 
 YOU MUST PERFORM A LIVE GOOGLE SEARCH FOR "${category} transport companies South Africa".
-VERIFY THE WEBSITE RESOLVES TO A LIVE CORPORATE DOMAIN. BROKEN LINKS ARE UNACCEPTABLE.
+VERIFY THE WEBSITE RESOLVES TO A LIVE CORPORATE DOMAIN.
 
-TASK: Discover and extract exactly 100 UNIQUE live transport companies in SOUTH AFRICA for: "${category}".
+TASK: Discover and extract exactly 30 UNIQUE live transport companies in SOUTH AFRICA for: "${category}".
 
 STRICT FORENSIC PROTOCOL:
 1. DATA MINING: Find the OFFICIAL CORPORATE WEBSITE. Verify existence.
@@ -61,7 +59,7 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
     const [isCopied, setIsCopied] = useState(false);
     const [pageOverride, setPageOverride] = useState<number | ''>('');
     
-    const suggestedPage = Math.floor(currentCount / 100) + 1;
+    const suggestedPage = Math.floor(currentCount / 30) + 1;
     const startPage = pageOverride !== '' ? Number(pageOverride) : suggestedPage;
     const prompt = useMemo(() => generateDiscoveryPrompt(category, startPage), [category, startPage]);
 
@@ -83,13 +81,13 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                     <ShieldCheck className="h-4 w-4 text-primary" />
                     <AlertTitle className="text-left font-bold">Hard-Verification Active</AlertTitle>
                     <AlertDescription className="text-xs text-left">
-                        Commanding AI to perform live audits. Mock data and non-resolving websites are strictly forbidden.
+                        Batching optimized at 30 records per prompt for maximum precision and to prevent AI timeouts.
                     </AlertDescription>
                 </Alert>
                 <div className="p-4 bg-muted/30 border rounded-xl space-y-4 text-left">
                     <Label className="text-[10px] font-black uppercase tracking-widest text-primary text-left">Pagination Sync</Label>
                     <div className="space-y-1.5 text-left">
-                        <Label className="text-xs font-bold">Start from Page #</Label>
+                        <Label className="text-xs font-bold">Start from Batch/Page #</Label>
                         <Input 
                             type="number" 
                             placeholder={String(suggestedPage)}

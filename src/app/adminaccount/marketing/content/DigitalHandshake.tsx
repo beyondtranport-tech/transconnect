@@ -4,7 +4,7 @@ import React from "react";
 
 /**
  * AUTHORITATIVE DIGITAL HANDSHAKE
- * Reinstated approved high-power wording.
+ * Removed em dash from growth engine statement.
  */
 export default function DigitalHandshake({ partner, audience, version = 'v1' }: { partner?: any, audience?: string, version?: string }) {
     const firstName = partner?.firstName || (partner?.contactPerson ? partner.contactPerson.split(' ')[0] : 'Partner');
@@ -85,7 +85,7 @@ export default function DigitalHandshake({ partner, audience, version = 'v1' }: 
             </p>
 
             <p style={{ margin: '0 0 14pt 0', fontWeight: 'bold' }}>
-                "We have digitized the national transport grid to provide absolute market transparency. We connect your idle capacity with high-intent cargo owners and provide the capital to fuel your growth."
+                "This is more than a registry, it is a high-velocity growth engine. We provide you with the forensic data to find your most profitable customers and the embedded finance to ensure they have the capital to buy from you upfront and in full."
             </p>
 
             <p style={{ margin: '0 0 7pt 0', fontWeight: 'bold' }}>The Transporter Advantage:</p>

@@ -29,9 +29,9 @@ RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
 CRITICAL INTEGRITY SHIELD: 
 DO NOT RETURN MOCK, SYNTHETIC, OR PLACEHOLDER DATA. 
 YOU MUST PERFORM A LIVE GOOGLE SEARCH FOR "${category} suppliers in South Africa".
-VERIFY THE WEBSITE RESOLVES TO A LIVE CORPORATE DOMAIN. BROKEN LINKS ARE UNACCEPTABLE.
+VERIFY THE WEBSITE RESOLVES TO A LIVE CORPORATE DOMAIN.
 
-TASK: Discover and extract exactly 100 UNIQUE, LIVE South African suppliers for: "${category}".
+TASK: Discover and extract exactly 30 UNIQUE, LIVE South African suppliers for: "${category}".
 
 DEEP-CRAWLING FORENSIC PROTOCOL:
 1. WEBSITE HIERARCHY SCAN: Find the primary Menu/Navigation. 
@@ -69,28 +69,28 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
     const handleCopy = async () => {
         await navigator.clipboard.writeText(prompt);
         setIsCopied(true);
-        toast({ title: "Forensic Prompt Ready", description: "Hard-Verification and Deep-Scraping protocols active." });
+        toast({ title: "Forensic Prompt Ready", description: "Batch size optimized for accuracy." });
         setTimeout(() => setIsCopied(false), 3000);
     };
 
     return (
         <div className="grid md:grid-cols-2 gap-6 text-left">
             <div className="space-y-4 text-left">
-                <h2 className="text-2xl font-bold font-headline flex items-center gap-2 text-left">
+                <h2 className="text-2xl font-bold font-headline flex items-center gap-2 text-left text-foreground">
                     <Globe className="h-6 w-6 text-primary" />
                     Forensic Discovery: {category}
                 </h2>
                 <Alert className="bg-primary/5 border-primary/20 text-left">
                     <ShieldCheck className="h-4 w-4 text-primary" />
-                    <AlertTitle className="text-left font-bold">Deep-Scraping Active</AlertTitle>
-                    <AlertDescription className="text-xs text-left">
-                        This prompt commands the AI to perform live corporate audits, visit sub-menus, and extract product-page hero text and ML tags.
+                    <AlertTitle className="text-left font-bold text-foreground">Deep-Scraping Active</AlertTitle>
+                    <AlertDescription className="text-xs text-left text-muted-foreground">
+                        Batching optimized at 30 records to ensure high-fidelity data and prevent model generation errors.
                     </AlertDescription>
                 </Alert>
                 <div className="p-4 bg-muted/30 border rounded-xl space-y-4 text-left">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Sequence Sync</Label>
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground text-left">Sequence Sync</Label>
                     <div className="space-y-1.5 text-left">
-                        <Label className="text-xs font-bold">Start Sequence #</Label>
+                        <Label className="text-xs font-bold text-foreground">Start Sequence #</Label>
                         <Input 
                             type="number" 
                             value={seqOverride}
@@ -99,13 +99,13 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                         />
                     </div>
                 </div>
-                <Button onClick={handleCopy} size="lg" className="w-full gap-2 h-14 font-black uppercase tracking-widest">
+                <Button onClick={handleCopy} size="lg" className="w-full gap-2 h-14 font-black uppercase tracking-widest bg-primary hover:bg-primary/90 text-white">
                     {isCopied ? <ClipboardCheck className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
                     Copy Deep-Forensic Prompt
                 </Button>
             </div>
             <div className="space-y-2 text-left">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5"><Terminal className="h-3 w-3"/> Command Preview</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5 text-left"><Terminal className="h-3 w-3"/> Command Preview</Label>
                 <ScrollArea className="h-[400px] border rounded-lg bg-slate-900 p-4 text-left">
                     <pre className="text-[10px] text-slate-400 font-mono whitespace-pre-wrap leading-tight text-left">{prompt}</pre>
                 </ScrollArea>
@@ -119,11 +119,11 @@ export default function DiscoveryEngine() {
         <Card className="shadow-none border-none text-left text-foreground">
             <Tabs defaultValue="Accessories" className="w-full text-left">
                 <CardHeader className="px-0 pt-0 text-left">
-                    <CardTitle className="flex items-center gap-2 text-left">
+                    <CardTitle className="flex items-center gap-2 text-left text-foreground font-black font-headline">
                         <Database className="h-6 w-6 text-primary" />
-                        AI Forensic Discovery (Deep Scan)
+                        AI Forensic Discovery
                     </CardTitle>
-                    <CardDescription className="text-left">Use the Deep-Scraping prompt to build a high-fidelity technical registry.</CardDescription>
+                    <CardDescription className="text-left text-muted-foreground">Build a high-fidelity registry using Deep-Scraping batches.</CardDescription>
                 </CardHeader>
                 <CardContent className="px-0 text-left">
                     <TabsList className="h-auto flex-wrap justify-start bg-muted/30 mb-8 p-1 text-left">
