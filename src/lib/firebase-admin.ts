@@ -1,4 +1,3 @@
-
 import { initializeApp, getApps, getApp, App, cert } from 'firebase-admin/app';
 import type { ServiceAccount } from 'firebase-admin/app';
 import { NextRequest } from 'next/server';
@@ -80,7 +79,9 @@ export async function verifyAdmin(req: NextRequest) {
     
     const adminAuth = getAuth(app);
     const decodedToken = await adminAuth.verifyIdToken(token);
-    const isAdmin = decodedToken.email === 'mkoton100@gmail.com' || decodedToken.email === 'beyondtransport@gmail.com';
+    const isAdmin = decodedToken.email === 'mkoton100@gmail.com' || 
+                    decodedToken.email === 'beyondtransport@gmail.com' ||
+                    decodedToken.email === 'michael@logisticsflow.co.za';
 
     if (!isAdmin) {
         throw new Error("Forbidden: Admin access required.");

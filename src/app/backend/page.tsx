@@ -88,12 +88,16 @@ function AdminAuthGuard({ children }: { children: React.ReactNode }) {
         if (isUserLoading) return;
         if (!user) {
             router.replace('/signin?redirect=/backend');
-        } else if (user.email !== 'mkoton100@gmail.com' && user.email !== 'beyondtransport@gmail.com') {
+        } else if (
+          user.email !== 'mkoton100@gmail.com' && 
+          user.email !== 'beyondtransport@gmail.com' &&
+          user.email !== 'michael@logisticsflow.co.za'
+        ) {
             router.replace('/account'); 
         }
     }, [user, isUserLoading, router]);
 
-    if (isUserLoading || !user || (user.email !== 'mkoton100@gmail.com' && user.email !== 'beyondtransport@gmail.com')) {
+    if (isUserLoading || !user || (user.email !== 'mkoton100@gmail.com' && user.email !== 'beyondtransport@gmail.com' && user.email !== 'michael@logisticsflow.co.za')) {
         return (
             <div className="flex flex-col justify-center items-center min-h-[calc(100vh-8rem)]">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -163,6 +167,14 @@ function BackendContent() {
     if (!name) return "AD";
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
   };
+
+  if (isUserLoading || !user) {
+    return (
+        <div className="flex justify-center items-center min-h-[calc(100vh-8rem)]">
+            <Loader2 className="h-16 w-16 animate-spin text-primary" />
+        </div>
+    );
+  }
 
   const navigate = (view: string) => router.push(`/backend?view=${view}`, { scroll: false });
   

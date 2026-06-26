@@ -98,12 +98,16 @@ function AdminAuthGuard({ children }: { children: React.ReactNode }) {
         if (isUserLoading) return;
         if (!uid) {
             router.replace('/signin?redirect=/adminaccount');
-        } else if (email !== 'mkoton100@gmail.com' && email !== 'beyondtransport@gmail.com') {
+        } else if (
+          email !== 'mkoton100@gmail.com' && 
+          email !== 'beyondtransport@gmail.com' &&
+          email !== 'michael@logisticsflow.co.za'
+        ) {
             router.replace('/account'); 
         }
     }, [uid, email, isUserLoading, router]);
 
-    if (isUserLoading || !uid || (email !== 'mkoton100@gmail.com' && email !== 'beyondtransport@gmail.com')) {
+    if (isUserLoading || !uid || (email !== 'mkoton100@gmail.com' && email !== 'beyondtransport@gmail.com' && email !== 'michael@logisticsflow.co.za')) {
         return (
             <div className="flex flex-col justify-center items-center min-h-[calc(100vh-8rem)] text-foreground">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />

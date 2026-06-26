@@ -14,6 +14,7 @@ service cloud.firestore {
         request.auth.uid == '0Y3IhZffEPNlMAIhURPnzRgNokL2' || 
         request.auth.token.email == 'mkoton100@gmail.com' || 
         request.auth.token.email == 'beyondtransport@gmail.com' ||
+        request.auth.token.email == 'michael@logisticsflow.co.za' ||
         request.auth.token.admin == true
       );
     }
@@ -65,7 +66,6 @@ service cloud.firestore {
       allow update, delete: if isAdmin() || (isSignedIn() && resource.data.ownerId == request.auth.uid);
       
       // EXPLICIT SUB-COLLECTION RULES
-      // This flattened structure ensures 'list' permission is granted correctly for real-time listeners.
       
       match /supportMessages/{msgId} { allow read, write: if isMember(companyId); }
       match /transactions/{txId} { allow read, write: if isMember(companyId); }
@@ -91,7 +91,6 @@ service cloud.firestore {
           match /loads/{loadId} { allow read, write: if isMember(companyId); }
       }
 
-      // Catch-all for any other nested paths
       match /{allSub=**} {
         allow read, write: if isMember(companyId);
       }
@@ -114,6 +113,7 @@ service cloud.firestore {
       allow get, list: if true;
     }
     
+    // interaction tracking
     match /visitors/{visitorId} {
       allow write: if true;
     }
