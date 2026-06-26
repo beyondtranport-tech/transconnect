@@ -37,6 +37,7 @@ import { Loader2, Eye, EyeOff, Lock, ShoppingCart, Truck, ShieldCheck, Briefcase
 import { roles } from '@/lib/roles';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 const formSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
