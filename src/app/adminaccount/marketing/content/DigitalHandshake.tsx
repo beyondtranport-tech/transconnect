@@ -115,18 +115,11 @@ const transporterPitches: Record<string, HandshakeContent> = {
     }
 };
 
-/**
- * NARRATIVE VARIANCE ENGINE
- * Generates unique greetings and closings based on ID to avoid spam fingerprinting.
- */
 function getVariance(id: string) {
     const greetings = ["Good day", "Good morning", "Greetings", "Hello"];
     const closings = ["Regards,", "Best regards,", "Sincerely,", "Kind regards,"];
     const signoffs = ["The Logistics Flow Team", "Logistics Flow Management", "The Growth Team", "Platform Operations"];
-    
-    // Deterministic selection based on ID hash
     const charCodeSum = id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    
     return {
         greeting: greetings[charCodeSum % greetings.length],
         closing: closings[charCodeSum % closings.length],
@@ -143,7 +136,6 @@ export default function DigitalHandshake({ partner, audience, version = 'v1' }: 
 
     const isSupplier = audience === 'suppliers';
     const pitch = isSupplier ? (supplierPitches[version] || supplierPitches.v1) : (transporterPitches[version] || transporterPitches.v1);
-    
     const variance = useMemo(() => getVariance(partner?.id || 'TEST'), [partner?.id]);
 
     return (
@@ -175,16 +167,7 @@ export default function DigitalHandshake({ partner, audience, version = 'v1' }: 
             </p>
             
             <p style={{ margin: '0 0 14pt 0' }}>
-                <a 
-                    href={optInLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{ 
-                        color: '#0000FF', 
-                        textDecoration: 'underline',
-                        fontWeight: 'bold'
-                    }}
-                >
+                <a href={optInLink} target="_blank" rel="noopener noreferrer" style={{ color: '#0000FF', textDecoration: 'underline', fontWeight: 'bold' }}>
                     {optInLink}
                 </a>
             </p>
@@ -202,8 +185,7 @@ export default function DigitalHandshake({ partner, audience, version = 'v1' }: 
                 </p>
             </div>
 
-            {/* Forensic Tracking Pixel */}
-            <img src={pixelUrl} width="1" height="1" style={{ display: 'none' }} alt="Logistics Flow Tracking" />
+            <img src={pixelUrl} width="1" height="1" style={{ display: 'none' }} alt="Tracking" />
         </div>
     );
 }

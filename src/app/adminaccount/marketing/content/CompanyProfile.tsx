@@ -2,10 +2,6 @@
 
 import React from "react";
 
-/**
- * Enhanced Company Profile with Intelligence Focus
- * Includes forensic tracking pixel.
- */
 export default function CompanyProfile({ audience, partner }: { audience: string; partner?: any }) {
     const firstName = partner?.firstName || (partner?.contactPerson ? partner.contactPerson.split(' ')[0] : 'Member');
     const email = partner?.email || '';
@@ -24,23 +20,26 @@ export default function CompanyProfile({ audience, partner }: { audience: string
             backgroundColor: '#ffffff',
             padding: '0'
         }}>
-            <p style={{ margin: '0 0 14pt 0' }}>Good day {firstName}, we write to introduce Logistics Flow to your business.</p>
+            <p style={{ margin: '0 0 14pt 0', fontWeight: 'bold', textTransform: 'uppercase', borderBottom: '2px solid #000000', paddingBottom: '4pt' }}>
+                INDUSTRIAL MEMO: THE DIGITALIZATION OF LOGISTICS FLOW
+            </p>
+
+            <p style={{ margin: '0 0 14pt 0' }}>Good day {firstName}, we write to introduce the Logistics Flow ecosystem to your business.</p>
             
             <p style={{ margin: '0 0 14pt 0' }}>
                 Logistics Flow is a Data-as-a-Service (DaaS) ecosystem designed to break the constraints of the South African transport industry. We have digitized the industrial map of the country, integrating commerce, capital, and forensic intelligence into a single flow of opportunity.
             </p>
 
-            <p style={{ margin: '0 0 7pt 0', fontWeight: 'bold' }}>Our Pillars of Flow</p>
-            <p style={{ margin: '0 0 14pt 0' }}>We empower the transport community through four integrated divisions:</p>
+            <p style={{ margin: '0 0 7pt 0', fontWeight: 'bold' }}>Our Four Pillars of Flow</p>
             
             <ul style={{ listStyleType: 'disc', marginLeft: '20pt', margin: '0 0 14pt 20pt' }}>
                 <li style={{ marginBottom: '7pt' }}><strong>Intelligence:</strong> A forensic registry of 22,000+ industrial records. We provide absolute market transparency, giving you the names, emails, and direct mobile numbers of decision-makers.</li>
-                <li style={{ marginBottom: '7pt' }}><strong>Commerce:</strong> Digital branches that allow transporters and suppliers to showcase capacity and inventory directly to a captive, high-intent market.</li>
+                <li style={{ marginBottom: '7pt' }}><strong>Commerce:</strong> Digital branches that allow transporters and suppliers to showcase capacity and inventory directly to a captive, high-intent community.</li>
                 <li style={{ marginBottom: '7pt' }}><strong>Community:</strong> Collective buying power that negotiates massive discounts on fuel, tires, and parts for our member syndicate.</li>
                 <li style={{ marginBottom: '7pt' }}><strong>Capital:</strong> A data-driven lending engine that uses your platform performance to unlock asset finance and working capital where traditional banks can't.</li>
             </ul>
 
-            <p style={{ margin: '0 0 7pt 0', fontWeight: 'bold' }}>The Value Proposition</p>
+            <p style={{ margin: '0 0 7pt 0', fontWeight: 'bold' }}>The Intelligence Tier</p>
             <p style={{ margin: '0 0 14pt 0' }}>
                 For just R100/month, our <strong>Intelligence Access</strong> tier gives you the keys to the kingdom. No more cold calling generic support lines. You get the map to the industry's leadership, allowing you to build relationships that drive revenue.
             </p>
@@ -58,9 +57,8 @@ export default function CompanyProfile({ audience, partner }: { audience: string
             <p style={{ margin: '0 0 14pt 0' }}>Please sign in to access your personal secure portal. This is your command center for industrial growth and data-driven profitability.</p>
             
             <p style={{ margin: '0 0 14pt 0' }}>Regards,</p>
-            <p style={{ margin: '0 0 14pt 0' }}>The Logistics Flow Team</p>
+            <p style={{ margin: '0 0 14pt 0', fontWeight: 'bold' }}>The Logistics Flow Team</p>
 
-            {/* Forensic Tracking Pixel */}
             <img src={pixelUrl} width="1" height="1" style={{ display: 'none' }} alt="" />
         </div>
     );
