@@ -1,15 +1,16 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Loader2, ExternalLink, Send, ChevronLeft, ChevronRight, CheckCircle2 } from 'lucide-react';
+import { Loader2, ExternalLink, Send, ChevronLeft, ChevronRight, CheckCircle2, Zap } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
 import { copyHtmlToClipboard, cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 
 // Content components
 import DigitalHandshake from './content/DigitalHandshake';
@@ -50,13 +51,6 @@ async function performAdminAction(token: string, action: string, payload: any) {
         cache: 'no-store'
     });
 
-    const contentType = response.headers.get('content-type');
-    if (!contentType || !contentType.includes('application/json')) {
-        const errorText = await response.text();
-        console.error("Non-JSON response received:", errorText.slice(0, 200));
-        throw new Error("The server returned an invalid response. This may be due to a timeout with large data segments.");
-    }
-
     const result = await response.json();
     if (!response.ok || !result.success) {
         throw new Error(result.error || `API Error for action: ${action}`);
@@ -69,6 +63,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [activeTab, setActiveTab] = useState('digital-handshake');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [handshakeVersion, setHandshakeVersion] = useState('v1');
 
   useEffect(() => {
     if (open) {
@@ -108,7 +103,10 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
 
   const getSubject = () => {
       const company = currentPartner?.companyName || 'your business';
-      const label = activeTab.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+      let label = activeTab.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+      if (activeTab === 'digital-handshake') {
+          label = `Digital Handshake (${handshakeVersion.toUpperCase()})`;
+      }
       return `Logistics Flow: ${label} for ${company}`;
   }
 
@@ -128,7 +126,10 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
         const token = await getClientSideAuthToken();
         if (!token) throw new Error("Auth failed.");
         
-        const subjectLabel = activeTab.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+        let subjectLabel = activeTab.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+        if (activeTab === 'digital-handshake') {
+            subjectLabel = `Handshake ${handshakeVersion.toUpperCase()}`;
+        }
 
         await performAdminAction(token, 'logCommunication', {
             partnerId: currentPartner.id,
@@ -141,11 +142,9 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
         const contentClone = contentElement.cloneNode(true) as HTMLElement;
         const origin = window.location.origin;
         
-        const images = contentClone.querySelectorAll('img');
-        images.forEach(img => {
-            const src = img.getAttribute('src');
-            if (src?.startsWith('/')) img.src = `${origin}${src}`;
-        });
+        // Ensure version selector is NOT copied to clipboard
+        const versionSelector = contentClone.querySelector('[data-id="version-selector-ui"]');
+        if (versionSelector) versionSelector.remove();
 
         const wrappedHtml = `<div style="font-family: Calibri, sans-serif; font-size: 12pt; color: #000000; line-height: 1.2; text-align: left;">${contentClone.innerHTML}</div>`;
 
@@ -273,15 +272,44 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                 </div>
 
                 <div className="flex-1 overflow-y-auto bg-slate-50 p-8 text-left">
-                    <div id={`engage-content-wrapper-${activeTab}`} className="bg-white p-12 rounded-lg shadow-sm border mx-auto max-w-[850px] text-left text-foreground min-h-full">
-                        {activeTab === 'digital-handshake' && <DigitalHandshake partner={currentPartner} audience={audience} />}
-                        {activeTab === 'company-profile' && <CompanyProfile audience={audience} partner={currentPartner} />}
-                        {activeTab === 'tech-architecture' && <TechArchitecture partner={currentPartner} />}
-                        {activeTab === 'revenue-model' && <RevenueModel partner={currentPartner} />}
-                        {activeTab === 'offer' && <Offer partner={currentPartner} />}
-                        {activeTab === 'pitch' && <PitchDeck partner={currentPartner} />}
-                        {activeTab === 'framework' && <Framework partner={currentPartner} />}
-                        {activeTab === 'emails' && <Emails partner={currentPartner} />}
+                    <div className="max-w-[850px] mx-auto space-y-6">
+                        {activeTab === 'digital-handshake' && (
+                            <div data-id="version-selector-ui" className="bg-amber-50 border border-amber-200 p-4 rounded-xl flex items-center justify-between mb-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="bg-amber-100 p-2 rounded-lg"><Zap className="h-5 w-5 text-amber-600" /></div>
+                                    <div>
+                                        <p className="text-sm font-bold text-amber-900">Follow-up Strategy</p>
+                                        <p className="text-[10px] text-amber-700">Select a pitch version to test different incentives.</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <Label className="text-[10px] font-black uppercase tracking-widest text-amber-800">Version</Label>
+                                    <Select value={handshakeVersion} onValueChange={setHandshakeVersion}>
+                                        <SelectTrigger className="w-[200px] h-9 bg-white border-amber-200">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="v1">V1: Standard (Low Friction)</SelectItem>
+                                            <SelectItem value="v2">V2: Market Access</SelectItem>
+                                            <SelectItem value="v3">V3: Financial Security</SelectItem>
+                                            <SelectItem value="v4">V4: Technical Power</SelectItem>
+                                            <SelectItem value="v5">V5: Ecosystem Partner (Max)</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+                        )}
+
+                        <div id={`engage-content-wrapper-${activeTab}`} className="bg-white p-12 rounded-lg shadow-sm border text-left text-foreground min-h-full">
+                            {activeTab === 'digital-handshake' && <DigitalHandshake partner={currentPartner} audience={audience} version={handshakeVersion} />}
+                            {activeTab === 'company-profile' && <CompanyProfile audience={audience} partner={currentPartner} />}
+                            {activeTab === 'tech-architecture' && <TechArchitecture partner={currentPartner} />}
+                            {activeTab === 'revenue-model' && <RevenueModel partner={currentPartner} />}
+                            {activeTab === 'offer' && <Offer partner={currentPartner} />}
+                            {activeTab === 'pitch' && <PitchDeck partner={currentPartner} />}
+                            {activeTab === 'framework' && <Framework partner={currentPartner} />}
+                            {activeTab === 'emails' && <Emails partner={currentPartner} />}
+                        </div>
                     </div>
                 </div>
             </div>

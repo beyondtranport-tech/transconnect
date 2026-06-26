@@ -2,12 +2,123 @@
 
 import React from "react";
 
+interface HandshakeContent {
+    headline: string;
+    intro: string;
+    points: string[];
+    closing: string;
+}
+
+const supplierPitches: Record<string, HandshakeContent> = {
+    v1: {
+        headline: "Strategic Sales Handshake",
+        intro: "Logistics Flow has cataloged the national transport grid. We are opening a direct sales channel for established providers to reach over 5,400+ verified transport companies.",
+        points: [
+            "Direct Market Access to 5,400+ fleet owners.",
+            "Forensic Sales Tools to bypass generic switchboards.",
+            "Verified Digital Branch visible to a high-intent community."
+        ],
+        closing: "Establish the handshake to activate your direct line."
+    },
+    v2: {
+        headline: "Market Velocity Upgrade",
+        intro: "Your sales team is fighting against an information gap. We've bridged it. We are inviting you to plug into a high-fidelity registry where the decision-makers are already active.",
+        points: [
+            "Access direct mobile numbers for MDs and Owners.",
+            "Map regional demand before committing inventory.",
+            "Join as a Tier-1 Verified Supplier for maximum visibility."
+        ],
+        closing: "Confirm your standing to accelerate your sales cycle."
+    },
+    v3: {
+        headline: "The Embedded Finance Handshake",
+        intro: "We've solved the primary constraint on your growth: customer cash flow. We fund your buyers so they can purchase from you upfront and in full, while you scale without risk.",
+        points: [
+            "Zero-risk sales: You get paid instantly by the platform.",
+            "Expand your credit reach without increasing your debtors' risk.",
+            "Direct introduction to members with approved asset-finance limits."
+        ],
+        closing: "Establish this connection to unlock our capital-powered sales channel."
+    },
+    v4: {
+        headline: "Digital Branch Dominance",
+        intro: "Traditional catalogs are static. Your new Digital Branch is alive. We match your specialized inventory with the exact equipment declared by our 5,400+ members.",
+        points: [
+            "AI-powered product matching based on member fleet data.",
+            "Real-time RFQs delivered directly to your secure dashboard.",
+            "Establish absolute technical dominance in your specific category."
+        ],
+        closing: "Secure your digital node and start receiving high-intent matches."
+    },
+    v5: {
+        headline: "Foundational Partnership Offer",
+        intro: "We are seeking a single foundational partner in your category to join our strategic advisory board. This is an invitation to share in the total ecosystem revenue as we scale.",
+        points: [
+            "Earn recurring revenue from every member you refer to the registry.",
+            "Priority standing in all Mall search results (Top-of-List).",
+            "Direct influence on the platform's industrial roadmap."
+        ],
+        closing: "This is a maximum-incentive invitation. Establish the handshake to begin the executive briefing."
+    }
+};
+
+const transporterPitches: Record<string, HandshakeContent> = {
+    v1: {
+        headline: "Operational Efficiency Handshake",
+        intro: "Inefficiency is a silent tax. Logistics Flow is a unified ecosystem designed to break the constraints of high operating costs and empty miles.",
+        points: [
+            "AI Capacity Alerts for matching freight loads.",
+            "Group buying power for tires, fuel, and parts.",
+            "Verified standing for future asset finance access."
+        ],
+        closing: "Establish the connection to start saving on overheads."
+    },
+    v2: {
+        headline: "The Zero-Empty-Mile Initiative",
+        intro: "How much did your empty legs cost you last month? We have digitized the national freight map to ensure your trucks never run empty.",
+        points: [
+            "Real-time visibility into available backhaul loads.",
+            "Direct connection to cargo owners (No broker fees).",
+            "Automated route optimization via the Tech Division."
+        ],
+        closing: "Connect your fleet to the industrial brain today."
+    },
+    v3: {
+        headline: "Collective Power Handshake",
+        intro: "Independent hauliers are being squeezed by rising costs. We are aggregating the buying power of thousands of small fleets to demand wholesale pricing.",
+        points: [
+            "Access 'Member-Only' rates for premium tire brands.",
+            "Direct-from-manufacturer parts pricing.",
+            "Fuel rebates through our integrated wallet system."
+        ],
+        closing: "Join the syndicate to slash your maintenance costs."
+    },
+    v4: {
+        headline: "Capital Intelligence Upgrade",
+        intro: "Traditional banks miss the opportunity in your business. We don't. Your performance data on our platform is the key to unlocking asset finance.",
+        points: [
+            "Build a validated standing based on real operational data.",
+            "Direct access to 85+ specialized industrial lenders.",
+            "Pre-vetting for working capital based on your load history."
+        ],
+        closing: "Establish the handshake to start building your digital credit record."
+    },
+    v5: {
+        headline: "Network Monetization (ISA) Offer",
+        intro: "Turn your industry relationships into a new revenue stream. We are inviting you to join as an Authorized Independent Sales Agent with full recurring commissions.",
+        points: [
+            "Earn a share of the monthly fees from every business you refer.",
+            "Participate in Mall commissions across the entire ecosystem.",
+            "Graduate your business from operations to strategic growth."
+        ],
+        closing: "Maximum incentive access. Establish the connection to activate your revenue engine."
+    }
+};
+
 /**
- * Narrative-Driven Digital Handshake
- * Optimized for Supplier Sales Growth and Market Access.
- * Includes forensic tracking pixel.
+ * Narrative-Driven Digital Handshake (Versioned for A/B Testing)
  */
-export default function DigitalHandshake({ partner, audience }: { partner?: any, audience?: string }) {
+export default function DigitalHandshake({ partner, audience, version = 'v1' }: { partner?: any, audience?: string, version?: string }) {
     const firstName = partner?.firstName || (partner?.contactPerson ? partner.contactPerson.split(' ')[0] : 'Partner');
     const companyName = partner?.companyName || 'your business';
     const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://studio--ecosystem-hub.us-central1.hosted.app';
@@ -15,6 +126,7 @@ export default function DigitalHandshake({ partner, audience }: { partner?: any,
     const pixelUrl = `/api/trackEmailOpen/${partner?.id || 'anonymous'}`;
 
     const isSupplier = audience === 'suppliers';
+    const pitch = isSupplier ? (supplierPitches[version] || supplierPitches.v1) : (transporterPitches[version] || transporterPitches.v1);
 
     return (
         <div style={{ 
@@ -26,51 +138,22 @@ export default function DigitalHandshake({ partner, audience }: { partner?: any,
             padding: '0'
         }}>
             <p style={{ margin: '0 0 14pt 0', fontWeight: 'bold', textTransform: 'uppercase', borderBottom: '2px solid #000000', paddingBottom: '4pt' }}>
-                {isSupplier ? `Strategic Sales Handshake: ${companyName.toUpperCase()}` : `Strategic Handshake: ${companyName.toUpperCase()}`}
+                {pitch.headline}: {companyName.toUpperCase()}
             </p>
 
             <p style={{ margin: '0 0 14pt 0' }}>Good day {firstName},</p>
 
-            {isSupplier ? (
-                <>
-                    <p style={{ margin: '0 0 14pt 0' }}>
-                        The opportunity to scale your supply business has never been more immediate. With over <strong>5,400+ verified transport companies</strong> already active in our ecosystem, we are opening a direct sales channel for established providers like {companyName}.
-                    </p>
+            <p style={{ margin: '0 0 14pt 0' }}>{pitch.intro}</p>
 
-                    <p style={{ margin: '0 0 14pt 0' }}>
-                        This is more than a registry—it is a high-velocity growth engine. We provide you with the forensic data to find your most profitable customers and the embedded finance to ensure they have the capital to buy from you upfront and in full.
-                    </p>
-
-                    <p style={{ margin: '0 0 7pt 0', fontWeight: 'bold' }}>The Supplier Advantage:</p>
-                    <ul style={{ listStyleType: 'disc', marginLeft: '20pt', margin: '0 0 14pt 20pt' }}>
-                        <li style={{ marginBottom: '7pt' }}><strong>Direct Market Access:</strong> Instantly reach 5,400+ fleet owners actively searching for parts and services.</li>
-                        <li style={{ marginBottom: '7pt' }}><strong>Forensic Sales Tools:</strong> Access direct mobile numbers and emails for MDs/Owners to bypass generic switchboards.</li>
-                        <li style={{ marginBottom: '7pt' }}><strong>Embedded Finance:</strong> We fund your customers so you can close more deals without cash flow constraints.</li>
-                        <li style={{ marginBottom: '7pt' }}><strong>Verified Digital Branch:</strong> Showcase your specialized inventory to a high-intent industrial community 24/7.</li>
-                    </ul>
-                </>
-            ) : (
-                <>
-                    <p style={{ margin: '0 0 14pt 0' }}>
-                        The industry is talking. At container depots and harbors across the country, the question is being asked: <strong>"Have you seen the new Logistics Flow app?"</strong>
-                    </p>
-
-                    <p style={{ margin: '0 0 14pt 0' }}>
-                        We are opening our secure network to foundational stakeholders like {companyName}. This is more than an app—it is an earning platform where you can build a network and generate passive revenue through community transparency.
-                    </p>
-
-                    <p style={{ margin: '0 0 7pt 0', fontWeight: 'bold' }}>The Connection Advantage:</p>
-                    <ul style={{ listStyleType: 'disc', marginLeft: '20pt', margin: '0 0 14pt 20pt' }}>
-                        <li style={{ marginBottom: '7pt' }}><strong>Forensic Registry:</strong> Instant access to decision-makers across the national transport grid.</li>
-                        <li style={{ marginBottom: '7pt' }}><strong>WhatsApp Integration:</strong> Simple, one-click network growth and lead generation.</li>
-                        <li style={{ marginBottom: '7pt' }}><strong>Direct Commerce:</strong> Link directly with suppliers and buy through verified product catalogues.</li>
-                        <li style={{ marginBottom: '7pt' }}><strong>Passive Revenue:</strong> Start earning from the activity within your digitized network today.</li>
-                    </ul>
-                </>
-            )}
+            <p style={{ margin: '0 0 7pt 0', fontWeight: 'bold' }}>Key Advantages:</p>
+            <ul style={{ listStyleType: 'disc', marginLeft: '20pt', margin: '0 0 14pt 20pt' }}>
+                {pitch.points.map((p, i) => (
+                    <li key={i} style={{ marginBottom: '7pt' }}>{p}</li>
+                ))}
+            </ul>
 
             <p style={{ margin: '0 0 14pt 0', fontWeight: 'bold' }}>
-                Establish the handshake to secure your direct line to the community below:
+                {pitch.closing}
             </p>
             
             <p style={{ margin: '0 0 14pt 0' }}>
