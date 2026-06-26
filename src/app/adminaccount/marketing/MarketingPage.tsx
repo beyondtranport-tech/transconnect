@@ -1,9 +1,10 @@
+
 'use client';
 
 import * as React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { BookOpen, Loader2, ClipboardCopy, SearchCode, Target, Users, LayoutDashboard, Send, Sparkles, Landmark, DollarSign, MessageSquare, ClipboardList, Search, RefreshCcw, RotateCcw, ExternalLink } from 'lucide-react';
+import { BookOpen, Loader2, ClipboardCopy, SearchCode, Target, Users, LayoutDashboard, Send, Sparkles, Landmark, DollarSign, MessageSquare, ClipboardList, Search, RefreshCcw, RotateCcw, ExternalLink, Zap } from 'lucide-react';
 import { useState, useEffect, useCallback, useMemo, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -66,6 +67,7 @@ const TransporterManagement = dynamic(() => import('./transporter-management'), 
 const AudienceCommunicationsTable = dynamic(() => import('./AudienceCommunicationsTable'), { loading: () => <Loader2 className="animate-spin" /> });
 const AudienceTasksTable = dynamic(() => import('./AudienceTasksTable'), { loading: () => <Loader2 className="animate-spin" /> });
 const AudienceOversightTable = dynamic(() => import('./AudienceOversightTable'), { loading: () => <Loader2 className="animate-spin" /> });
+const ForensicBridge = dynamic(() => import('./ForensicBridge'), { loading: () => <Loader2 className="animate-spin" /> });
 
 import SupplierPitch from '@/app/adminaccount/supplier-pitch';
 import DiscoveryEngine from './discovery-engine';
@@ -308,6 +310,9 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
                 </div>
             </div>
             <div className="flex items-center gap-2 text-left">
+                <Button variant="outline" onClick={() => handleTabChange('forensic-bridge')} className={cn("gap-2", activeTab === 'forensic-bridge' && "bg-primary text-white hover:bg-primary/90")}>
+                    <Zap className="h-4 w-4" /> Forensic Bridge (Auto)
+                </Button>
                 {Discovery && (
                     <Button variant="outline" onClick={() => handleTabChange('discovery')} className={cn(activeTab === 'discovery' && "bg-primary text-white hover:bg-primary/90")}>
                         <Sparkles className="mr-2 h-4 w-4" /> Discovery Engine
@@ -327,6 +332,7 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
                 <TabsTrigger value="communications" className="gap-2"><MessageSquare className="h-3.5 w-3.5"/>Communications</TabsTrigger>
                 <TabsTrigger value="tasks" className="gap-2"><ClipboardList className="h-3.5 w-3.5"/>Tasks</TabsTrigger>
                 <TabsTrigger value="oversight" className="gap-2"><Search className="h-3.5 w-3.5"/>Oversight</TabsTrigger>
+                <TabsTrigger value="forensic-bridge" className="gap-2"><Zap className="h-3.5 w-3.5"/>Bridge (Auto)</TabsTrigger>
                 {Discovery && <TabsTrigger value="discovery" className="gap-2"><Sparkles className="h-3.5 w-3.5"/>Discovery (AI)</TabsTrigger>}
                 {Pitch && <TabsTrigger value="pitch-generator">Pitch Library</TabsTrigger>}
                 <TabsTrigger value="company-profile">Profile</TabsTrigger>
@@ -343,6 +349,7 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
                 <TabsContent value="communications" className="text-left"><AudienceCommunicationsTable audience={audience} /></TabsContent>
                 <TabsContent value="tasks" className="text-left"><AudienceTasksTable audience={audience} /></TabsContent>
                 <TabsContent value="oversight" className="text-left"><AudienceOversightTable audience={audience} /></TabsContent>
+                <TabsContent value="forensic-bridge" className="text-left"><ForensicBridge audience={audience} /></TabsContent>
                 {Discovery && <TabsContent value="discovery" className="text-left"><div id="tab-content-discovery">{Discovery && <Discovery />}</div></TabsContent>}
                 {Pitch && <TabsContent value="pitch-generator" className="text-left"><div id="tab-content-pitch-generator">{Pitch && <Pitch />}</div></TabsContent>}
                 <TabsContent value="company-profile" className="text-left"><div id="tab-content-company-profile"><CompanyProfile partner={null} audience={audience} /></div></TabsContent>
@@ -365,3 +372,4 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
     </Suspense>
   );
 }
+

@@ -1,13 +1,14 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase-admin';
+import { enrichPartner } from '@/ai/flows/enrich-partner-flow';
 
 export const dynamic = 'force-dynamic';
 
 /**
  * UTILITY: Serialize Timestamps
- * Ensures Firestore data is JSON-compatible for the frontend.
  */
 function serializeTimestamps(docData: any): any {
     if (!docData) return docData;
@@ -39,7 +40,6 @@ export async function POST(req: NextRequest) {
         const adminAuth = getAuth(app);
         const decodedToken = await adminAuth.verifyIdToken(token);
         
-        // Root Admin Emails
         const isAdmin = decodedToken.email === 'beyondtransport@gmail.com' || 
                         decodedToken.email === 'mkoton100@gmail.com' ||
                         decodedToken.email === 'michael@logisticsflow.co.za';
@@ -52,34 +52,8 @@ export async function POST(req: NextRequest) {
         const db = getFirestore(app);
 
         switch (action) {
-            case 'logForensicInitiated': {
-                const { partnerId, isLead } = payload;
-                const coll = isLead ? 'leads' : 'partners';
-                await db.collection(coll).doc(partnerId).set({
-                    status: 'contacted',
-                    notes: 'Forensic research initiated via AI Gap-Analysis.',
-                    updatedAt: serverTimestamp()
-                }, { merge: true });
-                return NextResponse.json({ success: true });
-            }
-
-            case 'bulkLogForensicInitiated': {
-                const { leadIds, type } = payload;
-                const coll = type === 'lead' ? 'leads' : 'partners';
-                const batch = db.batch();
-                leadIds.forEach((id: string) => {
-                    batch.set(db.collection(coll).doc(id), {
-                        status: 'contacted',
-                        notes: 'Batch Forensic Discovery initiated.',
-                        updatedAt: FieldValue.serverTimestamp()
-                    }, { merge: true });
-                });
-                await batch.commit();
-                return NextResponse.json({ success: true });
-            }
-
             case 'getMembers': {
-                const companiesSnap = await db.collection('companies').orderBy('updatedAt', 'desc').limit(1000).get();
+                const companiesSnap = await db.collection('companies').orderBy('updatedAt', 'desc').limit(100).get();
                 const ownerIds = companiesSnap.docs.map(d => d.data().ownerId).filter(id => !!id);
                 const userDetailsMap = new Map();
                 if (ownerIds.length > 0) {
@@ -92,23 +66,52 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: data.map(serializeTimestamps) });
             }
 
+            case 'getPartnersByType': {
+                const { type, limit = 100 } = payload;
+                let query: any = db.collection('partners');
+                if (type && type !== 'all') query = query.where('type', '==', type.toLowerCase());
+                const snap = await query.orderBy('updatedAt', 'desc').limit(limit).get();
+                const data = snap.docs.map((d: any) => ({ id: d.id, ...d.data() }));
+                return NextResponse.json({ success: true, data: data.map(serializeTimestamps) });
+            }
+
             case 'searchRegistry': {
-                const { term, type, outreachFilter, limit = 20000 } = payload;
-                const [pSnap, lSnap] = await Promise.all([
-                    db.collection('partners').limit(limit).get(),
-                    db.collection('leads').limit(limit).get()
-                ]);
-                let normalized = [
-                    ...pSnap.docs.map(d => ({ id: d.id, source: 'partners', ...d.data() })),
-                    ...lSnap.docs.map(d => ({ id: d.id, source: 'leads', ...d.data() }))
-                ];
-                if (type && type !== 'all' && type !== 'lead') normalized = normalized.filter(p => p.type === type.toLowerCase());
-                else if (type === 'lead') normalized = normalized.filter(p => p.source === 'leads');
+                const { term, type, limit = 20000 } = payload;
+                const coll = (type === 'lead') ? 'leads' : 'partners';
+                let query: any = db.collection(coll);
+                if (type && type !== 'all' && type !== 'lead') query = query.where('type', '==', type.toLowerCase());
+                const snap = await query.limit(limit).get();
+                let results = snap.docs.map((d: any) => ({ id: d.id, source: coll, ...d.data() }));
                 if (term) {
                     const low = term.toLowerCase();
-                    normalized = normalized.filter(p => JSON.stringify(p).toLowerCase().includes(low));
+                    results = results.filter((p: any) => JSON.stringify(p).toLowerCase().includes(low));
                 }
-                return NextResponse.json({ success: true, data: normalized.map(serializeTimestamps) });
+                return NextResponse.json({ success: true, data: results.map(serializeTimestamps) });
+            }
+
+            case 'autoEnrichRecord': {
+                const { id, type } = payload;
+                const coll = (type === 'lead') ? 'leads' : 'partners';
+                const docRef = db.collection(coll).doc(id);
+                const docSnap = await docRef.get();
+                if (!docSnap.exists) throw new Error("Record not found.");
+                
+                const data = docSnap.data()!;
+                const companyName = data.companyName || data.company_name || data.trading_name || `${data.firstName} ${data.lastName}`;
+                
+                // Call high-intelligence AI flow
+                const enrichment = await enrichPartner({ companyName });
+                
+                // Patch the record with verified data
+                const update = {
+                    ...enrichment,
+                    status: enrichment.email ? 'qualified' : 'contacted',
+                    notes: `Automated Forensic Bridge completed on ${new Date().toISOString()}. Verified website: ${enrichment.website || 'No'}`,
+                    updatedAt: FieldValue.serverTimestamp()
+                };
+                
+                await docRef.update(update);
+                return NextResponse.json({ success: true, data: update });
             }
 
             case 'savePartner': {
@@ -119,21 +122,9 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, id });
             }
 
-            case 'bulkSavePartners': {
-                const { partners, type } = payload;
-                const coll = type === 'lead' ? 'leads' : 'partners';
-                const batch = db.batch();
-                partners.forEach((p: any) => {
-                    const id = p.record_id || db.collection(coll).doc().id;
-                    batch.set(db.collection(coll).doc(id), { 
-                        ...p, 
-                        id, 
-                        type: type === 'lead' ? 'lead' : type,
-                        updatedAt: FieldValue.serverTimestamp() 
-                    }, { merge: true });
-                });
-                await batch.commit();
-                return NextResponse.json({ success: true });
+            case 'getPlatformStaff': {
+                const snap = await db.collection('platformStaff').where('status', '==', 'active').get();
+                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...d.data() })) });
             }
 
             default: return NextResponse.json({ success: false, error: "Action invalid." }, { status: 400 });
