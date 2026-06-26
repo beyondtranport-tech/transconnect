@@ -162,14 +162,14 @@ function JoinFormComponent() {
   if (!selectedPosition) {
       return (
           <div className="container mx-auto flex min-h-[calc(100vh-8rem)] items-center justify-center px-4 py-16 text-left">
-          <Card className="w-full max-w-2xl text-left border-none shadow-2xl overflow-hidden text-left">
-            <CardHeader className="text-center bg-slate-900 text-white p-10 text-left">
+          <Card className="w-full max-w-2xl text-left border-none shadow-2xl overflow-hidden">
+            <CardHeader className="text-center bg-slate-900 text-white p-10">
                 <CardTitle className="text-3xl font-black font-headline text-left">Secure Your Digital Node</CardTitle>
                 <CardDescription className="text-slate-400 mt-2 text-left">Select your primary function to optimize your ecosystem experience.</CardDescription>
             </CardHeader>
-            <CardContent className="p-8 text-left">
-                <ScrollArea className="h-[50vh] pr-4 text-left">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-4 text-left">
+            <CardContent className="p-8">
+                <ScrollArea className="h-[50vh] pr-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-4">
                         {roles.map((role) => {
                             const Icon = role.icon;
                             const isSupplier = role.id === 'vendor';
@@ -178,13 +178,13 @@ function JoinFormComponent() {
                                     key={role.id}
                                     variant="outline" 
                                     className={cn(
-                                        "h-auto min-h-[120px] justify-start px-6 gap-4 border-2 transition-all text-left",
+                                        "h-auto min-h-[120px] justify-start px-6 gap-4 border-2 transition-all text-left whitespace-normal",
                                         isSupplier ? "border-primary/40 bg-primary/5 hover:border-primary" : "hover:border-primary"
                                     )} 
                                     onClick={() => setSelectedPosition(role.id)}
                                 >
                                     <div className="bg-primary/10 p-3 rounded-xl shrink-0"><Icon className="text-primary h-6 w-6"/></div>
-                                    <div className="text-left py-2">
+                                    <div className="text-left py-2 flex-1 min-w-0">
                                         <div className="flex items-center gap-2">
                                             <p className="font-black text-sm uppercase tracking-tighter">{role.title}</p>
                                             {isSupplier && <Badge className="text-[8px] h-4 bg-primary text-white border-none uppercase">Priority</Badge>}
@@ -197,8 +197,8 @@ function JoinFormComponent() {
                     </div>
                 </ScrollArea>
             </CardContent>
-            <CardFooter className="bg-slate-50 border-t p-6 flex justify-center text-left">
-                <p className="text-xs text-muted-foreground italic">Choosing a role allows the AI to curate the most profitable matches for your dashboard.</p>
+            <CardFooter className="bg-slate-50 border-t p-6 flex justify-center">
+                <p className="text-xs text-muted-foreground italic text-center">Choosing a role allows the AI to curate the most profitable matches for your dashboard.</p>
             </CardFooter>
           </Card>
           </div>
@@ -209,17 +209,17 @@ function JoinFormComponent() {
 
   return (
     <Card className="w-full max-w-lg shadow-2xl border-none text-left">
-      <CardHeader className="text-center p-8 border-b text-left">
+      <CardHeader className="text-center p-8 border-b">
         <CardTitle className="text-3xl font-black font-headline text-left">Create Account</CardTitle>
-        <CardDescription className="flex items-center justify-start gap-2 mt-3 text-left">
+        <CardDescription className="flex items-center justify-start gap-2 mt-3">
             Registering as <Badge variant="secondary" className="capitalize font-black px-3">{selectedRoleData?.title || selectedPosition}</Badge> 
             <Button variant="link" size="sm" className="px-1 h-auto text-[10px] font-bold uppercase text-primary" onClick={() => setSelectedPosition(null)}>Change Role</Button>
         </CardDescription>
       </CardHeader>
-      <CardContent className="p-8 text-left">
+      <CardContent className="p-8">
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 text-left">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 text-left">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <FormField control={form.control} name="firstName" render={({ field }) => ( <FormItem><FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">First Name</FormLabel><FormControl><Input placeholder="John" {...field} className="h-11" autoComplete="given-name" /></FormControl><FormMessage /></FormItem> )} />
               <FormField control={form.control} name="lastName" render={({ field }) => ( <FormItem><FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Last Name</FormLabel><FormControl><Input placeholder="Doe" {...field} className="h-11" autoComplete="family-name" /></FormControl><FormMessage /></FormItem> )} />
             </div>
@@ -229,7 +229,7 @@ function JoinFormComponent() {
             <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem><FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Mobile Number</FormLabel><FormControl><Input {...field} className="h-11" placeholder="+27..." autoComplete="tel" /></FormControl><FormMessage /></FormItem> )} />
             <FormField control={form.control} name="password" render={({ field }) => (
                 <FormItem><div className="flex items-center justify-between"><FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Secure Password</FormLabel><button type="button" onClick={handlePasswordReset} className="text-[10px] font-bold text-primary uppercase underline">Forgot?</button></div>
-                <FormControl><div className="relative"><Input type={showPassword ? "text" : "password"} {...field} className="h-11" autoComplete="new-password" /><Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0 h-11" onClick={() => setShowPassword(!showPassword)}>{showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</Button></div></FormControl><FormMessage /></FormItem>
+                <FormControl><div className="relative"><Input type={showPassword ? "text" : "password"} {...field} className="h-11" autoComplete="new-password" /><Button type="button" variant="ghost" size="icon" className="absolute inset-y-0 right-0 h-full px-3 text-muted-foreground hover:bg-transparent" onClick={() => setShowPassword((prev) => !prev)}>{showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</Button></div></FormControl><FormMessage /></FormItem>
             )} />
             <Button type="submit" className="w-full h-14 text-lg font-black uppercase tracking-tight mt-6 shadow-xl" disabled={isLoading}>
               {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ArrowRight className="mr-2 h-4 w-4" />}
@@ -238,8 +238,8 @@ function JoinFormComponent() {
           </form>
         </Form>
       </CardContent>
-      <CardFooter className="justify-center border-t py-6 bg-slate-50 text-left rounded-b-xl">
-        <p className="text-xs text-muted-foreground font-medium">
+      <CardFooter className="justify-center border-t py-6 bg-slate-50 rounded-b-xl">
+        <p className="text-xs text-muted-foreground font-medium text-center">
             Member already? <Link href="/signin" className="text-primary font-bold hover:underline ml-1 uppercase">Sign In</Link>
         </p>
       </CardFooter>
@@ -249,7 +249,7 @@ function JoinFormComponent() {
 
 export default function JoinPage() {
   return (
-    <div className="container mx-auto flex min-h-[calc(100vh-8rem)] items-center justify-center px-4 py-16 text-left">
+    <div className="container mx-auto flex min-h-[calc(100vh-8rem)] items-center justify-center px-4 py-16">
       <Suspense fallback={<Loader2 className="h-12 w-12 animate-spin text-primary" />}>
         <JoinFormComponent />
       </Suspense>
