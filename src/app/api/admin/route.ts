@@ -41,12 +41,14 @@ export async function POST(req: NextRequest) {
         
         const isAdmin = decodedToken.email === 'beyondtransport@gmail.com' || 
                         decodedToken.email === 'mkoton100@gmail.com' ||
-                        decodedToken.email === 'michael@logisticsflow.co.za';
+                        decodedToken.email === 'michael@logisticsflow.co.za' ||
+                        decodedToken.admin === true;
 
-        const userDoc = await getFirestore(app).collection('users').doc(decodedToken.uid).get();
+        const db = getFirestore(app);
+        const userDoc = await db.collection('users').doc(decodedToken.uid).get();
         const userData = userDoc.data();
         
-        // Authorization: Allow Admins OR users with 'associate' role to use certain tracking actions
+        // Authorization: Allow Admins OR users with 'associate' role to use certain tracking/saving actions
         const isAssociate = userData?.role === 'associate' || userData?.declaredPosition === 'associate';
 
         if (!isAdmin && !isAssociate) throw new Error("Forbidden: Elevated access required.");
@@ -54,7 +56,6 @@ export async function POST(req: NextRequest) {
         const body = await req.json();
         const action = (body.action || '').trim();
         const payload = body.payload || {};
-        const db = getFirestore(app);
 
         switch (action) {
             case 'logAudit': {
@@ -75,7 +76,7 @@ export async function POST(req: NextRequest) {
 
             case 'getMembers': {
                 if (!isAdmin) throw new Error("Admin only.");
-                const companiesSnap = await db.collection('companies').orderBy('updatedAt', 'desc').limit(100).get();
+                const companiesSnap = await db.collection('companies').orderBy('updatedAt', 'desc').limit(500).get();
                 const ownerIds = companiesSnap.docs.map(d => d.data().ownerId).filter(id => !!id);
                 const userDetailsMap = new Map();
                 if (ownerIds.length > 0) {
@@ -96,9 +97,11 @@ export async function POST(req: NextRequest) {
 
             case 'getPartnersByType': {
                 if (!isAdmin) throw new Error("Admin only.");
-                const { type, limit = 100 } = payload;
+                const { type, limit = 20000 } = payload;
                 let query: any = db.collection('partners');
-                if (type && type !== 'all') query = query.where('type', '==', type.toLowerCase());
+                if (type && type !== 'all') {
+                    query = query.where('type', '==', type.toLowerCase());
+                }
                 const snap = await query.orderBy('updatedAt', 'desc').limit(limit).get();
                 const data = snap.docs.map((d: any) => ({ id: d.id, ...d.data() }));
                 return NextResponse.json({ success: true, data: data.map(serializeTimestamps) });
@@ -107,16 +110,67 @@ export async function POST(req: NextRequest) {
             case 'searchRegistry': {
                 if (!isAdmin) throw new Error("Admin only.");
                 const { term, type, limit = 20000 } = payload;
-                const coll = (type === 'lead') ? 'leads' : 'partners';
-                let query: any = db.collection(coll);
-                if (type && type !== 'all' && type !== 'lead') query = query.where('type', '==', type.toLowerCase());
-                const snap = await query.limit(limit).get();
-                let results = snap.docs.map((d: any) => ({ id: d.id, source: coll, ...d.data() }));
+                
+                let results: any[] = [];
+                
+                if (type === 'all') {
+                    const [pSnap, lSnap] = await Promise.all([
+                        db.collection('partners').limit(limit).get(),
+                        db.collection('leads').limit(limit).get()
+                    ]);
+                    results = [
+                        ...pSnap.docs.map(d => ({ id: d.id, source: 'partners', ...d.data() })),
+                        ...lSnap.docs.map(d => ({ id: d.id, source: 'leads', ...d.data() }))
+                    ];
+                } else {
+                    const coll = (type === 'lead') ? 'leads' : 'partners';
+                    let query: any = db.collection(coll);
+                    if (type && type !== 'all' && type !== 'lead') {
+                        query = query.where('type', '==', type.toLowerCase());
+                    }
+                    const snap = await query.limit(limit).get();
+                    results = snap.docs.map((d: any) => ({ id: d.id, source: coll, ...d.data() }));
+                }
+
                 if (term) {
                     const low = term.toLowerCase();
                     results = results.filter((p: any) => JSON.stringify(p).toLowerCase().includes(low));
                 }
+                
                 return NextResponse.json({ success: true, data: results.map(serializeTimestamps) });
+            }
+
+            case 'saveCompanyLead': {
+                // Allows Digital Partners (Associates) or Admins to save a lead with attribution
+                const { lead, companyId } = payload;
+                if (!lead || !lead.companyName) throw new Error("Invalid lead data.");
+                
+                const id = lead.id || db.collection('leads').doc().id;
+                const leadData = {
+                    ...lead,
+                    id,
+                    referrerId: companyId, // Attribute to the Digital Partner
+                    updatedAt: FieldValue.serverTimestamp(),
+                };
+                
+                if (!lead.id) leadData.createdAt = FieldValue.serverTimestamp();
+                
+                await db.collection('leads').doc(id).set(leadData, { merge: true });
+                
+                return NextResponse.json({ success: true, id, message: "Lead recorded successfully." });
+            }
+
+            case 'deleteLeads': {
+                if (!isAdmin) throw new Error("Admin only.");
+                const { leadIds } = payload;
+                if (!Array.isArray(leadIds)) throw new Error("Invalid payload.");
+                
+                const batch = db.batch();
+                leadIds.forEach(id => {
+                    batch.delete(db.collection('leads').doc(id));
+                });
+                await batch.commit();
+                return NextResponse.json({ success: true });
             }
 
             case 'logCommunication': {
@@ -146,30 +200,6 @@ export async function POST(req: NextRequest) {
                 
                 await batch.commit();
                 return NextResponse.json({ success: true });
-            }
-
-            case 'autoEnrichRecord': {
-                if (!isAdmin) throw new Error("Admin only.");
-                const { id, type } = payload;
-                const coll = (type === 'lead') ? 'leads' : 'partners';
-                const docRef = db.collection(coll).doc(id);
-                const docSnap = await docRef.get();
-                if (!docSnap.exists) throw new Error("Record not found.");
-                
-                const data = docSnap.data()!;
-                const companyName = data.companyName || data.company_name || data.trading_name || `${data.firstName} ${data.lastName}`;
-                
-                const enrichment = await enrichPartner({ companyName });
-                
-                const update = {
-                    ...enrichment,
-                    status: enrichment.email ? 'qualified' : 'contacted',
-                    notes: `Automated Forensic Bridge completed on ${new Date().toISOString()}. Verified website: ${enrichment.website || 'No'}`,
-                    updatedAt: FieldValue.serverTimestamp()
-                };
-                
-                await docRef.update(update);
-                return NextResponse.json({ success: true, data: update });
             }
 
             case 'savePartner': {
