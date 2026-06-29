@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -47,6 +46,7 @@ const InvestorOffer = dynamic(() => import('./offers/InvestorOffer'), { loading:
 const DeveloperOffer = dynamic(() => import('./offers/DeveloperOffer'), { loading: () => <Loader2 className="animate-spin" /> });
 const SupplierOffer = dynamic(() => import('./offers/SupplierOffer'), { loading: () => <Loader2 className="animate-spin" /> });
 const TransporterOffer = dynamic(() => import('./offers/TransporterOffer'), { loading: () => <Loader2 className="animate-spin" /> });
+const AssociateOffer = dynamic(() => import('./offers/AssociateOffer'), { loading: () => <Loader2 className="animate-spin" /> });
 
 // Emails
 const PartnerEmails = dynamic(() => import('./emails/PartnerEmails'), { loading: () => <Loader2 className="animate-spin" /> });
@@ -54,6 +54,7 @@ const SupplierEmails = dynamic(() => import('./emails/SupplierEmails'), { loadin
 const TransporterEmails = dynamic(() => import('./emails/TransporterEmails'), { loading: () => <Loader2 className="animate-spin" /> });
 const InvestorEmails = dynamic(() => import('./emails/InvestorEmails'), { loading: () => <Loader2 className="animate-spin" /> });
 const DeveloperEmails = dynamic(() => import('./emails/DeveloperEmails'), { loading: () => <Loader2 className="animate-spin" /> });
+const AssociateEmails = dynamic(() => import('./emails/AssociateEmails'), { loading: () => <Loader2 className="animate-spin" /> });
 
 // Management
 const PartnerManagement = dynamic(() => import('./partner-management'), { loading: () => <Loader2 className="animate-spin" /> });
@@ -72,7 +73,7 @@ import DriverDiscoveryEngine from './driver-discovery';
 const audienceConfig: Record<string, any> = {
     partners: { title: 'Strategic Partners', icon: Users, Offer: PartnerOffer, Emails: PartnerEmails, Management: PartnerManagement },
     isa: { title: 'ISA Agents', icon: Target, Offer: PartnerOffer, Emails: PartnerEmails, Management: ISAManagement },
-    associates: { title: 'Digital Associates', icon: Share2, Offer: PartnerOffer, Emails: PartnerEmails, Management: null },
+    associates: { title: 'Digital Associates', icon: Share2, Offer: AssociateOffer, Emails: AssociateEmails, Management: null },
     suppliers: { title: 'Suppliers', icon: SearchCode, Offer: SupplierOffer, Emails: SupplierEmails, Management: SupplierManagement, Pitch: SupplierPitch, Discovery: DiscoveryEngine },
     transporters: { title: 'Transporters', icon: Send, Offer: TransporterOffer, Emails: TransporterEmails, Management: TransporterManagement, Discovery: TransporterDiscoveryEngine },
     finance: { title: 'Finance Companies', icon: Landmark, Offer: InvestorOffer, Emails: InvestorEmails, Management: null, Discovery: FinanceDiscoveryEngine },
@@ -225,7 +226,11 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
   }, [pathname, router]);
 
   const fetchPartnersForLogging = useCallback(async () => {
-    if (!Management || isLoadingPartners) return;
+    if (!Management && audience !== 'associates') {
+      setIsLoadingPartners(false);
+      setPartners([]);
+      return;
+    }
     
     setIsLoadingPartners(true);
     try {
@@ -242,7 +247,7 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
     } finally {
         setIsLoadingPartners(false);
     }
-  }, [audience, Management, isLoadingPartners]);
+  }, [audience, Management]);
 
   useEffect(() => { 
     if (isLogDialogOpen && partners.length === 0) {

@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -44,7 +43,13 @@ export async function POST(req: NextRequest) {
                         decodedToken.email === 'mkoton100@gmail.com' ||
                         decodedToken.email === 'michael@logisticsflow.co.za';
 
-        if (!isAdmin) throw new Error("Forbidden: Admin access required.");
+        const userDoc = await getFirestore(app).collection('users').doc(decodedToken.uid).get();
+        const userData = userDoc.data();
+        
+        // Authorization: Allow Admins OR users with 'associate' role to use certain tracking actions
+        const isAssociate = userData?.role === 'associate' || userData?.declaredPosition === 'associate';
+
+        if (!isAdmin && !isAssociate) throw new Error("Forbidden: Elevated access required.");
 
         const body = await req.json();
         const action = (body.action || '').trim();
@@ -52,7 +57,24 @@ export async function POST(req: NextRequest) {
         const db = getFirestore(app);
 
         switch (action) {
+            case 'logAudit': {
+                const { action: auditAction, details, metadata } = payload;
+                const logRef = db.collection('auditLogs').doc();
+                await logRef.set({
+                    id: logRef.id,
+                    action: auditAction,
+                    details,
+                    metadata,
+                    userId: decodedToken.uid,
+                    userName: decodedToken.name || userData?.firstName || 'User',
+                    companyId: userData?.companyId || null,
+                    timestamp: FieldValue.serverTimestamp()
+                });
+                return NextResponse.json({ success: true });
+            }
+
             case 'getMembers': {
+                if (!isAdmin) throw new Error("Admin only.");
                 const companiesSnap = await db.collection('companies').orderBy('updatedAt', 'desc').limit(100).get();
                 const ownerIds = companiesSnap.docs.map(d => d.data().ownerId).filter(id => !!id);
                 const userDetailsMap = new Map();
@@ -67,11 +89,13 @@ export async function POST(req: NextRequest) {
             }
 
             case 'getAuditLogs': {
+                if (!isAdmin) throw new Error("Admin only.");
                 const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(100).get();
                 return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
             }
 
             case 'getPartnersByType': {
+                if (!isAdmin) throw new Error("Admin only.");
                 const { type, limit = 100 } = payload;
                 let query: any = db.collection('partners');
                 if (type && type !== 'all') query = query.where('type', '==', type.toLowerCase());
@@ -81,6 +105,7 @@ export async function POST(req: NextRequest) {
             }
 
             case 'searchRegistry': {
+                if (!isAdmin) throw new Error("Admin only.");
                 const { term, type, limit = 20000 } = payload;
                 const coll = (type === 'lead') ? 'leads' : 'partners';
                 let query: any = db.collection(coll);
@@ -95,6 +120,7 @@ export async function POST(req: NextRequest) {
             }
 
             case 'logCommunication': {
+                if (!isAdmin) throw new Error("Admin only.");
                 const { partnerId, type, subject, notes, collection: collName = 'partners' } = payload;
                 if (!partnerId || !type || !subject) throw new Error("Missing log data.");
                 
@@ -123,6 +149,7 @@ export async function POST(req: NextRequest) {
             }
 
             case 'autoEnrichRecord': {
+                if (!isAdmin) throw new Error("Admin only.");
                 const { id, type } = payload;
                 const coll = (type === 'lead') ? 'leads' : 'partners';
                 const docRef = db.collection(coll).doc(id);
@@ -146,6 +173,7 @@ export async function POST(req: NextRequest) {
             }
 
             case 'savePartner': {
+                if (!isAdmin) throw new Error("Admin only.");
                 const { partner } = payload;
                 const coll = (partner.source === 'leads' || !partner.type || partner.type === 'lead') ? 'leads' : 'partners';
                 const id = partner.id || db.collection(coll).doc().id;
@@ -154,107 +182,9 @@ export async function POST(req: NextRequest) {
             }
 
             case 'getPlatformStaff': {
+                if (!isAdmin) throw new Error("Admin only.");
                 const snap = await db.collection('platformStaff').where('status', '==', 'active').get();
                 return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...d.data() })) });
-            }
-
-            case 'getLendingData': {
-                const { collectionName } = payload;
-                const snap = await db.collection(collectionName).get();
-                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
-            }
-
-            case 'approveWalletPayment': {
-                const { companyId, paymentId, amount, description, reconciliationId } = payload;
-                const companyRef = db.collection('companies').doc(companyId);
-                const paymentRef = companyRef.collection('walletPayments').doc(paymentId);
-                const transactionRef = companyRef.collection('transactions').doc();
-                
-                await db.runTransaction(async (t) => {
-                    t.update(companyRef, {
-                        walletBalance: FieldValue.increment(amount),
-                        availableBalance: FieldValue.increment(amount),
-                        updatedAt: FieldValue.serverTimestamp()
-                    });
-                    t.delete(paymentRef);
-                    t.set(transactionRef, {
-                        transactionId: transactionRef.id,
-                        type: 'credit',
-                        amount,
-                        description: `EFT Top-up: ${description}`,
-                        date: FieldValue.serverTimestamp(),
-                        status: 'allocated',
-                        reconciliationId
-                    });
-                });
-                return NextResponse.json({ success: true });
-            }
-
-            case 'listAllUsers': {
-                const listUsersResult = await adminAuth.listUsers(1000);
-                const users = listUsersResult.users.map(u => ({
-                    uid: u.uid,
-                    email: u.email,
-                    displayName: u.displayName,
-                    disabled: u.disabled,
-                    creationTime: u.metadata.creationTime,
-                    lastSignInTime: u.metadata.lastSignInTime
-                }));
-                return NextResponse.json({ success: true, data: users });
-            }
-
-            case 'getAudienceCommunications': {
-                const snap = await db.collectionGroup('communications').orderBy('timestamp', 'desc').limit(200).get();
-                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
-            }
-
-            case 'getAudienceTasks': {
-                const snap = await db.collectionGroup('tasks').orderBy('dueDate', 'asc').limit(200).get();
-                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
-            }
-
-            case 'bulkLogForensicInitiated': {
-                const { leadIds, type } = payload;
-                const coll = (type === 'lead') ? 'leads' : 'partners';
-                const batch = db.batch();
-                leadIds.forEach((id: string) => {
-                    const ref = db.collection(coll).doc(id);
-                    batch.update(ref, {
-                        status: 'contacted',
-                        updatedAt: FieldValue.serverTimestamp()
-                    });
-                });
-                await batch.commit();
-                return NextResponse.json({ success: true });
-            }
-
-            case 'logForensicInitiated': {
-                const { partnerId, isLead } = payload;
-                const coll = isLead ? 'leads' : 'partners';
-                await db.collection(coll).doc(partnerId).update({
-                    status: 'contacted',
-                    updatedAt: FieldValue.serverTimestamp()
-                });
-                return NextResponse.json({ success: true });
-            }
-
-            case 'invitePartner': {
-                const { partnerId } = payload;
-                await db.collection('partners').doc(partnerId).update({
-                    invitationStatus: 'invited',
-                    updatedAt: FieldValue.serverTimestamp()
-                });
-                return NextResponse.json({ success: true });
-            }
-
-            case 'getStaff': {
-                const snap = await db.collectionGroup('staff').get();
-                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
-            }
-
-            case 'getPendingAgreements': {
-                const snap = await db.collectionGroup('agreements').where('status', '==', 'proposed').get();
-                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
             }
 
             default: return NextResponse.json({ success: false, error: "Action invalid." }, { status: 400 });
