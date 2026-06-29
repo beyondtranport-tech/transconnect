@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -78,11 +79,12 @@ import DiscoveryEngine from './discovery-engine';
 import FinanceDiscoveryEngine from './finance-discovery';
 import TransporterDiscoveryEngine from './transporter-discovery';
 import DriverDiscoveryEngine from './driver-discovery';
+import AssociateDiscoveryEngine from './associate-discovery';
 
 const audienceConfig: Record<string, any> = {
     partners: { title: 'Strategic Partners', icon: Users, Offer: PartnerOffer, Emails: PartnerEmails, Management: PartnerManagement },
     isa: { title: 'ISA Agents', icon: Target, Offer: PartnerOffer, Emails: PartnerEmails, Management: ISAManagement },
-    associates: { title: 'Digital Associates', icon: Share2, Offer: AssociateOffer, Emails: AssociateEmails, Management: AssociateManagement },
+    associates: { title: 'Digital Associates', icon: Share2, Offer: AssociateOffer, Emails: AssociateEmails, Management: AssociateManagement, Discovery: AssociateDiscoveryEngine },
     suppliers: { title: 'Suppliers', icon: SearchCode, Offer: SupplierOffer, Emails: SupplierEmails, Management: SupplierManagement, Pitch: SupplierPitch, Discovery: DiscoveryEngine },
     transporters: { title: 'Transporters', icon: Send, Offer: TransporterOffer, Emails: TransporterEmails, Management: TransporterManagement, Discovery: TransporterDiscoveryEngine },
     finance: { title: 'Finance Companies', icon: Landmark, Offer: InvestorOffer, Emails: InvestorEmails, Management: FinanceManagement, Discovery: FinanceDiscoveryEngine },

@@ -16,6 +16,9 @@ export default function DigitalHandshake({ partner, audience, version = 'v1' }: 
 
     const isSupplier = audience === 'suppliers';
     const isAssociate = audience === 'associates' || audience === 'isa';
+    
+    // Extract creator type for personalized greeting
+    const creatorType = (partner?.industrial_category || 'digital').toLowerCase().replace('creator', '').trim();
 
     // 1. DIGITAL PARTNER / ASSOCIATE VERSION
     if (isAssociate) {
@@ -31,7 +34,7 @@ export default function DigitalHandshake({ partner, audience, version = 'v1' }: 
                 <p style={{ margin: '0 0 14pt 0' }}>Good day {firstName},</p>
 
                 <p style={{ margin: '0 0 14pt 0' }}>
-                    The South African transport industry is moving from fragmented physical networks to a unified digital ecosystem. We have identified your standing in the sector and are writing to propose a strategic partnership that turns your industry influence into a recurring revenue engine.
+                    The South African transport industry is moving from fragmented physical networks to a unified digital ecosystem. We have identified your standing as a <strong>{creatorType} creator</strong> and are writing to propose a strategic partnership that turns your industry influence into a recurring revenue engine.
                 </p>
 
                 <p style={{ margin: '0 0 14pt 0', fontWeight: 'bold' }}>
