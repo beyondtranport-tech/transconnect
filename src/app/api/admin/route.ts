@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -106,13 +105,22 @@ export async function POST(req: NextRequest) {
 
             case 'autoEnrichRecord': {
                 const { id, type } = payload;
-                if (!id || !type) throw new Error("ID and Type required for auto-enrichment.");
+                if (!id) throw new Error("ID required for auto-enrichment.");
 
-                const collectionName = type === 'lead' ? 'leads' : 'partners';
-                const docRef = db.collection(collectionName).doc(id);
-                const docSnap = await docRef.get();
+                // ROBUST SEARCH: Try explicit collection first, then fallback to others
+                let targetCollection = type === 'lead' ? 'leads' : 'partners';
+                let docRef = db.collection(targetCollection).doc(id);
+                let docSnap = await docRef.get();
                 
-                if (!docSnap.exists) throw new Error(`Record ${id} not found.`);
+                if (!docSnap.exists) {
+                    // Fallback to alternate collection
+                    targetCollection = targetCollection === 'leads' ? 'partners' : 'leads';
+                    docRef = db.collection(targetCollection).doc(id);
+                    docSnap = await docRef.get();
+                }
+                
+                if (!docSnap.exists) throw new Error(`Record ${id} not found in any registry.`);
+                
                 const record = docSnap.data()!;
                 const companyName = record.companyName || record.company_name || record.trading_name || `${record.firstName} ${record.lastName}`;
 
@@ -127,6 +135,18 @@ export async function POST(req: NextRequest) {
 
                 await docRef.update(update);
                 return NextResponse.json({ success: true, data: enriched });
+            }
+
+            case 'logForensicInitiated': {
+                const { partnerId, isLead } = payload;
+                const coll = isLead ? 'leads' : 'partners';
+                await db.collection(coll).doc(partnerId).update({
+                    status: 'contacted', // 'Searching' mapped to 'contacted' in CRM
+                    lastOutreachSubject: 'Forensic Research',
+                    lastOutreachAt: FieldValue.serverTimestamp(),
+                    updatedAt: FieldValue.serverTimestamp()
+                });
+                return NextResponse.json({ success: true });
             }
 
             case 'bulkSavePartners': {
@@ -163,7 +183,15 @@ export async function POST(req: NextRequest) {
 
             case 'logCommunication': {
                 const { partnerId, type: cType, subject, notes, collection: cName } = payload;
-                const parentRef = db.collection(cName).doc(partnerId);
+                
+                // Detection logic if collection is missing
+                let targetColl = cName;
+                if (!targetColl) {
+                    const leadsCheck = await db.collection('leads').doc(partnerId).get();
+                    targetColl = leadsCheck.exists ? 'leads' : 'partners';
+                }
+
+                const parentRef = db.collection(targetColl).doc(partnerId);
                 const logRef = parentRef.collection('communications').doc();
                 
                 const batch = db.batch();
