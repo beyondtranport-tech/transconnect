@@ -47,6 +47,11 @@ export default function ForensicBridge({ audience }: { audience: string }) {
         return (currentIndex / queue.length) * 100;
     }, [currentIndex, queue.length]);
 
+    /**
+     * GAP ANALYSIS ENGINE
+     * Scans up to 5,000 records and filters for those requiring forensic work.
+     * Prevents duplication by ignoring records that already have verified data.
+     */
     const handleScanGaps = async () => {
         setIsScanning(true);
         setStatus('scanning');
@@ -55,10 +60,16 @@ export default function ForensicBridge({ audience }: { audience: string }) {
             if (!token) return;
             
             let apiType = audience === 'isa' ? 'isa' : (audience === 'finance' ? 'finance' : (audience === 'drivers' ? 'driver' : audience.slice(0, -1)));
-            const res = await performAdminAction(token, 'searchRegistry', { type: apiType, limit: 1000 });
+            
+            // Increased limit to 5000 to see past previously enriched records
+            const res = await performAdminAction(token, 'searchRegistry', { 
+                type: apiType, 
+                limit: 5000 
+            });
             
             if (!res.success) throw new Error(res.error);
             
+            // CRITICAL: Filter identifies ONLY records that still have gaps
             const needsEnrichment = (res.data || []).filter((p: any) => 
                 !p.website || 
                 !p.email || 
@@ -72,8 +83,14 @@ export default function ForensicBridge({ audience }: { audience: string }) {
             setCurrentIndex(0);
             setLogs([]);
             setStats({ domains: 0, emails: 0, leadership: 0, errors: 0 });
-            toast({ title: "Scan Complete", description: `Found ${needsEnrichment.length} records requiring forensic enrichment.` });
-            setStatus('paused');
+            
+            if (needsEnrichment.length === 0) {
+                toast({ title: "Registry Fully Bridged", description: "No gapped records found in the current scan range." });
+                setStatus('idle');
+            } else {
+                toast({ title: "Analysis Complete", description: `Found ${needsEnrichment.length} new records requiring forensic enrichment.` });
+                setStatus('paused');
+            }
         } catch (e: any) {
             toast({ variant: 'destructive', title: "Scan Failed", description: e.message });
             setStatus('idle');
@@ -89,6 +106,7 @@ export default function ForensicBridge({ audience }: { audience: string }) {
         let pointer = currentIndex;
 
         while (pointer < queue.length) {
+            // Check for pause/stop signals
             let isPaused = false;
             setStatus(current => {
                 if (current !== 'running') isPaused = true;
@@ -102,6 +120,7 @@ export default function ForensicBridge({ audience }: { audience: string }) {
             setLogs(prev => [{ id: Date.now(), msg: `[${pointer + 1}/${queue.length}] Investigating ${name}...`, type: 'info' }, ...prev].slice(0, 50));
 
             try {
+                // Fetch FRESH token for every request to prevent auth timeouts
                 const token = await getClientSideAuthToken();
                 if (!token) throw new Error("Session expired.");
 
@@ -129,20 +148,20 @@ export default function ForensicBridge({ audience }: { audience: string }) {
                     throw new Error(res.error);
                 }
 
+                // Throttle to protect API quota
                 await new Promise(resolve => setTimeout(resolve, 1500));
 
             } catch (err: any) {
                 setStats(prev => ({ ...prev, errors: prev.errors + 1 }));
-                const isTokenError = err.message?.includes('id-token-expired') || err.message?.includes('auth/');
                 setLogs(prev => [{ 
                     id: Date.now() + 2, 
                     msg: `Bridge Failed for ${name}: ${err.message}`, 
                     type: 'error' 
                 }, ...prev].slice(0, 50));
                 
-                if (isTokenError) {
+                // If the error is auth-related even after refresh, pause
+                if (err.message?.includes('auth/')) {
                     setStatus('paused');
-                    toast({ variant: 'destructive', title: "Session Expired", description: "Loop paused. Resume to refresh." });
                     break;
                 }
                 await new Promise(resolve => setTimeout(resolve, 3000));
@@ -199,24 +218,24 @@ export default function ForensicBridge({ audience }: { audience: string }) {
                             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-left">
                                 <Card className="bg-white/5 border-white/10 text-white shadow-none">
                                     <CardContent className="pt-6">
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Queue Progress</p>
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1 text-left">Queue Progress</p>
                                         <p className="text-3xl font-black">{currentIndex} <span className="text-xs text-slate-500 font-bold">/ {queue.length}</span></p>
                                     </CardContent>
                                 </Card>
                                 <Card className="bg-white/5 border-white/10 text-white shadow-none">
-                                    <CardContent className="pt-6">
+                                    <CardContent className="pt-6 text-left">
                                         <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Domains Verified</p>
                                         <p className="text-3xl font-black text-blue-400">{stats.domains}</p>
                                     </CardContent>
                                 </Card>
                                 <Card className="bg-white/5 border-white/10 text-white shadow-none">
-                                    <CardContent className="pt-6">
+                                    <CardContent className="pt-6 text-left">
                                         <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Emails Mapped</p>
                                         <p className="text-3xl font-black text-green-400">{stats.emails}</p>
                                     </CardContent>
                                 </Card>
                                 <Card className="bg-white/5 border-white/10 text-white shadow-none">
-                                    <CardContent className="pt-6">
+                                    <CardContent className="pt-6 text-left">
                                         <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">CEOs Identified</p>
                                         <p className="text-3xl font-black text-purple-400">{stats.leadership}</p>
                                     </CardContent>
@@ -265,9 +284,9 @@ export default function ForensicBridge({ audience }: { audience: string }) {
                                              log.type === 'error' ? <AlertTriangle className="h-4 w-4 text-destructive mt-0.5 shrink-0" /> :
                                              <Loader2 className="h-4 w-4 text-primary animate-spin mt-0.5 shrink-0" />}
                                             <div className="text-left">
-                                                <p className={cn("text-[11px] font-bold leading-tight", log.type === 'error' && "text-destructive")}>{log.msg}</p>
+                                                <p className={cn("text-[11px] font-bold leading-tight text-left", log.type === 'error' && "text-destructive")}>{log.msg}</p>
                                                 {log.data && (
-                                                    <div className="flex gap-2 mt-2 flex-wrap">
+                                                    <div className="flex gap-2 mt-2 flex-wrap text-left">
                                                         {log.data.website && <Badge variant="outline" className="text-[8px] h-4 border-primary/20 text-primary uppercase font-bold">Domain Secured</Badge>}
                                                         {log.data.email && <Badge variant="outline" className="text-[8px] h-4 border-primary/20 text-primary uppercase font-bold">Email Mapped</Badge>}
                                                         {log.data.contactPerson && <Badge variant="outline" className="text-[8px] h-4 border-primary/20 text-primary uppercase font-bold">Identity Verified</Badge>}
@@ -310,9 +329,9 @@ export default function ForensicBridge({ audience }: { audience: string }) {
                             </div>
                             <Separator />
                             <div className="p-4 bg-muted/30 rounded-xl text-left border border-dashed border-muted">
-                                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">Checking Records</p>
-                                <p className="text-[11px] leading-relaxed italic text-foreground">
-                                    You can verify these 1,800 records in the **Supplier Management** table. Look for the "Qualified" status and the "Enrichment" icons.
+                                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1 text-left">Scan Logic</p>
+                                <p className="text-[11px] leading-relaxed italic text-foreground text-left">
+                                    The "Analyze" command skips records that already have verified data. Each scan moves deeper into the registry to find the next set of gapped records.
                                 </p>
                             </div>
                         </CardContent>
@@ -322,4 +341,3 @@ export default function ForensicBridge({ audience }: { audience: string }) {
         </div>
     );
 }
-
