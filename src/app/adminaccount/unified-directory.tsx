@@ -46,13 +46,12 @@ export default function UnifiedDirectory() {
             
             const [membersRes, leadsRes] = await Promise.all([
                 performAdminAction(token, 'getMembers'),
-                performAdminAction(token, 'getPartnersByType', { type: 'all' })
+                performAdminAction(token, 'getLeads')
             ]);
             
             setMembers(membersRes || []);
             setLeads(leadsRes || []);
             setHasLoaded(true);
-            toast({ title: "Registry Loaded", description: "Capped at top 100 records per source to save quota." });
         } catch (e: any) {
             toast({ variant: 'destructive', title: 'Load Error', description: e.message });
         } finally {
@@ -75,8 +74,8 @@ export default function UnifiedDirectory() {
         {
             header: 'Entity Name',
             cell: ({ row }) => (
-                <div className="flex flex-col">
-                    <span className="font-bold">{row.original.companyName || `${row.original.firstName} ${row.original.lastName}`}</span>
+                <div className="flex flex-col text-left">
+                    <span className="font-bold text-foreground text-left">{row.original.companyName || `${row.original.firstName} ${row.original.lastName}`}</span>
                     <div className="flex items-center gap-2 mt-1">
                          <Badge variant={row.original.source === 'Member' ? 'default' : 'outline'} className="text-[10px] uppercase h-4">
                             {row.original.source}
@@ -87,13 +86,29 @@ export default function UnifiedDirectory() {
             )
         },
         {
-            header: 'Leadership',
+            header: 'Fiduciary / Referral Node',
             cell: ({ row }) => (
-                <div className="text-sm">
-                    <p className="font-medium">{row.original.contactPerson || `${row.original.firstName || ''} ${row.original.lastName || ''}`.trim() || 'N/A'}</p>
-                    <p className="text-xs text-muted-foreground">{row.original.email || 'No email recorded'}</p>
+                <div className="flex flex-col text-left">
+                    <p className="text-xs font-bold text-primary">{row.original.referrerName || 'Direct Node'}</p>
+                    <p className="text-[9px] text-muted-foreground font-mono uppercase">{row.original.referrerId || 'SYSTEM'}</p>
                 </div>
             )
+        },
+        {
+            header: 'Engagement Result',
+            cell: ({ row }) => {
+                if (!row.original.lastOutreachSubject) return <span className="text-xs text-muted-foreground italic">No Outreach</span>;
+                return (
+                    <div className="flex flex-col text-left">
+                        <Badge variant="outline" className="text-[9px] h-4 uppercase font-bold border-primary/20 text-primary w-fit">{row.original.lastOutreachSubject}</Badge>
+                        {row.original.lastOpenedAt && (
+                            <div className="flex items-center gap-1 text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100 mt-1 w-fit">
+                                <UserCheck className="h-2.5 w-2.5" /> Read
+                            </div>
+                        )}
+                    </div>
+                );
+            }
         },
         {
             accessorKey: 'status',
@@ -129,65 +144,65 @@ export default function UnifiedDirectory() {
     return (
         <div className="space-y-6">
             {!hasLoaded ? (
-                 <Card className="bg-primary/5 border-primary/20 p-12 text-center">
+                 <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground">
                     <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
-                    <h2 className="text-2xl font-black font-headline mb-2">Registry Offline</h2>
-                    <p className="text-muted-foreground max-w-sm mx-auto mb-8">Click below to load the industry directory. This is a capped view to protect your usage quota.</p>
-                    <Button size="lg" onClick={loadData} disabled={isLoading}>
+                    <h2 className="text-2xl font-black font-headline mb-2 text-foreground">Master Registry Search</h2>
+                    <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-foreground text-center">Load the unified industry directory to view all members and attributed leads in one forensic view.</p>
+                    <Button size="lg" onClick={loadData} disabled={isLoading} className="h-12 px-8 font-bold">
                         {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <RefreshCcw className="mr-2 h-4 w-4" />}
-                        Load Master Registry
+                        Load Unified Registry
                     </Button>
                 </Card>
             ) : (
                 <>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
                         <Card className="bg-primary/5 border-primary/10">
-                            <CardContent className="pt-6">
-                                <div className="flex items-center gap-4">
+                            <CardContent className="pt-6 text-left">
+                                <div className="flex items-center gap-4 text-left">
                                     <Database className="h-8 w-8 text-primary" />
-                                    <div>
-                                        <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Registry Snapshot</p>
-                                        <p className="text-2xl font-black">{combinedData.length}</p>
+                                    <div className="text-left">
+                                        <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest text-left">Aggregated Snap</p>
+                                        <p className="text-2xl font-black text-left">{combinedData.length}</p>
                                     </div>
                                 </div>
                             </CardContent>
                         </Card>
                         <Card className="bg-blue-50 border-blue-100">
-                            <CardContent className="pt-6">
+                            <CardContent className="pt-6 text-left">
                                 <div className="flex items-center gap-4">
                                     <UserCheck className="h-8 w-8 text-blue-600" />
-                                    <div>
-                                        <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Registered Members</p>
-                                        <p className="text-2xl font-black text-blue-700">{members.length}</p>
+                                    <div className="text-left">
+                                        <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest text-left">Active Members</p>
+                                        <p className="text-2xl font-black text-blue-700 text-left">{members.length}</p>
                                     </div>
                                 </div>
                             </CardContent>
                         </Card>
                         <Card className="bg-amber-50 border-amber-100">
-                            <CardContent className="pt-6">
+                            <CardContent className="pt-6 text-left">
                                 <div className="flex items-center gap-4">
                                     <Globe className="h-8 w-8 text-amber-600" />
-                                    <div>
-                                        <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">AI Leads</p>
-                                        <p className="text-2xl font-black text-amber-700">{leads.length}</p>
+                                    <div className="text-left">
+                                        <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest text-left">Provisional Leads</p>
+                                        <p className="text-2xl font-black text-amber-700 text-left">{leads.length}</p>
                                     </div>
                                 </div>
                             </CardContent>
                         </Card>
                     </div>
 
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between">
-                            <div>
-                                <CardTitle className="flex items-center gap-2"><Users /> Unified Industry Directory</CardTitle>
-                                <CardDescription>Capped view of the most recent 100 entries from each source.</CardDescription>
+                    <Card className="text-left">
+                        <CardHeader className="flex flex-row items-center justify-between text-left">
+                            <div className="text-left">
+                                <CardTitle className="flex items-center gap-2 text-left"><Users /> Unified Industry Directory</CardTitle>
+                                <CardDescription className="text-left">Forensic view of all platform entities and their referring partners.</CardDescription>
                             </div>
                             <Button variant="outline" size="sm" onClick={loadData} disabled={isLoading}>
                                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <RefreshCcw className="mr-2 h-4 w-4" />}
-                                Refresh Snapshot
+                                Refresh Registry
                             </Button>
                         </CardHeader>
-                        <CardContent>
+                        <CardContent className="text-left">
                             <DataTable columns={columns} data={combinedData} />
                         </CardContent>
                     </Card>

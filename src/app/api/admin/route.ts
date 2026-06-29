@@ -86,9 +86,44 @@ export async function POST(req: NextRequest) {
             }
 
             case 'getLeads': {
-                // Admin utility to see all leads in database
-                const snap = await db.collection('leads').orderBy('updatedAt', 'desc').limit(500).get();
-                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
+                const snap = await db.collection('leads').orderBy('updatedAt', 'desc').limit(1000).get();
+                const leads = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                
+                // Enrich with Referrer names
+                const partnerSnap = await db.collection('companies').get();
+                const partnerMap = new Map(partnerSnap.docs.map(d => [d.id, d.data().companyName]));
+                
+                const data = leads.map(l => ({
+                    ...l,
+                    referrerName: partnerMap.get(l.referrerId) || 'Direct Entry'
+                }));
+
+                return NextResponse.json({ success: true, data: data.map(serializeTimestamps) });
+            }
+
+            case 'getMembers': {
+                const companiesSnap = await db.collection('companies').orderBy('updatedAt', 'desc').limit(1000).get();
+                const companies = companiesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+                const ownerIds = companies.map(c => c.ownerId).filter(id => !!id);
+                
+                const userDetailsMap = new Map();
+                if (ownerIds.length > 0) {
+                    const chunks = [];
+                    for (let i = 0; i < ownerIds.length; i += 30) chunks.push(ownerIds.slice(i, i + 30));
+                    const userSnaps = await Promise.all(chunks.map(chunk => db.collection('users').where(FieldValue.documentId(), 'in', chunk).get()));
+                    userSnaps.forEach(snap => snap.forEach(d => userDetailsMap.set(d.id, d.data())));
+                }
+
+                // Internal Map for Referrer Names
+                const nameMap = new Map(companies.map(c => [c.id, c.companyName]));
+
+                const data = companies.map(c => ({ 
+                    ...c, 
+                    ...userDetailsMap.get(c.ownerId),
+                    referrerName: nameMap.get(c.referrerId) || 'Direct / Marketing'
+                }));
+
+                return NextResponse.json({ success: true, data: data.map(serializeTimestamps) });
             }
 
             case 'logAudit': {
@@ -107,73 +142,15 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true });
             }
 
-            case 'getMembers': {
-                const companiesSnap = await db.collection('companies').orderBy('updatedAt', 'desc').limit(500).get();
-                const ownerIds = companiesSnap.docs.map(d => d.data().ownerId).filter(id => !!id);
-                const userDetailsMap = new Map();
-                if (ownerIds.length > 0) {
-                    const chunks = [];
-                    for (let i = 0; i < ownerIds.length; i += 30) chunks.push(ownerIds.slice(i, i + 30));
-                    const userSnaps = await Promise.all(chunks.map(chunk => db.collection('users').where(FieldValue.documentId(), 'in', chunk).get()));
-                    userSnaps.forEach(snap => snap.forEach(d => userDetailsMap.set(d.id, d.data())));
-                }
-                const data = companiesSnap.docs.map(doc => ({ id: doc.id, ...doc.data(), ...userDetailsMap.get(doc.data().ownerId) }));
-                return NextResponse.json({ success: true, data: data.map(serializeTimestamps) });
-            }
-
             case 'getAuditLogs': {
                 const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(100).get();
                 return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
-            }
-
-            case 'getPartnersByType': {
-                const { type, limit = 20000 } = payload;
-                let query: any = db.collection('partners');
-                if (type && type !== 'all') {
-                    query = query.where('type', '==', type.toLowerCase());
-                }
-                const snap = await query.orderBy('updatedAt', 'desc').limit(limit).get();
-                const data = snap.docs.map((d: any) => ({ id: d.id, ...d.data() }));
-                return NextResponse.json({ success: true, data: data.map(serializeTimestamps) });
-            }
-
-            case 'searchRegistry': {
-                const { term, type, limit = 20000 } = payload;
-                
-                let results: any[] = [];
-                
-                if (type === 'all') {
-                    const [pSnap, lSnap] = await Promise.all([
-                        db.collection('partners').limit(limit).get(),
-                        db.collection('leads').limit(limit).get()
-                    ]);
-                    results = [
-                        ...pSnap.docs.map(d => ({ id: d.id, source: 'partners', ...d.data() })),
-                        ...lSnap.docs.map(d => ({ id: d.id, source: 'leads', ...d.data() }))
-                    ];
-                } else {
-                    const coll = (type === 'lead') ? 'leads' : 'partners';
-                    let query: any = db.collection(coll);
-                    if (type && type !== 'all' && type !== 'lead') {
-                        query = query.where('type', '==', type.toLowerCase());
-                    }
-                    const snap = await query.limit(limit).get();
-                    results = snap.docs.map((d: any) => ({ id: d.id, source: coll, ...d.data() }));
-                }
-
-                if (term) {
-                    const low = term.toLowerCase();
-                    results = results.filter((p: any) => JSON.stringify(p).toLowerCase().includes(low));
-                }
-                
-                return NextResponse.json({ success: true, data: results.map(serializeTimestamps) });
             }
 
             case 'saveCompanyLead': {
                 const { lead, companyId } = payload;
                 if (!lead || !lead.companyName) throw new Error("Invalid lead data.");
                 
-                // If companyId wasn't passed, try to use the logged-in user's company
                 const finalReferrerId = companyId || userData?.companyId;
                 if (!finalReferrerId) throw new Error("Could not attribute lead: No company ID found.");
 
@@ -190,18 +167,6 @@ export async function POST(req: NextRequest) {
                 await db.collection('leads').doc(id).set(leadData, { merge: true });
                 
                 return NextResponse.json({ success: true, id, message: "Lead recorded successfully." });
-            }
-
-            case 'deleteLeads': {
-                const { leadIds } = payload;
-                if (!Array.isArray(leadIds)) throw new Error("Invalid payload.");
-                
-                const batch = db.batch();
-                leadIds.forEach(id => {
-                    batch.delete(db.collection('leads').doc(id));
-                });
-                await batch.commit();
-                return NextResponse.json({ success: true });
             }
 
             case 'logCommunication': {
@@ -230,19 +195,6 @@ export async function POST(req: NextRequest) {
                 
                 await batch.commit();
                 return NextResponse.json({ success: true });
-            }
-
-            case 'savePartner': {
-                const { partner } = payload;
-                const coll = (partner.source === 'leads' || !partner.type || partner.type === 'lead') ? 'leads' : 'partners';
-                const id = partner.id || db.collection(coll).doc().id;
-                await db.collection(coll).doc(id).set({ ...partner, id, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
-                return NextResponse.json({ success: true, id });
-            }
-
-            case 'getPlatformStaff': {
-                const snap = await db.collection('platformStaff').where('status', '==', 'active').get();
-                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...d.data() })) });
             }
 
             default: return NextResponse.json({ success: false, error: "Action invalid." }, { status: 400 });
