@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase-admin';
-import { enrichPartner } from '@/ai/flows/enrich-partner-flow';
 
 export const dynamic = 'force-dynamic';
 
@@ -48,7 +47,7 @@ export async function POST(req: NextRequest) {
         const userDoc = await db.collection('users').doc(decodedToken.uid).get();
         const userData = userDoc.data();
         
-        // Authorization: Allow Admins OR users with 'associate' role to use certain tracking/saving actions
+        // Authorization: Allow Admins OR users with 'associate' role
         const isAssociate = userData?.role === 'associate' || userData?.declaredPosition === 'associate';
 
         if (!isAdmin && !isAssociate) throw new Error("Forbidden: Elevated access required.");
@@ -58,6 +57,34 @@ export async function POST(req: NextRequest) {
         const payload = body.payload || {};
 
         switch (action) {
+            case 'getMyNetwork': {
+                const companyId = userData?.companyId;
+                if (!companyId) throw new Error("Missing company profile.");
+                
+                // 1. Get Leads (Attributed but not registered)
+                const leadsSnap = await db.collection('leads')
+                    .where('referrerId', '==', companyId)
+                    .where('status', '!=', 'active') // Filter out converted leads
+                    .get();
+                const leads = leadsSnap.docs.map(d => ({ 
+                    id: d.id, 
+                    source: 'Lead', 
+                    ...serializeTimestamps(d.data()) 
+                }));
+                
+                // 2. Get Registered Members (Companies converted from leads or direct signups)
+                const membersSnap = await db.collection('companies')
+                    .where('referrerId', '==', companyId)
+                    .get();
+                const members = membersSnap.docs.map(d => ({ 
+                    id: d.id, 
+                    source: 'Member', 
+                    ...serializeTimestamps(d.data()) 
+                }));
+                
+                return NextResponse.json({ success: true, data: [...leads, ...members] });
+            }
+
             case 'logAudit': {
                 const { action: auditAction, details, metadata } = payload;
                 const logRef = db.collection('auditLogs').doc();
@@ -141,7 +168,6 @@ export async function POST(req: NextRequest) {
             }
 
             case 'saveCompanyLead': {
-                // Allows Digital Partners (Associates) or Admins to save a lead with attribution
                 const { lead, companyId } = payload;
                 if (!lead || !lead.companyName) throw new Error("Invalid lead data.");
                 
@@ -149,7 +175,7 @@ export async function POST(req: NextRequest) {
                 const leadData = {
                     ...lead,
                     id,
-                    referrerId: companyId, // Attribute to the Digital Partner
+                    referrerId: companyId,
                     updatedAt: FieldValue.serverTimestamp(),
                 };
                 
@@ -174,8 +200,7 @@ export async function POST(req: NextRequest) {
             }
 
             case 'logCommunication': {
-                if (!isAdmin) throw new Error("Admin only.");
-                const { partnerId, type, subject, notes, collection: collName = 'partners' } = payload;
+                const { partnerId, type, subject, notes, collection: collName = 'leads' } = payload;
                 if (!partnerId || !type || !subject) throw new Error("Missing log data.");
                 
                 const parentRef = db.collection(collName).doc(partnerId);
