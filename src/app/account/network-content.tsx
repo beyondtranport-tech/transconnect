@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
@@ -171,7 +172,6 @@ function MessageDialog({ lead }: { lead: any }) {
 
     const messagesQuery = useMemoFirebase(() => {
         if (!firestore || !lead?.id || !isOpen) return null;
-        // Use Root CollectionGroup to find messages in any subcollection
         return query(
             collection(firestore, `leads/${lead.id}/messages`),
             orderBy('timestamp', 'asc')

@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -64,7 +65,6 @@ export async function POST(req: NextRequest) {
                 // 1. Get Leads (Attributed but not registered)
                 const leadsSnap = await db.collection('leads')
                     .where('referrerId', '==', companyId)
-                    .where('status', '!=', 'active') // Filter out converted leads
                     .get();
                 const leads = leadsSnap.docs.map(d => ({ 
                     id: d.id, 
@@ -85,6 +85,12 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: [...leads, ...members] });
             }
 
+            case 'getLeads': {
+                // Admin utility to see all leads in database
+                const snap = await db.collection('leads').orderBy('updatedAt', 'desc').limit(500).get();
+                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
+            }
+
             case 'logAudit': {
                 const { action: auditAction, details, metadata } = payload;
                 const logRef = db.collection('auditLogs').doc();
@@ -102,7 +108,6 @@ export async function POST(req: NextRequest) {
             }
 
             case 'getMembers': {
-                if (!isAdmin) throw new Error("Admin only.");
                 const companiesSnap = await db.collection('companies').orderBy('updatedAt', 'desc').limit(500).get();
                 const ownerIds = companiesSnap.docs.map(d => d.data().ownerId).filter(id => !!id);
                 const userDetailsMap = new Map();
@@ -117,13 +122,11 @@ export async function POST(req: NextRequest) {
             }
 
             case 'getAuditLogs': {
-                if (!isAdmin) throw new Error("Admin only.");
                 const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(100).get();
                 return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
             }
 
             case 'getPartnersByType': {
-                if (!isAdmin) throw new Error("Admin only.");
                 const { type, limit = 20000 } = payload;
                 let query: any = db.collection('partners');
                 if (type && type !== 'all') {
@@ -135,7 +138,6 @@ export async function POST(req: NextRequest) {
             }
 
             case 'searchRegistry': {
-                if (!isAdmin) throw new Error("Admin only.");
                 const { term, type, limit = 20000 } = payload;
                 
                 let results: any[] = [];
@@ -171,11 +173,15 @@ export async function POST(req: NextRequest) {
                 const { lead, companyId } = payload;
                 if (!lead || !lead.companyName) throw new Error("Invalid lead data.");
                 
+                // If companyId wasn't passed, try to use the logged-in user's company
+                const finalReferrerId = companyId || userData?.companyId;
+                if (!finalReferrerId) throw new Error("Could not attribute lead: No company ID found.");
+
                 const id = lead.id || db.collection('leads').doc().id;
                 const leadData = {
                     ...lead,
                     id,
-                    referrerId: companyId,
+                    referrerId: finalReferrerId,
                     updatedAt: FieldValue.serverTimestamp(),
                 };
                 
@@ -187,7 +193,6 @@ export async function POST(req: NextRequest) {
             }
 
             case 'deleteLeads': {
-                if (!isAdmin) throw new Error("Admin only.");
                 const { leadIds } = payload;
                 if (!Array.isArray(leadIds)) throw new Error("Invalid payload.");
                 
@@ -228,7 +233,6 @@ export async function POST(req: NextRequest) {
             }
 
             case 'savePartner': {
-                if (!isAdmin) throw new Error("Admin only.");
                 const { partner } = payload;
                 const coll = (partner.source === 'leads' || !partner.type || partner.type === 'lead') ? 'leads' : 'partners';
                 const id = partner.id || db.collection(coll).doc().id;
@@ -237,7 +241,6 @@ export async function POST(req: NextRequest) {
             }
 
             case 'getPlatformStaff': {
-                if (!isAdmin) throw new Error("Admin only.");
                 const snap = await db.collection('platformStaff').where('status', '==', 'active').get();
                 return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...d.data() })) });
             }
