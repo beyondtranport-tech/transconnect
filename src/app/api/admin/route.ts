@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase-admin';
+import { enrichPartner } from '@/ai/flows/enrich-partner-flow';
 
 export const dynamic = 'force-dynamic';
 
@@ -61,7 +62,6 @@ export async function POST(req: NextRequest) {
                 const { type, term, status, outreachFilter, assigneeId, limit = 1000 } = payload;
                 let results: any[] = [];
 
-                // 1. Search Leads Collection
                 if (type !== 'partner') {
                     let leadsQ: any = db.collection('leads');
                     if (type && type !== 'all' && type !== 'lead') {
@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
                             'isa': ['isa', 'ISA Agents', 'ISA Agent'],
                             'supplier': ['supplier', 'vendor', 'Suppliers', 'Supplier', 'Vendors'],
                             'transporter': ['transporter', 'Transporters', 'Transporter'],
-                            'finance': ['finance', 'Finance Companies', 'Finance Partner'],
+                            'finance': ['finance', 'financier', 'Finance Companies', 'Finance Partner'],
                             'driver': ['driver', 'Drivers', 'Driver']
                         };
                         const possibleRoles = typeMap[type] || [type];
@@ -84,7 +84,6 @@ export async function POST(req: NextRequest) {
                     results = [...results, ...leadsSnap.docs.map(d => ({ id: d.id, source: 'Lead', ...d.data() }))];
                 }
 
-                // 2. Search Partners Collection
                 if (type !== 'lead') {
                     let partnersQ: any = db.collection('partners');
                     if (type && type !== 'all' && type !== 'partner') partnersQ = partnersQ.where('type', '==', type);
@@ -96,7 +95,6 @@ export async function POST(req: NextRequest) {
                     results = [...results, ...partnersSnap.docs.map(d => ({ id: d.id, source: 'Partner', ...d.data() }))];
                 }
 
-                // Apply Outreach Filter in Memory
                 if (outreachFilter === 'none') {
                     results = results.filter(r => !r.lastOutreachSubject);
                 } else if (outreachFilter && outreachFilter !== 'all') {
@@ -106,43 +104,54 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: results.map(serializeTimestamps) });
             }
 
+            case 'autoEnrichRecord': {
+                const { id, type } = payload;
+                if (!id || !type) throw new Error("ID and Type required for auto-enrichment.");
+
+                const collectionName = type === 'lead' ? 'leads' : 'partners';
+                const docRef = db.collection(collectionName).doc(id);
+                const docSnap = await docRef.get();
+                
+                if (!docSnap.exists) throw new Error(`Record ${id} not found.`);
+                const record = docSnap.data()!;
+                const companyName = record.companyName || record.company_name || record.trading_name || `${record.firstName} ${record.lastName}`;
+
+                // Call AI Enrichment Flow
+                const enriched = await enrichPartner({ companyName });
+
+                const update: any = {
+                    ...enriched,
+                    status: (enriched.email || enriched.website) ? 'qualified' : record.status,
+                    updatedAt: FieldValue.serverTimestamp()
+                };
+
+                await docRef.update(update);
+                return NextResponse.json({ success: true, data: enriched });
+            }
+
             case 'bulkSavePartners': {
                 const { partners, type } = payload;
-                if (!Array.isArray(partners)) throw new Error("Partners must be an array.");
-                
                 const batch = db.batch();
                 const collectionName = (type === 'associate' || type === 'lead') ? 'leads' : 'partners';
                 const collRef = db.collection(collectionName);
 
-                partners.forEach(p => {
+                partners.forEach((p: any) => {
                     const id = p.record_id || p.id || collRef.doc().id;
-                    const docRef = collRef.doc(id);
-                    batch.set(docRef, {
+                    batch.set(collRef.doc(id), {
                         ...p,
                         id,
                         status: p.status || 'new',
-                        role: p.role || (type === 'associate' ? 'Digital Partner' : type),
-                        type: p.type || type,
                         updatedAt: FieldValue.serverTimestamp(),
                         createdAt: FieldValue.serverTimestamp()
                     }, { merge: true });
                 });
 
                 await batch.commit();
-                return NextResponse.json({ success: true, count: partners.length });
+                return NextResponse.json({ success: true });
             }
 
             case 'savePartner': {
-                const { partner } = payload;
-                if (!partner) throw new Error("No data.");
-                
-                let collName = payload.collection;
-                if (!collName) {
-                    // Try to detect
-                    const leadsDoc = await db.collection('leads').doc(partner.id).get();
-                    collName = leadsDoc.exists ? 'leads' : 'partners';
-                }
-
+                const { partner, collection: collName } = payload;
                 const id = partner.id || db.collection(collName).doc().id;
                 await db.collection(collName).doc(id).set({
                     ...partner,
@@ -152,55 +161,22 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, id });
             }
 
-            case 'deletePartner': {
-                const { partnerId, source } = payload;
-                const collectionName = source === 'Lead' ? 'leads' : 'partners';
-                await db.collection(collectionName).doc(partnerId).delete();
-                return NextResponse.json({ success: true });
-            }
-
             case 'logCommunication': {
-                const { partnerId, type: commType, subject, notes, collection: providedColl } = payload;
-                let collName = providedColl;
-
-                if (!collName) {
-                    // AUTO-DETECT COLLECTION
-                    const leadsDoc = await db.collection('leads').doc(partnerId).get();
-                    if (leadsDoc.exists) collName = 'leads';
-                    else {
-                        const partnersDoc = await db.collection('partners').doc(partnerId).get();
-                        if (partnersDoc.exists) collName = 'partners';
-                        else {
-                            const companiesDoc = await db.collection('companies').doc(partnerId).get();
-                            if (companiesDoc.exists) collName = 'companies';
-                        }
-                    }
-                }
-
-                if (!collName) throw new Error(`Registry record ${partnerId} not found.`);
-
-                const parentRef = db.collection(collName).doc(partnerId);
+                const { partnerId, type: cType, subject, notes, collection: cName } = payload;
+                const parentRef = db.collection(cName).doc(partnerId);
                 const logRef = parentRef.collection('communications').doc();
                 
                 const batch = db.batch();
-                batch.set(logRef, {
-                    id: logRef.id,
-                    type: commType,
-                    subject,
-                    notes,
-                    timestamp: FieldValue.serverTimestamp(),
-                    adminId: decodedToken.uid
-                });
-                
-                batch.update(parentRef, {
-                    lastOutreachAt: FieldValue.serverTimestamp(),
-                    lastOutreachSubject: subject,
-                    status: 'contacted',
-                    updatedAt: FieldValue.serverTimestamp()
-                });
+                batch.set(logRef, { id: logRef.id, type: cType, subject, notes, timestamp: FieldValue.serverTimestamp(), adminId: decodedToken.uid });
+                batch.update(parentRef, { lastOutreachAt: FieldValue.serverTimestamp(), lastOutreachSubject: subject, status: 'contacted', updatedAt: FieldValue.serverTimestamp() });
                 
                 await batch.commit();
                 return NextResponse.json({ success: true });
+            }
+
+            case 'getPlatformStaff': {
+                const snap = await db.collection('platformStaff').get();
+                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
             }
 
             case 'getLeads': {
@@ -215,11 +191,6 @@ export async function POST(req: NextRequest) {
 
             case 'getAuditLogs': {
                 const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(100).get();
-                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
-            }
-
-            case 'getPlatformStaff': {
-                const snap = await db.collection('platformStaff').get();
                 return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
             }
 

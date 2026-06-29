@@ -15,6 +15,8 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
 
 async function performAdminAction(token: string, action: string, payload: any) {
     const response = await fetch('/api/admin', {
@@ -47,9 +49,9 @@ export default function ForensicBridge({ audience }: { audience: string }) {
             const token = await getClientSideAuthToken();
             if (!token) return;
             
-            // Fetch all records for the audience type
-            const apiType = audience === 'isa' ? 'isa' : (audience === 'finance' ? 'finance' : (audience === 'drivers' ? 'driver' : audience.slice(0, -1)));
-            const res = await performAdminAction(token, 'searchRegistry', { type: apiType, limit: 20000 });
+            // Normalize API type
+            let apiType = audience === 'isa' ? 'isa' : (audience === 'finance' ? 'finance' : (audience === 'drivers' ? 'driver' : audience.slice(0, -1)));
+            const res = await performAdminAction(token, 'searchRegistry', { type: apiType, limit: 1000 });
             
             if (!res.success) throw new Error(res.error);
             
@@ -85,10 +87,13 @@ export default function ForensicBridge({ audience }: { audience: string }) {
         if (!token) return;
 
         for (let i = currentIndex; i < queue.length; i++) {
-            // Check if user paused the process
-            let currentStatus: string = '';
-            setStatus(s => { currentStatus = s; return s; });
-            if (currentStatus === 'paused' || currentStatus === 'idle') break;
+            // Re-check status inside loop to allow pausing
+            let shouldStop = false;
+            setStatus(s => {
+                if (s !== 'running') shouldStop = true;
+                return s;
+            });
+            if (shouldStop) break;
 
             const record = queue[i];
             const name = record.companyName || record.firstName || 'Unknown';
@@ -113,13 +118,12 @@ export default function ForensicBridge({ audience }: { audience: string }) {
                     throw new Error(res.error);
                 }
 
-                // Safety Throttle: 1.5s delay between records to respect search & AI quotas
-                await new Promise(resolve => setTimeout(resolve, 1500));
+                // Safety Throttle: 2s delay between records to respect search & AI quotas
+                await new Promise(resolve => setTimeout(resolve, 2000));
 
             } catch (err: any) {
                 setLogs(prev => [{ id: Date.now(), msg: `Bridge Failed for ${name}: ${err.message}`, type: 'error' }, ...prev].slice(0, 50));
-                // Continue to next record even if one fails
-                await new Promise(resolve => setTimeout(resolve, 2000));
+                await new Promise(resolve => setTimeout(resolve, 3000));
             }
 
             if (i === queue.length - 1) {
@@ -219,59 +223,59 @@ export default function ForensicBridge({ audience }: { audience: string }) {
 
             {(queue.length > 0 || logs.length > 0) && (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 text-left">
-                    <Card className="text-left">
-                        <CardHeader className="text-left">
-                            <CardTitle className="text-sm font-black uppercase tracking-widest flex items-center gap-2 text-left">
+                    <Card className="text-left shadow-lg">
+                        <CardHeader className="text-left border-b bg-muted/20">
+                            <CardTitle className="text-sm font-black uppercase tracking-widest flex items-center gap-2 text-left text-foreground">
                                 <Activity className="h-4 w-4 text-primary" />
                                 Live Intelligence Feed
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="p-0 text-left">
-                            <ScrollArea className="h-64 border-t text-left">
+                            <ScrollArea className="h-64 text-left">
                                 <div className="divide-y text-left">
                                     {logs.map(log => (
-                                        <div key={log.id} className="p-3 flex items-start gap-3 text-left">
+                                        <div key={log.id} className="p-3 flex items-start gap-3 text-left bg-white hover:bg-slate-50 transition-colors">
                                             {log.type === 'success' ? <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 shrink-0" /> : 
                                              log.type === 'error' ? <AlertTriangle className="h-4 w-4 text-destructive mt-0.5 shrink-0" /> :
                                              <Loader2 className="h-4 w-4 text-primary animate-spin mt-0.5 shrink-0" />}
                                             <div className="text-left">
                                                 <p className={cn("text-[11px] font-medium leading-tight", log.type === 'error' && "text-destructive")}>{log.msg}</p>
                                                 {log.data && (
-                                                    <div className="flex gap-2 mt-1.5">
-                                                        {log.data.website && <Badge variant="outline" className="text-[8px] h-3.5 border-primary/20 text-primary">Website Found</Badge>}
-                                                        {log.data.email && <Badge variant="outline" className="text-[8px] h-3.5 border-primary/20 text-primary">Email Found</Badge>}
-                                                        {log.data.contactPerson && <Badge variant="outline" className="text-[8px] h-3.5 border-primary/20 text-primary">CEO Identified</Badge>}
+                                                    <div className="flex gap-2 mt-1.5 flex-wrap">
+                                                        {log.data.website && <Badge variant="outline" className="text-[8px] h-3.5 border-primary/20 text-primary uppercase">Domain Verified</Badge>}
+                                                        {log.data.email && <Badge variant="outline" className="text-[8px] h-3.5 border-primary/20 text-primary uppercase">Email Mapped</Badge>}
+                                                        {log.data.contactPerson && <Badge variant="outline" className="text-[8px] h-3.5 border-primary/20 text-primary uppercase">CEO Identified</Badge>}
                                                     </div>
                                                 )}
                                             </div>
                                         </div>
                                     ))}
-                                    {logs.length === 0 && <p className="text-center py-12 text-xs text-muted-foreground italic">Waiting for pipeline execution...</p>}
+                                    {logs.length === 0 && <div className="p-12 text-center text-xs text-muted-foreground italic">Waiting for pipeline execution...</div>}
                                 </div>
                             </ScrollArea>
                         </CardContent>
                     </Card>
 
-                    <Card className="text-left">
-                        <CardHeader className="text-left">
-                            <CardTitle className="text-sm font-black uppercase tracking-widest flex items-center gap-2 text-left">
+                    <Card className="text-left shadow-lg">
+                        <CardHeader className="text-left border-b bg-muted/20">
+                            <CardTitle className="text-sm font-black uppercase tracking-widest flex items-center gap-2 text-left text-foreground">
                                 <ShieldCheck className="h-4 w-4 text-primary" />
                                 Pipeline Configuration
                             </CardTitle>
                         </CardHeader>
-                        <CardContent className="space-y-4 text-left">
+                        <CardContent className="space-y-4 text-left p-6">
                             <div className="space-y-2 text-left">
-                                <h4 className="text-xs font-bold">Hard-Verification Rules</h4>
+                                <h4 className="text-xs font-bold text-foreground">Hard-Verification Rules</h4>
                                 <ul className="space-y-2 text-[11px] text-muted-foreground text-left">
-                                    <li className="flex items-start gap-2"><div className="h-1 w-1 bg-primary rounded-full mt-1.5" /> Google Search verification for every corporate domain.</li>
-                                    <li className="flex items-start gap-2"><div className="h-1 w-1 bg-primary rounded-full mt-1.5" /> Sequential processing to ensure data integrity and trackability.</li>
-                                    <li className="flex items-start gap-2"><div className="h-1 w-1 bg-primary rounded-full mt-1.5" /> Automatic record promotion to "Qualified" upon successful bridge.</li>
+                                    <li className="flex items-start gap-2"><div className="h-1 w-1 bg-primary rounded-full mt-1.5 shrink-0" /> Google Search verification for every corporate domain.</li>
+                                    <li className="flex items-start gap-2"><div className="h-1 w-1 bg-primary rounded-full mt-1.5 shrink-0" /> Sequential processing to ensure data integrity.</li>
+                                    <li className="flex items-start gap-2"><div className="h-1 w-1 bg-primary rounded-full mt-1.5 shrink-0" /> Automatic record promotion to <strong>"Qualified"</strong> upon successful bridge.</li>
                                 </ul>
                             </div>
                             <Separator />
                             <div className="p-3 bg-muted/50 rounded-lg text-left">
-                                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-2">Throttling Protocol</p>
-                                <p className="text-[11px] leading-relaxed italic">The pipeline operates at ~40 records per minute. This allows for deep forensic verification while maintaining stability.</p>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">Throttling Protocol</p>
+                                <p className="text-[11px] leading-relaxed italic text-foreground">The pipeline operates with a 2-second safety delay per record to maintain model stability and prevent API timeouts.</p>
                             </div>
                         </CardContent>
                     </Card>
