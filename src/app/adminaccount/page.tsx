@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -44,6 +45,7 @@ import {
   Lock,
   Banknote,
   Search,
+  Eye,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -85,6 +87,7 @@ import PlatformTasks from '@/app/backend/platform-tasks';
 import PlatformSettingsContent from '@/app/backend/platform-settings';
 import UnifiedDirectory from '@/app/adminaccount/unified-directory';
 import PlatformStaffManagement from '@/app/adminaccount/platform-staff';
+import AssociateOversight from '@/app/adminaccount/associate-oversight';
 
 function AdminAuthGuard({ children }: { children: React.ReactNode }) {
     const { user, isUserLoading } = useUser();
@@ -109,7 +112,7 @@ function AdminAuthGuard({ children }: { children: React.ReactNode }) {
 
     if (isUserLoading || !uid || (email !== 'mkoton100@gmail.com' && email !== 'beyondtransport@gmail.com' && email !== 'michael@logisticsflow.co.za')) {
         return (
-            <div className="flex flex-col justify-center items-center min-h-[calc(100vh-8rem)] text-foreground">
+            <div className="flex flex-col justify-center items-center min-h-[calc(100vh-8rem)] text-base">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
                 <p className="mt-4 text-muted-foreground text-sm font-bold uppercase tracking-widest">Verifying Admin Permissions...</p>
             </div>
@@ -151,6 +154,7 @@ function AdminAccountContent() {
       case 'activity': return <ActivityFeed />;
       case 'leads-agent': return <LeadsAgent />;
       case 'leads-database': return <LeadsDatabase />;
+      case 'associate-oversight': return <AssociateOversight />;
       case 'branding-studio': return <BrandingStudio />;
       case 'tts-studio': return <TTSStudio />;
       case 'asset-gallery': return <AssetGallery />;
@@ -210,9 +214,10 @@ function AdminAccountContent() {
               </SidebarMenuItem>
               
               <SidebarMenuItem>
-                  <SidebarMenuButton tooltip="Leads" isActive={activeView.includes('leads') || activeView === 'unified-directory'}><UserPlus /><span>Leads & CRM</span></SidebarMenuButton>
+                  <SidebarMenuButton tooltip="Leads" isActive={activeView.includes('leads') || activeView === 'unified-directory' || activeView === 'associate-oversight'}><UserPlus /><span>Leads & CRM</span></SidebarMenuButton>
                   <SidebarMenuSub>
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'unified-directory'} onClick={() => navigate('unified-directory')}>Unified Directory</SidebarMenuSubButton></SidebarMenuSubItem>
+                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'associate-oversight'} onClick={() => navigate('associate-oversight')}><Eye className="h-3 w-3" />Associate Monitoring</SidebarMenuSubButton></SidebarMenuSubItem>
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'leads-agent'} onClick={() => navigate('leads-agent')}>Leads Agent</SidebarMenuSubButton></SidebarMenuSubItem>
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'leads-database'} onClick={() => navigate('leads-database')}>Leads Database</SidebarMenuSubButton></SidebarMenuSubItem>
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'platform-staff'} onClick={() => navigate('platform-staff')}>Platform Staff</SidebarMenuSubButton></SidebarMenuSubItem>
