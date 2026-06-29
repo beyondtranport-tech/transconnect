@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
                 const { type, term, status, outreachFilter, assigneeId, limit = 1000 } = payload;
                 let results: any[] = [];
 
-                // 1. Search Leads Collection (Prospects)
+                // 1. Search Leads Collection
                 if (type !== 'partner') {
                     let leadsQ: any = db.collection('leads');
                     
@@ -99,7 +99,7 @@ export async function POST(req: NextRequest) {
                     }))];
                 }
 
-                // 2. Search Partners Collection (Industrial Registry)
+                // 2. Search Partners Collection
                 if (type !== 'lead') {
                     let partnersQ: any = db.collection('partners');
                     
@@ -128,16 +128,7 @@ export async function POST(req: NextRequest) {
                     let companiesQ: any = db.collection('companies');
                     
                     if (type && type !== 'all') {
-                        const typeMap: Record<string, string[]> = {
-                            'associate': ['associate'],
-                            'isa': ['isa-agent'],
-                            'supplier': ['vendor'],
-                            'transporter': ['transporter'],
-                            'finance': ['financier'],
-                            'driver': ['driver']
-                        };
-                        const possibleRoles = typeMap[type] || [type];
-                        companiesQ = companiesQ.where('declaredRole', 'in', possibleRoles);
+                        companiesQ = companiesQ.where('declaredRole', '==', type);
                     }
 
                     if (status && status !== 'all') {
@@ -161,7 +152,6 @@ export async function POST(req: NextRequest) {
                     }))];
                 }
 
-                // Apply Outreach Filter in Memory
                 if (outreachFilter === 'none') {
                     results = results.filter(r => !r.lastOutreachSubject);
                 } else if (outreachFilter && outreachFilter !== 'all') {
@@ -182,21 +172,11 @@ export async function POST(req: NextRequest) {
                     'driver': ['driver', 'Drivers', 'Driver']
                 };
                 const possibleRoles = typeMap[type] || [type];
-                
-                const companyRoleMap: Record<string, string[]> = {
-                    'associate': ['associate'],
-                    'isa': ['isa-agent'],
-                    'supplier': ['vendor'],
-                    'transporter': ['transporter'],
-                    'finance': ['financier'],
-                    'driver': ['driver']
-                };
-                const companyRoles = companyRoleMap[type] || [type];
 
                 const [leadsSnap, partnersSnap, companiesSnap] = await Promise.all([
                     db.collection('leads').where('role', 'in', possibleRoles).get(),
                     db.collection('partners').where('type', '==', type).get(),
-                    db.collection('companies').where('declaredRole', 'in', companyRoles).get()
+                    db.collection('companies').where('declaredRole', '==', type).get()
                 ]);
                 
                 const results = [
