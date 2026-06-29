@@ -102,13 +102,6 @@ async function performAdminAction(token: string, action: string, payload: any) {
         cache: 'no-store'
     });
 
-    const contentType = response.headers.get('content-type');
-    if (!contentType || !contentType.includes('application/json')) {
-        const errorText = await response.text();
-        console.error("Non-JSON response received:", errorText.slice(0, 200));
-        throw new Error("The server returned an invalid response. This may be due to a timeout with large data segments.");
-    }
-
     const result = await response.json();
     if (!response.ok || !result.success) {
         throw new Error(result.error || `API Error for action: ${action}`);
@@ -287,7 +280,7 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
 
         toast({ title: 'Logged and Copied!', description: 'Interaction recorded. Opening Gmail...' });
         
-        // Interim Gmail Integration for Library view
+        // Gmail Integration
         const partner = partners.find(p => p.id === logData.partnerId);
         if (partner?.email) {
             const fullSubject = `Logistics Flow: ${subjectLabel} for ${partner.companyName || 'your business'}`;
