@@ -1,5 +1,5 @@
 
-import { NextRequest, NextResponse } from 'next/request';
+import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase-admin';
@@ -61,11 +61,10 @@ export async function POST(req: NextRequest) {
                 const { type, term, status, outreachFilter, assigneeId, limit = 1000 } = payload;
                 let results: any[] = [];
 
-                // 1. Search Leads Collection
+                // 1. Search Leads Collection (Prospects)
                 if (type !== 'partner') {
                     let leadsQ: any = db.collection('leads');
                     
-                    // Filter by Role Type with Fuzzy Mapping
                     if (type && type !== 'all' && type !== 'lead') {
                         const typeMap: Record<string, string[]> = {
                             'associate': ['associate', 'Digital Partners', 'Digital Partner'],
@@ -79,17 +78,14 @@ export async function POST(req: NextRequest) {
                         leadsQ = leadsQ.where('role', 'in', possibleRoles);
                     }
 
-                    // Apply Status Filter
                     if (status && status !== 'all') {
                         leadsQ = leadsQ.where('status', '==', status);
                     }
 
-                    // Apply Assignee Filter
                     if (assigneeId && assigneeId !== 'all') {
                         leadsQ = leadsQ.where('assigneeId', '==', assigneeId === 'none' ? null : assigneeId);
                     }
 
-                    // Apply Prefix Search on Company Name
                     if (term) {
                         leadsQ = leadsQ.where('companyName', '>=', term).where('companyName', '<=', term + '\uf8ff');
                     }
@@ -103,7 +99,7 @@ export async function POST(req: NextRequest) {
                     }))];
                 }
 
-                // 2. Search Partners Collection (Registered Industrial Entities)
+                // 2. Search Partners Collection (Industrial Registry)
                 if (type !== 'lead') {
                     let partnersQ: any = db.collection('partners');
                     
@@ -127,7 +123,45 @@ export async function POST(req: NextRequest) {
                     results = [...results, ...partnersSnap.docs.map(d => ({ id: d.id, source: 'Partner', ...d.data() }))];
                 }
 
-                // Apply Outreach Filter in Memory (if complex)
+                // 3. Search Companies Collection (Registered Members)
+                if (type !== 'lead' && type !== 'partner') {
+                    let companiesQ: any = db.collection('companies');
+                    
+                    if (type && type !== 'all') {
+                        const typeMap: Record<string, string[]> = {
+                            'associate': ['associate'],
+                            'isa': ['isa-agent'],
+                            'supplier': ['vendor'],
+                            'transporter': ['transporter'],
+                            'finance': ['financier'],
+                            'driver': ['driver']
+                        };
+                        const possibleRoles = typeMap[type] || [type];
+                        companiesQ = companiesQ.where('declaredRole', 'in', possibleRoles);
+                    }
+
+                    if (status && status !== 'all') {
+                        companiesQ = companiesQ.where('status', '==', status);
+                    }
+
+                    if (assigneeId && assigneeId !== 'all') {
+                        companiesQ = companiesQ.where('assigneeId', '==', assigneeId === 'none' ? null : assigneeId);
+                    }
+
+                    if (term) {
+                        companiesQ = companiesQ.where('companyName', '>=', term).where('companyName', '<=', term + '\uf8ff');
+                    }
+
+                    const companiesSnap = await companiesQ.limit(limit).get();
+                    results = [...results, ...companiesSnap.docs.map(d => ({ 
+                        id: d.id, 
+                        source: 'Member', 
+                        ...d.data(),
+                        type: type === 'all' ? (d.data().declaredRole || d.data().shopType || 'member') : type
+                    }))];
+                }
+
+                // Apply Outreach Filter in Memory
                 if (outreachFilter === 'none') {
                     results = results.filter(r => !r.lastOutreachSubject);
                 } else if (outreachFilter && outreachFilter !== 'all') {
@@ -148,15 +182,27 @@ export async function POST(req: NextRequest) {
                     'driver': ['driver', 'Drivers', 'Driver']
                 };
                 const possibleRoles = typeMap[type] || [type];
+                
+                const companyRoleMap: Record<string, string[]> = {
+                    'associate': ['associate'],
+                    'isa': ['isa-agent'],
+                    'supplier': ['vendor'],
+                    'transporter': ['transporter'],
+                    'finance': ['financier'],
+                    'driver': ['driver']
+                };
+                const companyRoles = companyRoleMap[type] || [type];
 
-                const [leadsSnap, partnersSnap] = await Promise.all([
+                const [leadsSnap, partnersSnap, companiesSnap] = await Promise.all([
                     db.collection('leads').where('role', 'in', possibleRoles).get(),
-                    db.collection('partners').where('type', '==', type).get()
+                    db.collection('partners').where('type', '==', type).get(),
+                    db.collection('companies').where('declaredRole', 'in', companyRoles).get()
                 ]);
                 
                 const results = [
                     ...leadsSnap.docs.map(d => ({ id: d.id, source: 'Lead', ...d.data() })),
-                    ...partnersSnap.docs.map(d => ({ id: d.id, source: 'Partner', ...d.data() }))
+                    ...partnersSnap.docs.map(d => ({ id: d.id, source: 'Partner', ...d.data() })),
+                    ...companiesSnap.docs.map(d => ({ id: d.id, source: 'Member', ...d.data() }))
                 ];
 
                 return NextResponse.json({ success: true, data: results.map(serializeTimestamps) });
