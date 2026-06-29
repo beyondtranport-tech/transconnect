@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
 import { 
     Loader2, Zap, Play, Pause, RotateCcw, ShieldCheck, Search, Database, 
-    AlertTriangle, CheckCircle2, Globe, Mail, Smartphone 
+    AlertTriangle, CheckCircle2, Globe, Mail, Smartphone, Activity
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
