@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -34,7 +35,7 @@ async function performAdminAction(token: string, action: string, payload: any) {
     return result;
 }
 
-export function AddCommunicationLogDialog({ partnerId, onLogAdded }: { partnerId: string, onLogAdded: () => void }) {
+export function AddCommunicationLogDialog({ partnerId, collection, onLogAdded }: { partnerId: string, collection?: string, onLogAdded: () => void }) {
     const [isOpen, setIsOpen] = useState(false);
     const [isLogging, setIsLogging] = useState(false);
     const { toast } = useToast();
@@ -46,7 +47,11 @@ export function AddCommunicationLogDialog({ partnerId, onLogAdded }: { partnerId
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication failed.");
             
-            await performAdminAction(token, 'logCommunication', { partnerId, ...values });
+            await performAdminAction(token, 'logCommunication', { 
+                partnerId, 
+                collection, // Pass the explicit collection if known
+                ...values 
+            });
             
             toast({ title: 'Communication Logged' });
             onLogAdded();
@@ -66,18 +71,18 @@ export function AddCommunicationLogDialog({ partnerId, onLogAdded }: { partnerId
                     <MessageSquarePlus className="h-4 w-4" />
                 </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="text-left text-foreground">
                 <DialogHeader>
                     <DialogTitle>Add Communication Log</DialogTitle>
                     <DialogDescription>Record a new interaction for this partner.</DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 py-4">
+                    <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 py-4 text-left">
                         <FormField control={form.control} name="type" render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Communication Type</FormLabel>
                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <FormControl><SelectTrigger><SelectValue placeholder="Select a type..." /></SelectTrigger></FormControl>
+                                    <FormControl><SelectTrigger className="bg-white"><SelectValue placeholder="Select a type..." /></SelectTrigger></FormControl>
                                     <SelectContent>
                                         <SelectItem value="Email">Email</SelectItem>
                                         <SelectItem value="WhatsApp">WhatsApp</SelectItem>
@@ -91,14 +96,14 @@ export function AddCommunicationLogDialog({ partnerId, onLogAdded }: { partnerId
                         <FormField control={form.control} name="subject" render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Subject</FormLabel>
-                                <FormControl><Input {...field} placeholder="e.g., Follow-up Call" /></FormControl>
+                                <FormControl><Input {...field} placeholder="e.g., Follow-up Call" className="bg-white" /></FormControl>
                                 <FormMessage />
                             </FormItem>
                         )} />
                         <FormField control={form.control} name="notes" render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Notes</FormLabel>
-                                <FormControl><Textarea placeholder="Details of the conversation..." {...field} /></FormControl>
+                                <FormControl><Textarea placeholder="Details of the conversation..." {...field} className="bg-white" /></FormControl>
                                 <FormMessage />
                             </FormItem>
                         )} />
