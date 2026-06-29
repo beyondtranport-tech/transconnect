@@ -58,28 +58,53 @@ export async function POST(req: NextRequest) {
 
         switch (action) {
             case 'searchRegistry': {
-                const { type, term, limit = 100 } = payload;
+                const { type, term, limit = 1000 } = payload;
                 let results: any[] = [];
 
-                if (type === 'lead' || type === 'all') {
-                    let q: any = db.collection('leads');
-                    if (term) {
-                        q = q.where('companyName', '>=', term).where('companyName', '<=', term + '\uf8ff');
+                // 1. Search Leads Collection
+                // We look for records where the role matches the requested type (or its display title)
+                if (type !== 'partner') {
+                    let leadsQ: any = db.collection('leads');
+                    
+                    if (type !== 'all' && type !== 'lead') {
+                        // Map internal IDs to common display titles found in lead roles
+                        const typeMap: Record<string, string[]> = {
+                            'associate': ['associate', 'Digital Partners', 'Digital Partner'],
+                            'isa': ['isa', 'ISA Agents', 'ISA Agent'],
+                            'supplier': ['supplier', 'vendor', 'Suppliers', 'Supplier'],
+                            'transporter': ['transporter', 'Transporters', 'Transporter'],
+                            'finance': ['finance', 'financier', 'Finance Companies', 'Finance Partner'],
+                            'driver': ['driver', 'Drivers', 'Driver']
+                        };
+                        const possibleRoles = typeMap[type] || [type];
+                        leadsQ = leadsQ.where('role', 'in', possibleRoles);
                     }
-                    const snap = await q.orderBy('companyName').limit(limit).get();
-                    results = [...results, ...snap.docs.map(d => ({ id: d.id, source: 'Lead', ...d.data() }))];
+
+                    if (term) {
+                        leadsQ = leadsQ.where('companyName', '>=', term).where('companyName', '<=', term + '\uf8ff');
+                    }
+                    
+                    const leadsSnap = await leadsQ.limit(limit).get();
+                    results = [...results, ...leadsSnap.docs.map(d => ({ 
+                        id: d.id, 
+                        source: 'Lead', 
+                        ...d.data(),
+                        // Map 'role' to 'type' for UI consistency in registry views
+                        type: type === 'all' || type === 'lead' ? (d.data().role?.toLowerCase() || 'lead') : type
+                    }))];
                 }
 
+                // 2. Search Partners Collection
                 if (type !== 'lead') {
-                    let q: any = db.collection('partners');
-                    if (type !== 'all') {
-                        q = q.where('type', '==', type);
+                    let partnersQ: any = db.collection('partners');
+                    if (type !== 'all' && type !== 'partner') {
+                        partnersQ = partnersQ.where('type', '==', type);
                     }
                     if (term) {
-                        q = q.where('companyName', '>=', term).where('companyName', '<=', term + '\uf8ff');
+                        partnersQ = partnersQ.where('companyName', '>=', term).where('companyName', '<=', term + '\uf8ff');
                     }
-                    const snap = await q.limit(limit).get();
-                    results = [...results, ...snap.docs.map(d => ({ id: d.id, source: 'Partner', ...d.data() }))];
+                    const partnersSnap = await partnersQ.limit(limit).get();
+                    results = [...results, ...partnersSnap.docs.map(d => ({ id: d.id, source: 'Partner', ...d.data() }))];
                 }
 
                 return NextResponse.json({ success: true, data: results.map(serializeTimestamps) });
@@ -87,15 +112,25 @@ export async function POST(req: NextRequest) {
 
             case 'getPartnersByType': {
                 const { type } = payload;
-                const snap = await db.collection('partners').where('type', '==', type).get();
-                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
+                // For 'management' views, we want both Leads of this type and registered Partners
+                const leadsSnap = await db.collection('leads').where('role', 'in', [type, type.charAt(0).toUpperCase() + type.slice(1)]).get();
+                const partnersSnap = await db.collection('partners').where('type', '==', type).get();
+                
+                const results = [
+                    ...leadsSnap.docs.map(d => ({ id: d.id, source: 'Lead', ...d.data() })),
+                    ...partnersSnap.docs.map(d => ({ id: d.id, source: 'Partner', ...d.data() }))
+                ];
+
+                return NextResponse.json({ success: true, data: results.map(serializeTimestamps) });
             }
 
             case 'savePartner': {
                 const { partner } = payload;
                 if (!partner || !partner.type) throw new Error("Invalid partner data.");
                 
-                const id = partner.id || db.collection('partners').doc().id;
+                const collection = partner.source === 'Lead' ? 'leads' : 'partners';
+                const id = partner.id || db.collection(collection).doc().id;
+                
                 const data = {
                     ...partner,
                     id,
@@ -103,13 +138,14 @@ export async function POST(req: NextRequest) {
                 };
                 if (!partner.id) data.createdAt = FieldValue.serverTimestamp();
 
-                await db.collection('partners').doc(id).set(data, { merge: true });
+                await db.collection(collection).doc(id).set(data, { merge: true });
                 return NextResponse.json({ success: true, id });
             }
 
             case 'deletePartner': {
-                const { partnerId } = payload;
-                await db.collection('partners').doc(partnerId).delete();
+                const { partnerId, source } = payload;
+                const collection = source === 'Lead' ? 'leads' : 'partners';
+                await db.collection(collection).doc(partnerId).delete();
                 return NextResponse.json({ success: true });
             }
 
@@ -127,15 +163,12 @@ export async function POST(req: NextRequest) {
 
             case 'getAudienceCommunications': {
                 const { type } = payload;
-                // Complex aggregation: finding all communications for a specific type of partner
                 const partnersSnap = await db.collection('partners').where('type', '==', type).get();
                 const partnerIds = partnersSnap.docs.map(d => d.id);
                 
                 if (partnerIds.length === 0) return NextResponse.json({ success: true, data: [] });
 
                 let allLogs: any[] = [];
-                // Chunk to stay within Firestore 'in' limit of 30 if using queries, 
-                // but since these are subcollections, we iterate.
                 const logPromises = partnerIds.slice(0, 20).map(pid => 
                     db.collection('partners').doc(pid).collection('communications').orderBy('timestamp', 'desc').limit(5).get()
                 );
@@ -234,6 +267,7 @@ export async function POST(req: NextRequest) {
                     ...lead,
                     id,
                     referrerId: finalReferrerId,
+                    referrerName: userData?.companyName || userData?.firstName || 'Partner',
                     updatedAt: FieldValue.serverTimestamp(),
                 };
                 
