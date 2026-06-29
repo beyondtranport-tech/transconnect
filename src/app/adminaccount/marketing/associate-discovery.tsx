@@ -1,9 +1,10 @@
+
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Copy, ClipboardCheck, Terminal, Database, ShieldCheck, Share2, Info, UserCheck, Zap, Target, Palette, Video } from "lucide-react";
+import { Copy, ClipboardCheck, Terminal, Database, ShieldCheck, Share2, Info, UserCheck, Zap, Target, Palette, Video, Star, AlertTriangle } from "lucide-react";
 import * as React from "react";
 import { useState, useMemo } from 'react';
 import { useToast } from "@/hooks/use-toast";
@@ -12,6 +13,8 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 export const associateCategories = [
     "Content Creator",
@@ -60,6 +63,7 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
     const [isCopied, setIsCopied] = useState(false);
     const [seqOverride, setSeqOverride] = useState<number | ''>('');
     
+    const isPriority = category === 'Industry Influencer';
     const startSeq = useMemo(() => (seqOverride !== '' ? Number(seqOverride) : currentCount + 1), [seqOverride, currentCount]);
     const prompt = generateDiscoveryPrompt(category, startSeq);
 
@@ -73,17 +77,31 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
     return (
         <div className="grid md:grid-cols-2 gap-6 text-left">
             <div className="space-y-4 text-left">
-                <h2 className="text-2xl font-bold font-headline flex items-center gap-2 text-foreground">
-                    <Share2 className="h-6 w-6 text-primary" />
-                    Talent Scouting: {category}
-                </h2>
-                <Alert className="bg-primary/5 border-primary/20 text-left">
-                    <ShieldCheck className="h-4 w-4 text-primary" />
-                    <AlertTitle className="font-bold">Creative Node Search</AlertTitle>
-                    <AlertDescription className="text-xs">
-                        Scouting for creators who can lead the industry's digitalization. Batching optimized for high-impact talent identification.
+                <div className="flex items-center justify-between">
+                    <h2 className="text-2xl font-bold font-headline flex items-center gap-2 text-foreground">
+                        <Share2 className="h-6 w-6 text-primary" />
+                        Talent Scouting: {category}
+                    </h2>
+                    {isPriority && (
+                        <Badge className="bg-amber-100 text-amber-700 border-amber-200 animate-pulse">
+                            <Star className="h-3 w-3 mr-1 fill-current" /> Recommended Focus
+                        </Badge>
+                    )}
+                </div>
+
+                <Alert className={cn("text-left", isPriority ? "bg-amber-50 border-amber-200" : "bg-primary/5 border-primary/20")}>
+                    {isPriority ? <Star className="h-4 w-4 text-amber-600" /> : <ShieldCheck className="h-4 w-4 text-primary" />}
+                    <AlertTitle className={cn("font-bold", isPriority && "text-amber-800")}>
+                        {isPriority ? "Trust-Led Growth Strategy" : "Creative Node Search"}
+                    </AlertTitle>
+                    <AlertDescription className={cn("text-xs", isPriority ? "text-amber-700" : "text-muted-foreground")}>
+                        {isPriority 
+                            ? "Prioritize these creators to build ecosystem trust. Their established authority is your best tool for rapid market penetration."
+                            : "Scouting for creators who can lead the industry's digitalization. Batching optimized for high-impact talent identification."
+                        }
                     </AlertDescription>
                 </Alert>
+
                 <div className="p-4 bg-muted/30 border rounded-xl space-y-4 text-left">
                     <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Sequence Sync</Label>
                     <div className="space-y-1.5 text-left text-foreground">
@@ -114,7 +132,7 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
 export default function AssociateDiscoveryEngine() {
     return (
         <Card className="shadow-none border-none text-left text-foreground">
-            <Tabs defaultValue="Content Creator" className="w-full text-left">
+            <Tabs defaultValue="Industry Influencer" className="w-full text-left">
                 <CardHeader className="px-0 pt-0 text-left text-foreground">
                     <CardTitle className="flex items-center gap-2 text-foreground font-black font-headline">
                         <Database className="h-6 w-6 text-primary" />
@@ -127,7 +145,10 @@ export default function AssociateDiscoveryEngine() {
                         <div className="lg:col-span-2">
                             <TabsList className="h-auto flex-wrap justify-start bg-muted/30 p-1">
                                 {associateCategories.map(category => (
-                                    <TabsTrigger key={category} value={category} className="text-xs px-4 py-2">{category}</TabsTrigger>
+                                    <TabsTrigger key={category} value={category} className="text-xs px-4 py-2">
+                                        {category}
+                                        {category === 'Industry Influencer' && <Star className="h-3 w-3 ml-2 text-amber-500 fill-current" />}
+                                    </TabsTrigger>
                                 ))}
                             </TabsList>
                             <div className="mt-8">
@@ -142,46 +163,47 @@ export default function AssociateDiscoveryEngine() {
                         <div className="space-y-6">
                             <h3 className="text-xs font-black uppercase tracking-[0.2em] text-primary flex items-center gap-2">
                                 <Info className="h-4 w-4" /> 
-                                Industrial Category Guide
+                                Tactical Roadmap
                             </h3>
                             <Card className="bg-slate-50 border-none shadow-sm">
                                 <CardContent className="p-4 space-y-4 text-[11px] leading-relaxed text-muted-foreground">
                                     <div className="space-y-1">
                                         <p className="font-black text-foreground flex items-center gap-1.5 uppercase tracking-tighter">
-                                            <Video className="h-3 w-3 text-primary"/> Content Creator
+                                            <UserCheck className="h-3 w-3 text-amber-500 fill-current"/> Phase 1: Industry Influencer
                                         </p>
-                                        <p>Focused on **Production**. High-volume media producers who create industrial narratives (YouTube/Blogs) using the AI Studio.</p>
+                                        <p className="font-bold text-amber-700 italic">Recommended Primary Focus.</p>
+                                        <p>Focused on **Trust**. Thought leaders with an established "ear" in the SA trucking sector. They break the trust-bottleneck immediately.</p>
                                     </div>
                                     <Separator />
                                     <div className="space-y-1">
                                         <p className="font-black text-foreground flex items-center gap-1.5 uppercase tracking-tighter">
-                                            <Zap className="h-3 w-3 text-primary"/> Digital Marketer
+                                            <Video className="h-3 w-3 text-primary"/> Phase 2: Content Creator
                                         </p>
-                                        <p>Focused on **Conversion**. Professionals who turn social content into registered members and transactional flow.</p>
+                                        <p>Focused on **Production**. High-volume media producers who create industrial narratives (YouTube/Blogs) using the AI Studio to scale awareness.</p>
                                     </div>
                                     <Separator />
                                     <div className="space-y-1">
                                         <p className="font-black text-foreground flex items-center gap-1.5 uppercase tracking-tighter">
-                                            <Palette className="h-3 w-3 text-primary"/> Brand Strategist
+                                            <Zap className="h-3 w-3 text-primary"/> Phase 3: Digital Marketer
                                         </p>
-                                        <p>Focused on **Identity**. They ensure transporters look professional and "lender-ready" on the platform.</p>
+                                        <p>Focused on **Conversion**. Professionals who turn social content into registered members and transactional flow once the base is established.</p>
                                     </div>
                                     <Separator />
                                     <div className="space-y-1">
                                         <p className="font-black text-foreground flex items-center gap-1.5 uppercase tracking-tighter">
-                                            <UserCheck className="h-3 w-3 text-primary"/> Industry Influencer
+                                            <Palette className="h-3 w-3 text-primary"/> Phase 4: Brand Strategist
                                         </p>
-                                        <p>Focused on **Trust**. Thought leaders with an established "ear" in the SA trucking sector. Act as authoritative ambassadors.</p>
-                                    </div>
-                                    <Separator />
-                                    <div className="space-y-1">
-                                        <p className="font-black text-foreground flex items-center gap-1.5 uppercase tracking-tighter">
-                                            <Target className="h-3 w-3 text-primary"/> Social Growth Lead
-                                        </p>
-                                        <p>Focused on **Scale**. Specialists who use viral network-effect tactics to rapidly expand your digital partner nodes.</p>
+                                        <p>Focused on **Identity**. Ensuring transporters look professional and "lender-ready" on the platform to increase success rates.</p>
                                     </div>
                                 </CardContent>
                             </Card>
+
+                            <Alert variant="outline" className="border-blue-200 bg-blue-50/30">
+                                <Info className="h-4 w-4 text-blue-600" />
+                                <AlertDescription className="text-[10px] text-blue-800 leading-tight">
+                                    <strong>Tip:</strong> Start with influencers to gain mass-credibility, then use creators to fill the <strong>Marketing Library</strong> with assets.
+                                </AlertDescription>
+                            </Alert>
                         </div>
                     </div>
                 </CardContent>
