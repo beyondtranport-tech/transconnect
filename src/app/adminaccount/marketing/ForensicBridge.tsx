@@ -81,22 +81,19 @@ export default function ForensicBridge({ audience }: { audience: string }) {
     /**
      * STAGE 2: ROBUST AUTO-PILOT ENRICHMENT
      * Uses a pointer-based loop to prevent state-stale closure issues.
+     * Token is refreshed every iteration to prevent expiry errors.
      */
     const startEnrichment = async () => {
         if (status === 'running' || queue.length === 0) return;
         
-        const token = await getClientSideAuthToken();
-        if (!token) return;
-
         setStatus('running');
         
         // Use a local pointer to avoid stale index issues during re-renders
         let pointer = currentIndex;
 
         while (pointer < queue.length) {
-            // Check for pause signal (React state update will trigger this check in next iteration)
+            // Check for pause signal
             let isPaused = false;
-            // We use a small hack to check the latest state without causing a full dependency re-run
             setStatus(current => {
                 if (current !== 'running') isPaused = true;
                 return current;
@@ -109,6 +106,10 @@ export default function ForensicBridge({ audience }: { audience: string }) {
             setLogs(prev => [{ id: Date.now(), msg: `[${pointer + 1}/${queue.length}] Investigating ${name}...`, type: 'info' }, ...prev].slice(0, 50));
 
             try {
+                // REFRESH TOKEN EVERY ITERATION TO PREVENT auth/id-token-expired
+                const token = await getClientSideAuthToken();
+                if (!token) throw new Error("Could not refresh authentication token.");
+
                 const res = await performAdminAction(token, 'autoEnrichRecord', { 
                     id: record.id, 
                     type: (!record.type || record.type === 'lead') ? 'lead' : record.type 
@@ -129,8 +130,21 @@ export default function ForensicBridge({ audience }: { audience: string }) {
                 await new Promise(resolve => setTimeout(resolve, 1500));
 
             } catch (err: any) {
-                setLogs(prev => [{ id: Date.now() + 2, msg: `Bridge Failed for ${name}: ${err.message}`, type: 'error' }, ...prev].slice(0, 50));
-                // Longer wait after failure
+                const isTokenError = err.message?.includes('id-token-expired') || err.message?.includes('auth/');
+                setLogs(prev => [{ 
+                    id: Date.now() + 2, 
+                    msg: `Bridge Failed for ${name}: ${err.message}`, 
+                    type: 'error' 
+                }, ...prev].slice(0, 50));
+                
+                // If it's a token error, stop the loop and ask for manual resume to be safe
+                if (isTokenError) {
+                    setStatus('paused');
+                    toast({ variant: 'destructive', title: "Auth Session Expired", description: "Loop paused. Please click Resume to refresh credentials and continue." });
+                    break;
+                }
+
+                // Longer wait after non-auth failure
                 await new Promise(resolve => setTimeout(resolve, 3000));
             }
 
