@@ -33,6 +33,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import dynamic from 'next/dynamic';
 
+// Forensic and Oversight Components
+import AudienceCommunicationsTable from './AudienceCommunicationsTable';
+import AudienceTasksTable from './AudienceTasksTable';
+import AudienceOversightTable from './AudienceOversightTable';
+import ForensicBridge from './ForensicBridge';
+
 // Content components
 const CompanyProfile = dynamic(() => import('./content/CompanyProfile'), { loading: () => <Loader2 className="animate-spin" /> });
 const TechArchitecture = dynamic(() => import('./content/TechArchitecture'), { loading: () => <Loader2 className="animate-spin" /> });
@@ -63,6 +69,8 @@ const InvestorManagement = dynamic(() => import('./investor-management'), { load
 const DeveloperManagement = dynamic(() => import('./developer-management'), { loading: () => <Loader2 className="animate-spin" /> });
 const SupplierManagement = dynamic(() => import('./supplier-management'), { loading: () => <Loader2 className="animate-spin" /> });
 const TransporterManagement = dynamic(() => import('./transporter-management'), { loading: () => <Loader2 className="animate-spin" /> });
+const FinanceManagement = dynamic(() => import('./finance-management'), { loading: () => <Loader2 className="animate-spin" /> });
+const DriverManagement = dynamic(() => import('./driver-management'), { loading: () => <Loader2 className="animate-spin" /> });
 
 import SupplierPitch from '@/app/adminaccount/supplier-pitch';
 import DiscoveryEngine from './discovery-engine';
@@ -76,8 +84,8 @@ const audienceConfig: Record<string, any> = {
     associates: { title: 'Digital Associates', icon: Share2, Offer: AssociateOffer, Emails: AssociateEmails, Management: null },
     suppliers: { title: 'Suppliers', icon: SearchCode, Offer: SupplierOffer, Emails: SupplierEmails, Management: SupplierManagement, Pitch: SupplierPitch, Discovery: DiscoveryEngine },
     transporters: { title: 'Transporters', icon: Send, Offer: TransporterOffer, Emails: TransporterEmails, Management: TransporterManagement, Discovery: TransporterDiscoveryEngine },
-    finance: { title: 'Finance Companies', icon: Landmark, Offer: InvestorOffer, Emails: InvestorEmails, Management: null, Discovery: FinanceDiscoveryEngine },
-    drivers: { title: 'Drivers', icon: Users, Offer: PartnerOffer, Emails: PartnerEmails, Management: null, Discovery: DriverDiscoveryEngine },
+    finance: { title: 'Finance Companies', icon: Landmark, Offer: InvestorOffer, Emails: InvestorEmails, Management: FinanceManagement, Discovery: FinanceDiscoveryEngine },
+    drivers: { title: 'Drivers', icon: Users, Offer: PartnerOffer, Emails: PartnerEmails, Management: DriverManagement, Discovery: DriverDiscoveryEngine },
     investors: { title: 'App Launch Investors', icon: DollarSign, Offer: InvestorOffer, Emails: InvestorEmails, Management: InvestorManagement },
     developers: { title: 'Developers', icon: LayoutDashboard, Offer: DeveloperOffer, Emails: DeveloperEmails, Management: DeveloperManagement },
 };
