@@ -1,6 +1,7 @@
+
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,14 +9,14 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { 
     Facebook, Linkedin, Instagram, Music, Sparkles, Loader2, Copy, ExternalLink, 
-    ShieldCheck, BarChart3, ImageIcon, Video, Rocket, Link as LinkIcon, Users, Info, Search
+    ShieldCheck, BarChart3, ImageIcon, Video, Rocket, Link as LinkIcon, Users, Info, Search, Save
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { generateSocialCopy } from '@/ai/flows/social-copy-flow';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
-import { getClientSideAuthToken } from '@/firebase';
+import { getClientSideAuthToken, useUser } from '@/firebase';
 import { Textarea } from '@/components/ui/textarea';
 
 // Media Generation Components
@@ -105,12 +106,14 @@ const socialTemplates = (platform: Platform) => {
 
 export default function SocialStudio({ platform = 'facebook' }: { platform?: Platform }) {
     const { toast } = useToast();
+    const { user } = useUser();
     const config = useMemo(() => platformConfig[platform] || platformConfig['facebook'], [platform]);
     const templates = useMemo(() => socialTemplates(platform), [platform]);
     
     const [activeTab, setActiveTab] = useState<string>('app-launch');
     const [campaignName, setCampaignName] = useState('');
     const [groupUrl, setGroupUrl] = useState('');
+    const [publishedUrl, setPublishedUrl] = useState('');
     const [pageUrl, setPageUrl] = useState(config.defaultPage);
     const [isGenerating, setIsGenerating] = useState(false);
     const [isLogging, setIsLogging] = useState(false);
@@ -127,9 +130,13 @@ export default function SocialStudio({ platform = 'facebook' }: { platform?: Pla
     const derived = useMemo(() => {
         if (!activePost) return { trackingLink: '', fullPostBody: '' };
         
-        const sanitizedRef = campaignName.replace(/\s/g, '_').toUpperCase() || 'GENERAL';
+        // Use the user's company ID as the primary tracking seed if available
+        const trackingId = user?.companyId || user?.uid || 'ANONYMOUS';
+        const campaignSeed = campaignName.replace(/\s/g, '_').toUpperCase() || 'GENERAL';
         const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://studio--ecosystem-hub.us-central1.hosted.app';
-        const trackingLink = `${baseUrl}/join?ref=${platform.toUpperCase()}_${sanitizedRef}`;
+        
+        // Referral link structured for Associates: join?ref=ID&campaign=SEED
+        const trackingLink = `${baseUrl}/join?ref=${trackingId}&campaign=${platform.toUpperCase()}_${campaignSeed}`;
         
         const currentBody = editedContent[activeTab] || activePost.body || activePost.text || '';
         
@@ -138,7 +145,7 @@ export default function SocialStudio({ platform = 'facebook' }: { platform?: Pla
             : `\n\n👉 Join the Community: ${trackingLink}\n\n🔗 Follow us for Updates: ${pageUrl}\n\n#LogisticsFlow #Efficiency #${config.label}`;
             
         return { trackingLink, fullPostBody: `${currentBody}${footer}` };
-    }, [activePost, campaignName, pageUrl, editedContent, activeTab, platform, config.label]);
+    }, [activePost, campaignName, pageUrl, editedContent, activeTab, platform, config.label, user]);
 
     const handleLogAndLaunch = async () => {
         const textToCopy = derived.fullPostBody;
@@ -162,15 +169,42 @@ export default function SocialStudio({ platform = 'facebook' }: { platform?: Pla
                     body: JSON.stringify({ 
                         action: 'logAudit', 
                         payload: { 
-                            action: 'social_launch', 
-                            details: `Launched ${platform} post "${activeTab}" for: ${campaignName}`,
-                            metadata: { campaignName, groupUrl, tab: activeTab, platform }
+                            action: 'social_launch_initiated', 
+                            details: `Associate launched ${platform} post "${activeTab}" for: ${campaignName}`,
+                            metadata: { campaignName, groupUrl, tab: activeTab, platform, trackingLink: derived.trackingLink }
                         } 
                     }),
                 });
             }
         } catch (e) {
             console.warn("Audit logging failed after launch.", e);
+        } finally {
+            setIsLogging(false);
+        }
+    };
+
+    const handleLogPublishedPost = async () => {
+        if (!publishedUrl.trim()) return;
+        setIsLogging(true);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) return;
+            await fetch('/api/admin', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    action: 'logAudit', 
+                    payload: { 
+                        action: 'social_post_confirmed', 
+                        details: `Associate confirmed live post on ${platform}`,
+                        metadata: { liveUrl: publishedUrl, platform, campaignName }
+                    } 
+                }),
+            });
+            toast({ title: "Post Recorded", description: "Your activity has been logged for commission verification." });
+            setPublishedUrl('');
+        } catch (e) {
+            toast({ variant: 'destructive', title: "Logging Failed" });
         } finally {
             setIsLogging(false);
         }
@@ -213,36 +247,36 @@ export default function SocialStudio({ platform = 'facebook' }: { platform?: Pla
     return (
         <div className="space-y-6 text-left">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 text-left">
-                <div className="flex items-center gap-4 text-left">
+                <div className="flex items-center gap-4 text-left text-foreground">
                     <div className="bg-muted p-3 rounded-xl">
                         {React.createElement(config.icon, { className: cn("h-8 w-8", config.color) })}
                     </div>
                     <div className="text-left">
-                        <h1 className="text-2xl font-black font-headline">{config.label} Studio</h1>
-                        <p className="text-muted-foreground text-sm">Targeted outreach and branding for the {config.label} professional network.</p>
+                        <h1 className="text-2xl font-black font-headline">{config.label} Associate Studio</h1>
+                        <p className="text-muted-foreground text-sm">Targeted outreach tools for Digital Associates and Creators.</p>
                     </div>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 text-left">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 text-left text-foreground">
                 <div className="space-y-2 text-left">
                     <Label className="text-[10px] font-black uppercase text-primary tracking-[0.2em] flex items-center gap-2">
-                        <LinkIcon className="h-3 w-3"/> Tracking Label
+                        <LinkIcon className="h-3 w-3"/> Campaign Tracking Label
                     </Label>
                     <Input 
-                        placeholder="e.g. Q3 Expansion" 
+                        placeholder="e.g. Q4 Growth Promo" 
                         value={campaignName} 
                         onChange={e => setCampaignName(e.target.value)} 
                         className="h-10 bg-white" 
                     />
-                    <p className="text-[9px] text-muted-foreground italic">A unique tag to identify traffic from this post (e.g. 'LI_Q3_MEMO').</p>
+                    <p className="text-[9px] text-muted-foreground italic">Identifies traffic from this specific post sequence.</p>
                 </div>
-                <div className="space-y-2 text-left">
+                <div className="space-y-2 text-left text-foreground">
                     <Label className="text-[10px] font-black uppercase text-primary tracking-[0.2em] flex items-center gap-2">
                         <ExternalLink className="h-3 w-3"/> {config.targetLabel}
                     </Label>
                     <Input 
-                        placeholder="Paste target destination URL..." 
+                        placeholder="Paste target group or feed URL..." 
                         value={groupUrl} 
                         onChange={e => setGroupUrl(e.target.value)} 
                         className="h-10 bg-white" 
@@ -252,10 +286,10 @@ export default function SocialStudio({ platform = 'facebook' }: { platform?: Pla
             </div>
 
             <Card className="flex flex-col h-[75vh] overflow-hidden p-0 shadow-2xl border-none text-left">
-                <div className="flex-1 flex overflow-hidden text-left">
+                <div className="flex-1 flex overflow-hidden text-left text-foreground">
                     <div className="w-64 border-r bg-muted/10 p-4 space-y-4 overflow-y-auto text-left">
                         <div className="space-y-1 text-left">
-                            <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-2 mb-2 block">Post Templates</Label>
+                            <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-2 mb-2 block">Campaign Narrative</Label>
                             {Object.entries(templates).map(([id, template]: [string, any]) => (
                                 <Button
                                     key={id}
@@ -279,20 +313,20 @@ export default function SocialStudio({ platform = 'facebook' }: { platform?: Pla
                         </Button>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto bg-slate-50 p-8 text-left">
+                    <div className="flex-1 overflow-y-auto bg-slate-50 p-8 text-left text-foreground">
                         <div className="max-w-[800px] mx-auto space-y-8 text-left">
                              <div className="bg-white p-4 rounded-xl border shadow-sm flex flex-col gap-2 text-left">
                                 <div className="flex items-center justify-between text-left">
                                     <Label className="text-[10px] font-black uppercase text-primary tracking-widest flex items-center gap-2">
-                                        <Search className="h-3 w-3"/> Follow Target Link
+                                        <Search className="h-3 w-3"/> Follow-Up URL
                                     </Label>
                                     <Input value={pageUrl} onChange={e => setPageUrl(e.target.value)} className="h-8 w-[400px] font-mono text-xs bg-slate-50" />
                                 </div>
-                                <p className="text-[9px] text-muted-foreground italic text-left">The link used for 'Follow Us' CTAs in the post footer.</p>
+                                <p className="text-[9px] text-muted-foreground italic">Your official associate page or the brand profile.</p>
                             </div>
 
                             {activeTab === 'creator' && (
-                                <Card className="border-amber-200 bg-amber-50/20 text-left">
+                                <Card className="border-amber-200 bg-amber-50/20 text-left text-foreground">
                                     <CardHeader><CardTitle className="text-lg flex items-center gap-2"><Sparkles className="h-5 w-5 text-amber-500" /> AI Creative Assistant</CardTitle></CardHeader>
                                     <CardContent className="space-y-4">
                                         <div className="space-y-2 text-left"><Label>Topic</Label><Input placeholder="e.g. Scaling industrial capacity" value={creatorParams.topic} onChange={e => setCreatorParams({...creatorParams, topic: e.target.value})} /></div>
@@ -306,7 +340,7 @@ export default function SocialStudio({ platform = 'facebook' }: { platform?: Pla
 
                             {activePost && (
                                 <>
-                                    <Card className="border-none shadow-xl border-l-4 border-l-primary bg-white text-left">
+                                    <Card className="border-none shadow-xl border-l-4 border-l-primary bg-white text-left text-foreground">
                                         <CardHeader>
                                             <CardTitle className="text-xl font-black">{activePost.headline}</CardTitle>
                                             <CardDescription>Review and finalize your {config.label} post.</CardDescription>
@@ -318,7 +352,21 @@ export default function SocialStudio({ platform = 'facebook' }: { platform?: Pla
                                                 className="min-h-[250px] border-none focus-visible:ring-0 p-8 italic font-sans leading-relaxed text-sm bg-transparent"
                                             />
                                         </CardContent>
-                                        <CardFooter className="bg-muted/10 border-t flex justify-end p-6">
+                                        <CardFooter className="bg-muted/10 border-t flex flex-col md:flex-row justify-between items-center gap-4 p-6">
+                                            <div className="flex-1 w-full space-y-2 text-left">
+                                                <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Live Post URL (Paste after publishing)</Label>
+                                                <div className="flex gap-2 text-left">
+                                                    <Input 
+                                                        placeholder="e.g. https://linkedin.com/posts/..." 
+                                                        value={publishedUrl} 
+                                                        onChange={e => setPublishedUrl(e.target.value)}
+                                                        className="h-10 bg-white"
+                                                    />
+                                                    <Button variant="outline" onClick={handleLogPublishedPost} disabled={!publishedUrl || isLogging}>
+                                                        {isLogging ? <Loader2 className="h-4 w-4 animate-spin"/> : <Save className="h-4 w-4" />}
+                                                    </Button>
+                                                </div>
+                                            </div>
                                             <Button size="lg" className="bg-blue-600 hover:bg-blue-700 font-black uppercase text-xs gap-3 shadow-lg h-14 px-8" onClick={handleLogAndLaunch}>
                                                 <ExternalLink className="h-5 w-5" />
                                                 Log & Launch {config.label}
@@ -326,16 +374,16 @@ export default function SocialStudio({ platform = 'facebook' }: { platform?: Pla
                                         </CardFooter>
                                     </Card>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left text-foreground">
                                         <div className="bg-slate-900 text-white p-6 rounded-xl border-l-4 border-l-primary shadow-xl text-left">
-                                            <div className="flex items-center justify-between mb-4 text-left">
+                                            <div className="flex items-center justify-between mb-4">
                                                 <h4 className="font-bold uppercase text-[10px] tracking-widest text-primary flex items-center gap-2"><ImageIcon className="h-3 w-3"/> AI Image Prompt</h4>
                                                 <Button variant="outline" size="sm" className="h-7 text-[9px] uppercase bg-white/10 border-white/20" onClick={() => handleCopyPrompt('image')}><Copy className="mr-1 h-3 w-3" /> Copy</Button>
                                             </div>
                                             <p className="text-xs italic font-mono opacity-80 pl-4 border-l border-white/10 leading-relaxed text-left">{activePost.imagePrompt}</p>
                                         </div>
                                         <div className="bg-slate-900 text-white p-6 rounded-xl border-l-4 border-l-amber-500 shadow-xl text-left">
-                                            <div className="flex items-center justify-between mb-4 text-left">
+                                            <div className="flex items-center justify-between mb-4">
                                                 <h4 className="font-bold uppercase text-[10px] tracking-widest text-amber-500 flex items-center gap-2"><Video className="h-3 w-3"/> AI Video Prompt</h4>
                                                 <Button variant="outline" size="sm" className="h-7 text-[9px] uppercase bg-white/10 border-white/20" onClick={() => handleCopyPrompt('video')}><Copy className="mr-1 h-3 w-3" /> Copy</Button>
                                             </div>
@@ -343,7 +391,7 @@ export default function SocialStudio({ platform = 'facebook' }: { platform?: Pla
                                         </div>
                                     </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4 text-left">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4 text-left text-foreground">
                                         <ImageGeneratorCard />
                                         <VideoGeneratorCard />
                                     </div>

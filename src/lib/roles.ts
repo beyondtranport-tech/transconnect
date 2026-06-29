@@ -1,5 +1,5 @@
 
-import { ShoppingCart, Truck, Handshake, Briefcase, Bot, Users, Code } from "lucide-react";
+import { ShoppingCart, Truck, Handshake, Briefcase, Bot, Users, Code, Share2 } from "lucide-react";
 import * as React from "react";
 import data from '@/lib/placeholder-images.json';
 
@@ -45,12 +45,12 @@ export const roles = [
         image: roleImages.partner
     },
     {
-        id: "affiliate",
-        icon: Briefcase,
-        title: "Affiliates",
-        description: "Join as a professional marketer and earn. Generate opportunities for our ecosystem and earn commission.",
-        cta: "Become an Affiliate",
-        longDescription: "Affiliates are marketing professionals who drive growth by generating opportunities for the Logistics Flow ecosystem. If you have a knack for digital marketing, content creation, or lead generation, this role is for you. You'll earn commissions for new members you bring in and for the activity they generate, turning your marketing skills into a revenue stream.",
+        id: "associate",
+        icon: Share2,
+        title: "Digital Associates",
+        description: "Digital Marketers and Influencers. Use our AI studio to create content and earn recurring revenue.",
+        cta: "Become an Associate",
+        longDescription: "The Digital Associate program is for content creators, influencers, and digital marketers. We provide you with the keys to our AI Marketing Studio—allowing you to generate 4K industrial videos and high-fidelity copy instantly. Build your own network and earn a recurring percentage of every transaction and membership fee generated through your influence.",
         image: roleImages.associate
     },
     {

@@ -4,7 +4,7 @@
 import * as React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { BookOpen, Loader2, ClipboardCopy, SearchCode, Target, Users, LayoutDashboard, Send, Sparkles, Landmark, DollarSign, MessageSquare, ClipboardList, Search, RefreshCcw, RotateCcw, ExternalLink, Zap } from 'lucide-react';
+import { BookOpen, Loader2, ClipboardCopy, SearchCode, Target, Users, LayoutDashboard, Send, Sparkles, Landmark, DollarSign, MessageSquare, ClipboardList, Search, RefreshCcw, RotateCcw, ExternalLink, Zap, Share2 } from 'lucide-react';
 import { useState, useEffect, useCallback, useMemo, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -63,12 +63,6 @@ const DeveloperManagement = dynamic(() => import('./developer-management'), { lo
 const SupplierManagement = dynamic(() => import('./supplier-management'), { loading: () => <Loader2 className="animate-spin" /> });
 const TransporterManagement = dynamic(() => import('./transporter-management'), { loading: () => <Loader2 className="animate-spin" /> });
 
-// Global Audience Tables
-const AudienceCommunicationsTable = dynamic(() => import('./AudienceCommunicationsTable'), { loading: () => <Loader2 className="animate-spin" /> });
-const AudienceTasksTable = dynamic(() => import('./AudienceTasksTable'), { loading: () => <Loader2 className="animate-spin" /> });
-const AudienceOversightTable = dynamic(() => import('./AudienceOversightTable'), { loading: () => <Loader2 className="animate-spin" /> });
-const ForensicBridge = dynamic(() => import('./ForensicBridge'), { loading: () => <Loader2 className="animate-spin" /> });
-
 import SupplierPitch from '@/app/adminaccount/supplier-pitch';
 import DiscoveryEngine from './discovery-engine';
 import FinanceDiscoveryEngine from './finance-discovery';
@@ -78,6 +72,7 @@ import DriverDiscoveryEngine from './driver-discovery';
 const audienceConfig: Record<string, any> = {
     partners: { title: 'Strategic Partners', icon: Users, Offer: PartnerOffer, Emails: PartnerEmails, Management: PartnerManagement },
     isa: { title: 'ISA Agents', icon: Target, Offer: PartnerOffer, Emails: PartnerEmails, Management: ISAManagement },
+    associates: { title: 'Digital Associates', icon: Share2, Offer: PartnerOffer, Emails: PartnerEmails, Management: null },
     suppliers: { title: 'Suppliers', icon: SearchCode, Offer: SupplierOffer, Emails: SupplierEmails, Management: SupplierManagement, Pitch: SupplierPitch, Discovery: DiscoveryEngine },
     transporters: { title: 'Transporters', icon: Send, Offer: TransporterOffer, Emails: TransporterEmails, Management: TransporterManagement, Discovery: TransporterDiscoveryEngine },
     finance: { title: 'Finance Companies', icon: Landmark, Offer: InvestorOffer, Emails: InvestorEmails, Management: null, Discovery: FinanceDiscoveryEngine },
@@ -372,4 +367,3 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
     </Suspense>
   );
 }
-

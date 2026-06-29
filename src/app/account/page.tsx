@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -37,6 +38,7 @@ import {
   Package,
   Award,
   Search,
+  Share2,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -72,6 +74,8 @@ import LoyaltyPlanPage from '@/app/connect/loyalty/page';
 import RewardsPlanPage from '@/app/connect/rewards/page';
 import ActionsPlanPage from '@/app/connect/actions/page';
 import IntelligenceHistory from './intelligence-history';
+import SocialStudio from '@/app/adminaccount/social-studio';
+import MarketingStudio from './marketing-studio';
 
 function AccountPageContent() {
   const router = useRouter();
@@ -107,6 +111,10 @@ function AccountPageContent() {
   };
 
   const renderContent = useCallback(() => {
+    if (activeView.startsWith('social-')) {
+        const platform = activeView.split('-')[1] as any;
+        return <SocialStudio platform={platform} />;
+    }
     switch (activeView) {
       case 'profile': return <ProfileContent />;
       case 'company': return <CompanyContent />;
@@ -130,6 +138,7 @@ function AccountPageContent() {
       case 'connect-rewards': return <RewardsPlanPage />;
       case 'connect-actions': return <ActionsPlanPage />;
       case 'search-history': return <IntelligenceHistory />;
+      case 'marketing-studio': return <MarketingStudio />;
       case 'dashboard':
       default:
         return <AccountDashboard />;
@@ -147,9 +156,11 @@ function AccountPageContent() {
   const isTransporter = user.declaredPosition === 'transporter' || user.companyData?.shopType === 'transporter';
   const isSupplier = user.declaredPosition === 'vendor' || user.companyData?.shopType === 'vendor';
   const isProfessional = user.declaredPosition === 'driver' || user.role === 'driver';
+  const isAssociate = user.declaredPosition === 'associate' || user.role === 'associate';
   
   const isSalesActive = ['network', 'performance', 'offer', 'emails'].includes(activeView);
   const isConnectActive = ['connect-loyalty', 'connect-rewards', 'connect-actions'].includes(activeView);
+  const isSocialActive = activeView.startsWith('social-');
 
   return (
     <SidebarProvider>
@@ -166,9 +177,12 @@ function AccountPageContent() {
               <SidebarMenuItem>
                 <SidebarMenuButton tooltip="Dashboard" isActive={activeView === 'dashboard'} onClick={() => navigate('dashboard')}><LayoutDashboard /><span>Dashboard</span></SidebarMenuButton>
               </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton tooltip={isTransporter ? "Service Profile" : "My Shop"} isActive={activeView === 'shop'} onClick={() => navigate('shop')}><Store /><span>{isTransporter ? "Service Profile" : "My Shop"}</span></SidebarMenuButton>
-              </SidebarMenuItem>
+              
+              {!isAssociate && (
+                <SidebarMenuItem>
+                    <SidebarMenuButton tooltip={isTransporter ? "Service Profile" : "My Shop"} isActive={activeView === 'shop'} onClick={() => navigate('shop')}><Store /><span>{isTransporter ? "Service Profile" : "My Shop"}</span></SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
               
               <SidebarMenuItem>
                 <SidebarMenuButton tooltip="Search History" isActive={activeView === 'search-history'} onClick={() => navigate('search-history')}><Search /><span>Search History</span></SidebarMenuButton>
@@ -196,7 +210,7 @@ function AccountPageContent() {
                     <SidebarMenuButton tooltip="Professional Profile" isActive={activeView === 'professional-profile'} onClick={() => navigate('professional-profile')}><Award /><span>Professional Profile</span></SidebarMenuButton>
                 </SidebarMenuItem>
               )}
-              {!isTransporter && !isSupplier && !isProfessional && (
+              {!isTransporter && !isSupplier && !isProfessional && !isAssociate && (
                 <SidebarMenuItem>
                     <SidebarMenuButton tooltip="Shipping Requirements" isActive={activeView === 'needs'} onClick={() => navigate('needs')}><ShoppingCart /><span>Shipping Requirements</span></SidebarMenuButton>
                 </SidebarMenuItem>
@@ -205,6 +219,26 @@ function AccountPageContent() {
                <SidebarMenuItem>
                 <SidebarMenuButton tooltip="Company Staff" isActive={activeView === 'staff'} onClick={() => navigate('staff')}><Users /><span>Company Staff</span></SidebarMenuButton>
               </SidebarMenuItem>
+
+              {/* Associate Specific Tools */}
+              {isAssociate && (
+                <SidebarMenuItem>
+                    <SidebarMenuButton tooltip="Marketing Studio" isActive={activeView === 'marketing-studio'} onClick={() => navigate('marketing-studio')}><Sparkles /><span>Marketing Studio</span></SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
+
+              {isAssociate && (
+                <SidebarMenuItem>
+                    <SidebarMenuButton tooltip="Social Studio" isActive={isSocialActive}><Share2 /><span>Social Studio</span></SidebarMenuButton>
+                    <SidebarMenuSub>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'social-facebook'} onClick={() => navigate('social-facebook')}>Facebook</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'social-linkedin'} onClick={() => navigate('social-linkedin')}>LinkedIn</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'social-instagram'} onClick={() => navigate('social-instagram')}>Instagram</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'social-tiktok'} onClick={() => navigate('social-tiktok')}>TikTok</SidebarMenuSubButton></SidebarMenuSubItem>
+                    </SidebarMenuSub>
+                </SidebarMenuItem>
+              )}
+
               <SidebarMenuItem>
                 <SidebarMenuButton tooltip="Sales" isActive={isSalesActive}><Handshake /><span>Sales</span></SidebarMenuButton>
                 <SidebarMenuSub>

@@ -29,6 +29,8 @@ export type Resource =
     'tech' |
     'contributions' |
     'permissions' |
+    'social' |
+    'marketing-studio' |
     'account';
 
 // `manage` implies all other actions
@@ -51,7 +53,9 @@ export function usePermissions() {
             return perms;
         }
 
-        const isAdmin = user.email === 'mkoton100@gmail.com' || user.email === 'beyondtransport@gmail.com';
+        const isAdmin = user.email === 'mkoton100@gmail.com' || 
+                        user.email === 'beyondtransport@gmail.com' ||
+                        user.email === 'michael@logisticsflow.co.za';
 
         // Admins get all permissions
         if (isAdmin) {
@@ -59,10 +63,9 @@ export function usePermissions() {
         }
         
         // Handle staff members first, as they have explicit, limited permissions
-        // Note: The `permissions` array is expected to be on the user object for staff.
         if (user.role === 'staff' && Array.isArray(user.permissions)) {
              user.permissions.forEach((p: string) => perms.add(p));
-             return perms; // Return immediately with only staff permissions
+             return perms;
         }
 
         // For everyone else who is logged in, grant default owner permissions.
@@ -78,11 +81,14 @@ export function usePermissions() {
         // Check for premium status and add permissions accordingly
         const isWctaMember = user.companyData?.referrerId === 'WCTA';
         const isPaidMember = user.companyData?.membershipId && user.companyData.membershipId !== 'free';
+        const isAssociate = user.declaredPosition === 'associate' || user.role === 'associate';
 
-        if (isPaidMember || isWctaMember) {
+        if (isPaidMember || isWctaMember || isAssociate) {
             perms.add('publish:shop');
             perms.add('create:loads');
             perms.add('manage:loads');
+            perms.add('view:social');
+            perms.add('manage:marketing-studio');
         }
         
         return perms;
