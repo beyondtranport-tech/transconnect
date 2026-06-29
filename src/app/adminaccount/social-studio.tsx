@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -391,7 +390,7 @@ export default function SocialStudio({ platform = 'facebook' }: { platform?: Pla
                                         </div>
                                     </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4 text-left text-foreground">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4 text-left text-foreground text-foreground">
                                         <ImageGeneratorCard />
                                         <VideoGeneratorCard />
                                     </div>

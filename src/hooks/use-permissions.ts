@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useUser } from '@/firebase';
@@ -68,27 +67,36 @@ export function usePermissions() {
              return perms;
         }
 
-        // For everyone else who is logged in, grant default owner permissions.
-        perms.add('create:shop');
-        perms.add('edit:shop');
-        perms.add('manage:products');
+        // Default owner/member permissions
         perms.add('view:account');
         perms.add('manage:staff');
         perms.add('edit:staff');
         perms.add('delete:staff');
         perms.add('create:staff');
 
-        // Check for premium status and add permissions accordingly
+        // Check for premium or specific roles
         const isWctaMember = user.companyData?.referrerId === 'WCTA';
         const isPaidMember = user.companyData?.membershipId && user.companyData.membershipId !== 'free';
         const isAssociate = user.declaredPosition === 'associate' || user.role === 'associate';
 
-        if (isPaidMember || isWctaMember || isAssociate) {
+        // Associate Specific Permissions: They get the Content Studios
+        if (isAssociate) {
+            perms.add('view:social');
+            perms.add('manage:marketing-studio');
+            perms.add('manage:social');
+        }
+
+        // Transporters/Suppliers get Shop access
+        if (user.declaredPosition === 'transporter' || user.declaredPosition === 'vendor') {
+            perms.add('create:shop');
+            perms.add('edit:shop');
+            perms.add('manage:products');
+        }
+
+        if (isPaidMember || isWctaMember) {
             perms.add('publish:shop');
             perms.add('create:loads');
             perms.add('manage:loads');
-            perms.add('view:social');
-            perms.add('manage:marketing-studio');
         }
         
         return perms;
