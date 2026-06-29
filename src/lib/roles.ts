@@ -1,4 +1,3 @@
-
 import { ShoppingCart, Truck, Handshake, Briefcase, Bot, Users, Code, Share2 } from "lucide-react";
 import * as React from "react";
 import data from '@/lib/placeholder-images.json';
@@ -47,10 +46,10 @@ export const roles = [
     {
         id: "associate",
         icon: Share2,
-        title: "Digital Associates",
-        description: "Digital Marketers and Influencers. Use our AI studio to create content and earn recurring revenue.",
-        cta: "Become an Associate",
-        longDescription: "The Digital Associate program is for content creators, influencers, and digital marketers. We provide you with the keys to our AI Marketing Studio—allowing you to generate 4K industrial videos and high-fidelity copy instantly. Build your own network and earn a recurring percentage of every transaction and membership fee generated through your influence.",
+        title: "Digital Partners",
+        description: "Content creators and influencers. Use our AI studio to create 4K content and earn recurring revenue.",
+        cta: "Become a Partner",
+        longDescription: "The Digital Partner program is for content creators, influencers, and digital marketers. We provide you with the keys to our AI Marketing Studio—allowing you to generate 4K industrial videos and high-fidelity copy instantly. Build your own network and earn a recurring percentage of every transaction and membership fee generated through your influence.",
         image: roleImages.associate
     },
     {

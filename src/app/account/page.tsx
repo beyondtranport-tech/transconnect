@@ -168,7 +168,7 @@ function AccountPageContent() {
         <SidebarHeader>
           <div className="flex items-center gap-2 p-2 text-left">
             <div className="bg-primary/10 p-2 rounded-full"><User className="h-6 w-6 text-primary" /></div>
-            <h2 className="text-lg font-semibold text-sidebar-foreground">Member Area</h2>
+            <h2 className="text-lg font-semibold text-sidebar-foreground">{isAssociate ? 'Partner Area' : 'Member Area'}</h2>
           </div>
         </SidebarHeader>
         <SidebarContent>
@@ -181,16 +181,21 @@ function AccountPageContent() {
                   <SidebarMenuButton tooltip={isAssociate ? "Creator Profile" : (isTransporter ? "Service Profile" : "My Shop")} isActive={activeView === 'shop'} onClick={() => navigate('shop')}><Store /><span>{isAssociate ? "Creator Profile" : (isTransporter ? "Service Profile" : "My Shop")}</span></SidebarMenuButton>
               </SidebarMenuItem>
               
-              <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Search History" isActive={activeView === 'search-history'} onClick={() => navigate('search-history')}><Search /><span>Search History</span></SidebarMenuButton>
-              </SidebarMenuItem>
+              {!isAssociate && (
+                <SidebarMenuItem>
+                    <SidebarMenuButton tooltip="Search History" isActive={activeView === 'search-history'} onClick={() => navigate('search-history')}><Search /><span>Search History</span></SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
 
               <SidebarMenuItem>
                 <SidebarMenuButton tooltip="My Profile" isActive={activeView === 'profile'} onClick={() => navigate('profile')}><User /><span>My Profile</span></SidebarMenuButton>
               </SidebarMenuItem>
-               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Company" isActive={activeView === 'company'} onClick={() => navigate('company')}><Building /><span>Company</span></SidebarMenuButton>
-              </SidebarMenuItem>
+
+              {!isAssociate && (
+                <SidebarMenuItem>
+                    <SidebarMenuButton tooltip="Company" isActive={activeView === 'company'} onClick={() => navigate('company')}><Building /><span>Company</span></SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
               
               {isTransporter && (
                 <SidebarMenuItem>
@@ -213,14 +218,16 @@ function AccountPageContent() {
                 </SidebarMenuItem>
               )}
 
+              {!isAssociate && (
                <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Company Staff" isActive={activeView === 'staff'} onClick={() => navigate('staff')}><Users /><span>Company Staff</span></SidebarMenuButton>
-              </SidebarMenuItem>
+                    <SidebarMenuButton tooltip="Company Staff" isActive={activeView === 'staff'} onClick={() => navigate('staff')}><Users /><span>Company Staff</span></SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
 
               {/* Associate & Creator Content Tools */}
               {isAssociate && (
                 <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Marketing Studio" isActive={activeView === 'marketing-studio'} onClick={() => navigate('marketing-studio')}><Sparkles /><span>Marketing Studio</span></SidebarMenuButton>
+                    <SidebarMenuButton tooltip="Content Studio" isActive={activeView === 'marketing-studio'} onClick={() => navigate('marketing-studio')}><Sparkles /><span>Content Studio</span></SidebarMenuButton>
                 </SidebarMenuItem>
               )}
 
@@ -245,26 +252,37 @@ function AccountPageContent() {
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'emails'} onClick={() => navigate('emails')}><Mail />Email Templates</SidebarMenuSubButton></SidebarMenuSubItem>
                 </SidebarMenuSub>
               </SidebarMenuItem>
+
+              {!isAssociate && (
                 <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Connect Plans" isActive={isConnectActive}><Zap /><span>Connect</span></SidebarMenuButton>
-                <SidebarMenuSub>
-                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'connect-loyalty'} onClick={() => navigate('connect-loyalty')}><Heart />Loyalty Plan</SidebarMenuSubButton></SidebarMenuSubItem>
-                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'connect-rewards'} onClick={() => navigate('connect-rewards')}><Gift />Rewards Plan</SidebarMenuSubButton></SidebarMenuSubItem>
-                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'connect-actions'} onClick={() => navigate('connect-actions')}><Zap />Actions Plan</SidebarMenuSubButton></SidebarMenuSubItem>
-                </SidebarMenuSub>
-              </SidebarMenuItem>
+                    <SidebarMenuButton tooltip="Connect Plans" isActive={isConnectActive}><Zap /><span>Connect</span></SidebarMenuButton>
+                    <SidebarMenuSub>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'connect-loyalty'} onClick={() => navigate('connect-loyalty')}><Heart />Loyalty Plan</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'connect-rewards'} onClick={() => navigate('connect-rewards')}><Gift />Rewards Plan</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'connect-actions'} onClick={() => navigate('connect-actions')}><Zap />Actions Plan</SidebarMenuSubButton></SidebarMenuSubItem>
+                    </SidebarMenuSub>
+                </SidebarMenuItem>
+              )}
+
                <SidebarMenuItem>
                 <SidebarMenuButton tooltip="Wallet" isActive={activeView === 'wallet'} onClick={() => navigate('wallet')}><Wallet /><span>Wallet & Earnings</span></SidebarMenuButton>
               </SidebarMenuItem>
+
+              {!isAssociate && (
                 <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Activity" isActive={activeView === 'activity'} onClick={() => navigate('activity')}><Activity /><span>Activity</span></SidebarMenuButton>
-              </SidebarMenuItem>
+                    <SidebarMenuButton tooltip="Activity" isActive={activeView === 'activity'} onClick={() => navigate('activity')}><Activity /><span>Activity</span></SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
+
               <SidebarMenuItem>
                 <SidebarMenuButton tooltip="Support Chat" isActive={activeView === 'support-chat'} onClick={() => navigate('support-chat')}><MessageSquare /><span>Support Chat</span></SidebarMenuButton>
               </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Billing" isActive={activeView === 'billing'} onClick={() => navigate('billing')}><CreditCard /><span>Billing</span></SidebarMenuButton>
-              </SidebarMenuItem>
+
+              {!isAssociate && (
+                <SidebarMenuItem>
+                    <SidebarMenuButton tooltip="Billing" isActive={activeView === 'billing'} onClick={() => navigate('billing')}><CreditCard /><span>Billing</span></SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
           </SidebarGroup>
         </SidebarContent>
         <SidebarFooter>
