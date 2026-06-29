@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
@@ -12,7 +11,7 @@ import { type ColumnDef } from '@/hooks/use-data-table';
 import { Badge } from '@/components/ui/badge';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, getClientSideAuthToken, useFirestore, useMemoFirebase } from '@/firebase';
+import { useUser, getClientSideAuthToken, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
 import Link from 'next/link';
 import { collection, doc, query, orderBy, serverTimestamp } from 'firebase/firestore';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
