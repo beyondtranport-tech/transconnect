@@ -1,5 +1,5 @@
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/request';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase-admin';
@@ -58,15 +58,15 @@ export async function POST(req: NextRequest) {
 
         switch (action) {
             case 'searchRegistry': {
-                const { type, term, limit = 1000 } = payload;
+                const { type, term, status, outreachFilter, assigneeId, limit = 1000 } = payload;
                 let results: any[] = [];
 
                 // 1. Search Leads Collection
                 if (type !== 'partner') {
                     let leadsQ: any = db.collection('leads');
                     
-                    if (type !== 'all' && type !== 'lead') {
-                        // Map internal IDs to common display titles found in lead roles
+                    // Filter by Role Type with Fuzzy Mapping
+                    if (type && type !== 'all' && type !== 'lead') {
                         const typeMap: Record<string, string[]> = {
                             'associate': ['associate', 'Digital Partners', 'Digital Partner'],
                             'isa': ['isa', 'ISA Agents', 'ISA Agent'],
@@ -79,6 +79,17 @@ export async function POST(req: NextRequest) {
                         leadsQ = leadsQ.where('role', 'in', possibleRoles);
                     }
 
+                    // Apply Status Filter
+                    if (status && status !== 'all') {
+                        leadsQ = leadsQ.where('status', '==', status);
+                    }
+
+                    // Apply Assignee Filter
+                    if (assigneeId && assigneeId !== 'all') {
+                        leadsQ = leadsQ.where('assigneeId', '==', assigneeId === 'none' ? null : assigneeId);
+                    }
+
+                    // Apply Prefix Search on Company Name
                     if (term) {
                         leadsQ = leadsQ.where('companyName', '>=', term).where('companyName', '<=', term + '\uf8ff');
                     }
@@ -92,17 +103,35 @@ export async function POST(req: NextRequest) {
                     }))];
                 }
 
-                // 2. Search Partners Collection
+                // 2. Search Partners Collection (Registered Industrial Entities)
                 if (type !== 'lead') {
                     let partnersQ: any = db.collection('partners');
-                    if (type !== 'all' && type !== 'partner') {
+                    
+                    if (type && type !== 'all' && type !== 'partner') {
                         partnersQ = partnersQ.where('type', '==', type);
                     }
+
+                    if (status && status !== 'all') {
+                        partnersQ = partnersQ.where('status', '==', status);
+                    }
+
+                    if (assigneeId && assigneeId !== 'all') {
+                        partnersQ = partnersQ.where('assigneeId', '==', assigneeId === 'none' ? null : assigneeId);
+                    }
+
                     if (term) {
                         partnersQ = partnersQ.where('companyName', '>=', term).where('companyName', '<=', term + '\uf8ff');
                     }
+
                     const partnersSnap = await partnersQ.limit(limit).get();
                     results = [...results, ...partnersSnap.docs.map(d => ({ id: d.id, source: 'Partner', ...d.data() }))];
+                }
+
+                // Apply Outreach Filter in Memory (if complex)
+                if (outreachFilter === 'none') {
+                    results = results.filter(r => !r.lastOutreachSubject);
+                } else if (outreachFilter && outreachFilter !== 'all') {
+                    results = results.filter(r => r.lastOutreachSubject === outreachFilter);
                 }
 
                 return NextResponse.json({ success: true, data: results.map(serializeTimestamps) });
@@ -120,8 +149,10 @@ export async function POST(req: NextRequest) {
                 };
                 const possibleRoles = typeMap[type] || [type];
 
-                const leadsSnap = await db.collection('leads').where('role', 'in', possibleRoles).get();
-                const partnersSnap = await db.collection('partners').where('type', '==', type).get();
+                const [leadsSnap, partnersSnap] = await Promise.all([
+                    db.collection('leads').where('role', 'in', possibleRoles).get(),
+                    db.collection('partners').where('type', '==', type).get()
+                ]);
                 
                 const results = [
                     ...leadsSnap.docs.map(d => ({ id: d.id, source: 'Lead', ...d.data() })),
@@ -135,8 +166,8 @@ export async function POST(req: NextRequest) {
                 const { partner } = payload;
                 if (!partner || !partner.type) throw new Error("Invalid partner data.");
                 
-                const collection = partner.source === 'Lead' ? 'leads' : 'partners';
-                const id = partner.id || db.collection(collection).doc().id;
+                const collectionName = partner.source === 'Lead' ? 'leads' : 'partners';
+                const id = partner.id || db.collection(collectionName).doc().id;
                 
                 const data = {
                     ...partner,
@@ -145,123 +176,19 @@ export async function POST(req: NextRequest) {
                 };
                 if (!partner.id) data.createdAt = FieldValue.serverTimestamp();
 
-                await db.collection(collection).doc(id).set(data, { merge: true });
+                await db.collection(collectionName).doc(id).set(data, { merge: true });
                 return NextResponse.json({ success: true, id });
             }
 
             case 'deletePartner': {
                 const { partnerId, source } = payload;
-                const collection = source === 'Lead' ? 'leads' : 'partners';
-                await db.collection(collection).doc(partnerId).delete();
+                const collectionName = source === 'Lead' ? 'leads' : 'partners';
+                await db.collection(collectionName).doc(partnerId).delete();
                 return NextResponse.json({ success: true });
             }
 
             case 'getPlatformStaff': {
                 const snap = await db.collection('platformStaff').get();
-                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
-            }
-
-            case 'savePlatformStaff': {
-                const { staff } = payload;
-                const id = staff.id || db.collection('platformStaff').doc().id;
-                const data = { ...staff, id, updatedAt: FieldValue.serverTimestamp() };
-                if (!staff.id) data.createdAt = FieldValue.serverTimestamp();
-                await db.collection('platformStaff').doc(id).set(data, { merge: true });
-                return NextResponse.json({ success: true, id });
-            }
-
-            case 'getAudienceCommunications': {
-                const { type } = payload;
-                const partnersSnap = await db.collection('partners').where('type', '==', type).get();
-                const partnerIds = partnersSnap.docs.map(d => d.id);
-                
-                let allLogs: any[] = [];
-                if (partnerIds.length > 0) {
-                    const logPromises = partnerIds.map(pid => 
-                        db.collection('partners').doc(pid).collection('communications').orderBy('timestamp', 'desc').limit(5).get()
-                    );
-                    
-                    const logSnaps = await Promise.all(logPromises);
-                    logSnaps.forEach((snap, idx) => {
-                        const partner = partnersSnap.docs.find(d => d.id === partnerIds[idx])?.data();
-                        snap.forEach(d => allLogs.push({ 
-                            ...d.data(), 
-                            id: d.id, 
-                            partnerName: partner?.companyName || partner?.firstName || 'Partner' 
-                        }));
-                    });
-                }
-
-                return NextResponse.json({ success: true, data: allLogs.sort((a,b) => b.timestamp - a.timestamp).map(serializeTimestamps) });
-            }
-
-            case 'getAudienceTasks': {
-                const { type } = payload;
-                const partnersSnap = await db.collection('partners').where('type', '==', type).get();
-                
-                let allTasks: any[] = [];
-                if (!partnersSnap.empty) {
-                    const taskPromises = partnersSnap.docs.map(doc => 
-                        doc.ref.collection('tasks').where('status', '==', 'pending').get()
-                    );
-                    
-                    const taskSnaps = await Promise.all(taskPromises);
-                    taskSnaps.forEach((snap, idx) => {
-                        const partner = partnersSnap.docs[idx].data();
-                        snap.forEach(d => allTasks.push({ 
-                            ...d.data(), 
-                            id: d.id, 
-                            partnerName: partner?.companyName || partner?.firstName || 'Partner' 
-                        }));
-                    });
-                }
-
-                return NextResponse.json({ success: true, data: allTasks.map(serializeTimestamps) });
-            }
-
-            case 'getMyNetwork': {
-                const companyId = userData?.companyId;
-                if (!companyId) throw new Error("Missing company profile.");
-                
-                const [leadsSnap, membersSnap] = await Promise.all([
-                    db.collection('leads').where('referrerId', '==', companyId).get(),
-                    db.collection('companies').where('referrerId', '==', companyId).get()
-                ]);
-
-                const leads = leadsSnap.docs.map(d => ({ id: d.id, source: 'Lead', ...d.data() }));
-                const members = membersSnap.docs.map(d => ({ id: d.id, source: 'Member', ...d.data() }));
-                
-                return NextResponse.json({ success: true, data: [...leads, ...members].map(serializeTimestamps) });
-            }
-
-            case 'getLeads': {
-                const snap = await db.collection('leads').orderBy('updatedAt', 'desc').limit(1000).get();
-                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
-            }
-
-            case 'getMembers': {
-                const snap = await db.collection('companies').orderBy('updatedAt', 'desc').limit(1000).get();
-                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
-            }
-
-            case 'logAudit': {
-                const { action: auditAction, details, metadata } = payload;
-                const logRef = db.collection('auditLogs').doc();
-                await logRef.set({
-                    id: logRef.id,
-                    action: auditAction,
-                    details,
-                    metadata,
-                    userId: decodedToken.uid,
-                    userName: decodedToken.name || userData?.firstName || 'User',
-                    companyId: userData?.companyId || null,
-                    timestamp: FieldValue.serverTimestamp()
-                });
-                return NextResponse.json({ success: true });
-            }
-
-            case 'getAuditLogs': {
-                const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(100).get();
                 return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
             }
 
@@ -313,6 +240,21 @@ export async function POST(req: NextRequest) {
                 
                 await batch.commit();
                 return NextResponse.json({ success: true });
+            }
+
+            case 'getLeads': {
+                const snap = await db.collection('leads').orderBy('updatedAt', 'desc').limit(1000).get();
+                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
+            }
+
+            case 'getMembers': {
+                const snap = await db.collection('companies').orderBy('updatedAt', 'desc').limit(1000).get();
+                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
+            }
+
+            case 'getAuditLogs': {
+                const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(100).get();
+                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
             }
 
             default: return NextResponse.json({ success: false, error: "Action invalid." }, { status: 400 });
