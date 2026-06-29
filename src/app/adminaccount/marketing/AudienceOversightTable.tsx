@@ -23,7 +23,7 @@ export default function AudienceOversightTable({ audience }: { audience: string 
             const response = await fetch('/api/admin', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'searchRegistry', payload: { type: apiType, limit: 20000 } }),
+                body: JSON.stringify({ action: 'searchRegistry', payload: { type: apiType, limit: 200 } }),
             });
             const result = await response.json();
             setRecords(result.data || []);
@@ -103,10 +103,12 @@ export default function AudienceOversightTable({ audience }: { audience: string 
                     <h3 className="text-lg font-bold flex items-center gap-2"><Search className="h-5 w-5 text-primary" /> Forensic Oversight</h3>
                     <p className="text-xs text-muted-foreground">Tracking engagement opens and landing pings for {audience}.</p>
                 </div>
-                <Button variant="outline" size="sm" onClick={loadData} disabled={isLoading}>
-                    <RefreshCcw className={cn("h-3 w-3 mr-2", isLoading && "animate-spin")} />
-                    Refresh Oversight
-                </Button>
+                <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={loadData} disabled={isLoading}>
+                        <RefreshCcw className={cn("h-3 w-3 mr-2", isLoading && "animate-spin")} />
+                        Refresh Oversight
+                    </Button>
+                </div>
             </div>
             {isLoading ? <div className="flex justify-center p-12 text-left"><Loader2 className="animate-spin text-primary" /></div> : <DataTable columns={columns} data={records} />}
         </div>
