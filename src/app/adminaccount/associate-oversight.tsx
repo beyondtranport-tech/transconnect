@@ -1,9 +1,8 @@
-
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Loader2, Users, TrendingUp, DollarSign, ExternalLink, ShieldCheck, Activity, Search, RefreshCcw, Wallet, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Loader2, Users, TrendingUp, DollarSign, ExternalLink, ShieldCheck, Activity, Search, RefreshCcw, Wallet, CheckCircle2, AlertCircle, ArrowRight, UserCheck } from 'lucide-react';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { Badge } from '@/components/ui/badge';
@@ -12,6 +11,8 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { formatCurrency, formatDateSafe } from '@/lib/utils';
 import Link from 'next/link';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
 
 async function fetchFromAdminAPI(token: string, action: string, payload?: any) {
     const response = await fetch('/api/admin', {
@@ -30,7 +31,10 @@ async function fetchFromAdminAPI(token: string, action: string, payload?: any) {
 export default function AssociateOversight() {
     const [associates, setAssociates] = useState<any[]>([]);
     const [activity, setActivity] = useState<any[]>([]);
+    const [selectedAssociate, setSelectedAssociate] = useState<any | null>(null);
+    const [associateNetwork, setAssociateNetwork] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [isLoadingNetwork, setIsLoadingNetwork] = useState(false);
     const [hasLoaded, setHasLoaded] = useState(false);
     const { toast } = useToast();
 
@@ -45,12 +49,10 @@ export default function AssociateOversight() {
                 fetchFromAdminAPI(token, 'getAuditLogs')
             ]);
             
-            // Filter only associates
             const associateMembers = (membersRes || []).filter((m: any) => 
                 m.declaredRole === 'associate' || m.role === 'associate'
             );
             
-            // Filter associate-specific activity (social posts)
             const socialActivity = (activityRes || []).filter((log: any) => 
                 log.action?.startsWith('social_')
             );
@@ -62,6 +64,31 @@ export default function AssociateOversight() {
             toast({ variant: 'destructive', title: 'Load Error', description: e.message });
         } finally {
             setIsLoading(false);
+        }
+    }, [toast]);
+
+    const loadAssociateNetwork = useCallback(async (associate: any) => {
+        if (!associate) return;
+        setIsLoadingNetwork(true);
+        setSelectedAssociate(associate);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) return;
+            
+            // Get all companies/leads where referrerId matches the associate's ID
+            const [membersRes, leadsRes] = await Promise.all([
+                fetchFromAdminAPI(token, 'getMembers'),
+                fetchFromAdminAPI(token, 'searchRegistry', { type: 'all' })
+            ]);
+            
+            const memberNetwork = (membersRes || []).filter((m: any) => m.referrerId === associate.id);
+            const leadNetwork = (leadsRes.data || []).filter((l: any) => l.referrerId === associate.id);
+            
+            setAssociateNetwork([...memberNetwork, ...leadNetwork]);
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: 'Network Load Error', description: e.message });
+        } finally {
+            setIsLoadingNetwork(false);
         }
     }, [toast]);
 
@@ -133,6 +160,9 @@ export default function AssociateOversight() {
             header: <div className="text-right">Actions</div>,
             cell: ({ row }) => (
                 <div className="flex justify-end gap-2">
+                    <Button variant="ghost" size="sm" onClick={() => loadAssociateNetwork(row.original)} className="h-8 text-[10px] font-black uppercase gap-1">
+                        <Users className="h-3 w-3" /> View Network
+                    </Button>
                     <Button variant="outline" size="sm" asChild className="h-8 text-[10px] font-black uppercase">
                         <Link href={`/backend?view=wallet&memberId=${row.original.id}`}>
                             Verify & Pay
@@ -156,8 +186,8 @@ export default function AssociateOversight() {
         <div className="space-y-8 text-left text-foreground">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
                 <div className="text-left">
-                    <h1 className="text-3xl font-black font-headline tracking-tight">Associate Monitoring</h1>
-                    <p className="text-muted-foreground">Strategic oversight of creator influence and commission revenue.</p>
+                    <h1 className="text-3xl font-black font-headline tracking-tight text-left text-foreground">Associate Monitoring</h1>
+                    <p className="text-muted-foreground text-left text-foreground">Strategic oversight of creator influence and commission revenue.</p>
                 </div>
                 <Button variant="outline" onClick={loadData} disabled={isLoading} className="gap-2">
                     <RefreshCcw className={cn("h-4 w-4", isLoading && "animate-spin")} />
@@ -165,10 +195,10 @@ export default function AssociateOversight() {
                 </Button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <Card className="bg-primary/5 border-primary/20">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-left text-foreground">
+                <Card className="bg-primary/5 border-primary/20 text-left">
                     <CardHeader className="pb-2 text-left">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Authorized Associates</p>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground text-left text-foreground">Authorized Associates</p>
                     </CardHeader>
                     <CardContent className="text-left">
                         <div className="text-3xl font-black text-primary">{stats.count}</div>
@@ -201,18 +231,54 @@ export default function AssociateOversight() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <Card className="lg:col-span-2 shadow-xl border-none text-left">
-                    <CardHeader className="text-left border-b bg-muted/20">
-                        <CardTitle className="text-xl font-bold flex items-center gap-2">
-                            <Users className="h-5 w-5 text-primary" />
-                            Active Performance Roster
-                        </CardTitle>
-                        <CardDescription>Live snapshots of Associate earnings and engagement status.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="pt-6">
-                        <DataTable columns={columns} data={associates} />
-                    </CardContent>
-                </Card>
+                <div className="lg:col-span-2 space-y-6 text-left text-foreground">
+                    <Card className="shadow-xl border-none text-left text-foreground">
+                        <CardHeader className="text-left border-b bg-muted/20">
+                            <CardTitle className="text-xl font-bold flex items-center gap-2">
+                                <Users className="h-5 w-5 text-primary" />
+                                Active Performance Roster
+                            </CardTitle>
+                            <CardDescription>Live snapshots of Associate earnings and engagement status.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="pt-6">
+                            <DataTable columns={columns} data={associates} />
+                        </CardContent>
+                    </Card>
+                    
+                    {selectedAssociate && (
+                        <Card className="shadow-2xl border-primary/20 bg-white animate-in slide-in-from-bottom-4 duration-500 text-left text-foreground">
+                            <CardHeader className="border-b bg-slate-900 text-white">
+                                <div className="flex justify-between items-center">
+                                    <div className="text-left">
+                                        <CardTitle className="text-lg font-black uppercase tracking-widest flex items-center gap-2">
+                                            <TrendingUp className="h-5 w-5 text-primary" />
+                                            Referred Network: {selectedAssociate.companyName || selectedAssociate.firstName}
+                                        </CardTitle>
+                                        <CardDescription className="text-slate-400">Viewing the specific leads and members generated by this node.</CardDescription>
+                                    </div>
+                                    <Button variant="ghost" className="text-white hover:text-primary" onClick={() => setSelectedAssociate(null)}>Close</Button>
+                                </div>
+                            </CardHeader>
+                            <CardContent className="pt-6">
+                                {isLoadingNetwork ? (
+                                    <div className="py-20 text-center"><Loader2 className="animate-spin h-10 w-10 text-primary mx-auto" /></div>
+                                ) : associateNetwork.length > 0 ? (
+                                    <DataTable 
+                                        columns={[
+                                            { header: 'Entity', cell: ({row}) => <span className="font-bold">{row.original.companyName || `${row.original.firstName} ${row.original.lastName}`}</span> },
+                                            { header: 'Type', cell: ({row}) => <Badge variant="outline" className="text-[9px] uppercase">{row.original.membershipId ? 'Member' : 'Lead'}</Badge> },
+                                            { header: 'Date', cell: ({row}) => <span className="text-xs text-muted-foreground">{formatDateSafe(row.original.createdAt)}</span> },
+                                            { header: 'Status', cell: ({row}) => <Badge variant={row.original.status === 'active' ? 'default' : 'secondary'} className="capitalize">{row.original.status}</Badge> }
+                                        ]} 
+                                        data={associateNetwork} 
+                                    />
+                                ) : (
+                                    <div className="py-20 text-center text-muted-foreground italic">No network activity recorded for this associate yet.</div>
+                                )}
+                            </CardContent>
+                        </Card>
+                    )}
+                </div>
 
                 <div className="space-y-6 text-left">
                     <Card className="shadow-lg border-none text-left">

@@ -71,6 +71,7 @@ const SupplierManagement = dynamic(() => import('./supplier-management'), { load
 const TransporterManagement = dynamic(() => import('./transporter-management'), { loading: () => <Loader2 className="animate-spin" /> });
 const FinanceManagement = dynamic(() => import('./finance-management'), { loading: () => <Loader2 className="animate-spin" /> });
 const DriverManagement = dynamic(() => import('./driver-management'), { loading: () => <Loader2 className="animate-spin" /> });
+const AssociateManagement = dynamic(() => import('./associate-management'), { loading: () => <Loader2 className="animate-spin" /> });
 
 import SupplierPitch from '@/app/adminaccount/supplier-pitch';
 import DiscoveryEngine from './discovery-engine';
@@ -81,7 +82,7 @@ import DriverDiscoveryEngine from './driver-discovery';
 const audienceConfig: Record<string, any> = {
     partners: { title: 'Strategic Partners', icon: Users, Offer: PartnerOffer, Emails: PartnerEmails, Management: PartnerManagement },
     isa: { title: 'ISA Agents', icon: Target, Offer: PartnerOffer, Emails: PartnerEmails, Management: ISAManagement },
-    associates: { title: 'Digital Associates', icon: Share2, Offer: AssociateOffer, Emails: AssociateEmails, Management: null },
+    associates: { title: 'Digital Associates', icon: Share2, Offer: AssociateOffer, Emails: AssociateEmails, Management: AssociateManagement },
     suppliers: { title: 'Suppliers', icon: SearchCode, Offer: SupplierOffer, Emails: SupplierEmails, Management: SupplierManagement, Pitch: SupplierPitch, Discovery: DiscoveryEngine },
     transporters: { title: 'Transporters', icon: Send, Offer: TransporterOffer, Emails: TransporterEmails, Management: TransporterManagement, Discovery: TransporterDiscoveryEngine },
     finance: { title: 'Finance Companies', icon: Landmark, Offer: InvestorOffer, Emails: InvestorEmails, Management: FinanceManagement, Discovery: FinanceDiscoveryEngine },
