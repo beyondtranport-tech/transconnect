@@ -84,6 +84,8 @@ export function usePermissions() {
             perms.add('view:social');
             perms.add('manage:marketing-studio');
             perms.add('manage:social');
+            perms.add('manage:shop'); // Associates need to manage their shop/profile
+            perms.add('manage:products');
         }
 
         // Transporters/Suppliers get Shop access

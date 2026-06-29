@@ -177,11 +177,9 @@ function AccountPageContent() {
                 <SidebarMenuButton tooltip="Dashboard" isActive={activeView === 'dashboard'} onClick={() => navigate('dashboard')}><LayoutDashboard /><span>Dashboard</span></SidebarMenuButton>
               </SidebarMenuItem>
               
-              {!isAssociate && (
-                <SidebarMenuItem>
-                    <SidebarMenuButton tooltip={isTransporter ? "Service Profile" : "My Shop"} isActive={activeView === 'shop'} onClick={() => navigate('shop')}><Store /><span>{isTransporter ? "Service Profile" : "My Shop"}</span></SidebarMenuButton>
-                </SidebarMenuItem>
-              )}
+              <SidebarMenuItem>
+                  <SidebarMenuButton tooltip={isAssociate ? "Creator Profile" : (isTransporter ? "Service Profile" : "My Shop")} isActive={activeView === 'shop'} onClick={() => navigate('shop')}><Store /><span>{isAssociate ? "Creator Profile" : (isTransporter ? "Service Profile" : "My Shop")}</span></SidebarMenuButton>
+              </SidebarMenuItem>
               
               <SidebarMenuItem>
                 <SidebarMenuButton tooltip="Search History" isActive={activeView === 'search-history'} onClick={() => navigate('search-history')}><Search /><span>Search History</span></SidebarMenuButton>
@@ -219,7 +217,7 @@ function AccountPageContent() {
                 <SidebarMenuButton tooltip="Company Staff" isActive={activeView === 'staff'} onClick={() => navigate('staff')}><Users /><span>Company Staff</span></SidebarMenuButton>
               </SidebarMenuItem>
 
-              {/* Associate Specific Tools */}
+              {/* Associate & Creator Content Tools */}
               {isAssociate && (
                 <SidebarMenuItem>
                     <SidebarMenuButton tooltip="Marketing Studio" isActive={activeView === 'marketing-studio'} onClick={() => navigate('marketing-studio')}><Sparkles /><span>Marketing Studio</span></SidebarMenuButton>
@@ -239,7 +237,7 @@ function AccountPageContent() {
               )}
 
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Sales" isActive={isSalesActive}><Handshake /><span>Sales</span></SidebarMenuButton>
+                <SidebarMenuButton tooltip="Sales" isActive={isSalesActive}><Handshake /><span>Sales & Outreach</span></SidebarMenuButton>
                 <SidebarMenuSub>
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'network'} onClick={() => navigate('network')}><Users />My Network</SidebarMenuSubButton></SidebarMenuSubItem>
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'performance'} onClick={() => navigate('performance')}><TrendingUp />Performance</SidebarMenuSubButton></SidebarMenuSubItem>
@@ -256,7 +254,7 @@ function AccountPageContent() {
                 </SidebarMenuSub>
               </SidebarMenuItem>
                <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Wallet" isActive={activeView === 'wallet'} onClick={() => navigate('wallet')}><Wallet /><span>Wallet</span></SidebarMenuButton>
+                <SidebarMenuButton tooltip="Wallet" isActive={activeView === 'wallet'} onClick={() => navigate('wallet')}><Wallet /><span>Wallet & Earnings</span></SidebarMenuButton>
               </SidebarMenuItem>
                 <SidebarMenuItem>
                 <SidebarMenuButton tooltip="Activity" isActive={activeView === 'activity'} onClick={() => navigate('activity')}><Activity /><span>Activity</span></SidebarMenuButton>
