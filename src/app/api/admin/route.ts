@@ -62,7 +62,6 @@ export async function POST(req: NextRequest) {
                 let results: any[] = [];
 
                 // 1. Search Leads Collection
-                // We look for records where the role matches the requested type (or its display title)
                 if (type !== 'partner') {
                     let leadsQ: any = db.collection('leads');
                     
@@ -71,7 +70,7 @@ export async function POST(req: NextRequest) {
                         const typeMap: Record<string, string[]> = {
                             'associate': ['associate', 'Digital Partners', 'Digital Partner'],
                             'isa': ['isa', 'ISA Agents', 'ISA Agent'],
-                            'supplier': ['supplier', 'vendor', 'Suppliers', 'Supplier'],
+                            'supplier': ['supplier', 'vendor', 'Suppliers', 'Supplier', 'Vendors'],
                             'transporter': ['transporter', 'Transporters', 'Transporter'],
                             'finance': ['finance', 'financier', 'Finance Companies', 'Finance Partner'],
                             'driver': ['driver', 'Drivers', 'Driver']
@@ -89,7 +88,6 @@ export async function POST(req: NextRequest) {
                         id: d.id, 
                         source: 'Lead', 
                         ...d.data(),
-                        // Map 'role' to 'type' for UI consistency in registry views
                         type: type === 'all' || type === 'lead' ? (d.data().role?.toLowerCase() || 'lead') : type
                     }))];
                 }
@@ -112,8 +110,17 @@ export async function POST(req: NextRequest) {
 
             case 'getPartnersByType': {
                 const { type } = payload;
-                // For 'management' views, we want both Leads of this type and registered Partners
-                const leadsSnap = await db.collection('leads').where('role', 'in', [type, type.charAt(0).toUpperCase() + type.slice(1)]).get();
+                const typeMap: Record<string, string[]> = {
+                    'associate': ['associate', 'Digital Partners', 'Digital Partner'],
+                    'isa': ['isa', 'ISA Agents', 'ISA Agent'],
+                    'supplier': ['supplier', 'vendor', 'Suppliers', 'Supplier', 'Vendors'],
+                    'transporter': ['transporter', 'Transporters', 'Transporter'],
+                    'finance': ['finance', 'financier', 'Finance Companies', 'Finance Partner'],
+                    'driver': ['driver', 'Drivers', 'Driver']
+                };
+                const possibleRoles = typeMap[type] || [type];
+
+                const leadsSnap = await db.collection('leads').where('role', 'in', possibleRoles).get();
                 const partnersSnap = await db.collection('partners').where('type', '==', type).get();
                 
                 const results = [
@@ -157,7 +164,9 @@ export async function POST(req: NextRequest) {
             case 'savePlatformStaff': {
                 const { staff } = payload;
                 const id = staff.id || db.collection('platformStaff').doc().id;
-                await db.collection('platformStaff').doc(id).set({ ...staff, id, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+                const data = { ...staff, id, updatedAt: FieldValue.serverTimestamp() };
+                if (!staff.id) data.createdAt = FieldValue.serverTimestamp();
+                await db.collection('platformStaff').doc(id).set(data, { merge: true });
                 return NextResponse.json({ success: true, id });
             }
 
@@ -166,22 +175,22 @@ export async function POST(req: NextRequest) {
                 const partnersSnap = await db.collection('partners').where('type', '==', type).get();
                 const partnerIds = partnersSnap.docs.map(d => d.id);
                 
-                if (partnerIds.length === 0) return NextResponse.json({ success: true, data: [] });
-
                 let allLogs: any[] = [];
-                const logPromises = partnerIds.slice(0, 20).map(pid => 
-                    db.collection('partners').doc(pid).collection('communications').orderBy('timestamp', 'desc').limit(5).get()
-                );
-                
-                const logSnaps = await Promise.all(logPromises);
-                logSnaps.forEach((snap, idx) => {
-                    const partner = partnersSnap.docs.find(d => d.id === partnerIds[idx])?.data();
-                    snap.forEach(d => allLogs.push({ 
-                        ...d.data(), 
-                        id: d.id, 
-                        partnerName: partner?.companyName || partner?.firstName || 'Partner' 
-                    }));
-                });
+                if (partnerIds.length > 0) {
+                    const logPromises = partnerIds.map(pid => 
+                        db.collection('partners').doc(pid).collection('communications').orderBy('timestamp', 'desc').limit(5).get()
+                    );
+                    
+                    const logSnaps = await Promise.all(logPromises);
+                    logSnaps.forEach((snap, idx) => {
+                        const partner = partnersSnap.docs.find(d => d.id === partnerIds[idx])?.data();
+                        snap.forEach(d => allLogs.push({ 
+                            ...d.data(), 
+                            id: d.id, 
+                            partnerName: partner?.companyName || partner?.firstName || 'Partner' 
+                        }));
+                    });
+                }
 
                 return NextResponse.json({ success: true, data: allLogs.sort((a,b) => b.timestamp - a.timestamp).map(serializeTimestamps) });
             }
@@ -189,24 +198,23 @@ export async function POST(req: NextRequest) {
             case 'getAudienceTasks': {
                 const { type } = payload;
                 const partnersSnap = await db.collection('partners').where('type', '==', type).get();
-                const partnerIds = partnersSnap.docs.map(d => d.id);
                 
-                if (partnerIds.length === 0) return NextResponse.json({ success: true, data: [] });
-
                 let allTasks: any[] = [];
-                const taskPromises = partnerIds.slice(0, 20).map(pid => 
-                    db.collection('partners').doc(pid).collection('tasks').where('status', '==', 'pending').get()
-                );
-                
-                const taskSnaps = await Promise.all(taskPromises);
-                taskSnaps.forEach((snap, idx) => {
-                    const partner = partnersSnap.docs.find(d => d.id === partnerIds[idx])?.data();
-                    snap.forEach(d => allTasks.push({ 
-                        ...d.data(), 
-                        id: d.id, 
-                        partnerName: partner?.companyName || partner?.firstName || 'Partner' 
-                    }));
-                });
+                if (!partnersSnap.empty) {
+                    const taskPromises = partnersSnap.docs.map(doc => 
+                        doc.ref.collection('tasks').where('status', '==', 'pending').get()
+                    );
+                    
+                    const taskSnaps = await Promise.all(taskPromises);
+                    taskSnaps.forEach((snap, idx) => {
+                        const partner = partnersSnap.docs[idx].data();
+                        snap.forEach(d => allTasks.push({ 
+                            ...d.data(), 
+                            id: d.id, 
+                            partnerName: partner?.companyName || partner?.firstName || 'Partner' 
+                        }));
+                    });
+                }
 
                 return NextResponse.json({ success: true, data: allTasks.map(serializeTimestamps) });
             }
@@ -215,10 +223,12 @@ export async function POST(req: NextRequest) {
                 const companyId = userData?.companyId;
                 if (!companyId) throw new Error("Missing company profile.");
                 
-                const leadsSnap = await db.collection('leads').where('referrerId', '==', companyId).get();
+                const [leadsSnap, membersSnap] = await Promise.all([
+                    db.collection('leads').where('referrerId', '==', companyId).get(),
+                    db.collection('companies').where('referrerId', '==', companyId).get()
+                ]);
+
                 const leads = leadsSnap.docs.map(d => ({ id: d.id, source: 'Lead', ...d.data() }));
-                
-                const membersSnap = await db.collection('companies').where('referrerId', '==', companyId).get();
                 const members = membersSnap.docs.map(d => ({ id: d.id, source: 'Member', ...d.data() }));
                 
                 return NextResponse.json({ success: true, data: [...leads, ...members].map(serializeTimestamps) });
