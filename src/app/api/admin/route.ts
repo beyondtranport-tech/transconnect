@@ -58,55 +58,42 @@ export async function POST(req: NextRequest) {
 
         switch (action) {
             case 'searchRegistry': {
-                const { type, term, status, outreachFilter, assigneeId, limit = 200 } = payload;
+                const { type, term, outreachFilter, limit = 200 } = payload;
                 let results: any[] = [];
 
-                // 1. Search Leads Collection
-                if (type !== 'partner') {
-                    let leadsQ: any = db.collection('leads');
-                    if (type && type !== 'all' && type !== 'lead') {
-                        const typeMap: Record<string, string[]> = {
-                            'associate': ['associate', 'Digital Partners', 'Digital Partner'],
-                            'isa': ['isa', 'ISA Agents', 'ISA Agent'],
-                            'supplier': ['supplier', 'vendor', 'Suppliers', 'Supplier', 'Vendors'],
-                            'transporter': ['transporter', 'Transporters', 'Transporter'],
-                            'finance': ['finance', 'financier', 'Finance Companies', 'Finance Partner'],
-                            'driver': ['driver', 'Drivers', 'Driver']
-                        };
-                        const possibleRoles = typeMap[type] || [type];
-                        leadsQ = leadsQ.where('role', 'in', possibleRoles);
-                    }
-                    if (status && status !== 'all') leadsQ = leadsQ.where('status', '==', status);
-                    if (assigneeId && assigneeId !== 'all') leadsQ = leadsQ.where('assigneeId', '==', assigneeId === 'none' ? null : assigneeId);
-                    if (term) leadsQ = leadsQ.where('companyName', '>=', term).where('companyName', '<=', term + '\uf8ff');
-                    
-                    const leadsSnap = await leadsQ.limit(limit).get();
-                    results = [...results, ...leadsSnap.docs.map(d => ({ id: d.id, source: 'Lead', ...d.data(), type: type === 'all' || type === 'lead' ? (d.data().role?.toLowerCase() || 'lead') : type }))];
+                // 1. Search Leads
+                let leadsQ: any = db.collection('leads');
+                if (type && type !== 'all' && type !== 'lead') {
+                    const typeMap: Record<string, string[]> = {
+                        'associate': ['associate', 'Digital Partners', 'Digital Partner'],
+                        'isa': ['isa', 'ISA Agents', 'ISA Agent'],
+                        'supplier': ['supplier', 'vendor', 'Suppliers', 'Supplier', 'Vendors'],
+                        'transporter': ['transporter', 'Transporters', 'Transporter'],
+                        'finance': ['finance', 'Finance Companies', 'Finance Partner'],
+                        'driver': ['driver', 'Drivers', 'Driver']
+                    };
+                    const possibleRoles = typeMap[type] || [type];
+                    leadsQ = leadsQ.where('role', 'in', possibleRoles);
                 }
+                if (term) leadsQ = leadsQ.where('companyName', '>=', term).where('companyName', '<=', term + '\uf8ff');
+                
+                const leadsSnap = await leadsQ.limit(limit).get();
+                results = [...results, ...leadsSnap.docs.map(d => ({ id: d.id, source: 'Lead', ...d.data() }))];
 
-                // 2. Search Partners Collection
-                if (type !== 'lead') {
-                    let partnersQ: any = db.collection('partners');
-                    if (type && type !== 'all' && type !== 'partner') partnersQ = partnersQ.where('type', '==', type);
-                    if (status && status !== 'all') partnersQ = partnersQ.where('status', '==', status);
-                    if (assigneeId && assigneeId !== 'all') partnersQ = partnersQ.where('assigneeId', '==', assigneeId === 'none' ? null : assigneeId);
-                    if (term) partnersQ = partnersQ.where('companyName', '>=', term).where('companyName', '<=', term + '\uf8ff');
+                // 2. Search Partners
+                let partnersQ: any = db.collection('partners');
+                if (type && type !== 'all' && type !== 'partner') partnersQ = partnersQ.where('type', '==', type);
+                if (term) partnersQ = partnersQ.where('companyName', '>=', term).where('companyName', '<=', term + '\uf8ff');
 
-                    const partnersSnap = await partnersQ.limit(limit).get();
-                    results = [...results, ...partnersSnap.docs.map(d => ({ id: d.id, source: 'Partner', ...d.data() }))];
-                }
+                const partnersSnap = await partnersQ.limit(limit).get();
+                results = [...results, ...partnersSnap.docs.map(d => ({ id: d.id, source: 'Partner', ...d.data() }))];
 
-                // 3. Search Companies Collection
-                if (type !== 'lead' && type !== 'partner') {
-                    let companiesQ: any = db.collection('companies');
-                    if (type && type !== 'all') companiesQ = companiesQ.where('declaredRole', '==', type);
-                    if (status && status !== 'all') companiesQ = companiesQ.where('status', '==', status);
-                    if (assigneeId && assigneeId !== 'all') companiesQ = companiesQ.where('assigneeId', '==', assigneeId === 'none' ? null : assigneeId);
-                    if (term) companiesQ = companiesQ.where('companyName', '>=', term).where('companyName', '<=', term + '\uf8ff');
+                // 3. Search Companies (Members)
+                let companiesQ: any = db.collection('companies');
+                if (term) companiesQ = companiesQ.where('companyName', '>=', term).where('companyName', '<=', term + '\uf8ff');
 
-                    const companiesSnap = await companiesQ.limit(limit).get();
-                    results = [...results, ...companiesSnap.docs.map(d => ({ id: d.id, source: 'Member', ...d.data(), type: type === 'all' ? (d.data().declaredRole || d.data().shopType || 'member') : type }))];
-                }
+                const companiesSnap = await companiesQ.limit(limit).get();
+                results = [...results, ...companiesSnap.docs.map(d => ({ id: d.id, source: 'Member', ...d.data() }))];
 
                 if (outreachFilter === 'none') {
                     results = results.filter(r => !r.lastOutreachSubject);
@@ -117,28 +104,92 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: results.map(serializeTimestamps) });
             }
 
+            case 'bulkSavePartners': {
+                const { partners, type } = payload;
+                if (!Array.isArray(partners)) throw new Error("Partners must be an array.");
+                
+                const batch = db.batch();
+                // Associates and prospects usually go to 'leads' for conversion tracking
+                // If they are explicitly 'partners', use partners collection
+                const collectionName = (type === 'associate' || type === 'lead') ? 'leads' : 'partners';
+                const collRef = db.collection(collectionName);
+
+                partners.forEach(p => {
+                    const id = p.record_id || p.id || collRef.doc().id;
+                    const docRef = collRef.doc(id);
+                    batch.set(docRef, {
+                        ...p,
+                        id,
+                        status: p.status || 'new',
+                        role: p.role || (type === 'associate' ? 'Digital Partner' : type),
+                        type: p.type || type,
+                        updatedAt: FieldValue.serverTimestamp(),
+                        createdAt: FieldValue.serverTimestamp()
+                    }, { merge: true });
+                });
+
+                await batch.commit();
+                return NextResponse.json({ success: true, count: partners.length });
+            }
+
+            case 'savePartner': {
+                const { partner } = payload;
+                const id = partner.id || db.collection('partners').doc().id;
+                await db.collection('partners').doc(id).set({
+                    ...partner,
+                    id,
+                    updatedAt: FieldValue.serverTimestamp()
+                }, { merge: true });
+                return NextResponse.json({ success: true, id });
+            }
+
+            case 'deletePartner': {
+                const { partnerId } = payload;
+                await db.collection('partners').doc(partnerId).delete();
+                return NextResponse.json({ success: true });
+            }
+
+            case 'logCommunication': {
+                const { partnerId, type: commType, subject, notes, collection: collName = 'partners' } = payload;
+                const parentRef = db.collection(collName).doc(partnerId);
+                const logRef = parentRef.collection('communications').doc();
+                
+                const batch = db.batch();
+                batch.set(logRef, {
+                    id: logRef.id,
+                    type: commType,
+                    subject,
+                    notes,
+                    timestamp: FieldValue.serverTimestamp(),
+                    adminId: decodedToken.uid
+                });
+                
+                batch.update(parentRef, {
+                    lastOutreachAt: FieldValue.serverTimestamp(),
+                    lastOutreachSubject: subject,
+                    status: 'contacted',
+                    updatedAt: FieldValue.serverTimestamp()
+                });
+                
+                await batch.commit();
+                return NextResponse.json({ success: true });
+            }
+
+            case 'savePlatformStaff': {
+                const { staff } = payload;
+                const id = staff.id || db.collection('platformStaff').doc().id;
+                await db.collection('platformStaff').doc(id).set({
+                    ...staff,
+                    id,
+                    updatedAt: FieldValue.serverTimestamp()
+                }, { merge: true });
+                return NextResponse.json({ success: true, id });
+            }
+
             case 'getPartnersByType': {
                 const { type } = payload;
-                const typeMap: Record<string, string[]> = {
-                    'associate': ['associate', 'Digital Partners', 'Digital Partner'],
-                    'isa': ['isa', 'ISA Agents', 'ISA Agent'],
-                    'supplier': ['supplier', 'vendor', 'Suppliers', 'Supplier', 'Vendors'],
-                    'transporter': ['transporter', 'Transporters', 'Transporter'],
-                    'finance': ['finance', 'financier', 'Finance Companies', 'Finance Partner'],
-                    'driver': ['driver', 'Drivers', 'Driver']
-                };
-                const possibleRoles = typeMap[type] || [type];
-                const [leadsSnap, partnersSnap, companiesSnap] = await Promise.all([
-                    db.collection('leads').where('role', 'in', possibleRoles).get(),
-                    db.collection('partners').where('type', '==', type).get(),
-                    db.collection('companies').where('declaredRole', '==', type).get()
-                ]);
-                const results = [
-                    ...leadsSnap.docs.map(d => ({ id: d.id, source: 'Lead', ...d.data() })),
-                    ...partnersSnap.docs.map(d => ({ id: d.id, source: 'Partner', ...d.data() })),
-                    ...companiesSnap.docs.map(d => ({ id: d.id, source: 'Member', ...d.data() }))
-                ];
-                return NextResponse.json({ success: true, data: results.map(serializeTimestamps) });
+                const snap = await db.collection('partners').where('type', '==', type).get();
+                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
             }
 
             case 'getLeads': {
@@ -188,6 +239,7 @@ export async function POST(req: NextRequest) {
 
             case 'getAudienceCommunications': {
                 const { type } = payload;
+                // Simplified for prototype: get recent communications for this type
                 const snap = await db.collectionGroup('communications').orderBy('timestamp', 'desc').limit(200).get();
                 const filtered = snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) }));
                 return NextResponse.json({ success: true, data: filtered });
