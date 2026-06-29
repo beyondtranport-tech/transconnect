@@ -8,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
 import { 
     Loader2, Zap, Play, Pause, RotateCcw, ShieldCheck, Search, Database, 
-    AlertTriangle, CheckCircle2, Globe, Mail, Smartphone, Activity
+    AlertTriangle, CheckCircle2, Globe, Mail, Smartphone, Activity, BarChart3
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -34,16 +34,19 @@ export default function ForensicBridge({ audience }: { audience: string }) {
     const [logs, setLogs] = useState<any[]>([]);
     const [isScanning, setIsScanning] = useState(false);
 
-    // Progress math based on completed items
+    // Session Statistics for auditing
+    const [stats, setStats] = useState({
+        domains: 0,
+        emails: 0,
+        leadership: 0,
+        errors: 0
+    });
+
     const progress = useMemo(() => {
         if (queue.length === 0) return 0;
         return (currentIndex / queue.length) * 100;
     }, [currentIndex, queue.length]);
 
-    /**
-     * STAGE 1: SCAN FOR GAPS
-     * Identifies records missing critical data.
-     */
     const handleScanGaps = async () => {
         setIsScanning(true);
         setStatus('scanning');
@@ -68,6 +71,7 @@ export default function ForensicBridge({ audience }: { audience: string }) {
             setQueue(needsEnrichment);
             setCurrentIndex(0);
             setLogs([]);
+            setStats({ domains: 0, emails: 0, leadership: 0, errors: 0 });
             toast({ title: "Scan Complete", description: `Found ${needsEnrichment.length} records requiring forensic enrichment.` });
             setStatus('paused');
         } catch (e: any) {
@@ -78,21 +82,13 @@ export default function ForensicBridge({ audience }: { audience: string }) {
         }
     };
 
-    /**
-     * STAGE 2: ROBUST AUTO-PILOT ENRICHMENT
-     * Uses a pointer-based loop to prevent state-stale closure issues.
-     * Token is refreshed every iteration to prevent expiry errors.
-     */
     const startEnrichment = async () => {
         if (status === 'running' || queue.length === 0) return;
         
         setStatus('running');
-        
-        // Use a local pointer to avoid stale index issues during re-renders
         let pointer = currentIndex;
 
         while (pointer < queue.length) {
-            // Check for pause signal
             let isPaused = false;
             setStatus(current => {
                 if (current !== 'running') isPaused = true;
@@ -106,9 +102,8 @@ export default function ForensicBridge({ audience }: { audience: string }) {
             setLogs(prev => [{ id: Date.now(), msg: `[${pointer + 1}/${queue.length}] Investigating ${name}...`, type: 'info' }, ...prev].slice(0, 50));
 
             try {
-                // REFRESH TOKEN EVERY ITERATION TO PREVENT auth/id-token-expired
                 const token = await getClientSideAuthToken();
-                if (!token) throw new Error("Could not refresh authentication token.");
+                if (!token) throw new Error("Session expired.");
 
                 const res = await performAdminAction(token, 'autoEnrichRecord', { 
                     id: record.id, 
@@ -116,6 +111,14 @@ export default function ForensicBridge({ audience }: { audience: string }) {
                 });
 
                 if (res.success) {
+                    // Update Session Stats
+                    setStats(prev => ({
+                        domains: prev.domains + (res.data?.website ? 1 : 0),
+                        emails: prev.emails + (res.data?.email ? 1 : 0),
+                        leadership: prev.leadership + (res.data?.contactPerson ? 1 : 0),
+                        errors: prev.errors
+                    }));
+
                     setLogs(prev => [{ 
                         id: Date.now() + 1, 
                         msg: `Bridge Successful: ${name} verified and promoted to Qualified.`, 
@@ -126,10 +129,10 @@ export default function ForensicBridge({ audience }: { audience: string }) {
                     throw new Error(res.error);
                 }
 
-                // Small delay to respect rate limits
                 await new Promise(resolve => setTimeout(resolve, 1500));
 
             } catch (err: any) {
+                setStats(prev => ({ ...prev, errors: prev.errors + 1 }));
                 const isTokenError = err.message?.includes('id-token-expired') || err.message?.includes('auth/');
                 setLogs(prev => [{ 
                     id: Date.now() + 2, 
@@ -137,14 +140,11 @@ export default function ForensicBridge({ audience }: { audience: string }) {
                     type: 'error' 
                 }, ...prev].slice(0, 50));
                 
-                // If it's a token error, stop the loop and ask for manual resume to be safe
                 if (isTokenError) {
                     setStatus('paused');
-                    toast({ variant: 'destructive', title: "Auth Session Expired", description: "Loop paused. Please click Resume to refresh credentials and continue." });
+                    toast({ variant: 'destructive', title: "Session Expired", description: "Loop paused. Resume to refresh." });
                     break;
                 }
-
-                // Longer wait after non-auth failure
                 await new Promise(resolve => setTimeout(resolve, 3000));
             }
 
@@ -153,7 +153,7 @@ export default function ForensicBridge({ audience }: { audience: string }) {
 
             if (pointer === queue.length) {
                 setStatus('completed');
-                toast({ title: "Pipeline Complete", description: `Successfully processed all ${queue.length} records.` });
+                toast({ title: "Batch Complete", description: "Successfully processed entire queue." });
             }
         }
     };
@@ -196,28 +196,29 @@ export default function ForensicBridge({ audience }: { audience: string }) {
                         </div>
                     ) : (
                         <div className="space-y-6 text-left">
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-left">
                                 <Card className="bg-white/5 border-white/10 text-white shadow-none">
                                     <CardContent className="pt-6">
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Queue Size</p>
-                                        <p className="text-3xl font-black">{queue.length}</p>
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Queue Progress</p>
+                                        <p className="text-3xl font-black">{currentIndex} <span className="text-xs text-slate-500 font-bold">/ {queue.length}</span></p>
                                     </CardContent>
                                 </Card>
                                 <Card className="bg-white/5 border-white/10 text-white shadow-none">
                                     <CardContent className="pt-6">
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Processed</p>
-                                        <p className="text-3xl font-black">{currentIndex}</p>
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Domains Verified</p>
+                                        <p className="text-3xl font-black text-blue-400">{stats.domains}</p>
                                     </CardContent>
                                 </Card>
                                 <Card className="bg-white/5 border-white/10 text-white shadow-none">
                                     <CardContent className="pt-6">
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Status</p>
-                                        <Badge className={cn(
-                                            "mt-1 uppercase font-black text-[10px]",
-                                            status === 'running' ? "bg-green-600 animate-pulse" : "bg-slate-700"
-                                        )}>
-                                            {status}
-                                        </Badge>
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Emails Mapped</p>
+                                        <p className="text-3xl font-black text-green-400">{stats.emails}</p>
+                                    </CardContent>
+                                </Card>
+                                <Card className="bg-white/5 border-white/10 text-white shadow-none">
+                                    <CardContent className="pt-6">
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">CEOs Identified</p>
+                                        <p className="text-3xl font-black text-purple-400">{stats.leadership}</p>
                                     </CardContent>
                                 </Card>
                             </div>
@@ -233,11 +234,11 @@ export default function ForensicBridge({ audience }: { audience: string }) {
                             <div className="flex justify-center gap-4 text-left">
                                 {status !== 'running' ? (
                                     <Button size="lg" className="h-14 px-12 font-black uppercase text-xs tracking-widest bg-primary" onClick={startEnrichment} disabled={status === 'completed'}>
-                                        <Play className="mr-2 h-4 w-4" /> {currentIndex > 0 ? 'Resume Pipeline' : 'Start Auto-Enrichment'}
+                                        <Play className="mr-2 h-4 w-4" /> {currentIndex > 0 ? 'Resume Batch' : 'Start Auto-Enrichment'}
                                     </Button>
                                 ) : (
                                     <Button size="lg" variant="outline" className="h-14 px-12 font-black uppercase text-xs tracking-widest border-white/20 text-white" onClick={() => setStatus('paused')}>
-                                        <Pause className="mr-2 h-4 w-4" /> Pause Pipeline
+                                        <Pause className="mr-2 h-4 w-4" /> Pause Batch
                                     </Button>
                                 )}
                             </div>
@@ -252,7 +253,7 @@ export default function ForensicBridge({ audience }: { audience: string }) {
                         <CardHeader className="text-left border-b bg-muted/20">
                             <CardTitle className="text-sm font-black uppercase tracking-widest flex items-center gap-2 text-left text-foreground">
                                 <Activity className="h-4 w-4 text-primary" />
-                                Live Intelligence Feed
+                                Batch Intelligence Feed
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="p-0 text-left">
@@ -267,9 +268,9 @@ export default function ForensicBridge({ audience }: { audience: string }) {
                                                 <p className={cn("text-[11px] font-bold leading-tight", log.type === 'error' && "text-destructive")}>{log.msg}</p>
                                                 {log.data && (
                                                     <div className="flex gap-2 mt-2 flex-wrap">
-                                                        {log.data.website && <Badge variant="outline" className="text-[8px] h-4 border-primary/20 text-primary uppercase font-bold">Domain Verified</Badge>}
+                                                        {log.data.website && <Badge variant="outline" className="text-[8px] h-4 border-primary/20 text-primary uppercase font-bold">Domain Secured</Badge>}
                                                         {log.data.email && <Badge variant="outline" className="text-[8px] h-4 border-primary/20 text-primary uppercase font-bold">Email Mapped</Badge>}
-                                                        {log.data.contactPerson && <Badge variant="outline" className="text-[8px] h-4 border-primary/20 text-primary uppercase font-bold">CEO Identified</Badge>}
+                                                        {log.data.contactPerson && <Badge variant="outline" className="text-[8px] h-4 border-primary/20 text-primary uppercase font-bold">Identity Verified</Badge>}
                                                     </div>
                                                 )}
                                             </div>
@@ -284,25 +285,34 @@ export default function ForensicBridge({ audience }: { audience: string }) {
                     <Card className="text-left shadow-lg border-none bg-white">
                         <CardHeader className="text-left border-b bg-muted/20">
                             <CardTitle className="text-sm font-black uppercase tracking-widest flex items-center gap-2 text-left text-foreground">
-                                <ShieldCheck className="h-4 w-4 text-primary" />
-                                Pipeline Configuration
+                                <BarChart3 className="h-4 w-4 text-primary" />
+                                Batch Summary
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4 text-left p-6">
-                            <div className="space-y-2 text-left">
-                                <h4 className="text-xs font-bold text-foreground">Automation Rules</h4>
-                                <ul className="space-y-2 text-[11px] text-muted-foreground text-left">
-                                    <li className="flex items-start gap-2"><div className="h-1 w-1 bg-primary rounded-full mt-1.5 shrink-0" /> Real-time domain verification via Google Search.</li>
-                                    <li className="flex items-start gap-2"><div className="h-1 w-1 bg-primary rounded-full mt-1.5 shrink-0" /> Sequential processing to maintain data integrity.</li>
-                                    <li className="flex items-start gap-2"><div className="h-1 w-1 bg-primary rounded-full mt-1.5 shrink-0" /> Automatic record promotion to <strong>"Qualified"</strong> upon successful bridge.</li>
-                                    <li className="flex items-start gap-2"><div className="h-1 w-1 bg-primary rounded-full mt-1.5 shrink-0" /> 1.5s safety throttle to prevent API rate-limiting.</li>
-                                </ul>
+                            <div className="space-y-4 text-left text-foreground">
+                                <div className="flex justify-between items-center text-sm">
+                                    <span className="font-bold flex items-center gap-2"><Globe className="h-4 w-4 text-blue-500"/> Domains Secured</span>
+                                    <span className="font-mono font-black">{stats.domains}</span>
+                                </div>
+                                <div className="flex justify-between items-center text-sm">
+                                    <span className="font-bold flex items-center gap-2"><Mail className="h-4 w-4 text-green-500"/> Direct E-mails Mapped</span>
+                                    <span className="font-mono font-black">{stats.emails}</span>
+                                </div>
+                                <div className="flex justify-between items-center text-sm">
+                                    <span className="font-bold flex items-center gap-2"><Users className="h-4 w-4 text-purple-500"/> Leadership Identified</span>
+                                    <span className="font-mono font-black">{stats.leadership}</span>
+                                </div>
+                                <div className="flex justify-between items-center text-sm border-t pt-4">
+                                    <span className="font-bold flex items-center gap-2 text-destructive"><AlertTriangle className="h-4 w-4"/> Processing Errors</span>
+                                    <span className="font-mono font-black text-destructive">{stats.errors}</span>
+                                </div>
                             </div>
                             <Separator />
                             <div className="p-4 bg-muted/30 rounded-xl text-left border border-dashed border-muted">
-                                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">Operational Note</p>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">Checking Records</p>
                                 <p className="text-[11px] leading-relaxed italic text-foreground">
-                                    Enrichment tasks are processed one-by-one to ensure maximum fidelity. If the pipeline pauses, you can resume from exactly where it stopped.
+                                    You can verify these 1,800 records in the **Supplier Management** table. Look for the "Qualified" status and the "Enrichment" icons.
                                 </p>
                             </div>
                         </CardContent>
@@ -312,3 +322,4 @@ export default function ForensicBridge({ audience }: { audience: string }) {
         </div>
     );
 }
+
