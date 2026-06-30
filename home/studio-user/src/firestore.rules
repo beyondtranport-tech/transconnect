@@ -14,20 +14,19 @@ service cloud.firestore {
         request.auth.uid == '0Y3IhZffEPNlMAIhURPnzRgNokL2' || 
         request.auth.token.email == 'mkoton100@gmail.com' || 
         request.auth.token.email == 'beyondtransport@gmail.com' ||
+        request.auth.token.email == 'michael@logisticsflow.co.za' ||
         request.auth.token.admin == true
       );
     }
 
-    function isCompanyOwner(cid) {
-      return isSignedIn() && get(/databases/$(database)/documents/companies/$(cid)).data.ownerId == request.auth.uid;
-    }
-
-    function isCompanyStaff(cid) {
-      return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == cid;
-    }
-
     function isMember(cid) {
-      return isAdmin() || isCompanyOwner(cid) || isCompanyStaff(cid);
+      return isAdmin() || (
+        isSignedIn() && cid != null && (
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == cid ||
+          (exists(/databases/$(database)/documents/companies/$(cid)) && 
+           get(/databases/$(database)/documents/companies/$(cid)).data.ownerId == request.auth.uid)
+        )
+      );
     }
 
     // --- RULES ---
@@ -48,39 +47,11 @@ service cloud.firestore {
     }
 
     match /companies/{companyId} {
-      allow get: if isSignedIn() && (
-        resource.data.ownerId == request.auth.uid ||
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId ||
-        isAdmin()
-      );
-      
+      allow get: if isMember(companyId);
       allow list: if isAdmin();
       allow create: if isSignedIn();
       allow update, delete: if isAdmin() || (isSignedIn() && resource.data.ownerId == request.auth.uid);
       
-      match /supportMessages/{msgId} { allow read, write: if isMember(companyId); }
-      match /transactions/{txId} { allow read, write: if isMember(companyId); }
-      match /walletPayments/{pmId} { allow read, write: if isMember(companyId); }
-      match /enquiries/{enqId} { allow read, write: if isMember(companyId); }
-      match /quotes/{qId} { allow read, write: if isMember(companyId); }
-      match /staff/{stId} { allow read, write: if isMember(companyId); }
-      match /payoutRequests/{pId} { allow read, write: if isMember(companyId); }
-      
-      match /shops/{sId} { 
-        allow read, write: if isMember(companyId); 
-        match /products/{pId} { allow read, write: if isMember(companyId); }
-      }
-      
-      match /leads/{lId} { 
-         allow read, write: if isMember(companyId); 
-         match /messages/{mId} { allow read, write: if isMember(companyId); }
-      }
-      
-      match /loadBoards/{lbId} {
-          allow read, write: if isMember(companyId);
-          match /loads/{loadId} { allow read, write: if isMember(companyId); }
-      }
-
       match /{allSub=**} {
         allow read, write: if isMember(companyId);
       }
@@ -93,7 +64,8 @@ service cloud.firestore {
     }
 
     match /leads/{leadId} {
-      allow read, write: if isAdmin();
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
       match /{allSub=**} { allow read, write: if isAdmin(); }
     }
     
@@ -102,7 +74,7 @@ service cloud.firestore {
     }
     
     match /visitors/{visitorId} {
-      allow write: if true;
+      allow read, write: if true;
     }
 
     match /memberships/{membershipId} {

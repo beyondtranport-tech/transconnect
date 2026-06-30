@@ -38,14 +38,14 @@ export default function AccountDashboard() {
 
     const { data: companyData, isLoading: isCompanyLoading, error } = useDoc(companyDocRef);
     
-    const isFreeMember = companyData?.membershipId === 'free';
+    const isFreeMember = companyData?.membershipId === 'free' || !companyData?.membershipId;
     
     const loyaltyTier = companyData?.loyaltyTier || 'bronze';
     const tierColors: {[key: string]: string} = {
         bronze: 'bg-orange-200 text-orange-800',
         silver: 'bg-slate-200 text-slate-800',
         gold: 'bg-yellow-200 text-yellow-800',
-    }
+    };
 
     const userBenefits = useMemo(() => {
         if (!loyaltySettings || !companyData) return [];
@@ -58,7 +58,7 @@ export default function AccountDashboard() {
         })).filter((b: any) => b.value && b.value !== 'N/A' && b.value !== '0');
     }, [loyaltySettings, companyData]);
     
-    // Admin View
+    // Admin View Guard
     if (isAdmin) {
         return (
              <div className="w-full space-y-8">
@@ -67,26 +67,26 @@ export default function AccountDashboard() {
                         <div className="flex items-center gap-4">
                             <ShieldAlert className="h-10 w-10 text-primary" />
                             <div>
-                                <CardTitle className="text-2xl">Administrator Account</CardTitle>
-                                <CardDescription className="text-primary/90">You are currently viewing the standard member dashboard.</CardDescription>
+                                <CardTitle className="text-2xl text-left">Administrator Account</CardTitle>
+                                <CardDescription className="text-primary/90 text-left">You are currently viewing the standard member dashboard.</CardDescription>
                             </div>
                         </div>
                     </CardHeader>
                     <CardContent>
                         <p className="text-lg">
-                           All administrative functions are located in the secure <span className="font-semibold">Admin Backend</span>.
+                           All administrative functions are located in the secure <span className="font-semibold text-primary">Admin Backend</span>.
                         </p>
                     </CardContent>
                     <CardFooter>
                         <Button variant="default" size="lg" asChild>
-                            <Link href="/backend">
-                                Go to Admin Backend <ArrowRight className="ml-2 h-5 w-5" />
+                            <Link href="/adminaccount">
+                                Go to Admin Portal <ArrowRight className="ml-2 h-5 w-5" />
                             </Link>
                         </Button>
                     </CardFooter>
                 </Card>
              </div>
-        )
+        );
     }
 
     if (isUserLoading || (user && (isCompanyLoading || isSettingsLoading))) {
@@ -99,8 +99,8 @@ export default function AccountDashboard() {
     
     if (error) {
         return (
-            <div className="flex justify-center items-center min-h-[calc(100vh-8rem)] w-full">
-                <Card className="m-4">
+            <div className="flex justify-center items-center min-h-[calc(100vh-8rem)] w-full text-left">
+                <Card className="m-4 w-full max-w-2xl">
                     <CardHeader>
                         <CardTitle className="text-destructive">Error Loading Dashboard</CardTitle>
                     </CardHeader>
@@ -113,7 +113,7 @@ export default function AccountDashboard() {
                     </CardFooter>
                 </Card>
             </div>
-        )
+        );
     }
 
     if (!user) {
@@ -121,30 +121,30 @@ export default function AccountDashboard() {
     }
     
     return (
-        <div className="w-full space-y-8">
-            <div className="flex items-center gap-4">
-                <div>
+        <div className="w-full space-y-8 text-left">
+            <div className="flex items-center gap-4 text-left">
+                <div className="text-left">
                     <h1 className="text-3xl md:text-4xl font-bold font-headline">Dashboard</h1>
                     <p className="text-lg text-muted-foreground">Welcome back, {userData?.firstName || 'Member'}!</p>
                 </div>
             </div>
 
             {isFreeMember && (
-                 <Card className="bg-primary/5 border-primary/20">
-                    <CardHeader>
-                        <div className="flex items-start gap-4">
-                            <div className="bg-primary/10 p-3 rounded-full">
+                 <Card className="bg-primary/5 border-primary/20 text-left">
+                    <CardHeader className="text-left">
+                        <div className="flex items-start gap-4 text-left">
+                            <div className="bg-primary/10 p-3 rounded-full shrink-0">
                                <Sparkles className="h-6 w-6 text-primary" />
                             </div>
-                            <div>
-                                <CardTitle>Unlock Your Full Potential</CardTitle>
-                                <CardDescription className="mt-1">
+                            <div className="text-left">
+                                <CardTitle className="text-left">Unlock Your Full Potential</CardTitle>
+                                <CardDescription className="mt-1 text-left">
                                     You are currently on the Free plan. Upgrade your membership to access powerful tools, exclusive discounts, and new revenue opportunities.
                                 </CardDescription>
                             </div>
                         </div>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="text-left">
                          <p className="text-sm text-muted-foreground">
                             By upgrading, you gain access to our advanced Tech division, including the AI Freight Matcher, plus the ability to activate Loyalty and Actions plans to save money and earn commission.
                         </p>
@@ -187,6 +187,7 @@ export default function AccountDashboard() {
                             <Link href="/account?view=wallet">Manage Wallet</Link>
                         </Button>
                     </CardContent>
+                </Card>
                  <Card>
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
                         <CardTitle className="text-sm font-medium">Loyalty Status</CardTitle>
@@ -205,13 +206,13 @@ export default function AccountDashboard() {
                 </Card>
             </div>
             
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
+            <Card className="text-left">
+                <CardHeader className="text-left">
+                    <CardTitle className="flex items-center gap-2 text-left">
                         <Award className="h-5 w-5 text-primary" />
                         My Loyalty Benefits
                     </CardTitle>
-                    <CardDescription>
+                    <CardDescription className="text-left">
                         You are on the <span className="font-semibold text-primary capitalize">{loyaltyTier}</span> tier. Here are your active benefits:
                     </CardDescription>
                 </CardHeader>
@@ -236,11 +237,11 @@ export default function AccountDashboard() {
                 </CardFooter>
             </Card>
 
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><HeartHandshake /> Help the Community & Earn Rewards</CardTitle>
+            <Card className="text-left">
+                <CardHeader className="text-left">
+                    <CardTitle className="flex items-center gap-2 text-left"><HeartHandshake /> Help the Community & Earn Rewards</CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="text-left">
                     <p className="text-muted-foreground mb-4">Help the community by sharing anonymous data about your fleet and suppliers. Each contribution earns you reward points and helps us negotiate better group discounts for everyone.</p>
                 </CardContent>
                 <CardFooter>

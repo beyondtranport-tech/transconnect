@@ -19,13 +19,13 @@ service cloud.firestore {
       );
     }
 
-    // Optimized membership check for list operations
+    // Optimized membership check for sub-collection listing
     function isMember(cid) {
       return isAdmin() || (
         isSignedIn() && cid != null && (
-          // Check user profile for company association (fastest check)
+          // Use auth uid directly to check profile companyId
           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == cid ||
-          // Fallback: Check company ownership
+          // Fallback to existence of company with owner matching current user
           (exists(/databases/$(database)/documents/companies/$(cid)) && 
            get(/databases/$(database)/documents/companies/$(cid)).data.ownerId == request.auth.uid)
         )
@@ -51,21 +51,22 @@ service cloud.firestore {
       }
     }
 
-    // Company Data & Sub-collections
+    // Company Data Hierarchy
     match /companies/{companyId} {
-      // Explicitly permit access if member
+      // Members can see their own company profile
       allow get: if isMember(companyId);
       allow list: if isAdmin();
       allow create: if isSignedIn();
       allow update, delete: if isAdmin() || (isSignedIn() && resource.data.ownerId == request.auth.uid);
       
-      // Sub-collections inherit member permissions
+      // Sub-collections: Support, Transactions, Enquiries, etc.
+      // Explicitly allow list/read if the user is a verified member of the parent company
       match /{allSub=**} {
         allow read, write: if isMember(companyId);
       }
     }
 
-    // Public Collections
+    // Public Registries & Discovery
     match /partners/{partnerId} {
       allow get: if true;
       allow list: if isSignedIn();
@@ -75,10 +76,12 @@ service cloud.firestore {
 
     match /leads/{leadId} {
       allow get: if true;
-      allow list, write: if isAdmin();
+      allow list: if isAdmin() || isSignedIn();
+      allow write: if isAdmin();
       match /{allSub=**} { allow read, write: if isAdmin(); }
     }
     
+    // Public Market Access
     match /shops/{shopId}/{path=**} {
       allow get, list: if true;
     }
@@ -97,7 +100,7 @@ service cloud.firestore {
 
     match /contributions/{contributionId} {
       allow create: if isSignedIn();
-      allow read: if isSignedIn();
+      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
     }
   }
 }
