@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -230,7 +229,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                         <Info className="h-3 w-3 text-amber-600" />
                         <AlertTitle className="text-[10px] font-black uppercase tracking-widest text-amber-800 text-left">Gmail Web Integration</AlertTitle>
                         <AlertDescription className="text-[9px] text-amber-700 text-left">
-                            Now opening Gmail Web for better deliverability. Avoid sending {' > '} 20/hr to protect your sender score.
+                            Now opening Gmail Web for better deliverability. Avoid sending &gt; 20/hr to protect your sender score.
                         </AlertDescription>
                     </Alert>
 

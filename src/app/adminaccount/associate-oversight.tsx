@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -246,7 +245,7 @@ export default function AssociateOversight() {
                     </Card>
                     
                     {selectedAssociate && (
-                        <Card className="shadow-2xl border-primary/20 bg-white animate-in slide-in-from-bottom-4 duration-500 text-left text-foreground">
+                        <Card className="shadow-2xl border-primary/20 bg-white animate-in slide-in-from-bottom-4 duration-500 text-left text-foreground text-foreground">
                             <CardHeader className="border-b bg-slate-900 text-white text-left">
                                 <div className="flex justify-between items-center text-left">
                                     <div className="text-left">

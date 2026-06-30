@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useCallback, useMemo, useEffect, Suspense } from 'react';
@@ -38,12 +37,12 @@ import { Label } from '@/components/ui/label';
 import { formatDateSafe, cn, downloadDataAsCSV } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 
-import { EnrichPartnerButton } from '@/app/adminaccount/marketing/EnrichPartnerButton';
-import { PartnerTasksDialog } from '@/app/adminaccount/marketing/PartnerTasksDialog';
-import { CommunicationLogDialog } from '@/app/adminaccount/marketing/CommunicationLogDialog';
-import { EngageDialog } from './marketing/EngageDialog';
-import { PartnerOversightDialog } from './marketing/PartnerOversightDialog';
-import { BulkImportDialog } from './marketing/BulkImportDialog';
+import { EnrichPartnerButton } from './EnrichPartnerButton';
+import { PartnerTasksDialog } from './PartnerTasksDialog';
+import { CommunicationLogDialog } from './CommunicationLogDialog';
+import { EngageDialog } from './EngageDialog';
+import { PartnerOversightDialog } from './PartnerOversightDialog';
+import { BulkImportDialog } from './BulkImportDialog';
 
 async function performAdminAction(token: string, action: string, payload?: any) {
   const response = await fetch('/api/admin', {
@@ -123,16 +122,10 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
         <DialogHeader><DialogTitle>{lead ? 'Edit' : 'Add New'} Lead</DialogTitle></DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[60vh] overflow-y-auto pr-2 text-left text-foreground">
-            <FormField control={form.control} name="companyName" render={({ field }) => (
-                <FormItem><FormLabel>Company Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-            )} />
+            <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Company Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <FormField control={form.control} name="contactPerson" render={({ field }) => (
-                  <FormItem><FormLabel>Contact Person</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-              )} />
-              <FormField control={form.control} name="email" render={({ field }) => (
-                  <FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" /></FormControl><FormMessage /></FormItem>
-              )} />
+              <FormField control={form.control} name="contactPerson" render={({ field }) => (<FormItem><FormLabel>Contact Person</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" /></FormControl><FormMessage /></FormItem>)} />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
               <FormField control={form.control} name="status" render={({ field }) => (

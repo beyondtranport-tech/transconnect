@@ -1,4 +1,3 @@
-
 rules_version = '2';
 
 service cloud.firestore {
@@ -20,12 +19,12 @@ service cloud.firestore {
       );
     }
 
-    // Hardened membership check optimized for list queries
+    // Hardened membership check optimized for query-level list permissions
     function isMember(cid) {
       return isAdmin() || (
-        isSignedIn() && (
-          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == cid
-        )
+        isSignedIn() && 
+        cid != null && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == cid
       );
     }
 
@@ -47,12 +46,12 @@ service cloud.firestore {
     }
 
     match /companies/{companyId} {
-      allow get: if isMember(companyId);
-      allow list: if isAdmin();
+      // Allow read to authenticated members of the company
+      allow read: if isMember(companyId);
       allow create: if isSignedIn();
       allow update, delete: if isAdmin() || (isSignedIn() && resource.data.ownerId == request.auth.uid);
       
-      // Explicitly allow sub-collection read (includes list/get) for authorized members
+      // Explicit sub-collection rules to ensure 'list' works correctly for members
       match /supportMessages/{msgId} { allow read, write: if isMember(companyId); }
       match /transactions/{txId} { allow read, write: if isMember(companyId); }
       match /walletPayments/{payId} { allow read, write: if isMember(companyId); }
