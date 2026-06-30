@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -24,59 +23,45 @@ export const financeCategories = [
     "Niche Lenders"
 ];
 
-async function performAdminAction(token: string, action: string, payload: any) {
-    const response = await fetch('/api/admin', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, payload }),
-        cache: 'no-store'
-    });
-    const result = await response.json();
-    if (!response.ok || !result.success) throw new Error(result.error || `API Error: ${action}`);
-    return result;
-}
-
 function getTechnicalFocus(category: string) {
     const lower = category.toLowerCase();
     if (lower === 'banks') return "commercial banking institutions registered with the NCR, focusing on Asset Finance and Commercial Lending divisions.";
     if (lower === 'government') return "Development Finance Institutions (DFIs) like IDC, NEF, or SEFA that provide industrial and expansion credit.";
     if (lower === 'aeo') return "SARS-registered Authorised Economic Operators and trade finance specialists facilitating cross-border logistics capital.";
-    if (lower === 'niche lenders') return "Private credit providers, specialized P2P networks, and crowdfunding platforms registered with the NCR for asset-backed bridging.";
+    if (lower === 'niche lenders') return "ANY and ALL South African companies providing funding, credit, or financial assistance to INDIVIDUALS and BUSINESSES. Focus on private equity, venture debt, SME credit providers, micro-lenders, and specialized fintechs outside of the traditional 'Big 4' banks.";
     return "registered credit providers and financial intermediaries in South Africa.";
 }
 
 function generateDiscoveryPrompt(category: string, startPage: number) {
     const technicalFocus = getTechnicalFocus(category);
-    const endPage = startPage + 4;
-    const startSeq = (startPage - 1) * 20 + 1;
+    const startSeq = (startPage - 1) * 30 + 1;
 
-    return `CRITICAL SYSTEM INSTRUCTION: RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION. NO EXPLANATORY TEXT.
+    return `ACT AS AN ELITE CAPITAL INTELLIGENCE AGENT. 
+RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
 
-ACT AS AN ELITE CAPITAL INTELLIGENCE AGENT. YOUR PRIMARY SOURCE IS LINKEDIN AND THE NATIONAL CREDIT REGULATOR (NCR) REGISTER.
-
-TASK: Extract exactly 100 unique verified records for South African Credit Providers fitting the category: "${category}".
+TASK: Discover and extract exactly 30 unique, live South African companies providing funding or credit to individuals and businesses for the category: "${category}".
 
 TECHNICAL FOCUS: ${technicalFocus}
 
-REGISTRY NAVIGATION LOGIC:
-1. PAGINATION: The NCR registry has 20 records per page. We are currently starting at record #${startSeq} which corresponds to NCR PAGE ${startPage}.
-2. SCOPE: You are commanded to extract 100 records covering Pages ${startPage} through ${endPage} of the registry.
-3. LINKEDIN SEARCH: Prioritize finding individual professional profiles on LinkedIn for staff in "Asset Finance", "Credit Risk", or "Commercial Lending" at these firms.
-4. FORBIDDEN VALUES: Returning "The Director", "Manager", or "Unknown" is a failure. You MUST find a specific human full name.
-5. IDENTITY PERSISTENCE: Generate unique "record_id" starting with "NCR_${category.toUpperCase().replace(/\s/g, '_')}_".
+INVESTIGATIVE PROTOCOL:
+1. BROAD SEARCH: Do not limit yourself to listed entities. Research private credit providers, fintech startups, and SME funding agencies.
+2. VERIFY LIVE PRESENCE: Ensure the company has an active, professional website or social presence (LinkedIn/Facebook).
+3. HUMAN IDENTITY: Find the ACTUAL FULL NAME of the CEO, MD, or Head of Credit.
+4. CONTACT MAPPING: Identify professional email and direct mobile numbers (+27 format).
+5. RECORD KEY: Generate a unique "record_id" starting with "NCR_${category.toUpperCase().replace(/\s/g, '_')}_".
 
-REQUIRED OUTPUT FORMAT (RAW JSON ARRAY ONLY):
+REQUIRED JSON FIELDS:
 [
   {
     "seq": ${startSeq},
-    "record_id": "NCR_${category.toUpperCase().replace(/\s/g, '_')}_[RANDOM_ID]",
-    "company_name": "LEGAL REGISTERED NAME",
+    "record_id": "...",
+    "companyName": "FULL LEGAL NAME",
     "industrial_category": "${category}",
-    "contact_person": "ACTUAL HUMAN FULL NAME (CEO/MD/HEAD OF CREDIT)",
-    "email_address": "Verified Direct Professional Email",
-    "telephone_number": "Direct Office/Executive Line",
-    "website": "Company URL",
-    "research_status": "completed"
+    "contact_person": "VERIFIED HUMAN NAME",
+    "email": "...",
+    "mobile": "...",
+    "website": "OFFICIAL VERIFIED URL",
+    "notes": "Detailed summary of their funding products (e.g. asset-backed loans, invoice factoring, personal credit) and their target client profile."
   }
 ]`;
 }
@@ -84,11 +69,9 @@ REQUIRED OUTPUT FORMAT (RAW JSON ARRAY ONLY):
 const DiscoveryTab = ({ category, currentCount }: { category: string, currentCount: number }) => {
     const { toast } = useToast();
     const [isCopied, setIsCopied] = useState(false);
-    const [isAutoDiscovering, setIsAutoDiscovering] = useState(false);
     const [pageOverride, setPageOverride] = useState<number | ''>('');
-    const [configError, setConfigError] = useState<string | null>(null);
     
-    const suggestedPage = Math.floor(currentCount / 20) + 1;
+    const suggestedPage = Math.floor(currentCount / 30) + 1;
     const startPage = pageOverride !== '' ? Number(pageOverride) : suggestedPage;
 
     const prompt = useMemo(() => generateDiscoveryPrompt(category, startPage), [category, startPage]);
@@ -109,14 +92,14 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
             <div className="space-y-4">
                 <h2 className="text-2xl font-bold font-headline flex items-center gap-2">
                     <Database className="h-6 w-6 text-amber-500" />
-                    NCR Discovery: {category}
+                    Capital Discovery: {category}
                 </h2>
                 
-                <div className="p-4 bg-primary/5 border rounded-xl space-y-4">
+                <div className="p-4 bg-primary/5 border rounded-xl space-y-4 text-left">
                     <Label className="text-[10px] font-black uppercase tracking-widest text-primary">Pagination Control</Label>
                     <div className="flex items-center gap-3">
                         <div className="flex-1 space-y-1.5">
-                            <Label className="text-xs font-bold">Start from NCR Page #</Label>
+                            <Label className="text-xs font-bold">Start from Discovery Batch #</Label>
                             <Input 
                                 type="number" 
                                 placeholder={String(suggestedPage)}
@@ -131,17 +114,17 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                 <div className="pt-2 flex flex-col gap-2">
                     <Button onClick={handleCopy} variant="outline" size="lg" className="w-full gap-2 shadow-sm border-amber-200 text-amber-700 hover:bg-amber-50">
                         {isCopied ? <ClipboardCheck className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
-                        {isCopied ? "Prompt Copied" : `Copy Manual Prompt`}
+                        {isCopied ? "Prompt Copied" : `Copy Forensic Prompt`}
                     </Button>
                 </div>
             </div>
 
-            <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
+            <div className="space-y-2 text-left">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5 text-left">
                     <Terminal className="h-3 w-3"/> AI Forensic Command
                 </Label>
-                <ScrollArea className="h-[400px] border rounded-lg bg-slate-900 p-4 shadow-inner">
-                    <pre className="text-[10px] text-slate-400 font-mono whitespace-pre-wrap leading-tight">
+                <ScrollArea className="h-[400px] border rounded-lg bg-slate-900 p-4 shadow-inner text-left">
+                    <pre className="text-[10px] text-slate-400 font-mono whitespace-pre-wrap leading-tight text-left">
                         {prompt}
                     </pre>
                 </ScrollArea>
@@ -159,8 +142,8 @@ export default function FinanceDiscoveryEngine() {
                         <Landmark className="h-6 w-6 text-amber-500" />
                         Capital Intelligence Discovery
                     </CardTitle>
-                    <CardDescription className="text-left">
-                        Identify credit providers from the NCR Register.
+                    <CardDescription className="text-left text-muted-foreground">
+                        Identify credit providers, private lenders, and specialized fintechs across South Africa.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="px-0 text-left">

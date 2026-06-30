@@ -19,6 +19,7 @@ service cloud.firestore {
       );
     }
 
+    // Explicit check for membership that supports 'list' operations correctly.
     function isMember(cid) {
       return isAdmin() || (
         isSignedIn() && 

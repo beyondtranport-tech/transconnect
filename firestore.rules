@@ -19,7 +19,8 @@ service cloud.firestore {
       );
     }
 
-    // Hardened membership check optimized for query-level list permissions
+    // Explicit check for membership that supports 'list' operations correctly.
+    // We check the user's document for their companyId and match it against the path.
     function isMember(cid) {
       return isAdmin() || (
         isSignedIn() && 
@@ -46,7 +47,7 @@ service cloud.firestore {
     }
 
     match /companies/{companyId} {
-      // Allow read to authenticated members of the company
+      // Explicitly allow reading (get/list) to authenticated members
       allow read: if isMember(companyId);
       allow create: if isSignedIn();
       allow update, delete: if isAdmin() || (isSignedIn() && resource.data.ownerId == request.auth.uid);
