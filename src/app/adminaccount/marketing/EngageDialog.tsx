@@ -100,10 +100,10 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
   }, [audience]);
 
   const Emails = useMemo(() => {
-    if (audience === 'investors' || audience === 'finance') return InvestorEmails;
-    if (audience === 'developers') return DeveloperEmails;
-    if (audience === 'suppliers') return SupplierEmails;
-    if (audience === 'transporters') return TransporterEmails;
+    if (audience === 'investors' || audience === 'finance') return InvestorOffer;
+    if (audience === 'developers') return DeveloperOffer;
+    if (audience === 'suppliers') return SupplierOffer;
+    if (audience === 'transporters') return TransporterOffer;
     if (audience === 'associates') return AssociateEmails;
     return PartnerEmails;
   }, [audience]);
@@ -159,7 +159,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
 
         toast({ title: "Content Ready", description: "Interaction logged and formatted HTML copied to clipboard." });
 
-        // Interim Gmail Integration
+        // Gmail Integration
         const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${currentPartner.email}&su=${encodeURIComponent(getSubject())}`;
         window.open(gmailUrl, '_blank');
         
@@ -231,7 +231,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                         <Info className="h-3 w-3 text-amber-600" />
                         <AlertTitle className="text-[10px] font-black uppercase tracking-widest text-amber-800 text-left">Gmail Web Integration</AlertTitle>
                         <AlertDescription className="text-[9px] text-amber-700 text-left">
-                            Now opening Gmail Web for better deliverability. Avoid sending {' > '} 20/hr to protect your sender score.
+                            Now opening Gmail Web for better deliverability. Avoid sending {"&gt;"} 20/hr to protect your sender score.
                         </AlertDescription>
                     </Alert>
 
@@ -286,7 +286,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                     )}
                 </div>
 
-                <div className="flex-1 overflow-y-auto bg-slate-50 p-8 text-left">
+                <div className="flex-1 overflow-y-auto bg-slate-50 p-8 text-left text-foreground">
                     <div className="max-w-[850px] mx-auto space-y-6 text-left">
                         {activeTab === 'digital-handshake' && (
                             <div data-id="version-selector-ui" className="bg-amber-50 border border-amber-200 p-4 rounded-xl flex items-center justify-between mb-4 text-left">

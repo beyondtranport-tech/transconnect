@@ -21,7 +21,7 @@ service cloud.firestore {
 
     function isMember(cid) {
       return isAdmin() || (
-        isSignedIn() && (
+        isSignedIn() && cid != null && (
           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == cid
         )
       );
