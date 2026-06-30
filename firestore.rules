@@ -19,18 +19,18 @@ service cloud.firestore {
       );
     }
 
-    // Direct owner check on the company document
-    function isCompanyOwner(cid) {
-      return isSignedIn() && get(/databases/$(database)/documents/companies/$(cid)).data.ownerId == request.auth.uid;
-    }
-
-    // Lookup check via the user's profile
+    // Direct check if the user belongs to the company via their profile
     function isCompanyStaff(cid) {
       return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == cid;
     }
 
+    // Direct check if the user is the owner defined on the company doc
+    function isCompanyOwner(cid) {
+      return isSignedIn() && get(/databases/$(database)/documents/companies/$(cid)).data.ownerId == request.auth.uid;
+    }
+
     function isMember(cid) {
-      return isAdmin() || isCompanyOwner(cid) || isCompanyStaff(cid);
+      return isAdmin() || isCompanyStaff(cid) || isCompanyOwner(cid);
     }
 
     // --- RULES ---
@@ -52,9 +52,8 @@ service cloud.firestore {
       }
     }
 
-    // Company Data
+    // Company Data & Sub-collections
     match /companies/{companyId} {
-      // Basic read for the company doc itself
       allow get: if isSignedIn() && (
         resource.data.ownerId == request.auth.uid ||
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId ||
@@ -65,9 +64,7 @@ service cloud.firestore {
       allow create: if isSignedIn();
       allow update, delete: if isAdmin() || (isSignedIn() && resource.data.ownerId == request.auth.uid);
       
-      // EXPLICIT SUB-COLLECTION RULES
-      // Using 'read' to cover both 'get' and 'list'
-      
+      // Sub-collections use refined membership check
       match /supportMessages/{msgId} { allow read, write: if isMember(companyId); }
       match /transactions/{txId} { allow read, write: if isMember(companyId); }
       match /walletPayments/{pmId} { allow read, write: if isMember(companyId); }
@@ -99,14 +96,14 @@ service cloud.firestore {
 
     // Industrial Registries (Internal)
     match /partners/{partnerId} {
-      allow get: if true; // Enabled for public opt-in links
+      allow get: if true;
       allow list: if isSignedIn();
       allow write: if isAdmin();
       match /{allSub=**} { allow read, write: if isAdmin(); }
     }
 
     match /leads/{leadId} {
-      allow get: if true; // Enabled for public opt-in links
+      allow get: if true;
       allow list, write: if isAdmin();
       match /{allSub=**} { allow read, write: if isAdmin(); }
     }
