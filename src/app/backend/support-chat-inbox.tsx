@@ -1,12 +1,13 @@
+
 'use client';
 
-import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Loader2, MessageSquare, Send, Bot } from 'lucide-react';
+import { Loader2, MessageSquare, Send, Bot, Search } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useCollection, getClientSideAuthToken, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, serverTimestamp, collectionGroup } from 'firebase/firestore';
@@ -41,6 +42,7 @@ export default function SupportChatInbox() {
     const firestore = useFirestore();
     const { user: adminUser } = useUser();
     const { toast } = useToast();
+    const [searchTerm, setSearchTerm] = useState('');
 
     // Fetch all support messages and companies
     const messagesQuery = useMemoFirebase(() => firestore ? query(collectionGroup(firestore, 'supportMessages')) : null, [firestore]);
@@ -80,19 +82,32 @@ export default function SupportChatInbox() {
             }
         });
         
-        return Object.values(grouped).sort((a,b) => {
-            if (!a.messages.length || !b.messages.length) return 0;
-            const lastMsgA = a.messages[a.messages.length - 1];
-            const lastMsgB = b.messages[b.messages.length - 1];
-            const dateA = lastMsgA?.timestamp?.toDate ? lastMsgA.timestamp.toDate() : new Date(0);
-            const dateB = lastMsgB?.timestamp?.toDate ? lastMsgB.timestamp.toDate() : new Date(0);
-            return dateB.getTime() - dateA.getTime();
-        });
-    }, [messages, companies]);
+        return Object.values(grouped)
+            .filter(convo => {
+                if (!searchTerm) return true;
+                const name = convo.company?.companyName?.toLowerCase() || '';
+                return name.includes(searchTerm.toLowerCase());
+            })
+            .sort((a,b) => {
+                if (!a.messages.length || !b.messages.length) return 0;
+                const lastMsgA = a.messages[a.messages.length - 1];
+                const lastMsgB = b.messages[b.messages.length - 1];
+                const dateA = lastMsgA?.timestamp?.toDate ? lastMsgA.timestamp.toDate() : new Date(0);
+                const dateB = lastMsgB?.timestamp?.toDate ? lastMsgB.timestamp.toDate() : new Date(0);
+                return dateB.getTime() - dateA.getTime();
+            });
+    }, [messages, companies, searchTerm]);
 
     const Conversation = ({ convo }: { convo: any }) => {
         const [adminInput, setAdminInput] = useState('');
         const [isSending, setIsSending] = useState(false);
+        const chatEndRef = useRef<HTMLDivElement>(null);
+
+        useEffect(() => {
+            if (chatEndRef.current) {
+                chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
+            }
+        }, [convo.messages]);
         
         const handleAdminSend = async () => {
             if (!adminUser || !adminInput.trim() || !convo.company?.id) return;
@@ -136,19 +151,22 @@ export default function SupportChatInbox() {
         };
 
         return (
-            <AccordionItem value={convo.company.id} key={convo.company.id}>
-                <AccordionTrigger>
-                    <div>
-                        <p className="font-semibold text-left text-primary">{convo.company?.companyName || 'Unknown Company'}</p>
-                         <p className="text-xs text-muted-foreground text-left">
-                            {convo.messages.length} message(s) | Last message: {formatDate(convo.messages[convo.messages.length - 1].timestamp)}
-                        </p>
+            <AccordionItem value={convo.company.id} key={convo.company.id} className="border rounded-lg mb-4 overflow-hidden shadow-sm">
+                <AccordionTrigger className="px-4 py-4 hover:bg-muted/30 hover:no-underline">
+                    <div className="flex items-center gap-4 text-left">
+                        <div className="bg-primary/10 p-2 rounded-full"><MessageSquare className="h-5 w-5 text-primary"/></div>
+                        <div>
+                            <p className="font-bold text-base text-foreground">{convo.company?.companyName || 'Unknown Company'}</p>
+                            <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest">
+                                {convo.messages.length} message(s) • Last activity: {formatDate(convo.messages[convo.messages.length - 1].timestamp)}
+                            </p>
+                        </div>
                     </div>
                 </AccordionTrigger>
                 <AccordionContent>
-                    <div className="p-4 border rounded-lg bg-muted/50 h-[60vh] flex flex-col">
+                    <div className="p-4 bg-muted/20 h-[50vh] flex flex-col">
                         <ScrollArea className="flex-1 w-full pr-4 mb-4">
-                             <div className="space-y-4">
+                             <div className="space-y-4 pt-2">
                                 {convo.messages.map((message: SupportMessage) => {
                                     const isMember = message.senderId === convo.company?.ownerId;
                                     const isAdmin = message.senderId === adminUser?.uid;
@@ -159,24 +177,24 @@ export default function SupportChatInbox() {
                                         <div key={message.id} className={cn("flex items-end gap-2", alignment)}>
                                             {isMember && (
                                                 <Avatar className="h-8 w-8">
-                                                    <AvatarFallback className="bg-muted">
+                                                    <AvatarFallback className="bg-slate-200 text-slate-700 text-[10px] font-black">
                                                         {convo.company?.companyName?.charAt(0) || 'M'}
                                                     </AvatarFallback>
                                                 </Avatar>
                                             )}
                                             <div className={cn(
-                                                "rounded-lg px-3 py-2 max-w-[80%] text-sm", 
-                                                isAdmin ? "bg-secondary text-secondary-foreground" :
-                                                isAI ? "bg-blue-200 text-blue-900" :
-                                                "bg-background border"
+                                                "rounded-2xl px-4 py-2 max-w-[80%] text-sm shadow-sm", 
+                                                isAdmin ? "bg-slate-900 text-white rounded-br-none" :
+                                                isAI ? "bg-blue-100 text-blue-900 rounded-br-none" :
+                                                "bg-white border rounded-bl-none"
                                             )}>
-                                                <p className="font-semibold text-xs mb-1">{message.senderName}</p>
-                                                <p>{message.text}</p>
-                                                <p className="text-xs opacity-70 mt-1 text-right">{formatDate(message.timestamp)}</p>
+                                                <p className="font-black text-[9px] uppercase tracking-widest mb-1 opacity-70">{message.senderName}</p>
+                                                <p className="leading-relaxed">{message.text}</p>
+                                                <p className="text-[9px] opacity-50 mt-1 text-right">{formatDate(message.timestamp)}</p>
                                             </div>
                                              {(isAdmin || isAI) && (
                                                 <Avatar className="h-8 w-8">
-                                                    <AvatarFallback className={isAdmin ? 'bg-secondary' : 'bg-blue-500 text-white'}>
+                                                    <AvatarFallback className={isAdmin ? 'bg-slate-900 text-white font-bold text-[10px]' : 'bg-blue-500 text-white'}>
                                                         {isAdmin ? 'AD' : <Bot className="h-5 w-5" />}
                                                     </AvatarFallback>
                                                 </Avatar>
@@ -184,17 +202,19 @@ export default function SupportChatInbox() {
                                         </div>
                                     );
                                 })}
+                                <div ref={chatEndRef} />
                              </div>
                         </ScrollArea>
-                        <div className="mt-auto flex items-center gap-2 pt-4 border-t">
+                        <div className="mt-auto flex items-center gap-2 pt-4 border-t bg-white p-2 rounded-xl shadow-inner">
                             <Input 
                                 placeholder="Type as Support to reply..." 
                                 value={adminInput}
                                 onChange={e => setAdminInput(e.target.value)}
                                 onKeyDown={e => e.key === 'Enter' && !isSending && handleAdminSend()}
                                 disabled={isSending}
+                                className="border-none focus-visible:ring-0"
                             />
-                            <Button onClick={handleAdminSend} disabled={isSending || !adminInput.trim()} size="icon">
+                            <Button onClick={handleAdminSend} disabled={isSending || !adminInput.trim()} size="icon" className="rounded-full h-10 w-10">
                                 {isSending ? <Loader2 className="h-4 w-4 animate-spin"/> : <Send className="h-4 w-4" />}
                             </Button>
                         </div>
@@ -206,26 +226,35 @@ export default function SupportChatInbox() {
 
     if (isLoading) {
         return (
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><MessageSquare /> Member Support Inbox</CardTitle>
-                </CardHeader>
-                <CardContent className="flex justify-center items-center py-20">
-                    <Loader2 className="h-10 w-10 animate-spin text-primary" />
-                </CardContent>
-            </Card>
+            <div className="flex flex-col items-center justify-center py-20 gap-4">
+                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                <p className="text-sm font-black uppercase tracking-widest text-muted-foreground">Aggregating Support Channels...</p>
+            </div>
         );
     }
     
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2"><MessageSquare /> Member Support Inbox</CardTitle>
-                <CardDescription>Review all member support conversations. You can join the discussion by typing in the message box below each conversation.</CardDescription>
+        <div className="space-y-6 text-left">
+            <CardHeader className="px-0 pt-0 text-left">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 text-left">
+                    <div className="text-left">
+                        <CardTitle className="flex items-center gap-2 text-2xl font-black font-headline text-left"><MessageSquare className="text-primary" /> Member Support Inbox</CardTitle>
+                        <CardDescription className="text-left">Central oversight for all community and AI assistant interactions.</CardDescription>
+                    </div>
+                    <div className="relative w-full md:w-80">
+                        <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input 
+                            placeholder="Filter by company name..." 
+                            className="pl-9 h-10 bg-white" 
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
+                </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="px-0 text-left">
                 {conversations.length > 0 ? (
-                    <Accordion type="single" collapsible className="w-full">
+                    <Accordion type="single" collapsible className="w-full text-left">
                         {conversations
                             .filter(convo => convo.company)
                             .map((convo) => (
@@ -233,13 +262,15 @@ export default function SupportChatInbox() {
                         ))}
                     </Accordion>
                 ) : (
-                    <div className="text-center py-20 border-dashed border-2 rounded-lg">
-                        <MessageSquare className="mx-auto h-12 w-12 text-muted-foreground" />
-                        <h3 className="mt-4 text-xl font-semibold">Inbox Zero!</h3>
-                        <p className="mt-2 text-muted-foreground">There are no active support conversations.</p>
+                    <div className="text-center py-32 border-dashed border-2 rounded-3xl bg-muted/10">
+                        <div className="bg-white p-6 rounded-full w-fit mx-auto mb-6 shadow-sm">
+                            <MessageSquare className="h-12 w-12 text-muted-foreground/30" />
+                        </div>
+                        <h3 className="text-2xl font-black font-headline text-foreground">Inbox Zero</h3>
+                        <p className="text-muted-foreground mt-2 max-w-xs mx-auto">No active support conversations found matching your criteria.</p>
                     </div>
                 )}
             </CardContent>
-        </Card>
+        </div>
     );
 }

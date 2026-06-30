@@ -56,7 +56,10 @@ export default function SupportChatContent() {
     
     useEffect(() => {
         if (scrollAreaRef.current) {
-            scrollAreaRef.current.scrollTo({ top: scrollAreaRef.current.scrollHeight, behavior: 'smooth' });
+            const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+            if (scrollContainer) {
+                scrollContainer.scrollTo({ top: scrollContainer.scrollHeight, behavior: 'smooth' });
+            }
         }
     }, [messages]);
 
@@ -132,7 +135,7 @@ export default function SupportChatContent() {
 
     if (permissionError) {
         return (
-            <Card className="border-destructive bg-destructive/5">
+            <Card className="border-destructive bg-destructive/5 text-left">
                 <CardHeader>
                     <CardTitle className="text-destructive flex items-center gap-2">
                         <AlertTriangle className="h-5 w-5" />
@@ -155,12 +158,12 @@ export default function SupportChatContent() {
     }
 
     return (
-        <Card className="h-[calc(100vh-10rem)] flex flex-col border-none shadow-none">
-            <CardHeader className="px-0">
-                <CardTitle className="flex items-center gap-2"><MessageSquare /> Support Chat</CardTitle>
-                <CardDescription>Direct line to our AI assistant and platform support team.</CardDescription>
+        <Card className="h-[calc(100vh-10rem)] flex flex-col border-none shadow-none text-left">
+            <CardHeader className="px-0 text-left">
+                <CardTitle className="flex items-center gap-2 text-left"><MessageSquare /> Support Chat</CardTitle>
+                <CardDescription className="text-left">Direct line to our AI assistant and platform support team.</CardDescription>
             </CardHeader>
-            <CardContent className="flex-1 flex flex-col min-h-[0px] p-0">
+            <CardContent className="flex-1 flex flex-col min-h-[0px] p-0 text-left">
                 <ScrollArea className="flex-1 pr-4 -mr-4 mb-4" ref={scrollAreaRef as any}>
                     <div className="space-y-4">
                         {isLoading && !messages ? (

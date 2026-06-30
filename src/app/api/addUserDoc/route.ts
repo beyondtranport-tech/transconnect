@@ -75,16 +75,18 @@ export async function POST(req: NextRequest) {
     const userDocSnap = await db.collection('users').doc(uid).get();
     const userCompanyId = userDocSnap.data()?.companyId;
 
+    // Check if the user owns the company path or is an admin
     if (pathSegments.length >= 2 && pathSegments[0] === 'companies' && pathSegments[1] === userCompanyId) {
         isAuthorized = true;
     }
     
-    // Allow admin to bypass ownership check
-    if (!isAuthorized) {
-        const isAdmin = decodedToken.email === 'beyondtransport@gmail.com' || decodedToken.email === 'mkoton100@gmail.com';
-        if (!isAdmin) {
-          return NextResponse.json({ success: false, error: 'Forbidden: You can only add documents to your own subcollections.' }, { status: 403 });
-        }
+    const isAdmin = decodedToken.email === 'beyondtransport@gmail.com' || 
+                    decodedToken.email === 'mkoton100@gmail.com' ||
+                    decodedToken.email === 'michael@logisticsflow.co.za' ||
+                    decodedToken.admin === true;
+
+    if (!isAuthorized && !isAdmin) {
+          return NextResponse.json({ success: false, error: `Forbidden: Access to ${collectionPath} denied for user ${uid}.` }, { status: 403 });
     }
 
     const batch = db.batch();
@@ -121,18 +123,20 @@ export async function POST(req: NextRequest) {
         });
     }
     
-    // Add audit log entry
-    const auditLogRef = db.collection('auditLogs').doc();
-    batch.set(auditLogRef, {
-      collectionPath,
-      documentId: newDocRef.id,
-      userId: uid,
-      companyId: userCompanyId || pathSegments[1], 
-      action: 'create',
-      timestamp: FieldValue.serverTimestamp(),
-      before: null,
-      after: serializeTimestamps(finalDataForDb) 
-    });
+    // Add audit log entry for significant actions (exclude support messages for clarity)
+    if (!collectionPath.includes('supportMessages')) {
+        const auditLogRef = db.collection('auditLogs').doc();
+        batch.set(auditLogRef, {
+            collectionPath,
+            documentId: newDocRef.id,
+            userId: uid,
+            companyId: userCompanyId || pathSegments[1], 
+            action: 'create',
+            timestamp: FieldValue.serverTimestamp(),
+            before: null,
+            after: serializeTimestamps(finalDataForDb) 
+        });
+    }
 
     await batch.commit();
 
