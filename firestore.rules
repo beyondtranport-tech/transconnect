@@ -53,7 +53,11 @@ service cloud.firestore {
     // Company Data & Sub-collections
     match /companies/{companyId} {
       // Use resource.data for the document itself for efficiency
-      allow get: if isSignedIn() && (isAdmin() || resource.data.ownerId == request.auth.uid || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId);
+      allow get: if isSignedIn() && (
+        isAdmin() || 
+        resource.data.ownerId == request.auth.uid || 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId
+      );
       allow list: if isAdmin();
       allow create: if isSignedIn();
       allow update, delete: if isAdmin() || (isSignedIn() && resource.data.ownerId == request.auth.uid);

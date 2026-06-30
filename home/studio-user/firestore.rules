@@ -30,12 +30,10 @@ service cloud.firestore {
 
     // --- RULES ---
 
-    // Global Admin Override
     match /{allPaths=**} {
       allow read, write: if isAdmin();
     }
 
-    // User Profiles
     match /users/{userId} {
       allow get: if isSignedIn(); 
       allow list: if isAdmin();
@@ -47,9 +45,12 @@ service cloud.firestore {
       }
     }
 
-    // Company Data & Sub-collections
     match /companies/{companyId} {
-      allow get: if isSignedIn() && (isAdmin() || resource.data.ownerId == request.auth.uid || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId);
+      allow get: if isSignedIn() && (
+        isAdmin() || 
+        resource.data.ownerId == request.auth.uid || 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId
+      );
       allow list: if isAdmin();
       allow create: if isSignedIn();
       allow update, delete: if isAdmin() || (isSignedIn() && resource.data.ownerId == request.auth.uid);
@@ -80,7 +81,6 @@ service cloud.firestore {
       }
     }
 
-    // Public Collections
     match /partners/{partnerId} {
       allow get: if true;
       allow list: if isSignedIn();
