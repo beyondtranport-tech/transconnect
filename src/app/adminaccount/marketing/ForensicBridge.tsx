@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -26,6 +26,8 @@ async function performAdminAction(token: string, action: string, payload: any) {
     return await response.json();
 }
 
+const BRIDGE_STORAGE_KEY = 'lf_forensic_bridge_state';
+
 export default function ForensicBridge({ audience }: { audience: string }) {
     const { toast } = useToast();
     const [status, setStatus] = useState<'idle' | 'scanning' | 'running' | 'paused' | 'completed'>('idle');
@@ -34,7 +36,7 @@ export default function ForensicBridge({ audience }: { audience: string }) {
     const [logs, setLogs] = useState<any[]>([]);
     const [isScanning, setIsScanning] = useState(false);
 
-    // Session Statistics for auditing
+    // Session Statistics
     const [stats, setStats] = useState({
         domains: 0,
         emails: 0,
@@ -42,16 +44,42 @@ export default function ForensicBridge({ audience }: { audience: string }) {
         errors: 0
     });
 
+    // Restore state from LocalStorage on mount
+    useEffect(() => {
+        const saved = localStorage.getItem(BRIDGE_STORAGE_KEY);
+        if (saved) {
+            try {
+                const parsed = JSON.parse(saved);
+                if (parsed.audience === audience && parsed.queue?.length > 0) {
+                    setQueue(parsed.queue);
+                    setCurrentIndex(parsed.currentIndex || 0);
+                    setStats(parsed.stats || { domains: 0, emails: 0, leadership: 0, errors: 0 });
+                    setStatus('paused');
+                }
+            } catch (e) {
+                console.error("Failed to restore bridge state", e);
+            }
+        }
+    }, [audience]);
+
+    // Save state to LocalStorage whenever it changes
+    useEffect(() => {
+        if (queue.length > 0) {
+            localStorage.setItem(BRIDGE_STORAGE_KEY, JSON.stringify({
+                audience,
+                queue,
+                currentIndex,
+                stats,
+                timestamp: Date.now()
+            }));
+        }
+    }, [queue, currentIndex, stats, audience]);
+
     const progress = useMemo(() => {
         if (queue.length === 0) return 0;
         return (currentIndex / queue.length) * 100;
     }, [currentIndex, queue.length]);
 
-    /**
-     * GAP ANALYSIS ENGINE
-     * Scans up to 5,000 records and filters for those requiring forensic work.
-     * Prevents duplication by ignoring records that already have verified data.
-     */
     const handleScanGaps = async () => {
         setIsScanning(true);
         setStatus('scanning');
@@ -61,7 +89,6 @@ export default function ForensicBridge({ audience }: { audience: string }) {
             
             let apiType = audience === 'isa' ? 'isa' : (audience === 'finance' ? 'finance' : (audience === 'drivers' ? 'driver' : audience.slice(0, -1)));
             
-            // Increased limit to 5000 to see past previously enriched records
             const res = await performAdminAction(token, 'searchRegistry', { 
                 type: apiType, 
                 limit: 5000 
@@ -69,7 +96,6 @@ export default function ForensicBridge({ audience }: { audience: string }) {
             
             if (!res.success) throw new Error(res.error);
             
-            // CRITICAL: Filter identifies ONLY records that still have gaps
             const needsEnrichment = (res.data || []).filter((p: any) => 
                 !p.website || 
                 !p.email || 
@@ -85,10 +111,11 @@ export default function ForensicBridge({ audience }: { audience: string }) {
             setStats({ domains: 0, emails: 0, leadership: 0, errors: 0 });
             
             if (needsEnrichment.length === 0) {
-                toast({ title: "Registry Fully Bridged", description: "No gapped records found in the current scan range." });
+                toast({ title: "Registry Fully Bridged", description: "No gapped records found." });
                 setStatus('idle');
+                localStorage.removeItem(BRIDGE_STORAGE_KEY);
             } else {
-                toast({ title: "Analysis Complete", description: `Found ${needsEnrichment.length} new records requiring forensic enrichment.` });
+                toast({ title: "Analysis Complete", description: `Found ${needsEnrichment.length} records requiring enrichment.` });
                 setStatus('paused');
             }
         } catch (e: any) {
@@ -99,6 +126,15 @@ export default function ForensicBridge({ audience }: { audience: string }) {
         }
     };
 
+    const handleReset = () => {
+        setStatus('idle');
+        setQueue([]);
+        setCurrentIndex(0);
+        setLogs([]);
+        setStats({ domains: 0, emails: 0, leadership: 0, errors: 0 });
+        localStorage.removeItem(BRIDGE_STORAGE_KEY);
+    };
+
     const startEnrichment = async () => {
         if (status === 'running' || queue.length === 0) return;
         
@@ -106,13 +142,16 @@ export default function ForensicBridge({ audience }: { audience: string }) {
         let pointer = currentIndex;
 
         while (pointer < queue.length) {
-            // Check for pause/stop signals
-            let isPaused = false;
-            setStatus(current => {
-                if (current !== 'running') isPaused = true;
-                return current;
+            // Re-fetch status within loop to check for pause/stop signals
+            let currentStatus: string = 'running';
+            setStatus(s => {
+                currentStatus = s;
+                return s;
             });
-            if (isPaused) break;
+            
+            // This is a tick-based check. Since setStatus is async, we use a bit of a delay or status ref
+            // For this UI pattern, we just break if we are no longer 'running'
+            if (currentStatus !== 'running' && pointer > currentIndex) break;
 
             const record = queue[pointer];
             const name = record.companyName || record.firstName || 'Unknown';
@@ -120,7 +159,6 @@ export default function ForensicBridge({ audience }: { audience: string }) {
             setLogs(prev => [{ id: Date.now(), msg: `[${pointer + 1}/${queue.length}] Investigating ${name}...`, type: 'info' }, ...prev].slice(0, 50));
 
             try {
-                // Fetch FRESH token for every request to prevent auth timeouts
                 const token = await getClientSideAuthToken();
                 if (!token) throw new Error("Session expired.");
 
@@ -130,7 +168,6 @@ export default function ForensicBridge({ audience }: { audience: string }) {
                 });
 
                 if (res.success) {
-                    // Update Session Stats
                     setStats(prev => ({
                         domains: prev.domains + (res.data?.website ? 1 : 0),
                         emails: prev.emails + (res.data?.email ? 1 : 0),
@@ -140,7 +177,7 @@ export default function ForensicBridge({ audience }: { audience: string }) {
 
                     setLogs(prev => [{ 
                         id: Date.now() + 1, 
-                        msg: `Bridge Successful: ${name} verified and promoted to Qualified.`, 
+                        msg: `Bridge Successful: ${name} verified and promoted.`, 
                         type: 'success',
                         data: res.data 
                     }, ...prev].slice(0, 50));
@@ -148,8 +185,7 @@ export default function ForensicBridge({ audience }: { audience: string }) {
                     throw new Error(res.error);
                 }
 
-                // Throttle to protect API quota
-                await new Promise(resolve => setTimeout(resolve, 1500));
+                await new Promise(resolve => setTimeout(resolve, 2000));
 
             } catch (err: any) {
                 setStats(prev => ({ ...prev, errors: prev.errors + 1 }));
@@ -159,7 +195,6 @@ export default function ForensicBridge({ audience }: { audience: string }) {
                     type: 'error' 
                 }, ...prev].slice(0, 50));
                 
-                // If the error is auth-related even after refresh, pause
                 if (err.message?.includes('auth/')) {
                     setStatus('paused');
                     break;
@@ -173,6 +208,7 @@ export default function ForensicBridge({ audience }: { audience: string }) {
             if (pointer === queue.length) {
                 setStatus('completed');
                 toast({ title: "Batch Complete", description: "Successfully processed entire queue." });
+                localStorage.removeItem(BRIDGE_STORAGE_KEY);
             }
         }
     };
@@ -192,8 +228,8 @@ export default function ForensicBridge({ audience }: { audience: string }) {
                             </CardDescription>
                         </div>
                         <div className="flex gap-2 text-left">
-                            <Button variant="outline" size="sm" onClick={() => { setStatus('idle'); setQueue([]); setCurrentIndex(0); setLogs([]); }} className="border-white/10 text-white hover:bg-white/10">
-                                <RotateCcw className="h-4 w-4 mr-2" /> Reset
+                            <Button variant="outline" size="sm" onClick={handleReset} className="border-white/10 text-white hover:bg-white/10">
+                                <RotateCcw className="h-4 w-4 mr-2" /> Reset Session
                             </Button>
                         </div>
                     </div>
@@ -204,8 +240,8 @@ export default function ForensicBridge({ audience }: { audience: string }) {
                             <div className="bg-white/5 p-8 rounded-full w-fit mx-auto border border-white/10">
                                 <Database className="h-16 w-16 text-primary opacity-50" />
                             </div>
-                            <div className="space-y-2 text-center">
-                                <h3 className="text-xl font-bold">Registry Analysis Required</h3>
+                            <div className="space-y-2 text-center text-foreground text-left">
+                                <h3 className="text-xl font-bold text-white">Registry Analysis Required</h3>
                                 <p className="text-slate-400 max-w-sm mx-auto">Scan the {audience} registry to identify records missing verified domains and leadership data.</p>
                             </div>
                             <Button size="lg" onClick={handleScanGaps} disabled={isScanning} className="h-14 px-12 font-black uppercase text-xs tracking-widest shadow-lg">
@@ -252,12 +288,12 @@ export default function ForensicBridge({ audience }: { audience: string }) {
 
                             <div className="flex justify-center gap-4 text-left">
                                 {status !== 'running' ? (
-                                    <Button size="lg" className="h-14 px-12 font-black uppercase text-xs tracking-widest bg-primary" onClick={startEnrichment} disabled={status === 'completed'}>
-                                        <Play className="mr-2 h-4 w-4" /> {currentIndex > 0 ? 'Resume Batch' : 'Start Auto-Enrichment'}
+                                    <Button size="lg" className="h-14 px-12 font-black uppercase text-xs tracking-widest bg-primary hover:bg-primary/90 text-white" onClick={startEnrichment} disabled={status === 'completed'}>
+                                        <Play className="mr-2 h-4 w-4" /> {currentIndex > 0 ? 'Resume Pipeline' : 'Start Auto-Enrichment'}
                                     </Button>
                                 ) : (
                                     <Button size="lg" variant="outline" className="h-14 px-12 font-black uppercase text-xs tracking-widest border-white/20 text-white" onClick={() => setStatus('paused')}>
-                                        <Pause className="mr-2 h-4 w-4" /> Pause Batch
+                                        <Pause className="mr-2 h-4 w-4" /> Pause Pipeline
                                     </Button>
                                 )}
                             </div>
@@ -272,7 +308,7 @@ export default function ForensicBridge({ audience }: { audience: string }) {
                         <CardHeader className="text-left border-b bg-muted/20">
                             <CardTitle className="text-sm font-black uppercase tracking-widest flex items-center gap-2 text-left text-foreground">
                                 <Activity className="h-4 w-4 text-primary" />
-                                Batch Intelligence Feed
+                                Live Intelligence Feed
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="p-0 text-left">
@@ -311,27 +347,27 @@ export default function ForensicBridge({ audience }: { audience: string }) {
                         <CardContent className="space-y-4 text-left p-6">
                             <div className="space-y-4 text-left text-foreground">
                                 <div className="flex justify-between items-center text-sm">
-                                    <span className="font-bold flex items-center gap-2"><Globe className="h-4 w-4 text-blue-500"/> Domains Secured</span>
+                                    <span className="font-bold flex items-center gap-2 text-foreground"><Globe className="h-4 w-4 text-blue-500"/> Domains Secured</span>
                                     <span className="font-mono font-black">{stats.domains}</span>
                                 </div>
                                 <div className="flex justify-between items-center text-sm">
-                                    <span className="font-bold flex items-center gap-2"><Mail className="h-4 w-4 text-green-500"/> Direct E-mails Mapped</span>
+                                    <span className="font-bold flex items-center gap-2 text-foreground"><Mail className="h-4 w-4 text-green-500"/> Direct E-mails Mapped</span>
                                     <span className="font-mono font-black">{stats.emails}</span>
                                 </div>
-                                <div className="flex justify-between items-center text-sm">
-                                    <span className="font-bold flex items-center gap-2"><Users className="h-4 w-4 text-purple-500"/> Leadership Identified</span>
+                                <div className="flex justify-between items-center text-sm text-foreground">
+                                    <span className="font-bold flex items-center gap-2 text-foreground"><Users className="h-4 w-4 text-purple-500"/> Leadership Identified</span>
                                     <span className="font-mono font-black">{stats.leadership}</span>
                                 </div>
-                                <div className="flex justify-between items-center text-sm border-t pt-4">
+                                <div className="flex justify-between items-center text-sm border-t pt-4 text-foreground">
                                     <span className="font-bold flex items-center gap-2 text-destructive"><AlertTriangle className="h-4 w-4"/> Processing Errors</span>
                                     <span className="font-mono font-black text-destructive">{stats.errors}</span>
                                 </div>
                             </div>
                             <Separator />
                             <div className="p-4 bg-muted/30 rounded-xl text-left border border-dashed border-muted">
-                                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1 text-left">Scan Logic</p>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1 text-left">Persistence Enabled</p>
                                 <p className="text-[11px] leading-relaxed italic text-foreground text-left">
-                                    The "Analyze" command skips records that already have verified data. Each scan moves deeper into the registry to find the next set of gapped records.
+                                    Your progress is saved locally. If you navigate away or refresh, you can resume exactly where you left off.
                                 </p>
                             </div>
                         </CardContent>
