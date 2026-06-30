@@ -3,7 +3,7 @@
 import { useUser, useFirestore, useDoc } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Award, Gem, Loader2, HeartHandshake, ArrowRight, Sparkles, Wallet, ShieldAlert, Star, CheckCircle } from "lucide-react";
+import { Award, Gem, Loader2, HeartHandshake, ArrowRight, Sparkles, Wallet, ShieldAlert, Star, CheckCircle, ShieldCheck } from "lucide-react";
 import { doc } from 'firebase/firestore';
 import Link from 'next/link';
 import { useMemo } from 'react';
@@ -65,14 +65,14 @@ export default function AccountDashboard() {
                  <Card className="border-primary bg-primary/5 text-left">
                     <CardHeader className="text-left">
                         <div className="flex items-center gap-4 text-left">
-                            <ShieldAlert className="h-10 w-10 text-primary" />
+                            <ShieldCheck className="h-10 w-10 text-primary" />
                             <div className="text-left">
                                 <CardTitle className="text-2xl text-left">Administrator Account</CardTitle>
                                 <CardDescription className="text-primary/90 text-left">You are currently viewing the standard member dashboard.</CardDescription>
                             </div>
                         </div>
                     </CardHeader>
-                    <CardContent className="text-left">
+                    <CardContent className="text-left text-foreground">
                         <p className="text-lg text-left leading-relaxed">
                            All administrative functions are located in the secure <span className="font-semibold text-primary">Admin Portal</span>.
                         </p>
@@ -100,7 +100,7 @@ export default function AccountDashboard() {
     if (error) {
         return (
             <div className="flex justify-center items-center min-h-[calc(100vh-8rem)] w-full text-left">
-                <Card className="m-4 w-full max-w-2xl text-left shadow-lg border-destructive/20">
+                <Card className="m-4 w-full max-w-2xl text-left shadow-lg border-destructive/20 text-foreground">
                     <CardHeader className="text-left border-b bg-destructive/5">
                         <CardTitle className="text-destructive text-left flex items-center gap-2">
                             <ShieldAlert className="h-5 w-5" /> Error Loading Dashboard
@@ -160,7 +160,7 @@ export default function AccountDashboard() {
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 text-left">
-                 <Card className="text-left">
+                 <Card className="text-left text-foreground">
                     <CardHeader className="flex flex-row items-center justify-between pb-2 text-left">
                         <CardTitle className="text-sm font-medium text-left">Membership Tier</CardTitle>
                         <Gem className="h-4 w-4 text-muted-foreground" />
@@ -176,7 +176,7 @@ export default function AccountDashboard() {
                          )}
                     </CardContent>
                 </Card>
-                <Card className="text-left">
+                <Card className="text-left text-foreground">
                     <CardHeader className="flex flex-row items-center justify-between pb-2 text-left">
                         <CardTitle className="text-sm font-medium text-left">Available to Spend</CardTitle>
                          <Wallet className="h-4 w-4 text-muted-foreground" />
@@ -188,7 +188,7 @@ export default function AccountDashboard() {
                         </Button>
                     </CardContent>
                 </Card>
-                 <Card className="text-left">
+                 <Card className="text-left text-foreground">
                     <CardHeader className="flex flex-row items-center justify-between pb-2 text-left">
                         <CardTitle className="text-sm font-medium text-left">Loyalty Status</CardTitle>
                         <Award className="h-4 w-4 text-muted-foreground" />
@@ -203,7 +203,7 @@ export default function AccountDashboard() {
                 </Card>
             </div>
             
-            <Card className="text-left shadow-sm">
+            <Card className="text-left shadow-sm text-foreground">
                 <CardHeader className="text-left bg-slate-50 border-b">
                     <CardTitle className="flex items-center gap-2 text-left">
                         <Award className="h-5 w-5 text-primary" />
@@ -234,7 +234,7 @@ export default function AccountDashboard() {
                 </CardFooter>
             </Card>
 
-            <Card className="text-left border-primary/20 bg-primary/5">
+            <Card className="text-left border-primary/20 bg-primary/5 text-foreground">
                 <CardHeader className="text-left">
                     <CardTitle className="flex items-center gap-2 text-left"><HeartHandshake className="text-primary" /> Help the Community & Earn Rewards</CardTitle>
                 </CardHeader>

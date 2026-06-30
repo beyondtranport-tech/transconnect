@@ -283,7 +283,7 @@ function LeadsDatabaseComponent() {
             <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground">
                 <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
                 <h2 className="text-2xl font-black font-headline mb-2 text-center text-foreground">Registry Offline</h2>
-                <p className="text-muted-foreground max-sm mx-auto mb-8 text-center text-foreground text-left text-foreground text-foreground text-foreground text-foreground">Load the lead registry to manage your sales pipeline and attributed referrals.</p>
+                <p className="text-muted-foreground max-sm mx-auto mb-8 text-center text-foreground text-left text-foreground text-foreground text-foreground text-foreground text-foreground">Load the lead registry to manage your sales pipeline and attributed referrals.</p>
                 <Button size="lg" onClick={forceRefresh} disabled={isLoading} className="h-12 px-8 font-bold">
                     {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <RefreshCcw className="mr-2 h-4 w-4" />}
                     Load Lead Registry

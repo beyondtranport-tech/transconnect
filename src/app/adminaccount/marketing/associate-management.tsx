@@ -111,7 +111,7 @@ function AssociateDialog({ open, onOpenChange, partner, onSave }: { open: boolea
                         <FormField control={form.control} name="firstName" render={({ field }) => ( <FormItem><FormLabel>First Name</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
                         <FormField control={form.control} name="lastName" render={({ field }) => ( <FormItem><FormLabel>Last Name</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
                     </div>
-                    <FormField control={form.control} name="companyName" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Handle / Business Name</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
+                    <FormField control={form.control} name="companyName" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Handle / Business Name</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
                     <div className="grid grid-cols-2 gap-4 text-left">
                         <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
                         <FormField control={form.control} name="mobile" render={({ field }) => ( <FormItem><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
@@ -210,7 +210,7 @@ export default function AssociateManagement() {
           cell: ({row}) => (
               <div className="flex flex-col text-left">
                   <span className="font-bold text-left text-foreground">{row.original.companyName || `${row.original.firstName} ${row.original.lastName}`}</span>
-                  <div className="flex items-center gap-2 mt-1 text-left">
+                  <div className="flex items-center gap-2 mt-1 text-left text-foreground">
                       <Badge variant={row.original.source === 'Member' ? 'default' : 'outline'} className="text-[9px] h-4 uppercase font-bold">{row.original.source}</Badge>
                       {row.original.website && <Globe className="h-3 w-3 text-primary" />}
                       <Badge variant="outline" className="text-[10px] h-3.5 border-primary/20 text-primary uppercase font-bold text-left">Creator Node</Badge>
@@ -259,7 +259,7 @@ export default function AssociateManagement() {
           cell: ({ row }) => <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge> 
       },
       { id: 'actions', header: 'Actions', cell: ({ row }) => (
-        <div className="flex justify-end items-center gap-1 text-left text-foreground">
+        <div className="flex justify-end items-center gap-1 text-left text-foreground text-foreground">
           <EnrichPartnerButton partner={row.original} onUpdate={() => fetchData()} />
           <Button variant="ghost" size="icon" onClick={() => handleEngage(row.original)} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
           <AddCommunicationLogDialog 
@@ -310,14 +310,14 @@ export default function AssociateManagement() {
             <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground">
                 <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
                 <h2 className="text-2xl font-black font-headline mb-2 text-center text-foreground text-left">Digital Partner Pipeline Scan</h2>
-                <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center text-foreground text-left text-foreground">Scan your influencer and marketer database. Use filters to prioritize recruitment.</p>
+                <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center text-foreground text-left text-foreground text-foreground">Scan your influencer and marketer database. Use filters to prioritize recruitment.</p>
                 
-                <div className="max-w-4xl mx-auto space-y-6 text-left text-foreground">
+                <div className="max-w-4xl mx-auto space-y-6 text-left text-foreground text-foreground">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
-                        <div className="space-y-1 text-left text-foreground">
+                        <div className="space-y-1 text-left text-foreground text-foreground">
                             <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Outreach Status</Label>
                             <Select value={outreachFilter} onValueChange={setOutreachFilter}>
-                                <SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="All Outreach" /></SelectTrigger>
+                                <SelectTrigger className="bg-white text-left text-foreground text-foreground"><SelectValue placeholder="All Outreach" /></SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="all">All</SelectItem>
                                     <SelectItem value="none">No Outreach Yet</SelectItem>
@@ -348,14 +348,14 @@ export default function AssociateManagement() {
                         </div>
                     </div>
 
-                    <div className="flex flex-col md:flex-row justify-center gap-4 max-w-4xl mx-auto text-left">
-                        <div className="flex-1 space-y-2 text-left text-foreground">
-                            <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Name, Agency or ID</Label>
+                    <div className="flex flex-col md:flex-row justify-center gap-4 max-w-4xl mx-auto text-left text-foreground text-foreground">
+                        <div className="flex-1 space-y-2 text-left text-foreground text-foreground">
+                            <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1 text-foreground">Name, Agency or ID</Label>
                             <Input placeholder="Search criteria..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="h-12 text-lg bg-white" onKeyDown={(e) => e.key === 'Enter' && fetchData()} />
                         </div>
-                        <div className="flex flex-col md:flex-row gap-2 self-end text-left text-foreground">
-                            <Button size="lg" onClick={() => fetchData()} disabled={isLoading} className="h-12 px-8 font-bold text-left">
-                                {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4" />} Execute Scan
+                        <div className="flex flex-col md:flex-row gap-2 self-end text-left text-foreground text-foreground">
+                            <Button size="lg" onClick={() => fetchData()} disabled={isLoading} className="h-12 px-8 font-bold text-left text-foreground">
+                                {isLoading ? <Loader2 className="h-4 w-4 animate-spin text-foreground"/> : <Search className="mr-2 h-4 w-4 text-foreground" />} Execute Scan
                             </Button>
                         </div>
                     </div>
@@ -424,7 +424,7 @@ export default function AssociateManagement() {
                             </div>
                             <div className="flex items-end text-left text-foreground"><Button variant="outline" size="sm" asChild className="h-9 w-full text-[10px] font-black uppercase tracking-widest text-left text-foreground"><Link href="/adminaccount?view=associate-oversight"><Clock className="mr-1 h-3 w-3" /> Performance Monitoring</Link></Button></div>
                         </div>
-                        {isLoading ? <div className="flex justify-center items-center py-10 text-foreground text-left"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
+                        {isLoading ? <div className="flex justify-center items-center py-10 text-foreground text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
                             <div className="space-y-6 text-left">
                                 <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />
                                 {allRecords.length >= 100 && (

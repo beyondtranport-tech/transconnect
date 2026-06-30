@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Loader2, Sparkles, Download, Mic, BookOpen, Music, UserPlus } from 'lucide-react';
+import { Loader2, Sparkles, Download, Mic, BookOpen, Music, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
 import { generateAudio, type TTSInput } from '@/ai/flows/tts-flow';

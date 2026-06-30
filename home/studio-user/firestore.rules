@@ -85,7 +85,7 @@ service cloud.firestore {
 
     match /contributions/{contributionId} {
       allow create: if isSignedIn();
-      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow read: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
     }
   }
 }
