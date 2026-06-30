@@ -74,7 +74,8 @@ service cloud.firestore {
 
     match /leads/{leadId} {
       allow get: if true;
-      allow list, write: if isAdmin();
+      allow list: if isAdmin() || isSignedIn();
+      allow write: if isAdmin();
       match /{allSub=**} { allow read, write: if isAdmin(); }
     }
     
@@ -96,7 +97,7 @@ service cloud.firestore {
 
     match /contributions/{contributionId} {
       allow create: if isSignedIn();
-      allow read: if isSignedIn();
+      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
     }
   }
 }
