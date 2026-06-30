@@ -21,12 +21,12 @@ service cloud.firestore {
 
     // Direct check if the user belongs to the company via their profile
     function isCompanyStaff(cid) {
-      return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == cid;
+      return isSignedIn() && cid != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == cid;
     }
 
     // Direct check if the user is the owner defined on the company doc
     function isCompanyOwner(cid) {
-      return isSignedIn() && exists(/databases/$(database)/documents/companies/$(cid)) && get(/databases/$(database)/documents/companies/$(cid)).data.ownerId == request.auth.uid;
+      return isSignedIn() && cid != null && exists(/databases/$(database)/documents/companies/$(cid)) && get(/databases/$(database)/documents/companies/$(cid)).data.ownerId == request.auth.uid;
     }
 
     function isMember(cid) {
