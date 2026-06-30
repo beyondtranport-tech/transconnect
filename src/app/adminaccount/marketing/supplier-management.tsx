@@ -69,7 +69,7 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
   useEffect(() => {
     if (open) {
       if (partner) form.reset(partner);
-      else form.reset({ firstName: '', lastName: '', email: '', phone: '', mobile: '', contactPerson: '', companyName: '', website: '', notes: '', address: '', status: 'new', type: 'supplier' });
+      else form.reset({ firstName: '', lastName: '', email: '', phone: '', mobile: '', contactPerson: '', companyName: '', website: '', minedServiceWording: '', address: '', status: 'new', type: 'supplier' });
     }
   }, [open, partner, form]);
 
@@ -91,7 +91,7 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-3xl text-left">
+      <DialogContent className="sm:max-w-3xl text-left text-foreground">
         <DialogHeader><DialogTitle>{partner ? 'Edit' : 'Add'} Supplier</DialogTitle></DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left text-foreground">
@@ -106,7 +106,7 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
             <FormField control={form.control} name="website" render={({ field }) => (<FormItem className="text-left"><FormLabel>Corporate Website</FormLabel><FormControl><Input placeholder="https://..." {...field} /></FormControl><FormMessage /></FormItem>)} />
             <Separator />
             <div className="space-y-4 text-left">
-                <h3 className="text-sm font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                <h3 className="text-sm font-black uppercase tracking-widest text-primary flex items-center gap-2 text-left">
                     <Sparkles className="h-4 w-4"/> Forensic Technical Profile
                 </h3>
                 <FormField control={form.control} name="minedServiceWording" render={({ field }) => (<FormItem><FormLabel>Scraped About/Hero Text</FormLabel><FormControl><Textarea placeholder="Deep-crawled statements..." className="min-h-[150px]" {...field} /></FormControl><FormMessage /></FormItem>)} />
@@ -183,19 +183,6 @@ export default function SupplierManagement() {
   }, [searchTerm, toast]);
 
   useEffect(() => { if (hasLoaded) fetchData(); }, [fetchData, hasLoaded]);
-
-  const filteredRecords = useMemo(() => {
-    return allRecords.filter(p => {
-        const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
-        const matchesAssignee = assigneeFilter === 'all' || p.assigneeId === assigneeFilter;
-        
-        let matchesOutreach = true;
-        if (outreachFilter === 'none') matchesOutreach = !p.lastOutreachSubject && ['new', 'inactive', 'contacted'].includes(p.status);
-        else if (outreachFilter !== 'all') matchesOutreach = p.lastOutreachSubject === outreachFilter;
-
-        return matchesStatus && matchesAssignee && matchesOutreach;
-    });
-  }, [allRecords, statusFilter, assigneeFilter, outreachFilter]);
 
   const handleEngage = useCallback((record: any) => {
     const engageList = selectedIds.length > 0 ? allRecords.filter(r => selectedIds.includes(r.id)) : (record ? [record] : []);
@@ -284,9 +271,12 @@ export default function SupplierManagement() {
       <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partners={dialog.data || []} initialIndex={dialog.initialIndex} audience="suppliers" onEngageSuccess={() => fetchData()} />
       <SupplierDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={() => fetchData()} />
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
-        <AlertDialogContent>
+        <AlertDialogContent className="text-left text-foreground">
           <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will permanently remove the record.</AlertDialogDescription></AlertDialogHeader>
-          <AlertDialogFooter><AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction></AlertDialogFooter>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
@@ -296,12 +286,12 @@ export default function SupplierManagement() {
                 <h2 className="text-2xl font-black font-headline mb-2 text-center text-foreground text-left">Supplier Registry Scan</h2>
                 <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center text-foreground text-left">Scan the entire database. Use filters to prioritize outreach and enrichment worklists.</p>
                 
-                <div className="max-w-5xl mx-auto space-y-6">
+                <div className="max-w-5xl mx-auto space-y-6 text-left text-foreground">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
-                        <div className="space-y-1">
+                        <div className="space-y-1 text-left text-foreground text-foreground">
                             <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Outreach Stage</Label>
                             <Select value={outreachFilter} onValueChange={setOutreachFilter}>
-                                <SelectTrigger className="bg-white"><SelectValue placeholder="All Stages" /></SelectTrigger>
+                                <SelectTrigger className="bg-white text-left text-foreground text-foreground"><SelectValue placeholder="All Stages" /></SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="all">All Stages</SelectItem>
                                     <SelectItem value="none">No Outreach Yet</SelectItem>
@@ -309,10 +299,10 @@ export default function SupplierManagement() {
                                 </SelectContent>
                             </Select>
                         </div>
-                        <div className="space-y-1">
+                        <div className="space-y-1 text-left text-foreground">
                             <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Pipeline Status</Label>
                             <Select value={statusFilter} onValueChange={setStatusFilter}>
-                                <SelectTrigger className="bg-white"><SelectValue placeholder="All Statuses" /></SelectTrigger>
+                                <SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="All Statuses" /></SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="all">All</SelectItem>
                                     <SelectItem value="new">New Lead</SelectItem>
@@ -321,10 +311,10 @@ export default function SupplierManagement() {
                                 </SelectContent>
                             </Select>
                         </div>
-                        <div className="space-y-1">
+                        <div className="space-y-1 text-left">
                             <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Assignee</Label>
                             <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-                                <SelectTrigger className="bg-white"><SelectValue placeholder="All Staff" /></SelectTrigger>
+                                <SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="All Staff" /></SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="all">All Staff</SelectItem>
                                     <SelectItem value="none">Unallocated</SelectItem>
@@ -339,7 +329,7 @@ export default function SupplierManagement() {
                             <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1 text-left">Search by Name or Keyword</Label>
                             <Input placeholder="Search criteria..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="h-12 bg-white" onKeyDown={(e) => e.key === 'Enter' && fetchData()} />
                         </div>
-                        <Button size="lg" onClick={() => fetchData()} disabled={isLoading} className="h-12 font-black uppercase tracking-widest gap-2 shadow-lg px-10">
+                        <Button size="lg" onClick={() => fetchData()} disabled={isLoading} className="h-12 font-black uppercase tracking-widest gap-2 shadow-lg px-10 text-left">
                             {isLoading ? <Loader2 className="animate-spin h-4 w-4"/> : <Search className="h-4 w-4"/>} Scan Registry
                         </Button>
                     </div>
@@ -348,18 +338,18 @@ export default function SupplierManagement() {
       ) : (
             <div className="space-y-6 text-left text-foreground">
                 <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left text-foreground">
-                    <div className="text-left text-foreground text-left"><CardTitle className="flex items-center gap-2 text-2xl font-black font-headline text-left text-foreground"><Building /> Supplier Registry</CardTitle><CardDescription className="text-left text-muted-foreground">Unified industrial database view ({filteredRecords.length} records).</CardDescription></div>
+                    <div className="text-left text-foreground text-left"><CardTitle className="flex items-center gap-2 text-2xl font-black font-headline text-left text-foreground"><Building /> Supplier Registry</CardTitle><CardDescription className="text-left text-muted-foreground text-left">Unified industrial database view ({filteredRecords.length} records).</CardDescription></div>
                     <div className="flex flex-wrap items-center gap-2 text-left text-foreground">
                         {selectedIds.length > 0 && <Button variant="secondary" onClick={() => handleEngage(null)} className="gap-2 shadow-sm font-bold animate-in fade-in zoom-in text-left text-foreground"><Send className="h-4 w-4" /> Batch Engage ({selectedIds.length})</Button>}
                         
                         <Popover>
                             <PopoverTrigger asChild>
-                                <Button variant="outline" className="gap-2"><Settings2 className="h-4 w-4" /> Columns</Button>
+                                <Button variant="outline" className="gap-2 text-left text-foreground"><Settings2 className="h-4 w-4" /> Columns</Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-56 p-2 text-left text-foreground">
-                                <div className="space-y-1">
+                                <div className="space-y-1 text-left text-foreground">
                                     {Object.keys(visibleColumns).map(col => (
-                                        <div key={col} className="flex items-center justify-between p-2 hover:bg-muted rounded-md cursor-pointer text-[10px] font-black uppercase tracking-widest" onClick={() => setVisibleColumns(prev => ({...prev, [col]: !prev[col]}))}>
+                                        <div key={col} className="flex items-center justify-between p-2 hover:bg-muted rounded-md cursor-pointer text-[10px] font-black uppercase tracking-widest text-left text-foreground" onClick={() => setVisibleColumns(prev => ({...prev, [col]: !prev[col]}))}>
                                             <span>{col.replace(/([A-Z])/g, ' $1')}</span>
                                             {visibleColumns[col] && <Check className="h-3 w-3 text-primary" />}
                                         </div>
@@ -374,12 +364,12 @@ export default function SupplierManagement() {
                     </div>
                 </CardHeader>
 
-                <Card className="text-left">
+                <Card className="text-left text-foreground">
                     <CardContent className="pt-6 text-left">
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
                             <div className="space-y-1 text-left text-foreground text-foreground"><Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Filter className="h-3 w-3"/> Status</Label><Select value={statusFilter} onValueChange={setStatusFilter}><SelectTrigger className="h-9 bg-white text-xs text-left text-foreground"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="new">New</SelectItem><SelectItem value="contacted">Researching</SelectItem></SelectContent></Select></div>
-                            <div className="space-y-1 text-left text-foreground"><Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-left text-foreground"><Users className="h-3 w-3"/> Assignee</Label><Select value={assigneeFilter} onValueChange={setAssigneeFilter}><SelectTrigger className="h-9 bg-white text-xs text-left text-foreground text-left text-foreground"><SelectValue placeholder="All Staff" /></SelectTrigger><SelectContent><SelectItem value="all">All Staff</SelectItem><SelectItem value="none">Unallocated</SelectItem>{staff.map(s => <SelectItem key={s.id} value={s.id}>{s.firstName} {s.lastName}</SelectItem>)}</SelectContent></Select></div>
-                            <div className="space-y-1 text-left text-foreground"><Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Send className="h-3 w-3"/> Outreach</Label><Select value={outreachFilter} onValueChange={setOutreachFilter}>
+                            <div className="space-y-1 text-left text-foreground text-foreground"><Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-left text-foreground text-foreground"><Users className="h-3 w-3"/> Assignee</Label><Select value={assigneeFilter} onValueChange={setAssigneeFilter}><SelectTrigger className="h-9 bg-white text-xs text-left text-foreground text-left text-foreground"><SelectValue placeholder="All Staff" /></SelectTrigger><SelectContent><SelectItem value="all">All Staff</SelectItem><SelectItem value="none">Unallocated</SelectItem>{staff.map(s => <SelectItem key={s.id} value={s.id}>{s.firstName} {s.lastName}</SelectItem>)}</SelectContent></Select></div>
+                            <div className="space-y-1 text-left text-foreground text-foreground"><Label className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Send className="h-3 w-3"/> Outreach</Label><Select value={outreachFilter} onValueChange={setOutreachFilter}>
                                 <SelectTrigger className="h-9 bg-white text-xs text-left text-foreground text-left text-foreground"><SelectValue /></SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="all">All Outreach</SelectItem>
@@ -387,14 +377,14 @@ export default function SupplierManagement() {
                                     <SelectItem value="Digital Handshake">Handshake Sent</SelectItem>
                                 </SelectContent>
                             </Select></div>
-                            <div className="flex items-end text-left text-foreground text-foreground text-foreground"><Button variant="outline" onClick={() => setHasLoaded(false)} className="h-9 w-full text-xs font-bold uppercase tracking-widest text-left text-foreground text-foreground text-foreground text-foreground"><RotateCcw className="mr-1 h-3 w-3" /> New Search</Button></div>
+                            <div className="flex items-end text-left text-foreground text-foreground text-foreground text-foreground text-foreground"><Button variant="outline" onClick={() => setHasLoaded(false)} className="h-9 w-full text-xs font-bold uppercase tracking-widest text-left text-foreground text-foreground text-foreground text-foreground"><RotateCcw className="mr-1 h-3 w-3" /> New Search</Button></div>
                         </div>
-                        {isLoading ? <div className="flex justify-center items-center py-20 text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
-                            <div className="space-y-6 text-left">
+                        {isLoading ? <div className="flex justify-center items-center py-20 text-foreground text-left text-foreground text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
+                            <div className="space-y-6 text-left text-foreground text-foreground">
                                 <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />
                                 {allRecords.length >= 100 && (
-                                     <div className="flex justify-center pt-4">
-                                        <Button variant="outline" size="lg" onClick={() => fetchData(allRecords.length + 100)} disabled={isLoading} className="gap-2 min-w-[200px]">
+                                     <div className="flex justify-center pt-4 text-left text-foreground">
+                                        <Button variant="outline" size="lg" onClick={() => fetchData(allRecords.length + 100)} disabled={isLoading} className="gap-2 min-w-[200px] text-left text-foreground">
                                             {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <ChevronDown className="h-4 w-4" />}
                                             Load Next 100 Records
                                         </Button>

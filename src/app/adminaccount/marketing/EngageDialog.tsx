@@ -28,6 +28,7 @@ import InvestorOffer from './offers/InvestorOffer';
 import DeveloperOffer from './offers/DeveloperOffer';
 import SupplierOffer from './offers/SupplierOffer';
 import TransporterOffer from './offers/TransporterOffer';
+import AssociateOffer from './offers/AssociateOffer';
 
 // Emails
 import PartnerEmails from './emails/PartnerEmails';
@@ -35,6 +36,7 @@ import SupplierEmails from './emails/SupplierEmails';
 import TransporterEmails from './emails/TransporterEmails';
 import InvestorEmails from './emails/InvestorEmails';
 import DeveloperEmails from './emails/DeveloperEmails';
+import AssociateEmails from './emails/AssociateEmails';
 
 interface EngageDialogProps {
   open: boolean;
@@ -93,6 +95,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
     if (audience === 'developers') return DeveloperOffer;
     if (audience === 'suppliers') return SupplierOffer;
     if (audience === 'transporters') return TransporterOffer;
+    if (audience === 'associates') return AssociateOffer;
     return PartnerOffer;
   }, [audience]);
 
@@ -101,6 +104,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
     if (audience === 'developers') return DeveloperEmails;
     if (audience === 'suppliers') return SupplierEmails;
     if (audience === 'transporters') return TransporterEmails;
+    if (audience === 'associates') return AssociateEmails;
     return PartnerEmails;
   }, [audience]);
 
@@ -185,10 +189,10 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-6xl h-[90vh] flex flex-col p-0 text-left overflow-hidden">
-            <DialogHeader className="p-6 border-b bg-muted/50 text-left text-foreground">
+        <DialogContent className="max-w-6xl h-[90vh] flex flex-col p-0 text-left overflow-hidden text-foreground">
+            <DialogHeader className="p-6 border-b bg-muted/50 text-left">
                 <div className="flex justify-between items-center text-left">
-                    <div className="text-left text-foreground space-y-1">
+                    <div className="text-left space-y-1">
                         <DialogTitle className="text-2xl font-bold flex items-center gap-2 text-left">
                             <Send className="h-6 w-6 text-primary" />
                             Engagement Wizard: {partnerDisplayName}
@@ -221,13 +225,13 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                 </div>
             </DialogHeader>
 
-            <div className="flex-1 flex overflow-hidden text-left text-foreground">
-                <div className="w-64 border-r bg-muted/20 p-4 space-y-4 overflow-y-auto text-left text-foreground">
-                    <Alert className="bg-amber-50 py-2 border-amber-200">
+            <div className="flex-1 flex overflow-hidden text-left">
+                <div className="w-64 border-r bg-muted/20 p-4 space-y-4 overflow-y-auto text-left">
+                    <Alert className="bg-amber-50 py-2 border-amber-200 text-left">
                         <Info className="h-3 w-3 text-amber-600" />
-                        <AlertTitle className="text-[10px] font-black uppercase tracking-widest text-amber-800">Gmail Web Integration</AlertTitle>
-                        <AlertDescription className="text-[9px] text-amber-700">
-                            Now opening Gmail Web for better deliverability. Avoid sending {'>'}20/hr to protect your sender score.
+                        <AlertTitle className="text-[10px] font-black uppercase tracking-widest text-amber-800 text-left">Gmail Web Integration</AlertTitle>
+                        <AlertDescription className="text-[9px] text-amber-700 text-left">
+                            Now opening Gmail Web for better deliverability. Avoid sending {' > '} 20/hr to protect your sender score.
                         </AlertDescription>
                     </Alert>
 
@@ -258,8 +262,8 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                     </div>
 
                     {partners.length > 1 && (
-                         <div className="pt-4 space-y-1 text-left">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-2 mb-2 block text-left text-foreground">Step 2: Batch Queue</label>
+                         <div className="pt-4 space-y-1 text-left text-foreground">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-2 mb-2 block text-left">Step 2: Batch Queue</label>
                             <ScrollArea className="h-64 pr-2 text-left">
                                 <div className="space-y-1 text-left">
                                     {partners.map((p, idx) => (
@@ -285,18 +289,18 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                 <div className="flex-1 overflow-y-auto bg-slate-50 p-8 text-left">
                     <div className="max-w-[850px] mx-auto space-y-6 text-left">
                         {activeTab === 'digital-handshake' && (
-                            <div data-id="version-selector-ui" className="bg-amber-50 border border-amber-200 p-4 rounded-xl flex items-center justify-between mb-4">
-                                <div className="flex items-center gap-3">
+                            <div data-id="version-selector-ui" className="bg-amber-50 border border-amber-200 p-4 rounded-xl flex items-center justify-between mb-4 text-left">
+                                <div className="flex items-center gap-3 text-left">
                                     <div className="bg-amber-100 p-2 rounded-lg"><Zap className="h-5 w-5 text-amber-600" /></div>
-                                    <div>
-                                        <p className="text-sm font-bold text-amber-900">Anti-Spam Variance</p>
-                                        <p className="text-[10px] text-amber-700">Text varies Deterministically by Partner ID to bypass Outlook filters.</p>
+                                    <div className="text-left">
+                                        <p className="text-sm font-bold text-amber-900 text-left">Anti-Spam Variance</p>
+                                        <p className="text-[10px] text-amber-700 text-left">Text varies Deterministically by Partner ID to bypass Outlook filters.</p>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-3 text-left">
                                     <Label className="text-[10px] font-black uppercase tracking-widest text-amber-800">Version</Label>
                                     <Select value={handshakeVersion} onValueChange={setHandshakeVersion}>
-                                        <SelectTrigger className="w-[200px] h-9 bg-white border-amber-200">
+                                        <SelectTrigger className="w-[200px] h-9 bg-white border-amber-200 text-left">
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>

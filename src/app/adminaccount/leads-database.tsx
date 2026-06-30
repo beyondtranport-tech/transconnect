@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
+import { useState, useCallback, useMemo, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -118,16 +118,16 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-xl">
+      <DialogContent className="sm:max-w-xl text-left text-foreground">
         <DialogHeader><DialogTitle>{lead ? 'Edit' : 'Add New'} Lead</DialogTitle></DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[60vh] overflow-y-auto pr-2 text-left">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[60vh] overflow-y-auto pr-2 text-left text-foreground">
             <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Company Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField control={form.control} name="contactPerson" render={({ field }) => (<FormItem><FormLabel>Contact Person</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" /></FormControl><FormMessage /></FormItem>)} />
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
               <FormField control={form.control} name="status" render={({ field }) => (
                 <FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="bg-white"><SelectValue/></SelectTrigger></FormControl><SelectContent>
                   <SelectItem value="new">New</SelectItem><SelectItem value="contacted">In Research</SelectItem><SelectItem value="qualified">Qualified</SelectItem><SelectItem value="invited">Invited</SelectItem><SelectItem value="active">Member</SelectItem>
@@ -140,7 +140,7 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
               )} />
             </div>
             <FormField control={form.control} name="notes" render={({ field }) => (<FormItem><FormLabel>Internal Notes</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>)} />
-            <DialogFooter className="pt-4 border-t">
+            <DialogFooter className="pt-4 border-t text-left">
               <Button type="submit" disabled={isLoading}>
                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} Save Lead
               </Button>
@@ -239,7 +239,7 @@ function LeadsDatabaseComponent() {
       id: 'actions',
       header: <div className="text-right">Actions</div>,
       cell: ({ row }) => (
-        <div className="text-right flex items-center justify-end gap-1">
+        <div className="text-right flex items-center justify-end gap-1 text-foreground">
           <EnrichPartnerButton partner={row.original} onUpdate={forceRefresh} />
           <Button variant="ghost" size="icon" onClick={() => setEngageLead(row.original)} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
           <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.companyName} />
@@ -257,39 +257,42 @@ function LeadsDatabaseComponent() {
       <EngageDialog open={!!engageLead} onOpenChange={(o) => !o && setEngageLead(null)} partners={[engageLead]} audience="suppliers" onEngageSuccess={forceRefresh} />
       <LeadDialog open={isAddLeadOpen || !!editLead} onOpenChange={(o) => { if(!o) { setEditLead(null); setIsAddLeadOpen(false); } }} lead={editLead} onSave={forceRefresh} />
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="text-left text-foreground text-foreground">
           <AlertDialogHeader><AlertDialogTitle>Delete Lead?</AlertDialogTitle><AlertDialogDescription>This will permanently delete the record.</AlertDialogDescription></AlertDialogHeader>
-          <AlertDialogFooter><AlertDialogCancel onClick={() => setDeleteLead(null)}>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction></AlertDialogFooter>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDeleteLead(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      <div className="space-y-6">
-        <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4 px-0 pt-0">
-          <div className="text-left text-foreground">
-            <CardTitle className="flex items-center gap-2"><Users /> Lead Database</CardTitle>
-            <CardDescription>Comprehensive registry of prospects and attributed referrals.</CardDescription>
+      <div className="space-y-6 text-left">
+        <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4 px-0 pt-0 text-left">
+          <div className="text-left text-foreground text-foreground">
+            <CardTitle className="flex items-center gap-2 text-left"><Users /> Lead Database</CardTitle>
+            <CardDescription className="text-left text-muted-foreground">Comprehensive registry of prospects and attributed referrals.</CardDescription>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 text-left">
             <Button variant="outline" onClick={handleExport} disabled={isLoading || !hasLoaded}><Download className="mr-2 h-4 w-4" /> Backup</Button>
-            <BulkImportDialog type="lead" onComplete={forceRefresh}><Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
-            <Button onClick={() => setIsAddLeadOpen(true)}><PlusCircle className="mr-2 h-4 w-4" />Add Lead</Button>
+            <BulkImportDialog type="lead" onComplete={forceRefresh}><Button variant="outline" className="text-left"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
+            <Button onClick={() => setIsAddLeadOpen(true)} className="text-left"><PlusCircle className="mr-2 h-4 w-4" />Add Lead</Button>
           </div>
         </CardHeader>
 
         {!hasLoaded ? (
-            <Card className="bg-primary/5 border-primary/20 p-12 text-center">
+            <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground">
                 <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
-                <h2 className="text-2xl font-black font-headline mb-2">Registry Offline</h2>
-                <p className="text-muted-foreground max-sm mx-auto mb-8">Load the lead registry to manage your sales pipeline and attributed referrals.</p>
-                <Button size="lg" onClick={forceRefresh} disabled={isLoading}>
+                <h2 className="text-2xl font-black font-headline mb-2 text-center text-foreground">Registry Offline</h2>
+                <p className="text-muted-foreground max-sm mx-auto mb-8 text-center text-foreground text-left text-foreground">Load the lead registry to manage your sales pipeline and attributed referrals.</p>
+                <Button size="lg" onClick={forceRefresh} disabled={isLoading} className="h-12 px-8 font-bold">
                     {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <RefreshCcw className="mr-2 h-4 w-4" />}
                     Load Lead Registry
                 </Button>
             </Card>
         ) : (
-            <Card>
-                <CardContent className="pt-6">
-                    {isLoading ? <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div> : <DataTable columns={columns} data={leads} />}
+            <Card className="text-left">
+                <CardContent className="pt-6 text-left text-foreground">
+                    {isLoading ? <div className="flex justify-center py-10 text-left"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div> : <DataTable columns={columns} data={leads} />}
                 </CardContent>
             </Card>
         )}

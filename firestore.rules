@@ -23,9 +23,8 @@ service cloud.firestore {
     // Optimized for static analysis by comparing against direct UID pathing or auth token fields.
     function isMember(cid) {
       return isAdmin() || (
-        isSignedIn() && (
+        isSignedIn() && cid != null && (
           // Use a direct path check if possible, or verify against the user document.
-          // For sub-collection listing, we often need to check a field on the document being listed or the parent path.
           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == cid
         )
       );
