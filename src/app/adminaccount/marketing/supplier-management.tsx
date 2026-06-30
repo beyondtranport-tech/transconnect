@@ -68,8 +68,25 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
 
   useEffect(() => {
     if (open) {
-      if (partner) form.reset(partner);
-      else form.reset({ firstName: '', lastName: '', email: '', phone: '', mobile: '', contactPerson: '', companyName: '', website: '', minedServiceWording: '', address: '', status: 'new', type: 'supplier' });
+      if (partner) {
+        form.reset(partner);
+      } else {
+        form.reset({ 
+            firstName: '', 
+            lastName: '', 
+            email: '', 
+            phone: '', 
+            mobile: '', 
+            contactPerson: '', 
+            companyName: '', 
+            website: '', 
+            minedServiceWording: '', 
+            address: '', 
+            status: 'new', 
+            type: 'supplier',
+            industrialTags: []
+        });
+      }
     }
   }, [open, partner, form]);
 
@@ -113,7 +130,7 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
             </div>
             <FormField control={form.control} name="status" render={({ field }) => (
                 <FormItem className="text-left">
-                    <FormLabel>Pipeline Status</Label>
+                    <FormLabel>Pipeline Status</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl><SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
                         <SelectContent>
@@ -258,7 +275,7 @@ export default function SupplierManagement() {
           header: 'Status', 
           cell: ({ row }) => <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge> 
       },
-      { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
+      { id: 'actions', header: 'Actions', cell: ({ row }) => (
         <div className="flex justify-end gap-1 text-left text-foreground">
           <EnrichPartnerButton partner={row.original} onUpdate={() => fetchData()} />
           <Button variant="ghost" size="icon" onClick={() => handleEngage(row.original)} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
@@ -342,7 +359,7 @@ export default function SupplierManagement() {
                 </div>
             </Card>
       ) : (
-            <div className="space-y-6 text-left text-foreground">
+            <div className="space-y-6 text-left">
                 <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left text-foreground">
                     <div className="text-left text-foreground text-left">
                       <CardTitle className="flex items-center gap-2 text-2xl font-black font-headline text-left text-foreground"><Building className="h-6 w-6" /> Supplier Registry</CardTitle>
@@ -378,7 +395,7 @@ export default function SupplierManagement() {
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
                             <div className="space-y-1 text-left text-foreground text-foreground text-foreground text-foreground text-foreground"><Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Filter className="h-3 w-3"/> Status</Label><Select value={statusFilter} onValueChange={setStatusFilter}>
                                 <SelectTrigger className="h-9 bg-white text-xs text-left text-foreground text-foreground text-foreground"><SelectValue placeholder="All Statuses" /></SelectTrigger>
-                                <SelectContent><SelectItem value="all">All</SelectItem><SelectItem value="new">New</SelectItem><SelectItem value="contacted">Researching</SelectItem></SelectContent>
+                                <SelectContent><SelectItem value="all">All Statuses</SelectItem><SelectItem value="new">New</SelectItem><SelectItem value="contacted">Researching</SelectItem></SelectContent>
                             </Select></div>
                             <div className="space-y-1 text-left text-foreground text-foreground text-foreground text-foreground"><Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-left text-foreground text-foreground"><Users className="h-3 w-3"/> Assignee</Label><Select value={assigneeFilter} onValueChange={setAssigneeFilter}><SelectTrigger className="bg-white text-xs text-left text-foreground text-left text-foreground"><SelectValue placeholder="All Staff" /></SelectTrigger><SelectContent><SelectItem value="all">All Staff</SelectItem><SelectItem value="none">Unallocated</SelectItem>{staff.map(s => <SelectItem key={s.id} value={s.id}>{s.firstName} {s.lastName}</SelectItem>)}</SelectContent></Select></div>
                             <div className="space-y-1 text-left text-foreground text-foreground text-foreground text-foreground"><Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Send className="h-3 w-3"/> Outreach</Label><Select value="all">
@@ -388,9 +405,9 @@ export default function SupplierManagement() {
                                     <SelectItem value="none">No Outreach Yet</SelectItem>
                                 </SelectContent>
                             </Select></div>
-                            <div className="flex items-end text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><Button variant="outline" onClick={() => setHasLoaded(false)} className="h-9 w-full text-xs font-bold uppercase tracking-widest text-left text-foreground text-foreground text-foreground text-foreground"><RotateCcw className="mr-1 h-3 w-3" /> New Search</Button></div>
+                            <div className="flex items-end text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><Button variant="outline" onClick={() => setHasLoaded(false)} className="h-9 w-full text-xs font-bold uppercase tracking-widest text-left text-foreground text-foreground"><RotateCcw className="mr-1 h-3 w-3" /> New Search</Button></div>
                         </div>
-                        {isLoading ? <div className="flex justify-center items-center py-20 text-foreground text-left text-foreground text-foreground text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
+                        {isLoading ? <div className="flex justify-center items-center py-20 text-foreground text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
                             <div className="space-y-6 text-left text-foreground text-foreground text-foreground">
                                 <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />
                                 {allRecords.length >= 100 && (

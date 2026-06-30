@@ -139,14 +139,14 @@ export default function AccountDashboard() {
                             <div className="text-left">
                                 <CardTitle className="text-left">Unlock Your Full Potential</CardTitle>
                                 <CardDescription className="mt-1 text-left">
-                                    You are currently on the Free plan. Upgrade your membership to access powerful tools, exclusive discounts, and new revenue opportunities.
+                                    You are currently on the Free plan. Upgrade your membership to access powerful tools.
                                 </CardDescription>
                             </div>
                         </div>
                     </CardHeader>
                     <CardContent className="text-left">
                          <p className="text-sm text-muted-foreground text-left">
-                            By upgrading, you gain access to our advanced Tech division, including the AI Freight Matcher, plus the ability to activate Loyalty and Actions plans to save money and earn commission.
+                            By upgrading, you gain access to our advanced Tech division and the ability to earn commission via Connect plans.
                         </p>
                     </CardContent>
                     <CardFooter>
@@ -210,7 +210,7 @@ export default function AccountDashboard() {
                         My Loyalty Benefits
                     </CardTitle>
                     <CardDescription className="text-left">
-                        You are on the <span className="font-semibold text-primary capitalize">{loyaltyTier}</span> tier. Here are your active benefits:
+                        You are on the <span className="font-semibold text-primary capitalize">{loyaltyTier}</span> tier.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="text-left p-6">
@@ -224,7 +224,7 @@ export default function AccountDashboard() {
                             ))}
                         </ul>
                     ) : (
-                        <p className="text-muted-foreground text-sm text-left italic">No benefits are currently configured for your tier. Share data or refer members to climb tiers!</p>
+                        <p className="text-muted-foreground text-sm text-left italic">No benefits are currently configured for your tier.</p>
                     )}
                 </CardContent>
                  <CardFooter className="text-left border-t pt-4">
@@ -239,7 +239,7 @@ export default function AccountDashboard() {
                     <CardTitle className="flex items-center gap-2 text-left"><HeartHandshake className="text-primary" /> Help the Community & Earn Rewards</CardTitle>
                 </CardHeader>
                 <CardContent className="text-left">
-                    <p className="text-muted-foreground text-sm leading-relaxed text-left">Help the community by sharing anonymous data about your fleet and suppliers. Each contribution earns you reward points and helps us negotiate better group discounts for everyone.</p>
+                    <p className="text-muted-foreground text-sm leading-relaxed text-left">Help the community by sharing anonymous data. Each contribution earns you reward points.</p>
                 </CardContent>
                 <CardFooter className="text-left">
                     <Button asChild size="sm">

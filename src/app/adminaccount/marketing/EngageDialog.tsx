@@ -148,7 +148,6 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
 
         const contentClone = contentElement.cloneNode(true) as HTMLElement;
         
-        // Ensure version selector is NOT copied to clipboard
         const versionSelector = contentClone.querySelector('[data-id="version-selector-ui"]');
         if (versionSelector) versionSelector.remove();
 
@@ -159,7 +158,6 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
 
         toast({ title: "Content Ready", description: "Interaction logged and formatted HTML copied to clipboard." });
 
-        // Gmail Integration
         const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${currentPartner.email}&su=${encodeURIComponent(getSubject())}`;
         window.open(gmailUrl, '_blank');
         
@@ -192,7 +190,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
         <DialogContent className="max-w-6xl h-[90vh] flex flex-col p-0 text-left overflow-hidden text-foreground">
             <DialogHeader className="p-6 border-b bg-muted/50 text-left">
                 <div className="flex justify-between items-center text-left">
-                    <div className="text-left space-y-1">
+                    <div className="text-left space-y-1 text-foreground">
                         <DialogTitle className="text-2xl font-bold flex items-center gap-2 text-left text-foreground">
                             <Send className="h-6 w-6 text-primary" />
                             Engagement Wizard: {partnerDisplayName}
@@ -226,7 +224,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
             </DialogHeader>
 
             <div className="flex-1 flex overflow-hidden text-left">
-                <div className="w-64 border-r bg-muted/20 p-4 space-y-4 overflow-y-auto text-left">
+                <div className="w-64 border-r bg-muted/20 p-4 space-y-4 overflow-y-auto text-left text-foreground">
                     <Alert className="bg-amber-50 py-2 border-amber-200 text-left">
                         <Info className="h-3 w-3 text-amber-600" />
                         <AlertTitle className="text-[10px] font-black uppercase tracking-widest text-amber-800 text-left">Gmail Web Integration</AlertTitle>
@@ -235,7 +233,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                         </AlertDescription>
                     </Alert>
 
-                    <div className="space-y-1 text-left">
+                    <div className="space-y-1 text-left text-foreground">
                         <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-2 mb-2 block text-left">Step 1: Selection</label>
                         {[
                             { id: 'digital-handshake', label: '0. Digital Handshake' },
@@ -260,30 +258,6 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                             </Button>
                         ))}
                     </div>
-
-                    {partners.length > 1 && (
-                         <div className="pt-4 space-y-1 text-left text-foreground">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-2 mb-2 block text-left">Step 2: Batch Queue</label>
-                            <ScrollArea className="h-64 pr-2 text-left">
-                                <div className="space-y-1 text-left">
-                                    {partners.map((p, idx) => (
-                                        <Button
-                                            key={p.id}
-                                            variant="ghost"
-                                            className={cn(
-                                                "w-full justify-start text-[10px] h-8 px-2 truncate text-left",
-                                                currentIndex === idx ? "bg-primary/10 text-primary font-bold" : "opacity-60"
-                                            )}
-                                            onClick={() => setCurrentIndex(idx)}
-                                        >
-                                            {currentIndex === idx ? <CheckCircle2 className="h-3 w-3 mr-1.5 shrink-0" /> : <div className="w-3 h-3 mr-1.5 rounded-full border shrink-0" />}
-                                            {p.companyName || p.contactPerson || `${p.firstName || ''} ${p.lastName || ''}`.trim() || 'Partner'}
-                                        </Button>
-                                    ))}
-                                </div>
-                            </ScrollArea>
-                        </div>
-                    )}
                 </div>
 
                 <div className="flex-1 overflow-y-auto bg-slate-50 p-8 text-left text-foreground">

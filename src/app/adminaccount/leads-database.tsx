@@ -226,7 +226,7 @@ function LeadsDatabaseComponent() {
                 <div className="flex flex-col text-left">
                     <Badge variant="outline" className="text-[9px] h-4 uppercase font-bold truncate max-w-[100px] border-primary/20 text-primary">{row.original.lastOutreachSubject}</Badge>
                     {row.original.lastOpenedAt && (
-                        <div className="flex items-center gap-1 text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100 mt-1 w-fit">
+                        <div className="flex items-center gap-1 text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100 mt-1 w-fit text-left">
                             <UserCheck className="h-2.5 w-2.5" /> Read
                         </div>
                     )}
@@ -257,7 +257,7 @@ function LeadsDatabaseComponent() {
       <EngageDialog open={!!engageLead} onOpenChange={(o) => !o && setEngageLead(null)} partners={[engageLead]} audience="transporters" onEngageSuccess={forceRefresh} />
       <LeadDialog open={isAddLeadOpen || !!editLead} onOpenChange={(o) => { if(!o) { setEditLead(null); setIsAddLeadOpen(false); } }} lead={editLead} onSave={forceRefresh} />
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
-        <AlertDialogContent className="text-left text-foreground text-foreground">
+        <AlertDialogContent className="text-left text-foreground">
           <AlertDialogHeader><AlertDialogTitle>Delete Lead?</AlertDialogTitle><AlertDialogDescription>This will permanently delete the record.</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setDeleteLead(null)}>Cancel</AlertDialogCancel>
@@ -268,23 +268,23 @@ function LeadsDatabaseComponent() {
 
       <div className="space-y-6 text-left">
         <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4 px-0 pt-0 text-left">
-          <div className="text-left text-foreground text-foreground">
+          <div className="text-left text-foreground">
             <CardTitle className="flex items-center gap-2 text-left"><Users /> Lead Database</CardTitle>
             <CardDescription className="text-left text-muted-foreground">Comprehensive registry of prospects and attributed referrals.</CardDescription>
           </div>
-          <div className="flex items-center gap-2 text-left">
-            <Button variant="outline" onClick={handleExport} disabled={isLoading || !hasLoaded}><Download className="mr-2 h-4 w-4" /> Backup</Button>
-            <BulkImportDialog type="lead" onComplete={forceRefresh}><Button variant="outline" className="text-left"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
-            <Button onClick={() => setIsAddLeadOpen(true)} className="text-left"><PlusCircle className="mr-2 h-4 w-4" />Add Lead</Button>
+          <div className="flex items-center gap-2 text-left text-foreground">
+            <Button variant="outline" onClick={handleExport} disabled={isLoading || !hasLoaded} className="text-left text-foreground"><Download className="mr-2 h-4 w-4" /> Backup</Button>
+            <BulkImportDialog type="lead" onComplete={forceRefresh}><Button variant="outline" className="text-left text-foreground"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
+            <Button onClick={() => setIsAddLeadOpen(true)} className="text-left text-foreground"><PlusCircle className="mr-2 h-4 w-4" />Add Lead</Button>
           </div>
         </CardHeader>
 
         {!hasLoaded ? (
             <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground">
                 <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
-                <h2 className="text-2xl font-black font-headline mb-2 text-center text-foreground">Registry Offline</h2>
-                <p className="text-muted-foreground max-sm mx-auto mb-8 text-center text-foreground text-left text-foreground text-foreground text-foreground text-foreground text-foreground">Load the lead registry to manage your sales pipeline and attributed referrals.</p>
-                <Button size="lg" onClick={forceRefresh} disabled={isLoading} className="h-12 px-8 font-bold">
+                <h2 className="text-2xl font-black font-headline mb-2 text-center text-foreground text-left">Registry Offline</h2>
+                <p className="text-muted-foreground max-sm mx-auto mb-8 text-center text-foreground text-left">Load the lead registry to manage your sales pipeline and attributed referrals.</p>
+                <Button size="lg" onClick={forceRefresh} disabled={isLoading} className="h-12 px-8 font-bold text-left">
                     {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <RefreshCcw className="mr-2 h-4 w-4" />}
                     Load Lead Registry
                 </Button>

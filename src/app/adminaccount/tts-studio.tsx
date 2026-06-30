@@ -98,7 +98,7 @@ export default function TTSStudio() {
                 <CardContent>
                     <Form {...form}>
                         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                            <fieldset disabled={isLoading} className="text-left">
+                            <fieldset disabled={isLoading} className="text-left text-foreground">
                                 <FormField
                                 control={form.control}
                                 name="script"
@@ -160,12 +160,12 @@ export default function TTSStudio() {
                     )}
                 </CardContent>
                 <CardFooter className="bg-muted/30 p-4 border-t rounded-b-xl text-left">
-                    <div className="flex items-start gap-3">
+                    <div className="flex items-start gap-3 text-left">
                         <div className="bg-primary/10 p-2 rounded-lg"><Info className="h-4 w-4 text-primary" /></div>
-                        <div className="space-y-1">
-                            <p className="text-[11px] font-black uppercase tracking-widest text-foreground">Post-Production Guide</p>
-                            <p className="text-[11px] text-muted-foreground leading-relaxed">
-                                Use a tool like **CapCut** to layer this voiceover track with the 3 visual scenes from the **Branding Studio**. We recommend adding a subtle "Industrial Deep House" or "Modern Tech" background track at 15% volume for maximum impact.
+                        <div className="space-y-1 text-left">
+                            <p className="text-[11px] font-black uppercase tracking-widest text-foreground text-left">Post-Production Guide</p>
+                            <p className="text-[11px] text-muted-foreground leading-relaxed text-left">
+                                Use a tool like **CapCut** to layer this voiceover track with the 3 visual scenes from the **Branding Studio**.
                             </p>
                         </div>
                     </div>

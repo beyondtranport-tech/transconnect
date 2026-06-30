@@ -104,7 +104,7 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                 <div className="p-4 bg-muted/30 border rounded-xl space-y-4 text-left">
                     <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Sequence Sync</Label>
                     <div className="space-y-1.5 text-left text-foreground">
-                        <Label className="text-xs font-bold text-foreground">Start Sequence #</Label>
+                        <Label className="text-xs font-bold text-foreground text-left">Start Sequence #</Label>
                         <Input 
                             type="number" 
                             value={seqOverride}
@@ -118,7 +118,7 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                     Copy Scouting Prompt
                 </Button>
             </div>
-            <div className="space-y-2 text-left">
+            <div className="space-y-2 text-left text-foreground text-foreground">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-left text-foreground"><Terminal className="h-3 w-3"/> Command Preview</Label>
                 <ScrollArea className="h-[400px] border rounded-lg bg-slate-900 p-4 text-left text-foreground">
                     <pre className="text-[10px] text-slate-400 font-mono whitespace-pre-wrap leading-tight text-left text-foreground text-left">{prompt}</pre>
@@ -164,35 +164,35 @@ export default function AssociateDiscoveryEngine() {
                                 <Info className="h-4 w-4" /> 
                                 Tactical Roadmap
                             </h3>
-                            <Card className="bg-slate-50 border-none shadow-sm text-left">
+                            <Card className="bg-slate-50 border-none shadow-sm text-left text-foreground">
                                 <CardContent className="p-4 space-y-4 text-[11px] leading-relaxed text-muted-foreground text-left">
                                     <div className="space-y-1 text-left">
                                         <p className="font-black text-foreground flex items-center gap-1.5 uppercase tracking-tighter text-left">
                                             <UserCheck className="h-3 w-3 text-amber-500 fill-current"/> Phase 1: Industry Influencer
                                         </p>
                                         <p className="font-bold text-amber-700 italic text-left">Recommended Primary Focus.</p>
-                                        <p className="text-left">Focused on **Trust**. Thought leaders with an established "ear" in the SA trucking sector. They break the trust-bottleneck immediately.</p>
+                                        <p className="text-left">Thought leaders with an established "ear" in the SA trucking sector.</p>
                                     </div>
                                     <Separator />
                                     <div className="space-y-1 text-left">
                                         <p className="font-black text-foreground flex items-center gap-1.5 uppercase tracking-tighter text-left">
                                             <Video className="h-3 w-3 text-primary"/> Phase 2: Content Creator
                                         </p>
-                                        <p className="text-left">Focused on **Production**. High-volume media producers who create industrial narratives (YouTube/Blogs) using the AI Studio to scale awareness.</p>
+                                        <p className="text-left">High-volume media producers who create industrial narratives.</p>
                                     </div>
                                     <Separator />
                                     <div className="space-y-1 text-left">
                                         <p className="font-black text-foreground flex items-center gap-1.5 uppercase tracking-tighter text-left">
                                             <Zap className="h-3 w-3 text-primary"/> Phase 3: Digital Marketer
                                         </p>
-                                        <p className="text-left">Focused on **Conversion**. Professionals who turn social content into registered members and transactional flow once the base is established.</p>
+                                        <p className="text-left">Professionals who turn social content into registered members.</p>
                                     </div>
                                     <Separator />
                                     <div className="space-y-1 text-left">
                                         <p className="font-black text-foreground flex items-center gap-1.5 uppercase tracking-tighter text-left text-foreground">
                                             <Palette className="h-3 w-3 text-primary"/> Phase 4: Brand Strategist
                                         </p>
-                                        <p className="text-left text-muted-foreground">Focused on **Identity**. Ensuring transporters look professional and "lender-ready" on the platform to increase success rates.</p>
+                                        <p className="text-left text-muted-foreground">Ensuring transporters look professional and "lender-ready".</p>
                                     </div>
                                 </CardContent>
                             </Card>
@@ -200,7 +200,7 @@ export default function AssociateDiscoveryEngine() {
                             <Alert variant="default" className="border-blue-200 bg-blue-50/30 text-left">
                                 <Info className="h-4 w-4 text-blue-600" />
                                 <AlertDescription className="text-[10px] text-blue-800 leading-tight text-left">
-                                    <strong>Tip:</strong> Start with influencers to gain mass-credibility, then use creators to fill the <strong>Marketing Library</strong> with assets.
+                                    <strong>Tip:</strong> Start with influencers to gain mass-credibility.
                                 </AlertDescription>
                             </Alert>
                         </div>

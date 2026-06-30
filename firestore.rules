@@ -19,12 +19,10 @@ service cloud.firestore {
       );
     }
 
-    // Optimized for query-level list evaluation
+    // Hardened membership check optimized for list queries
     function isMember(cid) {
       return isAdmin() || (
         isSignedIn() && (
-          // Direct path check to current user's profile to extract companyId
-          // This allows Firestore to evaluate 'list' operations more efficiently
           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == cid
         )
       );
@@ -53,9 +51,18 @@ service cloud.firestore {
       allow create: if isSignedIn();
       allow update, delete: if isAdmin() || (isSignedIn() && resource.data.ownerId == request.auth.uid);
       
-      // Explicitly allow sub-collection access to members
-      match /{allSub=**} {
-        allow read, write: if isMember(companyId);
+      // Explicitly allow sub-collection read (includes list/get) for authorized members
+      match /supportMessages/{msgId} { allow read, write: if isMember(companyId); }
+      match /transactions/{txId} { allow read, write: if isMember(companyId); }
+      match /walletPayments/{payId} { allow read, write: if isMember(companyId); }
+      match /enquiries/{enqId} { allow read, write: if isMember(companyId); }
+      match /quotes/{quoteId} { allow read, write: if isMember(companyId); }
+      match /tasks/{taskId} { allow read, write: if isMember(companyId); }
+      match /shops/{shopId} { 
+        allow read: if true; 
+        allow write: if isMember(companyId); 
+        match /products/{prodId} { allow read: if true; allow write: if isMember(companyId); }
+        match /agreements/{agId} { allow read, write: if isMember(companyId); }
       }
     }
 

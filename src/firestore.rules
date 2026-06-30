@@ -50,8 +50,17 @@ service cloud.firestore {
       allow create: if isSignedIn();
       allow update, delete: if isAdmin() || (isSignedIn() && resource.data.ownerId == request.auth.uid);
       
-      match /{allSub=**} {
-        allow read, write: if isMember(companyId);
+      match /supportMessages/{msgId} { allow read, write: if isMember(companyId); }
+      match /transactions/{txId} { allow read, write: if isMember(companyId); }
+      match /walletPayments/{payId} { allow read, write: if isMember(companyId); }
+      match /enquiries/{enqId} { allow read, write: if isMember(companyId); }
+      match /quotes/{quoteId} { allow read, write: if isMember(companyId); }
+      match /tasks/{taskId} { allow read, write: if isMember(companyId); }
+      match /shops/{shopId} { 
+        allow read: if true; 
+        allow write: if isMember(companyId); 
+        match /products/{prodId} { allow read: if true; allow write: if isMember(companyId); }
+        match /agreements/{agId} { allow read, write: if isMember(companyId); }
       }
     }
 
