@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -70,6 +71,7 @@ import SocialStudio from '@/app/adminaccount/social-studio';
 import SalesRoadmap from '@/app/account/sales-roadmap';
 import TargetsPage from '@/app/account/targets';
 import FinancialProjections from '@/app/backend/financial-projections';
+import FinancialsGeneralSettings from '@/app/adminaccount/financials-general-settings';
 import FinancialSetup from '@/app/account/financial-setup';
 import BudgetPage from '@/app/account/budget/page';
 import SalaryForecastPage from '@/app/backend/salary-forecast';
@@ -127,7 +129,7 @@ function AdminAccountContent() {
   const searchParams = useSearchParams();
   const initialView = searchParams.get('view') || 'dashboard';
   const [activeView, setActiveView] = useState(initialView);
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
   const auth = useAuth();
   
   useEffect(() => {
@@ -162,6 +164,7 @@ function AdminAccountContent() {
       case 'sales-roadmap': return <SalesRoadmap />;
       case 'targets': return <TargetsPage />;
       case 'financial-projections': return <FinancialProjections />;
+      case 'financial-settings': return <FinancialsGeneralSettings />;
       case 'financial-setup': return <FinancialSetup />;
       case 'budget': return <BudgetPage />;
       case 'salary-forecast': return <SalaryForecastPage />;
@@ -178,7 +181,6 @@ function AdminAccountContent() {
       case 'incentives-sales': return <SalesIncentives />;
       case 'tasks': return <PlatformTasks />;
       case 'settings-bank': return <PlatformSettingsContent />;
-      case 'platform-staff': return <PlatformStaffManagement />;
       case 'guides': return (
         <div className="space-y-8 text-left text-foreground">
             <CardHeader className="px-0">
@@ -251,9 +253,9 @@ function AdminAccountContent() {
     <SidebarProvider>
       <Sidebar>
         <SidebarHeader>
-          <div className="flex items-center gap-2 p-2">
+          <div className="flex items-center gap-2 p-2 text-left">
             <Shield className="h-6 w-6 text-primary" />
-            <h2 className="text-lg font-semibold text-sidebar-foreground">
+            <h2 className="text-lg font-semibold text-sidebar-foreground text-left">
               Admin Portal
             </h2>
           </div>
@@ -342,7 +344,7 @@ function AdminAccountContent() {
             <Avatar className="h-10 w-10">
                 <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
             </Avatar>
-            <div className="flex flex-col truncate text-left">
+            <div className="flex flex-col truncate text-left text-foreground">
                 <span className="text-sm font-medium text-sidebar-foreground truncate">{user?.displayName || 'Admin'}</span>
                 <span className="text-xs text-sidebar-foreground/70 truncate">{user?.email}</span>
             </div>
@@ -364,7 +366,7 @@ function AdminAccountContent() {
 export default function AdminAccountPage() {
   return (
     <AdminAuthGuard>
-        <Suspense fallback={<div className="flex justify-center items-center min-h-[calc(100vh-8rem)]"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>}>
+        <Suspense fallback={<div className="flex justify-center items-center min-h-[calc(100vh-8rem)] text-left text-foreground"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>}>
             <AdminAccountContent />
         </Suspense>
     </AdminAuthGuard>

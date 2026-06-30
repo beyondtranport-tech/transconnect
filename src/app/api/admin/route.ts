@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -103,6 +104,62 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: results.map(serializeTimestamps) });
             }
 
+            case 'dispatchEngagement': {
+                const { partnerId, email, subject, html, audience } = payload;
+                if (!partnerId || !email || !html) throw new Error("Missing dispatch payload.");
+
+                // 1. Identify Target Document
+                const leadsCheck = await db.collection('leads').doc(partnerId).get();
+                const targetCollection = leadsCheck.exists ? 'leads' : 'partners';
+                const parentRef = db.collection(targetCollection).doc(partnerId);
+
+                // 2. Log Locally in Firestore
+                const logRef = parentRef.collection('communications').doc();
+                const batch = db.batch();
+                batch.set(logRef, { 
+                    id: logRef.id, 
+                    type: 'Email', 
+                    subject, 
+                    notes: `Automated Transactional Dispatch for ${audience}`, 
+                    timestamp: FieldValue.serverTimestamp(), 
+                    adminId: decodedToken.uid 
+                });
+                batch.update(parentRef, { 
+                    lastOutreachAt: FieldValue.serverTimestamp(), 
+                    lastOutreachSubject: subject, 
+                    status: 'contacted', 
+                    updatedAt: FieldValue.serverTimestamp() 
+                });
+
+                // 3. Dispatch via Transactional Provider
+                // Replace with your SendGrid/Postmark API key logic
+                const MAIL_API_KEY = process.env.TRANSACTIONAL_MAIL_API_KEY;
+                if (MAIL_API_KEY) {
+                    try {
+                        await fetch('https://api.sendgrid.com/v3/mail/send', {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${MAIL_API_KEY}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                personalizations: [{ to: [{ email }] }],
+                                from: { email: 'noreply@logisticsflow.co.za', name: 'Logistics Flow' },
+                                subject: subject,
+                                content: [{ type: 'text/html', value: html }]
+                            })
+                        });
+                    } catch (mailError) {
+                        console.error("Mail API Dispatch Failed:", mailError);
+                    }
+                } else {
+                    console.warn("TRANSACTIONAL_MAIL_API_KEY missing. Only logging interaction in Firestore.");
+                }
+
+                await batch.commit();
+                return NextResponse.json({ success: true });
+            }
+
             case 'autoEnrichRecord': {
                 const { id, type } = payload;
                 if (!id) throw new Error("ID required for auto-enrichment.");
@@ -169,8 +226,9 @@ export async function POST(req: NextRequest) {
 
             case 'savePartner': {
                 const { partner, collection: collName } = payload;
-                const id = partner.id || db.collection(collName).doc().id;
-                await db.collection(collName).doc(id).set({
+                const targetColl = collName || 'partners';
+                const id = partner.id || db.collection(targetColl).doc().id;
+                await db.collection(targetColl).doc(id).set({
                     ...partner,
                     id,
                     updatedAt: FieldValue.serverTimestamp()

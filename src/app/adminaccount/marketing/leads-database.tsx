@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useCallback, useMemo, useEffect, Suspense } from 'react';
@@ -40,9 +41,9 @@ import { useToast } from '@/hooks/use-toast';
 import { EnrichPartnerButton } from '@/app/adminaccount/marketing/EnrichPartnerButton';
 import { PartnerTasksDialog } from '@/app/adminaccount/marketing/PartnerTasksDialog';
 import { CommunicationLogDialog } from '@/app/adminaccount/marketing/CommunicationLogDialog';
-import { EngageDialog } from './EngageDialog';
-import { PartnerOversightDialog } from './PartnerOversightDialog';
-import { BulkImportDialog } from './BulkImportDialog';
+import { EngageDialog } from '@/app/adminaccount/marketing/EngageDialog';
+import { PartnerOversightDialog } from '@/app/adminaccount/marketing/PartnerOversightDialog';
+import { BulkImportDialog } from '@/app/adminaccount/marketing/BulkImportDialog';
 
 async function performAdminAction(token: string, action: string, payload?: any) {
   const response = await fetch('/api/admin', {

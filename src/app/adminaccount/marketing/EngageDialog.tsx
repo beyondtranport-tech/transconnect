@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -67,6 +68,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [activeTab, setActiveTab] = useState('digital-handshake');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isDispatching, setIsDispatching] = useState(false);
   const [handshakeVersion, setHandshakeVersion] = useState('v1');
 
   useEffect(() => {
@@ -169,6 +171,49 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
     }
   };
 
+  const handleAutomatedDispatch = async () => {
+    if (!currentPartner?.email) {
+        toast({ variant: 'destructive', title: "No Email", description: "This record has no email address." });
+        return;
+    }
+    setIsDispatching(true);
+    try {
+        const token = await getClientSideAuthToken();
+        if (!token) throw new Error("Auth failed.");
+
+        const contentId = `engage-content-wrapper-${activeTab}`;
+        const contentElement = document.getElementById(contentId);
+        if (!contentElement) throw new Error("Content not found.");
+
+        const contentClone = contentElement.cloneNode(true) as HTMLElement;
+        const versionSelector = contentClone.querySelector('[data-id="version-selector-ui"]');
+        if (versionSelector) versionSelector.remove();
+
+        // Call the automated dispatcher
+        await performAdminAction(token, 'dispatchEngagement', {
+            partnerId: currentPartner.id,
+            email: currentPartner.email,
+            subject: getSubject(),
+            html: contentClone.innerHTML,
+            audience
+        });
+
+        toast({ title: "Dispatch Successful", description: "The engagement has been sent via transactional mail." });
+        if (onEngageSuccess) onEngageSuccess();
+        
+        // Auto-advance if batching
+        if (partners.length > 1 && currentIndex < partners.length - 1) {
+            nextRecord();
+        } else {
+            onOpenChange(false);
+        }
+    } catch (e: any) {
+        toast({ variant: 'destructive', title: "Dispatch Failed", description: e.message });
+    } finally {
+        setIsDispatching(false);
+    }
+  };
+
   const nextRecord = () => {
     if (currentIndex < partners.length - 1) {
       setCurrentIndex(prev => prev + 1);
@@ -215,10 +260,16 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                                 </Button>
                             </div>
                         )}
-                        <Button size="lg" className="h-12 px-8 font-bold gap-2 shadow-lg" onClick={handleLogCopyAndLaunch} disabled={isProcessing || !currentPartner.email}>
-                            {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <ExternalLink className="mr-2 h-4 w-4" />}
-                            Log, Copy & Open Gmail
-                        </Button>
+                        <div className="flex gap-2">
+                             <Button variant="outline" size="lg" className="h-12 px-6 font-bold gap-2 shadow-sm" onClick={handleLogCopyAndLaunch} disabled={isProcessing || isDispatching || !currentPartner.email}>
+                                {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <ExternalLink className="mr-2 h-4 w-4" />}
+                                Log & Open Gmail
+                            </Button>
+                            <Button size="lg" className="h-12 px-8 font-bold gap-2 shadow-lg bg-primary hover:bg-primary/90" onClick={handleAutomatedDispatch} disabled={isDispatching || isProcessing || !currentPartner.email}>
+                                {isDispatching ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Zap className="mr-2 h-4 w-4" />}
+                                Automated Dispatch
+                            </Button>
+                        </div>
                     </div>
                 </div>
             </DialogHeader>
@@ -227,9 +278,9 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                 <div className="w-64 border-r bg-muted/20 p-4 space-y-4 overflow-y-auto text-left text-foreground">
                     <Alert className="bg-amber-50 py-2 border-amber-200 text-left">
                         <Info className="h-3 w-3 text-amber-600" />
-                        <AlertTitle className="text-[10px] font-black uppercase tracking-widest text-amber-800 text-left">Gmail Web Integration</AlertTitle>
+                        <AlertTitle className="text-[10px] font-black uppercase tracking-widest text-amber-800 text-left">Transactional Sending</AlertTitle>
                         <AlertDescription className="text-[9px] text-amber-700 text-left">
-                            Now opening Gmail Web for better deliverability. Avoid sending &gt; 20/hr to protect your sender score.
+                            Use "Automated Dispatch" to send via our secure mail server. This bypasses Outlook's outbound spam blocks.
                         </AlertDescription>
                     </Alert>
 
@@ -268,7 +319,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                                     <div className="bg-amber-100 p-2 rounded-lg text-left"><Zap className="h-5 w-5 text-amber-600" /></div>
                                     <div className="text-left">
                                         <p className="text-sm font-bold text-amber-900 text-left">Anti-Spam Variance</p>
-                                        <p className="text-[10px] text-amber-700 text-left">Text varies Deterministically by Partner ID to bypass Outlook filters.</p>
+                                        <p className="text-[10px] text-amber-700 text-left">Text varies Deterministically by Partner ID to bypass filters.</p>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-3 text-left">
