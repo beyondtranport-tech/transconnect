@@ -113,7 +113,7 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
             </div>
             <FormField control={form.control} name="status" render={({ field }) => (
                 <FormItem className="text-left">
-                    <FormLabel>Pipeline Status</FormLabel>
+                    <FormLabel>Pipeline Status</Label>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl><SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
                         <SelectContent>
@@ -344,7 +344,10 @@ export default function SupplierManagement() {
       ) : (
             <div className="space-y-6 text-left text-foreground">
                 <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left text-foreground">
-                    <div className="text-left text-foreground text-left"><CardTitle className="flex items-center gap-2 text-2xl font-black font-headline text-left text-foreground"><Building className="h-6 w-6" /> Supplier Registry</CardTitle><CardDescription className="text-left text-muted-foreground text-left text-foreground">Unified industrial database view ({filteredRecords.length} records).</CardDescription></div>
+                    <div className="text-left text-foreground text-left">
+                      <CardTitle className="flex items-center gap-2 text-2xl font-black font-headline text-left text-foreground"><Building className="h-6 w-6" /> Supplier Registry</CardTitle>
+                      <CardDescription className="text-left text-muted-foreground text-left text-foreground">Unified industrial database view ({filteredRecords.length} records).</CardDescription>
+                    </div>
                     <div className="flex flex-wrap items-center gap-2 text-left text-foreground">
                         {selectedIds.length > 0 && <Button variant="secondary" onClick={() => handleEngage(null)} className="gap-2 shadow-sm font-bold animate-in fade-in zoom-in text-left text-foreground"><Send className="h-4 w-4" /> Batch Engage ({selectedIds.length})</Button>}
                         

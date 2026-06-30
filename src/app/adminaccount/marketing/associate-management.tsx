@@ -374,7 +374,7 @@ export default function AssociateManagement() {
                                 <Button variant="outline" className="gap-2 text-foreground"><Settings2 className="h-4 w-4" /> Columns</Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-56 p-2 text-left text-foreground">
-                                <div className="space-y-1 text-left text-foreground">
+                                <div className="space-y-1 text-left text-foreground text-foreground text-foreground">
                                     {Object.keys(visibleColumns).map(col => (
                                         <div key={col} className="flex items-center justify-between p-2 hover:bg-muted rounded-md cursor-pointer text-[10px] font-black uppercase tracking-widest text-foreground" onClick={() => setVisibleColumns(prev => ({...prev, [col]: !prev[col]}))}>
                                             <span>{col.replace(/([A-Z])/g, ' $1')}</span>
@@ -396,7 +396,7 @@ export default function AssociateManagement() {
                             <div className="space-y-1 text-left text-foreground text-foreground">
                                 <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Filter className="h-3 w-3"/> Status</Label>
                                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                                    <SelectTrigger className="h-9 bg-white text-xs text-left text-foreground"><SelectValue placeholder="All Statuses" /></SelectTrigger>
+                                    <SelectTrigger className="h-9 bg-white text-xs text-left text-foreground text-foreground"><SelectValue placeholder="All Statuses" /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">All Statuses</SelectItem>
                                         <SelectItem value="new">New</SelectItem>

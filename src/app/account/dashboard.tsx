@@ -59,36 +59,6 @@ export default function AccountDashboard() {
         })).filter((b: any) => b.value && b.value !== 'N/A' && b.value !== '0');
     }, [loyaltySettings, companyData]);
     
-    if (isAdmin) {
-        return (
-             <div className="w-full space-y-8 text-left">
-                 <Card className="border-primary bg-primary/5 text-left">
-                    <CardHeader className="text-left">
-                        <div className="flex items-center gap-4 text-left">
-                            <ShieldCheck className="h-10 w-10 text-primary" />
-                            <div className="text-left">
-                                <CardTitle className="text-2xl text-left">Administrator Account</CardTitle>
-                                <CardDescription className="text-primary/90 text-left">You are currently viewing the standard member dashboard.</CardDescription>
-                            </div>
-                        </div>
-                    </CardHeader>
-                    <CardContent className="text-left text-foreground">
-                        <p className="text-lg text-left leading-relaxed">
-                           All administrative functions are located in the secure <span className="font-semibold text-primary">Admin Portal</span>.
-                        </p>
-                    </CardContent>
-                    <CardFooter className="text-left">
-                        <Button variant="default" size="lg" asChild>
-                            <Link href="/adminaccount">
-                                Go to Admin Portal <ArrowRight className="ml-2 h-5 w-5" />
-                            </Link>
-                        </Button>
-                    </CardFooter>
-                </Card>
-             </div>
-        );
-    }
-
     if (isUserLoading || (user && (isCompanyLoading || isSettingsLoading))) {
         return (
             <div className="flex justify-center items-center min-h-[calc(100vh-8rem)] w-full">
@@ -119,6 +89,36 @@ export default function AccountDashboard() {
     }
 
     if (!user) return null;
+
+    if (isAdmin) {
+        return (
+             <div className="w-full space-y-8 text-left">
+                 <Card className="border-primary bg-primary/5 text-left">
+                    <CardHeader className="text-left">
+                        <div className="flex items-center gap-4 text-left">
+                            <ShieldCheck className="h-10 w-10 text-primary" />
+                            <div className="text-left">
+                                <CardTitle className="text-2xl text-left">Administrator Account</CardTitle>
+                                <CardDescription className="text-primary/90 text-left">You are currently viewing the standard member dashboard.</CardDescription>
+                            </div>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="text-left text-foreground">
+                        <p className="text-lg text-left leading-relaxed">
+                           All administrative functions are located in the secure <span className="font-semibold text-primary">Admin Portal</span>.
+                        </p>
+                    </CardContent>
+                    <CardFooter className="text-left">
+                        <Button variant="default" size="lg" asChild>
+                            <Link href="/adminaccount">
+                                Go to Admin Portal <ArrowRight className="ml-2 h-5 w-5" />
+                            </Link>
+                        </Button>
+                    </CardFooter>
+                </Card>
+             </div>
+        );
+    }
     
     return (
         <div className="w-full space-y-8 text-left text-foreground">

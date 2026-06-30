@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
                     if (term) leadsQ = leadsQ.where('companyName', '>=', term).where('companyName', '<=', term + '\uf8ff');
                     
                     const leadsSnap = await leadsQ.limit(limit).get();
-                    results = [...results, ...leadsSnap.docs.map(d => ({ id: d.id, source: 'Lead', ...d.data() }))];
+                    results = [...results, ...leadsSnap.docs.map((d: any) => ({ id: d.id, source: 'Lead', ...d.data() }))];
                 }
 
                 if (type !== 'lead') {
@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
                     if (term) partnersQ = partnersQ.where('companyName', '>=', term).where('companyName', '<=', term + '\uf8ff');
 
                     const partnersSnap = await partnersQ.limit(limit).get();
-                    results = [...results, ...partnersSnap.docs.map(d => ({ id: d.id, source: 'Partner', ...d.data() }))];
+                    results = [...results, ...partnersSnap.docs.map((d: any) => ({ id: d.id, source: 'Partner', ...d.data() }))];
                 }
 
                 if (outreachFilter === 'none') {
@@ -200,22 +200,22 @@ export async function POST(req: NextRequest) {
 
             case 'getPlatformStaff': {
                 const snap = await db.collection('platformStaff').get();
-                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
+                return NextResponse.json({ success: true, data: snap.docs.map((d: any) => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
             }
 
             case 'getLeads': {
                 const snap = await db.collection('leads').orderBy('updatedAt', 'desc').limit(1000).get();
-                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
+                return NextResponse.json({ success: true, data: snap.docs.map((d: any) => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
             }
 
             case 'getMembers': {
                 const snap = await db.collection('companies').orderBy('updatedAt', 'desc').limit(1000).get();
-                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
+                return NextResponse.json({ success: true, data: snap.docs.map((d: any) => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
             }
 
             case 'getAuditLogs': {
                 const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(100).get();
-                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
+                return NextResponse.json({ success: true, data: snap.docs.map((d: any) => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
             }
 
             default: return NextResponse.json({ success: false, error: "Action invalid." }, { status: 400 });
