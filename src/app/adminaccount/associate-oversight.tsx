@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -279,7 +280,7 @@ export default function AssociateOversight() {
                     )}
                 </div>
 
-                <div className="space-y-6 text-left text-foreground">
+                <div className="space-y-6 text-left text-foreground text-foreground">
                     <Card className="shadow-lg border-none text-left text-foreground">
                         <CardHeader className="text-left text-foreground">
                             <CardTitle className="text-sm font-black uppercase tracking-widest flex items-center gap-2 text-left text-foreground">
