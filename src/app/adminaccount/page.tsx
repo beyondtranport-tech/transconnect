@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -45,6 +46,8 @@ import {
   Banknote,
   Search,
   Eye,
+  HelpCircle,
+  Book,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -87,6 +90,7 @@ import PlatformSettingsContent from '@/app/backend/platform-settings';
 import UnifiedDirectory from '@/app/adminaccount/unified-directory';
 import PlatformStaffManagement from '@/app/adminaccount/platform-staff';
 import AssociateOversight from '@/app/adminaccount/associate-oversight';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 function AdminAuthGuard({ children }: { children: React.ReactNode }) {
     const { user, isUserLoading } = useUser();
@@ -177,9 +181,64 @@ function AdminAccountContent() {
       case 'tasks': return <PlatformTasks />;
       case 'settings-bank': return <PlatformSettingsContent />;
       case 'platform-staff': return <PlatformStaffManagement />;
+      case 'guides': return (
+        <div className="space-y-8 text-left">
+            <CardHeader className="px-0">
+                <div className="flex items-center gap-4 text-left">
+                    <div className="bg-primary/10 p-3 rounded-xl"><Book className="h-8 w-8 text-primary" /></div>
+                    <div className="text-left">
+                        <CardTitle className="text-2xl font-black font-headline">Platform Guides & Help</CardTitle>
+                        <CardDescription className="text-left">Administrative protocols and troubleshooting walkthroughs.</CardDescription>
+                    </div>
+                </div>
+            </CardHeader>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
+                <Card className="hover:border-primary transition-all group cursor-pointer" onClick={() => window.open('/docs/outlook-sending-guide.md', '_blank')}>
+                    <CardHeader className="text-left">
+                        <CardTitle className="text-lg font-bold group-hover:text-primary">Outlook Spam Unblocking</CardTitle>
+                        <CardDescription className="text-left">Step-by-step instructions for the Microsoft 365 Defender Portal.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="text-left">
+                        <p className="text-xs text-muted-foreground leading-relaxed">If your outreach email gets flagged as spam, follow this guide to lift the restriction in the M365 Security center.</p>
+                    </CardContent>
+                </Card>
+
+                <Card className="hover:border-primary transition-all group cursor-pointer" onClick={() => window.open('/docs/enable-gemini-api.md', '_blank')}>
+                    <CardHeader className="text-left">
+                        <CardTitle className="text-lg font-bold group-hover:text-primary">AI & Gemini Configuration</CardTitle>
+                        <CardDescription className="text-left">Fixing "403 Forbidden" or "Resource Exhausted" errors.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="text-left">
+                        <p className="text-xs text-muted-foreground leading-relaxed">Ensure your AI API keys are correctly scoped and quotas are adjusted for high-volume forensic discovery.</p>
+                    </CardContent>
+                </Card>
+
+                <Card className="hover:border-primary transition-all group cursor-pointer" onClick={() => window.open('/docs/backend-setup.md', '_blank')}>
+                    <CardHeader className="text-left">
+                        <CardTitle className="text-lg font-bold group-hover:text-primary">Backend & IAM Setup</CardTitle>
+                        <CardDescription className="text-left">Connecting service accounts and environment variables.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="text-left">
+                        <p className="text-xs text-muted-foreground leading-relaxed">Instructions for generating JSON keys and Base64 encoding for the FIREBASE_ADMIN_SDK_CONFIG_B64 variable.</p>
+                    </CardContent>
+                </Card>
+
+                <Card className="hover:border-primary transition-all group cursor-pointer" onClick={() => window.open('/docs/deployment-guide.md', '_blank')}>
+                    <CardHeader className="text-left">
+                        <CardTitle className="text-lg font-bold group-hover:text-primary">Deployment Guide</CardTitle>
+                        <CardDescription className="text-left">Publishing updates to Firebase App Hosting.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="text-left">
+                        <p className="text-xs text-muted-foreground leading-relaxed">Protocol for pushing code to GitHub and monitoring the App Hosting build pipeline.</p>
+                    </CardContent>
+                </Card>
+            </div>
+        </div>
+      );
       default: return <AdminDashboardContent />;
     }
-  }, [activeView]);
+  }, [activeView, campaignName, groupUrl, platform, config, templates, derived, handleLogAndCopy, handleLogPublishedPost, handleCopyPrompt, handleGenerateCustom, creatorParams, aiResult, isGenerating, isLogging]);
   
   const getInitials = (name: string | null | undefined) => {
     if (!name) return "AD";
@@ -269,6 +328,12 @@ function AdminAccountContent() {
                  <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'permissions'} onClick={() => navigate('permissions')}>Permissions</SidebarMenuSubButton></SidebarMenuSubItem>
                  <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'settings-bank'} onClick={() => navigate('settings-bank')}>Bank Details</SidebarMenuSubButton></SidebarMenuSubItem>
               </SidebarMenuSub>
+            </SidebarMenuItem>
+
+            <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Help & Guides" isActive={activeView === 'guides'} onClick={() => navigate('guides')}>
+                    <HelpCircle /><span>Help & Guides</span>
+                </SidebarMenuButton>
             </SidebarMenuItem>
         </SidebarGroup>
       </SidebarContent>
