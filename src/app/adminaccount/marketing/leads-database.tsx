@@ -37,9 +37,9 @@ import { Label } from '@/components/ui/label';
 import { formatDateSafe, cn, downloadDataAsCSV } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 
-import { EnrichPartnerButton } from '@/app/adminaccount/marketing/EnrichPartnerButton';
-import { PartnerTasksDialog } from '@/app/adminaccount/marketing/PartnerTasksDialog';
-import { CommunicationLogDialog } from '@/app/adminaccount/marketing/CommunicationLogDialog';
+import { EnrichPartnerButton } from './EnrichPartnerButton';
+import { PartnerTasksDialog } from './PartnerTasksDialog';
+import { CommunicationLogDialog } from './CommunicationLogDialog';
 import { EngageDialog } from './EngageDialog';
 import { PartnerOversightDialog } from './PartnerOversightDialog';
 import { BulkImportDialog } from './BulkImportDialog';

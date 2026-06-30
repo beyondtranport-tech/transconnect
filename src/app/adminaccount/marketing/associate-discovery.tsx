@@ -88,7 +88,7 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                     )}
                 </div>
 
-                <Alert className={cn("text-left", isPriority ? "bg-amber-50 border-amber-200" : "bg-primary/5 border-primary/20")}>
+                <Alert variant="default" className={cn("text-left", isPriority ? "bg-amber-50 border-amber-200" : "bg-primary/5 border-primary/20")}>
                     {isPriority ? <Star className="h-4 w-4 text-amber-600" /> : <ShieldCheck className="h-4 w-4 text-primary" />}
                     <AlertTitle className={cn("font-bold text-left", isPriority && "text-amber-800")}>
                         {isPriority ? "Trust-Led Growth Strategy" : "Creative Node Search"}
