@@ -19,10 +19,12 @@ service cloud.firestore {
       );
     }
 
+    // Direct owner check on the company document
     function isCompanyOwner(cid) {
       return isSignedIn() && get(/databases/$(database)/documents/companies/$(cid)).data.ownerId == request.auth.uid;
     }
 
+    // Lookup check via the user's profile
     function isCompanyStaff(cid) {
       return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == cid;
     }
@@ -33,10 +35,12 @@ service cloud.firestore {
 
     // --- RULES ---
 
+    // Global Admin Override
     match /{allPaths=**} {
       allow read, write: if isAdmin();
     }
 
+    // User Profiles
     match /users/{userId} {
       allow get: if isSignedIn(); 
       allow list: if isAdmin();
@@ -48,7 +52,9 @@ service cloud.firestore {
       }
     }
 
+    // Company Data
     match /companies/{companyId} {
+      // Basic read for the company doc itself
       allow get: if isSignedIn() && (
         resource.data.ownerId == request.auth.uid ||
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId ||
@@ -58,6 +64,9 @@ service cloud.firestore {
       allow list: if isAdmin();
       allow create: if isSignedIn();
       allow update, delete: if isAdmin() || (isSignedIn() && resource.data.ownerId == request.auth.uid);
+      
+      // EXPLICIT SUB-COLLECTION RULES
+      // Using 'read' to cover both 'get' and 'list'
       
       match /supportMessages/{msgId} { allow read, write: if isMember(companyId); }
       match /transactions/{txId} { allow read, write: if isMember(companyId); }
@@ -70,6 +79,7 @@ service cloud.firestore {
       match /shops/{sId} { 
         allow read, write: if isMember(companyId); 
         match /products/{pId} { allow read, write: if isMember(companyId); }
+        match /agreements/{aId} { allow read, write: if isMember(companyId); }
       }
       
       match /leads/{lId} { 
@@ -87,23 +97,26 @@ service cloud.firestore {
       }
     }
 
+    // Industrial Registries (Internal)
     match /partners/{partnerId} {
-      allow get: if true;
-      allow read: if isSignedIn();
+      allow get: if true; // Enabled for public opt-in links
+      allow list: if isSignedIn();
       allow write: if isAdmin();
       match /{allSub=**} { allow read, write: if isAdmin(); }
     }
 
     match /leads/{leadId} {
-      allow get: if true;
-      allow read, write: if isAdmin();
+      allow get: if true; // Enabled for public opt-in links
+      allow list, write: if isAdmin();
       match /{allSub=**} { allow read, write: if isAdmin(); }
     }
     
+    // Public Marketplaces
     match /shops/{shopId}/{path=**} {
       allow get, list: if true;
     }
     
+    // Interaction tracking
     match /visitors/{visitorId} {
       allow write: if true;
     }

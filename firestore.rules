@@ -66,6 +66,7 @@ service cloud.firestore {
       allow update, delete: if isAdmin() || (isSignedIn() && resource.data.ownerId == request.auth.uid);
       
       // EXPLICIT SUB-COLLECTION RULES
+      // Using 'read' to cover both 'get' and 'list'
       
       match /supportMessages/{msgId} { allow read, write: if isMember(companyId); }
       match /transactions/{txId} { allow read, write: if isMember(companyId); }
@@ -115,7 +116,7 @@ service cloud.firestore {
       allow get, list: if true;
     }
     
-    // interaction tracking
+    // Interaction tracking
     match /visitors/{visitorId} {
       allow write: if true;
     }
