@@ -25,7 +25,7 @@ service cloud.firestore {
         isSignedIn() && cid != null && (
           // Use auth uid directly to check profile companyId
           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == cid ||
-          // Fallback to existence of company with owner matching current user
+          // Fallback to checking if they own the company
           (exists(/databases/$(database)/documents/companies/$(cid)) && 
            get(/databases/$(database)/documents/companies/$(cid)).data.ownerId == request.auth.uid)
         )
@@ -60,7 +60,6 @@ service cloud.firestore {
       allow update, delete: if isAdmin() || (isSignedIn() && resource.data.ownerId == request.auth.uid);
       
       // Sub-collections: Support, Transactions, Enquiries, etc.
-      // Explicitly allow list/read if the user is a verified member of the parent company
       match /{allSub=**} {
         allow read, write: if isMember(companyId);
       }

@@ -3,15 +3,14 @@
 import { useUser, useFirestore, useDoc } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Award, FileText, Gem, User, Loader2, DollarSign, HeartHandshake, ArrowRight, Sparkles, Wallet, ShieldAlert, Landmark, Star, CheckCircle } from "lucide-react";
+import { Award, Gem, Loader2, HeartHandshake, ArrowRight, Sparkles, Wallet, ShieldAlert, Star, CheckCircle } from "lucide-react";
 import { doc } from 'firebase/firestore';
 import Link from 'next/link';
-import { useEffect, useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import EnquiriesCard from './enquiries-card';
 import QuotesCard from './quotes-card';
-import { cn } from '@/lib/utils';
-import { useMemoFirebase } from '@/hooks/use-memo-firebase';
-import { formatCurrency } from '@/lib/utils';
+import { cn, formatCurrency } from '@/lib/utils';
+import { useMemoFirebase } from '@/firebase';
 import { useConfig } from '@/hooks/use-config';
 
 export default function AccountDashboard() {
@@ -23,18 +22,20 @@ export default function AccountDashboard() {
         user.email === 'mkoton100@gmail.com' || 
         user.email === 'michael@logisticsflow.co.za'
     );
+
     const { data: loyaltySettings, isLoading: isSettingsLoading } = useConfig<any>('loyaltySettings');
 
     const userDocRef = useMemoFirebase(() => {
-        if (isAdmin || !firestore || !user) return null;
+        if (!firestore || !user?.uid) return null;
         return doc(firestore, 'users', user.uid);
-    }, [firestore, user, isAdmin]);
+    }, [firestore, user?.uid]);
+    
     const { data: userData } = useDoc<{ companyId: string, firstName: string }>(userDocRef);
 
     const companyDocRef = useMemoFirebase(() => {
-        if (isAdmin || !firestore || !userData?.companyId) return null;
+        if (!firestore || !userData?.companyId) return null;
         return doc(firestore, 'companies', userData.companyId);
-    }, [firestore, userData, isAdmin]);
+    }, [firestore, userData?.companyId]);
 
     const { data: companyData, isLoading: isCompanyLoading, error } = useDoc(companyDocRef);
     
@@ -58,15 +59,14 @@ export default function AccountDashboard() {
         })).filter((b: any) => b.value && b.value !== 'N/A' && b.value !== '0');
     }, [loyaltySettings, companyData]);
     
-    // Admin View Guard
     if (isAdmin) {
         return (
-             <div className="w-full space-y-8">
+             <div className="w-full space-y-8 text-left">
                  <Card className="border-primary bg-primary/5">
                     <CardHeader>
                         <div className="flex items-center gap-4">
                             <ShieldAlert className="h-10 w-10 text-primary" />
-                            <div>
+                            <div className="text-left">
                                 <CardTitle className="text-2xl text-left">Administrator Account</CardTitle>
                                 <CardDescription className="text-primary/90 text-left">You are currently viewing the standard member dashboard.</CardDescription>
                             </div>
@@ -74,7 +74,7 @@ export default function AccountDashboard() {
                     </CardHeader>
                     <CardContent>
                         <p className="text-lg">
-                           All administrative functions are located in the secure <span className="font-semibold text-primary">Admin Backend</span>.
+                           All administrative functions are located in the secure <span className="font-semibold text-primary">Admin Portal</span>.
                         </p>
                     </CardContent>
                     <CardFooter>
@@ -116,12 +116,10 @@ export default function AccountDashboard() {
         );
     }
 
-    if (!user) {
-        return null;
-    }
+    if (!user) return null;
     
     return (
-        <div className="w-full space-y-8 text-left">
+        <div className="w-full space-y-8 text-left text-foreground">
             <div className="flex items-center gap-4 text-left">
                 <div className="text-left">
                     <h1 className="text-3xl md:text-4xl font-bold font-headline">Dashboard</h1>
@@ -191,10 +189,7 @@ export default function AccountDashboard() {
                  <Card>
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
                         <CardTitle className="text-sm font-medium">Loyalty Status</CardTitle>
-                        <div className="flex items-center gap-1">
-                             <Award className="h-4 w-4 text-muted-foreground" />
-                             <Star className="h-4 w-4 text-muted-foreground" />
-                        </div>
+                        <Award className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold flex items-center gap-2">
@@ -251,7 +246,7 @@ export default function AccountDashboard() {
                 </CardFooter>
             </Card>
             
-            <div className="space-y-8">
+            <div className="space-y-8 text-left">
                 <QuotesCard />
                 <EnquiriesCard />
             </div>
