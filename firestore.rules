@@ -19,7 +19,8 @@ service cloud.firestore {
       );
     }
 
-    // Authoritative membership check for company-level data
+    // Explicit check to see if user is a member of the company.
+    // Query-level security requires get() or direct UID mapping.
     function isMember(cid) {
       return isAdmin() || (
         isSignedIn() && cid != null && (
@@ -55,8 +56,8 @@ service cloud.firestore {
       allow create: if isSignedIn();
       allow update, delete: if isAdmin() || (isSignedIn() && resource.data.ownerId == request.auth.uid);
       
-      // Sub-collections: Support, Transactions, Enquiries, etc.
-      // Explicitly permitting read/write for all nested sub-collections to members
+      // Explicitly permitting list and write for sub-collections to members.
+      // Using 'read' instead of 'get'/'list' separately for robustness.
       match /{allSub=**} {
         allow read, write: if isMember(companyId);
       }
@@ -64,15 +65,13 @@ service cloud.firestore {
 
     // Public Registries & Discovery
     match /partners/{partnerId} {
-      allow get: if true;
-      allow list: if isSignedIn();
+      allow read: if isSignedIn();
       allow write: if isAdmin();
       match /{allSub=**} { allow read, write: if isAdmin(); }
     }
 
     match /leads/{leadId} {
-      allow get: if true;
-      allow list: if isAdmin() || isSignedIn();
+      allow read: if isSignedIn();
       allow write: if isAdmin();
       match /{allSub=**} { allow read, write: if isAdmin(); }
     }

@@ -56,15 +56,13 @@ service cloud.firestore {
     }
 
     match /partners/{partnerId} {
-      allow get: if true;
-      allow list: if isSignedIn();
+      allow read: if isSignedIn();
       allow write: if isAdmin();
       match /{allSub=**} { allow read, write: if isAdmin(); }
     }
 
     match /leads/{leadId} {
-      allow get: if true;
-      allow list: if isAdmin() || isSignedIn();
+      allow read: if isSignedIn();
       allow write: if isAdmin();
       match /{allSub=**} { allow read, write: if isAdmin(); }
     }

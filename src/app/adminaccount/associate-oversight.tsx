@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { getClientSideAuthToken } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { formatCurrency, formatDateSafe } from '@/lib/utils';
+import { cn, formatCurrency, formatDateSafe } from '@/lib/utils';
 import Link from 'next/link';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
@@ -75,7 +75,6 @@ export default function AssociateOversight() {
             const token = await getClientSideAuthToken();
             if (!token) return;
             
-            // Get all companies/leads where referrerId matches the associate's ID
             const [membersRes, leadsRes] = await Promise.all([
                 fetchFromAdminAPI(token, 'getMembers'),
                 fetchFromAdminAPI(token, 'searchRegistry', { type: 'all' })
