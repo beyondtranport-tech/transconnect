@@ -1,5 +1,4 @@
 import { initializeApp, getApps, getApp, App, cert } from 'firebase-admin/app';
-import type { ServiceAccount } from 'firebase-admin/app';
 import { NextRequest } from 'next/server';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
@@ -15,12 +14,11 @@ function initializeAdminApp(): { app: App; error: null } | { app: null; error: s
     }
 
     try {
-        // This will throw if the app is not already initialized
         const existingApp = getApp(ADMIN_APP_NAME);
         adminApp = existingApp;
         return { app: adminApp, error: null };
     } catch (e) {
-        // App not initialized, proceed to initialize
+        // App not initialized
     }
     
     const encodedServiceAccount = process.env.FIREBASE_ADMIN_SDK_CONFIG_B64;
@@ -35,7 +33,7 @@ function initializeAdminApp(): { app: App; error: null } | { app: null; error: s
         const serviceAccountObject: { [key: string]: any } = JSON.parse(serviceAccountJson);
 
         if (!serviceAccountObject.project_id || !serviceAccountObject.client_email || !serviceAccountObject.private_key) {
-            throw new Error('Parsed service account is invalid or missing essential properties (project_id, client_email, private_key). Please re-generate it following the backend-setup.md guide.');
+            throw new Error('Parsed service account is invalid or missing essential properties.');
         }
 
         const app = initializeApp({
@@ -81,7 +79,8 @@ export async function verifyAdmin(req: NextRequest) {
     const decodedToken = await adminAuth.verifyIdToken(token);
     const isAdmin = decodedToken.email === 'mkoton100@gmail.com' || 
                     decodedToken.email === 'beyondtransport@gmail.com' ||
-                    decodedToken.email === 'michael@logisticsflow.co.za';
+                    decodedToken.email === 'michael@logisticsflow.co.za' ||
+                    decodedToken.admin === true;
 
     if (!isAdmin) {
         throw new Error("Forbidden: Admin access required.");

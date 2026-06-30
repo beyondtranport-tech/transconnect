@@ -26,7 +26,7 @@ service cloud.firestore {
 
     // Direct check if the user is the owner defined on the company doc
     function isCompanyOwner(cid) {
-      return isSignedIn() && get(/databases/$(database)/documents/companies/$(cid)).data.ownerId == request.auth.uid;
+      return isSignedIn() && exists(/databases/$(database)/documents/companies/$(cid)) && get(/databases/$(database)/documents/companies/$(cid)).data.ownerId == request.auth.uid;
     }
 
     function isMember(cid) {
@@ -54,17 +54,22 @@ service cloud.firestore {
 
     // Company Data & Sub-collections
     match /companies/{companyId} {
+      // Allow individual GET if authorized
       allow get: if isSignedIn() && (
-        resource.data.ownerId == request.auth.uid ||
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId ||
-        isAdmin()
+        isMember(companyId)
       );
       
+      // Protect the list operation on the companies collection
       allow list: if isAdmin();
+      
+      // Allow creation during sign-up
       allow create: if isSignedIn();
+      
+      // Update/Delete restricted to Admin or Owner
       allow update, delete: if isAdmin() || (isSignedIn() && resource.data.ownerId == request.auth.uid);
       
-      // Sub-collections use refined membership check
+      // Explicit rules for all sub-collections
+      // This ensures that list/get/write operations within these paths are allowed for members
       match /supportMessages/{msgId} { allow read, write: if isMember(companyId); }
       match /transactions/{txId} { allow read, write: if isMember(companyId); }
       match /walletPayments/{pmId} { allow read, write: if isMember(companyId); }
@@ -72,6 +77,8 @@ service cloud.firestore {
       match /quotes/{qId} { allow read, write: if isMember(companyId); }
       match /staff/{stId} { allow read, write: if isMember(companyId); }
       match /payoutRequests/{pId} { allow read, write: if isMember(companyId); }
+      match /searchLogs/{logId} { allow read, write: if isMember(companyId); }
+      match /tasks/{taskId} { allow read, write: if isMember(companyId); }
       
       match /shops/{sId} { 
         allow read, write: if isMember(companyId); 
@@ -79,22 +86,18 @@ service cloud.firestore {
         match /agreements/{aId} { allow read, write: if isMember(companyId); }
       }
       
-      match /leads/{lId} { 
-         allow read, write: if isMember(companyId); 
-         match /messages/{mId} { allow read, write: if isMember(companyId); }
-      }
-      
       match /loadBoards/{lbId} {
           allow read, write: if isMember(companyId);
           match /loads/{loadId} { allow read, write: if isMember(companyId); }
       }
 
+      // Catch-all for any other future sub-collections
       match /{allSub=**} {
         allow read, write: if isMember(companyId);
       }
     }
 
-    // Industrial Registries (Internal)
+    // Public Collections
     match /partners/{partnerId} {
       allow get: if true;
       allow list: if isSignedIn();
@@ -108,14 +111,12 @@ service cloud.firestore {
       match /{allSub=**} { allow read, write: if isAdmin(); }
     }
     
-    // Public Marketplaces
     match /shops/{shopId}/{path=**} {
       allow get, list: if true;
     }
     
-    // Interaction tracking
     match /visitors/{visitorId} {
-      allow write: if true;
+      allow read, write: if true;
     }
 
     match /memberships/{membershipId} {
