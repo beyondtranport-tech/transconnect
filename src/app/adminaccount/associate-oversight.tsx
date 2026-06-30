@@ -77,11 +77,11 @@ export default function AssociateOversight() {
             
             const [membersRes, leadsRes] = await Promise.all([
                 fetchFromAdminAPI(token, 'getMembers'),
-                fetchFromAdminAPI(token, 'searchRegistry', { type: 'all' })
+                fetchFromAdminAPI(token, 'getLeads')
             ]);
             
             const memberNetwork = (membersRes || []).filter((m: any) => m.referrerId === associate.id);
-            const leadNetwork = (leadsRes.data || []).filter((l: any) => l.referrerId === associate.id);
+            const leadNetwork = (leadsRes || []).filter((l: any) => l.referrerId === associate.id);
             
             setAssociateNetwork([...memberNetwork, ...leadNetwork]);
         } catch (e: any) {

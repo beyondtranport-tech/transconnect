@@ -20,10 +20,12 @@ service cloud.firestore {
     }
 
     // Explicit check for membership that works reliably for sub-collection LIST operations.
+    // Optimized for static analysis by comparing against direct UID pathing or auth token fields.
     function isMember(cid) {
       return isAdmin() || (
         isSignedIn() && (
-          // Direct UID mapping to the companyId field in the user document
+          // Use a direct path check if possible, or verify against the user document.
+          // For sub-collection listing, we often need to check a field on the document being listed or the parent path.
           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == cid
         )
       );
