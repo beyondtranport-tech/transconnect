@@ -23,10 +23,11 @@ service cloud.firestore {
     function isMember(cid) {
       return isAdmin() || (
         isSignedIn() && cid != null && (
-          // Check user profile for company association
+          // Check user profile for company association (fastest check)
           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == cid ||
-          // Fallback to checking company ownership
-          get(/databases/$(database)/documents/companies/$(cid)).data.ownerId == request.auth.uid
+          // Fallback: Check company ownership
+          (exists(/databases/$(database)/documents/companies/$(cid)) && 
+           get(/databases/$(database)/documents/companies/$(cid)).data.ownerId == request.auth.uid)
         )
       );
     }
@@ -52,40 +53,13 @@ service cloud.firestore {
 
     // Company Data & Sub-collections
     match /companies/{companyId} {
-      // Use resource.data for the document itself for efficiency
-      allow get: if isSignedIn() && (
-        isAdmin() || 
-        resource.data.ownerId == request.auth.uid || 
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId
-      );
+      // Explicitly permit access if member
+      allow get: if isMember(companyId);
       allow list: if isAdmin();
       allow create: if isSignedIn();
       allow update, delete: if isAdmin() || (isSignedIn() && resource.data.ownerId == request.auth.uid);
       
-      // Explicit rules for sub-collections to ensure list/get/write operations
-      // are permitted for verified members using the hardened isMember helper.
-      match /supportMessages/{msgId} { allow read, write: if isMember(companyId); }
-      match /transactions/{txId} { allow read, write: if isMember(companyId); }
-      match /walletPayments/{pmId} { allow read, write: if isMember(companyId); }
-      match /enquiries/{enqId} { allow read, write: if isMember(companyId); }
-      match /quotes/{qId} { allow read, write: if isMember(companyId); }
-      match /staff/{stId} { allow read, write: if isMember(companyId); }
-      match /payoutRequests/{pId} { allow read, write: if isMember(companyId); }
-      match /searchLogs/{logId} { allow read, write: if isMember(companyId); }
-      match /tasks/{taskId} { allow read, write: if isMember(companyId); }
-      
-      match /shops/{sId} { 
-        allow read, write: if isMember(companyId); 
-        match /products/{pId} { allow read, write: if isMember(companyId); }
-        match /agreements/{aId} { allow read, write: if isMember(companyId); }
-      }
-      
-      match /loadBoards/{lbId} {
-          allow read, write: if isMember(companyId);
-          match /loads/{loadId} { allow read, write: if isMember(companyId); }
-      }
-
-      // Catch-all for any other future sub-collections
+      // Sub-collections inherit member permissions
       match /{allSub=**} {
         allow read, write: if isMember(companyId);
       }

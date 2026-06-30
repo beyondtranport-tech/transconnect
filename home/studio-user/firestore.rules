@@ -19,21 +19,27 @@ service cloud.firestore {
       );
     }
 
+    // Optimized membership check for list operations
     function isMember(cid) {
       return isAdmin() || (
         isSignedIn() && cid != null && (
+          // Check user profile for company association
           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == cid ||
-          get(/databases/$(database)/documents/companies/$(cid)).data.ownerId == request.auth.uid
+          // Fallback: Check company ownership
+          (exists(/databases/$(database)/documents/companies/$(cid)) && 
+           get(/databases/$(database)/documents/companies/$(cid)).data.ownerId == request.auth.uid)
         )
       );
     }
 
     // --- RULES ---
 
+    // Global Admin Override
     match /{allPaths=**} {
       allow read, write: if isAdmin();
     }
 
+    // User Profiles
     match /users/{userId} {
       allow get: if isSignedIn(); 
       allow list: if isAdmin();
@@ -45,42 +51,20 @@ service cloud.firestore {
       }
     }
 
+    // Company Data & Sub-collections
     match /companies/{companyId} {
-      allow get: if isSignedIn() && (
-        isAdmin() || 
-        resource.data.ownerId == request.auth.uid || 
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId
-      );
+      allow get: if isMember(companyId);
       allow list: if isAdmin();
       allow create: if isSignedIn();
       allow update, delete: if isAdmin() || (isSignedIn() && resource.data.ownerId == request.auth.uid);
       
-      match /supportMessages/{msgId} { allow read, write: if isMember(companyId); }
-      match /transactions/{txId} { allow read, write: if isMember(companyId); }
-      match /walletPayments/{pmId} { allow read, write: if isMember(companyId); }
-      match /enquiries/{enqId} { allow read, write: if isMember(companyId); }
-      match /quotes/{qId} { allow read, write: if isMember(companyId); }
-      match /staff/{stId} { allow read, write: if isMember(companyId); }
-      match /payoutRequests/{pId} { allow read, write: if isMember(companyId); }
-      match /searchLogs/{logId} { allow read, write: if isMember(companyId); }
-      match /tasks/{taskId} { allow read, write: if isMember(companyId); }
-      
-      match /shops/{sId} { 
-        allow read, write: if isMember(companyId); 
-        match /products/{pId} { allow read, write: if isMember(companyId); }
-        match /agreements/{aId} { allow read, write: if isMember(companyId); }
-      }
-      
-      match /loadBoards/{lbId} {
-          allow read, write: if isMember(companyId);
-          match /loads/{loadId} { allow read, write: if isMember(companyId); }
-      }
-
+      // Sub-collections inherit member permissions
       match /{allSub=**} {
         allow read, write: if isMember(companyId);
       }
     }
 
+    // Public Collections
     match /partners/{partnerId} {
       allow get: if true;
       allow list: if isSignedIn();

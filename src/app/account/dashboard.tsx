@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useUser, useFirestore, useDoc } from '@/firebase';
@@ -19,7 +18,11 @@ export default function AccountDashboard() {
     const { user, isUserLoading } = useUser();
     const firestore = useFirestore();
 
-    const isAdmin = user && (user.email === 'beyondtransport@gmail.com' || user.email === 'mkoton100@gmail.com');
+    const isAdmin = user && (
+        user.email === 'beyondtransport@gmail.com' || 
+        user.email === 'mkoton100@gmail.com' || 
+        user.email === 'michael@logisticsflow.co.za'
+    );
     const { data: loyaltySettings, isLoading: isSettingsLoading } = useConfig<any>('loyaltySettings');
 
     const userDocRef = useMemoFirebase(() => {
@@ -184,7 +187,6 @@ export default function AccountDashboard() {
                             <Link href="/account?view=wallet">Manage Wallet</Link>
                         </Button>
                     </CardContent>
-                </Card>
                  <Card>
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
                         <CardTitle className="text-sm font-medium">Loyalty Status</CardTitle>
