@@ -1,3 +1,4 @@
+
 rules_version = '2';
 
 service cloud.firestore {
@@ -20,7 +21,6 @@ service cloud.firestore {
     }
 
     // Explicit check for membership that supports 'list' operations correctly.
-    // We check the user's document for their companyId and match it against the path.
     function isMember(cid) {
       return isAdmin() || (
         isSignedIn() && 
@@ -47,12 +47,10 @@ service cloud.firestore {
     }
 
     match /companies/{companyId} {
-      // Explicitly allow reading (get/list) to authenticated members
       allow read: if isMember(companyId);
       allow create: if isSignedIn();
       allow update, delete: if isAdmin() || (isSignedIn() && resource.data.ownerId == request.auth.uid);
       
-      // Explicit sub-collection rules to ensure 'list' works correctly for members
       match /supportMessages/{msgId} { allow read, write: if isMember(companyId); }
       match /transactions/{txId} { allow read, write: if isMember(companyId); }
       match /walletPayments/{payId} { allow read, write: if isMember(companyId); }

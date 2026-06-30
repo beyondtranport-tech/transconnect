@@ -74,12 +74,13 @@ const FinanceManagement = dynamic(() => import('./finance-management'), { loadin
 const DriverManagement = dynamic(() => import('./driver-management'), { loading: () => <Loader2 className="animate-spin" /> });
 const AssociateManagement = dynamic(() => import('./associate-management'), { loading: () => <Loader2 className="animate-spin" /> });
 
-import SupplierPitch from '@/app/adminaccount/supplier-pitch';
-import DiscoveryEngine from './discovery-engine';
-import FinanceDiscoveryEngine from './finance-discovery';
-import TransporterDiscoveryEngine from './transporter-discovery';
-import DriverDiscoveryEngine from './driver-discovery';
-import AssociateDiscoveryEngine from './associate-discovery';
+const SupplierPitch = dynamic(() => import('@/app/adminaccount/supplier-pitch'), { loading: () => <Loader2 className="animate-spin" /> });
+const DiscoveryEngine = dynamic(() => import('./discovery-engine'), { loading: () => <Loader2 className="animate-spin" /> });
+const FinanceDiscoveryEngine = dynamic(() => import('./finance-discovery'), { loading: () => <Loader2 className="animate-spin" /> });
+const TransporterDiscoveryEngine = dynamic(() => import('./transporter-discovery'), { loading: () => <Loader2 className="animate-spin" /> });
+const DriverDiscoveryEngine = dynamic(() => import('./driver-discovery'), { loading: () => <Loader2 className="animate-spin" /> });
+const AssociateDiscoveryEngine = dynamic(() => import('./associate-discovery'), { loading: () => <Loader2 className="animate-spin" /> });
+const InvestorDiscoveryEngine = dynamic(() => import('./investor-discovery'), { loading: () => <Loader2 className="animate-spin" /> });
 
 const audienceConfig: Record<string, any> = {
     partners: { title: 'Strategic Partners', icon: Users, Offer: PartnerOffer, Emails: PartnerEmails, Management: PartnerManagement },
@@ -89,7 +90,7 @@ const audienceConfig: Record<string, any> = {
     transporters: { title: 'Transporters', icon: Send, Offer: TransporterOffer, Emails: TransporterEmails, Management: TransporterManagement, Discovery: TransporterDiscoveryEngine },
     finance: { title: 'Finance Companies', icon: Landmark, Offer: InvestorOffer, Emails: InvestorEmails, Management: FinanceManagement, Discovery: FinanceDiscoveryEngine },
     drivers: { title: 'Drivers', icon: Users, Offer: PartnerOffer, Emails: PartnerEmails, Management: DriverManagement, Discovery: DriverDiscoveryEngine },
-    investors: { title: 'App Launch Investors', icon: DollarSign, Offer: InvestorOffer, Emails: InvestorEmails, Management: InvestorManagement },
+    investors: { title: 'App Launch Investors', icon: DollarSign, Offer: InvestorOffer, Emails: InvestorEmails, Management: InvestorManagement, Discovery: InvestorDiscoveryEngine },
     developers: { title: 'Developers', icon: LayoutDashboard, Offer: DeveloperOffer, Emails: DeveloperEmails, Management: DeveloperManagement },
 };
 

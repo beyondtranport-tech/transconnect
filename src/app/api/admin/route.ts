@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -40,7 +41,7 @@ export async function POST(req: NextRequest) {
         const decodedToken = await adminAuth.verifyIdToken(token);
         
         const isAdmin = decodedToken.email === 'beyondtransport@gmail.com' || 
-                        decodedToken.email === 'mkoton100@gmail.com' ||
+                        decodedToken.email === 'mkoton100@gmail.com' || 
                         decodedToken.email === 'michael@logisticsflow.co.za' ||
                         decodedToken.admin === true;
 

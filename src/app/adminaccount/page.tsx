@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -180,7 +181,6 @@ function AdminAccountContent() {
       case 'incentives-sales': return <SalesIncentives />;
       case 'tasks': return <PlatformTasks />;
       case 'settings-bank': return <PlatformSettingsContent />;
-      case 'platform-staff': return <PlatformStaffManagement />;
       case 'guides': return (
         <div className="space-y-8 text-left text-foreground">
             <CardHeader className="px-0">

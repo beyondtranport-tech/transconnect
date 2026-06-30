@@ -1,3 +1,4 @@
+
 import { initializeApp, getApps, getApp, App, cert } from 'firebase-admin/app';
 import { NextRequest } from 'next/server';
 import { getAuth } from 'firebase-admin/auth';
