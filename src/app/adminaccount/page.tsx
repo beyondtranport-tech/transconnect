@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -96,7 +95,6 @@ function AdminAuthGuard({ children }: { children: React.ReactNode }) {
     const { user, isUserLoading } = useUser();
     const router = useRouter();
     
-    // Stabilize check with primitive values to prevent loop
     const uid = user?.uid;
     const email = user?.email;
 
@@ -182,55 +180,55 @@ function AdminAccountContent() {
       case 'settings-bank': return <PlatformSettingsContent />;
       case 'platform-staff': return <PlatformStaffManagement />;
       case 'guides': return (
-        <div className="space-y-8 text-left">
+        <div className="space-y-8 text-left text-foreground">
             <CardHeader className="px-0">
                 <div className="flex items-center gap-4 text-left">
-                    <div className="bg-primary/10 p-3 rounded-xl"><Book className="h-8 w-8 text-primary" /></div>
+                    <div className="bg-primary/10 p-3 rounded-xl text-left"><Book className="h-8 w-8 text-primary" /></div>
                     <div className="text-left">
-                        <CardTitle className="text-2xl font-black font-headline">Platform Guides & Help</CardTitle>
+                        <CardTitle className="text-2xl font-black font-headline text-left">Platform Guides & Help</CardTitle>
                         <CardDescription className="text-left">Administrative protocols and troubleshooting walkthroughs.</CardDescription>
                     </div>
                 </div>
             </CardHeader>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
-                <Card className="hover:border-primary transition-all group cursor-pointer" onClick={() => window.open('/docs/outlook-sending-guide.md', '_blank')}>
+                <Card className="hover:border-primary transition-all group cursor-pointer text-left" onClick={() => window.open('https://github.com/mkoton/logistics-flow/blob/main/docs/outlook-sending-guide.md', '_blank')}>
                     <CardHeader className="text-left">
-                        <CardTitle className="text-lg font-bold group-hover:text-primary">Outlook Spam Unblocking</CardTitle>
+                        <CardTitle className="text-lg font-bold group-hover:text-primary text-left">Outlook Spam Unblocking</CardTitle>
                         <CardDescription className="text-left">Step-by-step instructions for the Microsoft 365 Defender Portal.</CardDescription>
                     </CardHeader>
                     <CardContent className="text-left">
-                        <p className="text-xs text-muted-foreground leading-relaxed">If your outreach email gets flagged as spam, follow this guide to lift the restriction in the M365 Security center.</p>
+                        <p className="text-xs text-muted-foreground leading-relaxed text-left">If your outreach email gets flagged as spam, follow this guide to lift the restriction in the M365 Security center.</p>
                     </CardContent>
                 </Card>
 
-                <Card className="hover:border-primary transition-all group cursor-pointer" onClick={() => window.open('/docs/enable-gemini-api.md', '_blank')}>
+                <Card className="hover:border-primary transition-all group cursor-pointer text-left" onClick={() => window.open('https://github.com/mkoton/logistics-flow/blob/main/docs/enable-gemini-api.md', '_blank')}>
                     <CardHeader className="text-left">
-                        <CardTitle className="text-lg font-bold group-hover:text-primary">AI & Gemini Configuration</CardTitle>
-                        <CardDescription className="text-left">Fixing "403 Forbidden" or "Resource Exhausted" errors.</CardDescription>
+                        <CardTitle className="text-lg font-bold group-hover:text-primary text-left">AI & Gemini Configuration</CardTitle>
+                        <CardDescription className="text-left text-left">Fixing "403 Forbidden" or "Resource Exhausted" errors.</CardDescription>
                     </CardHeader>
-                    <CardContent className="text-left">
-                        <p className="text-xs text-muted-foreground leading-relaxed">Ensure your AI API keys are correctly scoped and quotas are adjusted for high-volume forensic discovery.</p>
+                    <CardContent className="text-left text-left">
+                        <p className="text-xs text-muted-foreground leading-relaxed text-left">Ensure your AI API keys are correctly scoped and quotas are adjusted for high-volume forensic discovery.</p>
                     </CardContent>
                 </Card>
 
-                <Card className="hover:border-primary transition-all group cursor-pointer" onClick={() => window.open('/docs/backend-setup.md', '_blank')}>
-                    <CardHeader className="text-left">
-                        <CardTitle className="text-lg font-bold group-hover:text-primary">Backend & IAM Setup</CardTitle>
+                <Card className="hover:border-primary transition-all group cursor-pointer text-left" onClick={() => window.open('https://github.com/mkoton/logistics-flow/blob/main/docs/backend-setup.md', '_blank')}>
+                    <CardHeader className="text-left text-left">
+                        <CardTitle className="text-lg font-bold group-hover:text-primary text-left">Backend & IAM Setup</CardTitle>
                         <CardDescription className="text-left">Connecting service accounts and environment variables.</CardDescription>
                     </CardHeader>
-                    <CardContent className="text-left">
-                        <p className="text-xs text-muted-foreground leading-relaxed">Instructions for generating JSON keys and Base64 encoding for the FIREBASE_ADMIN_SDK_CONFIG_B64 variable.</p>
+                    <CardContent className="text-left text-left text-left">
+                        <p className="text-xs text-muted-foreground leading-relaxed text-left">Instructions for generating JSON keys and Base64 encoding for the FIREBASE_ADMIN_SDK_CONFIG_B64 variable.</p>
                     </CardContent>
                 </Card>
 
-                <Card className="hover:border-primary transition-all group cursor-pointer" onClick={() => window.open('/docs/deployment-guide.md', '_blank')}>
+                <Card className="hover:border-primary transition-all group cursor-pointer text-left" onClick={() => window.open('https://github.com/mkoton/logistics-flow/blob/main/docs/deployment-guide.md', '_blank')}>
                     <CardHeader className="text-left">
-                        <CardTitle className="text-lg font-bold group-hover:text-primary">Deployment Guide</CardTitle>
+                        <CardTitle className="text-lg font-bold group-hover:text-primary text-left">Deployment Guide</CardTitle>
                         <CardDescription className="text-left">Publishing updates to Firebase App Hosting.</CardDescription>
                     </CardHeader>
                     <CardContent className="text-left">
-                        <p className="text-xs text-muted-foreground leading-relaxed">Protocol for pushing code to GitHub and monitoring the App Hosting build pipeline.</p>
+                        <p className="text-xs text-muted-foreground leading-relaxed text-left text-left">Protocol for pushing code to GitHub and monitoring the App Hosting build pipeline.</p>
                     </CardContent>
                 </Card>
             </div>
@@ -238,7 +236,7 @@ function AdminAccountContent() {
       );
       default: return <AdminDashboardContent />;
     }
-  }, [activeView, campaignName, groupUrl, platform, config, templates, derived, handleLogAndCopy, handleLogPublishedPost, handleCopyPrompt, handleGenerateCustom, creatorParams, aiResult, isGenerating, isLogging]);
+  }, [activeView]);
   
   const getInitials = (name: string | null | undefined) => {
     if (!name) return "AD";
@@ -255,7 +253,9 @@ function AdminAccountContent() {
         <SidebarHeader>
           <div className="flex items-center gap-2 p-2">
             <Shield className="h-6 w-6 text-primary" />
-            <h2 className="text-lg font-semibold text-sidebar-foreground">Admin Portal</h2>
+            <h2 className="text-lg font-semibold text-sidebar-foreground">
+              Admin Portal
+            </h2>
           </div>
         </SidebarHeader>
         <SidebarContent>

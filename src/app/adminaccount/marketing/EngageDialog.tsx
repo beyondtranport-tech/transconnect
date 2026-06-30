@@ -189,7 +189,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
     <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-6xl h-[90vh] flex flex-col p-0 text-left overflow-hidden text-foreground">
             <DialogHeader className="p-6 border-b bg-muted/50 text-left">
-                <div className="flex justify-between items-center text-left">
+                <div className="flex justify-between items-center text-left text-foreground">
                     <div className="text-left space-y-1 text-foreground">
                         <DialogTitle className="text-2xl font-bold flex items-center gap-2 text-left text-foreground">
                             <Send className="h-6 w-6 text-primary" />
@@ -207,7 +207,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                                 <Button variant="ghost" size="icon" onClick={prevRecord} disabled={currentIndex === 0}>
                                     <ChevronLeft className="h-4 w-4" />
                                 </Button>
-                                <div className="px-3 text-xs font-black uppercase tracking-tighter tabular-nums">
+                                <div className="px-3 text-xs font-black uppercase tracking-tighter tabular-nums text-foreground">
                                     {currentIndex + 1} / {partners.length}
                                 </div>
                                 <Button variant="ghost" size="icon" onClick={nextRecord} disabled={currentIndex === partners.length - 1}>
@@ -223,7 +223,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                 </div>
             </DialogHeader>
 
-            <div className="flex-1 flex overflow-hidden text-left">
+            <div className="flex-1 flex overflow-hidden text-left text-foreground">
                 <div className="w-64 border-r bg-muted/20 p-4 space-y-4 overflow-y-auto text-left text-foreground">
                     <Alert className="bg-amber-50 py-2 border-amber-200 text-left">
                         <Info className="h-3 w-3 text-amber-600" />
@@ -265,7 +265,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                         {activeTab === 'digital-handshake' && (
                             <div data-id="version-selector-ui" className="bg-amber-50 border border-amber-200 p-4 rounded-xl flex items-center justify-between mb-4 text-left">
                                 <div className="flex items-center gap-3 text-left">
-                                    <div className="bg-amber-100 p-2 rounded-lg"><Zap className="h-5 w-5 text-amber-600" /></div>
+                                    <div className="bg-amber-100 p-2 rounded-lg text-left"><Zap className="h-5 w-5 text-amber-600" /></div>
                                     <div className="text-left">
                                         <p className="text-sm font-bold text-amber-900 text-left">Anti-Spam Variance</p>
                                         <p className="text-[10px] text-amber-700 text-left">Text varies Deterministically by Partner ID to bypass Outlook filters.</p>

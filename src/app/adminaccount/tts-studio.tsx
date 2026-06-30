@@ -86,8 +86,8 @@ export default function TTSStudio() {
                         <div className="flex items-center gap-4 text-left">
                             <Mic className="h-8 w-8 text-primary" />
                             <div className="text-left">
-                                <CardTitle>AI Audio Studio (Text-to-Speech)</CardTitle>
-                                <CardDescription>Generate high-quality voiceovers for your narrative scenes.</CardDescription>
+                                <CardTitle className="text-left">AI Audio Studio (Text-to-Speech)</CardTitle>
+                                <CardDescription className="text-left">Generate high-quality voiceovers for your narrative scenes.</CardDescription>
                             </div>
                         </div>
                         <Button variant="outline" size="sm" className="gap-2" onClick={() => form.setValue('script', driverScript)}>
@@ -104,7 +104,7 @@ export default function TTSStudio() {
                                 name="script"
                                 render={({ field }) => (
                                     <FormItem className="text-left">
-                                    <FormLabel>Your Script</FormLabel>
+                                    <FormLabel className="text-left">Your Script</FormLabel>
                                     <FormControl>
                                         <Textarea
                                         placeholder="Enter the script for your voiceover here..."
@@ -121,7 +121,7 @@ export default function TTSStudio() {
                                     name="voice"
                                     render={({ field }) => (
                                         <FormItem className="text-left max-w-sm">
-                                        <FormLabel>Primary Voice Character</FormLabel>
+                                        <FormLabel className="text-left">Primary Voice Character</FormLabel>
                                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                                             <FormControl>
                                                 <SelectTrigger>
@@ -161,7 +161,7 @@ export default function TTSStudio() {
                 </CardContent>
                 <CardFooter className="bg-muted/30 p-4 border-t rounded-b-xl text-left">
                     <div className="flex items-start gap-3 text-left">
-                        <div className="bg-primary/10 p-2 rounded-lg"><Info className="h-4 w-4 text-primary" /></div>
+                        <div className="bg-primary/10 p-2 rounded-lg text-left"><Info className="h-4 w-4 text-primary" /></div>
                         <div className="space-y-1 text-left">
                             <p className="text-[11px] font-black uppercase tracking-widest text-foreground text-left">Post-Production Guide</p>
                             <p className="text-[11px] text-muted-foreground leading-relaxed text-left">

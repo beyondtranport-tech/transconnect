@@ -37,9 +37,9 @@ import { Label } from '@/components/ui/label';
 import { formatDateSafe, cn, downloadDataAsCSV } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 
-import { EnrichPartnerButton } from './EnrichPartnerButton';
-import { PartnerTasksDialog } from './PartnerTasksDialog';
-import { CommunicationLogDialog } from './CommunicationLogDialog';
+import { EnrichPartnerButton } from '@/app/adminaccount/marketing/EnrichPartnerButton';
+import { PartnerTasksDialog } from '@/app/adminaccount/marketing/PartnerTasksDialog';
+import { CommunicationLogDialog } from '@/app/adminaccount/marketing/CommunicationLogDialog';
 import { EngageDialog } from './EngageDialog';
 import { PartnerOversightDialog } from './PartnerOversightDialog';
 import { BulkImportDialog } from './BulkImportDialog';
@@ -213,8 +213,8 @@ function LeadsDatabaseComponent() {
         header: 'Referrer Node', 
         cell: ({row}) => (
             <div className="flex flex-col text-left">
-                <span className="text-xs font-bold text-primary">{row.original.referrerName}</span>
-                <span className="text-[9px] text-muted-foreground font-mono">{row.original.referrerId}</span>
+                <span className="text-xs font-bold text-primary text-left">{row.original.referrerName}</span>
+                <span className="text-[9px] text-muted-foreground font-mono text-left">{row.original.referrerId}</span>
             </div>
         )
     },
@@ -224,7 +224,7 @@ function LeadsDatabaseComponent() {
             if (!row.original.lastOutreachSubject) return <span className="text-[10px] text-muted-foreground italic text-left">None</span>;
             return (
                 <div className="flex flex-col text-left">
-                    <Badge variant="outline" className="text-[9px] h-4 uppercase font-bold truncate max-w-[100px] border-primary/20 text-primary">{row.original.lastOutreachSubject}</Badge>
+                    <Badge variant="outline" className="text-[9px] h-4 uppercase font-bold truncate max-w-[100px] border-primary/20 text-primary text-left">{row.original.lastOutreachSubject}</Badge>
                     {row.original.lastOpenedAt && (
                         <div className="flex items-center gap-1 text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100 mt-1 w-fit text-left">
                             <UserCheck className="h-2.5 w-2.5" /> Read
@@ -239,7 +239,7 @@ function LeadsDatabaseComponent() {
       id: 'actions',
       header: <div className="text-right">Actions</div>,
       cell: ({ row }) => (
-        <div className="text-right flex items-center justify-end gap-1 text-foreground">
+        <div className="text-right flex items-center justify-end gap-1 text-foreground text-left">
           <EnrichPartnerButton partner={row.original} onUpdate={forceRefresh} />
           <Button variant="ghost" size="icon" onClick={() => setEngageLead(row.original)} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
           <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.companyName} />
@@ -257,8 +257,8 @@ function LeadsDatabaseComponent() {
       <EngageDialog open={!!engageLead} onOpenChange={(o) => !o && setEngageLead(null)} partners={[engageLead]} audience="transporters" onEngageSuccess={forceRefresh} />
       <LeadDialog open={isAddLeadOpen || !!editLead} onOpenChange={(o) => { if(!o) { setEditLead(null); setIsAddLeadOpen(false); } }} lead={editLead} onSave={forceRefresh} />
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
-        <AlertDialogContent className="text-left text-foreground">
-          <AlertDialogHeader><AlertDialogTitle>Delete Lead?</AlertDialogTitle><AlertDialogDescription>This will permanently delete the record.</AlertDialogDescription></AlertDialogHeader>
+        <AlertDialogContent className="text-left text-foreground text-left">
+          <AlertDialogHeader className="text-left"><AlertDialogTitle className="text-left">Delete Lead?</AlertDialogTitle><AlertDialogDescription className="text-left">This will permanently delete the record.</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setDeleteLead(null)}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction>
@@ -266,11 +266,11 @@ function LeadsDatabaseComponent() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <div className="space-y-6 text-left">
+      <div className="space-y-6 text-left text-foreground">
         <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4 px-0 pt-0 text-left">
-          <div className="text-left text-foreground">
-            <CardTitle className="flex items-center gap-2 text-left"><Users /> Lead Database</CardTitle>
-            <CardDescription className="text-left text-muted-foreground">Comprehensive registry of prospects and attributed referrals.</CardDescription>
+          <div className="text-left text-foreground text-left">
+            <CardTitle className="flex items-center gap-2 text-left text-foreground"><Users /> Lead Database</CardTitle>
+            <CardDescription className="text-left text-muted-foreground text-left">Comprehensive registry of prospects and attributed referrals.</CardDescription>
           </div>
           <div className="flex items-center gap-2 text-left text-foreground">
             <Button variant="outline" onClick={handleExport} disabled={isLoading || !hasLoaded} className="text-left text-foreground"><Download className="mr-2 h-4 w-4" /> Backup</Button>
@@ -280,7 +280,7 @@ function LeadsDatabaseComponent() {
         </CardHeader>
 
         {!hasLoaded ? (
-            <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground">
+            <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground text-left">
                 <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
                 <h2 className="text-2xl font-black font-headline mb-2 text-center text-foreground text-left">Registry Offline</h2>
                 <p className="text-muted-foreground max-sm mx-auto mb-8 text-center text-foreground text-left">Load the lead registry to manage your sales pipeline and attributed referrals.</p>
@@ -290,7 +290,7 @@ function LeadsDatabaseComponent() {
                 </Button>
             </Card>
         ) : (
-            <Card className="text-left">
+            <Card className="text-left text-foreground">
                 <CardContent className="pt-6 text-left text-foreground">
                     {isLoading ? <div className="flex justify-center py-10 text-left"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div> : <DataTable columns={columns} data={leads} />}
                 </CardContent>

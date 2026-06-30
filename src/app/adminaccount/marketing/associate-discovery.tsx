@@ -75,7 +75,7 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
 
     return (
         <div className="grid md:grid-cols-2 gap-6 text-left">
-            <div className="space-y-4 text-left">
+            <div className="space-y-4 text-left text-foreground">
                 <div className="flex items-center justify-between text-left">
                     <h2 className="text-2xl font-bold font-headline flex items-center gap-2 text-foreground text-left">
                         <Share2 className="h-6 w-6 text-primary" />
@@ -118,7 +118,7 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                     Copy Scouting Prompt
                 </Button>
             </div>
-            <div className="space-y-2 text-left text-foreground">
+            <div className="space-y-2 text-left text-foreground text-foreground">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5 text-left"><Terminal className="h-3 w-3"/> Command Preview</Label>
                 <ScrollArea className="h-[400px] border rounded-lg bg-slate-900 p-4 text-left">
                     <pre className="text-[10px] text-slate-400 font-mono whitespace-pre-wrap leading-tight text-left">{prompt}</pre>
@@ -141,7 +141,7 @@ export default function AssociateDiscoveryEngine() {
                 </CardHeader>
                 <CardContent className="px-0 text-left text-foreground">
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12 text-left">
-                        <div className="lg:col-span-2 text-left">
+                        <div className="lg:col-span-2 text-left text-foreground">
                             <TabsList className="h-auto flex-wrap justify-start bg-muted/30 p-1 text-left">
                                 {associateCategories.map(category => (
                                     <TabsTrigger key={category} value={category} className="text-xs px-4 py-2">
