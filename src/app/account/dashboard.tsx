@@ -62,9 +62,9 @@ export default function AccountDashboard() {
     if (isAdmin) {
         return (
              <div className="w-full space-y-8 text-left">
-                 <Card className="border-primary bg-primary/5">
-                    <CardHeader>
-                        <div className="flex items-center gap-4">
+                 <Card className="border-primary bg-primary/5 text-left">
+                    <CardHeader className="text-left">
+                        <div className="flex items-center gap-4 text-left">
                             <ShieldAlert className="h-10 w-10 text-primary" />
                             <div className="text-left">
                                 <CardTitle className="text-2xl text-left">Administrator Account</CardTitle>
@@ -72,12 +72,12 @@ export default function AccountDashboard() {
                             </div>
                         </div>
                     </CardHeader>
-                    <CardContent>
-                        <p className="text-lg text-left">
+                    <CardContent className="text-left">
+                        <p className="text-lg text-left leading-relaxed">
                            All administrative functions are located in the secure <span className="font-semibold text-primary">Admin Portal</span>.
                         </p>
                     </CardContent>
-                    <CardFooter>
+                    <CardFooter className="text-left">
                         <Button variant="default" size="lg" asChild>
                             <Link href="/adminaccount">
                                 Go to Admin Portal <ArrowRight className="ml-2 h-5 w-5" />
@@ -100,15 +100,17 @@ export default function AccountDashboard() {
     if (error) {
         return (
             <div className="flex justify-center items-center min-h-[calc(100vh-8rem)] w-full text-left">
-                <Card className="m-4 w-full max-w-2xl text-left">
-                    <CardHeader className="text-left">
-                        <CardTitle className="text-destructive text-left">Error Loading Dashboard</CardTitle>
+                <Card className="m-4 w-full max-w-2xl text-left shadow-lg border-destructive/20">
+                    <CardHeader className="text-left border-b bg-destructive/5">
+                        <CardTitle className="text-destructive text-left flex items-center gap-2">
+                            <ShieldAlert className="h-5 w-5" /> Error Loading Dashboard
+                        </CardTitle>
                     </CardHeader>
-                    <CardContent className="text-left">
-                        <p className="text-left">There was a problem fetching your account data.</p>
-                        <p className="text-xs text-muted-foreground mt-2 text-left">{error.message}</p>
+                    <CardContent className="text-left p-8">
+                        <p className="text-left font-medium">There was a problem fetching your account data.</p>
+                        <p className="text-xs text-muted-foreground mt-2 text-left bg-muted p-2 rounded font-mono">{error.message}</p>
                     </CardContent>
-                    <CardFooter>
+                    <CardFooter className="text-left border-t pt-6">
                         <Button onClick={() => window.location.reload()}>Try Again</Button>
                     </CardFooter>
                 </Card>
@@ -201,8 +203,8 @@ export default function AccountDashboard() {
                 </Card>
             </div>
             
-            <Card className="text-left">
-                <CardHeader className="text-left">
+            <Card className="text-left shadow-sm">
+                <CardHeader className="text-left bg-slate-50 border-b">
                     <CardTitle className="flex items-center gap-2 text-left">
                         <Award className="h-5 w-5 text-primary" />
                         My Loyalty Benefits
@@ -211,36 +213,36 @@ export default function AccountDashboard() {
                         You are on the <span className="font-semibold text-primary capitalize">{loyaltyTier}</span> tier. Here are your active benefits:
                     </CardDescription>
                 </CardHeader>
-                <CardContent className="text-left">
+                <CardContent className="text-left p-6">
                     {userBenefits.length > 0 ? (
                         <ul className="space-y-3 text-left">
                             {userBenefits.map((benefit: any) => (
                                 <li key={benefit.name} className="flex items-center gap-3 text-left">
                                     <CheckCircle className="h-5 w-5 text-green-500" />
-                                    <span>{benefit.name}: <span className="font-bold">{benefit.value}</span></span>
+                                    <span className="font-medium text-sm">{benefit.name}: <span className="font-bold text-primary">{benefit.value}</span></span>
                                 </li>
                             ))}
                         </ul>
                     ) : (
-                        <p className="text-muted-foreground text-left">No benefits are currently configured for your tier. Keep earning points!</p>
+                        <p className="text-muted-foreground text-sm text-left italic">No benefits are currently configured for your tier. Share data or refer members to climb tiers!</p>
                     )}
                 </CardContent>
-                 <CardFooter>
-                    <Button variant="outline" asChild>
+                 <CardFooter className="text-left border-t pt-4">
+                    <Button variant="outline" size="sm" asChild>
                         <Link href="/connect?view=rewards">View Rewards Store</Link>
                     </Button>
                 </CardFooter>
             </Card>
 
-            <Card className="text-left">
+            <Card className="text-left border-primary/20 bg-primary/5">
                 <CardHeader className="text-left">
-                    <CardTitle className="flex items-center gap-2 text-left"><HeartHandshake /> Help the Community & Earn Rewards</CardTitle>
+                    <CardTitle className="flex items-center gap-2 text-left"><HeartHandshake className="text-primary" /> Help the Community & Earn Rewards</CardTitle>
                 </CardHeader>
                 <CardContent className="text-left">
-                    <p className="text-muted-foreground mb-4 text-left">Help the community by sharing anonymous data about your fleet and suppliers. Each contribution earns you reward points and helps us negotiate better group discounts for everyone.</p>
+                    <p className="text-muted-foreground text-sm leading-relaxed text-left">Help the community by sharing anonymous data about your fleet and suppliers. Each contribution earns you reward points and helps us negotiate better group discounts for everyone.</p>
                 </CardContent>
-                <CardFooter>
-                    <Button asChild>
+                <CardFooter className="text-left">
+                    <Button asChild size="sm">
                         <Link href="/contribute">Contribute Data <ArrowRight className="ml-2 h-4 w-4" /></Link>
                     </Button>
                 </CardFooter>

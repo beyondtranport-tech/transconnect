@@ -22,9 +22,7 @@ service cloud.firestore {
     function isMember(cid) {
       return isAdmin() || (
         isSignedIn() && (
-          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == cid ||
-          (exists(/databases/$(database)/documents/companies/$(cid)) && 
-           get(/databases/$(database)/documents/companies/$(cid)).data.ownerId == request.auth.uid)
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == cid
         )
       );
     }
