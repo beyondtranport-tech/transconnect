@@ -19,18 +19,18 @@ service cloud.firestore {
       );
     }
 
-    // Direct check if the user belongs to the company via their profile
-    function isCompanyStaff(cid) {
-      return isSignedIn() && cid != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == cid;
-    }
-
-    // Direct check if the user is the owner defined on the company doc
+    // Check if the user is the owner defined on the company doc
     function isCompanyOwner(cid) {
       return isSignedIn() && cid != null && exists(/databases/$(database)/documents/companies/$(cid)) && get(/databases/$(database)/documents/companies/$(cid)).data.ownerId == request.auth.uid;
     }
 
+    // Check if the user belongs to the company via their profile
+    function isCompanyStaff(cid) {
+      return isSignedIn() && cid != null && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == cid;
+    }
+
     function isMember(cid) {
-      return isAdmin() || isCompanyStaff(cid) || isCompanyOwner(cid);
+      return isAdmin() || isCompanyOwner(cid) || isCompanyStaff(cid);
     }
 
     // --- RULES ---
@@ -54,18 +54,9 @@ service cloud.firestore {
 
     // Company Data & Sub-collections
     match /companies/{companyId} {
-      // Allow individual GET if authorized
-      allow get: if isSignedIn() && (
-        isMember(companyId)
-      );
-      
-      // Protect the list operation on the companies collection
+      allow get: if isSignedIn() && isMember(companyId);
       allow list: if isAdmin();
-      
-      // Allow creation during sign-up
       allow create: if isSignedIn();
-      
-      // Update/Delete restricted to Admin or Owner
       allow update, delete: if isAdmin() || (isSignedIn() && resource.data.ownerId == request.auth.uid);
       
       // Explicit rules for all sub-collections to ensure list/get/write operations
