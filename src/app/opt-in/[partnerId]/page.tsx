@@ -117,10 +117,10 @@ export default function OptInPage() {
                             A formal record of your consent for <strong>{partner?.companyName || 'your business'}</strong> has been logged. You are now authorized to complete your professional profile.
                         </p>
                         <div className="bg-white p-4 rounded-xl border border-green-200 shadow-sm space-y-3 text-left">
-                            <p className="text-[10px] font-black uppercase tracking-widest text-green-700 flex items-center gap-2 text-left">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-green-700 flex items-center gap-2 text-left text-foreground">
                                 <Zap className="h-3 w-3 fill-current"/> Immediate Next Step
                             </p>
-                            <p className="text-sm font-medium text-foreground text-left">
+                            <p className="text-sm font-medium text-foreground text-left text-foreground">
                                 Set up your secure dashboard to access the forensic registry and matching engine.
                             </p>
                             <Button asChild size="lg" className="w-full h-12 font-black uppercase text-xs tracking-widest shadow-lg">
@@ -139,7 +139,7 @@ export default function OptInPage() {
     }
 
     return (
-        <div className="flex justify-center items-center min-h-screen p-4 bg-slate-50 text-left">
+        <div className="flex justify-center items-center min-h-screen p-4 bg-slate-50 text-left text-foreground">
             <Card className="max-w-xl w-full shadow-2xl border-primary/10 overflow-hidden text-left">
                 <CardHeader className="text-center border-b pb-6 bg-slate-900 text-white text-left">
                     <div className="bg-primary/20 p-3 rounded-full w-fit mx-auto mb-4 text-left">
@@ -211,7 +211,7 @@ export default function OptInPage() {
                         </div>
                     </div>
 
-                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-left">
+                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-left text-foreground">
                         <div className="flex items-center justify-between mb-2 text-left">
                              <h4 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 text-left">
                                 <Scale className="h-3 w-3" />

@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -313,7 +312,7 @@ export default function SupplierManagement() {
                 
                 <div className="max-w-5xl mx-auto space-y-6 text-left text-foreground">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
-                        <div className="space-y-1 text-left text-foreground text-foreground text-foreground">
+                        <div className="space-y-1 text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground">
                             <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Outreach Stage</Label>
                             <Select value="all">
                                 <SelectTrigger className="bg-white text-left text-foreground text-foreground"><SelectValue placeholder="All Stages" /></SelectTrigger>
@@ -323,7 +322,7 @@ export default function SupplierManagement() {
                                 </SelectContent>
                             </Select>
                         </div>
-                        <div className="space-y-1 text-left text-foreground text-foreground">
+                        <div className="space-y-1 text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground">
                             <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Pipeline Status</Label>
                             <Select value={statusFilter} onValueChange={setStatusFilter}>
                                 <SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="All Statuses" /></SelectTrigger>
@@ -335,7 +334,7 @@ export default function SupplierManagement() {
                                 </SelectContent>
                             </Select>
                         </div>
-                        <div className="space-y-1 text-left text-foreground">
+                        <div className="space-y-1 text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground">
                             <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Assignee</Label>
                             <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
                                 <SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="All Staff" /></SelectTrigger>
@@ -394,26 +393,26 @@ export default function SupplierManagement() {
                 <Card className="text-left text-foreground text-foreground text-foreground">
                     <CardContent className="pt-6 text-left text-foreground">
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
-                            <div className="space-y-1 text-left text-foreground text-foreground text-foreground text-foreground text-foreground"><Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Filter className="h-3 w-3"/> Status</Label><Select value={statusFilter} onValueChange={setStatusFilter}>
-                                <SelectTrigger className="h-9 bg-white text-xs text-left text-foreground text-foreground text-foreground text-foreground"><SelectValue placeholder="All Statuses" /></SelectTrigger>
+                            <div className="space-y-1 text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Filter className="h-3 w-3"/> Status</Label><Select value={statusFilter} onValueChange={setStatusFilter}>
+                                <SelectTrigger className="h-9 bg-white text-xs text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><SelectValue placeholder="All Statuses" /></SelectTrigger>
                                 <SelectContent><SelectItem value="all">All Statuses</SelectItem><SelectItem value="new">New</SelectItem><SelectItem value="contacted">Researching</SelectItem></SelectContent>
                             </Select></div>
-                            <div className="space-y-1 text-left text-foreground text-foreground text-foreground text-foreground"><Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-left text-foreground text-foreground"><Users className="h-3 w-3"/> Assignee</Label><Select value={assigneeFilter} onValueChange={setAssigneeFilter}><SelectTrigger className="bg-white text-xs text-left text-foreground text-left text-foreground"><SelectValue placeholder="All Staff" /></SelectTrigger><SelectContent><SelectItem value="all">All Staff</SelectItem><SelectItem value="none">Unallocated</SelectItem>{staff.map(s => <SelectItem key={s.id} value={s.id}>{s.firstName} {s.lastName}</SelectItem>)}</SelectContent></Select></div>
-                            <div className="space-y-1 text-left text-foreground text-foreground text-foreground text-foreground"><Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Send className="h-3 w-3"/> Outreach</Label><Select value="all">
-                                <SelectTrigger className="h-9 bg-white text-xs text-left text-foreground text-left text-foreground text-foreground text-foreground"><SelectValue /></SelectTrigger>
+                            <div className="space-y-1 text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><Users className="h-3 w-3"/> Assignee</Label><Select value={assigneeFilter} onValueChange={setAssigneeFilter}><SelectTrigger className="bg-white text-xs text-left text-foreground text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><SelectValue placeholder="All Staff" /></SelectTrigger><SelectContent><SelectItem value="all">All Staff</SelectItem><SelectItem value="none">Unallocated</SelectItem>{staff.map(s => <SelectItem key={s.id} value={s.id}>{s.firstName} {s.lastName}</SelectItem>)}</SelectContent></Select></div>
+                            <div className="space-y-1 text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><Send className="h-3 w-3"/> Outreach</Label><Select value="all">
+                                <SelectTrigger className="h-9 bg-white text-xs text-left text-foreground text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><SelectValue /></SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="all">All Outreach</SelectItem>
                                     <SelectItem value="none">No Outreach Yet</SelectItem>
                                 </SelectContent>
                             </Select></div>
-                            <div className="flex items-end text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><Button variant="outline" onClick={() => setHasLoaded(false)} className="h-9 w-full text-xs font-bold uppercase tracking-widest text-left text-foreground text-foreground"><RotateCcw className="mr-1 h-3 w-3" /> New Search</Button></div>
+                            <div className="flex items-end text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><Button variant="outline" onClick={() => setHasLoaded(false)} className="h-9 w-full text-xs font-bold uppercase tracking-widest text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><RotateCcw className="mr-1 h-3 w-3" /> New Search</Button></div>
                         </div>
-                        {isLoading ? <div className="flex justify-center items-center py-20 text-foreground text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
-                            <div className="space-y-6 text-left text-foreground text-foreground text-foreground">
+                        {isLoading ? <div className="flex justify-center items-center py-20 text-foreground text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
+                            <div className="space-y-6 text-left text-foreground text-foreground text-foreground text-foreground text-foreground">
                                 <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />
                                 {allRecords.length >= 100 && (
-                                     <div className="flex justify-center pt-4 text-left text-foreground text-foreground">
-                                        <Button variant="outline" size="lg" onClick={() => fetchData(allRecords.length + 100)} disabled={isLoading} className="gap-2 min-w-[200px] text-left text-foreground text-foreground text-foreground">
+                                     <div className="flex justify-center pt-4 text-left text-foreground text-foreground text-foreground text-foreground text-foreground">
+                                        <Button variant="outline" size="lg" onClick={() => fetchData(allRecords.length + 100)} disabled={isLoading} className="gap-2 min-w-[200px] text-left text-foreground text-foreground text-foreground text-foreground text-foreground">
                                             {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <ChevronDown className="h-4 w-4" />}
                                             Load Next 100 Records
                                         </Button>

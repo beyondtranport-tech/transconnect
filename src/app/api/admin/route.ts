@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -108,12 +107,10 @@ export async function POST(req: NextRequest) {
                 const { partnerId, email, subject, html, audience } = payload;
                 if (!partnerId || !email || !html) throw new Error("Missing dispatch payload.");
 
-                // 1. Identify Target Document
                 const leadsCheck = await db.collection('leads').doc(partnerId).get();
                 const targetCollection = leadsCheck.exists ? 'leads' : 'partners';
                 const parentRef = db.collection(targetCollection).doc(partnerId);
 
-                // 2. Log Locally in Firestore
                 const logRef = parentRef.collection('communications').doc();
                 const batch = db.batch();
                 batch.set(logRef, { 
@@ -131,8 +128,6 @@ export async function POST(req: NextRequest) {
                     updatedAt: FieldValue.serverTimestamp() 
                 });
 
-                // 3. Dispatch via Transactional Provider
-                // Replace with your SendGrid/Postmark API key logic
                 const MAIL_API_KEY = process.env.TRANSACTIONAL_MAIL_API_KEY;
                 if (MAIL_API_KEY) {
                     try {
@@ -152,8 +147,6 @@ export async function POST(req: NextRequest) {
                     } catch (mailError) {
                         console.error("Mail API Dispatch Failed:", mailError);
                     }
-                } else {
-                    console.warn("TRANSACTIONAL_MAIL_API_KEY missing. Only logging interaction in Firestore.");
                 }
 
                 await batch.commit();
@@ -174,33 +167,18 @@ export async function POST(req: NextRequest) {
                     docSnap = await docRef.get();
                 }
                 
-                if (!docSnap.exists) throw new Error(`Record ${id} not found in any registry.`);
+                if (!docSnap.exists) throw new Error(`Record ${id} not found.`);
                 
                 const record = docSnap.data()!;
                 const companyName = record.companyName || record.company_name || record.trading_name || `${record.firstName} ${record.lastName}`;
-
                 const enriched = await enrichPartner({ companyName });
 
-                const update: any = {
+                await docRef.update({
                     ...enriched,
                     status: (enriched.email || enriched.website) ? 'qualified' : record.status,
                     updatedAt: FieldValue.serverTimestamp()
-                };
-
-                await docRef.update(update);
-                return NextResponse.json({ success: true, data: enriched });
-            }
-
-            case 'logForensicInitiated': {
-                const { partnerId, isLead } = payload;
-                const coll = isLead ? 'leads' : 'partners';
-                await db.collection(coll).doc(partnerId).update({
-                    status: 'contacted',
-                    lastOutreachSubject: 'Forensic Research',
-                    lastOutreachAt: FieldValue.serverTimestamp(),
-                    updatedAt: FieldValue.serverTimestamp()
                 });
-                return NextResponse.json({ success: true });
+                return NextResponse.json({ success: true, data: enriched });
             }
 
             case 'bulkSavePartners': {
@@ -224,21 +202,8 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true });
             }
 
-            case 'savePartner': {
-                const { partner, collection: collName } = payload;
-                const targetColl = collName || 'partners';
-                const id = partner.id || db.collection(targetColl).doc().id;
-                await db.collection(targetColl).doc(id).set({
-                    ...partner,
-                    id,
-                    updatedAt: FieldValue.serverTimestamp()
-                }, { merge: true });
-                return NextResponse.json({ success: true, id });
-            }
-
             case 'logCommunication': {
                 const { partnerId, type: cType, subject, notes, collection: cName } = payload;
-                
                 let targetColl = cName;
                 if (!targetColl) {
                     const leadsCheck = await db.collection('leads').doc(partnerId).get();
@@ -247,7 +212,6 @@ export async function POST(req: NextRequest) {
 
                 const parentRef = db.collection(targetColl).doc(partnerId);
                 const logRef = parentRef.collection('communications').doc();
-                
                 const batch = db.batch();
                 batch.set(logRef, { id: logRef.id, type: cType, subject, notes, timestamp: FieldValue.serverTimestamp(), adminId: decodedToken.uid });
                 batch.update(parentRef, { lastOutreachAt: FieldValue.serverTimestamp(), lastOutreachSubject: subject, status: 'contacted', updatedAt: FieldValue.serverTimestamp() });

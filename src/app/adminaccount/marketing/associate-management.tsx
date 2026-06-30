@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
   Loader2, PlusCircle, Share2, Edit, Trash2, Send, Globe, Search, Download, Save, 
-  Filter, Users, UserCheck, Database, RotateCcw, Upload, Sparkles, ChevronDown, Settings2, Check, Clock, Phone, MessageSquarePlus
+  Filter, Users, UserCheck, Database, RotateCcw, Upload, Sparkles, ChevronDown, Settings2, Check, Clock, Phone
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -310,11 +310,11 @@ export default function AssociateManagement() {
             <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground">
                 <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
                 <h2 className="text-2xl font-black font-headline mb-2 text-center text-foreground text-left">Digital Partner Pipeline Scan</h2>
-                <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center text-foreground text-left text-foreground text-foreground">Scan your influencer and marketer database. Use filters to prioritize recruitment.</p>
+                <p className="text-muted-foreground max-sm mx-auto mb-8 text-center text-foreground text-left text-foreground text-foreground">Scan your influencer and marketer database. Use filters to prioritize recruitment.</p>
                 
                 <div className="max-w-4xl mx-auto space-y-6 text-left text-foreground text-foreground">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
-                        <div className="space-y-1 text-left text-foreground text-foreground">
+                        <div className="space-y-1 text-left text-foreground text-foreground text-foreground">
                             <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Outreach Status</Label>
                             <Select value={outreachFilter} onValueChange={setOutreachFilter}>
                                 <SelectTrigger className="bg-white text-left text-foreground text-foreground"><SelectValue placeholder="All Outreach" /></SelectTrigger>
@@ -418,14 +418,14 @@ export default function AssociateManagement() {
                             <div className="space-y-1 text-left text-foreground">
                                 <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Send className="h-3 w-3"/> Outreach</Label>
                                 <Select value={outreachFilter} onValueChange={setOutreachFilter}>
-                                    <SelectTrigger className="h-9 bg-white text-xs text-left text-foreground text-left text-foreground"><SelectValue placeholder="All Outreach" /></SelectTrigger>
+                                    <SelectTrigger className="h-9 bg-white text-xs text-left text-foreground text-left text-foreground text-foreground"><SelectValue placeholder="All Outreach" /></SelectTrigger>
                                     <SelectContent><SelectItem value="all">All Outreach</SelectItem><SelectItem value="none">No Outreach Yet</SelectItem></SelectContent>
                                 </Select>
                             </div>
                             <div className="flex items-end text-left text-foreground"><Button variant="outline" size="sm" asChild className="h-9 w-full text-[10px] font-black uppercase tracking-widest text-left text-foreground"><Link href="/adminaccount?view=associate-oversight"><Clock className="mr-1 h-3 w-3" /> Performance Monitoring</Link></Button></div>
                         </div>
                         {isLoading ? <div className="flex justify-center items-center py-10 text-foreground text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
-                            <div className="space-y-6 text-left">
+                            <div className="space-y-6 text-left text-foreground text-foreground">
                                 <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />
                                 {allRecords.length >= 100 && (
                                      <div className="flex justify-center pt-4">

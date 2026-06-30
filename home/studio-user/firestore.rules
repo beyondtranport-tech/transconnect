@@ -21,9 +21,9 @@ service cloud.firestore {
 
     function isMember(cid) {
       return isAdmin() || (
-        isSignedIn() && (
-          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == cid
-        )
+        isSignedIn() && 
+        cid != null && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == cid
       );
     }
 
@@ -45,8 +45,7 @@ service cloud.firestore {
     }
 
     match /companies/{companyId} {
-      allow get: if isMember(companyId);
-      allow list: if isAdmin();
+      allow read: if isMember(companyId);
       allow create: if isSignedIn();
       allow update, delete: if isAdmin() || (isSignedIn() && resource.data.ownerId == request.auth.uid);
       

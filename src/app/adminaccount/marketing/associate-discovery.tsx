@@ -102,7 +102,7 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                 </Alert>
 
                 <div className="p-4 bg-muted/30 border rounded-xl space-y-4 text-left">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Sequence Sync</Label>
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 text-left">Sequence Sync</Label>
                     <div className="space-y-1.5 text-left text-foreground">
                         <Label className="text-xs font-bold text-foreground text-left">Start Sequence #</Label>
                         <Input 
@@ -118,7 +118,7 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                     Copy Scouting Prompt
                 </Button>
             </div>
-            <div className="space-y-2 text-left text-foreground text-foreground">
+            <div className="space-y-2 text-left text-foreground">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5 text-left"><Terminal className="h-3 w-3"/> Command Preview</Label>
                 <ScrollArea className="h-[400px] border rounded-lg bg-slate-900 p-4 text-left">
                     <pre className="text-[10px] text-slate-400 font-mono whitespace-pre-wrap leading-tight text-left">{prompt}</pre>
@@ -133,16 +133,16 @@ export default function AssociateDiscoveryEngine() {
         <Card className="shadow-none border-none text-left text-foreground">
             <Tabs defaultValue="Industry Influencer" className="w-full text-left">
                 <CardHeader className="px-0 pt-0 text-left text-foreground">
-                    <CardTitle className="flex items-center gap-2 text-foreground font-black font-headline text-left text-foreground">
+                    <CardTitle className="flex items-center gap-2 text-foreground font-black font-headline text-left">
                         <Database className="h-6 w-6 text-primary" />
                         Associate Discovery Engine
                     </CardTitle>
-                    <CardDescription className="text-muted-foreground text-left">Identify high-impact content and brand creators for recruitment.</CardDescription>
+                    <CardDescription className="text-muted-foreground text-left text-foreground">Identify high-impact content and brand creators for recruitment.</CardDescription>
                 </CardHeader>
                 <CardContent className="px-0 text-left text-foreground">
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12 text-left">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12 text-left text-foreground">
                         <div className="lg:col-span-2 text-left text-foreground">
-                            <TabsList className="h-auto flex-wrap justify-start bg-muted/30 p-1 text-left">
+                            <TabsList className="h-auto flex-wrap justify-start bg-muted/30 p-1 text-left text-foreground">
                                 {associateCategories.map(category => (
                                     <TabsTrigger key={category} value={category} className="text-xs px-4 py-2">
                                         {category}
@@ -152,14 +152,14 @@ export default function AssociateDiscoveryEngine() {
                             </TabsList>
                             <div className="mt-8 text-left text-foreground">
                                 {associateCategories.map(category => (
-                                    <TabsContent key={category} value={category} className="mt-0 text-left text-foreground">
+                                    <TabsContent key={category} value={category} className="mt-0 text-left text-foreground text-foreground">
                                         <DiscoveryTab category={category} currentCount={0} />
                                     </TabsContent>
                                 ))}
                             </div>
                         </div>
 
-                        <div className="space-y-6 text-left">
+                        <div className="space-y-6 text-left text-foreground">
                             <h3 className="text-xs font-black uppercase tracking-[0.2em] text-primary flex items-center gap-2 text-left">
                                 <Info className="h-4 w-4" /> 
                                 Tactical Roadmap
@@ -178,28 +178,28 @@ export default function AssociateDiscoveryEngine() {
                                         <p className="font-black text-foreground flex items-center gap-1.5 uppercase tracking-tighter text-left">
                                             <Video className="h-3 w-3 text-primary"/> Phase 2: Content Creator
                                         </p>
-                                        <p className="text-left">High-volume media producers who create industrial narratives.</p>
+                                        <p className="text-left text-foreground">High-volume media producers who create industrial narratives.</p>
                                     </div>
                                     <Separator />
                                     <div className="space-y-1 text-left">
-                                        <p className="font-black text-foreground flex items-center gap-1.5 uppercase tracking-tighter text-left">
+                                        <p className="font-black text-foreground flex items-center gap-1.5 uppercase tracking-tighter text-left text-foreground">
                                             <Zap className="h-3 w-3 text-primary"/> Phase 3: Digital Marketer
                                         </p>
-                                        <p className="text-left">Professionals who turn social content into registered members.</p>
+                                        <p className="text-left text-foreground">Professionals who turn social content into registered members.</p>
                                     </div>
                                     <Separator />
                                     <div className="space-y-1 text-left">
                                         <p className="font-black text-foreground flex items-center gap-1.5 uppercase tracking-tighter text-left text-foreground">
                                             <Palette className="h-3 w-3 text-primary"/> Phase 4: Brand Strategist
                                         </p>
-                                        <p className="text-left text-muted-foreground">Ensuring transporters look professional and "lender-ready".</p>
+                                        <p className="text-left text-muted-foreground text-foreground">Ensuring transporters look professional and "lender-ready".</p>
                                     </div>
                                 </CardContent>
                             </Card>
 
-                            <Alert variant="default" className="border-blue-200 bg-blue-50/30 text-left">
+                            <Alert variant="default" className="border-blue-200 bg-blue-50/30 text-left text-foreground">
                                 <Info className="h-4 w-4 text-blue-600" />
-                                <AlertDescription className="text-[10px] text-blue-800 leading-tight text-left">
+                                <AlertDescription className="text-[10px] text-blue-800 leading-tight text-left text-foreground">
                                     <strong>Tip:</strong> Start with influencers to gain mass-credibility, then use creators to fill the <strong>Marketing Library</strong> with assets.
                                 </AlertDescription>
                             </Alert>
@@ -210,3 +210,4 @@ export default function AssociateDiscoveryEngine() {
         </Card>
     );
 }
+

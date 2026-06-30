@@ -1,8 +1,7 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Loader2, ExternalLink, Send, ChevronLeft, ChevronRight, CheckCircle2, Zap, AlertTriangle, Info, Mail } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -235,7 +234,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
         <DialogContent className="max-w-6xl h-[90vh] flex flex-col p-0 text-left overflow-hidden text-foreground">
             <DialogHeader className="p-6 border-b bg-muted/50 text-left">
                 <div className="flex justify-between items-center text-left text-foreground">
-                    <div className="text-left space-y-1 text-foreground">
+                    <div className="text-left space-y-1 text-foreground text-foreground">
                         <DialogTitle className="text-2xl font-bold flex items-center gap-2 text-left text-foreground">
                             <Send className="h-6 w-6 text-primary" />
                             Engagement Wizard: {partnerDisplayName}
@@ -274,18 +273,18 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                 </div>
             </DialogHeader>
 
-            <div className="flex-1 flex overflow-hidden text-left text-foreground">
-                <div className="w-64 border-r bg-muted/20 p-4 space-y-4 overflow-y-auto text-left text-foreground">
+            <div className="flex-1 flex overflow-hidden text-left text-foreground text-foreground">
+                <div className="w-64 border-r bg-muted/10 p-4 space-y-4 overflow-y-auto text-left">
                     <Alert className="bg-amber-50 py-2 border-amber-200 text-left">
                         <Info className="h-3 w-3 text-amber-600" />
-                        <AlertTitle className="text-[10px] font-black uppercase tracking-widest text-amber-800 text-left">Transactional Sending</AlertTitle>
-                        <AlertDescription className="text-[9px] text-amber-700 text-left">
-                            Use "Automated Dispatch" to send via our secure mail server. This bypasses Outlook's outbound spam blocks.
+                        <AlertTitle className="text-[10px] font-black uppercase tracking-widest text-amber-800 text-left">Gmail Web Integration</AlertTitle>
+                        <AlertDescription className="text-[9px] text-amber-700">
+                            Now opening Gmail Web for better deliverability. Avoid sending &gt;20/hr to protect your sender score.
                         </AlertDescription>
                     </Alert>
 
-                    <div className="space-y-1 text-left text-foreground">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-2 mb-2 block text-left">Step 1: Selection</label>
+                    <div className="space-y-1 text-left text-foreground text-foreground">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-2 mb-2 block">Step 1: Selection</label>
                         {[
                             { id: 'digital-handshake', label: '0. Digital Handshake' },
                             { id: 'company-profile', label: '1. Company Profile' },
@@ -311,7 +310,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                     </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto bg-slate-50 p-8 text-left text-foreground">
+                <div className="flex-1 overflow-y-auto bg-slate-50 p-8 text-left text-foreground text-foreground">
                     <div className="max-w-[850px] mx-auto space-y-6 text-left">
                         {activeTab === 'digital-handshake' && (
                             <div data-id="version-selector-ui" className="bg-amber-50 border border-amber-200 p-4 rounded-xl flex items-center justify-between mb-4 text-left">
@@ -319,11 +318,11 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                                     <div className="bg-amber-100 p-2 rounded-lg text-left"><Zap className="h-5 w-5 text-amber-600" /></div>
                                     <div className="text-left">
                                         <p className="text-sm font-bold text-amber-900 text-left">Anti-Spam Variance</p>
-                                        <p className="text-[10px] text-amber-700 text-left">Text varies Deterministically by Partner ID to bypass filters.</p>
+                                        <p className="text-[10px] text-amber-700 text-left text-left">Text varies Deterministically by Partner ID to bypass filters.</p>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-3 text-left">
-                                    <Label className="text-[10px] font-black uppercase tracking-widest text-amber-800">Version</Label>
+                                <div className="flex items-center gap-3 text-left text-foreground">
+                                    <Label className="text-[10px] font-black uppercase tracking-widest text-amber-800 text-left">Version</Label>
                                     <Select value={handshakeVersion} onValueChange={setHandshakeVersion}>
                                         <SelectTrigger className="w-[200px] h-9 bg-white border-amber-200 text-left">
                                             <SelectValue />

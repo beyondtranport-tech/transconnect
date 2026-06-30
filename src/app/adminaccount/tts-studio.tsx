@@ -79,7 +79,7 @@ export default function TTSStudio() {
     };
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 text-left text-foreground">
             <Card>
                 <CardHeader className="text-left">
                     <div className="flex items-center justify-between text-left">
@@ -87,7 +87,7 @@ export default function TTSStudio() {
                             <Mic className="h-8 w-8 text-primary" />
                             <div className="text-left">
                                 <CardTitle className="text-left">AI Audio Studio (Text-to-Speech)</CardTitle>
-                                <CardDescription className="text-left">Generate high-quality voiceovers for your narrative scenes.</CardDescription>
+                                <CardDescription className="text-left text-muted-foreground">Generate high-quality voiceovers for your narrative scenes.</CardDescription>
                             </div>
                         </div>
                         <Button variant="outline" size="sm" className="gap-2" onClick={() => form.setValue('script', driverScript)}>
@@ -97,18 +97,18 @@ export default function TTSStudio() {
                 </CardHeader>
                 <CardContent>
                     <Form {...form}>
-                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 text-left">
                             <fieldset disabled={isLoading} className="text-left text-foreground">
                                 <FormField
                                 control={form.control}
                                 name="script"
                                 render={({ field }) => (
                                     <FormItem className="text-left">
-                                    <FormLabel className="text-left">Your Script</FormLabel>
+                                    <FormLabel className="text-left text-foreground">Your Script</FormLabel>
                                     <FormControl>
                                         <Textarea
                                         placeholder="Enter the script for your voiceover here..."
-                                        className="min-h-[200px] font-mono text-sm leading-relaxed"
+                                        className="min-h-[200px] font-mono text-sm leading-relaxed text-foreground bg-white"
                                         {...field}
                                         />
                                     </FormControl>
@@ -120,11 +120,11 @@ export default function TTSStudio() {
                                     control={form.control}
                                     name="voice"
                                     render={({ field }) => (
-                                        <FormItem className="text-left max-w-sm">
-                                        <FormLabel className="text-left">Primary Voice Character</FormLabel>
+                                        <FormItem className="text-left max-w-sm text-foreground">
+                                        <FormLabel className="text-left text-foreground">Primary Voice Character</FormLabel>
                                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                                             <FormControl>
-                                                <SelectTrigger>
+                                                <SelectTrigger className="bg-white">
                                                     <SelectValue placeholder="Select a voice" />
                                                 </SelectTrigger>
                                             </FormControl>
@@ -140,7 +140,7 @@ export default function TTSStudio() {
                                 />
                             </fieldset>
                             
-                            <Button type="submit" disabled={isLoading} className="w-full h-12 font-bold">
+                            <Button type="submit" disabled={isLoading} className="w-full h-12 font-bold text-foreground">
                                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4" />}
                                 Generate Narrative Audio
                             </Button>
@@ -153,7 +153,7 @@ export default function TTSStudio() {
                             <audio controls src={generatedAudio} className="w-full">
                                 Your browser does not support the audio element.
                             </audio>
-                            <Button onClick={handleDownload} variant="outline" className="w-full h-12 font-bold gap-2">
+                            <Button onClick={handleDownload} variant="outline" className="w-full h-12 font-bold gap-2 text-foreground">
                                 <Download className="h-4 w-4" /> Download Track for Post-Production
                             </Button>
                         </div>
@@ -162,7 +162,7 @@ export default function TTSStudio() {
                 <CardFooter className="bg-muted/30 p-4 border-t rounded-b-xl text-left">
                     <div className="flex items-start gap-3 text-left">
                         <div className="bg-primary/10 p-2 rounded-lg text-left"><Info className="h-4 w-4 text-primary" /></div>
-                        <div className="space-y-1 text-left">
+                        <div className="space-y-1 text-left text-foreground">
                             <p className="text-[11px] font-black uppercase tracking-widest text-foreground text-left">Post-Production Guide</p>
                             <p className="text-[11px] text-muted-foreground leading-relaxed text-left">
                                 Use a tool like **CapCut** to layer this voiceover track with the 3 visual scenes from the **Branding Studio**.
