@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -198,9 +197,9 @@ export default function AssociateDiscoveryEngine() {
                                 </CardContent>
                             </Card>
 
-                            <Alert variant="outline" className="border-blue-200 bg-blue-50/30">
+                            <Alert className="border-blue-200 bg-blue-50/30">
                                 <Info className="h-4 w-4 text-blue-600" />
-                                <AlertDescription className="text-[10px] text-blue-800 leading-tight">
+                                <AlertDescription className="text-[10px] text-blue-800 leading-tight text-left">
                                     <strong>Tip:</strong> Start with influencers to gain mass-credibility, then use creators to fill the <strong>Marketing Library</strong> with assets.
                                 </AlertDescription>
                             </Alert>

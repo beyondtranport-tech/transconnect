@@ -19,9 +19,11 @@ service cloud.firestore {
       );
     }
 
+    // Explicit check for membership that works reliably for sub-collection LIST operations.
     function isMember(cid) {
       return isAdmin() || (
         isSignedIn() && (
+          // Direct UID mapping to the companyId field in the user document
           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == cid
         )
       );
@@ -29,10 +31,12 @@ service cloud.firestore {
 
     // --- RULES ---
 
+    // Global Admin Override
     match /{allPaths=**} {
       allow read, write: if isAdmin();
     }
 
+    // User Profiles
     match /users/{userId} {
       allow get: if isSignedIn(); 
       allow list: if isAdmin();
@@ -44,17 +48,22 @@ service cloud.firestore {
       }
     }
 
+    // Company Data Hierarchy
     match /companies/{companyId} {
+      // Members can see their own company profile
       allow get: if isMember(companyId);
       allow list: if isAdmin();
       allow create: if isSignedIn();
       allow update, delete: if isAdmin() || (isSignedIn() && resource.data.ownerId == request.auth.uid);
       
+      // Explicitly permitting list and read for all sub-collections to members.
+      // This is required for Support Messages, Transactions, and Enquiries.
       match /{allSub=**} {
         allow read, write: if isMember(companyId);
       }
     }
 
+    // Public Registries & Discovery
     match /partners/{partnerId} {
       allow read: if isSignedIn();
       allow write: if isAdmin();
@@ -67,6 +76,7 @@ service cloud.firestore {
       match /{allSub=**} { allow read, write: if isAdmin(); }
     }
     
+    // Public Market Access
     match /shops/{shopId}/{path=**} {
       allow get, list: if true;
     }
@@ -79,10 +89,12 @@ service cloud.firestore {
       allow get, list: if true;
     }
     
+    // Configuration Data
     match /configuration/{configId} {
       allow get, list: if true;
     }
 
+    // Community Contributions
     match /contributions/{contributionId} {
       allow create: if isSignedIn();
       allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
