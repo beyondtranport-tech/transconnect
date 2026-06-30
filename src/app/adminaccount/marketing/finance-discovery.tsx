@@ -4,18 +4,15 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, Copy, ClipboardCheck, Info, Search, Terminal, Landmark, Database, Zap, AlertCircle } from "lucide-react";
+import { ArrowRight, Copy, ClipboardCheck, Info, Search, Terminal, Landmark, Database, Zap, AlertCircle, ShieldCheck } from "lucide-react";
 import * as React from "react";
 import { useState, useMemo } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { getClientSideAuthToken } from '@/firebase';
-import { useConfig } from '@/hooks/use-config';
-import { cn, formatDateSafe } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
-import Link from 'next/link';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export const financeCategories = [
     "Banks", 
@@ -33,30 +30,33 @@ function getTechnicalFocus(category: string) {
     return "registered credit providers and financial intermediaries in South Africa.";
 }
 
-function generateDiscoveryPrompt(category: string, startPage: number) {
+function generateDiscoveryPrompt(category: string, startSeq: number = 1) {
     const technicalFocus = getTechnicalFocus(category);
-    const startSeq = (startPage - 1) * 30 + 1;
 
-    return `ACT AS AN ELITE CAPITAL INTELLIGENCE AGENT. 
+    return `ACT AS AN ELITE CAPITAL INTELLIGENCE AGENT AND FORENSIC INVESTIGATOR. 
 RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
 
-TASK: Discover and extract exactly 30 unique, live South African companies providing funding or credit to individuals and businesses for the category: "${category}".
+CRITICAL INTEGRITY SHIELD: 
+DO NOT RETURN MOCK OR PLACEHOLDER DATA. 
+YOU MUST PERFORM A LIVE SEARCH FOR "${category} in South Africa" on professional directories, fintech news, and social platforms.
+VERIFY THE INSTITUTION IS ACTIVE.
+
+TASK: Discover and extract exactly 30 unique, live South African companies providing funding or credit for the category: "${category}".
 
 TECHNICAL FOCUS: ${technicalFocus}
 
 INVESTIGATIVE PROTOCOL:
 1. BROAD SEARCH: Do not limit yourself to listed entities. Research private credit providers, fintech startups, and SME funding agencies.
-2. VERIFY LIVE PRESENCE: Ensure the company has an active, professional website or social presence (LinkedIn/Facebook).
-3. HUMAN IDENTITY: Find the ACTUAL FULL NAME of the CEO, MD, or Head of Credit.
-4. CONTACT MAPPING: Identify professional email and direct mobile numbers (+27 format).
-5. RECORD KEY: Generate a unique "record_id" starting with "NCR_${category.toUpperCase().replace(/\s/g, '_')}_".
+2. HUMAN IDENTITY: Find the ACTUAL FULL NAME (First and Last) of the CEO, MD, or Head of Credit.
+3. CONTACT MAPPING: Identify professional email and direct mobile numbers (+27 format).
+4. RECORD KEY: Generate a unique "record_id" starting with "NCR_${category.toUpperCase().replace(/\s/g, '_')}_".
 
 REQUIRED JSON FIELDS:
 [
   {
     "seq": ${startSeq},
     "record_id": "...",
-    "companyName": "FULL LEGAL NAME",
+    "companyName": "FULL INSTITUTION NAME",
     "industrial_category": "${category}",
     "contact_person": "VERIFIED HUMAN NAME",
     "email": "...",
@@ -67,57 +67,54 @@ REQUIRED JSON FIELDS:
 ]`;
 }
 
-const DiscoveryTab = ({ category, currentCount }: { category: string, currentCount: number }) => {
+const DiscoveryTab = ({ category, currentCount = 0 }: { category: string, currentCount?: number }) => {
     const { toast } = useToast();
     const [isCopied, setIsCopied] = useState(false);
-    const [pageOverride, setPageOverride] = useState<number | ''>('');
+    const [seqOverride, setSeqOverride] = useState<number | ''>('');
     
-    const suggestedPage = Math.floor(currentCount / 30) + 1;
-    const startPage = pageOverride !== '' ? Number(pageOverride) : suggestedPage;
-
-    const prompt = useMemo(() => generateDiscoveryPrompt(category, startPage), [category, startPage]);
+    const startSeq = useMemo(() => (seqOverride !== '' ? Number(seqOverride) : currentCount + 1), [seqOverride, currentCount]);
+    const prompt = useMemo(() => generateDiscoveryPrompt(category, startSeq), [category, startSeq]);
 
     const handleCopy = async () => {
-        try {
-            await navigator.clipboard.writeText(prompt);
-            setIsCopied(true);
-            toast({ title: "Extraction Prompt Copied!" });
-            setTimeout(() => setIsCopied(false), 3000);
-        } catch (e) {
-            toast({ variant: 'destructive', title: "Copy Failed" });
-        }
+        await navigator.clipboard.writeText(prompt);
+        setIsCopied(true);
+        toast({ title: "Forensic Prompt Ready", description: "Targeting private credit and fintechs." });
+        setTimeout(() => setIsCopied(false), 3000);
     };
 
     return (
         <div className="grid md:grid-cols-2 gap-6 text-left">
-            <div className="space-y-4">
-                <h2 className="text-2xl font-bold font-headline flex items-center gap-2">
-                    <Database className="h-6 w-6 text-amber-500" />
+            <div className="space-y-4 text-left">
+                <h2 className="text-2xl font-bold font-headline flex items-center gap-2 text-foreground text-left">
+                    <Landmark className="h-6 w-6 text-primary" />
                     Capital Discovery: {category}
                 </h2>
                 
-                <div className="p-4 bg-primary/5 border rounded-xl space-y-4 text-left">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-primary">Pagination Control</Label>
-                    <div className="flex items-center gap-3">
-                        <div className="flex-1 space-y-1.5">
-                            <Label className="text-xs font-bold">Start from Discovery Batch #</Label>
-                            <Input 
-                                type="number" 
-                                placeholder={String(suggestedPage)}
-                                value={pageOverride}
-                                onChange={(e) => setPageOverride(e.target.value === '' ? '' : Number(e.target.value))}
-                                className="h-10 font-mono font-bold text-lg"
-                            />
-                        </div>
+                <Alert className="bg-primary/5 border-primary/20 text-left">
+                    <ShieldCheck className="h-4 w-4 text-primary" />
+                    <AlertTitle className="text-left font-bold text-foreground">Market Mapping Protocol</AlertTitle>
+                    <AlertDescription className="text-xs text-left text-muted-foreground">
+                        Batching optimized at 30 records to ensure high-fidelity leadership contact extraction.
+                    </AlertDescription>
+                </Alert>
+
+                <div className="p-4 bg-muted/30 border rounded-xl space-y-4 text-left">
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 text-left">Sequence Sync</Label>
+                    <div className="space-y-1.5 text-left">
+                        <Label className="text-xs font-bold text-foreground">Start Sequence #</Label>
+                        <Input 
+                            type="number" 
+                            value={seqOverride}
+                            onChange={(e) => setSeqOverride(e.target.value === '' ? '' : Number(e.target.value))}
+                            className="h-10 font-mono bg-white"
+                        />
                     </div>
                 </div>
 
-                <div className="pt-2 flex flex-col gap-2">
-                    <Button onClick={handleCopy} variant="outline" size="lg" className="w-full gap-2 shadow-sm border-amber-200 text-amber-700 hover:bg-amber-50">
-                        {isCopied ? <ClipboardCheck className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
-                        {isCopied ? "Prompt Copied" : `Copy Forensic Prompt`}
-                    </Button>
-                </div>
+                <Button onClick={handleCopy} size="lg" className="w-full gap-2 h-14 font-black uppercase tracking-widest bg-primary hover:bg-primary/90 text-white">
+                    {isCopied ? <ClipboardCheck className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
+                    Copy Discovery Prompt
+                </Button>
             </div>
 
             <div className="space-y-2 text-left">
@@ -137,7 +134,7 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
 export default function FinanceDiscoveryEngine() {
     return (
         <Card className="shadow-none border-none text-left">
-            <Tabs defaultValue="Banks" className="w-full text-left">
+            <Tabs defaultValue="Niche Lenders" className="w-full text-left">
                 <CardHeader className="px-0 pt-0 text-left">
                     <CardTitle className="flex items-center gap-2 text-left">
                         <Landmark className="h-6 w-6 text-amber-500" />
@@ -148,7 +145,7 @@ export default function FinanceDiscoveryEngine() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="px-0 text-left">
-                    <TabsList className="h-auto flex-wrap justify-start bg-muted/30 mb-8 p-1">
+                    <TabsList className="h-auto flex-wrap justify-start bg-muted/30 mb-8 p-1 text-left">
                         {financeCategories.map(category => (
                             <TabsTrigger key={category} value={category} className="text-xs px-4 py-2">
                                 {category}
@@ -157,7 +154,7 @@ export default function FinanceDiscoveryEngine() {
                     </TabsList>
                     {financeCategories.map(category => (
                         <TabsContent key={category} value={category} className="mt-0 text-left">
-                            <DiscoveryTab category={category} currentCount={0} />
+                            <DiscoveryTab category={category} />
                         </TabsContent>
                     ))}
                 </CardContent>

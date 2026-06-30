@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useCallback, useMemo, useEffect, Suspense } from 'react';
@@ -122,10 +123,10 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
         <DialogHeader><DialogTitle>{lead ? 'Edit' : 'Add New'} Lead</DialogTitle></DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[60vh] overflow-y-auto pr-2 text-left text-foreground">
-            <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Company Name</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem>)} />
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <FormField control={form.control} name="contactPerson" render={({ field }) => (<FormItem><FormLabel>Contact Person</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem>)} />
-              <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" className="bg-white" /></FormControl><FormMessage /></FormItem>)} />
+            <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Company Name</FormLabel><FormControl><Input {...field} className="bg-white text-left" /></FormControl><FormMessage /></FormItem>)} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
+              <FormField control={form.control} name="contactPerson" render={({ field }) => (<FormItem><FormLabel>Contact Person</FormLabel><FormControl><Input {...field} className="bg-white text-left" /></FormControl><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" className="bg-white text-left" /></FormControl><FormMessage /></FormItem>)} />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
               <FormField control={form.control} name="status" render={({ field }) => (
@@ -139,7 +140,7 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
                 </SelectContent></Select></FormItem>
               )} />
             </div>
-            <FormField control={form.control} name="notes" render={({ field }) => (<FormItem><FormLabel>Internal Notes</FormLabel><FormControl><Textarea {...field} className="bg-white" /></FormControl><FormMessage /></FormItem>)} />
+            <FormField control={form.control} name="notes" render={({ field }) => (<FormItem><FormLabel>Internal Notes</FormLabel><FormControl><Textarea {...field} className="bg-white text-left" /></FormControl><FormMessage /></FormItem>)} />
             <DialogFooter className="pt-4 border-t text-left text-foreground">
               <Button type="submit" disabled={isLoading}>
                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} Save Lead
@@ -234,7 +235,7 @@ function LeadsDatabaseComponent() {
             );
         }
     },
-    { accessorKey: 'status', header: 'Status', cell: ({ row }) => <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge> },
+    { accessorKey: 'status', header: 'Status', cell: ({ row }) => <Badge variant="outline" className="capitalize text-[10px] text-left">{row.original.status}</Badge> },
     {
       id: 'actions',
       header: <div className="text-right">Actions</div>,

@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -143,7 +144,7 @@ export default function AssociateOversight() {
                 return (
                     <div className="flex flex-col text-left">
                         {recentPost ? (
-                            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 gap-1.5 py-0.5 px-2">
+                            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 gap-1.5 py-0.5 px-2 text-left">
                                 <Activity className="h-3 w-3" />
                                 Active {formatDateSafe(recentPost.timestamp, "dd/MM")}
                             </Badge>
@@ -188,7 +189,7 @@ export default function AssociateOversight() {
                     <h1 className="text-3xl font-black font-headline tracking-tight text-left">Associate Monitoring</h1>
                     <p className="text-muted-foreground text-left">Strategic oversight of creator influence and commission revenue.</p>
                 </div>
-                <Button variant="outline" onClick={loadData} disabled={isLoading} className="gap-2 text-foreground">
+                <Button variant="outline" onClick={loadData} disabled={isLoading} className="gap-2 text-foreground text-left">
                     <RefreshCcw className={cn("h-4 w-4", isLoading && "animate-spin")} />
                     Refresh Stats
                 </Button>
@@ -219,7 +220,7 @@ export default function AssociateOversight() {
                         <div className="text-3xl font-black text-amber-700 text-left">{formatCurrency(stats.availablePayouts)}</div>
                     </CardContent>
                 </Card>
-                <Card className="bg-blue-50 border-blue-100 text-left text-foreground text-foreground text-foreground">
+                <Card className="bg-blue-50 border-blue-100 text-left text-foreground text-foreground text-foreground text-left">
                     <CardHeader className="pb-2 text-left text-foreground text-foreground">
                         <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground text-left text-foreground">Logged Campaigns</p>
                     </CardHeader>

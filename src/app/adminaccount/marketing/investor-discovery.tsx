@@ -4,109 +4,109 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, Sparkles, Copy, ClipboardCheck, Info, Search, Terminal, MapPin, ListOrdered, Loader2, DollarSign } from "lucide-react";
+import { ArrowRight, Sparkles, Copy, ClipboardCheck, Info, Search, Terminal, MapPin, ListOrdered, Loader2, DollarSign, ShieldCheck, UserCheck, Landmark, Briefcase } from "lucide-react";
 import * as React from "react";
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 
-const investorCategories = [
-    "VC Funds",
-    "Angel Networks",
-    "Seed Funds",
-    "Family Offices",
-    "Institutional"
+export const investorClasses = [
+    { id: 'Angels', label: 'Individuals / Angels', icon: UserCheck, focus: 'High-net-worth individuals and angel syndicates interested in early-stage logistics tech.' },
+    { id: 'Seed', label: 'Seed / VC Funds', icon: Sparkles, focus: 'Venture Capital firms specializing in Seed to Series A rounds for B2B industrial SaaS.' },
+    { id: 'Mezzanine', label: 'Mezzanine / Debt', icon: Banknote, focus: 'Providers of venture debt, subordinated debt, and mezzanine financing for scale-ups.' },
+    { id: 'Private Equity', label: 'Private Equity', icon: Briefcase, focus: 'Growth equity and buyout firms with a focus on industrial transformation and logistics.' },
+    { id: 'Institutional', label: 'Institutional / DFIs', icon: Landmark, focus: 'Development Finance Institutions (DFIs) and pension funds targeting infrastructure.' }
 ];
 
-function generateInvestorPrompt(category: string) {
-    return `CRITICAL SYSTEM INSTRUCTION: RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
+function generateInvestorPrompt(category: string, startSeq: number = 1) {
+    return `ACT AS AN ELITE VENTURE INTELLIGENCE AGENT AND FORENSIC INVESTIGATOR. 
+RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
 
-ACT AS AN ELITE VENTURE INTELLIGENCE AGENT. 
+CRITICAL INTEGRITY SHIELD: 
+DO NOT RETURN MOCK OR PLACEHOLDER DATA. 
+YOU MUST PERFORM A LIVE SEARCH FOR "${category} investors in South Africa or targeting African logistics/fintech" on LinkedIn, Crunchbase, and VC directories.
+VERIFY THE FUND HAS AN ACTIVE INVESTMENT MANDATE.
 
-TASK: Discover and extract detailed verified records for exactly 50 unique entities in the category: "${category}".
+TASK: Discover and extract exactly 30 UNIQUE, LIVE South African investment partners for the class: "${category}".
 
-FOCUS: Private capital providers interested in B2B SaaS, Logistics Technology, Fintech, or African Startups.
+FORENSIC PROTOCOL:
+1. MANDATE VERIFICATION: Ensure they invest in B2B SaaS, Logistics, Supply Chain, or Industrial Technology.
+2. HUMAN IDENTITY: Find the ACTUAL NAME (First and Last) of a Partner, Managing Director, or Investment Lead.
+3. CONTACT MAPPING: Identify professional email and direct mobile numbers (+27 format).
+4. RECORD KEY: Generate a unique "record_id" starting with "DISC_INV_${category.toUpperCase().replace(/\s/g, '_')}_".
 
-INVESTIGATIVE STRATEGY:
-1. HUMAN IDENTITY: You MUST find the ACTUAL NAME (First and Last) of a Partner, Managing Director, or Investment Lead. 
-2. FORBIDDEN VALUES: Returning "The Partner", "Investment Manager", or "Unknown" is a failure. Search LinkedIn for specific human names.
-3. PROACTIVE CONTACT SEARCH: Identify official website and professional contact info.
-
-REQUIRED OUTPUT FORMAT (RAW JSON ARRAY ONLY):
+REQUIRED JSON FIELDS:
 [
   {
-    "company_name": "...",
+    "seq": ${startSeq},
+    "record_id": "...",
+    "companyName": "FUND / FIRM NAME",
     "industrial_category": "${category}",
-    "contact_person": "ACTUAL HUMAN FULL NAME",
-    "email_address": "...",
-    "telephone_number": "...",
-    "website": "...",
-    "physical_address": "..."
+    "contact_person": "VERIFIED HUMAN NAME",
+    "email": "...",
+    "mobile": "...",
+    "website": "OFFICIAL CORPORATE URL",
+    "notes": "Detailed summary of their investment thesis, preferred cheque size, and why they fit Logistics Flow."
   }
-]
-
-HUNTING GROUNDS: Search LinkedIn, Crunchbase, and African Startup Registries.`;
+]`;
 }
 
-const DiscoveryTab = ({ category }: { category: string }) => {
+const DiscoveryTab = ({ category, focus, currentCount = 0 }: { category: string, focus: string, currentCount?: number }) => {
     const { toast } = useToast();
     const [isCopied, setIsCopied] = useState(false);
+    const [seqOverride, setSeqOverride] = useState<number | ''>('');
     
-    const prompt = generateInvestorPrompt(category);
+    const startSeq = useMemo(() => (seqOverride !== '' ? Number(seqOverride) : currentCount + 1), [seqOverride, currentCount]);
+    const prompt = useMemo(() => generateInvestorPrompt(category, startSeq), [category, startSeq]);
 
     const handleCopy = async () => {
-        try {
-            await navigator.clipboard.writeText(prompt);
-            setIsCopied(true);
-            toast({ title: "Investor Prompt Copied!", description: `Paste into Gemini 1.5 Pro to find ${category}.` });
-            setTimeout(() => setIsCopied(false), 3000);
-        } catch (e) {
-            toast({ variant: 'destructive', title: "Copy Failed" });
-        }
+        await navigator.clipboard.writeText(prompt);
+        setIsCopied(true);
+        toast({ title: "Investor Prompt Ready", description: `Targeted at ${category} class.` });
+        setTimeout(() => setIsCopied(false), 3000);
     };
 
     return (
-        <div className="space-y-6">
-            <div className="grid md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                    <h2 className="text-2xl font-bold font-headline flex items-center gap-2">
-                        <DollarSign className="h-6 w-6 text-primary" />
-                        App Launch Discovery: {category}
-                    </h2>
-                    
-                    <Alert className="bg-primary/5 border-primary/20">
-                        <Info className="h-4 w-4 text-primary" />
-                        <AlertTitle>Startup Growth Strategy</AlertTitle>
-                        <AlertDescription className="text-xs">
-                            This engine targets capital for the <strong>Logistics Flow</strong> platform itself. These are not industrial lenders, but potential equity partners for your launch.
-                        </AlertDescription>
-                    </Alert>
+        <div className="grid md:grid-cols-2 gap-6 text-left">
+            <div className="space-y-4 text-left">
+                <h2 className="text-2xl font-bold font-headline flex items-center gap-2 text-foreground text-left">
+                    <DollarSign className="h-6 w-6 text-primary" />
+                    Capital Scouting: {category}
+                </h2>
 
-                    <div className="pt-4 flex flex-col gap-2">
-                        <Button onClick={handleCopy} size="lg" className="w-full gap-2 shadow-md">
-                            {isCopied ? <ClipboardCheck className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
-                            {isCopied ? "Prompt Copied" : "Copy Discovery Prompt"}
-                        </Button>
-                        <Button variant="outline" asChild className="w-full">
-                            <a href="https://aistudio.google.com/" target="_blank" rel="noopener noreferrer">
-                                Open Google AI Studio <ArrowRight className="ml-2 h-4 w-4" />
-                            </a>
-                        </Button>
+                <Alert className="bg-primary/5 border-primary/20 text-left">
+                    <Info className="h-4 w-4 text-primary" />
+                    <AlertTitle className="font-bold text-left">Target Mandate</AlertTitle>
+                    <AlertDescription className="text-xs text-left text-muted-foreground">
+                        {focus}
+                    </AlertDescription>
+                </Alert>
+
+                <div className="p-4 bg-muted/30 border rounded-xl space-y-4 text-left">
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 text-left">Sequence Sync</Label>
+                    <div className="space-y-1.5 text-left">
+                        <Label className="text-xs font-bold text-foreground">Start Sequence #</Label>
+                        <Input 
+                            type="number" 
+                            value={seqOverride}
+                            onChange={(e) => setSeqOverride(e.target.value === '' ? '' : Number(e.target.value))}
+                            className="h-10 font-mono bg-white"
+                        />
                     </div>
                 </div>
-
-                <div className="space-y-2">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
-                        <Terminal className="h-3 w-3"/> Intelligence Command
-                    </Label>
-                    <ScrollArea className="h-[300px] border rounded-lg bg-slate-900 p-4 shadow-inner">
-                        <pre className="text-[10px] text-slate-300 font-mono whitespace-pre-wrap leading-tight">
-                            {prompt}
-                        </pre>
-                    </ScrollArea>
-                </div>
+                <Button onClick={handleCopy} size="lg" className="w-full gap-2 h-14 font-black uppercase tracking-widest bg-primary hover:bg-primary/90 text-white">
+                    {isCopied ? <ClipboardCheck className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
+                    Copy Discovery Prompt
+                </Button>
+            </div>
+            <div className="space-y-2 text-left">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5 text-left"><Terminal className="h-3 w-3"/> Intelligence Command</Label>
+                <ScrollArea className="h-[400px] border rounded-lg bg-slate-900 p-4 text-left">
+                    <pre className="text-[10px] text-slate-400 font-mono whitespace-pre-wrap leading-tight text-left">{prompt}</pre>
+                </ScrollArea>
             </div>
         </div>
     );
@@ -114,29 +114,26 @@ const DiscoveryTab = ({ category }: { category: string }) => {
 
 export default function InvestorDiscoveryEngine() {
     return (
-        <Card className="shadow-none border-none">
-            <Tabs defaultValue="VC Funds" className="w-full">
-                <CardHeader className="px-0 pt-0">
-                    <CardTitle className="flex items-center gap-2">
-                        <Sparkles className="h-6 w-6 text-primary" />
+        <Card className="shadow-none border-none text-left">
+            <Tabs defaultValue="Seed" className="w-full text-left">
+                <CardHeader className="px-0 pt-0 text-left">
+                    <CardTitle className="flex items-center gap-2 text-left text-foreground font-black font-headline">
+                        <Database className="h-6 w-6 text-primary" />
                         App Launch Investor Discovery
                     </CardTitle>
-                    <CardDescription>
-                        Generate tailored prompts to discover equity partners, VCs, and angel investors for the platform launch.
-                    </CardDescription>
+                    <CardDescription className="text-left text-muted-foreground">Identify foundational partners for the platform equity launch.</CardDescription>
                 </CardHeader>
-                <CardContent className="px-0">
-                    <TabsList className="h-auto flex-wrap justify-start bg-muted/30 mb-8">
-                        {investorCategories.map(category => (
-                            <TabsTrigger key={category} value={category} className="text-xs px-4 py-2">
-                                {category}
+                <CardContent className="px-0 text-left">
+                    <TabsList className="h-auto flex-wrap justify-start bg-muted/30 mb-8 p-1">
+                        {investorClasses.map(cls => (
+                            <TabsTrigger key={cls.id} value={cls.id} className="text-xs px-4 py-2">
+                                {cls.label}
                             </TabsTrigger>
                         ))}
                     </TabsList>
-
-                    {investorCategories.map(category => (
-                        <TabsContent key={category} value={category} className="mt-0">
-                            <DiscoveryTab category={category} />
+                    {investorClasses.map(cls => (
+                        <TabsContent key={cls.id} value={cls.id} className="text-left">
+                            <DiscoveryTab category={cls.label} focus={cls.focus} />
                         </TabsContent>
                     ))}
                 </CardContent>

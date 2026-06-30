@@ -71,7 +71,8 @@ export async function POST(req: NextRequest) {
                             'supplier': ['supplier', 'vendor', 'Suppliers', 'Supplier', 'Vendors'],
                             'transporter': ['transporter', 'Transporters', 'Transporter'],
                             'finance': ['finance', 'financier', 'Finance Companies', 'Finance Partner'],
-                            'driver': ['driver', 'Drivers', 'Driver']
+                            'driver': ['driver', 'Drivers', 'Driver'],
+                            'investor': ['investor', 'Investors', 'Investor']
                         };
                         const possibleRoles = typeMap[type] || [type];
                         leadsQ = leadsQ.where('role', 'in', possibleRoles);
