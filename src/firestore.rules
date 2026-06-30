@@ -21,8 +21,10 @@ service cloud.firestore {
 
     function isMember(cid) {
       return isAdmin() || (
-        isSignedIn() && cid != null && (
-          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == cid
+        isSignedIn() && (
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == cid ||
+          (exists(/databases/$(database)/documents/companies/$(cid)) && 
+           get(/databases/$(database)/documents/companies/$(cid)).data.ownerId == request.auth.uid)
         )
       );
     }
@@ -85,7 +87,7 @@ service cloud.firestore {
 
     match /contributions/{contributionId} {
       allow create: if isSignedIn();
-      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow read: if isSignedIn();
     }
   }
 }

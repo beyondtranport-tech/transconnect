@@ -73,7 +73,7 @@ export default function AccountDashboard() {
                         </div>
                     </CardHeader>
                     <CardContent>
-                        <p className="text-lg">
+                        <p className="text-lg text-left">
                            All administrative functions are located in the secure <span className="font-semibold text-primary">Admin Portal</span>.
                         </p>
                     </CardContent>
@@ -100,13 +100,13 @@ export default function AccountDashboard() {
     if (error) {
         return (
             <div className="flex justify-center items-center min-h-[calc(100vh-8rem)] w-full text-left">
-                <Card className="m-4 w-full max-w-2xl">
-                    <CardHeader>
-                        <CardTitle className="text-destructive">Error Loading Dashboard</CardTitle>
+                <Card className="m-4 w-full max-w-2xl text-left">
+                    <CardHeader className="text-left">
+                        <CardTitle className="text-destructive text-left">Error Loading Dashboard</CardTitle>
                     </CardHeader>
-                    <CardContent>
-                        <p>There was a problem fetching your account data.</p>
-                        <p className="text-xs text-muted-foreground mt-2">{error.message}</p>
+                    <CardContent className="text-left">
+                        <p className="text-left">There was a problem fetching your account data.</p>
+                        <p className="text-xs text-muted-foreground mt-2 text-left">{error.message}</p>
                     </CardContent>
                     <CardFooter>
                         <Button onClick={() => window.location.reload()}>Try Again</Button>
@@ -122,8 +122,8 @@ export default function AccountDashboard() {
         <div className="w-full space-y-8 text-left text-foreground">
             <div className="flex items-center gap-4 text-left">
                 <div className="text-left">
-                    <h1 className="text-3xl md:text-4xl font-bold font-headline">Dashboard</h1>
-                    <p className="text-lg text-muted-foreground">Welcome back, {userData?.firstName || 'Member'}!</p>
+                    <h1 className="text-3xl md:text-4xl font-bold font-headline text-left">Dashboard</h1>
+                    <p className="text-lg text-muted-foreground text-left">Welcome back, {userData?.firstName || 'Member'}!</p>
                 </div>
             </div>
 
@@ -143,7 +143,7 @@ export default function AccountDashboard() {
                         </div>
                     </CardHeader>
                     <CardContent className="text-left">
-                         <p className="text-sm text-muted-foreground">
+                         <p className="text-sm text-muted-foreground text-left">
                             By upgrading, you gain access to our advanced Tech division, including the AI Freight Matcher, plus the ability to activate Loyalty and Actions plans to save money and earn commission.
                         </p>
                     </CardContent>
@@ -157,46 +157,46 @@ export default function AccountDashboard() {
                 </Card>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium">Membership Tier</CardTitle>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 text-left">
+                 <Card className="text-left">
+                    <CardHeader className="flex flex-row items-center justify-between pb-2 text-left">
+                        <CardTitle className="text-sm font-medium text-left">Membership Tier</CardTitle>
                         <Gem className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-primary capitalize">{companyData?.membershipId || 'Free'}</div>
+                    <CardContent className="text-left">
+                        <div className="text-2xl font-bold text-primary capitalize text-left">{companyData?.membershipId || 'Free'}</div>
                          {isFreeMember ? (
                              <Button asChild variant="link" size="sm" className="p-0 h-auto">
                                 <Link href="/pricing">Upgrade to a paid plan</Link>
                             </Button>
                          ) : (
-                            <p className="text-xs text-muted-foreground">You have a premium membership.</p>
+                            <p className="text-xs text-muted-foreground text-left">You have a premium membership.</p>
                          )}
                     </CardContent>
                 </Card>
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium">Available to Spend</CardTitle>
+                <Card className="text-left">
+                    <CardHeader className="flex flex-row items-center justify-between pb-2 text-left">
+                        <CardTitle className="text-sm font-medium text-left">Available to Spend</CardTitle>
                          <Wallet className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{formatCurrency(companyData?.availableBalance)}</div>
+                    <CardContent className="text-left">
+                        <div className="text-2xl font-bold text-left">{formatCurrency(companyData?.availableBalance)}</div>
                          <Button asChild variant="link" size="sm" className="p-0 h-auto">
                             <Link href="/account?view=wallet">Manage Wallet</Link>
                         </Button>
                     </CardContent>
                 </Card>
-                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium">Loyalty Status</CardTitle>
+                 <Card className="text-left">
+                    <CardHeader className="flex flex-row items-center justify-between pb-2 text-left">
+                        <CardTitle className="text-sm font-medium text-left">Loyalty Status</CardTitle>
                         <Award className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold flex items-center gap-2">
+                    <CardContent className="text-left">
+                        <div className="text-2xl font-bold flex items-center gap-2 text-left">
                             <span className={cn("px-2 py-1 rounded-md text-base", tierColors[loyaltyTier])}>{loyaltyTier.charAt(0).toUpperCase() + loyaltyTier.slice(1)}</span>
                             <span>{companyData?.rewardPoints || 0} Points</span>
                         </div>
-                        <p className="text-xs text-muted-foreground">Earn points for community actions.</p>
+                        <p className="text-xs text-muted-foreground text-left">Earn points for community actions.</p>
                     </CardContent>
                 </Card>
             </div>
@@ -211,18 +211,18 @@ export default function AccountDashboard() {
                         You are on the <span className="font-semibold text-primary capitalize">{loyaltyTier}</span> tier. Here are your active benefits:
                     </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="text-left">
                     {userBenefits.length > 0 ? (
-                        <ul className="space-y-3">
+                        <ul className="space-y-3 text-left">
                             {userBenefits.map((benefit: any) => (
-                                <li key={benefit.name} className="flex items-center gap-3">
+                                <li key={benefit.name} className="flex items-center gap-3 text-left">
                                     <CheckCircle className="h-5 w-5 text-green-500" />
                                     <span>{benefit.name}: <span className="font-bold">{benefit.value}</span></span>
                                 </li>
                             ))}
                         </ul>
                     ) : (
-                        <p className="text-muted-foreground">No benefits are currently configured for your tier. Keep earning points!</p>
+                        <p className="text-muted-foreground text-left">No benefits are currently configured for your tier. Keep earning points!</p>
                     )}
                 </CardContent>
                  <CardFooter>
@@ -237,7 +237,7 @@ export default function AccountDashboard() {
                     <CardTitle className="flex items-center gap-2 text-left"><HeartHandshake /> Help the Community & Earn Rewards</CardTitle>
                 </CardHeader>
                 <CardContent className="text-left">
-                    <p className="text-muted-foreground mb-4">Help the community by sharing anonymous data about your fleet and suppliers. Each contribution earns you reward points and helps us negotiate better group discounts for everyone.</p>
+                    <p className="text-muted-foreground mb-4 text-left">Help the community by sharing anonymous data about your fleet and suppliers. Each contribution earns you reward points and helps us negotiate better group discounts for everyone.</p>
                 </CardContent>
                 <CardFooter>
                     <Button asChild>

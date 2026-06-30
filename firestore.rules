@@ -19,12 +19,14 @@ service cloud.firestore {
       );
     }
 
-    // Explicit check to see if user is a member of the company.
-    // Query-level security requires get() or direct UID mapping.
+    // Explicit check for membership to allow query-level authorization for sub-collections.
     function isMember(cid) {
       return isAdmin() || (
-        isSignedIn() && cid != null && (
-          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == cid
+        isSignedIn() && (
+          // Direct UID mapping or get() check
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == cid ||
+          (exists(/databases/$(database)/documents/companies/$(cid)) && 
+           get(/databases/$(database)/documents/companies/$(cid)).data.ownerId == request.auth.uid)
         )
       );
     }
@@ -57,7 +59,7 @@ service cloud.firestore {
       allow update, delete: if isAdmin() || (isSignedIn() && resource.data.ownerId == request.auth.uid);
       
       // Explicitly permitting list and write for sub-collections to members.
-      // Using 'read' instead of 'get'/'list' separately for robustness.
+      // This allows members to list their own supportMessages, transactions, and enquiries.
       match /{allSub=**} {
         allow read, write: if isMember(companyId);
       }

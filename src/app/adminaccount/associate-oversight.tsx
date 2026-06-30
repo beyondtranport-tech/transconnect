@@ -131,7 +131,7 @@ export default function AssociateOversight() {
             header: 'Earnings Ledger',
             cell: ({ row }) => (
                 <div className="flex flex-col text-left">
-                    <span className="font-bold text-green-600">{formatCurrency(row.original.availableBalance)}</span>
+                    <span className="font-bold text-green-700">{formatCurrency(row.original.availableBalance)}</span>
                     <span className="text-[9px] text-muted-foreground uppercase font-black tracking-tighter">Available for Payout</span>
                 </div>
             )
