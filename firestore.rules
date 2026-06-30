@@ -19,7 +19,7 @@ service cloud.firestore {
       );
     }
 
-    // Optimized membership check for sub-collection listing
+    // Optimized membership check for both document and collection level access
     function isMember(cid) {
       return isAdmin() || (
         isSignedIn() && cid != null && (
