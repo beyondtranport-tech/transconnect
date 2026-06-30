@@ -1,53 +1,66 @@
-
-import { initializeApp, getApps, App, cert } from 'firebase-admin/app';
-import type { ServiceAccount } from 'firebase-admin/app';
+import { initializeApp, getApps, getApp, App, cert } from 'firebase-admin/app';
 import { NextRequest } from 'next/server';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 
-// Reverting to v7 initialization to fix potential hangs.
 const ADMIN_APP_NAME = 'firebase-admin-app-transconnect-studio-v7';
 
-export function getAdminApp(): { app: App | null; error: string | null } {
-  const existingApp = getApps().find(app => app.name === ADMIN_APP_NAME);
-  if (existingApp) {
-    return { app: existingApp, error: null };
-  }
+let adminApp: App | null = null;
+let adminAppError: string | null = null;
 
-  const encodedServiceAccount = process.env.FIREBASE_ADMIN_SDK_CONFIG_B64;
+function initializeAdminApp(): { app: App; error: null } | { app: null; error: string } {
+    if (adminApp) {
+        return { app: adminApp, error: null };
+    }
 
-  if (!encodedServiceAccount) {
-    const errorMessage = 'Firebase Admin SDK initialization failed: The FIREBASE_ADMIN_SDK_CONFIG_B64 environment variable is not set.';
-    console.error(errorMessage);
-    return { app: null, error: errorMessage };
-  }
-
-  try {
-    const serviceAccountJson = Buffer.from(encodedServiceAccount, 'base64').toString('utf8');
-    // **CORRECTION**: Parse into a generic object to avoid type mismatches.
-    const serviceAccountObject: { [key: string]: any } = JSON.parse(serviceAccountJson);
-
-    // **CORRECTION**: Validate the properties that actually exist on the parsed JSON object.
-    if (!serviceAccountObject.project_id || !serviceAccountObject.client_email || !serviceAccountObject.private_key) {
-        throw new Error('Parsed service account is invalid or missing essential properties (project_id, client_email, private_key). Please re-generate it following the backend-setup.md guide.');
+    try {
+        const existingApp = getApp(ADMIN_APP_NAME);
+        adminApp = existingApp;
+        return { app: adminApp, error: null };
+    } catch (e) {
+        // App not initialized
     }
     
-    const projectId = serviceAccountObject.project_id;
+    const encodedServiceAccount = process.env.FIREBASE_ADMIN_SDK_CONFIG_B64;
+    if (!encodedServiceAccount) {
+        adminAppError = 'Firebase Admin SDK initialization failed: The FIREBASE_ADMIN_SDK_CONFIG_B64 environment variable is not set.';
+        console.error(adminAppError);
+        return { app: null, error: adminAppError };
+    }
 
-    // The cert() function correctly handles the raw JSON object.
-    // No `as ServiceAccount` cast is needed here, which was the source of the error.
-    const app = initializeApp({
-      credential: cert(serviceAccountObject),
-      projectId: projectId,
-    }, ADMIN_APP_NAME);
+    try {
+        const serviceAccountJson = Buffer.from(encodedServiceAccount, 'base64').toString('utf8');
+        const serviceAccountObject: { [key: string]: any } = JSON.parse(serviceAccountJson);
 
-    return { app, error: null };
+        if (!serviceAccountObject.project_id || !serviceAccountObject.client_email || !serviceAccountObject.private_key) {
+            throw new Error('Parsed service account is invalid or missing essential properties.');
+        }
 
-  } catch (error: any) {
-    const errorMessage = `Firebase Admin SDK initialization failed: ${error.message}`;
-    console.error(errorMessage, error);
-    return { app: null, error: errorMessage };
-  }
+        const app = initializeApp({
+            credential: cert(serviceAccountObject),
+            projectId: serviceAccountObject.project_id,
+        }, ADMIN_APP_NAME);
+        
+        adminApp = app;
+        return { app: adminApp, error: null };
+
+    } catch (error: any) {
+        const errorMessage = `Firebase Admin SDK initialization failed: ${error.message}`;
+        console.error(errorMessage, error);
+        adminAppError = errorMessage;
+        return { app: null, error: errorMessage };
+    }
+}
+
+
+export function getAdminApp(): { app: App; error: null } | { app: null; error: string } {
+    if (adminApp && !adminAppError) {
+        return { app: adminApp, error: null };
+    }
+    if (adminAppError) {
+        return { app: null, error: adminAppError };
+    }
+    return initializeAdminApp();
 }
 
 export async function verifyAdmin(req: NextRequest) {
@@ -64,7 +77,10 @@ export async function verifyAdmin(req: NextRequest) {
     
     const adminAuth = getAuth(app);
     const decodedToken = await adminAuth.verifyIdToken(token);
-    const isAdmin = decodedToken.email === 'mkoton100@gmail.com' || decodedToken.email === 'beyondtransport@gmail.com';
+    const isAdmin = decodedToken.email === 'mkoton100@gmail.com' || 
+                    decodedToken.email === 'beyondtransport@gmail.com' ||
+                    decodedToken.email === 'michael@logisticsflow.co.za' ||
+                    decodedToken.admin === true;
 
     if (!isAdmin) {
         throw new Error("Forbidden: Admin access required.");

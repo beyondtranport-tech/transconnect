@@ -14,12 +14,13 @@ service cloud.firestore {
         request.auth.uid == '0Y3IhZffEPNlMAIhURPnzRgNokL2' || 
         request.auth.token.email == 'mkoton100@gmail.com' || 
         request.auth.token.email == 'beyondtransport@gmail.com' ||
+        request.auth.token.email == 'michael@logisticsflow.co.za' ||
         request.auth.token.admin == true
       );
     }
 
     function isCompanyOwner(cid) {
-      return isSignedIn() && get(/databases/$(database)/documents/companies/$(cid)).data.ownerId == request.auth.uid;
+      return isSignedIn() && exists(/databases/$(database)/documents/companies/$(cid)) && get(/databases/$(database)/documents/companies/$(cid)).data.ownerId == request.auth.uid;
     }
 
     function isCompanyStaff(cid) {
@@ -49,9 +50,7 @@ service cloud.firestore {
 
     match /companies/{companyId} {
       allow get: if isSignedIn() && (
-        resource.data.ownerId == request.auth.uid ||
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId ||
-        isAdmin()
+        isMember(companyId)
       );
       
       allow list: if isAdmin();

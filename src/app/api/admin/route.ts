@@ -107,13 +107,11 @@ export async function POST(req: NextRequest) {
                 const { id, type } = payload;
                 if (!id) throw new Error("ID required for auto-enrichment.");
 
-                // ROBUST SEARCH: Try explicit collection first, then fallback to others
                 let targetCollection = type === 'lead' ? 'leads' : 'partners';
                 let docRef = db.collection(targetCollection).doc(id);
                 let docSnap = await docRef.get();
                 
                 if (!docSnap.exists) {
-                    // Fallback to alternate collection
                     targetCollection = targetCollection === 'leads' ? 'partners' : 'leads';
                     docRef = db.collection(targetCollection).doc(id);
                     docSnap = await docRef.get();
@@ -124,7 +122,6 @@ export async function POST(req: NextRequest) {
                 const record = docSnap.data()!;
                 const companyName = record.companyName || record.company_name || record.trading_name || `${record.firstName} ${record.lastName}`;
 
-                // Call AI Enrichment Flow
                 const enriched = await enrichPartner({ companyName });
 
                 const update: any = {
@@ -141,7 +138,7 @@ export async function POST(req: NextRequest) {
                 const { partnerId, isLead } = payload;
                 const coll = isLead ? 'leads' : 'partners';
                 await db.collection(coll).doc(partnerId).update({
-                    status: 'contacted', // 'Searching' mapped to 'contacted' in CRM
+                    status: 'contacted',
                     lastOutreachSubject: 'Forensic Research',
                     lastOutreachAt: FieldValue.serverTimestamp(),
                     updatedAt: FieldValue.serverTimestamp()
@@ -184,7 +181,6 @@ export async function POST(req: NextRequest) {
             case 'logCommunication': {
                 const { partnerId, type: cType, subject, notes, collection: cName } = payload;
                 
-                // Detection logic if collection is missing
                 let targetColl = cName;
                 if (!targetColl) {
                     const leadsCheck = await db.collection('leads').doc(partnerId).get();

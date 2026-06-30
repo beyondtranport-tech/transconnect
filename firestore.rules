@@ -68,8 +68,8 @@ service cloud.firestore {
       // Update/Delete restricted to Admin or Owner
       allow update, delete: if isAdmin() || (isSignedIn() && resource.data.ownerId == request.auth.uid);
       
-      // Explicit rules for all sub-collections
-      // This ensures that list/get/write operations within these paths are allowed for members
+      // Explicit rules for all sub-collections to ensure list/get/write operations
+      // are permitted for verified members.
       match /supportMessages/{msgId} { allow read, write: if isMember(companyId); }
       match /transactions/{txId} { allow read, write: if isMember(companyId); }
       match /walletPayments/{pmId} { allow read, write: if isMember(companyId); }
