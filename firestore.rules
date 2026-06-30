@@ -19,15 +19,11 @@ service cloud.firestore {
       );
     }
 
-    // Optimized membership check for both document and collection level access
+    // Authoritative membership check for company-level data
     function isMember(cid) {
       return isAdmin() || (
         isSignedIn() && cid != null && (
-          // Use auth uid directly to check profile companyId
-          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == cid ||
-          // Fallback to checking if they own the company
-          (exists(/databases/$(database)/documents/companies/$(cid)) && 
-           get(/databases/$(database)/documents/companies/$(cid)).data.ownerId == request.auth.uid)
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == cid
         )
       );
     }
@@ -60,6 +56,7 @@ service cloud.firestore {
       allow update, delete: if isAdmin() || (isSignedIn() && resource.data.ownerId == request.auth.uid);
       
       // Sub-collections: Support, Transactions, Enquiries, etc.
+      // Explicitly permitting read/write for all nested sub-collections to members
       match /{allSub=**} {
         allow read, write: if isMember(companyId);
       }
@@ -93,10 +90,12 @@ service cloud.firestore {
       allow get, list: if true;
     }
     
+    // Configuration Data
     match /configuration/{configId} {
       allow get, list: if true;
     }
 
+    // Community Contributions
     match /contributions/{contributionId} {
       allow create: if isSignedIn();
       allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());

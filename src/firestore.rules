@@ -19,27 +19,20 @@ service cloud.firestore {
       );
     }
 
-    // Optimized membership check for both document and collection level access
     function isMember(cid) {
       return isAdmin() || (
         isSignedIn() && cid != null && (
-          // Use auth uid directly to check profile companyId
-          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == cid ||
-          // Fallback to checking if they own the company
-          (exists(/databases/$(database)/documents/companies/$(cid)) && 
-           get(/databases/$(database)/documents/companies/$(cid)).data.ownerId == request.auth.uid)
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == cid
         )
       );
     }
 
     // --- RULES ---
 
-    // Global Admin Override
     match /{allPaths=**} {
       allow read, write: if isAdmin();
     }
 
-    // User Profiles
     match /users/{userId} {
       allow get: if isSignedIn(); 
       allow list: if isAdmin();
@@ -51,22 +44,17 @@ service cloud.firestore {
       }
     }
 
-    // Company Data Hierarchy
     match /companies/{companyId} {
-      // Members can see their own company profile
       allow get: if isMember(companyId);
       allow list: if isAdmin();
       allow create: if isSignedIn();
       allow update, delete: if isAdmin() || (isSignedIn() && resource.data.ownerId == request.auth.uid);
       
-      // Sub-collections: Support, Transactions, Enquiries, etc.
-      // Explicitly allow list/read if the user is a verified member of the parent company
       match /{allSub=**} {
         allow read, write: if isMember(companyId);
       }
     }
 
-    // Public Registries & Discovery
     match /partners/{partnerId} {
       allow read: if isSignedIn();
       allow write: if isAdmin();
@@ -79,7 +67,6 @@ service cloud.firestore {
       match /{allSub=**} { allow read, write: if isAdmin(); }
     }
     
-    // Public Market Access
     match /shops/{shopId}/{path=**} {
       allow get, list: if true;
     }
