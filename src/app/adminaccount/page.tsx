@@ -45,7 +45,6 @@ import {
   Search,
   Eye,
   HelpCircle,
-  Book,
   RefreshCcw,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -114,7 +113,7 @@ function AdminAuthGuard({ children }: { children: React.ReactNode }) {
         return (
             <div className="flex flex-col justify-center items-center min-h-[calc(100vh-8rem)] text-foreground text-left">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                <p className="mt-4 text-muted-foreground text-sm font-bold uppercase tracking-widest text-center">Verifying Admin Permissions...</p>
+                <p className="mt-4 text-muted-foreground text-sm font-bold uppercase tracking-widest text-center text-foreground">Verifying Admin Permissions...</p>
             </div>
         );
     }
@@ -139,6 +138,49 @@ function AdminAccountContent() {
     router.push('/');
   };
 
+  const renderContent = useCallback(() => {
+    if (activeView.startsWith('social-')) {
+        const platform = activeView.split('-')[1] as any;
+        return <SocialStudio platform={platform} />;
+    }
+    if (activeView.startsWith('marketing-')) {
+        const audience = activeView.split('-')[1] as any;
+        return <MarketingPage audience={audience} />;
+    }
+    switch (activeView) {
+      case 'dashboard': return <AdminDashboardContent />;
+      case 'unified-directory': return <UnifiedDirectory />;
+      case 'activity': return <ActivityFeed />;
+      case 'leads-agent': return <LeadsAgent />;
+      case 'leads-database': return <LeadsDatabase />;
+      case 'branding-studio': return <BrandingStudio />;
+      case 'tts-studio': return <TTSStudio />;
+      case 'asset-gallery': return <AssetGallery />;
+      case 'sales-roadmap': return <SalesRoadmap />;
+      case 'targets': return <TargetsPage />;
+      case 'financial-projections': return <FinancialProjections />;
+      case 'financial-setup': return <FinancialSetup />;
+      case 'budget': return <BudgetPage />;
+      case 'salary-forecast': return <SalaryForecastPage />;
+      case 'permissions': return <PermissionsContent />;
+      case 'action-plan': return <ActionPlanSettings />;
+      case 'loyalty-plan': return <TierBenefits />;
+      case 'rewards-plan': return <RewardsManagement />;
+      case 'pricing-memberships': return <PricingManagement />;
+      case 'pricing-connect': return <ConnectPlanPricing />;
+      case 'pricing-tech': return <TechPricing />;
+      case 'pricing-marketplace': return <MarketplaceFees />;
+      case 'commissions-malls': return <MallCommissions />;
+      case 'commissions-isa': return <ISAPitchSettings />;
+      case 'incentives-sales': return <SalesIncentives />;
+      case 'tasks': return <PlatformTasks />;
+      case 'settings-bank': return <PlatformSettingsContent />;
+      case 'platform-staff': return <PlatformStaffManagement />;
+      case 'associate-oversight': return <AssociateOversight />;
+      default: return <AdminDashboardContent />;
+    }
+  }, [activeView]);
+  
   const getInitials = (name: string | null | undefined) => {
     if (!name) return "AD";
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
@@ -228,7 +270,7 @@ function AdminAccountContent() {
                  <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'settings-bank'} onClick={() => navigate('settings-bank')}>Bank Details</SidebarMenuSubButton></SidebarMenuSubItem>
               </SidebarMenuSub>
             </SidebarMenuItem>
-            <SidebarMenuItem>
+             <SidebarMenuItem>
                 <SidebarMenuButton tooltip="Help & Guides" isActive={activeView === 'guides'} onClick={() => navigate('guides')}>
                     <HelpCircle /><span>Help & Guides</span>
                 </SidebarMenuButton>
@@ -252,71 +294,7 @@ function AdminAccountContent() {
     </Sidebar>
     <SidebarInset>
         <div className="p-6 text-left text-foreground">
-            {activeView.startsWith('social-') ? (
-                <SocialStudio platform={activeView.split('-')[1] as any} />
-            ) : activeView.startsWith('marketing-') ? (
-                <MarketingPage audience={activeView.split('-')[1] as any} />
-            ) : activeView === 'dashboard' ? (
-                <AdminDashboardContent />
-            ) : activeView === 'unified-directory' ? (
-                <UnifiedDirectory />
-            ) : activeView === 'activity' ? (
-                <ActivityFeed />
-            ) : activeView === 'leads-agent' ? (
-                <LeadsAgent />
-            ) : activeView === 'leads-database' ? (
-                <LeadsDatabase />
-            ) : activeView === 'associate-oversight' ? (
-                <AssociateOversight />
-            ) : activeView === 'branding-studio' ? (
-                <BrandingStudio />
-            ) : activeView === 'tts-studio' ? (
-                <TTSStudio />
-            ) : activeView === 'asset-gallery' ? (
-                <AssetGallery />
-            ) : activeView === 'sales-roadmap' ? (
-                <SalesRoadmap />
-            ) : activeView === 'targets' ? (
-                <TargetsPage />
-            ) : activeView === 'financial-projections' ? (
-                <FinancialProjections />
-            ) : activeView === 'financial-setup' ? (
-                <FinancialSetup />
-            ) : activeView === 'budget' ? (
-                <BudgetPage />
-            ) : activeView === 'salary-forecast' ? (
-                <SalaryForecastPage />
-            ) : activeView === 'permissions' ? (
-                <PermissionsContent />
-            ) : activeView === 'action-plan' ? (
-                <ActionPlanSettings />
-            ) : activeView === 'loyalty-plan' ? (
-                <TierBenefits />
-            ) : activeView === 'rewards-plan' ? (
-                <RewardsManagement />
-            ) : activeView === 'pricing-memberships' ? (
-                <PricingManagement />
-            ) : activeView === 'pricing-connect' ? (
-                <ConnectPlanPricing />
-            ) : activeView === 'pricing-tech' ? (
-                <TechPricing />
-            ) : activeView === 'pricing-marketplace' ? (
-                <MarketplaceFees />
-            ) : activeView === 'commissions-malls' ? (
-                <MallCommissions />
-            ) : activeView === 'commissions-isa' ? (
-                <ISAPitchSettings />
-            ) : activeView === 'incentives-sales' ? (
-                <SalesIncentives />
-            ) : activeView === 'tasks' ? (
-                <PlatformTasks />
-            ) : activeView === 'settings-bank' ? (
-                <PlatformSettingsContent />
-            ) : activeView === 'platform-staff' ? (
-                <PlatformStaffManagement />
-            ) : (
-                <AdminDashboardContent />
-            )}
+            {renderContent()}
         </div>
     </SidebarInset>
     </SidebarProvider>
