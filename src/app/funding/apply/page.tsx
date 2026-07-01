@@ -233,21 +233,21 @@ function ApplyForm() {
                     <h3 className="font-bold text-lg flex items-center gap-2 text-foreground"><History className="h-5 w-5 text-primary"/> Forensic Disclosure</h3>
                     <p className="text-sm text-muted-foreground mb-4 text-left">Please disclose any active or previous credit constraints. Our matching engine selects lenders based on this criteria.</p>
                     <FormField control={methods.control} name="hasJudgements" render={({ field }) => (
-                        <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md">
+                        <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md text-left">
                             <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                            <FormLabel className="font-medium text-xs cursor-pointer">Do you have active judgements?</FormLabel>
+                            <FormLabel className="font-medium text-xs cursor-pointer text-left">Do you have active judgements?</FormLabel>
                         </FormItem>
                     )} />
                     <FormField control={methods.control} name="hasDefaults" render={({ field }) => (
-                        <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md">
+                        <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md text-left">
                             <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                            <FormLabel className="font-medium text-xs cursor-pointer">Do you have active defaults?</FormLabel>
+                            <FormLabel className="font-medium text-xs cursor-pointer text-left">Do you have active defaults?</FormLabel>
                         </FormItem>
                     )} />
                     <FormField control={methods.control} name="hasArrears" render={({ field }) => (
-                        <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md">
+                        <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md text-left">
                             <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                            <FormLabel className="font-medium text-xs cursor-pointer">Do you have accounts currently in arrears?</FormLabel>
+                            <FormLabel className="font-medium text-xs cursor-pointer text-left">Do you have accounts currently in arrears?</FormLabel>
                         </FormItem>
                     )} />
                 </div>

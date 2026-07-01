@@ -112,10 +112,10 @@ export default function LendingParametersContent() {
     if (isUserLoading) return <div className="flex justify-center p-20"><Loader2 className="animate-spin h-10 w-10 text-primary" /></div>;
 
     return (
-        <div className="space-y-6 text-left">
-            <div className="flex items-center gap-4 text-left">
+        <div className="space-y-6 text-left text-foreground">
+            <div className="flex items-center gap-4 text-left text-foreground">
                 <div className="bg-primary/10 p-3 rounded-xl text-left"><Landmark className="h-8 w-8 text-primary" /></div>
-                <div className="text-left">
+                <div className="text-left text-foreground">
                     <h1 className="text-3xl font-black font-headline text-left">Lending Focus & Portfolio</h1>
                     <p className="text-muted-foreground text-left">Define your credit appetite and the assets you are willing to finance.</p>
                 </div>
@@ -133,7 +133,7 @@ export default function LendingParametersContent() {
 
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)}>
-                    <Tabs defaultValue="criteria" className="w-full text-left">
+                    <Tabs defaultValue="criteria" className="w-full text-left text-foreground">
                         <TabsList className="grid w-full grid-cols-3 h-auto p-1 bg-muted/50 text-left">
                             <TabsTrigger value="criteria" className="py-2.5 font-bold uppercase tracking-widest text-[10px]">Financial Criteria</TabsTrigger>
                             <TabsTrigger value="risk" className="py-2.5 font-bold uppercase tracking-widest text-[10px]">Risk & Entity Focus</TabsTrigger>
@@ -143,7 +143,7 @@ export default function LendingParametersContent() {
                         <TabsContent value="criteria" className="mt-6 space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300 text-left">
                              <Card className="text-left">
                                 <CardHeader className="text-left"><CardTitle className="text-lg flex items-center gap-2 text-left"><Scale className="h-5 w-5 text-primary"/> Deal Size & Terms</CardTitle></CardHeader>
-                                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
+                                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground">
                                     <div className="space-y-4 text-left">
                                         <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 text-left">Deal Amount Range (ZAR)</Label>
                                         <div className="grid grid-cols-2 gap-4 text-left">
