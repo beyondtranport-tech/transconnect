@@ -1,7 +1,7 @@
 'use client';
 
 import React, { Suspense, useState, useEffect, useMemo } from 'react';
-import { useForm, FormProvider } from 'react-hook-form';
+import { useForm, FormProvider, useFormContext } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
@@ -16,8 +16,8 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Landmark, ArrowLeft, ArrowRight, Send, CheckCircle, ShieldCheck, Briefcase, History, Package, Sparkles } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Loader2, Landmark, ArrowLeft, ArrowRight, Send, CheckCircle, ShieldCheck, History, Package, Sparkles, Building, FileUp, ClipboardCheck, Info } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { useUser, getClientSideAuthToken, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -28,6 +28,7 @@ import { cn } from '@/lib/utils';
 import { doc } from 'firebase/firestore';
 import { supplierCategories } from '@/app/adminaccount/marketing/discovery-engine';
 import { Label } from '@/components/ui/label';
+import { Progress } from '@/components/ui/progress';
 
 const fundingNeeds = {
   'business': 'Working Capital / Business Loan',
@@ -69,9 +70,22 @@ const baseSchema = z.object({
   annualTurnover: z.coerce.number().min(0, 'Required.'),
   creditRating: z.string().min(1, 'Required.'),
   
+  // Intelligent Sub-Form Fields
+  registrationNumber: z.string().optional(),
+  companyLegalName: z.string().optional(),
+  registeredAddress: z.string().optional(),
+  directors: z.string().optional(),
+  shareholders: z.string().optional(),
+
+  // Document URLs
+  registrationDocUrl: z.string().optional(),
+  ficaDocUrl: z.string().optional(),
+  shareholderCertUrl: z.string().optional(),
+
   hasJudgements: z.boolean().default(false),
   hasDefaults: z.boolean().default(false),
   hasArrears: z.boolean().default(false),
+  apiConsent: z.boolean().default(false),
 
   assetCategory: z.string().optional(),
   assetBrand: z.string().optional(),
@@ -90,9 +104,9 @@ const baseSchema = z.object({
 });
 
 const combinedSchema = baseSchema.superRefine((data, ctx) => {
-    if (data.fundingNeed === 'vehicles' && data.foundVehicle === 'yes') {
-        if (!data.vehicleMake) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Required.", path: ["vehicleMake"] });
-        if (!data.vehicleModel) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Required.", path: ["vehicleModel"] });
+    if (data.entityType === 'Private Company (Pty Ltd)') {
+        if (!data.registrationNumber) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Required for companies.", path: ["registrationNumber"] });
+        if (!data.companyLegalName) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Required for companies.", path: ["companyLegalName"] });
     }
 });
 
@@ -100,13 +114,80 @@ type ApplicationFormValues = z.infer<typeof combinedSchema>;
 
 const staticSteps = [
   { id: 'Need', name: 'Step 1: Your Need', fields: ['fundingNeed'] },
-  { id: 'Profile', name: 'Step 2: Business Profile', fields: ['entityType', 'yearsInBusiness', 'annualTurnover', 'creditRating'] },
-  { id: 'History', name: 'Step 3: Credit History', fields: ['hasJudgements', 'hasDefaults', 'hasArrears'] },
+  { id: 'Profile', name: 'Step 2: Business Profile', fields: ['entityType', 'yearsInBusiness', 'annualTurnover', 'creditRating', 'registrationNumber', 'companyLegalName'] },
+  { id: 'History', name: 'Step 3: Credit History', fields: ['hasJudgements', 'hasDefaults', 'hasArrears', 'apiConsent'] },
   { id: 'Asset', name: 'Step 4: Asset Specifics', fields: ['assetCategory', 'assetBrand'] },
   { id: 'Reason', name: 'Step 5: The Reason', fields: ['fundingReason', 'purpose'] },
   { id: 'Amount', name: 'Step 6: Amount & Terms', fields: ['amountRequested', 'preferredTerm'] },
   { id: 'Submit', name: 'Final Step: Review' },
 ];
+
+function FileUploadField({ name, label, folder }: { name: any, label: string, folder: string }) {
+    const { setValue, watch } = useFormContext<ApplicationFormValues>();
+    const [isUploading, setIsUploading] = useState(false);
+    const [progress, setProgress] = useState(0);
+    const { user } = useUser();
+    const { toast } = useToast();
+    const currentUrl = watch(name);
+
+    const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file || !user) return;
+
+        setIsUploading(true);
+        setProgress(10);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Auth failed.");
+
+            const reader = new FileReader();
+            const dataUri = await new Promise<string>((resolve) => {
+                reader.onload = () => resolve(reader.result as string);
+                reader.readAsDataURL(file);
+            });
+
+            setProgress(30);
+            const fileName = `${name}_${Date.now()}_${file.name}`;
+            const res = await fetch('/api/uploadImageAsset', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ fileDataUri: dataUri, folder: `${folder}/${user.uid}`, fileName, contentType: file.type })
+            });
+
+            const result = await res.json();
+            if (!res.ok) throw new Error(result.error);
+
+            setValue(name, result.url, { shouldValidate: true });
+            setProgress(100);
+            toast({ title: `${label} Attached` });
+        } catch (err: any) {
+            toast({ variant: 'destructive', title: "Upload Failed", description: err.message });
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
+    return (
+        <div className="space-y-2 text-left">
+            <Label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{label}</Label>
+            <div className="flex items-center gap-3">
+                <Button 
+                    type="button" 
+                    variant="outline" 
+                    className={cn("h-10 gap-2 border-2", currentUrl ? "border-green-500 bg-green-50 text-green-700" : "border-dashed")}
+                    onClick={() => document.getElementById(`upload-${name}`)?.click()}
+                    disabled={isUploading}
+                >
+                    {isUploading ? <Loader2 className="h-4 w-4 animate-spin"/> : currentUrl ? <CheckCircle className="h-4 w-4" /> : <FileUp className="h-4 w-4" />}
+                    {currentUrl ? 'Update Document' : 'Attach Document'}
+                </Button>
+                <input id={`upload-${name}`} type="file" className="hidden" onChange={handleUpload} />
+                {currentUrl && <span className="text-[10px] font-mono text-muted-foreground truncate max-w-[150px]">Uploaded</span>}
+            </div>
+            {isUploading && <Progress value={progress} className="h-1" />}
+        </div>
+    );
+}
 
 function ApplyForm() {
   const { toast } = useToast();
@@ -125,13 +206,6 @@ function ApplyForm() {
   }, [firestore, user]);
   const { data: userData } = useDoc(userDocRef);
 
-  const enquiryRef = useMemoFirebase(() => {
-    if (!firestore || !userData?.companyId || !enquiryId) return null;
-    return doc(firestore, `companies/${userData.companyId}/enquiries`, enquiryId);
-  }, [firestore, userData, enquiryId]);
-
-  const { data: existingEnquiry, isLoading: isEnquiryLoading } = useDoc(enquiryRef);
-
   const methods = useForm<ApplicationFormValues>({
     resolver: zodResolver(combinedSchema),
     mode: 'onChange',
@@ -144,17 +218,13 @@ function ApplyForm() {
       hasJudgements: false,
       hasDefaults: false,
       hasArrears: false,
+      apiConsent: false,
       assetCategory: '',
       assetBrand: ''
     },
   });
 
-  useEffect(() => {
-    if (existingEnquiry) {
-      methods.reset(existingEnquiry);
-    }
-  }, [existingEnquiry, methods]);
-
+  const entityType = methods.watch('entityType');
   const fundingNeed = methods.watch('fundingNeed');
 
   const dynamicSteps = useMemo(() => {
@@ -197,17 +267,17 @@ function ApplyForm() {
     }
   };
   
-  if (isUserLoading || (enquiryId && isEnquiryLoading)) return <div className="flex justify-center p-20"><Loader2 className="animate-spin" /></div>;
+  if (isUserLoading) return <div className="flex justify-center p-20"><Loader2 className="animate-spin" /></div>;
 
   const currentStepConfig = dynamicSteps[currentStep];
 
   return (
-    <Card className="w-full max-w-2xl shadow-xl text-left">
+    <Card className="w-full max-w-2xl shadow-xl text-left border-none overflow-hidden">
       <CardHeader className="bg-slate-900 text-white rounded-t-xl p-8 text-left">
         <CardTitle className="flex items-center gap-2 text-left text-white"><Landmark className="text-primary"/> Forensic Funding Application</CardTitle>
         <CardDescription className="text-slate-400 text-left">{currentStepConfig.name}</CardDescription>
       </CardHeader>
-      <CardContent className="p-8 text-left">
+      <CardContent className="p-8 text-left bg-white">
         <FormProvider {...methods}>
           <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-8 text-left">
             
@@ -216,7 +286,7 @@ function ApplyForm() {
                     <FormItem className="text-left">
                       <FormLabel className="font-bold text-foreground">I require capital for:</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl><SelectTrigger className="h-12"><SelectValue placeholder="Select type..." /></SelectTrigger></FormControl>
+                        <FormControl><SelectTrigger className="h-12 border-2"><SelectValue placeholder="Select type..." /></SelectTrigger></FormControl>
                         <SelectContent>
                           {Object.entries(fundingNeeds).map(([id, name]) => (<SelectItem key={id} value={id}>{name}</SelectItem>))}
                         </SelectContent>
@@ -227,16 +297,39 @@ function ApplyForm() {
             )}
 
             {currentStepConfig.id === 'Profile' && (
-                <div className="space-y-6 text-left">
+                <div className="space-y-8 text-left">
                     <FormField control={methods.control} name="entityType" render={({ field }) => (
-                        <FormItem className="text-left"><FormLabel>Entity Type</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger></FormControl><SelectContent>{entityTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select></FormItem>
+                        <FormItem className="text-left"><FormLabel>Entity Type</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="border-2"><SelectValue placeholder="Select..." /></SelectTrigger></FormControl><SelectContent>{entityTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select></FormItem>
                     )} />
+
+                    {entityType === 'Private Company (Pty Ltd)' && (
+                        <div className="p-6 bg-slate-50 rounded-2xl border-2 border-dashed space-y-6 animate-in fade-in slide-in-from-top-4 duration-500">
+                             <div className="flex items-center gap-2 text-primary font-bold text-sm mb-4">
+                                <Building className="h-4 w-4" /> Corporate Discovery Required
+                             </div>
+                             <FormField control={methods.control} name="companyLegalName" render={({ field }) => (<FormItem><FormLabel>Registered Company Name</FormLabel><FormControl><Input placeholder="Legal name as per CIPC" {...field} className="bg-white border-2" /></FormControl></FormItem>)} />
+                             <div className="grid grid-cols-2 gap-4">
+                                <FormField control={methods.control} name="registrationNumber" render={({ field }) => (<FormItem><FormLabel>Registration Number</FormLabel><FormControl><Input placeholder="20XX/XXXXXX/07" {...field} className="bg-white border-2" /></FormControl></FormItem>)} />
+                                <FileUploadField name="registrationDocUrl" label="Registration Doc (CK)" folder="enquiry-docs" />
+                             </div>
+                             <FormField control={methods.control} name="registeredAddress" render={({ field }) => (<FormItem><FormLabel>Registered Address</FormLabel><FormControl><Textarea placeholder="Full address..." {...field} className="bg-white border-2" /></FormControl></FormItem>)} />
+                             <div className="grid grid-cols-2 gap-4">
+                                <FormField control={methods.control} name="directors" render={({ field }) => (<FormItem><FormLabel>Key Directors</FormLabel><FormControl><Input placeholder="Full names..." {...field} className="bg-white border-2" /></FormControl></FormItem>)} />
+                                <FileUploadField name="ficaDocUrl" label="FICA / Proof of Address" folder="enquiry-docs" />
+                             </div>
+                             <div className="grid grid-cols-2 gap-4">
+                                <FormField control={methods.control} name="shareholders" render={({ field }) => (<FormItem><FormLabel>Major Shareholders</FormLabel><FormControl><Input placeholder="Entities or individuals..." {...field} className="bg-white border-2" /></FormControl></FormItem>)} />
+                                <FileUploadField name="shareholderCertUrl" label="Shareholder Certificate" folder="enquiry-docs" />
+                             </div>
+                        </div>
+                    )}
+
                     <div className="grid grid-cols-2 gap-4 text-left">
-                        <FormField control={methods.control} name="yearsInBusiness" render={({ field }) => (<FormItem><FormLabel>Years in Business</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>)} />
-                        <FormField control={methods.control} name="annualTurnover" render={({ field }) => (<FormItem><FormLabel>Annual Turnover (R)</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>)} />
+                        <FormField control={methods.control} name="yearsInBusiness" render={({ field }) => (<FormItem><FormLabel>Years in Business</FormLabel><FormControl><Input type="number" {...field} className="border-2"/></FormControl></FormItem>)} />
+                        <FormField control={methods.control} name="annualTurnover" render={({ field }) => (<FormItem><FormLabel>Annual Turnover (R)</FormLabel><FormControl><Input type="number" {...field} className="border-2" /></FormControl></FormItem>)} />
                     </div>
                     <FormField control={methods.control} name="creditRating" render={({ field }) => (
-                        <FormItem className="text-left"><FormLabel>Self-Assessed Credit Standing</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Rate yourself..." /></SelectTrigger></FormControl><SelectContent>{creditRatings.map(r => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}</SelectContent></Select></FormItem>
+                        <FormItem className="text-left"><FormLabel>Self-Assessed Credit Standing</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="border-2"><SelectValue placeholder="Rate yourself..." /></SelectTrigger></FormControl><SelectContent>{creditRatings.map(r => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}</SelectContent></Select></FormItem>
                     )} />
                 </div>
             )}
@@ -246,74 +339,44 @@ function ApplyForm() {
                     <h3 className="font-bold text-lg flex items-center gap-2 text-foreground"><History className="h-5 w-5 text-primary"/> Forensic Disclosure</h3>
                     <p className="text-sm text-muted-foreground mb-4 text-left">Please provide a clear declaration regarding your business's credit history.</p>
                     
-                    <FormField control={methods.control} name="hasJudgements" render={({ field }) => (
-                        <FormItem className="space-y-3">
-                            <FormLabel className="text-sm font-semibold">Do you have any active judgements?</FormLabel>
-                            <FormControl>
-                                <RadioGroup
-                                    onValueChange={(val) => field.onChange(val === 'yes')}
-                                    value={field.value ? 'yes' : 'no'}
-                                    className="flex gap-4"
-                                >
-                                    <FormItem className="flex items-center space-x-2 space-y-0">
-                                        <FormControl><RadioGroupItem value="yes" /></FormControl>
-                                        <FormLabel className="font-normal cursor-pointer">Yes</FormLabel>
-                                    </FormItem>
-                                    <FormItem className="flex items-center space-x-2 space-y-0">
-                                        <FormControl><RadioGroupItem value="no" /></FormControl>
-                                        <FormLabel className="font-normal cursor-pointer">No</FormLabel>
-                                    </FormItem>
-                                </RadioGroup>
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )} />
+                    <div className="space-y-4">
+                        <FormField control={methods.control} name="hasJudgements" render={({ field }) => (
+                            <FormItem className="flex items-center justify-between p-4 border rounded-xl hover:bg-slate-50">
+                                <FormLabel className="font-bold cursor-pointer">Do you have any active judgements?</FormLabel>
+                                <FormControl><RadioGroup onValueChange={(val) => field.onChange(val === 'yes')} value={field.value ? 'yes' : 'no'} className="flex gap-4"><div className="flex items-center gap-1.5"><RadioGroupItem value="yes" /> Yes</div><div className="flex items-center gap-1.5"><RadioGroupItem value="no" /> No</div></RadioGroup></FormControl>
+                            </FormItem>
+                        )} />
 
-                    <FormField control={methods.control} name="hasDefaults" render={({ field }) => (
-                        <FormItem className="space-y-3">
-                            <FormLabel className="text-sm font-semibold">Do you have any active defaults?</FormLabel>
-                            <FormControl>
-                                <RadioGroup
-                                    onValueChange={(val) => field.onChange(val === 'yes')}
-                                    value={field.value ? 'yes' : 'no'}
-                                    className="flex gap-4"
-                                >
-                                    <FormItem className="flex items-center space-x-2 space-y-0">
-                                        <FormControl><RadioGroupItem value="yes" /></FormControl>
-                                        <FormLabel className="font-normal cursor-pointer">Yes</FormLabel>
-                                    </FormItem>
-                                    <FormItem className="flex items-center space-x-2 space-y-0">
-                                        <FormControl><RadioGroupItem value="no" /></FormControl>
-                                        <FormLabel className="font-normal cursor-pointer">No</FormLabel>
-                                    </FormItem>
-                                </RadioGroup>
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )} />
+                        <FormField control={methods.control} name="hasDefaults" render={({ field }) => (
+                             <FormItem className="flex items-center justify-between p-4 border rounded-xl hover:bg-slate-50">
+                                <FormLabel className="font-bold cursor-pointer">Do you have any active defaults?</FormLabel>
+                                <FormControl><RadioGroup onValueChange={(val) => field.onChange(val === 'yes')} value={field.value ? 'yes' : 'no'} className="flex gap-4"><div className="flex items-center gap-1.5"><RadioGroupItem value="yes" /> Yes</div><div className="flex items-center gap-1.5"><RadioGroupItem value="no" /> No</div></RadioGroup></FormControl>
+                            </FormItem>
+                        )} />
+                        
+                        <FormField control={methods.control} name="hasArrears" render={({ field }) => (
+                             <FormItem className="flex items-center justify-between p-4 border rounded-xl hover:bg-slate-50">
+                                <FormLabel className="font-bold cursor-pointer">Are any accounts in arrears?</FormLabel>
+                                <FormControl><RadioGroup onValueChange={(val) => field.onChange(val === 'yes')} value={field.value ? 'yes' : 'no'} className="flex gap-4"><div className="flex items-center gap-1.5"><RadioGroupItem value="yes" /> Yes</div><div className="flex items-center gap-1.5"><RadioGroupItem value="no" /> No</div></RadioGroup></FormControl>
+                            </FormItem>
+                        )} />
+                    </div>
+
+                    <Separator />
                     
-                    <FormField control={methods.control} name="hasArrears" render={({ field }) => (
-                        <FormItem className="space-y-3">
-                            <FormLabel className="text-sm font-semibold">Are any accounts currently in arrears?</FormLabel>
-                            <FormControl>
-                                <RadioGroup
-                                    onValueChange={(val) => field.onChange(val === 'yes')}
-                                    value={field.value ? 'yes' : 'no'}
-                                    className="flex gap-4"
-                                >
-                                    <FormItem className="flex items-center space-x-2 space-y-0">
-                                        <FormControl><RadioGroupItem value="yes" /></FormControl>
-                                        <FormLabel className="font-normal cursor-pointer">Yes</FormLabel>
-                                    </FormItem>
-                                    <FormItem className="flex items-center space-x-2 space-y-0">
-                                        <FormControl><RadioGroupItem value="no" /></FormControl>
-                                        <FormLabel className="font-normal cursor-pointer">No</FormLabel>
-                                    </FormItem>
-                                </RadioGroup>
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )} />
+                    <div className="bg-primary/5 p-6 rounded-2xl border-2 border-primary/20 space-y-4">
+                         <div className="flex items-center gap-2">
+                             <Sparkles className="h-5 w-5 text-primary" />
+                             <h4 className="font-bold text-primary">Automated Credit Analysis</h4>
+                         </div>
+                         <p className="text-xs text-muted-foreground leading-relaxed">By authorizing a credit check, you significantly increase the speed of matching and the likelihood of approval. Our system will securely connect to our credit bureau partners.</p>
+                         <FormField control={methods.control} name="apiConsent" render={({ field }) => (
+                            <FormItem className="flex items-center space-x-3 space-y-0">
+                                <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange}/></FormControl>
+                                <FormLabel className="text-sm font-bold text-slate-800 cursor-pointer">Authorise Logistics Flow to fetch credit data via API</FormLabel>
+                            </FormItem>
+                         )} />
+                    </div>
                 </div>
             )}
 
@@ -324,7 +387,7 @@ function ApplyForm() {
                         <FormItem className="text-left">
                             <FormLabel>Industrial Category</FormLabel>
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl><SelectTrigger><SelectValue placeholder="Select asset type..." /></SelectTrigger></FormControl>
+                                <FormControl><SelectTrigger className="border-2"><SelectValue placeholder="Select asset type..." /></SelectTrigger></FormControl>
                                 <SelectContent>
                                     {supplierCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
                                 </SelectContent>
@@ -335,7 +398,7 @@ function ApplyForm() {
                         <FormItem className="text-left">
                             <FormLabel>Preferred Brand</FormLabel>
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl><SelectTrigger><SelectValue placeholder="Select brand..." /></SelectTrigger></FormControl>
+                                <FormControl><SelectTrigger className="border-2"><SelectValue placeholder="Select brand..." /></SelectTrigger></FormControl>
                                 <SelectContent>
                                     {brandOptions.map(brand => <SelectItem key={brand} value={brand}>{brand}</SelectItem>)}
                                 </SelectContent>
@@ -351,14 +414,14 @@ function ApplyForm() {
                         <FormItem className="space-y-3 text-left">
                           <FormLabel className="font-bold text-foreground">Is this for problem solving or capturing opportunity?</FormLabel>
                           <FormControl>
-                            <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-col space-y-1 text-left">
-                                <FormItem className="flex items-center space-x-3 space-y-0"><FormControl><RadioGroupItem value="problem" /></FormControl><FormLabel className="font-normal cursor-pointer">Problem / Recovery</FormLabel></FormItem>
-                                <FormItem className="flex items-center space-x-3 space-y-0"><FormControl><RadioGroupItem value="opportunity" /></FormControl><FormLabel className="font-normal cursor-pointer">Growth / Opportunity</FormLabel></FormItem>
+                            <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-col space-y-2 text-left">
+                                <div className="flex items-center gap-2 p-3 border rounded-lg cursor-pointer hover:bg-slate-50"><RadioGroupItem value="problem" id="r-prob" /> <Label htmlFor="problem" className="cursor-pointer">Problem / Recovery</Label></div>
+                                <div className="flex items-center gap-2 p-3 border rounded-lg cursor-pointer hover:bg-slate-50"><RadioGroupItem value="opportunity" id="r-opp" /> <Label htmlFor="opportunity" className="cursor-pointer">Growth / Opportunity</Label></div>
                             </RadioGroup>
                           </FormControl>
                         </FormItem>
                       )} />
-                    <FormField control={methods.control} name="purpose" render={({ field }) => (<FormItem className="text-left"><FormLabel>Brief Technical Summary</FormLabel><FormControl><Textarea placeholder="Explain exactly how these funds will be deployed..." {...field} /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={methods.control} name="purpose" render={({ field }) => (<FormItem className="text-left"><FormLabel>Brief Technical Summary</FormLabel><FormControl><Textarea placeholder="Explain exactly how these funds will be deployed..." {...field} className="border-2" /></FormControl><FormMessage /></FormItem>)} />
                 </div>
             )}
 
@@ -367,14 +430,14 @@ function ApplyForm() {
                     <FormField control={methods.control} name="amountRequested" render={({ field }) => (
                         <FormItem className="text-left">
                         <FormLabel className="text-lg font-bold text-foreground">Estimated Amount (ZAR)</FormLabel>
-                        <FormControl><Input type="number" className="h-12 text-xl font-mono" placeholder="500000" {...field} /></FormControl>
+                        <FormControl><Input type="number" className="h-14 text-2xl font-black font-mono border-primary/20" placeholder="500000" {...field} /></FormControl>
                         </FormItem>
                     )} />
                     <FormField control={methods.control} name="preferredTerm" render={({ field }) => (
                         <FormItem className="text-left">
                             <FormLabel>Preferred Repayment Term</FormLabel>
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl><SelectTrigger><SelectValue placeholder="Select term..." /></SelectTrigger></FormControl>
+                                <FormControl><SelectTrigger className="border-2"><SelectValue placeholder="Select term..." /></SelectTrigger></FormControl>
                                 <SelectContent>
                                     {termOptions.map(term => <SelectItem key={term} value={term}>{term}</SelectItem>)}
                                 </SelectContent>
@@ -384,12 +447,12 @@ function ApplyForm() {
                 </div>
             )}
             
-            <div className="flex justify-between items-center pt-6 border-t text-left">
-              <Button type="button" variant="outline" onClick={() => setCurrentStep(currentStep - 1)} disabled={currentStep === 0}><ArrowLeft className="mr-2 h-4 w-4" /> Back</Button>
+            <div className="flex justify-between items-center pt-8 border-t text-left">
+              <Button type="button" variant="outline" onClick={() => setCurrentStep(currentStep - 1)} disabled={currentStep === 0} className="h-12 px-8 font-bold"><ArrowLeft className="mr-2 h-4 w-4" /> Back</Button>
               {currentStep < dynamicSteps.length - 1 ? (
-                <Button type="button" onClick={processStep}>Next <ArrowRight className="ml-2 h-4 w-4" /></Button>
+                <Button type="button" onClick={processStep} className="h-12 px-10 font-bold">Next <ArrowRight className="ml-2 h-4 w-4" /></Button>
               ) : (
-                <Button type="submit" disabled={isSubmitting} className="bg-primary hover:bg-primary/90 shadow-lg">
+                <Button type="submit" disabled={isSubmitting} className="h-12 bg-primary hover:bg-primary/90 shadow-lg font-black uppercase tracking-tight">
                     {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShieldCheck className="mr-2 h-4 w-4" />}
                     Analyze & Match Application
                 </Button>
@@ -404,8 +467,8 @@ function ApplyForm() {
 
 export default function ApplyPage() {
     return (
-        <div className="container mx-auto flex min-h-screen items-center justify-center px-4 py-20 text-left">
-            <Suspense fallback={<Loader2 className="animate-spin" />}><ApplyForm /></Suspense>
+        <div className="container mx-auto flex min-h-screen items-center justify-center px-4 py-20 text-left bg-slate-50">
+            <Suspense fallback={<Loader2 className="animate-spin h-12 w-12 text-primary" />}><ApplyForm /></Suspense>
         </div>
     )
 }
