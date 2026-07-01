@@ -242,7 +242,7 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
     const contentElement = document.getElementById(contentId);
 
     if (contentElement) {
-        // Use resilient hidden element utility instead of new ClipboardItem()
+        // FIXED: Replaced 'new ClipboardItem' (Illegal constructor) with resilient utility
         const success = await copyHtmlToClipboard(contentElement.innerHTML);
         if (!success) {
             throw new Error('Your browser may not support this feature, or there was an error.');
