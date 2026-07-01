@@ -1,7 +1,7 @@
 'use client';
 
 import React, { Suspense, useState, useEffect, useMemo } from 'react';
-import { useForm, FormProvider, useFormContext } from 'react-hook-form';
+import { useForm, FormProvider, useFormContext, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Landmark, ArrowLeft, ArrowRight, Send, CheckCircle, ShieldCheck, History, Package, Sparkles, Building, FileUp, ClipboardCheck, Info } from 'lucide-react';
+import { Loader2, Landmark, ArrowLeft, ArrowRight, Send, CheckCircle, ShieldCheck, History, Package, Sparkles, Building, FileUp, ClipboardCheck, Info, Users, PlusCircle, Trash2, UserCheck } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { useUser, getClientSideAuthToken, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -29,6 +29,7 @@ import { doc } from 'firebase/firestore';
 import { supplierCategories } from '@/app/adminaccount/marketing/discovery-engine';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
+import { Separator } from '@/components/ui/separator';
 
 const fundingNeeds = {
   'business': 'Working Capital / Business Loan',
@@ -57,6 +58,14 @@ const creditRatings = [
 const brandOptions = ['Scania', 'Volvo', 'Mercedes-Benz', 'MAN', 'Freightliner', 'Iveco', 'DAF', 'UD Trucks', 'Isuzu', 'Hino', 'Toyota (Bakkie)', 'Universal/All'];
 const termOptions = ['1-12 Months', '12-24 Months', '24-36 Months', '36-48 Months', '48-60 Months', '60-72+ Months'];
 
+const stakeholderSchema = z.object({
+    name: z.string().min(1, "Full Name required."),
+    position: z.string().min(1, "Position required."),
+    since: z.string().min(1, "Date or Year required."),
+    rsaIdUrl: z.string().optional(),
+    proofAddressUrl: z.string().optional(),
+});
+
 const baseSchema = z.object({
   fundingNeed: z.string().min(1, 'Please select what you need funds for.'),
   fundingReason: z.string().min(1, 'Please select a reason.'),
@@ -64,23 +73,24 @@ const baseSchema = z.object({
   amountRequested: z.coerce.number().positive('Please enter a valid amount.'),
   preferredTerm: z.string().min(1, 'Required.'),
   
-  // Forensic Variables for Matching
+  // Forensic Variables
   entityType: z.string().min(1, 'Please select your entity type.'),
   yearsInBusiness: z.coerce.number().min(0, 'Required.'),
   annualTurnover: z.coerce.number().min(0, 'Required.'),
   creditRating: z.string().min(1, 'Required.'),
   
-  // Intelligent Sub-Form Fields
+  // Corporate Discovery
   registrationNumber: z.string().optional(),
   companyLegalName: z.string().optional(),
   registeredAddress: z.string().optional(),
-  directors: z.string().optional(),
-  shareholders: z.string().optional(),
+  
+  // Dynamic Stakeholders
+  directors: z.array(stakeholderSchema).optional().default([]),
+  shareholders: z.array(stakeholderSchema).optional().default([]),
 
-  // Document URLs
+  // Core Document URLs
   registrationDocUrl: z.string().optional(),
   ficaDocUrl: z.string().optional(),
-  shareholderCertUrl: z.string().optional(),
 
   hasJudgements: z.boolean().default(false),
   hasDefaults: z.boolean().default(false),
@@ -105,8 +115,8 @@ const baseSchema = z.object({
 
 const combinedSchema = baseSchema.superRefine((data, ctx) => {
     if (data.entityType === 'Private Company (Pty Ltd)') {
-        if (!data.registrationNumber) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Required for companies.", path: ["registrationNumber"] });
-        if (!data.companyLegalName) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Required for companies.", path: ["companyLegalName"] });
+        if (!data.registrationNumber) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Required.", path: ["registrationNumber"] });
+        if (!data.companyLegalName) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Required.", path: ["companyLegalName"] });
     }
 });
 
@@ -114,7 +124,7 @@ type ApplicationFormValues = z.infer<typeof combinedSchema>;
 
 const staticSteps = [
   { id: 'Need', name: 'Step 1: Your Need', fields: ['fundingNeed'] },
-  { id: 'Profile', name: 'Step 2: Business Profile', fields: ['entityType', 'yearsInBusiness', 'annualTurnover', 'creditRating', 'registrationNumber', 'companyLegalName'] },
+  { id: 'Profile', name: 'Step 2: Business Profile', fields: ['entityType', 'yearsInBusiness', 'annualTurnover', 'creditRating', 'registrationNumber', 'companyLegalName', 'directors', 'shareholders'] },
   { id: 'History', name: 'Step 3: Credit History', fields: ['hasJudgements', 'hasDefaults', 'hasArrears', 'apiConsent'] },
   { id: 'Asset', name: 'Step 4: Asset Specifics', fields: ['assetCategory', 'assetBrand'] },
   { id: 'Reason', name: 'Step 5: The Reason', fields: ['fundingReason', 'purpose'] },
@@ -122,7 +132,7 @@ const staticSteps = [
   { id: 'Submit', name: 'Final Step: Review' },
 ];
 
-function FileUploadField({ name, label, folder }: { name: any, label: string, folder: string }) {
+function FileUploadField({ name, label, folder, variant = 'standard' }: { name: any, label: string, folder: string, variant?: 'standard' | 'compact' }) {
     const { setValue, watch } = useFormContext<ApplicationFormValues>();
     const [isUploading, setIsUploading] = useState(false);
     const [progress, setProgress] = useState(0);
@@ -147,7 +157,7 @@ function FileUploadField({ name, label, folder }: { name: any, label: string, fo
             });
 
             setProgress(30);
-            const fileName = `${name}_${Date.now()}_${file.name}`;
+            const fileName = `${name.replace(/\./g, '_')}_${Date.now()}_${file.name}`;
             const res = await fetch('/api/uploadImageAsset', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -168,23 +178,81 @@ function FileUploadField({ name, label, folder }: { name: any, label: string, fo
     };
 
     return (
-        <div className="space-y-2 text-left">
-            <Label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{label}</Label>
-            <div className="flex items-center gap-3">
+        <div className="space-y-1.5 text-left">
+            {variant === 'standard' && <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">{label}</Label>}
+            <div className="flex items-center gap-2">
                 <Button 
                     type="button" 
                     variant="outline" 
-                    className={cn("h-10 gap-2 border-2", currentUrl ? "border-green-500 bg-green-50 text-green-700" : "border-dashed")}
+                    size={variant === 'compact' ? 'sm' : 'default'}
+                    className={cn(
+                        "h-10 gap-2 border-2 text-xs font-bold", 
+                        currentUrl ? "border-green-500 bg-green-50 text-green-700" : "border-dashed",
+                        variant === 'compact' && "h-8 px-3"
+                    )}
                     onClick={() => document.getElementById(`upload-${name}`)?.click()}
                     disabled={isUploading}
                 >
-                    {isUploading ? <Loader2 className="h-4 w-4 animate-spin"/> : currentUrl ? <CheckCircle className="h-4 w-4" /> : <FileUp className="h-4 w-4" />}
-                    {currentUrl ? 'Update Document' : 'Attach Document'}
+                    {isUploading ? <Loader2 className="h-3 w-3 animate-spin"/> : currentUrl ? <UserCheck className="h-4 w-4" /> : <FileUp className="h-4 w-4" />}
+                    {currentUrl ? `Update ${label}` : `Attach ${label}`}
                 </Button>
                 <input id={`upload-${name}`} type="file" className="hidden" onChange={handleUpload} />
-                {currentUrl && <span className="text-[10px] font-mono text-muted-foreground truncate max-w-[150px]">Uploaded</span>}
             </div>
-            {isUploading && <Progress value={progress} className="h-1" />}
+            {isUploading && <Progress value={progress} className="h-1 mt-1" />}
+        </div>
+    );
+}
+
+function StakeholderForm({ type, label }: { type: 'directors' | 'shareholders', label: string }) {
+    const { control } = useFormContext<ApplicationFormValues>();
+    const { fields, append, remove, replace } = useFieldArray({ control, name: type });
+    const [count, setCount] = useState(fields.length || 0);
+
+    const handleCountChange = (val: string) => {
+        const num = parseInt(val, 10) || 0;
+        setCount(num);
+        const currentItems = [...fields];
+        if (num > currentItems.length) {
+            for (let i = currentItems.length; i < num; i++) append({ name: '', position: '', since: '', idUrl: '', addressUrl: '' });
+        } else if (num < currentItems.length) {
+            for (let i = currentItems.length - 1; i >= num; i--) remove(i);
+        }
+    };
+
+    return (
+        <div className="space-y-6">
+            <div className="flex items-center justify-between bg-muted/30 p-3 rounded-lg">
+                <Label className="font-bold flex items-center gap-2">
+                    <Users className="h-4 w-4 text-primary" />
+                    Number of {label}
+                </Label>
+                <Select value={String(count)} onValueChange={handleCountChange}>
+                    <SelectTrigger className="w-24 bg-white"><SelectValue placeholder="0" /></SelectTrigger>
+                    <SelectContent>
+                        {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => <SelectItem key={n} value={String(n)}>{n}</SelectItem>)}
+                    </SelectContent>
+                </Select>
+            </div>
+
+            {fields.map((field, index) => (
+                <div key={field.id} className="p-6 border-2 border-dashed rounded-2xl bg-white space-y-6 animate-in fade-in slide-in-from-top-2">
+                    <div className="flex items-center justify-between border-b pb-4">
+                        <Badge variant="secondary" className="font-black uppercase text-[10px] tracking-widest">{label} {index + 1}</Badge>
+                        <Button type="button" variant="ghost" size="icon" onClick={() => { remove(index); setCount(count - 1); }} className="h-8 w-8 text-destructive"><Trash2 className="h-4 w-4"/></Button>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <FormField control={control} name={`${type}.${index}.name` as any} render={({ field }) => (<FormItem><FormLabel>Full Legal Name</FormLabel><FormControl><Input {...field} className="h-9 border-2" /></FormControl></FormItem>)} />
+                        <FormField control={control} name={`${type}.${index}.position` as any} render={({ field }) => (<FormItem><FormLabel>Position / Role</FormLabel><FormControl><Input {...field} className="h-9 border-2" /></FormControl></FormItem>)} />
+                        <FormField control={control} name={`${type}.${index}.since` as any} render={({ field }) => (<FormItem><FormLabel>Member Since</FormLabel><FormControl><Input {...field} className="h-9 border-2" placeholder="e.g. 2018" /></FormControl></FormItem>)} />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2">
+                        <FileUploadField name={`${type}.${index}.rsaIdUrl`} label="RSA Identity Document" folder="stakeholder-ids" variant="standard" />
+                        <FileUploadField name={`${type}.${index}.proofAddressUrl`} label="Proof of Residential Address" folder="stakeholder-address" variant="standard" />
+                    </div>
+                </div>
+            ))}
         </div>
     );
 }
@@ -220,7 +288,9 @@ function ApplyForm() {
       hasArrears: false,
       apiConsent: false,
       assetCategory: '',
-      assetBrand: ''
+      assetBrand: '',
+      directors: [],
+      shareholders: []
     },
   });
 
@@ -303,23 +373,37 @@ function ApplyForm() {
                     )} />
 
                     {entityType === 'Private Company (Pty Ltd)' && (
-                        <div className="p-6 bg-slate-50 rounded-2xl border-2 border-dashed space-y-6 animate-in fade-in slide-in-from-top-4 duration-500">
+                        <div className="p-6 bg-slate-50 rounded-2xl border-2 border-dashed space-y-10 animate-in fade-in slide-in-from-top-4 duration-500">
                              <div className="flex items-center gap-2 text-primary font-bold text-sm mb-4">
-                                <Building className="h-4 w-4" /> Corporate Discovery Required
+                                <Building className="h-4 w-4" /> Corporate Discovery Module
                              </div>
-                             <FormField control={methods.control} name="companyLegalName" render={({ field }) => (<FormItem><FormLabel>Registered Company Name</FormLabel><FormControl><Input placeholder="Legal name as per CIPC" {...field} className="bg-white border-2" /></FormControl></FormItem>)} />
-                             <div className="grid grid-cols-2 gap-4">
-                                <FormField control={methods.control} name="registrationNumber" render={({ field }) => (<FormItem><FormLabel>Registration Number</FormLabel><FormControl><Input placeholder="20XX/XXXXXX/07" {...field} className="bg-white border-2" /></FormControl></FormItem>)} />
-                                <FileUploadField name="registrationDocUrl" label="Registration Doc (CK)" folder="enquiry-docs" />
+                             
+                             <div className="space-y-6">
+                                <FormField control={methods.control} name="companyLegalName" render={({ field }) => (<FormItem><FormLabel>Registered Company Name</FormLabel><FormControl><Input placeholder="Legal name as per CIPC" {...field} className="bg-white border-2" /></FormControl></FormItem>)} />
+                                <div className="grid grid-cols-2 gap-4">
+                                    <FormField control={methods.control} name="registrationNumber" render={({ field }) => (<FormItem><FormLabel>Registration Number</FormLabel><FormControl><Input placeholder="20XX/XXXXXX/07" {...field} className="bg-white border-2" /></FormControl></FormItem>)} />
+                                    <FileUploadField name="registrationDocUrl" label="Registration Doc (CK)" folder="enquiry-docs" />
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <FormField control={methods.control} name="registeredAddress" render={({ field }) => (<FormItem><FormLabel>Registered Address</FormLabel><FormControl><Textarea placeholder="Full address..." {...field} className="bg-white border-2" /></FormControl></FormItem>)} />
+                                    <FileUploadField name="ficaDocUrl" label="Company FICA / Proof of Address" folder="enquiry-docs" />
+                                </div>
                              </div>
-                             <FormField control={methods.control} name="registeredAddress" render={({ field }) => (<FormItem><FormLabel>Registered Address</FormLabel><FormControl><Textarea placeholder="Full address..." {...field} className="bg-white border-2" /></FormControl></FormItem>)} />
-                             <div className="grid grid-cols-2 gap-4">
-                                <FormField control={methods.control} name="directors" render={({ field }) => (<FormItem><FormLabel>Key Directors</FormLabel><FormControl><Input placeholder="Full names..." {...field} className="bg-white border-2" /></FormControl></FormItem>)} />
-                                <FileUploadField name="ficaDocUrl" label="FICA / Proof of Address" folder="enquiry-docs" />
-                             </div>
-                             <div className="grid grid-cols-2 gap-4">
-                                <FormField control={methods.control} name="shareholders" render={({ field }) => (<FormItem><FormLabel>Major Shareholders</FormLabel><FormControl><Input placeholder="Entities or individuals..." {...field} className="bg-white border-2" /></FormControl></FormItem>)} />
-                                <FileUploadField name="shareholderCertUrl" label="Shareholder Certificate" folder="enquiry-docs" />
+
+                             <Separator />
+
+                             <div className="space-y-8">
+                                <div className="space-y-2">
+                                    <h4 className="font-black uppercase text-[10px] tracking-[0.2em] text-primary">Governance: Key Directors</h4>
+                                    <StakeholderForm type="directors" label="Directors" />
+                                </div>
+
+                                <Separator />
+
+                                <div className="space-y-2">
+                                    <h4 className="font-black uppercase text-[10px] tracking-[0.2em] text-primary">Equity: Major Shareholders</h4>
+                                    <StakeholderForm type="shareholders" label="Shareholders" />
+                                </div>
                              </div>
                         </div>
                     )}
@@ -341,23 +425,23 @@ function ApplyForm() {
                     
                     <div className="space-y-4">
                         <FormField control={methods.control} name="hasJudgements" render={({ field }) => (
-                            <FormItem className="flex items-center justify-between p-4 border rounded-xl hover:bg-slate-50">
+                            <FormItem className="flex items-center justify-between p-4 border rounded-xl hover:bg-slate-50 transition-colors">
                                 <FormLabel className="font-bold cursor-pointer">Do you have any active judgements?</FormLabel>
-                                <FormControl><RadioGroup onValueChange={(val) => field.onChange(val === 'yes')} value={field.value ? 'yes' : 'no'} className="flex gap-4"><div className="flex items-center gap-1.5"><RadioGroupItem value="yes" /> Yes</div><div className="flex items-center gap-1.5"><RadioGroupItem value="no" /> No</div></RadioGroup></FormControl>
+                                <FormControl><RadioGroup onValueChange={(val) => field.onChange(val === 'yes')} value={field.value ? 'yes' : 'no'} className="flex gap-4"><div className="flex items-center gap-1.5"><RadioGroupItem value="yes" id="j-yes" /><Label htmlFor="j-yes" className="cursor-pointer">Yes</Label></div><div className="flex items-center gap-1.5"><RadioGroupItem value="no" id="j-no" /><Label htmlFor="j-no" className="cursor-pointer">No</Label></div></RadioGroup></FormControl>
                             </FormItem>
                         )} />
 
                         <FormField control={methods.control} name="hasDefaults" render={({ field }) => (
-                             <FormItem className="flex items-center justify-between p-4 border rounded-xl hover:bg-slate-50">
+                             <FormItem className="flex items-center justify-between p-4 border rounded-xl hover:bg-slate-50 transition-colors">
                                 <FormLabel className="font-bold cursor-pointer">Do you have any active defaults?</FormLabel>
-                                <FormControl><RadioGroup onValueChange={(val) => field.onChange(val === 'yes')} value={field.value ? 'yes' : 'no'} className="flex gap-4"><div className="flex items-center gap-1.5"><RadioGroupItem value="yes" /> Yes</div><div className="flex items-center gap-1.5"><RadioGroupItem value="no" /> No</div></RadioGroup></FormControl>
+                                <FormControl><RadioGroup onValueChange={(val) => field.onChange(val === 'yes')} value={field.value ? 'yes' : 'no'} className="flex gap-4"><div className="flex items-center gap-1.5"><RadioGroupItem value="yes" id="d-yes" /><Label htmlFor="d-yes" className="cursor-pointer">Yes</Label></div><div className="flex items-center gap-1.5"><RadioGroupItem value="no" id="d-no" /><Label htmlFor="d-no" className="cursor-pointer">No</Label></div></RadioGroup></FormControl>
                             </FormItem>
                         )} />
                         
                         <FormField control={methods.control} name="hasArrears" render={({ field }) => (
-                             <FormItem className="flex items-center justify-between p-4 border rounded-xl hover:bg-slate-50">
+                             <FormItem className="flex items-center justify-between p-4 border rounded-xl hover:bg-slate-50 transition-colors">
                                 <FormLabel className="font-bold cursor-pointer">Are any accounts in arrears?</FormLabel>
-                                <FormControl><RadioGroup onValueChange={(val) => field.onChange(val === 'yes')} value={field.value ? 'yes' : 'no'} className="flex gap-4"><div className="flex items-center gap-1.5"><RadioGroupItem value="yes" /> Yes</div><div className="flex items-center gap-1.5"><RadioGroupItem value="no" /> No</div></RadioGroup></FormControl>
+                                <FormControl><RadioGroup onValueChange={(val) => field.onChange(val === 'yes')} value={field.value ? 'yes' : 'no'} className="flex gap-4"><div className="flex items-center gap-1.5"><RadioGroupItem value="yes" id="a-yes" /><Label htmlFor="a-yes" className="cursor-pointer">Yes</Label></div><div className="flex items-center gap-1.5"><RadioGroupItem value="no" id="a-no" /><Label htmlFor="a-no" className="cursor-pointer">No</Label></div></RadioGroup></FormControl>
                             </FormItem>
                         )} />
                     </div>
@@ -415,13 +499,19 @@ function ApplyForm() {
                           <FormLabel className="font-bold text-foreground">Is this for problem solving or capturing opportunity?</FormLabel>
                           <FormControl>
                             <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-col space-y-2 text-left">
-                                <div className="flex items-center gap-2 p-3 border rounded-lg cursor-pointer hover:bg-slate-50"><RadioGroupItem value="problem" id="r-prob" /> <Label htmlFor="problem" className="cursor-pointer">Problem / Recovery</Label></div>
-                                <div className="flex items-center gap-2 p-3 border rounded-lg cursor-pointer hover:bg-slate-50"><RadioGroupItem value="opportunity" id="r-opp" /> <Label htmlFor="opportunity" className="cursor-pointer">Growth / Opportunity</Label></div>
+                                <div className="flex items-center gap-2 p-3 border rounded-lg cursor-pointer hover:bg-slate-50 transition-colors">
+                                    <RadioGroupItem value="problem" id="r-prob" /> 
+                                    <Label htmlFor="r-prob" className="cursor-pointer flex-1 font-medium">Problem / Recovery</Label>
+                                </div>
+                                <div className="flex items-center gap-2 p-3 border rounded-lg cursor-pointer hover:bg-slate-50 transition-colors">
+                                    <RadioGroupItem value="opportunity" id="r-opp" /> 
+                                    <Label htmlFor="r-opp" className="cursor-pointer flex-1 font-medium">Growth / Opportunity</Label>
+                                </div>
                             </RadioGroup>
                           </FormControl>
                         </FormItem>
                       )} />
-                    <FormField control={methods.control} name="purpose" render={({ field }) => (<FormItem className="text-left"><FormLabel>Brief Technical Summary</FormLabel><FormControl><Textarea placeholder="Explain exactly how these funds will be deployed..." {...field} className="border-2" /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={methods.control} name="purpose" render={({ field }) => (<FormItem className="text-left"><FormLabel>Brief Technical Summary</FormLabel><FormControl><Textarea placeholder="Explain exactly how these funds will be deployed..." {...field} className="border-2 min-h-[120px]" /></FormControl><FormMessage /></FormItem>)} />
                 </div>
             )}
 
