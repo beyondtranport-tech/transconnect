@@ -1,10 +1,9 @@
-
 'use client';
 
 import { useUser, useFirestore, useDoc } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Award, Gem, Loader2, HeartHandshake, ArrowRight, Sparkles, Wallet, ShieldAlert, Star, CheckCircle, ShieldCheck, Landmark, Globe, Zap, Link as LinkIcon, Copy, Lock } from "lucide-react";
+import { Award, Gem, Loader2, HeartHandshake, ArrowRight, Sparkles, Wallet, ShieldAlert, Star, CheckCircle, ShieldCheck, Landmark, Globe, Zap, Link as LinkIcon, Copy, Lock, Truck } from "lucide-react";
 import { doc, collection, query, limit } from 'firebase/firestore';
 import Link from 'next/link';
 import { useMemo } from 'react';
@@ -91,18 +90,18 @@ export default function AccountDashboard() {
     
     if (error) {
         return (
-            <div className="flex justify-center items-center min-h-[calc(100vh-8rem)] w-full text-left">
-                <Card className="m-4 w-full max-w-2xl text-left shadow-lg border-destructive/20 text-foreground">
-                    <CardHeader className="text-left border-b bg-destructive/5 text-foreground">
-                        <CardTitle className="text-destructive text-left flex items-center gap-2">
+            <div className="flex justify-center items-center min-h-[calc(100vh-8rem)] w-full">
+                <Card className="m-4 w-full max-w-2xl shadow-lg border-destructive/20">
+                    <CardHeader className="border-b bg-destructive/5">
+                        <CardTitle className="text-destructive flex items-center gap-2">
                             <ShieldAlert className="h-5 w-5" /> Error Loading Dashboard
                         </CardTitle>
                     </CardHeader>
-                    <CardContent className="text-left p-8 text-foreground">
-                        <p className="text-left font-medium">There was a problem fetching your account data.</p>
-                        <p className="text-xs text-muted-foreground mt-2 text-left bg-muted p-2 rounded font-mono">{error.message}</p>
+                    <CardContent className="p-8">
+                        <p className="font-medium text-left">There was a problem fetching your account data.</p>
+                        <p className="text-xs text-muted-foreground mt-2 bg-muted p-2 rounded font-mono text-left">{error.message}</p>
                     </CardContent>
-                    <CardFooter className="text-left border-t pt-6">
+                    <CardFooter className="border-t pt-6">
                         <Button onClick={() => window.location.reload()}>Try Again</Button>
                     </CardFooter>
                 </Card>
@@ -113,31 +112,31 @@ export default function AccountDashboard() {
     if (!user) return null;
 
     return (
-        <div className="w-full space-y-8 text-left text-foreground">
-            <div className="flex items-center gap-4 text-left">
-                <div className="text-left text-foreground">
-                    <h1 className="text-3xl md:text-4xl font-bold font-headline text-left">Dashboard</h1>
-                    <p className="text-lg text-muted-foreground text-left">Welcome back, {userData?.firstName || 'Member'}!</p>
+        <div className="w-full space-y-8">
+            <div className="flex items-center gap-4">
+                <div className="text-left">
+                    <h1 className="text-3xl md:text-4xl font-bold font-headline">Dashboard</h1>
+                    <p className="text-lg text-muted-foreground">Welcome back, {userData?.firstName || 'Member'}!</p>
                 </div>
             </div>
 
             {isAdmin && (
-                 <Card className="border-primary bg-primary/5 text-left text-foreground">
-                    <CardHeader className="text-left">
-                        <div className="flex items-center gap-4 text-left text-foreground text-foreground">
+                 <Card className="border-primary bg-primary/5">
+                    <CardHeader>
+                        <div className="flex items-center gap-4">
                             <ShieldCheck className="h-10 w-10 text-primary" />
-                            <div className="text-left text-foreground">
-                                <CardTitle className="text-2xl text-left text-foreground">Administrator Account</CardTitle>
-                                <CardDescription className="text-primary/90 text-left text-foreground">You are currently viewing the standard member dashboard.</CardDescription>
+                            <div className="text-left">
+                                <CardTitle className="text-2xl">Administrator Account</CardTitle>
+                                <CardDescription className="text-primary/90">You are currently viewing the standard member dashboard.</CardDescription>
                             </div>
                         </div>
                     </CardHeader>
-                    <CardContent className="text-left text-foreground">
-                        <p className="text-lg text-left leading-relaxed text-foreground">
+                    <CardContent className="text-left">
+                        <p className="text-lg leading-relaxed">
                            All administrative functions are located in the secure <span className="font-semibold text-primary">Admin Portal</span>.
                         </p>
                     </CardContent>
-                    <CardFooter className="text-left">
+                    <CardFooter>
                         <Button variant="default" size="lg" asChild>
                             <Link href="/adminaccount">
                                 Go to Admin Portal <ArrowRight className="ml-2 h-5 w-5" />
@@ -149,35 +148,35 @@ export default function AccountDashboard() {
 
             {/* Core Stats - Role Filtered */}
             <div className={cn(
-                "grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground",
+                "grid grid-cols-1 md:grid-cols-2 gap-8",
                 !isAssociate && !isLender && "lg:grid-cols-3"
             )}>
                  {!isAssociate && !isLender && (
-                    <Card className="text-left text-foreground">
-                        <CardHeader className="flex flex-row items-center justify-between pb-2 text-left">
-                            <CardTitle className="text-sm font-medium text-left">Membership Tier</CardTitle>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between pb-2">
+                            <CardTitle className="text-sm font-medium">Membership Tier</CardTitle>
                             <Gem className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
-                        <CardContent className="text-left text-foreground">
-                            <div className="text-2xl font-bold text-primary capitalize text-left">{companyData?.membershipId || 'Free'}</div>
+                        <CardContent className="text-left">
+                            <div className="text-2xl font-bold text-primary capitalize">{companyData?.membershipId || 'Free'}</div>
                             {isFreeMember ? (
                                 <Button asChild variant="link" size="sm" className="p-0 h-auto">
                                     <Link href="/pricing">Upgrade to a paid plan</Link>
                                 </Button>
                             ) : (
-                                <p className="text-xs text-muted-foreground text-left">You have a premium membership.</p>
+                                <p className="text-xs text-muted-foreground">You have a premium membership.</p>
                             )}
                         </CardContent>
                     </Card>
                  )}
                 
-                <Card className="text-left text-foreground">
-                    <CardHeader className="flex flex-row items-center justify-between pb-2 text-left">
-                        <CardTitle className="text-sm font-medium text-left text-foreground">Available to Spend</CardTitle>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                        <CardTitle className="text-sm font-medium">Available to Spend</CardTitle>
                          <Wallet className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
-                    <CardContent className="text-left text-foreground">
-                        <div className="text-2xl font-bold text-left">{formatCurrency(companyData?.availableBalance)}</div>
+                    <CardContent className="text-left">
+                        <div className="text-2xl font-bold">{formatCurrency(companyData?.availableBalance)}</div>
                          <Button asChild variant="link" size="sm" className="p-0 h-auto">
                             <Link href="/account?view=wallet">Manage Wallet</Link>
                         </Button>
@@ -185,17 +184,17 @@ export default function AccountDashboard() {
                 </Card>
 
                  {!isAssociate && !isLender && (
-                    <Card className="text-left text-foreground">
-                        <CardHeader className="flex flex-row items-center justify-between pb-2 text-left">
-                            <CardTitle className="text-sm font-medium text-left text-foreground">Loyalty Status</CardTitle>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between pb-2">
+                            <CardTitle className="text-sm font-medium">Loyalty Status</CardTitle>
                             <Award className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
-                        <CardContent className="text-left text-foreground">
-                            <div className="text-2xl font-bold flex items-center gap-2 text-left">
+                        <CardContent className="text-left">
+                            <div className="text-2xl font-bold flex items-center gap-2">
                                 <span className={cn("px-2 py-1 rounded-md text-base", tierColors[loyaltyTier])}>{loyaltyTier.charAt(0).toUpperCase() + loyaltyTier.slice(1)}</span>
                                 <span>{companyData?.rewardPoints || 0} Points</span>
                             </div>
-                            <p className="text-xs text-muted-foreground text-left">Earn points for community actions.</p>
+                            <p className="text-xs text-muted-foreground">Earn points for community actions.</p>
                         </CardContent>
                     </Card>
                  )}
@@ -204,7 +203,7 @@ export default function AccountDashboard() {
             {/* Associate Specific Referral Card */}
             {isAssociate && (
                 <Card className="border-primary bg-primary/5">
-                    <CardHeader>
+                    <CardHeader className="text-left">
                         <CardTitle className="flex items-center gap-2"><LinkIcon className="h-5 w-5 text-primary" /> My Tracking Node</CardTitle>
                         <CardDescription>Share your unique referral link to grow your network and earn recurring revenue.</CardDescription>
                     </CardHeader>
@@ -220,7 +219,7 @@ export default function AccountDashboard() {
             {/* Lender Specific Control Card */}
             {isLender && !isAdmin && (
                 <Card className="border-primary bg-primary/5">
-                    <CardHeader>
+                    <CardHeader className="text-left">
                         <CardTitle className="flex items-center gap-2"><Landmark className="text-primary" /> Lender Control Center</CardTitle>
                         <CardDescription>Manage your lending mandate and review inbound deal flow matching your criteria.</CardDescription>
                     </CardHeader>
@@ -236,15 +235,15 @@ export default function AccountDashboard() {
             {!isAssociate && !isLender && (
                 <>
                     {isFreeMember && (
-                        <Card className="bg-primary/5 border-primary/20 text-left text-foreground">
-                            <CardHeader className="text-left text-foreground">
-                                <div className="flex items-start gap-4 text-left text-foreground">
+                        <Card className="bg-primary/5 border-primary/20">
+                            <CardHeader>
+                                <div className="flex items-start gap-4 text-left">
                                     <div className="bg-primary/10 p-3 rounded-full shrink-0">
                                     <Sparkles className="h-6 w-6 text-primary" />
                                     </div>
-                                    <div className="text-left text-foreground">
-                                        <CardTitle className="text-left text-foreground">Unlock Your Full Potential</CardTitle>
-                                        <CardDescription className="mt-1 text-left text-foreground">
+                                    <div className="text-left">
+                                        <CardTitle>Unlock Your Full Potential</CardTitle>
+                                        <CardDescription className="mt-1">
                                             You are currently on the Free plan. Upgrade your membership to access forensic data and publishing tools.
                                         </CardDescription>
                                     </div>
@@ -261,18 +260,18 @@ export default function AccountDashboard() {
                     )}
 
                     <div className="space-y-4 text-left">
-                        <h2 className="text-2xl font-black font-headline text-foreground">Strategic Funding Center</h2>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground">
-                            <Card className="border-primary/20 bg-primary/5 shadow-md flex flex-col text-left">
+                        <h2 className="text-2xl font-black font-headline">Strategic Funding Center</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <Card className="border-primary/20 bg-primary/5 shadow-md flex flex-col">
                                 <CardHeader className="pb-2 text-left">
-                                    <div className="flex items-center gap-3 text-left">
-                                        <div className="bg-primary/20 p-2 rounded-lg text-left"><Landmark className="h-5 w-5 text-primary" /></div>
-                                        <CardTitle className="text-lg font-bold text-left">Direct In-House Funding</CardTitle>
+                                    <div className="flex items-center gap-3">
+                                        <div className="bg-primary/20 p-2 rounded-lg"><Landmark className="h-5 w-5 text-primary" /></div>
+                                        <CardTitle className="text-lg font-bold">Direct In-House Funding</CardTitle>
                                     </div>
-                                    <CardDescription className="text-left">Apply directly to the Logistics Flow capital division.</CardDescription>
+                                    <CardDescription>Apply directly to the Logistics Flow capital division.</CardDescription>
                                 </CardHeader>
                                 <CardContent className="flex-grow text-left">
-                                    <p className="text-sm text-muted-foreground leading-relaxed text-left">Use this path for prioritized, rapid decisions based on your platform activity and verified fleet profile.</p>
+                                    <p className="text-sm text-muted-foreground leading-relaxed">Use this path for prioritized, rapid decisions based on your platform activity and verified fleet profile.</p>
                                 </CardContent>
                                 <CardFooter className="pt-4 border-t border-primary/10">
                                     <Button asChild className="w-full font-bold h-11 shadow-lg" variant="default">
@@ -283,16 +282,16 @@ export default function AccountDashboard() {
                                 </CardFooter>
                             </Card>
 
-                            <Card className="border-blue-200 bg-blue-50/30 shadow-md flex flex-col text-left text-foreground">
+                            <Card className="border-blue-200 bg-blue-50/30 shadow-md flex flex-col">
                                 <CardHeader className="pb-2 text-left">
-                                    <div className="flex items-center gap-3 text-left">
-                                        <div className="bg-blue-100 p-2 rounded-lg text-left"><Globe className="h-5 w-5 text-blue-600" /></div>
-                                        <CardTitle className="text-lg font-bold text-left">Finance Mall Broadcast</CardTitle>
+                                    <div className="flex items-center gap-3">
+                                        <div className="bg-blue-100 p-2 rounded-lg"><Globe className="h-5 w-5 text-blue-600" /></div>
+                                        <CardTitle className="text-lg font-bold">Finance Mall Broadcast</CardTitle>
                                     </div>
-                                    <CardDescription className="text-left">Distribute your enquiry to our 85+ partner lenders.</CardDescription>
+                                    <CardDescription>Distribute your enquiry to our 85+ partner lenders.</CardDescription>
                                 </CardHeader>
                                 <CardContent className="flex-grow text-left">
-                                    <p className="text-sm text-muted-foreground leading-relaxed text-left">Compare the market. Your application is automatically matched with niche lenders based on your criteria.</p>
+                                    <p className="text-sm text-muted-foreground leading-relaxed">Compare the market. Your application is automatically matched with niche lenders based on your criteria.</p>
                                 </CardContent>
                                 <CardFooter className="pt-4 border-t border-blue-100">
                                     <Button asChild className="w-full font-bold h-11" variant="outline">
@@ -305,35 +304,35 @@ export default function AccountDashboard() {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground">
-                        <Card className="text-left shadow-sm text-foreground">
-                            <CardHeader className="text-left bg-slate-50 border-b text-foreground">
-                                <CardTitle className="flex items-center gap-2 text-left text-foreground">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
+                        <Card className="shadow-sm">
+                            <CardHeader className="bg-slate-50 border-b text-left">
+                                <CardTitle className="flex items-center gap-2">
                                     <Landmark className="h-5 w-5 text-primary" />
                                     Issued Funding Facilities
                                 </CardTitle>
-                                <CardDescription className="text-left text-foreground">
+                                <CardDescription>
                                     Active capital offers issued to your business.
                                 </CardDescription>
                             </CardHeader>
-                            <CardContent className="p-6 text-left text-foreground">
-                                {isFacilitiesLoading ? <Loader2 className="animate-spin h-6 w-6 text-primary"/> : (
+                            <CardContent className="p-6">
+                                {isFacilitiesLoading ? <Loader2 className="animate-spin h-6 w-6 text-primary mx-auto"/> : (
                                     facilities && facilities.length > 0 ? (
-                                        <div className="space-y-4 text-left text-foreground">
+                                        <div className="space-y-4">
                                             {facilities.map((f: any) => (
-                                                <div key={f.id} className="flex justify-between items-center p-3 border rounded-lg bg-white shadow-sm text-left">
+                                                <div key={f.id} className="flex justify-between items-center p-3 border rounded-lg bg-white shadow-sm">
                                                     <div className="text-left">
-                                                        <p className="font-bold text-sm capitalize text-left">{f.type?.replace(/_/g, ' ')}</p>
+                                                        <p className="font-bold text-sm capitalize">{f.type?.replace(/_/g, ' ')}</p>
                                                         {isFreeMember && !isAdmin ? (
-                                                            <div className="flex items-center gap-1.5 mt-1 text-left">
+                                                            <div className="flex items-center gap-1.5 mt-1">
                                                                 <Lock className="h-3 w-3 text-amber-600"/>
-                                                                <span className="text-[10px] font-black uppercase text-amber-600 tracking-widest text-left">Terms Restricted</span>
+                                                                <span className="text-[10px] font-black uppercase text-amber-600 tracking-widest">Terms Restricted</span>
                                                             </div>
                                                         ) : (
-                                                            <p className="text-xs font-mono font-bold text-primary text-left">{formatCurrency(f.limit)}</p>
+                                                            <p className="text-xs font-mono font-bold text-primary">{formatCurrency(f.limit)}</p>
                                                         )}
                                                     </div>
-                                                    <Button variant="ghost" size="sm" asChild className="text-[10px] font-black uppercase h-8 px-3 text-left">
+                                                    <Button variant="ghost" size="sm" asChild className="text-[10px] font-black uppercase h-8 px-3">
                                                         <Link href="/account?view=my-facilities">Manage <ArrowRight className="ml-1 h-3 w-3" /></Link>
                                                     </Button>
                                                 </div>
@@ -353,31 +352,31 @@ export default function AccountDashboard() {
                             </CardFooter>
                         </Card>
 
-                        <Card className="text-left shadow-sm text-foreground">
-                            <CardHeader className="text-left bg-slate-50 border-b text-foreground text-foreground">
-                                <CardTitle className="flex items-center gap-2 text-left text-foreground">
+                        <Card className="shadow-sm">
+                            <CardHeader className="bg-slate-50 border-b text-left">
+                                <CardTitle className="flex items-center gap-2">
                                     <Award className="h-5 w-5 text-primary" />
                                     My Loyalty Benefits
                                 </CardTitle>
-                                <CardDescription className="text-left text-foreground">
+                                <CardDescription>
                                     You are on the <span className="font-semibold text-primary capitalize">{loyaltyTier}</span> tier.
                                 </CardDescription>
                             </CardHeader>
-                            <CardContent className="text-left p-6 text-foreground">
+                            <CardContent className="p-6">
                                 {userBenefits.length > 0 ? (
-                                    <ul className="space-y-3 text-left text-foreground text-foreground">
+                                    <ul className="space-y-3 text-left">
                                         {userBenefits.map((benefit: any) => (
-                                            <li key={benefit.name} className="flex items-center gap-3 text-left">
+                                            <li key={benefit.name} className="flex items-center gap-3">
                                                 <CheckCircle className="h-5 w-5 text-green-500" />
-                                                <span className="font-medium text-sm text-left">{benefit.name}: <span className="font-bold text-primary">{benefit.value}</span></span>
+                                                <span className="font-medium text-sm">{benefit.name}: <span className="font-bold text-primary">{benefit.value}</span></span>
                                             </li>
                                         ))}
                                     </ul>
                                 ) : (
-                                    <p className="text-muted-foreground text-sm text-left italic text-foreground">No benefits are currently configured for your tier.</p>
+                                    <p className="text-muted-foreground text-sm italic">No benefits are currently configured for your tier.</p>
                                 )}
                             </CardContent>
-                            <CardFooter className="text-left border-t pt-4">
+                            <CardFooter className="border-t pt-4">
                                 <Button variant="outline" size="sm" asChild className="w-full font-bold h-9">
                                     <Link href="/connect?view=rewards">Open Rewards Store</Link>
                                 </Button>
@@ -385,21 +384,21 @@ export default function AccountDashboard() {
                         </Card>
                     </div>
 
-                    <Card className="text-left border-primary/20 bg-primary/5 text-foreground">
-                        <CardHeader className="text-left text-foreground text-foreground text-left">
-                            <CardTitle className="flex items-center gap-2 text-left text-foreground"><HeartHandshake className="text-primary" /> Help the Community & Earn Rewards</CardTitle>
+                    <Card className="bg-primary/5 border-primary/20">
+                        <CardHeader className="text-left">
+                            <CardTitle className="flex items-center gap-2"><HeartHandshake className="text-primary" /> Help the Community & Earn Rewards</CardTitle>
                         </CardHeader>
-                        <CardContent className="text-left text-foreground">
-                            <p className="text-muted-foreground text-sm leading-relaxed text-left text-foreground">Help the community by sharing anonymous data. Each contribution earns you reward points.</p>
+                        <CardContent className="text-left">
+                            <p className="text-muted-foreground text-sm leading-relaxed">Help the community by sharing anonymous data. Each contribution earns you reward points.</p>
                         </CardContent>
-                        <CardFooter className="text-left">
+                        <CardFooter>
                             <Button asChild size="sm">
                                 <Link href="/contribute">Contribute Data <ArrowRight className="ml-2 h-4 w-4" /></Link>
                             </Button>
                         </CardFooter>
                     </Card>
                     
-                    <div className="space-y-8 text-left text-foreground">
+                    <div className="space-y-8">
                         <QuotesCard />
                         <EnquiriesCard />
                     </div>

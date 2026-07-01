@@ -60,6 +60,8 @@ service cloud.firestore {
       match /tasks/{taskId} { allow read, write: if isMember(companyId); }
       match /payoutRequests/{pid} { allow read, write: if isMember(companyId); }
       match /searchLogs/{sid} { allow read, write: if isMember(companyId); }
+      match /facilities/{fid} { allow read: if isMember(companyId); allow write: if isAdmin(); }
+      match /staff/{sid} { allow read: if isMember(companyId); allow write: if isAdmin(); }
       
       match /shops/{shopId} { 
         allow read: if true; 
