@@ -87,6 +87,7 @@ import PlatformSettingsContent from '@/app/backend/platform-settings';
 import UnifiedDirectory from '@/app/adminaccount/unified-directory';
 import PlatformStaffManagement from '@/app/adminaccount/platform-staff';
 import AssociateOversight from '@/app/adminaccount/associate-oversight';
+import SocialStudio from '@/app/adminaccount/social-studio';
 
 function AdminAuthGuard({ children }: { children: React.ReactNode }) {
     const { user, isUserLoading } = useUser();

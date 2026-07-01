@@ -10,7 +10,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { Checkbox } from '@/components/ui/checkbox';
 import { useUser, getClientSideAuthToken } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, Landmark, Info, Banknote, ShieldCheck, Zap, Scale, TrendingUp, History } from 'lucide-react';
+import { Loader2, Save, Landmark, Info, Banknote, ShieldCheck, Zap, Scale, TrendingUp, History, Users } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
 
@@ -21,7 +21,6 @@ const lendingSchema = z.object({
     maxDealSize: z.coerce.number().min(0),
     preferredTerms: z.array(z.string()).min(1, "Select at least one preferred term."),
     entityTypes: z.array(z.string()).min(1, "Select at least one entity type."),
-    creditFocus: z.array(z.string()).min(1, "Select credit focus."),
     minYearsInBusiness: z.coerce.number().min(0),
     minAnnualTurnover: z.coerce.number().min(0),
     requiresNoJudgements: z.boolean().default(false),
@@ -33,7 +32,6 @@ const appTypeOptions = ['Working Capital', 'Asset Finance', 'Personal Loan', 'Mi
 const assetOptions = ['Trucks', 'Trailers', 'CNC Equipment', 'Computer Hardware', 'Automation', 'Production Line', 'Printing', 'CCTV/Security'];
 const termOptions = ['12 Months', '24 Months', '36 Months', '48 Months', '60 Months', '72+ Months'];
 const entityOptions = ['Pty Ltd', 'Sole Proprietor', 'Close Corporation', 'Trust', 'Individual', 'Partnership', 'Ltd'];
-const creditOptions = ['Excellent', 'Good', 'Fair', 'Poor (with collateral)', 'New Business'];
 
 export default function LendingParametersContent() {
     const { user, isUserLoading, forceRefresh } = useUser();
@@ -51,7 +49,6 @@ export default function LendingParametersContent() {
             maxDealSize: user?.companyData?.lendingParams?.maxDealSize || 0,
             preferredTerms: user?.companyData?.lendingParams?.preferredTerms || [],
             entityTypes: user?.companyData?.lendingParams?.entityTypes || [],
-            creditFocus: user?.companyData?.lendingParams?.creditFocus || [],
             minYearsInBusiness: user?.companyData?.lendingParams?.minYearsInBusiness || 0,
             minAnnualTurnover: user?.companyData?.lendingParams?.minAnnualTurnover || 0,
             requiresNoJudgements: user?.companyData?.lendingParams?.requiresNoJudgements || false,
@@ -77,12 +74,16 @@ export default function LendingParametersContent() {
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     path: `companies/${user.companyId}`,
-                    data: { lendingParams: values, updatedAt: { _methodName: 'serverTimestamp' } }
+                    data: { 
+                        lendingParams: values, 
+                        declaredRole: 'lender', // Explicitly tag as lender
+                        updatedAt: { _methodName: 'serverTimestamp' } 
+                    }
                 })
             });
 
             if (!response.ok) throw new Error("Update failed.");
-            toast({ title: "Parameters Saved", description: "Your lending appetite has been updated." });
+            toast({ title: "Lending Appetite Saved", description: "Your forensic variables have been updated." });
             forceRefresh();
         } catch (e: any) {
             toast({ variant: 'destructive', title: "Error", description: e.message });
@@ -100,7 +101,7 @@ export default function LendingParametersContent() {
                     <div className="bg-primary/10 p-3 rounded-xl"><Landmark className="h-6 w-6 text-primary" /></div>
                     <div className="text-left text-foreground">
                         <CardTitle className="text-2xl font-bold">Lending Appetite Configuration</CardTitle>
-                        <CardDescription>Define the specific borrower profiles and deal types your institution funds.</CardDescription>
+                        <CardDescription>Define the forensic variables that drive your deal selection engine.</CardDescription>
                     </div>
                 </div>
             </CardHeader>
@@ -118,7 +119,7 @@ export default function LendingParametersContent() {
                         )}
 
                         <div className="space-y-4">
-                            <h3 className="font-bold flex items-center gap-2 text-lg"><Banknote className="h-5 w-5 text-primary" /> Application Types</h3>
+                            <h3 className="font-bold flex items-center gap-2 text-lg"><Banknote className="h-5 w-5 text-primary" /> Agreement Types</h3>
                             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                                 {appTypeOptions.map(item => (
                                     <FormField key={item} control={form.control} name="appTypes" render={({ field }) => (
@@ -158,7 +159,7 @@ export default function LendingParametersContent() {
                                 </div>
                             </div>
                             <div className="space-y-4">
-                                <h3 className="font-bold text-lg flex items-center gap-2"><TrendingUp className="h-5 w-5 text-primary"/> Financial Criteria</h3>
+                                <h3 className="font-bold text-lg flex items-center gap-2"><TrendingUp className="h-5 w-5 text-primary"/> Risk Criteria</h3>
                                 <div className="grid grid-cols-2 gap-4">
                                     <FormField control={form.control} name="minYearsInBusiness" render={({ field }) => (
                                         <FormItem><FormLabel>Min Entity Age (Years)</FormLabel><FormControl><Input type="number" placeholder="e.g. 2" {...field} /></FormControl></FormItem>
@@ -195,7 +196,7 @@ export default function LendingParametersContent() {
                         </div>
 
                         <div className="space-y-4">
-                            <h3 className="font-bold text-lg">Preferred Target Entities</h3>
+                            <h3 className="font-bold text-lg flex items-center gap-2"><Users className="h-5 w-5 text-primary" /> Target Entity Types</h3>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                 {entityOptions.map(item => (
                                     <FormField key={item} control={form.control} name="entityTypes" render={({ field }) => (
@@ -210,7 +211,7 @@ export default function LendingParametersContent() {
 
                     </CardContent>
                     <CardFooter className="bg-slate-50 border-t p-6 flex justify-end">
-                        <Button type="submit" disabled={isSaving} size="lg" className="h-12 px-10 font-bold gap-2 text-foreground">
+                        <Button type="submit" disabled={isSaving} size="lg" className="h-12 px-10 font-bold gap-2">
                             {isSaving ? <Loader2 className="h-5 w-5 animate-spin"/> : <Save className="h-5 w-5" />}
                             Register Lending Appetite
                         </Button>
