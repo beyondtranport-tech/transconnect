@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -74,16 +73,32 @@ export async function POST(req: NextRequest) {
                 const enquiry = enquirySnap.data()!;
                 const amount = enquiry.amountRequested || 0;
 
-                const lendersSnap = await db.collection('partners').where('type', '==', 'finance').get();
-                const matches = lendersSnap.docs
-                    .map((d: any) => ({ id: d.id, ...d.data() }))
+                // Query BOTH static partners AND paying members who configured parameters
+                const [lendersSnap, activeMemberLendersSnap] = await Promise.all([
+                    db.collection('partners').where('type', '==', 'finance').get(),
+                    db.collection('companies')
+                        .where('declaredRole', '==', 'lender')
+                        .where('membershipId', '!=', 'free')
+                        .get()
+                ]);
+
+                const staticMatches = lendersSnap.docs
+                    .map((d: any) => ({ id: d.id, source: 'Registry', ...d.data() }))
                     .filter((l: any) => {
                         const min = Number(l.minDealSize) || 0;
                         const max = Number(l.maxDealSize) || 100000000;
                         return amount >= min && amount <= max;
                     });
+                
+                const memberMatches = activeMemberLendersSnap.docs
+                    .map((d: any) => ({ id: d.id, source: 'Member', ...d.data() }))
+                    .filter((l: any) => {
+                        const params = l.lendingParams;
+                        if (!params) return false;
+                        return amount >= (params.minDealSize || 0) && amount <= (params.maxDealSize || 100000000);
+                    });
 
-                return NextResponse.json({ success: true, data: matches.map(serializeTimestamps) });
+                return NextResponse.json({ success: true, data: [...staticMatches, ...memberMatches].map(serializeTimestamps) });
             }
 
             case 'getPlatformStaff': {

@@ -1,4 +1,4 @@
-import { ShoppingCart, Truck, Handshake, Briefcase, Bot, Users, Code, Share2 } from "lucide-react";
+import { ShoppingCart, Truck, Handshake, Briefcase, Bot, Users, Code, Share2, Landmark } from "lucide-react";
 import * as React from "react";
 import data from '@/lib/placeholder-images.json';
 
@@ -12,6 +12,7 @@ const roleImages = {
     'isa-agent': placeholderImages.find(p => p.id === 'tech-home')!,
     driver: placeholderImages.find(p => p.id === 'value-community')!,
     developer: placeholderImages.find(p => p.id === 'tech-division')!,
+    lender: placeholderImages.find(p => p.id === 'funding-division')!,
 };
 
 
@@ -33,6 +34,15 @@ export const roles = [
         cta: "Become a Transporter",
         longDescription: "As a transporter, you can efficiently source high-quality vehicles, parts, and services from a network of vetted vendors and fellow transporters, while also marketing your own transport services to the community. Leverage our marketplace to find competitive pricing, reliable partners, and new customers, ensuring your fleet stays on the road and operates efficiently.",
         image: roleImages.transporter
+    },
+    {
+        id: "lender",
+        icon: Landmark,
+        title: "Lenders",
+        description: "Configure your lending criteria, reach qualified borrowers, and fund more deals.",
+        cta: "Become a Lender",
+        longDescription: "As a lender, you can define your specific credit appetite—from asset finance to working capital. Our matching engine delivers high-fidelity leads that fit your exact parameters, allowing you to focus on deployment and yield rather than cold origination.",
+        image: roleImages.lender
     },
     {
         id: "partner",

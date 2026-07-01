@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -88,7 +87,6 @@ import PlatformSettingsContent from '@/app/backend/platform-settings';
 import UnifiedDirectory from '@/app/adminaccount/unified-directory';
 import PlatformStaffManagement from '@/app/adminaccount/platform-staff';
 import AssociateOversight from '@/app/adminaccount/associate-oversight';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 function AdminAuthGuard({ children }: { children: React.ReactNode }) {
     const { user, isUserLoading } = useUser();
@@ -195,14 +193,14 @@ function AdminAccountContent() {
                         <CardTitle className="text-lg font-bold group-hover:text-primary">Outlook Spam Unblocking</CardTitle>
                         <CardDescription>Step-by-step for the M365 Defender Portal.</CardDescription>
                     </CardHeader>
-                    <CardContent><p className="text-xs text-muted-foreground leading-relaxed">If outreach gets flagged, follow this guide to lift restriction.</p></CardContent>
+                    <CardContent><p className="text-xs text-muted-foreground leading-relaxed text-left">If outreach gets flagged, follow this guide to lift restriction.</p></CardContent>
                 </Card>
                 <Card className="hover:border-primary transition-all group cursor-pointer" onClick={() => window.open('/docs/enable-gemini-api.md', '_blank')}>
                     <CardHeader>
                         <CardTitle className="text-lg font-bold group-hover:text-primary">AI & Gemini Config</CardTitle>
                         <CardDescription>Fixing 403 or 429 Errors.</CardDescription>
                     </CardHeader>
-                    <CardContent><p className="text-xs text-muted-foreground leading-relaxed">Ensure API keys are scoped and quotas adjusted for forensic discovery.</p></CardContent>
+                    <CardContent><p className="text-xs text-muted-foreground leading-relaxed text-left">Ensure API keys are scoped and quotas adjusted for forensic discovery.</p></CardContent>
                 </Card>
             </div>
         </div>

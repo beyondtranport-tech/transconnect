@@ -101,10 +101,10 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
   }, [audience]);
 
   const Emails = useMemo(() => {
-    if (audience === 'investors' || audience === 'finance') return InvestorOffer;
-    if (audience === 'developers') return DeveloperOffer;
-    if (audience === 'suppliers') return SupplierOffer;
-    if (audience === 'transporters') return TransporterOffer;
+    if (audience === 'investors' || audience === 'finance') return InvestorEmails;
+    if (audience === 'developers') return DeveloperEmails;
+    if (audience === 'suppliers') return SupplierEmails;
+    if (audience === 'transporters') return TransporterEmails;
     if (audience === 'associates') return AssociateEmails;
     return PartnerEmails;
   }, [audience]);

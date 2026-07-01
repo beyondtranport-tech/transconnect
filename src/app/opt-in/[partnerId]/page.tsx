@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -79,7 +78,7 @@ export default function OptInPage() {
     if (completed) {
         const signupUrl = `/join?email=${encodeURIComponent(partner?.email || '')}&firstName=${encodeURIComponent(partner?.firstName || '')}&lastName=${encodeURIComponent(partner?.lastName || '')}&ref=${partnerId}`;
         return (
-            <div className="flex justify-center items-center min-h-screen p-4">
+            <div className="flex justify-center items-center min-h-screen p-4 text-left">
                 <Card className="max-w-md w-full text-center border-green-500 bg-green-50 shadow-2xl">
                     <CardHeader><CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" /><CardTitle className="text-2xl font-black">Handshake Established</CardTitle></CardHeader>
                     <CardContent className="p-8 space-y-6">

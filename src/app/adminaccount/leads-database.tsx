@@ -135,7 +135,7 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
               )} />
               <FormField control={form.control} name="role" render={({ field }) => (
                 <FormItem><FormLabel>Potential Role</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="bg-white"><SelectValue/></SelectTrigger></FormControl><SelectContent>
-                  {roles.map(r => <SelectItem key={r.id} value={r.title}>{r.title}</SelectItem>)}
+                  {roles.map(r => <SelectItem key={r.id} value={r.id}>{r.title}</SelectItem>)}
                 </SelectContent></Select></FormItem>
               )} />
             </div>
@@ -290,9 +290,9 @@ function LeadsDatabaseComponent() {
                 </Button>
             </Card>
         ) : (
-            <Card className="text-left text-foreground">
+            <Card className="text-left text-foreground text-foreground">
                 <CardContent className="pt-6 text-left text-foreground">
-                    {isLoading ? <div className="flex justify-center py-10 text-left"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div> : <DataTable columns={columns} data={leads} />}
+                    {isLoading ? <div className="flex justify-center py-10 text-left text-foreground"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div> : <DataTable columns={columns} data={leads} />}
                 </CardContent>
             </Card>
         )}

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -89,7 +88,7 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                     )}
                 </div>
 
-                <Alert variant="default" className={cn("text-left", isPriority ? "bg-amber-50 border-amber-200" : "bg-primary/5 border-primary/20")}>
+                <Alert className={cn("text-left", isPriority ? "bg-amber-50 border-amber-200" : "bg-primary/5 border-primary/20")}>
                     {isPriority ? <Star className="h-4 w-4 text-amber-600" /> : <ShieldCheck className="h-4 w-4 text-primary" />}
                     <AlertTitle className={cn("font-bold text-left", isPriority && "text-amber-800")}>
                         {isPriority ? "Trust-Led Growth Strategy" : "Creative Node Search"}
@@ -198,7 +197,7 @@ export default function AssociateDiscoveryEngine() {
                                 </CardContent>
                             </Card>
 
-                            <Alert variant="default" className="border-blue-200 bg-blue-50/30 text-left text-foreground">
+                            <Alert className="border-blue-200 bg-blue-50/30 text-left text-foreground">
                                 <Info className="h-4 w-4 text-blue-600" />
                                 <AlertDescription className="text-[10px] text-blue-800 leading-tight text-left text-foreground">
                                     <strong>Tip:</strong> Start with influencers to gain mass-credibility, then use creators to fill the <strong>Marketing Library</strong> with assets.

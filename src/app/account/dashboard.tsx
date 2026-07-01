@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useUser, useFirestore, useDoc } from '@/firebase';
@@ -72,12 +71,12 @@ export default function AccountDashboard() {
         return (
             <div className="flex justify-center items-center min-h-[calc(100vh-8rem)] w-full text-left">
                 <Card className="m-4 w-full max-w-2xl text-left shadow-lg border-destructive/20 text-foreground">
-                    <CardHeader className="text-left border-b bg-destructive/5">
+                    <CardHeader className="text-left border-b bg-destructive/5 text-foreground">
                         <CardTitle className="text-destructive text-left flex items-center gap-2">
                             <ShieldAlert className="h-5 w-5" /> Error Loading Dashboard
                         </CardTitle>
                     </CardHeader>
-                    <CardContent className="text-left p-8">
+                    <CardContent className="text-left p-8 text-foreground">
                         <p className="text-left font-medium">There was a problem fetching your account data.</p>
                         <p className="text-xs text-muted-foreground mt-2 text-left bg-muted p-2 rounded font-mono">{error.message}</p>
                     </CardContent>
@@ -93,13 +92,13 @@ export default function AccountDashboard() {
 
     if (isAdmin) {
         return (
-             <div className="w-full space-y-8 text-left">
-                 <Card className="border-primary bg-primary/5 text-left">
+             <div className="w-full space-y-8 text-left text-foreground">
+                 <Card className="border-primary bg-primary/5 text-left text-foreground">
                     <CardHeader className="text-left">
                         <div className="flex items-center gap-4 text-left">
                             <ShieldCheck className="h-10 w-10 text-primary" />
-                            <div className="text-left">
-                                <CardTitle className="text-2xl text-left">Administrator Account</CardTitle>
+                            <div className="text-left text-foreground">
+                                <CardTitle className="text-2xl text-left text-foreground">Administrator Account</CardTitle>
                                 <CardDescription className="text-primary/90 text-left">You are currently viewing the standard member dashboard.</CardDescription>
                             </div>
                         </div>
@@ -124,28 +123,28 @@ export default function AccountDashboard() {
     return (
         <div className="w-full space-y-8 text-left text-foreground">
             <div className="flex items-center gap-4 text-left">
-                <div className="text-left">
+                <div className="text-left text-foreground">
                     <h1 className="text-3xl md:text-4xl font-bold font-headline text-left">Dashboard</h1>
                     <p className="text-lg text-muted-foreground text-left">Welcome back, {userData?.firstName || 'Member'}!</p>
                 </div>
             </div>
 
             {isFreeMember && (
-                 <Card className="bg-primary/5 border-primary/20 text-left">
+                 <Card className="bg-primary/5 border-primary/20 text-left text-foreground">
                     <CardHeader className="text-left">
-                        <div className="flex items-start gap-4 text-left">
+                        <div className="flex items-start gap-4 text-left text-foreground">
                             <div className="bg-primary/10 p-3 rounded-full shrink-0">
                                <Sparkles className="h-6 w-6 text-primary" />
                             </div>
-                            <div className="text-left">
-                                <CardTitle className="text-left">Unlock Your Full Potential</CardTitle>
+                            <div className="text-left text-foreground">
+                                <CardTitle className="text-left text-foreground">Unlock Your Full Potential</CardTitle>
                                 <CardDescription className="mt-1 text-left">
                                     You are currently on the Free plan. Upgrade your membership to access powerful tools.
                                 </CardDescription>
                             </div>
                         </div>
                     </CardHeader>
-                    <CardContent className="text-left">
+                    <CardContent className="text-left text-foreground">
                          <p className="text-sm text-muted-foreground text-left">
                             By upgrading, you gain access to our advanced Tech division and the ability to earn commission via Connect plans.
                         </p>
@@ -160,13 +159,13 @@ export default function AccountDashboard() {
                 </Card>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 text-left">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 text-left text-foreground">
                  <Card className="text-left text-foreground">
                     <CardHeader className="flex flex-row items-center justify-between pb-2 text-left">
                         <CardTitle className="text-sm font-medium text-left">Membership Tier</CardTitle>
                         <Gem className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
-                    <CardContent className="text-left">
+                    <CardContent className="text-left text-foreground">
                         <div className="text-2xl font-bold text-primary capitalize text-left">{companyData?.membershipId || 'Free'}</div>
                          {isFreeMember ? (
                              <Button asChild variant="link" size="sm" className="p-0 h-auto">
@@ -179,10 +178,10 @@ export default function AccountDashboard() {
                 </Card>
                 <Card className="text-left text-foreground">
                     <CardHeader className="flex flex-row items-center justify-between pb-2 text-left">
-                        <CardTitle className="text-sm font-medium text-left">Available to Spend</CardTitle>
+                        <CardTitle className="text-sm font-medium text-left text-foreground">Available to Spend</CardTitle>
                          <Wallet className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
-                    <CardContent className="text-left">
+                    <CardContent className="text-left text-foreground">
                         <div className="text-2xl font-bold text-left">{formatCurrency(companyData?.availableBalance)}</div>
                          <Button asChild variant="link" size="sm" className="p-0 h-auto">
                             <Link href="/account?view=wallet">Manage Wallet</Link>
@@ -191,10 +190,10 @@ export default function AccountDashboard() {
                 </Card>
                  <Card className="text-left text-foreground">
                     <CardHeader className="flex flex-row items-center justify-between pb-2 text-left">
-                        <CardTitle className="text-sm font-medium text-left">Loyalty Status</CardTitle>
+                        <CardTitle className="text-sm font-medium text-left text-foreground">Loyalty Status</CardTitle>
                         <Award className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
-                    <CardContent className="text-left">
+                    <CardContent className="text-left text-foreground">
                         <div className="text-2xl font-bold flex items-center gap-2 text-left">
                             <span className={cn("px-2 py-1 rounded-md text-base", tierColors[loyaltyTier])}>{loyaltyTier.charAt(0).toUpperCase() + loyaltyTier.slice(1)}</span>
                             <span>{companyData?.rewardPoints || 0} Points</span>
@@ -205,8 +204,8 @@ export default function AccountDashboard() {
             </div>
             
             <Card className="text-left shadow-sm text-foreground">
-                <CardHeader className="text-left bg-slate-50 border-b">
-                    <CardTitle className="flex items-center gap-2 text-left">
+                <CardHeader className="text-left bg-slate-50 border-b text-foreground">
+                    <CardTitle className="flex items-center gap-2 text-left text-foreground">
                         <Award className="h-5 w-5 text-primary" />
                         My Loyalty Benefits
                     </CardTitle>
@@ -214,7 +213,7 @@ export default function AccountDashboard() {
                         You are on the <span className="font-semibold text-primary capitalize">{loyaltyTier}</span> tier.
                     </CardDescription>
                 </CardHeader>
-                <CardContent className="text-left p-6">
+                <CardContent className="text-left p-6 text-foreground">
                     {userBenefits.length > 0 ? (
                         <ul className="space-y-3 text-left">
                             {userBenefits.map((benefit: any) => (
@@ -237,9 +236,9 @@ export default function AccountDashboard() {
 
             <Card className="text-left border-primary/20 bg-primary/5 text-foreground">
                 <CardHeader className="text-left">
-                    <CardTitle className="flex items-center gap-2 text-left"><HeartHandshake className="text-primary" /> Help the Community & Earn Rewards</CardTitle>
+                    <CardTitle className="flex items-center gap-2 text-left text-foreground"><HeartHandshake className="text-primary" /> Help the Community & Earn Rewards</CardTitle>
                 </CardHeader>
-                <CardContent className="text-left">
+                <CardContent className="text-left text-foreground">
                     <p className="text-muted-foreground text-sm leading-relaxed text-left">Help the community by sharing anonymous data. Each contribution earns you reward points.</p>
                 </CardContent>
                 <CardFooter className="text-left">
@@ -249,7 +248,7 @@ export default function AccountDashboard() {
                 </CardFooter>
             </Card>
             
-            <div className="space-y-8 text-left">
+            <div className="space-y-8 text-left text-foreground">
                 <QuotesCard />
                 <EnquiriesCard />
             </div>

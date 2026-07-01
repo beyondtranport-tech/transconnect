@@ -30,6 +30,7 @@ export type Resource =
     'permissions' |
     'social' |
     'marketing-studio' |
+    'lending-params' |
     'account';
 
 // `manage` implies all other actions
@@ -78,6 +79,7 @@ export function usePermissions() {
         const isWctaMember = user.companyData?.referrerId === 'WCTA';
         const isPaidMember = user.companyData?.membershipId && user.companyData.membershipId !== 'free';
         const isAssociate = user.declaredPosition === 'associate' || user.role === 'associate';
+        const isLender = user.declaredPosition === 'lender' || user.role === 'lender';
 
         // Associate Specific Permissions: They get the Content Studios
         if (isAssociate) {
@@ -89,10 +91,14 @@ export function usePermissions() {
         }
 
         // Transporters/Suppliers get Shop access
-        if (user.declaredPosition === 'transporter' || user.declaredPosition === 'vendor') {
+        if (user.declaredPosition === 'transporter' || user.declaredPosition === 'vendor' || isLender) {
             perms.add('create:shop');
             perms.add('edit:shop');
             perms.add('manage:products');
+        }
+
+        if (isLender) {
+            perms.add('manage:lending-params');
         }
 
         if (isPaidMember || isWctaMember) {

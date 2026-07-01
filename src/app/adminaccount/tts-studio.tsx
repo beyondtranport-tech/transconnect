@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -98,7 +97,7 @@ export default function TTSStudio() {
                                 <FormItem><FormLabel>Your Script</FormLabel><FormControl><Textarea className="min-h-[200px] font-mono text-sm leading-relaxed bg-white" {...field} /></FormControl><FormMessage /></FormItem>
                             )} />
                             <FormField control={form.control} name="voice" render={({ field }) => (
-                                <FormItem className="max-w-sm"><FormLabel>Primary Voice Character</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="bg-white"><SelectValue placeholder="Select..." /></SelectTrigger></FormControl><SelectContent>{voices.map(v => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}</SelectContent></Select></FormItem>
+                                <FormItem className="max-w-sm"><FormLabel>Primary Voice Character</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger></FormControl><SelectContent>{voices.map(v => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}</SelectContent></Select></FormItem>
                             )} />
                             <Button type="submit" disabled={isLoading} className="w-full h-12 font-bold">
                                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4" />} Generate Audio

@@ -38,6 +38,7 @@ import {
   Award,
   Search,
   Share2,
+  Landmark,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -75,6 +76,7 @@ import ActionsPlanPage from '@/app/connect/actions/page';
 import IntelligenceHistory from './intelligence-history';
 import SocialStudio from '@/app/adminaccount/social-studio';
 import MarketingStudio from './marketing-studio';
+import LendingParametersContent from './lending-parameters-content';
 
 function AccountPageContent() {
   const router = useRouter();
@@ -123,6 +125,7 @@ function AccountPageContent() {
       case 'professional-profile': return <HumanCapitalContent />;
       case 'staff': return <StaffContent />;
       case 'shop': return <ShopContent />;
+      case 'lending-parameters': return <LendingParametersContent />;
       case 'load-board': return <LoadBoardContent />;
       case 'wallet': return <WalletContent />;
       case 'billing': return <BillingContent />;
@@ -154,6 +157,7 @@ function AccountPageContent() {
 
   const isTransporter = user.declaredPosition === 'transporter' || user.companyData?.shopType === 'transporter';
   const isSupplier = user.declaredPosition === 'vendor' || user.companyData?.shopType === 'vendor';
+  const isLender = user.declaredPosition === 'lender' || user.role === 'lender';
   const isProfessional = user.declaredPosition === 'driver' || user.role === 'driver';
   const isAssociate = user.declaredPosition === 'associate' || user.role === 'associate';
   
@@ -178,8 +182,14 @@ function AccountPageContent() {
               </SidebarMenuItem>
               
               <SidebarMenuItem>
-                  <SidebarMenuButton tooltip={isAssociate ? "Creator Profile" : (isTransporter ? "Service Profile" : "My Shop")} isActive={activeView === 'shop'} onClick={() => navigate('shop')}><Store /><span>{isAssociate ? "Creator Profile" : (isTransporter ? "Service Profile" : "My Shop")}</span></SidebarMenuButton>
+                  <SidebarMenuButton tooltip={isAssociate ? "Creator Profile" : (isTransporter ? "Service Profile" : isLender ? "Lender Profile" : "My Shop")} isActive={activeView === 'shop'} onClick={() => navigate('shop')}><Store /><span>{isAssociate ? "Creator Profile" : (isTransporter ? "Service Profile" : isLender ? "Lender Profile" : "My Shop")}</span></SidebarMenuButton>
               </SidebarMenuItem>
+
+              {isLender && (
+                <SidebarMenuItem>
+                    <SidebarMenuButton tooltip="Lending Parameters" isActive={activeView === 'lending-parameters'} onClick={() => navigate('lending-parameters')}><Landmark /><span>Lending Parameters</span></SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
               
               {!isAssociate && (
                 <SidebarMenuItem>
@@ -212,7 +222,7 @@ function AccountPageContent() {
                     <SidebarMenuButton tooltip="Professional Profile" isActive={activeView === 'professional-profile'} onClick={() => navigate('professional-profile')}><Award /><span>Professional Profile</span></SidebarMenuButton>
                 </SidebarMenuItem>
               )}
-              {!isTransporter && !isSupplier && !isProfessional && !isAssociate && (
+              {!isTransporter && !isSupplier && !isProfessional && !isAssociate && !isLender && (
                 <SidebarMenuItem>
                     <SidebarMenuButton tooltip="Shipping Requirements" isActive={activeView === 'needs'} onClick={() => navigate('needs')}><ShoppingCart /><span>Shipping Requirements</span></SidebarMenuButton>
                 </SidebarMenuItem>
@@ -290,7 +300,7 @@ function AccountPageContent() {
             <Avatar className="h-10 w-10">
               <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
             </Avatar>
-            <div className="flex flex-col truncate text-left">
+            <div className="flex flex-col truncate text-left text-foreground">
               <span className="text-sm font-medium text-sidebar-foreground truncate">{user.displayName}</span>
               <span className="text-xs text-sidebar-foreground/70 truncate">{user.email}</span>
             </div>
