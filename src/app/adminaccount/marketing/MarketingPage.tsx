@@ -3,7 +3,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import dynamic from 'next/dynamic';
-import { Loader2, ClipboardCopy, Mail } from 'lucide-react';
+import { Loader2, ClipboardCopy } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
@@ -44,12 +44,14 @@ const InvestorOffer = dynamic(() => import('@/app/adminaccount/marketing/offers/
 const DeveloperOffer = dynamic(() => import('@/app/adminaccount/marketing/offers/DeveloperOffer'), { loading: () => <Loader2 className="animate-spin" /> });
 const SupplierOffer = dynamic(() => import('@/app/adminaccount/marketing/offers/SupplierOffer'), { loading: () => <Loader2 className="animate-spin" /> });
 const TransporterOffer = dynamic(() => import('@/app/adminaccount/marketing/offers/TransporterOffer'), { loading: () => <Loader2 className="animate-spin" /> });
+const AssociateOffer = dynamic(() => import('@/app/adminaccount/marketing/offers/AssociateOffer'), { loading: () => <Loader2 className="animate-spin" /> });
 
 const PartnerEmails = dynamic(() => import('@/app/adminaccount/marketing/emails/PartnerEmails'), { loading: () => <Loader2 className="animate-spin" /> });
 const SupplierEmails = dynamic(() => import('@/app/adminaccount/marketing/emails/SupplierEmails'), { loading: () => <Loader2 className="animate-spin" /> });
 const TransporterEmails = dynamic(() => import('@/app/adminaccount/marketing/emails/TransporterEmails'), { loading: () => <Loader2 className="animate-spin" /> });
 const InvestorEmails = dynamic(() => import('@/app/adminaccount/marketing/emails/InvestorEmails'), { loading: () => <Loader2 className="animate-spin" /> });
 const DeveloperEmails = dynamic(() => import('@/app/adminaccount/marketing/emails/DeveloperEmails'), { loading: () => <Loader2 className="animate-spin" /> });
+const AssociateEmails = dynamic(() => import('@/app/adminaccount/marketing/emails/AssociateEmails'), { loading: () => <Loader2 className="animate-spin" /> });
 
 // Management components
 const PartnerManagement = dynamic(() => import('@/app/adminaccount/marketing/partner-management'), { loading: () => <Loader2 className="animate-spin" /> });
@@ -58,18 +60,22 @@ const InvestorManagement = dynamic(() => import('@/app/adminaccount/marketing/in
 const DeveloperManagement = dynamic(() => import('@/app/adminaccount/marketing/developer-management'), { loading: () => <Loader2 className="animate-spin" /> });
 const SupplierManagement = dynamic(() => import('@/app/adminaccount/marketing/supplier-management'), { loading: () => <Loader2 className="animate-spin" /> });
 const TransporterManagement = dynamic(() => import('@/app/adminaccount/marketing/transporter-management'), { loading: () => <Loader2 className="animate-spin" /> });
+const AssociateManagement = dynamic(() => import('@/app/adminaccount/marketing/associate-management'), { loading: () => <Loader2 className="animate-spin" /> });
+const FinanceManagement = dynamic(() => import('@/app/adminaccount/marketing/finance-management'), { loading: () => <Loader2 className="animate-spin" /> });
 
-const audienceConfig = {
+const audienceConfig: Record<string, any> = {
     partners: { title: 'Strategic Partners', Offer: PartnerOffer, Emails: PartnerEmails, Management: PartnerManagement },
     isa: { title: 'ISA Agents', Offer: PartnerOffer, Emails: PartnerEmails, Management: ISAManagement },
     suppliers: { title: 'Suppliers', Offer: SupplierOffer, Emails: SupplierEmails, Management: SupplierManagement },
     transporters: { title: 'Transporters', Offer: TransporterOffer, Emails: TransporterEmails, Management: TransporterManagement },
     investors: { title: 'Investors', Offer: InvestorOffer, Emails: InvestorEmails, Management: InvestorManagement },
     developers: { title: 'Developers', Offer: DeveloperOffer, Emails: DeveloperEmails, Management: DeveloperManagement },
+    associates: { title: 'Digital Associates', Offer: AssociateOffer, Emails: AssociateEmails, Management: AssociateManagement },
+    finance: { title: 'Finance Partners', Offer: InvestorOffer, Emails: InvestorEmails, Management: FinanceManagement },
 };
 
 interface MarketingPageProps {
-  audience: keyof typeof audienceConfig;
+  audience: string;
 }
 
 async function performAdminAction(token: string, action: string, payload: any) {
@@ -194,7 +200,6 @@ function LogAndCopyDialog({ open, onOpenChange, partners, isLoadingPartners, act
 
 export default function MarketingPage({ audience }: MarketingPageProps) {
   const config = audienceConfig[audience];
-  const { Offer, Emails, Management } = config;
   const [activeTab, setActiveTab] = useState('company-profile');
   const { toast } = useToast();
   
@@ -203,7 +208,7 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
   const [isLoadingPartners, setIsLoadingPartners] = useState(true);
 
   const fetchPartnersForLogging = useCallback(async () => {
-    if (!Management) {
+    if (!config?.Management) {
       setIsLoadingPartners(false);
       setPartners([]);
       return;
@@ -220,6 +225,8 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
         else if (audience === 'developers') apiType = 'developer';
         else if (audience === 'suppliers') apiType = 'supplier';
         else if (audience === 'transporters') apiType = 'transporter';
+        else if (audience === 'associates') apiType = 'associate';
+        else if (audience === 'finance') apiType = 'finance';
         
         const result = await performAdminAction(token, 'getPartnersByType', { type: apiType });
         setPartners(result.data || []);
@@ -229,7 +236,7 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
     } finally {
         setIsLoadingPartners(false);
     }
-  }, [audience, Management, toast]);
+  }, [audience, config?.Management, toast]);
 
   useEffect(() => {
     fetchPartnersForLogging();
@@ -241,7 +248,6 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
     const contentElement = document.getElementById(contentId);
 
     if (contentElement) {
-        // FIXED: Using resilient utility to avoid ClipboardItem constructor crash
         const success = await copyHtmlToClipboard(contentElement.innerHTML);
         if (!success) {
             throw new Error('Clipboard operation failed.');
@@ -267,7 +273,6 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
 
         toast({ title: 'Logged and Copied!', description: 'Communication has been logged. Content copied to clipboard.' });
         
-        // GMAIL Launch
         const partner = partners.find(p => p.id === logData.partnerId);
         if (partner?.email) {
             const subjectLabel = activeTab.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
@@ -281,6 +286,17 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
         toast({ variant: 'destructive', title: 'Action Failed', description: e.message });
     }
   };
+
+  if (!config) {
+      return (
+          <Card className="bg-destructive/10 border-destructive text-destructive text-left p-12">
+              <h2 className="text-xl font-bold">Invalid Audience Segment: {audience}</h2>
+              <p className="text-sm mt-1">Please ensure the sidebar navigation matches the configuration keys in MarketingPage.</p>
+          </Card>
+      );
+  }
+
+  const { Offer, Emails, Management } = config;
 
   return (
     <>

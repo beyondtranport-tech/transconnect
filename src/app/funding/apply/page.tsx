@@ -12,11 +12,10 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-  FormDescription,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Landmark, ArrowLeft, ArrowRight, CheckCircle, ShieldCheck, History, Package, Sparkles, Building, FileUp, ClipboardCheck, Info, Users, PlusCircle, Trash2, UserCheck, Truck, FileText, MapPin } from 'lucide-react';
+import { Loader2, Landmark, ArrowLeft, ArrowRight, CheckCircle, ShieldCheck, History, Package, Sparkles, Building, FileUp, Users, PlusCircle, Trash2, UserCheck, Truck, FileText, Navigation, MapPin } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { useUser, getClientSideAuthToken, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -435,21 +434,21 @@ function ApplyForm() {
                     <div className="space-y-4 text-left">
                         <FormField control={methods.control} name="hasJudgements" render={({ field }) => (
                             <FormItem className="flex items-center justify-between p-4 border rounded-xl hover:bg-slate-50 transition-colors text-left">
-                                <FormLabel className="font-bold cursor-pointer">Do you have any active judgements?</FormLabel>
+                                <FormLabel className="font-bold cursor-pointer text-left">Do you have any active judgements?</FormLabel>
                                 <FormControl><RadioGroup onValueChange={(val) => field.onChange(val === 'yes')} value={field.value ? 'yes' : 'no'} className="flex gap-4"><div className="flex items-center gap-1.5"><RadioGroupItem value="yes" id="j-yes" /><Label htmlFor="j-yes" className="cursor-pointer">Yes</Label></div><div className="flex items-center gap-1.5"><RadioGroupItem value="no" id="j-no" /><Label htmlFor="j-no" className="cursor-pointer">No</Label></div></RadioGroup></FormControl>
                             </FormItem>
                         )} />
 
                         <FormField control={methods.control} name="hasDefaults" render={({ field }) => (
                              <FormItem className="flex items-center justify-between p-4 border rounded-xl hover:bg-slate-50 transition-colors text-left">
-                                <FormLabel className="font-bold cursor-pointer">Do you have any active defaults?</FormLabel>
+                                <FormLabel className="font-bold cursor-pointer text-left">Do you have any active defaults?</FormLabel>
                                 <FormControl><RadioGroup onValueChange={(val) => field.onChange(val === 'yes')} value={field.value ? 'yes' : 'no'} className="flex gap-4"><div className="flex items-center gap-1.5"><RadioGroupItem value="yes" id="d-yes" /><Label htmlFor="d-yes" className="cursor-pointer">Yes</Label></div><div className="flex items-center gap-1.5"><RadioGroupItem value="no" id="d-no" /><Label htmlFor="d-no" className="cursor-pointer">No</Label></div></RadioGroup></FormControl>
                             </FormItem>
                         )} />
                         
                         <FormField control={methods.control} name="hasArrears" render={({ field }) => (
                              <FormItem className="flex items-center justify-between p-4 border rounded-xl hover:bg-slate-50 transition-colors text-left">
-                                <FormLabel className="font-bold cursor-pointer">Are any accounts in arrears?</FormLabel>
+                                <FormLabel className="font-bold cursor-pointer text-left">Are any accounts in arrears?</FormLabel>
                                 <FormControl><RadioGroup onValueChange={(val) => field.onChange(val === 'yes')} value={field.value ? 'yes' : 'no'} className="flex gap-4"><div className="flex items-center gap-1.5"><RadioGroupItem value="yes" id="a-yes" /><Label htmlFor="a-yes" className="cursor-pointer">Yes</Label></div><div className="flex items-center gap-1.5"><RadioGroupItem value="no" id="a-no" /><Label htmlFor="a-no" className="cursor-pointer">No</Label></div></RadioGroup></FormControl>
                             </FormItem>
                         )} />
@@ -505,8 +504,8 @@ function ApplyForm() {
                                 {fundingNeed === 'vehicles' ? (
                                     <div className="space-y-6 text-left">
                                         <FormField control={methods.control} name={`assets.${index}.vehicleClass` as any} render={({ field }) => (
-                                            <FormItem className="text-left text-foreground">
-                                                <FormLabel className="font-bold">Select Vehicle Class</FormLabel>
+                                            <FormItem className="text-left">
+                                                <FormLabel className="font-bold text-foreground">Select Vehicle Class</FormLabel>
                                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                                                     <FormControl><SelectTrigger className="h-11 border-2 bg-white text-left text-foreground"><SelectValue placeholder="Choose class..." /></SelectTrigger></FormControl>
                                                     <SelectContent>{vehicleClasses.map(vc => <SelectItem key={vc} value={vc}>{vc}</SelectItem>)}</SelectContent>
@@ -543,11 +542,11 @@ function ApplyForm() {
                                             </div>
                                         )}
                                     </div>
-                                ) : fundingNeed === 'equipment' ? (
+                                ) : (
                                     <div className="space-y-6 text-left">
                                         <FormField control={methods.control} name={`assets.${index}.assetCategory` as any} render={({ field }) => (
                                             <FormItem className="text-left">
-                                                <FormLabel className="font-bold">Equipment Category</FormLabel>
+                                                <FormLabel className="font-bold text-foreground">Equipment Category</FormLabel>
                                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                                                     <FormControl><SelectTrigger className="h-11 border-2 bg-white text-left text-foreground"><SelectValue placeholder="Select type..." /></SelectTrigger></FormControl>
                                                     <SelectContent>{supplierCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent>
@@ -572,8 +571,6 @@ function ApplyForm() {
                                             </div>
                                         )}
                                     </div>
-                                ) : (
-                                    <div className="py-12 text-center opacity-50"><p className="text-xs italic text-center text-foreground">No specific asset details required for this funding need.</p></div>
                                 )}
                             </div>
                         );
@@ -620,8 +617,8 @@ function ApplyForm() {
                         </FormItem>
                     )} />
                     <FormField control={methods.control} name="preferredTerm" render={({ field }) => (
-                        <FormItem className="text-left text-foreground">
-                            <FormLabel>Preferred Repayment Term</FormLabel>
+                        <FormItem className="text-left text-foreground text-left">
+                            <FormLabel className="text-foreground">Preferred Repayment Term</FormLabel>
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                                 <FormControl><SelectTrigger className="border-2 text-left"><SelectValue placeholder="Select term..." /></SelectTrigger></FormControl>
                                 <SelectContent>
