@@ -30,6 +30,7 @@ import { supplierCategories } from '@/app/adminaccount/marketing/discovery-engin
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
 
 const fundingNeeds = {
   'business': 'Working Capital / Business Loan',
@@ -376,17 +377,17 @@ function ApplyForm() {
 
                     {entityType === 'Private Company (Pty Ltd)' && (
                         <div className="p-6 bg-slate-50 rounded-2xl border-2 border-dashed space-y-10 animate-in fade-in slide-in-from-top-4 duration-500 text-left">
-                             <div className="flex items-center gap-2 text-primary font-bold text-sm mb-4">
+                             <div className="flex items-center gap-2 text-primary font-bold text-sm mb-4 text-left">
                                 <Building className="h-4 w-4" /> Corporate Discovery Module
                              </div>
                              
-                             <div className="space-y-6">
+                             <div className="space-y-6 text-left">
                                 <FormField control={methods.control} name="companyLegalName" render={({ field }) => (<FormItem className="text-left"><FormLabel>Registered Company Name</FormLabel><FormControl><Input placeholder="Legal name as per CIPC" {...field} className="bg-white border-2" /></FormControl></FormItem>)} />
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-2 gap-4 text-left">
                                     <FormField control={methods.control} name="registrationNumber" render={({ field }) => (<FormItem className="text-left"><FormLabel>Registration Number</FormLabel><FormControl><Input placeholder="20XX/XXXXXX/07" {...field} className="bg-white border-2" /></FormControl></FormItem>)} />
                                     <FileUploadField name="registrationDocUrl" label="Registration Doc (CK)" folder="enquiry-docs" />
                                 </div>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
                                     <FormField control={methods.control} name="registeredAddress" render={({ field }) => (<FormItem className="text-left"><FormLabel>Registered Address</FormLabel><FormControl><Textarea placeholder="Full address..." {...field} className="bg-white border-2" /></FormControl></FormItem>)} />
                                     <FileUploadField name="ficaDocUrl" label="Company FICA / Proof of Address" folder="enquiry-docs" />
                                 </div>
@@ -394,16 +395,16 @@ function ApplyForm() {
 
                              <Separator />
 
-                             <div className="space-y-8">
-                                <div className="space-y-2">
-                                    <h4 className="font-black uppercase text-[10px] tracking-[0.2em] text-primary">Governance: Key Directors</h4>
+                             <div className="space-y-8 text-left">
+                                <div className="space-y-2 text-left">
+                                    <h4 className="font-black uppercase text-[10px] tracking-[0.2em] text-primary text-left">Governance: Key Directors</h4>
                                     <StakeholderForm type="directors" label="Directors" />
                                 </div>
 
                                 <Separator />
 
                                 <div className="space-y-2 text-left">
-                                    <h4 className="font-black uppercase text-[10px] tracking-[0.2em] text-primary">Equity: Major Shareholders</h4>
+                                    <h4 className="font-black uppercase text-[10px] tracking-[0.2em] text-primary text-left">Equity: Major Shareholders</h4>
                                     <StakeholderForm type="shareholders" label="Shareholders" />
                                 </div>
                              </div>
@@ -422,26 +423,26 @@ function ApplyForm() {
 
             {currentStepConfig.id === 'History' && (
                 <div className="space-y-6 text-left">
-                    <h3 className="font-bold text-lg flex items-center gap-2 text-foreground"><History className="h-5 w-5 text-primary"/> Forensic Disclosure</h3>
+                    <h3 className="font-bold text-lg flex items-center gap-2 text-foreground text-left"><History className="h-5 w-5 text-primary"/> Forensic Disclosure</h3>
                     <p className="text-sm text-muted-foreground mb-4 text-left">Please provide a clear declaration regarding your business's credit history.</p>
                     
-                    <div className="space-y-4">
+                    <div className="space-y-4 text-left">
                         <FormField control={methods.control} name="hasJudgements" render={({ field }) => (
-                            <FormItem className="flex items-center justify-between p-4 border rounded-xl hover:bg-slate-50 transition-colors">
+                            <FormItem className="flex items-center justify-between p-4 border rounded-xl hover:bg-slate-50 transition-colors text-left">
                                 <FormLabel className="font-bold cursor-pointer">Do you have any active judgements?</FormLabel>
                                 <FormControl><RadioGroup onValueChange={(val) => field.onChange(val === 'yes')} value={field.value ? 'yes' : 'no'} className="flex gap-4"><div className="flex items-center gap-1.5"><RadioGroupItem value="yes" id="j-yes" /><Label htmlFor="j-yes" className="cursor-pointer">Yes</Label></div><div className="flex items-center gap-1.5"><RadioGroupItem value="no" id="j-no" /><Label htmlFor="j-no" className="cursor-pointer">No</Label></div></RadioGroup></FormControl>
                             </FormItem>
                         )} />
 
                         <FormField control={methods.control} name="hasDefaults" render={({ field }) => (
-                             <FormItem className="flex items-center justify-between p-4 border rounded-xl hover:bg-slate-50 transition-colors">
+                             <FormItem className="flex items-center justify-between p-4 border rounded-xl hover:bg-slate-50 transition-colors text-left">
                                 <FormLabel className="font-bold cursor-pointer">Do you have any active defaults?</FormLabel>
                                 <FormControl><RadioGroup onValueChange={(val) => field.onChange(val === 'yes')} value={field.value ? 'yes' : 'no'} className="flex gap-4"><div className="flex items-center gap-1.5"><RadioGroupItem value="yes" id="d-yes" /><Label htmlFor="d-yes" className="cursor-pointer">Yes</Label></div><div className="flex items-center gap-1.5"><RadioGroupItem value="no" id="d-no" /><Label htmlFor="d-no" className="cursor-pointer">No</Label></div></RadioGroup></FormControl>
                             </FormItem>
                         )} />
                         
                         <FormField control={methods.control} name="hasArrears" render={({ field }) => (
-                             <FormItem className="flex items-center justify-between p-4 border rounded-xl hover:bg-slate-50 transition-colors">
+                             <FormItem className="flex items-center justify-between p-4 border rounded-xl hover:bg-slate-50 transition-colors text-left">
                                 <FormLabel className="font-bold cursor-pointer">Are any accounts in arrears?</FormLabel>
                                 <FormControl><RadioGroup onValueChange={(val) => field.onChange(val === 'yes')} value={field.value ? 'yes' : 'no'} className="flex gap-4"><div className="flex items-center gap-1.5"><RadioGroupItem value="yes" id="a-yes" /><Label htmlFor="a-yes" className="cursor-pointer">Yes</Label></div><div className="flex items-center gap-1.5"><RadioGroupItem value="no" id="a-no" /><Label htmlFor="a-no" className="cursor-pointer">No</Label></div></RadioGroup></FormControl>
                             </FormItem>
@@ -450,14 +451,14 @@ function ApplyForm() {
 
                     <Separator />
                     
-                    <div className="bg-primary/5 p-6 rounded-2xl border-2 border-primary/20 space-y-4">
-                         <div className="flex items-center gap-2">
+                    <div className="bg-primary/5 p-6 rounded-2xl border-2 border-primary/20 space-y-4 text-left">
+                         <div className="flex items-center gap-2 text-left">
                              <Sparkles className="h-5 w-5 text-primary" />
                              <h4 className="font-bold text-primary">Automated Credit Analysis</h4>
                          </div>
                          <p className="text-xs text-muted-foreground leading-relaxed text-left">By authorizing a credit check, you significantly increase the speed of matching and the likelihood of approval. Our system will securely connect to our credit bureau partners.</p>
                          <FormField control={methods.control} name="apiConsent" render={({ field }) => (
-                            <FormItem className="flex items-center space-x-3 space-y-0">
+                            <FormItem className="flex items-center space-x-3 space-y-0 text-left">
                                 <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange}/></FormControl>
                                 <FormLabel className="text-sm font-bold text-slate-800 cursor-pointer">Authorise Logistics Flow to fetch credit data via API</FormLabel>
                             </FormItem>
@@ -468,13 +469,13 @@ function ApplyForm() {
 
             {currentStepConfig.id === 'Asset' && (
                 <div className="space-y-6 text-left">
-                    <div className="flex items-center justify-between border-b pb-4">
+                    <div className="flex items-center justify-between border-b pb-4 text-left">
                         <div className="text-left">
-                            <h3 className="text-xl font-black font-headline flex items-center gap-2">
+                            <h3 className="text-xl font-black font-headline flex items-center gap-2 text-left">
                                 {fundingNeed === 'vehicles' ? <Truck className="h-6 w-6 text-primary" /> : <Package className="h-6 w-6 text-primary" />}
                                 Asset Portfolio Details
                             </h3>
-                            <p className="text-xs text-muted-foreground mt-1">Specify all items requiring finance in this batch.</p>
+                            <p className="text-xs text-muted-foreground mt-1 text-left">Specify all items requiring finance in this batch.</p>
                         </div>
                         <Button type="button" size="sm" onClick={() => appendAsset({ vehicleClass: '', assetCategory: '' })} className="gap-2 font-bold h-9">
                             <PlusCircle className="h-4 w-4" />
@@ -488,7 +489,7 @@ function ApplyForm() {
                         const isTrailer = vClass === 'Trailer';
 
                         return (
-                            <div key={field.id} className="p-6 border-2 rounded-2xl bg-slate-50 space-y-6 relative animate-in fade-in zoom-in-95 duration-300">
+                            <div key={field.id} className="p-6 border-2 rounded-2xl bg-slate-50 space-y-6 relative animate-in fade-in zoom-in-95 duration-300 text-left">
                                 {index > 0 && (
                                     <Button type="button" variant="ghost" size="icon" onClick={() => removeAsset(index)} className="absolute top-2 right-2 text-destructive"><Trash2 className="h-4 w-4"/></Button>
                                 )}
@@ -496,28 +497,28 @@ function ApplyForm() {
                                 <Badge variant="secondary" className="font-black text-[10px] tracking-widest uppercase">Asset {index + 1}</Badge>
 
                                 {fundingNeed === 'vehicles' ? (
-                                    <div className="space-y-6">
+                                    <div className="space-y-6 text-left">
                                         <FormField control={methods.control} name={`assets.${index}.vehicleClass` as any} render={({ field }) => (
                                             <FormItem className="text-left">
                                                 <FormLabel className="font-bold">Select Vehicle Class</FormLabel>
                                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                    <FormControl><SelectTrigger className="h-11 border-2 bg-white"><SelectValue placeholder="Choose class..." /></SelectTrigger></FormControl>
+                                                    <FormControl><SelectTrigger className="h-11 border-2 bg-white text-left"><SelectValue placeholder="Choose class..." /></SelectTrigger></FormControl>
                                                     <SelectContent>{vehicleClasses.map(vc => <SelectItem key={vc} value={vc}>{vc}</SelectItem>)}</SelectContent>
                                                 </Select>
                                             </FormItem>
                                         )} />
                                         
                                         {vClass && (
-                                            <div className="space-y-6 animate-in slide-in-from-top-2 duration-300">
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div className="space-y-6 animate-in slide-in-from-top-2 duration-300 text-left">
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
                                                     <FormField control={methods.control} name={`assets.${index}.vehicleMake` as any} render={({ field }) => (<FormItem className="text-left"><FormLabel>Make / Brand</FormLabel><FormControl><Input placeholder="e.g. Scania" {...field} className="h-10 border-2 bg-white" /></FormControl></FormItem>)} />
                                                     <FormField control={methods.control} name={`assets.${index}.vehicleModel` as any} render={({ field }) => (<FormItem className="text-left"><FormLabel>Model / Series</FormLabel><FormControl><Input placeholder="e.g. R560" {...field} className="h-10 border-2 bg-white" /></FormControl></FormItem>)} />
                                                 </div>
-                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
                                                     <FormField control={methods.control} name={`assets.${index}.vehicleYear` as any} render={({ field }) => (<FormItem className="text-left"><FormLabel>Year</FormLabel><FormControl><Input type="number" placeholder="20XX" {...field} className="h-10 border-2 bg-white" /></FormControl></FormItem>)} />
                                                     <FormField control={methods.control} name={`assets.${index}.vehicleVin` as any} render={({ field }) => (<FormItem className="text-left md:col-span-2"><FormLabel>VIN / Chassis #</FormLabel><FormControl><Input placeholder="Serial Number" {...field} className="h-10 border-2 bg-white" /></FormControl></FormItem>)} />
                                                 </div>
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-slate-200">
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-slate-200 text-left">
                                                     {!isTrailer && (
                                                         <FormField control={methods.control} name={`assets.${index}.engineNumber` as any} render={({ field }) => (<FormItem className="text-left"><FormLabel>Engine Number</FormLabel><FormControl><Input {...field} className="h-10 border-2 bg-white" /></FormControl></FormItem>)} />
                                                     )}
@@ -527,24 +528,24 @@ function ApplyForm() {
                                         )}
                                     </div>
                                 ) : fundingNeed === 'equipment' ? (
-                                    <div className="space-y-6">
+                                    <div className="space-y-6 text-left">
                                         <FormField control={methods.control} name={`assets.${index}.assetCategory` as any} render={({ field }) => (
                                             <FormItem className="text-left">
                                                 <FormLabel className="font-bold">Equipment Category</FormLabel>
                                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                    <FormControl><SelectTrigger className="h-11 border-2 bg-white"><SelectValue placeholder="Select type..." /></SelectTrigger></FormControl>
+                                                    <FormControl><SelectTrigger className="h-11 border-2 bg-white text-left"><SelectValue placeholder="Select type..." /></SelectTrigger></FormControl>
                                                     <SelectContent>{supplierCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent>
                                                 </Select>
                                             </FormItem>
                                         )} />
 
                                         {aCategory && (
-                                            <div className="space-y-6 animate-in slide-in-from-top-2 duration-300">
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div className="space-y-6 animate-in slide-in-from-top-2 duration-300 text-left">
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
                                                     <FormField control={methods.control} name={`assets.${index}.assetBrand` as any} render={({ field }) => (<FormItem className="text-left"><FormLabel>Manufacturer / Brand</FormLabel><FormControl><Input placeholder="e.g. Caterpillar" {...field} className="h-10 border-2 bg-white" /></FormControl></FormItem>)} />
                                                     <FormField control={methods.control} name={`assets.${index}.assetModel` as any} render={({ field }) => (<FormItem className="text-left"><FormLabel>Model / Type</FormLabel><FormControl><Input {...field} className="h-10 border-2 bg-white" /></FormControl></FormItem>)} />
                                                 </div>
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-slate-200">
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-slate-200 text-left">
                                                     <FormField control={methods.control} name={`assets.${index}.assetSerialNumber` as any} render={({ field }) => (<FormItem className="text-left"><FormLabel>Serial Number</FormLabel><FormControl><Input {...field} className="h-10 border-2 bg-white" /></FormControl></FormItem>)} />
                                                     <FileUploadField name={`assets.${index}.assetSpecUrl`} label="Attach Spec Sheet / Quote" folder="enquiry-assets" />
                                                 </div>
@@ -567,11 +568,11 @@ function ApplyForm() {
                           <FormLabel className="font-bold text-foreground">Is this for problem solving or capturing opportunity?</FormLabel>
                           <FormControl>
                             <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-col space-y-2 text-left">
-                                <div className="flex items-center gap-2 p-3 border rounded-lg cursor-pointer hover:bg-slate-50 transition-colors">
+                                <div className="flex items-center gap-2 p-3 border rounded-lg cursor-pointer hover:bg-slate-50 transition-colors text-left">
                                     <RadioGroupItem value="problem" id="r-prob" /> 
                                     <Label htmlFor="r-prob" className="cursor-pointer flex-1 font-medium text-left">Problem / Recovery</Label>
                                 </div>
-                                <div className="flex items-center gap-2 p-3 border rounded-lg cursor-pointer hover:bg-slate-50 transition-colors">
+                                <div className="flex items-center gap-2 p-3 border rounded-lg cursor-pointer hover:bg-slate-50 transition-colors text-left">
                                     <RadioGroupItem value="opportunity" id="r-opp" /> 
                                     <Label htmlFor="r-opp" className="cursor-pointer flex-1 font-medium text-left">Growth / Opportunity</Label>
                                 </div>
@@ -595,7 +596,7 @@ function ApplyForm() {
                         <FormItem className="text-left">
                             <FormLabel>Preferred Repayment Term</FormLabel>
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl><SelectTrigger className="border-2"><SelectValue placeholder="Select term..." /></SelectTrigger></FormControl>
+                                <FormControl><SelectTrigger className="border-2 text-left"><SelectValue placeholder="Select term..." /></SelectTrigger></FormControl>
                                 <SelectContent>
                                     {termOptions.map(term => <SelectItem key={term} value={term}>{term}</SelectItem>)}
                                 </SelectContent>
@@ -608,9 +609,9 @@ function ApplyForm() {
             <div className="flex justify-between items-center pt-8 border-t text-left">
               <Button type="button" variant="outline" onClick={() => setCurrentStep(currentStep - 1)} disabled={currentStep === 0} className="h-12 px-8 font-bold"><ArrowLeft className="mr-2 h-4 w-4" /> Back</Button>
               {currentStep < staticSteps.length - 1 ? (
-                <Button type="button" onClick={processStep} className="h-12 px-10 font-bold">Next <ArrowRight className="ml-2 h-4 w-4" /></Button>
+                <Button type="button" onClick={processStep} className="h-12 px-10 font-bold text-left">Next <ArrowRight className="ml-2 h-4 w-4" /></Button>
               ) : (
-                <Button type="submit" disabled={isSubmitting} className="h-12 bg-primary hover:bg-primary/90 shadow-lg font-black uppercase tracking-tight">
+                <Button type="submit" disabled={isSubmitting} className="h-12 bg-primary hover:bg-primary/90 shadow-lg font-black uppercase tracking-tight text-left">
                     {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShieldCheck className="mr-2 h-4 w-4" />}
                     Analyze & Match Application
                 </Button>
