@@ -76,6 +76,9 @@ const assetDetailSchema = z.object({
     vehicleVin: z.string().optional(),
     engineNumber: z.string().optional(),
     rc1DocUrl: z.string().optional(),
+    vehicleRegisterNumber: z.string().optional(),
+    titleholder: z.string().optional(),
+    owner: z.string().optional(),
     
     // Conditional Equipment Fields
     assetCategory: z.string().optional(),
@@ -452,11 +455,11 @@ function ApplyForm() {
                     <Separator />
                     
                     <div className="bg-primary/5 p-6 rounded-2xl border-2 border-primary/20 space-y-4 text-left">
-                         <div className="flex items-center gap-2 text-left">
+                         <div className="flex items-center gap-2 text-left text-foreground">
                              <Sparkles className="h-5 w-5 text-primary" />
                              <h4 className="font-bold text-primary">Automated Credit Analysis</h4>
                          </div>
-                         <p className="text-xs text-muted-foreground leading-relaxed text-left">By authorizing a credit check, you significantly increase the speed of matching and the likelihood of approval. Our system will securely connect to our credit bureau partners.</p>
+                         <p className="text-xs text-muted-foreground leading-relaxed text-left">By authorising a credit check, you significantly increase the speed of matching and the likelihood of approval. Our system will securely connect to our credit bureau partners.</p>
                          <FormField control={methods.control} name="apiConsent" render={({ field }) => (
                             <FormItem className="flex items-center space-x-3 space-y-0 text-left">
                                 <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange}/></FormControl>
@@ -489,7 +492,7 @@ function ApplyForm() {
                         const isTrailer = vClass === 'Trailer';
 
                         return (
-                            <div key={field.id} className="p-6 border-2 rounded-2xl bg-slate-50 space-y-6 relative animate-in fade-in zoom-in-95 duration-300 text-left">
+                            <div key={field.id} className="p-6 border-2 rounded-2xl bg-slate-50 space-y-6 relative animate-in fade-in zoom-in-95 duration-300 text-left text-foreground">
                                 {index > 0 && (
                                     <Button type="button" variant="ghost" size="icon" onClick={() => removeAsset(index)} className="absolute top-2 right-2 text-destructive"><Trash2 className="h-4 w-4"/></Button>
                                 )}
@@ -518,10 +521,23 @@ function ApplyForm() {
                                                     <FormField control={methods.control} name={`assets.${index}.vehicleYear` as any} render={({ field }) => (<FormItem className="text-left"><FormLabel>Year</FormLabel><FormControl><Input type="number" placeholder="20XX" {...field} className="h-10 border-2 bg-white" /></FormControl></FormItem>)} />
                                                     <FormField control={methods.control} name={`assets.${index}.vehicleVin` as any} render={({ field }) => (<FormItem className="text-left md:col-span-2"><FormLabel>VIN / Chassis #</FormLabel><FormControl><Input placeholder="Serial Number" {...field} className="h-10 border-2 bg-white" /></FormControl></FormItem>)} />
                                                 </div>
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-slate-200 text-left">
-                                                    {!isTrailer && (
+                                                
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+                                                     <FormField control={methods.control} name={`assets.${index}.vehicleRegisterNumber` as any} render={({ field }) => (<FormItem className="text-left"><FormLabel>Vehicle Register #</FormLabel><FormControl><Input placeholder="As per RC1" {...field} className="h-10 border-2 bg-white" /></FormControl></FormItem>)} />
+                                                     {!isTrailer && (
                                                         <FormField control={methods.control} name={`assets.${index}.engineNumber` as any} render={({ field }) => (<FormItem className="text-left"><FormLabel>Engine Number</FormLabel><FormControl><Input {...field} className="h-10 border-2 bg-white" /></FormControl></FormItem>)} />
                                                     )}
+                                                </div>
+
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+                                                    <FormField control={methods.control} name={`assets.${index}.titleholder` as any} render={({ field }) => (<FormItem className="text-left"><FormLabel>Titleholder</FormLabel><FormControl><Input placeholder="Entity that holds title" {...field} className="h-10 border-2 bg-white" /></FormControl></FormItem>)} />
+                                                    <FormField control={methods.control} name={`assets.${index}.owner` as any} render={({ field }) => (<FormItem className="text-left"><FormLabel>Owner</FormLabel><FormControl><Input placeholder="Registered owner" {...field} className="h-10 border-2 bg-white" /></FormControl></FormItem>)} />
+                                                </div>
+
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-slate-200 text-left">
+                                                    <div className="text-left">
+                                                         <FormField control={methods.control} name={`assets.${index}.tare` as any} render={({ field }) => (<FormItem className="text-left"><FormLabel>Tare (kg)</FormLabel><FormControl><Input type="number" {...field} className="h-10 border-2 bg-white" /></FormControl></FormItem>)} />
+                                                    </div>
                                                     <FileUploadField name={`assets.${index}.rc1DocUrl`} label="Attach RC1 / Registration Doc" folder="enquiry-assets" />
                                                 </div>
                                             </div>
@@ -530,10 +546,10 @@ function ApplyForm() {
                                 ) : fundingNeed === 'equipment' ? (
                                     <div className="space-y-6 text-left">
                                         <FormField control={methods.control} name={`assets.${index}.assetCategory` as any} render={({ field }) => (
-                                            <FormItem className="text-left">
+                                            <FormItem className="text-left text-foreground">
                                                 <FormLabel className="font-bold">Equipment Category</FormLabel>
                                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                    <FormControl><SelectTrigger className="h-11 border-2 bg-white text-left"><SelectValue placeholder="Select type..." /></SelectTrigger></FormControl>
+                                                    <FormControl><SelectTrigger className="h-11 border-2 bg-white text-left text-foreground"><SelectValue placeholder="Select type..." /></SelectTrigger></FormControl>
                                                     <SelectContent>{supplierCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent>
                                                 </Select>
                                             </FormItem>
@@ -543,7 +559,7 @@ function ApplyForm() {
                                             <div className="space-y-6 animate-in slide-in-from-top-2 duration-300 text-left">
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
                                                     <FormField control={methods.control} name={`assets.${index}.assetBrand` as any} render={({ field }) => (<FormItem className="text-left"><FormLabel>Manufacturer / Brand</FormLabel><FormControl><Input placeholder="e.g. Caterpillar" {...field} className="h-10 border-2 bg-white" /></FormControl></FormItem>)} />
-                                                    <FormField control={methods.control} name={`assets.${index}.assetModel` as any} render={({ field }) => (<FormItem className="text-left"><FormLabel>Model / Type</FormLabel><FormControl><Input {...field} className="h-10 border-2 bg-white" /></FormControl></FormItem>)} />
+                                                    <FormField control={methods.control} name={`assets.${index}.assetModel` as any} render={({ field }) => (<FormItem className="text-left"><FormLabel>Model / Type</FormLabel><FormControl><Input placeholder="e.g. R560" {...field} className="h-10 border-2 bg-white" /></FormControl></FormItem>)} />
                                                 </div>
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-slate-200 text-left">
                                                     <FormField control={methods.control} name={`assets.${index}.assetSerialNumber` as any} render={({ field }) => (<FormItem className="text-left"><FormLabel>Serial Number</FormLabel><FormControl><Input {...field} className="h-10 border-2 bg-white" /></FormControl></FormItem>)} />
@@ -553,7 +569,7 @@ function ApplyForm() {
                                         )}
                                     </div>
                                 ) : (
-                                    <div className="py-12 text-center opacity-50"><p className="text-xs italic">No specific asset details required for this funding need.</p></div>
+                                    <div className="py-12 text-center opacity-50"><p className="text-xs italic text-center">No specific asset details required for this funding need.</p></div>
                                 )}
                             </div>
                         );
@@ -574,7 +590,7 @@ function ApplyForm() {
                                 </div>
                                 <div className="flex items-center gap-2 p-3 border rounded-lg cursor-pointer hover:bg-slate-50 transition-colors text-left">
                                     <RadioGroupItem value="opportunity" id="r-opp" /> 
-                                    <Label htmlFor="r-opp" className="cursor-pointer flex-1 font-medium text-left">Growth / Opportunity</Label>
+                                    <Label htmlFor="r-opp" className="cursor-pointer flex-1 font-medium text-left text-foreground">Growth / Opportunity</Label>
                                 </div>
                             </RadioGroup>
                           </FormControl>
@@ -587,7 +603,7 @@ function ApplyForm() {
             {currentStepConfig.id === 'Amount' && (
                 <div className="space-y-6 text-left">
                     <FormField control={methods.control} name="amountRequested" render={({ field }) => (
-                        <FormItem className="text-left">
+                        <FormItem className="text-left text-foreground">
                         <FormLabel className="text-lg font-bold text-foreground">Estimated Amount (ZAR)</FormLabel>
                         <FormControl><Input type="number" className="h-14 text-2xl font-black font-mono border-primary/20" placeholder="500000" {...field} /></FormControl>
                         </FormItem>
